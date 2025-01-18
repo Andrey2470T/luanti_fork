@@ -25,6 +25,11 @@ elseif(DEVELOPMENT_BUILD)
 	set(VERSION_STRING "${VERSION_STRING}-dev")
 endif()
 
+if(NOT CMAKE_BUILD_TYPE)
+	# Default to release
+	set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type: Debug or Release" FORCE)
+endif()
+
 if (CMAKE_BUILD_TYPE STREQUAL Debug)
 	# Append "-debug" to version string
 	set(VERSION_STRING "${VERSION_STRING}-debug")
@@ -78,11 +83,6 @@ message(STATUS "RUN_IN_PLACE: " ${RUN_IN_PLACE})
 
 set(WARN_ALL TRUE CACHE BOOL "Enable -Wall for Release build")
 
-if(NOT CMAKE_BUILD_TYPE)
-	# Default to release
-	set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type: Debug or Release" FORCE)
-endif()
-
 set(ENABLE_UPDATE_CHECKER (NOT ${DEVELOPMENT_BUILD}) CACHE BOOL
 	"Whether to enable update checks by default")
 
@@ -95,23 +95,7 @@ if(ANDROID)
 	include(AndroidLibs)
 endif()
 
-
-if(TRUE)
-	message(STATUS "Using imported IrrlichtMt at subdirectory 'irr'")
-	if(BUILD_CLIENT)
-		add_subdirectory(irr EXCLUDE_FROM_ALL)
-
-		if(NOT TARGET IrrlichtMt)
-			message(FATAL_ERROR "IrrlichtMt project is missing a CMake target?!")
-		endif()
-	else()
-		add_library(IrrlichtMt::IrrlichtMt INTERFACE IMPORTED)
-		set_target_properties(IrrlichtMt::IrrlichtMt PROPERTIES
-			INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/irr/include")
-	endif()
-endif()
-
-if (ENABLE_LTO OR CMAKE_INTERPROCEDURAL_OPTIMIZATION)
+if(ENABLE_LTO OR CMAKE_INTERPROCEDURAL_OPTIMIZATION)
 	include(CheckIPOSupported)
 	check_ipo_supported(RESULT lto_supported OUTPUT lto_output)
 	if(lto_supported)
@@ -279,7 +263,26 @@ if(CMAKE_GENERATOR STREQUAL "Xcode")
 	set(client_RESOURCES "${CMAKE_SOURCE_DIR}/misc/luanti-icon.icns")
 endif()
 
-# Library pack
+# Libraries
+
+message(STATUS "Using IrrlichtRedo submodule at subdirectory 'lib/irrlicht_redo'")
+
+if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/lib/irrlicht_redo")
+	message(FATAL_ERROR "IrrlichtRedo submodule is missing (probably wasn't added?)")
+endif()
+
+if(BUILD_CLIENT)
+	add_subdirectory(lib/irrlicht_redo EXCLUDE_FROM_ALL)
+
+	if(NOT TARGET IrrlichtRedo)
+		message(FATAL_ERROR "IrrlichRedo submodule is missing a CMake target?!")
+	endif()
+else()
+	add_library(IrrlichtRedo::IrrlichtRedo INTERFACE IMPORTED)
+	set_target_properties(IrrlichtRedo::IrrlichtRedo PROPERTIES
+		INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/lib/irrlicht_redo/src")
+endif()
+
 find_package(GMP REQUIRED)
 find_package(Json 1.0.0 REQUIRED)
 find_package(Lua REQUIRED)

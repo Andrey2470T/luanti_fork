@@ -571,7 +571,7 @@ include_directories(SYSTEM
 	${JSON_INCLUDE_DIR}
 	${LUA_BIT_INCLUDE_DIR}
 	# on Android, Luanti depends on SDL2 directly
-	# on other platforms, only IrrlichtMt depends on SDL2
+	# on other platforms, only IrrlichtRedo depends on SDL2
 	"$<$<PLATFORM_ID:Android>:${SDL2_INCLUDE_DIRS}>"
 )
 
@@ -609,7 +609,7 @@ if(USE_OPENSSL)
 	target_link_libraries(EngineCommon OpenSSL::Crypto)
 endif()
 get_target_property(
-	IRRLICHT_INCLUDES IrrlichtMt::IrrlichtMt INTERFACE_INCLUDE_DIRECTORIES)
+	IRRLICHT_INCLUDES IrrlichtRedo::IrrlichtRedo INTERFACE_INCLUDE_DIRECTORIES)
 target_include_directories(EngineCommon PRIVATE ${IRRLICHT_INCLUDES})
 if(PRECOMPILE_HEADERS)
 	target_precompile_headers(EngineCommon PRIVATE ${PRECOMPILED_HEADERS_LIST})
@@ -681,7 +681,7 @@ if(BUILD_CLIENT)
 	target_link_libraries(
 		${PROJECT_NAME}
 		${ZLIB_LIBRARIES}
-		IrrlichtMt::IrrlichtMt
+		IrrlichtRedo::IrrlichtRedo
 		${ZSTD_LIBRARY}
 		${SOUND_LIBRARIES}
 		${SQLITE3_LIBRARY}
@@ -693,7 +693,7 @@ if(BUILD_CLIENT)
 		${FREETYPE_LIBRARY}
 		${PLATFORM_LIBS}
 		# on Android, Luanti depends on SDL2 directly
-		# on other platforms, only IrrlichtMt depends on SDL2
+		# on other platforms, only IrrlichtRedo depends on SDL2
 		"$<$<PLATFORM_ID:Android>:${SDL2_LIBRARIES}>"
 	)
 	target_compile_definitions(${PROJECT_NAME} PRIVATE "MT_BUILDTARGET=1")
@@ -769,7 +769,7 @@ if(BUILD_SERVER)
 
 	# don't link the irrlicht library
 	get_target_property(
-		IRRLICHT_INCLUDES IrrlichtMt::IrrlichtMt INTERFACE_INCLUDE_DIRECTORIES)
+		IRRLICHT_INCLUDES IrrlichtRedo::IrrlichtRedo INTERFACE_INCLUDE_DIRECTORIES)
 	target_include_directories(${PROJECT_NAME}server PRIVATE ${IRRLICHT_INCLUDES})
 	target_link_libraries(
 		${PROJECT_NAME}server

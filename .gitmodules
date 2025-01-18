@@ -1,0 +1,3 @@
+[submodule "lib/irrlicht_redo"]
+	path = lib/irrlicht_redo
+	url = https://github.com/Andrey2470T/irrlicht_redo
