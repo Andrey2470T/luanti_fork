@@ -4,9 +4,8 @@
 
 #pragma once
 
-#include "irrlichttypes_bloated.h"
+#include <BasicIncludes.h>
 #include "activeobject.h"
-#include <memory>
 #include <unordered_map>
 #include <unordered_set>
 
