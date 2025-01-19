@@ -1,69 +1,69 @@
 set(ao_SRCS
-	${CMAKE_CURRENT_SOURCE_DIR}/ClientActiveObject.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ClientActiveObjectMgr.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/GenericCAO.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/SmokePuffCSO.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/TestCAO.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ao/ClientActiveObject.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ao/ClientActiveObjectMgr.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ao/GenericCAO.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ao/SmokePuffCSO.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ao/TestCAO.cpp
 )
 
 set(event_SRCS
-	${CMAKE_CURRENT_SOURCE_DIR}/EventReceiver.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/InputHandler.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/JoystickController.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/KeyCache.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/KeyPress.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/event/EventReceiver.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/event/InputHandler.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/event/JoystickController.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/event/KeyCache.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/event/KeyPress.cpp
 )
 
 set(map_SRCS
-	${CMAKE_CURRENT_SOURCE_DIR}/ClientMap.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/MapblockMesh.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/MeshCollector.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/MeshGenerator.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/MeshGeneratorThread.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/map/ClientMap.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/map/MapblockMesh.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/map/MeshCollector.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/map/MeshGenerator.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/map/MeshGeneratorThread.cpp
 )
 
 set(media_SRCS
-	${CMAKE_CURRENT_SOURCE_DIR}/ClientMedia.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/FileCache.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ImageFilters.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ImageSource.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/Shader.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/TexturePaths.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/TextureSource.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/media/ClientMedia.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/media/FileCache.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/media/ImageFilters.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/media/ImageSource.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/media/Shader.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/media/TexturePaths.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/media/TextureSource.cpp
 )
 
 set(pipeline_SRCS
-	${CMAKE_CURRENT_SOURCE_DIR}/Anaglyph.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/Core.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/Factory.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/Interlaced.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/Pipeline.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/Plain.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/SecondStage.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/SideBySide.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/Stereo.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/pipeline/Anaglyph.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/pipeline/Core.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/pipeline/Factory.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/pipeline/Interlaced.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/pipeline/Pipeline.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/pipeline/Plain.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/pipeline/SecondStage.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/pipeline/SideBySide.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/pipeline/Stereo.cpp
 )
 
 set(player_SRCS
-	${CMAKE_CURRENT_SOURCE_DIR}/Camera.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/LocalPlayer.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/player/Camera.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/player/LocalPlayer.cpp
 )
 
 set(render_SRCS
-	${CMAKE_CURRENT_SOURCE_DIR}/Clouds.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/MeshOperations.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/Particles.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/RenderingEngine.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/Sky.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/Tile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/WieldMesh.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/render/Clouds.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/render/MeshOperations.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/render/Particles.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/render/RenderingEngine.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/render/Sky.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/render/Tile.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/render/WieldMesh.cpp
 )
 
 set(shadows_SRCS
-	${CMAKE_CURRENT_SOURCE_DIR}/DynamicShadows.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/DynamicShadowsRender.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ShadowsScreenQuad.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ShadowsShaderCallbacks.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/shadows/DynamicShadows.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/shadows/DynamicShadowsRender.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/shadows/ShadowsScreenQuad.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/shadows/ShadowsShaderCallbacks.cpp
 )
 
 set(sound_SRCS ${CMAKE_CURRENT_SOURCE_DIR}/sound/sound.cpp)
@@ -92,12 +92,12 @@ if(USE_SOUND)
 endif()
 
 set(ui_SRCS
-	${CMAKE_CURRENT_SOURCE_DIR}/fontengine.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/game_formspec.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/gameui.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/guiscalingfilter.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/hud.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/minimap.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/fontengine.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/game_formspec.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/gameui.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/guiscalingfilter.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/hud.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/minimap.cpp
 )
 
 set(client_SRCS
@@ -111,5 +111,9 @@ set(client_SRCS
 	${shadows_SRCS}
 	${sound_SRCS}
 	${ui_SRCS}
+	${CMAKE_CURRENT_SOURCE_DIR}/Client.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ClientEnvironment.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ClientLauncher.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/Game.cpp
 	PARENT_SCOPE
 )
