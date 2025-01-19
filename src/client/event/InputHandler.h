@@ -1,0 +1,176 @@
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+
+#pragma once
+
+#include "irrlichttypes.h"
+#include "irr_v2d.h"
+#include "joystick_controller.h"
+#include <list>
+#include "keycode.h"
+
+class InputHandler
+{
+public:
+	InputHandler()
+	{
+		keycache.handler = this;
+		keycache.populate();
+	}
+
+	virtual ~InputHandler() = default;
+
+	virtual bool isRandom() const
+	{
+		return false;
+	}
+
+	virtual bool isKeyDown(GameKeyType k) = 0;
+	virtual bool wasKeyDown(GameKeyType k) = 0;
+	virtual bool wasKeyPressed(GameKeyType k) = 0;
+	virtual bool wasKeyReleased(GameKeyType k) = 0;
+	virtual bool cancelPressed() = 0;
+
+	virtual float getJoystickSpeed() = 0;
+	virtual float getJoystickDirection() = 0;
+
+	virtual void clearWasKeyPressed() {}
+	virtual void clearWasKeyReleased() {}
+
+	virtual void listenForKey(const KeyPress &keyCode) {}
+	virtual void dontListenForKeys() {}
+
+	virtual v2s32 getMousePos() = 0;
+	virtual void setMousePos(s32 x, s32 y) = 0;
+
+	virtual s32 getMouseWheel() = 0;
+
+	virtual void step(float dtime) {}
+
+	virtual void clear() {}
+	virtual void releaseAllKeys() {}
+
+	JoystickController joystick;
+	KeyCache keycache;
+};
+
+/*
+	Separated input handler implementations
+*/
+
+class RealInputHandler final : public InputHandler
+{
+public:
+	RealInputHandler(MyEventReceiver *receiver) : m_receiver(receiver)
+	{
+		m_receiver->joystick = &joystick;
+	}
+
+	virtual ~RealInputHandler()
+	{
+		m_receiver->joystick = nullptr;
+	}
+
+	virtual bool isKeyDown(GameKeyType k)
+	{
+		return m_receiver->IsKeyDown(keycache.key[k]) || joystick.isKeyDown(k);
+	}
+	virtual bool wasKeyDown(GameKeyType k)
+	{
+		return m_receiver->WasKeyDown(keycache.key[k]) || joystick.wasKeyDown(k);
+	}
+	virtual bool wasKeyPressed(GameKeyType k)
+	{
+		return m_receiver->WasKeyPressed(keycache.key[k]) || joystick.wasKeyPressed(k);
+	}
+	virtual bool wasKeyReleased(GameKeyType k)
+	{
+		return m_receiver->WasKeyReleased(keycache.key[k]) || joystick.wasKeyReleased(k);
+	}
+
+	virtual float getJoystickSpeed();
+
+	virtual float getJoystickDirection();
+
+	virtual bool cancelPressed()
+	{
+		return wasKeyDown(KeyType::ESC);
+	}
+
+	virtual void clearWasKeyPressed()
+	{
+		m_receiver->clearWasKeyPressed();
+	}
+	virtual void clearWasKeyReleased()
+	{
+		m_receiver->clearWasKeyReleased();
+	}
+
+	virtual void listenForKey(const KeyPress &keyCode)
+	{
+		m_receiver->listenForKey(keyCode);
+	}
+	virtual void dontListenForKeys()
+	{
+		m_receiver->dontListenForKeys();
+	}
+
+	virtual v2s32 getMousePos();
+	virtual void setMousePos(s32 x, s32 y);
+
+	virtual s32 getMouseWheel()
+	{
+		return m_receiver->getMouseWheel();
+	}
+
+	void clear()
+	{
+		joystick.clear();
+		m_receiver->clearInput();
+	}
+
+	void releaseAllKeys()
+	{
+		joystick.releaseAllKeys();
+		m_receiver->releaseAllKeys();
+	}
+
+private:
+	MyEventReceiver *m_receiver = nullptr;
+	v2s32 m_mousepos;
+};
+
+class RandomInputHandler final : public InputHandler
+{
+public:
+	RandomInputHandler() = default;
+
+	bool isRandom() const
+	{
+		return true;
+	}
+
+	virtual bool isKeyDown(GameKeyType k) { return keydown[keycache.key[k]]; }
+	virtual bool wasKeyDown(GameKeyType k) { return false; }
+	virtual bool wasKeyPressed(GameKeyType k) { return false; }
+	virtual bool wasKeyReleased(GameKeyType k) { return false; }
+	virtual bool cancelPressed() { return false; }
+	virtual float getJoystickSpeed() { return joystickSpeed; }
+	virtual float getJoystickDirection() { return joystickDirection; }
+	virtual v2s32 getMousePos() { return mousepos; }
+	virtual void setMousePos(s32 x, s32 y) { mousepos = v2s32(x, y); }
+
+	virtual s32 getMouseWheel() { return 0; }
+
+	virtual void step(float dtime);
+
+	s32 Rand(s32 min, s32 max);
+
+private:
+	KeyList keydown;
+	v2s32 mousepos;
+	v2s32 mousespeed;
+	float joystickSpeed;
+	float joystickDirection;
+};

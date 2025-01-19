@@ -278,8 +278,8 @@ if(BUILD_CLIENT)
 		message(FATAL_ERROR "IrrlichRedo submodule is missing a CMake target?!")
 	endif()
 else()
-	add_library(IrrlichtRedo::IrrlichtRedo INTERFACE IMPORTED)
-	set_target_properties(IrrlichtRedo::IrrlichtRedo PROPERTIES
+	add_library(IrrlichtRedo INTERFACE IMPORTED)
+	set_target_properties(IrrlichtRedo PROPERTIES
 		INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/lib/irrlicht_redo/src")
 endif()
 
