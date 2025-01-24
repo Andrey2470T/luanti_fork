@@ -272,15 +272,11 @@ if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/lib/irrlicht_redo")
 endif()
 
 if(BUILD_CLIENT)
-	add_subdirectory(lib/irrlicht_redo EXCLUDE_FROM_ALL)
+	add_subdirectory(lib/irrlicht_redo)
 
 	if(NOT TARGET IrrlichtRedo)
 		message(FATAL_ERROR "IrrlichRedo submodule is missing a CMake target?!")
 	endif()
-else()
-	add_library(IrrlichtRedo INTERFACE IMPORTED)
-	set_target_properties(IrrlichtRedo PROPERTIES
-		INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/lib/irrlicht_redo/src")
 endif()
 
 find_package(GMP REQUIRED)

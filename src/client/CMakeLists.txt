@@ -66,19 +66,19 @@ set(shadows_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/shadows/ShadowsShaderCallbacks.cpp
 )
 
-set(sound_SRCS ${CMAKE_CURRENT_SOURCE_DIR}/sound/sound.cpp)
+set(sound_SRCS ${CMAKE_CURRENT_SOURCE_DIR}/sound/Sound.cpp)
 
 if(USE_SOUND)
 	list(APPEND sound_SRCS
-		${CMAKE_CURRENT_SOURCE_DIR}/sound/al_extensions.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/sound/al_helpers.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/sound/ogg_file.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/sound/playing_sound.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/sound/proxy_sound_manager.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/sound/sound_data.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/sound/sound_manager.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/sound/sound_openal.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/sound/sound_singleton.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/sound/ALExtensions.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/sound/ALHelpers.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/sound/OggFile.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/sound/PlayingSound.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/sound/ProxySoundManager.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/sound/SoundData.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/sound/SoundManager.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/sound/SoundOpenAL.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/sound/SoundSingleton.cpp
 	)
 	set(SOUND_INCLUDE_DIRS
 		${OPENAL_INCLUDE_DIR}
@@ -92,12 +92,12 @@ if(USE_SOUND)
 endif()
 
 set(ui_SRCS
-	${CMAKE_CURRENT_SOURCE_DIR}/ui/fontengine.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ui/game_formspec.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ui/gameui.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ui/guiscalingfilter.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ui/hud.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ui/minimap.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/FontEngine.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/GameFormspec.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/GameUI.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/GUIScalingFilter.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/Hud.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/Minimap.cpp
 )
 
 set(client_SRCS
