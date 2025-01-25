@@ -22,22 +22,21 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <string>
 #include <string_view>
 #include <vector>
-#include <SColor.h>
+#include "Image/Color.h"
 
-using namespace irr;
 
 class EnrichedString {
 public:
 	EnrichedString();
 	EnrichedString(std::wstring_view s,
-		const video::SColor &color = video::SColor(255, 255, 255, 255));
+        const img::color8 &color = img::color8(img::PF_RGBA8, 255, 255, 255, 255));
 	EnrichedString(std::wstring_view string,
-		const std::vector<video::SColor> &colors);
+        const std::vector<img::color8> &colors);
 	EnrichedString &operator=(std::wstring_view s);
 
 	void clear();
 
-	void addAtEnd(std::wstring_view s, video::SColor color);
+    void addAtEnd(std::wstring_view s, img::color8 color);
 
 	// Adds the character source[i] at the end.
 	// An EnrichedString should always be able to be copied
@@ -62,16 +61,16 @@ public:
 	{
 		return getString().c_str();
 	}
-	const std::vector<video::SColor> &getColors() const;
+    const std::vector<img::color8> &getColors() const;
 	const std::wstring &getString() const;
 
-	inline void setDefaultColor(video::SColor color)
+    inline void setDefaultColor(img::color8 color)
 	{
 		m_default_color = color;
 		updateDefaultColor();
 	}
 	void updateDefaultColor();
-	inline const video::SColor &getDefaultColor() const
+    inline const img::color8 &getDefaultColor() const
 	{
 		return m_default_color;
 	}
@@ -97,11 +96,11 @@ public:
 	{
 		return m_has_background;
 	}
-	inline video::SColor getBackground() const
+    inline img::color8 getBackground() const
 	{
 		return m_background;
 	}
-	inline void setBackground(video::SColor color)
+    inline void setBackground(img::color8 color)
 	{
 		m_background = color;
 		m_has_background = true;
@@ -109,10 +108,10 @@ public:
 
 private:
 	std::wstring m_string;
-	std::vector<video::SColor> m_colors;
+    std::vector<img::color8> m_colors;
 	bool m_has_background;
-	video::SColor m_default_color;
-	video::SColor m_background;
+    img::color8 m_default_color;
+    img::color8 m_background;
 	// This variable defines the length of the default-colored text.
 	size_t m_default_length = 0;
 };

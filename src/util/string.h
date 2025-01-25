@@ -4,11 +4,9 @@
 
 #pragma once
 
-#include "irrlichttypes_bloated.h"
-#include "config.h" // IS_CLIENT_BUILD
-#if IS_CLIENT_BUILD
-#include "irrString.h"
-#endif
+#include "Types.h"
+#include "Utils/Vector3D.h"
+#include "Image/Color.h"
 #include <cstdlib>
 #include <string>
 #include <string_view>
@@ -21,6 +19,8 @@
 #include <cwctype>
 #include <unordered_map>
 #include <optional>
+
+using namespace utils;
 
 class Translations;
 
@@ -87,9 +87,9 @@ size_t mystrlcpy(char *dst, const char *src, size_t size) noexcept;
 char *mystrtok_r(char *s, const char *sep, char **lasts) noexcept;
 
 u64 read_seed(const char *str);
-bool parseColorString(const std::string &value, video::SColor &color, bool quiet,
+bool parseColorString(const std::string &value, img::color8 &color, bool quiet,
 		unsigned char default_alpha = 0xff);
-std::string encodeHexColorString(video::SColor color);
+std::string encodeHexColorString(img::color8 color);
 
 /**
  * Converts a letter to lowercase, with safe handling of the char type and non-ASCII.
@@ -742,26 +742,6 @@ inline std::string str_join(const std::vector<std::string> &list,
 	}
 	return oss.str();
 }
-
-#if IS_CLIENT_BUILD
-/**
- * Create a UTF8 std::string from an irr::core::stringw.
- */
-inline std::string stringw_to_utf8(const irr::core::stringw &input)
-{
-	std::wstring_view sv(input.c_str(), input.size());
-	return wide_to_utf8(sv);
-}
-
- /**
-  * Create an irr::core:stringw from a UTF8 std::string.
-  */
-inline irr::core::stringw utf8_to_stringw(std::string_view input)
-{
-	std::wstring str = utf8_to_wide(input);
-	return irr::core::stringw(str.c_str(), str.size());
-}
-#endif
 
 /**
  * Sanitize the name of a new directory. This consists of two stages:

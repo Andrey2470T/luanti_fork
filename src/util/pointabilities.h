@@ -7,7 +7,7 @@
 #include <unordered_map>
 #include "itemgroup.h"
 #include <optional>
-#include "irrlichttypes.h"
+#include "Types.h"
 
 enum class PointabilityType : u8
 {

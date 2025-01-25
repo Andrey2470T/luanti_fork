@@ -83,7 +83,7 @@ void AreaStore::deserialize(std::istream &is)
 	std::vector<Area> areas;
 	areas.reserve(num_areas);
 	for (u32 i = 0; i < num_areas; ++i) {
-		Area a(U32_MAX);
+        Area a(T_MAX(u32));
 		a.minedge = readV3S16(is);
 		a.maxedge = readV3S16(is);
 		u16 data_len = readU16(is);
@@ -176,7 +176,7 @@ void AreaStore::getAreasForPos(std::vector<Area *> *result, v3s16 pos)
 
 bool VectorAreaStore::insertArea(Area *a)
 {
-	if (a->id == U32_MAX)
+    if (a->id == T_MAX(u32))
 		a->id = getNextId();
 	std::pair<AreaMap::iterator, bool> res =
 			areas_map.insert(std::make_pair(a->id, *a));

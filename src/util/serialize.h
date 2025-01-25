@@ -4,7 +4,9 @@
 
 #pragma once
 
-#include "irrlichttypes_bloated.h"
+#include "Utils/Vector2D.h"
+#include "Utils/Vector3D.h"
+#include "Image/Color.h"
 #include "exceptions.h" // for SerializationError
 #include "ieee_float.h"
 
@@ -14,6 +16,8 @@
 #include <iostream>
 #include <string>
 #include <string_view>
+
+using namespace utils;
 
 /* make sure BYTE_ORDER macros are available */
 #ifdef _WIN32
@@ -206,9 +210,9 @@ inline f32 readF32(const u8 *data)
 	throw SerializationError("readF32: Unreachable code");
 }
 
-inline video::SColor readARGB8(const u8 *data)
+inline img::color8 readARGB8(const u8 *data)
 {
-	video::SColor p(readU32(data));
+    img::color8 p(img::PF_RGBA8, readU32(data));
 	return p;
 }
 
@@ -229,17 +233,17 @@ inline v3s16 readV3S16(const u8 *data)
 	return p;
 }
 
-inline v2s32 readV2S32(const u8 *data)
+inline v2i readV2S32(const u8 *data)
 {
-	v2s32 p;
+    v2i p;
 	p.X = readS32(&data[0]);
 	p.Y = readS32(&data[4]);
 	return p;
 }
 
-inline v3s32 readV3S32(const u8 *data)
+inline v3i readV3S32(const u8 *data)
 {
-	v3s32 p;
+    v3i p;
 	p.X = readS32(&data[0]);
 	p.Y = readS32(&data[4]);
 	p.Z = readS32(&data[8]);
@@ -322,9 +326,12 @@ inline void writeF32(u8 *data, f32 i)
 	throw SerializationError("writeF32: Unreachable code");
 }
 
-inline void writeARGB8(u8 *data, video::SColor p)
+inline void writeARGB8(u8 *data, img::color8 p)
 {
-	writeU32(data, p.color);
+    data[0] = p.A();
+    data[1] = p.R();
+    data[2] = p.G();
+    data[3] = p.B();
 }
 
 inline void writeV2S16(u8 *data, v2s16 p)
@@ -340,13 +347,13 @@ inline void writeV3S16(u8 *data, v3s16 p)
 	writeS16(&data[4], p.Z);
 }
 
-inline void writeV2S32(u8 *data, v2s32 p)
+inline void writeV2S32(u8 *data, v2i p)
 {
 	writeS32(&data[0], p.X);
 	writeS32(&data[4], p.Y);
 }
 
-inline void writeV3S32(u8 *data, v3s32 p)
+inline void writeV3S32(u8 *data, v3i p)
 {
 	writeS32(&data[0], p.X);
 	writeS32(&data[4], p.Y);
@@ -405,12 +412,12 @@ MAKE_STREAM_READ_FXN(f32,   F1000,    4);
 MAKE_STREAM_READ_FXN(f32,   F32,      4);
 MAKE_STREAM_READ_FXN(v2s16, V2S16,    4);
 MAKE_STREAM_READ_FXN(v3s16, V3S16,    6);
-MAKE_STREAM_READ_FXN(v2s32, V2S32,    8);
-MAKE_STREAM_READ_FXN(v3s32, V3S32,   12);
+MAKE_STREAM_READ_FXN(v2i, V2S32,    8);
+MAKE_STREAM_READ_FXN(v3i, V3S32,   12);
 MAKE_STREAM_READ_FXN(v3f,   V3F1000, 12);
 MAKE_STREAM_READ_FXN(v2f,   V2F32,    8);
 MAKE_STREAM_READ_FXN(v3f,   V3F32,   12);
-MAKE_STREAM_READ_FXN(video::SColor, ARGB8, 4);
+MAKE_STREAM_READ_FXN(img::color8, ARGB8, 4);
 
 MAKE_STREAM_WRITE_FXN(u8,    U8,       1);
 MAKE_STREAM_WRITE_FXN(u16,   U16,      2);
@@ -424,12 +431,12 @@ MAKE_STREAM_WRITE_FXN(f32,   F1000,    4);
 MAKE_STREAM_WRITE_FXN(f32,   F32,      4);
 MAKE_STREAM_WRITE_FXN(v2s16, V2S16,    4);
 MAKE_STREAM_WRITE_FXN(v3s16, V3S16,    6);
-MAKE_STREAM_WRITE_FXN(v2s32, V2S32,    8);
-MAKE_STREAM_WRITE_FXN(v3s32, V3S32,   12);
+MAKE_STREAM_WRITE_FXN(v2i, V2S32,    8);
+MAKE_STREAM_WRITE_FXN(v3i, V3S32,   12);
 MAKE_STREAM_WRITE_FXN(v3f,   V3F1000, 12);
 MAKE_STREAM_WRITE_FXN(v2f,   V2F32,    8);
 MAKE_STREAM_WRITE_FXN(v3f,   V3F32,   12);
-MAKE_STREAM_WRITE_FXN(video::SColor, ARGB8, 4);
+MAKE_STREAM_WRITE_FXN(img::color8, ARGB8, 4);
 
 ////
 //// More serialization stuff
@@ -437,7 +444,7 @@ MAKE_STREAM_WRITE_FXN(video::SColor, ARGB8, 4);
 
 inline float clampToF1000(float v)
 {
-	return core::clamp(v, F1000_MIN, F1000_MAX);
+    return std::clamp(v, F1000_MIN, F1000_MAX);
 }
 
 inline v3f clampToF1000(v3f v)

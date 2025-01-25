@@ -4,10 +4,8 @@
 
 #include "numeric.h"
 
-#include "log.h"
 #include "constants.h" // BS, MAP_BLOCKSIZE
 #include "noise.h" // PseudoRandom, PcgRandom
-#include "threading/mutex_auto_lock.h"
 #include <cstring>
 #include <cmath>
 
@@ -34,7 +32,7 @@ void myrand_bytes(void *out, size_t len)
 float myrand_float()
 {
 	u32 uv = g_pcgrand.next();
-	return (float)uv / (float)U32_MAX;
+    return (float)uv / (float)T_MAX(u32);
 }
 
 int myrand_range(int min, int max)
@@ -172,7 +170,7 @@ s16 adjustDist(s16 dist, float zoom_fov)
 	return std::round(adjustDist((float)dist, zoom_fov));
 }
 
-void setPitchYawRollRad(core::matrix4 &m, v3f rot)
+void setPitchYawRollRad(matrix4 &m, v3f rot)
 {
 	f64 a1 = rot.Z, a2 = rot.X, a3 = rot.Y;
 	f64 c1 = cos(a1), s1 = sin(a1);
@@ -193,7 +191,7 @@ void setPitchYawRollRad(core::matrix4 &m, v3f rot)
 	M[10] = c2 * c3;
 }
 
-v3f getPitchYawRollRad(const core::matrix4 &m)
+v3f getPitchYawRollRad(const matrix4 &m)
 {
 	const f32 *M = m.pointer();
 

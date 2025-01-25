@@ -25,9 +25,11 @@
 
 #pragma once
 
-#include "irr_v3d.h"
+#include "Utils/Vector3D.h"
 #include "exceptions.h"
 #include "util/string.h"
+
+using namespace utils;
 
 #if defined(RANDOM_MIN)
 #undef RANDOM_MIN

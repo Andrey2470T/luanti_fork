@@ -5,6 +5,7 @@
 #include "quicktune.h"
 #include "threading/mutex_auto_lock.h"
 #include "util/string.h"
+#include <map>
 
 std::string QuicktuneValue::getString()
 {
@@ -27,7 +28,7 @@ void QuicktuneValue::relativeAdd(float amount)
 	case QVT_FLOAT: {
 		float &v = value_QVT_FLOAT.current;
 		v += amount * (value_QVT_FLOAT.max - value_QVT_FLOAT.min);
-		v = core::clamp(v, value_QVT_FLOAT.min, value_QVT_FLOAT.max);
+        v = std::clamp(v, value_QVT_FLOAT.min, value_QVT_FLOAT.max);
 		break;
 	}
 	case QVT_INT: {
@@ -35,7 +36,7 @@ void QuicktuneValue::relativeAdd(float amount)
 		int diff = std::floor(amount * (value_QVT_INT.max - value_QVT_INT.min));
 		if (!diff)
 			diff = amount < 0 ? -1 : 1;
-		v = core::clamp(v + diff, value_QVT_INT.min, value_QVT_INT.max);
+        v = std::clamp(v + diff, value_QVT_INT.min, value_QVT_INT.max);
 		break;
 	}
 	}

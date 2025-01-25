@@ -3,11 +3,9 @@
 // Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "serialize.h"
-#include "porting.h"
 #include "util/string.h"
 #include "util/hex.h"
 #include "exceptions.h"
-#include "irrlichttypes.h"
 
 #include <iostream>
 #include <cassert>

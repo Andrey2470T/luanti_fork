@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "irrlichttypes.h"
+#include "Types.h"
 #include "debug.h" // sanity_check
 #include "exceptions.h"
 #include "threading/mutex_auto_lock.h"

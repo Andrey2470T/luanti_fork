@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include "BasicIncludes.h"
 #include "activeobject.h"
 #include <unordered_map>
 #include <unordered_set>
@@ -36,15 +35,15 @@ public:
 
 	virtual void updateLight(u32 day_night_ratio) {}
 
-	virtual bool getCollisionBox(aabb3f *toset) const { return false; }
-	virtual bool getSelectionBox(aabb3f *toset) const { return false; }
+    virtual bool getCollisionBox(aabbf *toset) const { return false; }
+    virtual bool getSelectionBox(aabbf *toset) const { return false; }
 	virtual bool collideWithObjects() const { return false; }
-	virtual const v3f getPosition() const { return v3f(0.0f); } // in BS-space
-	virtual const v3f getVelocity() const { return v3f(0.0f); } // in BS-space
-	virtual scene::ISceneNode *getSceneNode() const
-	{ return NULL; }
-	virtual scene::IAnimatedMeshSceneNode *getAnimatedMeshSceneNode() const
-	{ return NULL; }
+    virtual const v3f getPosition() const { return v3f(0.0f); } // in BS-space
+    virtual const v3f getVelocity() const { return v3f(0.0f); } // in BS-space
+    virtual scene::ISceneNode *getSceneNode() const
+    { return NULL; }
+    virtual scene::IAnimatedMeshSceneNode *getAnimatedMeshSceneNode() const
+    { return NULL; }
 	virtual bool isLocalPlayer() const { return false; }
 
 	virtual ClientActiveObject *getParent() const { return nullptr; };
@@ -74,7 +73,7 @@ public:
 			Client *client, ClientEnvironment *env);
 
 	// If returns true, punch will not be sent to the server
-	virtual bool directReportPunch(v3f dir, const ItemStack *punchitem = nullptr,
+    virtual bool directReportPunch(v3f dir, const ItemStack *punchitem = nullptr,
 		float time_from_last_punch = 1000000) { return false; }
 
 protected:

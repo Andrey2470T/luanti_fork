@@ -4,12 +4,13 @@
 
 #pragma once
 
-#include "irr_aabb3d.h"
-#include "irr_v3d.h"
-#include <quaternion.h>
+#include "Utils/AABB.h"
+#include "Utils/Quaternion.h"
+#include "Utils/Vector3D.h"
 #include <string>
 #include <unordered_map>
 
+using namespace utils;
 
 enum ActiveObjectType {
 	ACTIVEOBJECT_TYPE_INVALID = 0,
@@ -73,14 +74,14 @@ struct BoneOverride
 		f32 progress = dtime_passed / position.interp_timer;
 		if (progress > 1.0f || position.interp_timer == 0.0f)
 			progress = 1.0f;
-		return position.vector.getInterpolated(position.previous, progress)
+        return position.vector.linInterp(position.previous, progress)
 				+ (position.absolute ? v3f() : anim_pos);
 	}
 
 	struct RotationProperty
 	{
-		core::quaternion previous;
-		core::quaternion next;
+        Quaternion previous;
+        Quaternion next;
 		// Redundantly store the euler angles serverside
 		// so that we can return them in the appropriate getters
 		v3f next_radians;
@@ -89,20 +90,20 @@ struct BoneOverride
 	} rotation;
 
 	v3f getRotationEulerDeg(v3f anim_rot_euler) const {
-		core::quaternion rot;
+        Quaternion rot;
 
 		f32 progress = dtime_passed / rotation.interp_timer;
 		if (progress > 1.0f || rotation.interp_timer == 0.0f)
 			progress = 1.0f;
 		rot.slerp(rotation.previous, rotation.next, progress);
 		if (!rotation.absolute) {
-			core::quaternion anim_rot(anim_rot_euler * core::DEGTORAD);
+            Quaternion anim_rot(anim_rot_euler.apply(degToRad));
 			rot = rot * anim_rot; // first rotate by anim. bone rot., then rot.
 		}
 
 		v3f rot_euler;
 		rot.toEuler(rot_euler);
-		return rot_euler * core::RADTODEG;
+        return rot_euler.apply(radToDeg);
 	}
 
 	struct ScaleProperty
@@ -117,7 +118,7 @@ struct BoneOverride
 		f32 progress = dtime_passed / scale.interp_timer;
 		if (progress > 1.0f || scale.interp_timer == 0.0f)
 			progress = 1.0f;
-		return scale.vector.getInterpolated(scale.previous, progress)
+        return scale.vector.linInterp(scale.previous, progress)
 				* (scale.absolute ? v3f(1) : anim_scale);
 	}
 
@@ -126,7 +127,7 @@ struct BoneOverride
 	bool isIdentity() const
 	{
 		return !position.absolute && position.vector == v3f()
-				&& !rotation.absolute && rotation.next == core::quaternion()
+                && !rotation.absolute && rotation.next == Quaternion()
 				&& !scale.absolute && scale.vector == v3f(1);
 	}
 };
@@ -167,7 +168,7 @@ public:
 	 * The box's coordinates are world coordinates.
 	 * @returns true if the object has a collision box.
 	 */
-	virtual bool getCollisionBox(aabb3f *toset) const = 0;
+    virtual bool getCollisionBox(aabbf *toset) const = 0;
 
 
 	/*!
@@ -177,7 +178,7 @@ public:
 	 * The box's coordinates are world coordinates.
 	 * @returns true if the object has a selection box.
 	 */
-	virtual bool getSelectionBox(aabb3f *toset) const = 0;
+    virtual bool getSelectionBox(aabbf *toset) const = 0;
 
 
 	virtual bool collideWithObjects() const = 0;

@@ -6,14 +6,13 @@
 
 #include "basic_macros.h"
 #include "constants.h"
-#include "irrlichttypes.h"
-#include "irr_v2d.h"
-#include "irr_v3d.h"
-#include "irr_aabb3d.h"
-#include "SColor.h"
-#include <matrix4.h>
+#include "Utils/AABB.h"
+#include "Utils/Matrix4.h"
+#include "Image/Color.h"
 #include <cmath>
 #include <algorithm>
+
+using namespace utils;
 
 #define rangelim(d, min, max) ((d) < (min) ? (min) : ((d) > (max) ? (max) : (d)))
 #define myfloor(x) ((x) < 0.0 ? (int)(x) - 1 : (int)(x))
@@ -309,7 +308,7 @@ inline v3s16 floatToInt(v3f p, f32 d)
 /*
 	Returns integer position of node in given double precision position
  */
-inline v3s16 doubleToInt(v3d p, double d)
+inline v3s16 doubleToInt(v3f64 p, double d)
 {
 	return v3s16(
 		(p.X + (p.X > 0 ? d / 2 : -d / 2)) / d,
@@ -330,9 +329,9 @@ inline v3f intToFloat(v3s16 p, f32 d)
 }
 
 // Random helper. Usually d=BS
-inline aabb3f getNodeBox(v3s16 p, float d)
+inline aabbf getNodeBox(v3s16 p, float d)
 {
-	return aabb3f(
+    return aabbf(
 		(float)p.X * d - 0.5f * d,
 		(float)p.Y * d - 0.5f * d,
 		(float)p.Z * d - 0.5f * d,
@@ -457,27 +456,28 @@ inline void wrappedApproachShortest(T &current, const T target, const T stepsize
 	}
 }
 
-void setPitchYawRollRad(core::matrix4 &m, v3f rot);
+void setPitchYawRollRad(matrix4 &m, v3f rot);
 
-inline void setPitchYawRoll(core::matrix4 &m, v3f rot)
+inline void setPitchYawRoll(matrix4 &m, v3f rot)
 {
-	setPitchYawRollRad(m, rot * core::DEGTORAD);
+    setPitchYawRollRad(m, rot.apply(degToRad));
 }
 
-v3f getPitchYawRollRad(const core::matrix4 &m);
+v3f getPitchYawRollRad(const matrix4 &m);
 
-inline v3f getPitchYawRoll(const core::matrix4 &m)
+inline v3f getPitchYawRoll(const matrix4 &m)
 {
-	return getPitchYawRollRad(m) * core::RADTODEG;
+    return getPitchYawRollRad(m).apply(radToDeg);;
 }
 
 // Muliply the RGB value of a color linearly, and clamp to black/white
-inline irr::video::SColor multiplyColorValue(const irr::video::SColor &color, float mod)
+inline img::color8 multiplyColorValue(const img::color8 &color, float mod)
 {
-	return irr::video::SColor(color.getAlpha(),
-			core::clamp<u32>(color.getRed() * mod, 0, 255),
-			core::clamp<u32>(color.getGreen() * mod, 0, 255),
-			core::clamp<u32>(color.getBlue() * mod, 0, 255));
+    return img::color8(color.getFormat(),
+            std::clamp<u32>(color.R() * mod, 0, 255),
+            std::clamp<u32>(color.G() * mod, 0, 255),
+            std::clamp<u32>(color.B() * mod, 0, 255),
+            color.A());
 }
 
 template <typename T> inline T numericAbsolute(T v) { return v < 0 ? T(-v) : v;                }

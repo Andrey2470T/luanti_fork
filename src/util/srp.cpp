@@ -27,8 +27,6 @@
  */
 
 
-#include <cstddef>
-
 #ifdef WIN32
 	#include <windows.h>
 	#include <wincrypt.h>
@@ -40,7 +38,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <cstdio>
-#include <cstdint>
 
 #include <config.h>
 

@@ -3,20 +3,20 @@
 // Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "string.h"
-#include "serialize.h" // BYTE_ORDER
 #include "numeric.h"
 #include "log.h"
 
 #include "hex.h"
-#include "porting.h"
 #include "translation.h"
-#include "strfnd.h"
 
 #include <algorithm>
 #include <array>
 #include <sstream>
 #include <iomanip>
 #include <unordered_map>
+
+#include "Image/Converting.h"
+
 
 #ifndef _WIN32
 	#include <iconv.h>
@@ -349,7 +349,7 @@ u64 read_seed(const char *str)
 	return num;
 }
 
-static bool parseHexColorString(const std::string &value, video::SColor &color,
+static bool parseHexColorString(const std::string &value, img::color8 &color,
 		unsigned char default_alpha)
 {
 	u8 components[] = {0x00, 0x00, 0x00, default_alpha}; // R,G,B,A
@@ -382,10 +382,10 @@ static bool parseHexColorString(const std::string &value, video::SColor &color,
 		}
 	}
 
-	color.setRed(components[0]);
-	color.setGreen(components[1]);
-	color.setBlue(components[2]);
-	color.setAlpha(components[3]);
+    color.R(components[0]);
+    color.G(components[1]);
+    color.B(components[2]);
+    color.A(components[3]);
 
 	return true;
 }
@@ -541,7 +541,7 @@ const static std::unordered_map<std::string, u32> s_named_colors = {
 	{"yellowgreen",          0x9acd32}
 };
 
-static bool parseNamedColorString(const std::string &value, video::SColor &color)
+static bool parseNamedColorString(const std::string &value, img::color8 &color)
 {
 	std::string color_name;
 	std::string alpha_string;
@@ -592,12 +592,12 @@ static bool parseNamedColorString(const std::string &value, video::SColor &color
 		color_temp |= 0xff << 24; // Fully opaque
 	}
 
-	color = video::SColor(color_temp);
+    color = img::colorU32NumberToObject(color_temp);
 
 	return true;
 }
 
-bool parseColorString(const std::string &value, video::SColor &color, bool quiet,
+bool parseColorString(const std::string &value, img::color8 &color, bool quiet,
 		unsigned char default_alpha)
 {
 	bool success;
@@ -613,13 +613,13 @@ bool parseColorString(const std::string &value, video::SColor &color, bool quiet
 	return success;
 }
 
-std::string encodeHexColorString(video::SColor color)
+std::string encodeHexColorString(img::color8 color)
 {
 	std::string color_string = "#";
-	const char red = color.getRed();
-	const char green = color.getGreen();
-	const char blue = color.getBlue();
-	const char alpha = color.getAlpha();
+    const char red = color.R();
+    const char green = color.G();
+    const char blue = color.B();
+    const char alpha = color.A();
 	color_string += hex_encode(&red, 1);
 	color_string += hex_encode(&green, 1);
 	color_string += hex_encode(&blue, 1);

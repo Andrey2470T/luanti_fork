@@ -10,7 +10,6 @@
 #include <cassert>
 #include "util/serialize.h"
 #include "serialization.h"
-#include "irrlichttypes.h"
 
 enum {
 	COLOR_GRAY = 0,
@@ -21,7 +20,7 @@ enum {
 static void writeChunk(std::string &target, const std::string &chunk_str)
 {
 	assert(chunk_str.size() >= 4);
-	assert(chunk_str.size() - 4 < U32_MAX);
+    assert(chunk_str.size() - 4 < T_MAX(u32));
 	u8 tmp[4];
 	target.reserve(target.size() + 4 + chunk_str.size() + 4);
 

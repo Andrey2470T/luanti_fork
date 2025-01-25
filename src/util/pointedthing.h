@@ -4,11 +4,13 @@
 
 #pragma once
 
-#include "irrlichttypes.h"
-#include "irr_v3d.h"
+#include "Types.h"
+#include "Utils/Vector3D.h"
 #include <iostream>
 #include <string>
 #include "pointabilities.h"
+
+using namespace utils;
 
 enum PointedThingType :u8
 {

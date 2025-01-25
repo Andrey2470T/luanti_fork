@@ -4,10 +4,8 @@
 
 #pragma once
 
-#include "irr_v3d.h"
 #include "noise.h" // for PcgRandom
 #include <map>
-#include <list>
 #include <vector>
 #include <istream>
 #include "util/container.h"
@@ -20,11 +18,10 @@
 	#include "util/serialize.h"
 #endif
 
-
 struct Area {
 	Area(u32 area_id) : id(area_id) {}
 
-	Area(const v3s16 &mine, const v3s16 &maxe, u32 area_id = U32_MAX) :
+    Area(const v3s16 &mine, const v3s16 &maxe, u32 area_id = T_MAX(u32)) :
 		id(area_id), minedge(mine), maxedge(maxe)
 	{
 		sortBoxVerticies(minedge, maxedge);

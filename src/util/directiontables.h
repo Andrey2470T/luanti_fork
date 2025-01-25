@@ -4,8 +4,10 @@
 
 #pragma once
 
-#include "irrlichttypes.h"
-#include "irr_v3d.h"
+#include "Types.h"
+#include "Utils/Vector3D.h"
+
+using namespace utils;
 
 /// Direction in the 6D format. g_27dirs contains corresponding vectors.
 /// Here P means Positive, N stands for Negative.
