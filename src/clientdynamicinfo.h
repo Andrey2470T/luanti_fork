@@ -11,10 +11,10 @@
 struct ClientDynamicInfo
 {
 public:
-    utils::v2u render_target_size;
+    v2u render_target_size;
 	f32 real_gui_scaling;
 	f32 real_hud_scaling;
-    utils::v2f max_fs_size;
+    v2f max_fs_size;
 	bool touch_controls;
 
 	bool equal(const ClientDynamicInfo &other) const {
@@ -28,6 +28,6 @@ public:
 	static ClientDynamicInfo getCurrent();
 
 private:
-    static utils::v2f calculateMaxFSSize(utils::v2u render_target_size, f32 density, f32 gui_scaling);
+    static v2f calculateMaxFSSize(v2u render_target_size, f32 density, f32 gui_scaling);
 #endif
 };

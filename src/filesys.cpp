@@ -15,11 +15,6 @@
 #include "log.h"
 #include "config.h"
 #include "porting.h"
-#if CHECK_CLIENT_BUILD()
-#include "irr_ptr.h"
-#include <IFileArchive.h>
-#include <IFileSystem.h>
-#endif
 
 #ifdef __linux__
 #include <fcntl.h>
