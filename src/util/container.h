@@ -4,13 +4,12 @@
 
 #pragma once
 
-#include "Types.h"
+#include "BasicIncludes.h"
 #include "debug.h" // sanity_check
 #include "exceptions.h"
 #include "threading/mutex_auto_lock.h"
 #include "threading/semaphore.h"
 #include <list>
-#include <vector>
 #include <map>
 #include <set>
 #include <queue>

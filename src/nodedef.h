@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include "irrlichttypes_bloated.h"
 #include <string>
 #include <iostream>
 #include <map>
@@ -92,20 +91,20 @@ enum NodeBoxType : u8
 
 struct NodeBoxConnected
 {
-	std::vector<aabb3f> connect_top;
-	std::vector<aabb3f> connect_bottom;
-	std::vector<aabb3f> connect_front;
-	std::vector<aabb3f> connect_left;
-	std::vector<aabb3f> connect_back;
-	std::vector<aabb3f> connect_right;
-	std::vector<aabb3f> disconnected_top;
-	std::vector<aabb3f> disconnected_bottom;
-	std::vector<aabb3f> disconnected_front;
-	std::vector<aabb3f> disconnected_left;
-	std::vector<aabb3f> disconnected_back;
-	std::vector<aabb3f> disconnected_right;
-	std::vector<aabb3f> disconnected;
-	std::vector<aabb3f> disconnected_sides;
+    std::vector<aabbf> connect_top;
+    std::vector<aabbf> connect_bottom;
+    std::vector<aabbf> connect_front;
+    std::vector<aabbf> connect_left;
+    std::vector<aabbf> connect_back;
+    std::vector<aabbf> connect_right;
+    std::vector<aabbf> disconnected_top;
+    std::vector<aabbf> disconnected_bottom;
+    std::vector<aabbf> disconnected_front;
+    std::vector<aabbf> disconnected_left;
+    std::vector<aabbf> disconnected_back;
+    std::vector<aabbf> disconnected_right;
+    std::vector<aabbf> disconnected;
+    std::vector<aabbf> disconnected_sides;
 };
 
 struct NodeBox
@@ -113,11 +112,11 @@ struct NodeBox
 	enum NodeBoxType type;
 	// NODEBOX_REGULAR (no parameters)
 	// NODEBOX_FIXED
-	std::vector<aabb3f> fixed;
+    std::vector<aabbf> fixed;
 	// NODEBOX_WALLMOUNTED
-	aabb3f wall_top = dummybox;
-	aabb3f wall_bottom = dummybox;
-	aabb3f wall_side = dummybox; // being at the -X side
+    aabbf wall_top = dummybox;
+    aabbf wall_bottom = dummybox;
+    aabbf wall_side = dummybox; // being at the -X side
 	// NODEBOX_CONNECTED
 	// (kept externally to not bloat the structure)
 	std::shared_ptr<NodeBoxConnected> connected;
@@ -142,7 +141,7 @@ struct NodeBox
 
 private:
 	/// @note the actual defaults are in reset(), see nodedef.cpp
-	static constexpr aabb3f dummybox = aabb3f({0, 0, 0});
+    static constexpr aabbf dummybox = aabbf({0, 0, 0});
 };
 
 struct MapNode;
@@ -606,7 +605,7 @@ public:
 	 * contains all nodes' selection boxes. The returned box might be larger
 	 * than the minimal size if the largest node is removed from the manager.
 	 */
-	inline core::aabbox3d<s16> getSelectionBoxIntUnion() const {
+    inline aabbs16 getSelectionBoxIntUnion() const {
 		return m_selection_box_int_union;
 	}
 
@@ -799,14 +798,14 @@ private:
 	 * The union of all nodes' selection boxes.
 	 * Might be larger if big nodes are removed from the manager.
 	 */
-	aabb3f m_selection_box_union{{0.0f, 0.0f, 0.0f}};
+    aabbf m_selection_box_union{{0.0f, 0.0f, 0.0f}};
 
 	/*!
 	 * The smallest box in integer node coordinates that
 	 * contains all nodes' selection boxes.
 	 * Might be larger if big nodes are removed from the manager.
 	 */
-	core::aabbox3d<s16> m_selection_box_int_union{{0, 0, 0}};
+    aabbs16 m_selection_box_int_union{{0, 0, 0}};
 
 	/*!
 	 * NodeResolver instances to notify once node registration has finished.

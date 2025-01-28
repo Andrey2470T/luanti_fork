@@ -8,7 +8,7 @@
 #include <iostream>
 #include <unordered_map>
 #include <cassert>
-#include "irrlichttypes.h"
+#include "BasicIncludes.h"
 
 typedef std::unordered_map<u16, std::string> IdToNameMap;
 typedef std::unordered_map<std::string, u16> NameToIdMap;

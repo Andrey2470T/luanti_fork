@@ -13,9 +13,7 @@
 #endif
 
 // Be mindful of what you include here!
-#include <string>
 #include "config.h"
-#include "Types.h" // u64
 #include "debug.h"
 #include "constants.h"
 #include "util/timetaker.h" // TimePrecision

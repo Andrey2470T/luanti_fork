@@ -4,11 +4,11 @@
 
 #pragma once
 
-#include "irrlichttypes_bloated.h"
 #include "light.h"
 #include "util/pointer.h"
-#include <string>
-#include <vector>
+#include "BasicIncludes.h"
+#include "Image/Color.h"
+#include "Utils/AABB.h"
 
 class NodeDefManager;
 class Map;
@@ -190,7 +190,7 @@ struct alignas(u32) MapNode
 	 * \param f content features of this node
 	 * \param color output, contains the node's color.
 	 */
-	void getColor(const ContentFeatures &f, video::SColor *color) const;
+    void getColor(const ContentFeatures &f, img::color8 *color) const;
 
 	inline void setLight(LightBank bank, u8 a_light, ContentLightingFlags f) noexcept
 	{
@@ -263,20 +263,20 @@ struct alignas(u32) MapNode
 	/*
 		Gets list of node boxes (used for rendering (NDT_NODEBOX))
 	*/
-	void getNodeBoxes(const NodeDefManager *nodemgr, std::vector<aabb3f> *boxes,
+    void getNodeBoxes(const NodeDefManager *nodemgr, std::vector<aabbf> *boxes,
 		u8 neighbors = 0) const;
 
 	/*
 		Gets list of selection boxes
 	*/
 	void getSelectionBoxes(const NodeDefManager *nodemg,
-		std::vector<aabb3f> *boxes, u8 neighbors = 0) const;
+        std::vector<aabbf> *boxes, u8 neighbors = 0) const;
 
 	/*
 		Gets list of collision boxes
 	*/
 	void getCollisionBoxes(const NodeDefManager *nodemgr,
-		std::vector<aabb3f> *boxes, u8 neighbors = 0) const;
+        std::vector<aabbf> *boxes, u8 neighbors = 0) const;
 
 	/*
 		Liquid/leveled helpers

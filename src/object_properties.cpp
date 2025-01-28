@@ -4,14 +4,13 @@
 
 #include "object_properties.h"
 #include "irrlicht_changes/printing.h"
-#include "irrlichttypes_bloated.h"
 #include "exceptions.h"
 #include "log.h"
 #include "util/serialize.h"
 #include <sstream>
 #include <tuple>
 
-static const video::SColor NULL_BGCOLOR{0, 1, 1, 1};
+static const img::color8 NULL_BGCOLOR{img::PF_RGBA8, 0, 1, 1, 1};
 
 ObjectProperties::ObjectProperties()
 {
@@ -36,9 +35,9 @@ std::string ObjectProperties::dump() const
 	}
 	os << "]";
 	os << ", colors=[";
-	for (const video::SColor &color : colors) {
-		os << "\"" << color.getAlpha() << "," << color.getRed() << ","
-			<< color.getGreen() << "," << color.getBlue() << "\" ";
+    for (const img::color8 &color : colors) {
+        os << "\"" << color.A() << "," << color.R() << ","
+            << color.G() << "," << color.B() << "\" ";
 	}
 	os << "]";
 	os << ", spritediv=" << spritediv;
@@ -49,12 +48,12 @@ std::string ObjectProperties::dump() const
 	os << ", backface_culling="<< backface_culling;
 	os << ", glow=" << glow;
 	os << ", nametag=" << nametag;
-	os << ", nametag_color=" << "\"" << nametag_color.getAlpha() << "," << nametag_color.getRed()
-			<< "," << nametag_color.getGreen() << "," << nametag_color.getBlue() << "\" ";
+    os << ", nametag_color=" << "\"" << nametag_color.A() << "," << nametag_color.R()
+            << "," << nametag_color.G() << "," << nametag_color.B() << "\" ";
 
 	if (nametag_bgcolor)
-		os << ", nametag_bgcolor=" << "\"" << nametag_color.getAlpha() << "," << nametag_color.getRed()
-		   << "," << nametag_color.getGreen() << "," << nametag_color.getBlue() << "\" ";
+        os << ", nametag_bgcolor=" << "\"" << nametag_color.A() << "," << nametag_color.R()
+           << "," << nametag_color.G() << "," << nametag_color.B() << "\" ";
 	else
 		os << ", nametag_bgcolor=null ";
 
@@ -99,24 +98,24 @@ bool ObjectProperties::validate()
 
 	// cf. where serializeString16 is used below
 	for (u32 i = 0; i < textures.size(); i++) {
-		if (textures[i].size() > U16_MAX) {
+        if (textures[i].size() > T_MAX(u16)) {
 			warningstream << func << "texture " << (i+1) << " has excessive length, "
 				"clearing it." << std::endl;
 			textures[i].clear();
 			ret = false;
 		}
 	}
-	if (nametag.length() > U16_MAX) {
+    if (nametag.length() > T_MAX(u16)) {
 		warningstream << func << "nametag has excessive length, clearing it." << std::endl;
 		nametag.clear();
 		ret = false;
 	}
-	if (infotext.length() > U16_MAX) {
+    if (infotext.length() > T_MAX(u16)) {
 		warningstream << func << "infotext has excessive length, clearing it." << std::endl;
 		infotext.clear();
 		ret = false;
 	}
-	if (wield_item.length() > U16_MAX) {
+    if (wield_item.length() > T_MAX(u16)) {
 		warningstream << func << "wield_item has excessive length, clearing it." << std::endl;
 		wield_item.clear();
 		ret = false;
@@ -149,7 +148,7 @@ void ObjectProperties::serialize(std::ostream &os) const
 	writeF32(os, automatic_rotate);
 	os << serializeString16(mesh);
 	writeU16(os, colors.size());
-	for (video::SColor color : colors) {
+    for (img::color8 color : colors) {
 		writeARGB8(os, color);
 	}
 	writeU8(os, collideWithObjects);
@@ -173,8 +172,8 @@ void ObjectProperties::serialize(std::ostream &os) const
 
 	if (!nametag_bgcolor)
 		writeARGB8(os, NULL_BGCOLOR);
-	else if (nametag_bgcolor.value().getAlpha() == 0)
-		writeARGB8(os, video::SColor(0, 0, 0, 0));
+    else if (nametag_bgcolor.value().A() == 0)
+        writeARGB8(os, img::color8(img::PF_RGBA8, 0, 0, 0, 0));
 	else
 		writeARGB8(os, nametag_bgcolor.value());
 

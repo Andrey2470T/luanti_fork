@@ -3,7 +3,6 @@
 // Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "settings.h"
-#include "irrlichttypes_bloated.h"
 #include "exceptions.h"
 #include "threading/mutex_auto_lock.h"
 #include "util/numeric.h" // rangelim
@@ -560,7 +559,7 @@ u32 Settings::getFlagStr(const std::string &name, const FlagDesc *flagdesc,
 	if (m_settings.find(name) != m_settings.end()) {
 		std::string value = get(name);
 		u32 flags_user;
-		u32 mask_user = U32_MAX;
+        u32 mask_user = T_MAX(u32);
 		flags_user = std::isdigit(value[0])
 			? stoi(value) // Override default
 			: readFlagString(value, flagdesc, &mask_user);
@@ -1021,7 +1020,7 @@ void Settings::setDefault(const std::string &name, const FlagDesc *flagdesc,
 	u32 flags)
 {
 	s_flags[name] = flagdesc;
-	setDefault(name, writeFlagString(flags, flagdesc, U32_MAX));
+    setDefault(name, writeFlagString(flags, flagdesc, T_MAX(u32)));
 }
 
 const FlagDesc *Settings::getFlagDescFallback(const std::string &name) const

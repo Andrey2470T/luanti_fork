@@ -31,6 +31,7 @@
 #include "util/numeric.h"
 #include "util/string.h"
 #include "exceptions.h"
+#include <bits/stdc++.h>
 
 #define NOISE_MAGIC_X    1619
 #define NOISE_MAGIC_Y    31337

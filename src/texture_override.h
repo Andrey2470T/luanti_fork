@@ -4,9 +4,7 @@
 
 #pragma once
 
-#include "irrlichttypes.h"
-#include <string>
-#include <vector>
+#include "BasicIncludes.h"
 
 typedef u16 override_t;
 

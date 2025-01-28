@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "irrlichttypes.h"
+#include "Types.h"
 #include "debug.h" // For assert()
 #include <cstring>
 #include <memory> // std::shared_ptr

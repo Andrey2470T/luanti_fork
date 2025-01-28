@@ -5,12 +5,9 @@
 #pragma once
 
 #include "itemdef.h"
-#include "irrlichttypes.h"
 #include "itemstackmetadata.h"
 #include <istream>
 #include <ostream>
-#include <string>
-#include <vector>
 #include <cassert>
 
 struct ToolCapabilities;

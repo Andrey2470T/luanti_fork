@@ -46,8 +46,8 @@ void TileAnimationParams::deSerialize(std::istream &is, u16 protocol_ver)
 	}
 }
 
-void TileAnimationParams::determineParams(v2u32 texture_size, int *frame_count,
-		int *frame_length_ms, v2u32 *frame_size) const
+void TileAnimationParams::determineParams(v2u texture_size, int *frame_count,
+        int *frame_length_ms, v2u *frame_size) const
 {
 	if (type == TAT_VERTICAL_FRAMES) {
 		int frame_height = (float)texture_size.X /
@@ -59,19 +59,19 @@ void TileAnimationParams::determineParams(v2u32 texture_size, int *frame_count,
 		if (frame_length_ms)
 			*frame_length_ms = 1000.0 * vertical_frames.length / _frame_count;
 		if (frame_size)
-			*frame_size = v2u32(texture_size.X, frame_height);
+            *frame_size = v2u(texture_size.X, frame_height);
 	} else if (type == TAT_SHEET_2D) {
 		if (frame_count)
 			*frame_count = sheet_2d.frames_w * sheet_2d.frames_h;
 		if (frame_length_ms)
 			*frame_length_ms = 1000 * sheet_2d.frame_length;
 		if (frame_size)
-			*frame_size = v2u32(texture_size.X / sheet_2d.frames_w, texture_size.Y / sheet_2d.frames_h);
+            *frame_size = v2u(texture_size.X / sheet_2d.frames_w, texture_size.Y / sheet_2d.frames_h);
 	}
 	// caller should check for TAT_NONE
 }
 
-void TileAnimationParams::getTextureModifer(std::ostream &os, v2u32 texture_size, int frame) const
+void TileAnimationParams::getTextureModifer(std::ostream &os, v2u texture_size, int frame) const
 {
 	if (type == TAT_NONE)
 		return;
@@ -88,21 +88,21 @@ void TileAnimationParams::getTextureModifer(std::ostream &os, v2u32 texture_size
 	}
 }
 
-v2f TileAnimationParams::getTextureCoords(v2u32 texture_size, int frame) const
+v2f TileAnimationParams::getTextureCoords(v2u texture_size, int frame) const
 {
-	v2u32 ret(0, 0);
+    v2u ret(0, 0);
 	if (type == TAT_VERTICAL_FRAMES) {
 		int frame_height = (float)texture_size.X /
 				(float)vertical_frames.aspect_w *
 				(float)vertical_frames.aspect_h;
-		ret = v2u32(0, frame_height * frame);
+        ret = v2u(0, frame_height * frame);
 	} else if (type == TAT_SHEET_2D) {
-		v2u32 frame_size;
+        v2u frame_size;
 		determineParams(texture_size, NULL, NULL, &frame_size);
 		int q, r;
 		q = frame / sheet_2d.frames_w;
 		r = frame % sheet_2d.frames_w;
-		ret = v2u32(r * frame_size.X, q * frame_size.Y);
+        ret = v2u(r * frame_size.X, q * frame_size.Y);
 	}
 	return v2f(ret.X / (float) texture_size.X, ret.Y / (float) texture_size.Y);
 }

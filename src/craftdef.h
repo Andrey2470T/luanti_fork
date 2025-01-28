@@ -4,9 +4,7 @@
 
 #pragma once
 
-#include <string>
 #include <iostream>
-#include <vector>
 #include <utility>
 #include "gamedef.h"
 #include "inventory.h"

@@ -4,19 +4,18 @@
 
 #pragma once
 #include <ostream>
-#include <vector2d.h>
-#include <vector3d.h>
+#include "BasicIncludes.h"
 
-namespace irr::core {
+namespace utils {
 
 	template <class T>
-	std::ostream &operator<< (std::ostream &os, vector2d<T> vec)
+    std::ostream &operator<< (std::ostream &os, Vector2D<T> vec)
 	{
 		return os << "(" << vec.X << "," << vec.Y << ")";
 	}
 
 	template <class T>
-	std::ostream &operator<< (std::ostream &os, vector3d<T> vec)
+    std::ostream &operator<< (std::ostream &os, Vector3D<T> vec)
 	{
 		return os << "(" << vec.X << "," << vec.Y << "," << vec.Z << ")";
 	}

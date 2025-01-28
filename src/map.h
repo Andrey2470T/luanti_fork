@@ -8,7 +8,6 @@
 #include <set>
 #include <map>
 
-#include "irrlichttypes_bloated.h"
 #include "mapblock.h"
 #include "mapnode.h"
 #include "constants.h"
@@ -292,7 +291,7 @@ protected:
 	virtual void reportMetrics(u64 save_time_us, u32 saved_blocks, u32 all_blocks) {}
 
 	bool determineAdditionalOcclusionCheck(v3s16 pos_camera,
-		const core::aabbox3d<s16> &block_bounds, v3s16 &to_check);
+        const aabbs16 &block_bounds, v3s16 &to_check);
 	bool isOccluded(v3s16 pos_camera, v3s16 pos_target,
 		float step, float stepfac, float start_offset, float end_offset,
 		u32 needed_count);

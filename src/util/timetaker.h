@@ -4,8 +4,7 @@
 
 #pragma once
 
-#include <string>
-#include "Types.h"
+#include "BasicIncludes.h"
 
 enum TimePrecision : s8
 {

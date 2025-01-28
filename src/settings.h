@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include "irrlichttypes_bloated.h"
 #include "util/string.h"
 #include "util/basic_macros.h"
 #include <string>
@@ -208,7 +207,7 @@ public:
 	bool setV2F(const std::string &name, v2f value);
 	bool setV3F(const std::string &name, v3f value);
 	bool setFlagStr(const std::string &name, u32 flags,
-		const FlagDesc *flagdesc = nullptr, u32 flagmask = U32_MAX);
+        const FlagDesc *flagdesc = nullptr, u32 flagmask = T_MAX(u32));
 	bool setNoiseParams(const std::string &name, const NoiseParams &np);
 
 	// remove a setting

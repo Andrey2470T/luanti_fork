@@ -29,7 +29,7 @@ ChatBuffer::ChatBuffer(u32 scrollback):
 		if (m_cache_clickable_chat_weblinks) {
 			std::string colorval = g_settings->get("chat_weblink_color");
 			parseColorString(colorval, m_cache_chat_weblink_color, false, 255);
-			m_cache_chat_weblink_color.setAlpha(255);
+            m_cache_chat_weblink_color.A(255);
 		}
 	}
 }
@@ -273,7 +273,7 @@ u32 ChatBuffer::formatChatLine(const ChatLine &line, u32 cols,
 			ChatFormattedFragment& frag = next_frags[0];
 
 			// Force newline after this frag, if marked
-			if (frag.column == INT_MAX)
+            if (frag.column == T_MAX(s32))
 				mark_newline = true;
 
 			if (frag.text.size() <= cols - out_column) {
@@ -387,7 +387,7 @@ u32 ChatBuffer::formatChatLine(const ChatLine &line, u32 cols,
 
 			temp_frag.text = line.text.substr(in_pos, frag_length);
 			// A hack so this frag remembers mark_newline for the layout phase
-			temp_frag.column = mark_newline ? INT_MAX : 0;
+            temp_frag.column = mark_newline ? T_MAX(s32) : 0;
 
 			if (http_pos == 0) {
 				// Discard color stuff from the source frag

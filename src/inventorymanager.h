@@ -4,10 +4,8 @@
 
 #pragma once
 
-#include "irr_v3d.h"
+#include "BasicIncludes.h"
 #include <iostream>
-#include <string>
-#include <vector>
 
 class ServerActiveObject;
 struct ItemStack;

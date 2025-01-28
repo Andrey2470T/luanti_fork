@@ -5,22 +5,22 @@
 #pragma once
 
 #include <optional>
-#include <string>
-#include "irrlichttypes_bloated.h"
+#include "BasicIncludes.h"
 #include <iostream>
-#include <vector>
 #include "util/pointabilities.h"
+#include "Utils/AABB.h"
+#include "Image/Color.h"
 
 struct ObjectProperties
 {
 	/* member variables ordered roughly by size */
 
 	std::vector<std::string> textures;
-	std::vector<video::SColor> colors;
+    std::vector<img::color8> colors;
 	// Values are BS=1
-	aabb3f collisionbox = aabb3f(-0.5f, -0.5f, -0.5f, 0.5f, 0.5f, 0.5f);
+    aabbf collisionbox = aabbf(-0.5f, -0.5f, -0.5f, 0.5f, 0.5f, 0.5f);
 	// Values are BS=1
-	aabb3f selectionbox = aabb3f(-0.5f, -0.5f, -0.5f, 0.5f, 0.5f, 0.5f);
+    aabbf selectionbox = aabbf(-0.5f, -0.5f, -0.5f, 0.5f, 0.5f, 0.5f);
 	std::string visual = "sprite";
 	std::string mesh;
 	std::string damage_texture_modifier = "^[brighten";
@@ -29,8 +29,8 @@ struct ObjectProperties
 	// For dropped items, this contains the serialized item.
 	std::string wield_item;
 	v3f visual_size = v3f(1, 1, 1);
-	video::SColor nametag_color = video::SColor(255, 255, 255, 255);
-	std::optional<video::SColor> nametag_bgcolor;
+    img::color8 nametag_color = img::color8(img::PF_RGBA8, 255, 255, 255, 255);
+    std::optional<img::color8> nametag_bgcolor;
 	v2s16 spritediv = v2s16(1, 1);
 	v2s16 initial_sprite_basepos;
 	f32 stepheight = 0.0f;

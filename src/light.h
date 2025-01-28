@@ -5,7 +5,7 @@
 #pragma once
 #include <cassert>
 #include "config.h"
-#include "irrlichttypes.h"
+#include "Types.h"
 
 /*
 	Lower level lighting stuff

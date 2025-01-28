@@ -70,7 +70,7 @@ TextureOverrideSource::TextureOverrideSource(const std::string &filepath)
 				// Key-value pairs
 				if (kvpair[0] == "align_world") {
 					// Global textures
-					texture_override.world_scale = stoi(kvpair[1], 0, U8_MAX);
+                    texture_override.world_scale = stoi(kvpair[1], 0, T_MAX(u8));
 					continue;
 				}
 			}

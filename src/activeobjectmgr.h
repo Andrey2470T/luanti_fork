@@ -6,7 +6,6 @@
 
 #include <memory>
 #include "util/container.h"
-#include "Types.h"
 #include "util/basic_macros.h"
 
 class TestClientActiveObjectMgr;

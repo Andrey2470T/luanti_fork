@@ -20,9 +20,8 @@
 #include <atomic>
 #include <mutex>
 #include <optional>
-#include "irr_v3d.h"
 #include "util/basic_macros.h"
-#include "line3d.h"
+#include "Utils/Line3D.h"
 
 class IGameDef;
 class Map;
@@ -83,7 +82,7 @@ public:
 	 *
 	 * @param[out] objects          found objects
 	 */
-	virtual void getSelectedActiveObjects(const core::line3d<f32> &shootline_on_map,
+    virtual void getSelectedActiveObjects(const line3f &shootline_on_map,
 			std::vector<PointedThing> &objects,
 			const std::optional<Pointabilities> &pointabilities) = 0;
 

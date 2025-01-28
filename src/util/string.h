@@ -4,14 +4,11 @@
 
 #pragma once
 
-#include "Types.h"
-#include "Utils/Vector3D.h"
+#include "BasicIncludes.h"
 #include "Image/Color.h"
 #include <cstdlib>
-#include <string>
 #include <string_view>
 #include <cstring>
-#include <vector>
 #include <limits>
 #include <sstream>
 #include <iomanip>

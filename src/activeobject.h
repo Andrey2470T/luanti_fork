@@ -6,8 +6,7 @@
 
 #include "Utils/AABB.h"
 #include "Utils/Quaternion.h"
-#include "Utils/Vector3D.h"
-#include <string>
+#include "BasicIncludes.h"
 #include <unordered_map>
 
 using namespace utils;

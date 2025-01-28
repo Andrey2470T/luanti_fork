@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include "irr_v3d.h"
 #include "map.h"
 #include "hud.h"
 #include "gamedef.h"

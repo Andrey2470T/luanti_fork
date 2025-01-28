@@ -4,8 +4,6 @@
 
 #pragma once
 
-#include <vector>
-#include "irr_v3d.h"
 #include "mapnode.h"
 #include "exceptions.h"
 #include "constants.h"
@@ -201,13 +199,13 @@ public:
 		return m_pos_relative;
 	}
 
-	inline core::aabbox3d<s16> getBox() {
+    inline aabbs16 getBox() {
 		return getBox(getPosRelative());
 	}
 
-	static inline core::aabbox3d<s16> getBox(const v3s16 &pos_relative)
+    static inline aabbs16 getBox(const v3s16 &pos_relative)
 	{
-		return core::aabbox3d<s16>(pos_relative,
+        return aabbs16(pos_relative,
 				pos_relative
 				+ v3s16(MAP_BLOCKSIZE, MAP_BLOCKSIZE, MAP_BLOCKSIZE)
 				- v3s16(1,1,1));
@@ -367,7 +365,7 @@ public:
 
 	inline void refGrab()
 	{
-		assert(m_refcount < SHRT_MAX);
+        assert(m_refcount < T_MAX(s16));
 		m_refcount++;
 	}
 

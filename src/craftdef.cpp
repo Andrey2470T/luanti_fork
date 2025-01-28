@@ -4,14 +4,11 @@
 
 #include "craftdef.h"
 
-#include "irrlichttypes.h"
 #include "log.h"
 #include <sstream>
 #include <unordered_set>
 #include <algorithm>
 #include <queue>
-#include "gamedef.h"
-#include "inventory.h"
 #include "util/serialize.h"
 #include "util/string.h"
 #include "util/numeric.h"

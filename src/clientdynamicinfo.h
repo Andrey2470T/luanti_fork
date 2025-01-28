@@ -4,17 +4,17 @@
 
 #pragma once
 
-#include "irrlichttypes_bloated.h"
+#include "BasicIncludes.h"
 #include "config.h"
 
 
 struct ClientDynamicInfo
 {
 public:
-	v2u32 render_target_size;
+    utils::v2u render_target_size;
 	f32 real_gui_scaling;
 	f32 real_hud_scaling;
-	v2f32 max_fs_size;
+    utils::v2f max_fs_size;
 	bool touch_controls;
 
 	bool equal(const ClientDynamicInfo &other) const {
@@ -28,6 +28,6 @@ public:
 	static ClientDynamicInfo getCurrent();
 
 private:
-	static v2f32 calculateMaxFSSize(v2u32 render_target_size, f32 density, f32 gui_scaling);
+    static utils::v2f calculateMaxFSSize(utils::v2u render_target_size, f32 density, f32 gui_scaling);
 #endif
 };

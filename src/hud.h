@@ -5,8 +5,8 @@
 
 #pragma once
 
-#include "irrlichttypes_bloated.h"
-#include <string>
+
+#include "BasicIncludes.h"
 #include "common/c_types.h"
 
 #define HUD_DIR_LEFT_RIGHT 0
@@ -93,7 +93,7 @@ struct HudElement {
 	v2f align;
 	v2f offset;
 	v3f world_pos;
-	v2s32 size;
+    v2i size;
 	s16 z_index = 0;
 	std::string text2;
 	u32 style;

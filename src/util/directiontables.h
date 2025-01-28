@@ -4,8 +4,7 @@
 
 #pragma once
 
-#include "Types.h"
-#include "Utils/Vector3D.h"
+#include "BasicIncludes.h"
 
 using namespace utils;
 

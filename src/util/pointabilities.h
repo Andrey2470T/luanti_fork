@@ -3,11 +3,10 @@
 // Copyright (C) 2023 cx384
 
 #pragma once
-#include <string>
 #include <unordered_map>
 #include "itemgroup.h"
 #include <optional>
-#include "Types.h"
+#include "BasicIncludes.h"
 
 enum class PointabilityType : u8
 {

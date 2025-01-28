@@ -7,7 +7,6 @@
 #include "filesys.h"
 #include "config.h"
 #include "constants.h"
-#include "porting.h"
 #include "mapgen/mapgen.h" // Mapgen::setDefaultSettings
 #include "util/string.h"
 #include "server.h"

@@ -13,7 +13,7 @@
 
 ClientDynamicInfo ClientDynamicInfo::getCurrent()
 {
-    v2u32 screen_size = RenderingEngine::getWindowSize();
+    utils::v2u screen_size = RenderingEngine::getWindowSize();
     f32 density = RenderingEngine::getDisplayDensity();
     f32 gui_scaling = g_settings->getFloat("gui_scaling", 0.5f, 20.0f);
     f32 hud_scaling = g_settings->getFloat("hud_scaling", 0.5f, 20.0f);
@@ -28,7 +28,7 @@ ClientDynamicInfo ClientDynamicInfo::getCurrent()
     };
 }
 
-v2f32 ClientDynamicInfo::calculateMaxFSSize(v2u32 render_target_size, f32 density, f32 gui_scaling)
+utils::v2f ClientDynamicInfo::calculateMaxFSSize(utils::v2u render_target_size, f32 density, f32 gui_scaling)
 {
 	// must stay in sync with GUIFormSpecMenu::calculateImgsize
 
@@ -37,7 +37,7 @@ v2f32 ClientDynamicInfo::calculateMaxFSSize(v2u32 render_target_size, f32 densit
     // assume padding[0,0] since max_formspec_size is used for fullscreen formspecs
 	double prefer_imgsize = GUIFormSpecMenu::getImgsize(render_target_size,
             screen_dpi, gui_scaling);
-    return v2f32(render_target_size.X / prefer_imgsize,
+    return utils::v2f(render_target_size.X / prefer_imgsize,
             render_target_size.Y / prefer_imgsize);
 }
 

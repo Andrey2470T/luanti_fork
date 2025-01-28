@@ -4,10 +4,9 @@
 
 #pragma once
 
-#include "irr_v3d.h"
+#include "BasicIncludes.h"
 #include <iostream>
 #include <map>
-#include <vector>
 
 /*
 	NodeTimer provides per-node timed callback functionality.

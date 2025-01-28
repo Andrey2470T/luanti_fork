@@ -141,9 +141,9 @@ v3f PARAM_PVFN(pick) (float* f, const v3f a, const v3f b) {
 }
 
 v2f PARAM_PVFN(interpolate) (float fac, const v2f a, const v2f b)
-	{ return b.getInterpolated(a, fac); }
+    { return b.linInterp(a, fac); }
 v3f PARAM_PVFN(interpolate) (float fac, const v3f a, const v3f b)
-	{ return b.getInterpolated(a, fac); }
+    { return b.linInterp(a, fac); }
 
 #define PARAM_DEF_SRZR(T, wr, rd) \
 	void PARAM_PVFN(serialize)  (std::ostream& os, T  v) {wr(os,v);  } \

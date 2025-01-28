@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include "irrlichttypes.h"
 #include "util/container.h" // MutexedQueue
 #include <string>
 

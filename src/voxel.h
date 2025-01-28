@@ -4,8 +4,6 @@
 
 #pragma once
 
-#include "irrlichttypes.h"
-#include "irr_v3d.h"
 #include <iostream>
 #include <cassert>
 #include "exceptions.h"
@@ -110,7 +108,7 @@ public:
 		const methods
 	*/
 
-	const v3s32 &getExtent() const
+    const v3i &getExtent() const
 	{
 		return m_cache_extent;
 	}
@@ -282,7 +280,7 @@ public:
 	/**
 	 * Translate index in the X coordinate
 	 */
-	static void add_x(const v3s32 &extent, u32 &i, s16 a)
+    static void add_x(const v3i &extent, u32 &i, s16 a)
 	{
 		(void)extent;
 		i += a;
@@ -291,7 +289,7 @@ public:
 	/**
 	 * Translate index in the Y coordinate
 	 */
-	static void add_y(const v3s32 &extent, u32 &i, s16 a)
+    static void add_y(const v3i &extent, u32 &i, s16 a)
 	{
 		i += a * extent.X;
 	}
@@ -299,7 +297,7 @@ public:
 	/**
 	 * Translate index in the Z coordinate
 	 */
-	static void add_z(const v3s32 &extent, u32 &i, s16 a)
+    static void add_z(const v3i &extent, u32 &i, s16 a)
 	{
 		i += a * extent.X * extent.Y;
 	}
@@ -307,7 +305,7 @@ public:
 	/**
 	 * Translate index in space
 	 */
-	static void add_p(const v3s32 &extent, u32 &i, v3s16 a)
+    static void add_p(const v3i &extent, u32 &i, v3s16 a)
 	{
 		i += a.Z * extent.X * extent.Y + a.Y * extent.X + a.X;
 	}
@@ -344,8 +342,8 @@ private:
 		assert(m_cache_extent.Z >= 0 && m_cache_extent.Z <= MAX_EXTENT);
 	}
 
-	static constexpr s32 MAX_EXTENT = S16_MAX - S16_MIN + 1;
-	v3s32 m_cache_extent;
+    static constexpr s32 MAX_EXTENT = T_MAX(s16) - T_MIN(s16) + 1;
+    v3i m_cache_extent;
 };
 
 enum : u8 {

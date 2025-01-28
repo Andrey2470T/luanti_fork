@@ -129,7 +129,7 @@ void NodeMetadataList::serialize(std::ostream &os, u8 blockver, bool disk,
 			writeS16(os, p.Z);
 		} else {
 			// Serialize positions within a mapblock
-			static_assert(MAP_BLOCKSIZE * MAP_BLOCKSIZE * MAP_BLOCKSIZE <= U16_MAX,
+            static_assert(MAP_BLOCKSIZE * MAP_BLOCKSIZE * MAP_BLOCKSIZE <= T_MAX(u16),
 				"position too big to serialize");
 			u16 p16 = (p.Z * MAP_BLOCKSIZE + p.Y) * MAP_BLOCKSIZE + p.X;
 			writeU16(os, p16);

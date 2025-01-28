@@ -5,8 +5,6 @@
 
 #pragma once
 
-#include "irrlichttypes_bloated.h"
-#include <string>
 #include <iostream>
 #include <optional>
 #include <set>
@@ -22,7 +20,7 @@ class Client;
 struct ToolCapabilities;
 struct ItemMesh;
 struct ItemStack;
-typedef std::vector<video::SColor> Palette; // copied from src/client/texturesource.h
+typedef std::vector<img::color8> Palette; // copied from src/client/texturesource.h
 namespace irr::video { class ITexture; }
 using namespace irr;
 
@@ -80,7 +78,7 @@ struct ItemDefinition
 	std::string wield_image; // If empty, inventory_image or mesh (only nodes) is used
 	std::string wield_overlay; // Overlay of wield_image.
 	std::string palette_image; // If specified, the item will be colorized based on this
-	video::SColor color; // The fallback color of the node.
+    img::color8 color; // The fallback color of the node.
 	v3f wield_scale;
 
 	/*
@@ -163,9 +161,9 @@ public:
 
 	// Returns the base color of an item stack: the color of all
 	// tiles that do not define their own color.
-	virtual video::SColor getItemstackColor(const ItemStack &stack,
+    virtual img::color8 getItemstackColor(const ItemStack &stack,
 		Client *client) const
-	{ return video::SColor(0); }
+    { return img::color8(img::PF_RGBA8, 0, 0, 0, 0); }
 };
 
 class IWritableItemDefManager : public IItemDefManager

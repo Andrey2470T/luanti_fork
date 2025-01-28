@@ -5,9 +5,7 @@
 #pragma once
 
 #include "util/basic_macros.h" // DISABLE_CLASS_COPY
-#include "irrlichttypes.h"
-#include <string>
-#include <vector>
+#include "BasicIncludes.h"
 
 class IGameDef;
 class NodeDefManager;

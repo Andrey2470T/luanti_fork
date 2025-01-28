@@ -10,8 +10,8 @@
 #include <list>
 #include <optional>
 
-#include "irrlichttypes.h"
 #include "util/enriched_string.h"
+#include "Image/Color.h"
 
 // Chat console related classes
 
@@ -137,7 +137,7 @@ private:
 	// Enable clickable chat weblinks
 	bool m_cache_clickable_chat_weblinks;
 	// Color of clickable chat weblinks
-	irr::video::SColor m_cache_chat_weblink_color;
+    img::color8 m_cache_chat_weblink_color;
 
 	// Whether the lines were modified since last markLinesUnchanged()
 	// Is always set to true when m_unformatted is modified, because that's what

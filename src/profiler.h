@@ -4,9 +4,7 @@
 
 #pragma once
 
-#include "irrlichttypes.h"
 #include <cassert>
-#include <string>
 #include <map>
 #include <ostream>
 

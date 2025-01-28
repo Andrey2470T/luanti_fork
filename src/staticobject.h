@@ -4,10 +4,8 @@
 
 #pragma once
 
-#include "irrlichttypes_bloated.h"
-#include <string>
+#include "BasicIncludes.h"
 #include <sstream>
-#include <vector>
 #include <map>
 #include "debug.h"
 

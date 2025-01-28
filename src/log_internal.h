@@ -12,7 +12,7 @@
 #include "threading/mutex_auto_lock.h"
 #include "util/basic_macros.h"
 #include "util/stream.h"
-#include "irrlichttypes.h"
+#include "Types.h"
 #include "log.h"
 
 class ILogOutput;

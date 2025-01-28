@@ -4,17 +4,16 @@
 
 #pragma once
 
-#include "irrlichttypes.h"
+#include "BasicIncludes.h"
 #include "itemgroup.h"
 #include "json-forwards.h"
 #include "common/c_types.h"
-#include <SColor.h>
 
-#include <string>
 #include <iostream>
-#include <vector>
 #include <map>
 #include <optional>
+
+#include "Image/Color.h"
 
 struct ItemDefinition;
 class IItemDefManager;
@@ -94,15 +93,15 @@ struct WearBarParams
 		{0, nullptr}
 	};
 
-	std::map<f32, video::SColor> colorStops;
+    std::map<f32, img::color8> colorStops;
 	BlendMode blend;
 
-	WearBarParams(const std::map<f32, video::SColor> &colorStops, BlendMode blend):
+    WearBarParams(const std::map<f32, img::color8> &colorStops, BlendMode blend):
 		colorStops(colorStops),
 		blend(blend)
 	{}
 
-	WearBarParams(const video::SColor color):
+    WearBarParams(const img::color8 color):
 		WearBarParams({{0.0f, color}}, WearBarParams::BLEND_MODE_CONSTANT)
 	{};
 
@@ -111,7 +110,7 @@ struct WearBarParams
 	void serializeJson(std::ostream &os) const;
 	static std::optional<WearBarParams> deserializeJson(std::istream &is);
 
-	video::SColor getWearBarColor(f32 durabilityPercent);
+    img::color8 getWearBarColor(f32 durabilityPercent);
 };
 
 struct DigParams
