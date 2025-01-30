@@ -29,6 +29,7 @@
 #include "threading/mutex_auto_lock.h"
 #include "common/c_converter.h"
 #include "gui/guiOpenURL.h"
+#include <extractZip.h>
 
 /******************************************************************************/
 std::string ModApiMainMenu::getTextData(lua_State *L, const std::string &name)
@@ -815,7 +816,9 @@ int ModApiMainMenu::l_extract_zip(lua_State *L)
 	CHECK_SECURE_PATH(L, destination, true)
 
 	auto fs = RenderingEngine::get_raw_device()->getFileSystem();
-	bool ok = fs::extractZipFile(fs, zipfile, destination);
+
+	extractor::ZipExtractor extr;
+	bool ok = extr.extractArchive(zipfile, destination);
 	lua_pushboolean(L, ok);
 	return 1;
 }

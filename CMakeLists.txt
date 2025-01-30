@@ -293,6 +293,8 @@ endif()
 
 add_subdirectory(lib/tiniergltf)
 
+add_subdirectory(lib/zipextractor)
+
 # Subdirectories
 # Be sure to add all relevant definitions above this
 add_subdirectory(src)
