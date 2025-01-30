@@ -4,7 +4,6 @@
 
 #include "rollback.h"
 #include <fstream>
-#include <list>
 #include <sstream>
 #include "log.h"
 #include "mapnode.h"

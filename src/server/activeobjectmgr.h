@@ -28,7 +28,7 @@ public:
 	void getObjectsInsideRadius(const v3f &pos, float radius,
 			std::vector<ServerActiveObject *> &result,
 			std::function<bool(ServerActiveObject *obj)> include_obj_cb);
-	void getObjectsInArea(const aabb3f &box,
+    void getObjectsInArea(const aabbf &box,
 			std::vector<ServerActiveObject *> &result,
 			std::function<bool(ServerActiveObject *obj)> include_obj_cb);
 	void getAddedActiveObjectsAroundPos(

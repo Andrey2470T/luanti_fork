@@ -60,8 +60,8 @@ public:
 	void setSprite(v2s16 p, int num_frames, float framelength,
 			bool select_horiz_by_yawpitch);
 	std::string getName();
-	bool getCollisionBox(aabb3f *toset) const;
-	bool getSelectionBox(aabb3f *toset) const;
+    bool getCollisionBox(aabbf *toset) const;
+    bool getSelectionBox(aabbf *toset) const;
 	bool collideWithObjects() const;
 
 protected:

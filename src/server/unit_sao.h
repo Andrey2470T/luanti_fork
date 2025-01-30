@@ -7,7 +7,7 @@
 
 #include "object_properties.h"
 #include "serveractiveobject.h"
-#include <quaternion.h>
+#include "Utils/Quaternion.h"
 #include "util/numeric.h"
 
 class UnitSAO : public ServerActiveObject
@@ -25,19 +25,18 @@ public:
 	const v3f &getRotation() const { return m_rotation; }
 	const v3f getTotalRotation() const {
 		// This replicates what happens clientside serverside
-		core::matrix4 rot;
+        matrix4 rot;
 		setPitchYawRoll(rot, -m_rotation);
 		v3f res;
 		// First rotate by m_rotation, then rotate by the automatic rotate yaw
-		(core::quaternion(v3f(0, -m_rotation_add_yaw * core::DEGTORAD, 0))
-				* core::quaternion(rot.getRotationDegrees() * core::DEGTORAD))
-				.toEuler(res);
-		return res * core::RADTODEG;
+        (Quaternion(v3f(0, degToRad(-m_rotation_add_yaw), 0))
+            * Quaternion(rot.getRotationDegrees().apply(degToRad))).toEuler(res);
+        return res.apply(radToDeg);
 	}
-	v3f getRadRotation() { return m_rotation * core::DEGTORAD; }
+    v3f getRadRotation() { return m_rotation.apply(degToRad); }
 
 	// Deprecated
-	f32 getRadYawDep() const { return (m_rotation.Y + 90.) * core::DEGTORAD; }
+    f32 getRadYawDep() const { return degToRad(m_rotation.Y + 90.); }
 
 	// Armor groups
 	inline bool isImmortal() const

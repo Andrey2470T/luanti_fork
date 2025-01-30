@@ -4,11 +4,8 @@
 
 #pragma once
 
-#include <string>
-#include "irr_v3d.h"
 #include "rollback_interface.h"
 #include <list>
-#include <vector>
 #include "sqlite3.h"
 
 class IGameDef;

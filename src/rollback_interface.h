@@ -4,8 +4,7 @@
 
 #pragma once
 
-#include "irr_v3d.h"
-#include <string>
+#include "BasicIncludes.h"
 #include <iostream>
 #include <list>
 #include "exceptions.h"

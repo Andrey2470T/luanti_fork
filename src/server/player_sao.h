@@ -10,6 +10,7 @@
 #include "network/networkprotocol.h"
 #include "unit_sao.h"
 #include "util/numeric.h"
+#include <set>
 
 /*
 	PlayerSAO needs some internals exposed.
@@ -84,9 +85,9 @@ public:
 	// Data should not be sent at player initialization
 	void setLookPitchAndSend(const float pitch);
 	f32 getLookPitch() const { return m_pitch; }
-	f32 getRadLookPitch() const { return m_pitch * core::DEGTORAD; }
+    f32 getRadLookPitch() const { return degToRad(m_pitch); }
 	// Deprecated
-	f32 getRadLookPitchDep() const { return -1.0 * m_pitch * core::DEGTORAD; }
+    f32 getRadLookPitchDep() const { return degToRad(-1.0 * m_pitch); }
 	void setFov(const float pitch);
 	f32 getFov() const { return m_fov; }
 	void setWantedRange(const s16 range);
@@ -164,8 +165,8 @@ public:
 	inline void setNewPlayer() { m_is_new_player = true; }
 	inline bool isNewPlayer()  { return m_is_new_player; }
 
-	bool getCollisionBox(aabb3f *toset) const override;
-	bool getSelectionBox(aabb3f *toset) const override;
+    bool getCollisionBox(aabbf *toset) const override;
+    bool getSelectionBox(aabbf *toset) const override;
 	bool collideWithObjects() const override { return true; }
 
 	void finalize(RemotePlayer *player, const std::set<std::string> &privs);

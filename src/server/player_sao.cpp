@@ -22,8 +22,8 @@ PlayerSAO::PlayerSAO(ServerEnvironment *env_, RemotePlayer *player_, session_t p
 	m_prop.hp_max = PLAYER_MAX_HP_DEFAULT;
 	m_prop.breath_max = PLAYER_MAX_BREATH_DEFAULT;
 	m_prop.physical = false;
-	m_prop.collisionbox = aabb3f(-0.3f, 0.0f, -0.3f, 0.3f, 1.77f, 0.3f);
-	m_prop.selectionbox = aabb3f(-0.3f, 0.0f, -0.3f, 0.3f, 1.77f, 0.3f);
+    m_prop.collisionbox = aabbf(-0.3f, 0.0f, -0.3f, 0.3f, 1.77f, 0.3f);
+    m_prop.selectionbox = aabbf(-0.3f, 0.0f, -0.3f, 0.3f, 1.77f, 0.3f);
 	m_prop.pointable = PointabilityType::POINTABLE;
 	// Start of default appearance, this should be overwritten by Lua
 	m_prop.visual = "upright_sprite";

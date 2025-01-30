@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "irr_v3d.h"                   // for irrlicht datatypes
+#include "Utils/Vector3D.h"                   // for irrlicht datatypes
 
 #include "network/address.h"
 #include "network/networkprotocol.h" // session_t
@@ -12,7 +12,6 @@
 #include "threading/mutex_auto_lock.h"
 #include "clientdynamicinfo.h"
 
-#include <list>
 #include <memory>
 #include <mutex>
 #include <set>
