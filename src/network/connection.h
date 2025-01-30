@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include "irrlichttypes.h"
 #include "socket.h"
 #include "networkprotocol.h" // session_t
 

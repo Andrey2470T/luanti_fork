@@ -4,11 +4,7 @@
 
 #pragma once
 
-#include <string>
 #include <string_view>
-#include <vector>
-#include "irr_v3d.h"
-#include "irrlichttypes.h"
 #include "util/string.h"
 
 class Database

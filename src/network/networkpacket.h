@@ -4,11 +4,10 @@
 
 #pragma once
 
+#include "BasicIncludes.h"
 #include "util/pointer.h" // Buffer<T>
-#include "irrlichttypes_bloated.h"
 #include "networkprotocol.h"
-#include <SColor.h>
-#include <vector>
+#include "Image/Color.h"
 
 class NetworkPacket
 {
@@ -95,17 +94,17 @@ public:
 	NetworkPacket &operator>>(s32 &dst);
 	NetworkPacket &operator<<(s32 src);
 
-	NetworkPacket &operator>>(v2s32 &dst);
-	NetworkPacket &operator<<(v2s32 src);
+    NetworkPacket &operator>>(v2i &dst);
+    NetworkPacket &operator<<(v2i src);
 
 	NetworkPacket &operator>>(v3s16 &dst);
 	NetworkPacket &operator<<(v3s16 src);
 
-	NetworkPacket &operator>>(v3s32 &dst);
-	NetworkPacket &operator<<(v3s32 src);
+    NetworkPacket &operator>>(v3i &dst);
+    NetworkPacket &operator<<(v3i src);
 
-	NetworkPacket &operator>>(video::SColor &dst);
-	NetworkPacket &operator<<(video::SColor src);
+    NetworkPacket &operator>>(img::color8 &dst);
+    NetworkPacket &operator<<(img::color8 src);
 
 	// Temp, we remove SharedBuffer when migration finished
 	// ^ this comment has been here for 7 years

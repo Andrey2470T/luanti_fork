@@ -7,6 +7,7 @@
 #include "networkexceptions.h"
 #include "util/serialize.h"
 #include "networkprotocol.h"
+#include "Image/Converting.h"
 
 void NetworkPacket::checkReadOffset(u32 from_offset, u32 field_size) const
 {
@@ -438,7 +439,7 @@ NetworkPacket& NetworkPacket::operator>>(v3s16& dst)
 	return *this;
 }
 
-NetworkPacket& NetworkPacket::operator>>(v2s32& dst)
+NetworkPacket& NetworkPacket::operator>>(v2i& dst)
 {
 	checkReadOffset(m_read_offset, 8);
 
@@ -448,7 +449,7 @@ NetworkPacket& NetworkPacket::operator>>(v2s32& dst)
 	return *this;
 }
 
-NetworkPacket& NetworkPacket::operator>>(v3s32& dst)
+NetworkPacket& NetworkPacket::operator>>(v3i& dst)
 {
 	checkReadOffset(m_read_offset, 12);
 
@@ -481,14 +482,14 @@ NetworkPacket& NetworkPacket::operator<<(v3s16 src)
 	return *this;
 }
 
-NetworkPacket& NetworkPacket::operator<<(v2s32 src)
+NetworkPacket& NetworkPacket::operator<<(v2i src)
 {
 	*this << (s32) src.X;
 	*this << (s32) src.Y;
 	return *this;
 }
 
-NetworkPacket& NetworkPacket::operator<<(v3s32 src)
+NetworkPacket& NetworkPacket::operator<<(v3i src)
 {
 	*this << (s32) src.X;
 	*this << (s32) src.Y;
@@ -496,7 +497,7 @@ NetworkPacket& NetworkPacket::operator<<(v3s32 src)
 	return *this;
 }
 
-NetworkPacket& NetworkPacket::operator>>(video::SColor& dst)
+NetworkPacket& NetworkPacket::operator>>(img::color8& dst)
 {
 	checkReadOffset(m_read_offset, 4);
 
@@ -506,11 +507,11 @@ NetworkPacket& NetworkPacket::operator>>(video::SColor& dst)
 	return *this;
 }
 
-NetworkPacket& NetworkPacket::operator<<(video::SColor src)
+NetworkPacket& NetworkPacket::operator<<(img::color8 src)
 {
 	checkDataSize(4);
 
-	writeU32(&m_data[m_read_offset], src.color);
+    writeU32(&m_data[m_read_offset], img::colorObjectToU32Number(src));
 
 	m_read_offset += 4;
 	return *this;
