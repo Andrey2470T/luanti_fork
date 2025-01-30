@@ -2,19 +2,16 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 
 #include "catch.h"
-#include "irrMath.h"
-#include "matrix4.h"
-#include "irr_v3d.h"
-
-using matrix4 = core::matrix4;
+#include "Utils/MathFuncs.h"
+#include "Utils/Matrix4.h"
 
 static bool matrix_equals(const matrix4 &a, const matrix4 &b) {
     return a.equals(b, 0.00001f);
 }
 
-constexpr v3f x{1, 0, 0};
-constexpr v3f y{0, 1, 0};
-constexpr v3f z{0, 0, 1};
+static v3f x{1, 0, 0};
+static v3f y{0, 1, 0};
+static v3f z{0, 0, 1};
 
 TEST_CASE("matrix4") {
 
@@ -34,7 +31,7 @@ SECTION("setRotationRadians") {
         CHECK(matrix_equals(Z * Y * X, ZYX));
     }
 
-    const f32 quarter_turn = core::PI / 2;
+    const f32 quarter_turn = PI / 2;
 
     // See https://en.wikipedia.org/wiki/Right-hand_rule#/media/File:Cartesian_coordinate_system_handedness.svg
     // for a visualization of what handedness means for rotations
@@ -43,25 +40,25 @@ SECTION("setRotationRadians") {
         SECTION("rotation around the X-axis is Z-up, counter-clockwise") {
             matrix4 X;
             X.setRotationRadians({quarter_turn, 0, 0});
-            CHECK(X.transformVect(x).equals(x));
-            CHECK(X.transformVect(y).equals(z));
-            CHECK(X.transformVect(z).equals(-y));
+            CHECK(X.transformVect(x) == x);
+            CHECK(X.transformVect(y) == z);
+            CHECK(X.transformVect(z) == -y);
         }
 
         SECTION("rotation around the Y-axis is Z-up, clockwise") {
             matrix4 Y;
             Y.setRotationRadians({0, quarter_turn, 0});
-            CHECK(Y.transformVect(y).equals(y));
-            CHECK(Y.transformVect(x).equals(-z));
-            CHECK(Y.transformVect(z).equals(x));
+            CHECK(Y.transformVect(y) == y);
+            CHECK(Y.transformVect(x) == -z);
+            CHECK(Y.transformVect(z) == x);
         }
 
         SECTION("rotation around the Z-axis is Y-up, counter-clockwise") {
             matrix4 Z;
             Z.setRotationRadians({0, 0, quarter_turn});
-            CHECK(Z.transformVect(z).equals(z));
-            CHECK(Z.transformVect(x).equals(y));
-            CHECK(Z.transformVect(y).equals(-x));
+            CHECK(Z.transformVect(z) == z);
+            CHECK(Z.transformVect(x) == y);
+            CHECK(Z.transformVect(y) == -x);
         }
     }
 }

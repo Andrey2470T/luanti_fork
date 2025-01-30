@@ -8,7 +8,6 @@
 
 #include "log.h"
 #include "serialization.h"
-#include "nodedef.h"
 #include "noise.h"
 
 class TestCompression : public TestBase {

@@ -10,6 +10,7 @@
 #include "util/string.h"
 #include "util/base64.h"
 #include "util/colorize.h"
+#include "Image/Converting.h"
 
 class TestUtilities : public TestBase {
 public:
@@ -365,7 +366,7 @@ void TestUtilities::testWrapRows()
 void TestUtilities::testEnrichedString()
 {
 	EnrichedString str(L"Test bar");
-	irr::video::SColor color(0xFF, 0, 0, 0xFF);
+    img::color8 color(img::PF_RGBA8, 0xFF, 0, 0, 0xFF);
 
 	UASSERT(str.substr(1, 3).getString() == L"est");
 	str += L" BUZZ";
@@ -374,10 +375,10 @@ void TestUtilities::testEnrichedString()
 	UASSERT(str.getColors()[5] == color);
 	// Green background, then white and yellow text
 	str = L"\x1b(b@#0F0)Regular \x1b(c@#FF0)yellow";
-	UASSERT(str.getColors()[2] == 0xFFFFFFFF);
+    UASSERT(img::colorObjectToU32Number(str.getColors()[2]) == 0xFFFFFFFF);
 	str.setDefaultColor(color); // Blue foreground
-	UASSERT(str.getColors()[13] == 0xFFFFFF00); // Still yellow text
-	UASSERT(str.getBackground() == 0xFF00FF00); // Green background
+    UASSERT(img::colorObjectToU32Number(str.getColors()[13]) == 0xFFFFFF00); // Still yellow text
+    UASSERT(img::colorObjectToU32Number(str.getBackground()) == 0xFF00FF00); // Green background
 }
 
 void TestUtilities::testIsNumber()
@@ -399,7 +400,7 @@ void TestUtilities::testIsPowerOfTwo()
 		UASSERT(is_power_of_two((1U << exponent)) == true);
 		UASSERT(is_power_of_two((1U << exponent) + 1) == false);
 	}
-	UASSERT(is_power_of_two(U32_MAX) == false);
+    UASSERT(is_power_of_two(T_MAX(u32)) == false);
 }
 
 void TestUtilities::testMyround()
@@ -443,7 +444,7 @@ static bool within(const v3f &v1, const v3f &v2, const f32 precision)
 		&& within(v1.Z, v2.Z, precision);
 }
 
-static bool within(const core::matrix4 &m1, const core::matrix4 &m2,
+static bool within(const matrix4 &m1, const matrix4 &m2,
 		const f32 precision)
 {
 	const f32 *M1 = m1.pointer();
@@ -456,7 +457,7 @@ static bool within(const core::matrix4 &m1, const core::matrix4 &m2,
 
 static bool roundTripsDeg(const v3f &v, const f32 precision)
 {
-	core::matrix4 m;
+    matrix4 m;
 	setPitchYawRoll(m, v);
 	return within(v, getPitchYawRoll(m), precision);
 }
@@ -471,7 +472,7 @@ void TestUtilities::testEulerConversion()
 	// ulp(180.0) = 2^-16
 	const f32 tolH = 3.0517578125e-5f;
 	v3f v1, v2;
-	core::matrix4 m1, m2;
+    matrix4 m1, m2;
 	const f32 *M1 = m1.pointer();
 	const f32 *M2 = m2.pointer();
 
@@ -673,7 +674,7 @@ void TestUtilities::testIsBlockInSight()
 	};
 	auto test1 = [] (const std::vector<v3s16> &data) {
 		float range = BS * MAP_BLOCKSIZE * 4;
-		float fov = 72 * core::DEGTORAD;
+        float fov = degToRad(72);
 		v3f cam_pos = cast_v3(v3f, data[0]), cam_dir = cast_v3(v3f, data[1]);
 		UASSERT( isBlockInSight(data[2], cam_pos, cam_dir, fov, range));
 		UASSERT(!isBlockInSight(data[3], cam_pos, cam_dir, fov, range));
@@ -705,7 +706,7 @@ void TestUtilities::testIsBlockInSight()
 
 	{
 		float range = BS * MAP_BLOCKSIZE * 2;
-		float fov = 72 * core::DEGTORAD;
+        float fov = degToRad(72);
 		v3f cam_pos(-(MAP_BLOCKSIZE - 1) * BS, 0, 0), cam_dir(1, 0, 0);
 		// we're looking at X+ but are so close to block (-1,0,0) that it
 		// should still be considered visible

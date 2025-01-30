@@ -4,13 +4,6 @@
 
 #include "test.h"
 
-#include <sstream>
-
-#include "log.h"
-#include "serialization.h"
-#include "nodedef.h"
-#include "noise.h"
-
 class TestFileSys : public TestBase
 {
 public:

@@ -146,7 +146,7 @@ void TestDataStructures::testMap4()
 		(void)it;
 		map.put(1, 200);
 		u32 taken = map.take(1);
-		UASSERTEQ(u32, taken, 200);
+        UASSERTEQ(u32, taken, 200);
 		break;
 	}
 

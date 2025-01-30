@@ -4,12 +4,7 @@
 
 #pragma once
 
-#include "irrlichttypes.h"
-#include "irr_v2d.h"
 #include "mapblock.h"
-#include <ostream>
-#include <map>
-#include <vector>
 
 class Map;
 class IGameDef;

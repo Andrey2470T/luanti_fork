@@ -5,12 +5,7 @@
 #pragma once
 
 #include <functional>
-#include <exception>
 #include <sstream>
-#include <vector>
-
-#include "irrlichttypes_bloated.h"
-#include "porting.h"
 #include "filesys.h"
 #include "mapnode.h"
 

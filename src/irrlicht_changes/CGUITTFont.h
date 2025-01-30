@@ -32,7 +32,6 @@
 
 #pragma once
 
-#include <map>
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
@@ -43,6 +42,8 @@
 #include "SMesh.h"
 #include "util/enriched_string.h"
 #include "util/basic_macros.h"
+#include "Utils/Rect.h"
+#include "Image/Image.h"
 
 namespace irr
 {
@@ -81,7 +82,7 @@ namespace gui
 
 		//! If true, the glyph has been loaded.
 		inline bool isLoaded() const {
-			return source_rect != core::recti();
+            return source_rect != recti();
 		}
 
 		//! Preload the glyph.
@@ -95,23 +96,23 @@ namespace gui
 		void unload();
 
 		//! Creates the IImage object from the FT_Bitmap.
-		video::IImage* createGlyphImage(const FT_Bitmap& bits, video::IVideoDriver* driver) const;
+        img::Image* createGlyphImage(const FT_Bitmap& bits, video::IVideoDriver* driver) const;
 
 		//! The page the glyph is on.
 		u32 glyph_page;
 
 		//! The source rectangle for the glyph.
-		core::recti source_rect;
+        recti source_rect;
 
 		//! The offset of glyph when drawn.
-		core::vector2di offset;
+        v2i offset;
 
 		//! Glyph advance information.
-		core::vector2di advance;
+        v2i advance;
 
 		//! This is just the temporary image holder.  After this glyph is paged,
 		//! it will be dropped.
-		mutable video::IImage* surface;
+        mutable img::Image* surface;
 	};
 
 	//! Holds a sheet of glyphs.

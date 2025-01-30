@@ -3,8 +3,6 @@
 // Copyright (C) 2010-2014 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
 
 #include "test.h"
-
-#include "exceptions.h"
 #include "objdef.h"
 
 class TestObjDef : public TestBase

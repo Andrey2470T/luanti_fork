@@ -109,14 +109,14 @@ void TestVoxelArea::test_pad()
 void TestVoxelArea::test_extent()
 {
 	VoxelArea v1(v3s16(-1337, -547, -789), v3s16(-147, 447, 669));
-	UASSERT(v1.getExtent() == v3s32(1191, 995, 1459));
+    UASSERT(v1.getExtent() == v3i(1191, 995, 1459));
 
 	VoxelArea v2(v3s16(32493, -32507, 32752), v3s16(32508, -32492, 32767));
-	UASSERT(v2.getExtent() == v3s32(16, 16, 16));
+    UASSERT(v2.getExtent() == v3i(16, 16, 16));
 
 	// side length bigger than S16_MAX
 	VoxelArea v3({-20000, 12, 34}, {20000, 12, 34});
-	UASSERT(v3.getExtent() == v3s32(40001, 1, 1));
+    UASSERT(v3.getExtent() == v3i(40001, 1, 1));
 
 	UASSERT(VoxelArea().hasEmptyExtent());
 	UASSERT(VoxelArea({2,3,4}, {1,2,3}).hasEmptyExtent());
@@ -412,7 +412,7 @@ void TestVoxelArea::test_index_v3s16_all_neg()
 
 void TestVoxelArea::test_add_x()
 {
-	v3s32 extent;
+    v3i extent;
 	u32 i = 4;
 	VoxelArea::add_x(extent, i, 8);
 	UASSERTEQ(u32, i, 12)
@@ -420,7 +420,7 @@ void TestVoxelArea::test_add_x()
 
 void TestVoxelArea::test_add_y()
 {
-	v3s32 extent(740, 16, 87);
+    v3i extent(740, 16, 87);
 	u32 i = 8;
 	VoxelArea::add_y(extent, i, 88);
 	UASSERTEQ(u32, i, 65128)
@@ -428,7 +428,7 @@ void TestVoxelArea::test_add_y()
 
 void TestVoxelArea::test_add_z()
 {
-	v3s32 extent(114, 80, 256);
+    v3i extent(114, 80, 256);
 	u32 i = 4;
 	VoxelArea::add_z(extent, i, 8);
 	UASSERTEQ(u32, i, 72964)
@@ -436,7 +436,7 @@ void TestVoxelArea::test_add_z()
 
 void TestVoxelArea::test_add_p()
 {
-	v3s32 extent(33, 14, 742);
+    v3i extent(33, 14, 742);
 	v3s16 a(15, 12, 369);
 	u32 i = 4;
 	VoxelArea::add_p(extent, i, a);
