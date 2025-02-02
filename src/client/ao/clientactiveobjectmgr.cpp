@@ -5,7 +5,7 @@
 #include <cmath>
 #include <log.h>
 #include "profiler.h"
-#include "ClientActiveObjectMgr.h"
+#include "clientactiveobjectmgr.h"
 
 namespace client
 {

@@ -1,84 +1,84 @@
 set(ao_SRCS
-	${CMAKE_CURRENT_SOURCE_DIR}/ao/ClientActiveObject.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ao/ClientActiveObjectMgr.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ao/GenericCAO.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ao/SmokePuffCSO.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ao/TestCAO.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ao/clientactiveobject.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ao/clientactiveobjectmgr.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ao/genericcao.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ao/smokepuffcso.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ao/testcao.cpp
 )
 
 set(event_SRCS
-	${CMAKE_CURRENT_SOURCE_DIR}/event/EventReceiver.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/event/InputHandler.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/event/JoystickController.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/event/KeyCache.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/event/KeyPress.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/event/eventreceiver.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/event/inputhandler.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/event/joystickcontroller.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/event/keycache.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/event/keypress.cpp
 )
 
 set(map_SRCS
-	${CMAKE_CURRENT_SOURCE_DIR}/map/ClientMap.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/map/MapblockMesh.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/map/MeshCollector.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/map/MeshGenerator.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/map/MeshGeneratorThread.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/map/clientmap.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/map/mapblockmesh.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/map/meshcollector.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/map/meshgenerator.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/map/meshgeneratorthread.cpp
 )
 
 set(media_SRCS
-	${CMAKE_CURRENT_SOURCE_DIR}/media/ClientMedia.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/media/FileCache.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/media/ImageFilters.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/media/ImageSource.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/media/Shader.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/media/TexturePaths.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/media/TextureSource.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/media/clientmedia.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/media/filecache.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/media/imagefilters.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/media/imagesource.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/media/shader.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/media/texturepaths.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/media/texturesource.cpp
 )
 
 set(pipeline_SRCS
-	${CMAKE_CURRENT_SOURCE_DIR}/pipeline/Anaglyph.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/pipeline/Core.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/pipeline/Factory.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/pipeline/Interlaced.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/pipeline/Pipeline.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/pipeline/Plain.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/pipeline/SecondStage.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/pipeline/SideBySide.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/pipeline/Stereo.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/pipeline/anaglyph.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/pipeline/core.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/pipeline/factory.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/pipeline/interlaced.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/pipeline/pipeline.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/pipeline/plain.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/pipeline/secondstage.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/pipeline/sidebyside.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/pipeline/stereo.cpp
 )
 
 set(player_SRCS
-	${CMAKE_CURRENT_SOURCE_DIR}/player/Camera.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/player/LocalPlayer.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/player/camera.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/player/localplayer.cpp
 )
 
 set(render_SRCS
-	${CMAKE_CURRENT_SOURCE_DIR}/render/Clouds.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/render/MeshOperations.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/render/Particles.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/render/RenderingEngine.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/render/Sky.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/render/Tile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/render/WieldMesh.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/render/clouds.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/render/meshoperations.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/render/particles.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/render/renderingengine.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/render/sky.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/render/tile.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/render/wieldmesh.cpp
 )
 
 set(shadows_SRCS
-	${CMAKE_CURRENT_SOURCE_DIR}/shadows/DynamicShadows.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/shadows/DynamicShadowsRender.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/shadows/ShadowsScreenQuad.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/shadows/ShadowsShaderCallbacks.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/shadows/dynamicshadows.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/shadows/dynamicshadowsrender.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/shadows/shadowsscreenquad.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/shadows/shadowsshadercallbacks.cpp
 )
 
-set(sound_SRCS ${CMAKE_CURRENT_SOURCE_DIR}/sound/Sound.cpp)
+set(sound_SRCS ${CMAKE_CURRENT_SOURCE_DIR}/sound/sound.cpp)
 
 if(USE_SOUND)
 	list(APPEND sound_SRCS
-		${CMAKE_CURRENT_SOURCE_DIR}/sound/ALExtensions.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/sound/ALHelpers.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/sound/OggFile.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/sound/PlayingSound.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/sound/ProxySoundManager.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/sound/SoundData.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/sound/SoundManager.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/sound/SoundOpenAL.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/sound/SoundSingleton.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/sound/al_extensions.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/sound/al_helpers.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/sound/oggfile.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/sound/playingsound.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/sound/proxysoundmanager.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/sound/sounddata.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/sound/soundmanager.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/sound/soundopenal.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/sound/soundsingleton.cpp
 	)
 	set(SOUND_INCLUDE_DIRS
 		${OPENAL_INCLUDE_DIR}
@@ -92,12 +92,12 @@ if(USE_SOUND)
 endif()
 
 set(ui_SRCS
-	${CMAKE_CURRENT_SOURCE_DIR}/ui/FontEngine.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ui/GameFormspec.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ui/GameUI.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ui/GUIScalingFilter.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ui/Hud.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ui/Minimap.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/fontengine.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/gameformspec.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/gameui.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/guiscalingfilter.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/hud.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/minimap.cpp
 )
 
 set(client_SRCS
@@ -111,9 +111,9 @@ set(client_SRCS
 	${shadows_SRCS}
 	${sound_SRCS}
 	${ui_SRCS}
-	${CMAKE_CURRENT_SOURCE_DIR}/Client.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ClientEnvironment.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ClientLauncher.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/Game.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/client.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/clientenvironment.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/clientlauncher.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/game.cpp
 	PARENT_SCOPE
 )
