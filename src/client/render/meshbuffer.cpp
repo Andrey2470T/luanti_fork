@@ -1,0 +1,124 @@
+#include "meshbuffer.h"
+#include <assert.h>
+#include "log.h"
+
+std::optional<ByteArray*> MeshBuffer::getVertexData()
+{
+	switch (Type) {
+		case MeshBufferType::VERTEX:
+			return VBuffer.VData.get();
+		case MeshBufferType::VERTEX_INDEX:
+			return VIBuffer.VData.get();
+		default:
+			return std::nullopt;
+	};
+}
+
+std::optional<const ByteArray*> MeshBuffer::getVertexData() const
+{
+	switch (Type) {
+		case MeshBufferType::VERTEX:
+			return const_cast<const ByteArray*>(VBuffer.VData.get());
+		case MeshBufferType::VERTEX_INDEX:
+			return const_cast<const ByteArray*>(VIBuffer.VData.get());
+		default:
+			return std::nullopt;
+	};
+}
+
+std::optional<ByteArray*> MeshBuffer::getIndexData()
+{
+	switch (Type) {
+		case MeshBufferType::INDEX:
+			return IBuffer.IData.get();
+		case MeshBufferType::VERTEX_INDEX:
+			return VIBuffer.IData.get();
+		default:
+			return std::nullopt;
+	};
+}
+std::optional<const ByteArray*> MeshBuffer::getIndexData() const
+{
+	switch (Type) {
+		case MeshBufferType::INDEX:
+			return const_cast<const ByteArray*>(IBuffer.IData.get());
+		case MeshBufferType::VERTEX_INDEX:
+			return const_cast<const ByteArray*>(VIBuffer.IData.get());
+		default:
+			return std::nullopt;
+	};
+}
+
+u32 MeshBuffer::getVertexCount() const
+{
+	switch (Type) {
+		case MeshBufferType::VERTEX:
+			return VBuffer.VDataCount;
+		case MeshBufferType::VERTEX_INDEX:
+			return VIBuffer.VDataCount;
+		default:
+			return 0;
+	};
+}
+
+u32 MeshBuffer::getIndexCount() const
+{
+	switch (Type) {
+		case MeshBufferType::INDEX:
+			return IBuffer.IDataCount;
+		case MeshBufferType::VERTEX_INDEX:
+			return VIBuffer.IDataCount;
+		default:
+			return 0;
+	};
+}
+
+u32 MeshBuffer::getIndexAt(u32 pos) const
+{
+	checkIndexPos(pos)
+
+	return getIndexData()->getUInt32(pos);
+}
+
+void MeshBuffer::recalculateBoundingBox()
+{
+	u32 vcount = getVertexCount();
+	if (vcount) {
+		BoundingBox.reset(getAttrAt<v3f>(0, 0));
+
+		for (u32 i = 1; i < vcount; ++i)
+			BoundingBox.addInternalPoint(getAttrAt<v3f>(0, i));
+	} else
+		BoundingBox.reset(0, 0, 0);
+}
+
+void MeshBuffer::setIndexAt(u32 index, u32 pos)
+{
+	checkIndexPos(pos);
+
+	getIndexData()->setUInt32(index, pos);
+}
+
+inline u64 MeshBuffer::countElemsBefore(u32 vertexNumber, u32 attrNumber)
+{
+	auto &vdata = getVertexData();
+
+	assert(vdata != std::nullopt, "MeshBuffer: attempt to retrieve the attribute in the empty bytearray");
+
+	u32 vcount = getVertexCount();
+
+	assert(vertexNumber <= vcount, "MeshBuffer: attempt to retrieve the attribute out of the range");
+	auto &attr = GPUBuffer->getVertexType().Attributes.at(attrNumber);
+	return VertexCmpCount * vertexNumber + attrNumber * attr.Offset;
+}
+
+inline void MeshBuffer::checkIndexPos(u32 pos)
+{
+	auto &idata = getIndexData();
+
+	assert(idata != std::nullopt, "MeshBuffer: attempt to retrieve the index in the empty bytearray");
+
+	u32 icount = getIndexCount();
+
+	assert(pos < icount, "MeshBuffer: attempt to retrieve the index out of the range");
+}
