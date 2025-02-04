@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 // Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
-#include "mesh.h"
+#include "meshoperations.h"
+#include "defaultVertexTypes.h"
 #include "debug.h"
 #include "log.h"
 #include <cmath>
@@ -14,14 +15,14 @@
 #include "SMesh.h"
 #include "SMeshBuffer.h"
 
-inline static void applyShadeFactor(video::SColor& color, float factor)
+inline static void applyShadeFactor(img::color8& color, float factor)
 {
-	color.setRed(core::clamp(core::round32(color.getRed()*factor), 0, 255));
-	color.setGreen(core::clamp(core::round32(color.getGreen()*factor), 0, 255));
-	color.setBlue(core::clamp(core::round32(color.getBlue()*factor), 0, 255));
+	color.R(static_cast<u8>(round32(color.R()*factor)));
+	color.G(static_cast<u8>(round32(color.G()*factor)));
+	color.B(static_cast<u8>(round32(color.B()*factor)));
 }
 
-void applyFacesShading(video::SColor &color, const v3f normal)
+void MeshOperations::applyFacesShading(img::color8 &color, const v3f normal)
 {
 	/*
 		Some drawtypes have normals set to (0, 0, 0), this must result in
@@ -41,242 +42,184 @@ void applyFacesShading(video::SColor &color, const v3f normal)
 		applyShadeFactor(color, 0.670820f * x2 + 1.000000f * y2 + 0.836660f * z2);
 }
 
-scene::IAnimatedMesh* createCubeMesh(v3f scale)
+MeshStorage MeshOperations::createCubeMesh(v3f scale)
 {
-	video::SColor c(255,255,255,255);
-	video::S3DVertex vertices[24] =
-	{
-		// Up
-		video::S3DVertex(-0.5,+0.5,-0.5, 0,1,0, c, 0,1),
-		video::S3DVertex(-0.5,+0.5,+0.5, 0,1,0, c, 0,0),
-		video::S3DVertex(+0.5,+0.5,+0.5, 0,1,0, c, 1,0),
-		video::S3DVertex(+0.5,+0.5,-0.5, 0,1,0, c, 1,1),
-		// Down
-		video::S3DVertex(-0.5,-0.5,-0.5, 0,-1,0, c, 0,0),
-		video::S3DVertex(+0.5,-0.5,-0.5, 0,-1,0, c, 1,0),
-		video::S3DVertex(+0.5,-0.5,+0.5, 0,-1,0, c, 1,1),
-		video::S3DVertex(-0.5,-0.5,+0.5, 0,-1,0, c, 0,1),
-		// Right
-		video::S3DVertex(+0.5,-0.5,-0.5, 1,0,0, c, 0,1),
-		video::S3DVertex(+0.5,+0.5,-0.5, 1,0,0, c, 0,0),
-		video::S3DVertex(+0.5,+0.5,+0.5, 1,0,0, c, 1,0),
-		video::S3DVertex(+0.5,-0.5,+0.5, 1,0,0, c, 1,1),
-		// Left
-		video::S3DVertex(-0.5,-0.5,-0.5, -1,0,0, c, 1,1),
-		video::S3DVertex(-0.5,-0.5,+0.5, -1,0,0, c, 0,1),
-		video::S3DVertex(-0.5,+0.5,+0.5, -1,0,0, c, 0,0),
-		video::S3DVertex(-0.5,+0.5,-0.5, -1,0,0, c, 1,0),
-		// Back
-		video::S3DVertex(-0.5,-0.5,+0.5, 0,0,1, c, 1,1),
-		video::S3DVertex(+0.5,-0.5,+0.5, 0,0,1, c, 0,1),
-		video::S3DVertex(+0.5,+0.5,+0.5, 0,0,1, c, 0,0),
-		video::S3DVertex(-0.5,+0.5,+0.5, 0,0,1, c, 1,0),
-		// Front
-		video::S3DVertex(-0.5,-0.5,-0.5, 0,0,-1, c, 0,1),
-		video::S3DVertex(-0.5,+0.5,-0.5, 0,0,-1, c, 0,0),
-		video::S3DVertex(+0.5,+0.5,-0.5, 0,0,-1, c, 1,0),
-		video::S3DVertex(+0.5,-0.5,-0.5, 0,0,-1, c, 1,1),
+	img::color8 c(img::PF_RGBA8, 255,255,255,255);
+
+	std::array<v3f, 24> positions = {
+		v3f(-0.5,+0.5,-0.5),  v3f(-0.5,+0.5,+0.5),  v3f(+0.5,+0.5,+0.5),  v3f(+0.5,+0.5,-0.5), // Up
+		v3f(-0.5,-0.5,-0.5),  v3f(+0.5,-0.5,-0.5),  v3f(+0.5,-0.5,+0.5),  v3f(-0.5,-0.5,+0.5), // Down
+		v3f(+0.5,-0.5,-0.5),  v3f(+0.5,+0.5,-0.5),  v3f(+0.5,+0.5,+0.5),  v3f(+0.5,-0.5,+0.5), // Right
+		v3f(-0.5,-0.5,-0.5),  v3f(-0.5,-0.5,+0.5),  v3f(-0.5,+0.5,+0.5),  v3f(-0.5,+0.5,-0.5), // Left
+		v3f(-0.5,-0.5,+0.5),  v3f(+0.5,-0.5,+0.5),  v3f(+0.5,+0.5,+0.5),  v3f(-0.5,+0.5,+0.5), // Back
+		v3f(-0.5,-0.5,-0.5),  v3f(-0.5,+0.5,-0.5),  v3f(+0.5,+0.5,-0.5),  v3f(+0.5,-0.5,-0.5)  // Front
 	};
 
-	u16 indices[6] = {0,1,2,2,3,0};
+	std::array<v3f, 6> normals = {
+		// Up			Down			Right			Left			Back			Front
+		v3f(0,1,0),		v3f(0,-1,0),	v3f(1,0,0),		v3f(-1,0,0),	v3f(0,0,1),		v3f(0,0,-1)
+	};
 
-	scene::SMesh *mesh = new scene::SMesh();
-	for (u32 i=0; i<6; ++i)
+	std::array<v2f, 24> uvs = {
+		v2f(0,1),  v2f(0,0),  v2f(1,0),  v2f(1,1),  // Up
+		v2f(0,0),  v2f(1,0),  v2f(1,1),  v2f(0,1),  // Down
+		v2f(0,1),  v2f(0,0),  v2f(1,0),  v2f(1,1),  // Right
+		v2f(1,1),  v2f(0,1),  v2f(0,0),  v2f(1,0),  // Left
+		v2f(1,1),  v2f(0,1),  v2f(0,0),  v2f(1,0),  // Back
+		v2f(0,1),  v2f(0,0),  v2f(1,0),  v2f(1,1)   // Front
+	};
+
+	u32 indices[6] = {0,1,2,2,3,0};
+
+	MeshStorage mesh;
+	for (u8 i=0; i<6; ++i)
 	{
-		scene::IMeshBuffer *buf = new scene::SMeshBuffer();
-		buf->append(vertices + 4 * i, 4, indices, 6);
-		// Set default material
-		buf->getMaterial().MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL_REF;
-		buf->getMaterial().forEachTexture([] (auto &tex) {
-			tex.MinFilter = video::ETMINF_NEAREST_MIPMAP_NEAREST;
-			tex.MagFilter = video::ETMAGF_NEAREST;
-		});
-		// Add mesh buffer to mesh
-		mesh->addMeshBuffer(buf);
-		buf->drop();
+		MeshBuffer *buf = new MeshBuffer();
+
+		for (u8 j = 0; j < 4; j++)
+			appendSVT(buf, positions[4*i+j], c, normals[i], uvs[4*i+j]);
+
+		for (u8 k = 0; k < 6; k++)
+			buf->setIndexAt(indices[k]);
+
+		scaleMesh(buf, scale);
+		mesh[i] = buf;
 	}
 
-	scene::SAnimatedMesh *anim_mesh = new scene::SAnimatedMesh(mesh);
-	mesh->drop();
-	scaleMesh(anim_mesh, scale);  // also recalculates bounding box
-	return anim_mesh;
+	return mesh;
 }
 
-void scaleMesh(scene::IMesh *mesh, v3f scale)
-{
-	if (mesh == NULL)
-		return;
-
-	aabb3f bbox{{0.0f, 0.0f, 0.0f}};
-
-	u32 mc = mesh->getMeshBufferCount();
-	for (u32 j = 0; j < mc; j++) {
-		scene::IMeshBuffer *buf = mesh->getMeshBuffer(j);
-		const u32 stride = getVertexPitchFromType(buf->getVertexType());
-		u32 vertex_count = buf->getVertexCount();
-		u8 *vertices = (u8 *)buf->getVertices();
-		for (u32 i = 0; i < vertex_count; i++)
-			((video::S3DVertex *)(vertices + i * stride))->Pos *= scale;
-
-		buf->setDirty(scene::EBT_VERTEX);
-		buf->recalculateBoundingBox();
-
-		// calculate total bounding box
-		if (j == 0)
-			bbox = buf->getBoundingBox();
-		else
-			bbox.addInternalBox(buf->getBoundingBox());
-	}
-	mesh->setBoundingBox(bbox);
-}
-
-void translateMesh(scene::IMesh *mesh, v3f vec)
-{
-	if (mesh == NULL)
-		return;
-
-	aabb3f bbox{{0.0f, 0.0f, 0.0f}};
-
-	u32 mc = mesh->getMeshBufferCount();
-	for (u32 j = 0; j < mc; j++) {
-		scene::IMeshBuffer *buf = mesh->getMeshBuffer(j);
-		const u32 stride = getVertexPitchFromType(buf->getVertexType());
-		u32 vertex_count = buf->getVertexCount();
-		u8 *vertices = (u8 *)buf->getVertices();
-		for (u32 i = 0; i < vertex_count; i++)
-			((video::S3DVertex *)(vertices + i * stride))->Pos += vec;
-
-		buf->setDirty(scene::EBT_VERTEX);
-		buf->recalculateBoundingBox();
-
-		// calculate total bounding box
-		if (j == 0)
-			bbox = buf->getBoundingBox();
-		else
-			bbox.addInternalBox(buf->getBoundingBox());
-	}
-	mesh->setBoundingBox(bbox);
-}
-
-void setMeshBufferColor(scene::IMeshBuffer *buf, const video::SColor color)
-{
-	const u32 stride = getVertexPitchFromType(buf->getVertexType());
-	u32 vertex_count = buf->getVertexCount();
-	u8 *vertices = (u8 *) buf->getVertices();
-	for (u32 i = 0; i < vertex_count; i++)
-		((video::S3DVertex *) (vertices + i * stride))->Color = color;
-	buf->setDirty(scene::EBT_VERTEX);
-}
-
-void setMeshColor(scene::IMesh *mesh, const video::SColor color)
-{
-	if (mesh == NULL)
-		return;
-
-	u32 mc = mesh->getMeshBufferCount();
-	for (u32 j = 0; j < mc; j++)
-		setMeshBufferColor(mesh->getMeshBuffer(j), color);
-}
-
-template <typename F>
-static void applyToMesh(scene::IMesh *mesh, const F &fn)
-{
-	u16 mc = mesh->getMeshBufferCount();
-	for (u16 j = 0; j < mc; j++) {
-		scene::IMeshBuffer *buf = mesh->getMeshBuffer(j);
-		const u32 stride = getVertexPitchFromType(buf->getVertexType());
-		u32 vertex_count = buf->getVertexCount();
-		char *vertices = reinterpret_cast<char *>(buf->getVertices());
-		for (u32 i = 0; i < vertex_count; i++)
-			fn(reinterpret_cast<video::S3DVertex *>(vertices + i * stride));
-		buf->setDirty(scene::EBT_VERTEX);
-	}
-}
-
-void colorizeMeshBuffer(scene::IMeshBuffer *buf, const video::SColor *buffercolor)
-{
-	const u32 stride = getVertexPitchFromType(buf->getVertexType());
-	u32 vertex_count = buf->getVertexCount();
-	u8 *vertices = (u8 *) buf->getVertices();
-	for (u32 i = 0; i < vertex_count; i++) {
-		video::S3DVertex *vertex = (video::S3DVertex *) (vertices + i * stride);
-		video::SColor *vc = &(vertex->Color);
-		// Reset color
-		*vc = *buffercolor;
-		// Apply shading
-		applyFacesShading(*vc, vertex->Normal);
-	}
-	buf->setDirty(scene::EBT_VERTEX);
-}
-
-void setMeshColorByNormalXYZ(scene::IMesh *mesh,
-		const video::SColor &colorX,
-		const video::SColor &colorY,
-		const video::SColor &colorZ)
+void MeshOperations::scaleMesh(MeshBuffer *mesh, v3f scale)
 {
 	if (!mesh)
 		return;
-	auto colorizator = [=] (video::S3DVertex *vertex) {
-		f32 x = fabs(vertex->Normal.X);
-		f32 y = fabs(vertex->Normal.Y);
-		f32 z = fabs(vertex->Normal.Z);
-		if (x >= y && x >= z)
-			vertex->Color = colorX;
+
+	aabbf bbox{{0.0f, 0.0f, 0.0f}};
+
+	for (u32 i = 0; i < mesh->getVertexCount(); i++) {
+		svtSetPos(mesh, svtGetPos(mesh, i) * scale, i);
+	}
+
+	mesh->uploadData(MeshBufferType::VERTEX);
+	mesh->recalculateBoundingBox();
+}
+
+void MeshOperations::translateMesh(MeshBuffer *mesh, v3f vec)
+{
+	if (!mesh)
+		return;
+
+	aabbf bbox{{0.0f, 0.0f, 0.0f}};
+
+	for (u32 i = 0; i < mesh->getVertexCount(); i++) {
+		svtSetPos(mesh, svtGetPos(mesh, i) + vec, i);
+	}
+
+	mesh->uploadData(MeshBufferType::VERTEX);
+	mesh->recalculateBoundingBox();
+}
+
+void MeshOperations::colorizeMesh(MeshBuffer *mesh, const img::color8 &color,
+	bool apply_face_shading)
+{
+	if (!mesh)
+		return;
+
+	for (u32 i = 0; i < mesh->getVertexCount(); i++) {
+		img::color8 res_c = color;
+
+		if (apply_face_shading)
+			applyFacesShading(res_c, svtGetNormal(mesh, i));
+		svtSetColor(mesh, res_c, i);
+	}
+
+	mesh->uploadData(MeshBufferType::VERTEX);
+}
+
+template <typename F>
+static void applyToMesh(MeshBuffer *mesh, const F &fn)
+{
+	if (!mesh)
+		return;
+
+	for (u32 i = 0; i < mesh->getVertexCount(); i++) {
+		fn(i);
+	}
+
+	mesh->uploadData(MeshBufferType::VERTEX);
+}
+
+void MeshOperations::setMeshColorByNormalXYZ(MeshBuffer *mesh,
+		const img::color8 &colorX,
+		const img::color8 &colorY,
+		const img::color8 &colorZ)
+{
+	if (!mesh)
+		return;
+	auto colorizator = [=] (u32 i) {
+		v3f normal = svtGetNormal(mesh, i);
+		normal = normal.apply(fabs);
+
+		if (normal.X >= normal.Y && normal.X >= normal.Z)
+			svtSetColor(mesh, colorX);
 		else if (y >= z)
-			vertex->Color = colorY;
+			svtSetColor(mesh, colorY);
 		else
-			vertex->Color = colorZ;
+			svtSetColor(mesh, colorZ);
+
+		svtSetNormal(mesh, normal, i);
 	};
 	applyToMesh(mesh, colorizator);
 }
 
-void setMeshColorByNormal(scene::IMesh *mesh, const v3f &normal,
+void MeshOperations::setMeshColorByNormal(MeshBuffer *mesh, const v3f &normal,
 		const video::SColor &color)
 {
 	if (!mesh)
 		return;
-	auto colorizator = [normal, color] (video::S3DVertex *vertex) {
-		if (vertex->Normal == normal)
-			vertex->Color = color;
+	auto colorizator = [normal, color] (u32 i) {
+		v3f n = svtGetNormal(mesh, i);
+		if (n == normal)
+			svtSetColor(mesh, color);
 	};
 	applyToMesh(mesh, colorizator);
 }
 
 template <float v3f::*U, float v3f::*V>
-static void rotateMesh(scene::IMesh *mesh, float degrees)
+static void rotateMesh(MeshBuffer *mesh, float degrees)
 {
 	degrees *= M_PI / 180.0f;
 	float c = std::cos(degrees);
 	float s = std::sin(degrees);
-	auto rotator = [c, s] (video::S3DVertex *vertex) {
+	auto rotator = [c, s] (u32 i) {
 		auto rotate_vec = [c, s] (v3f &vec) {
 			float u = vec.*U;
 			float v = vec.*V;
 			vec.*U = c * u - s * v;
 			vec.*V = s * u + c * v;
 		};
-		rotate_vec(vertex->Pos);
-		rotate_vec(vertex->Normal);
+		rotate_vec(svtGetPos(mesh, i));
+		rotate_vec(svtGetNormal(mesh, i));
 	};
 	applyToMesh(mesh, rotator);
 }
 
-void rotateMeshXYby(scene::IMesh *mesh, f64 degrees)
+void MeshOperations::rotateMeshXYby(MeshBuffer *mesh, f64 degrees)
 {
 	rotateMesh<&v3f::X, &v3f::Y>(mesh, degrees);
 }
 
-void rotateMeshXZby(scene::IMesh *mesh, f64 degrees)
+void MeshOperations::rotateMeshXZby(MeshBuffer *mesh, f64 degrees)
 {
 	rotateMesh<&v3f::X, &v3f::Z>(mesh, degrees);
 }
 
-void rotateMeshYZby(scene::IMesh *mesh, f64 degrees)
+void MeshOperations::rotateMeshYZby(MeshBuffer *mesh, f64 degrees)
 {
 	rotateMesh<&v3f::Y, &v3f::Z>(mesh, degrees);
 }
 
-void rotateMeshBy6dFacedir(scene::IMesh *mesh, u8 facedir)
+void MeshOperations::rotateMeshBy6dFacedir(MeshBuffer *mesh, u8 facedir)
 {
 	u8 axisdir = facedir >> 2;
 	facedir &= 0x03;
@@ -294,111 +237,36 @@ void rotateMeshBy6dFacedir(scene::IMesh *mesh, u8 facedir)
 	}
 }
 
-void recalculateBoundingBox(scene::IMesh *src_mesh)
+bool MeshOperations::checkMeshNormals(MeshBuffer *mesh)
 {
-	aabb3f bbox{{0.0f, 0.0f, 0.0f}};
-	for (u16 j = 0; j < src_mesh->getMeshBufferCount(); j++) {
-		scene::IMeshBuffer *buf = src_mesh->getMeshBuffer(j);
-		buf->recalculateBoundingBox();
-		if (j == 0)
-			bbox = buf->getBoundingBox();
-		else
-			bbox.addInternalBox(buf->getBoundingBox());
-	}
-	src_mesh->setBoundingBox(bbox);
-}
+	if (!mesh)
+		return false;
+	if (!mesh->getVertexCount())
+		return false;
 
-bool checkMeshNormals(scene::IMesh *mesh)
-{
-	u32 buffer_count = mesh->getMeshBufferCount();
+	// Here we intentionally check only first normal, assuming that if buffer
+	// has it valid, then most likely all other ones are fine too. We can
+	// check all of the normals to have length, but it seems like an overkill
+	// hurting the performance and covering only really weird broken models.
+	f32 length = svtGetNormal(mesh, 0).getLength();
 
-	for (u32 i = 0; i < buffer_count; i++) {
-		scene::IMeshBuffer *buffer = mesh->getMeshBuffer(i);
-		if (!buffer->getVertexCount())
-			continue;
-
-		// Here we intentionally check only first normal, assuming that if buffer
-		// has it valid, then most likely all other ones are fine too. We can
-		// check all of the normals to have length, but it seems like an overkill
-		// hurting the performance and covering only really weird broken models.
-		f32 length = buffer->getNormal(0).getLength();
-
-		if (!std::isfinite(length) || length < 1e-10f)
-			return false;
-	}
+	if (!std::isfinite(length) || length < 1e-10f)
+		return false;
 
 	return true;
 }
 
-scene::IMeshBuffer* cloneMeshBuffer(scene::IMeshBuffer *mesh_buffer)
-{
-	switch (mesh_buffer->getVertexType()) {
-	case video::EVT_STANDARD: {
-		video::S3DVertex *v = (video::S3DVertex *) mesh_buffer->getVertices();
-		u16 *indices = mesh_buffer->getIndices();
-		scene::SMeshBuffer *cloned_buffer = new scene::SMeshBuffer();
-		cloned_buffer->append(v, mesh_buffer->getVertexCount(), indices,
-			mesh_buffer->getIndexCount());
-		return cloned_buffer;
-	}
-	case video::EVT_2TCOORDS: {
-		video::S3DVertex2TCoords *v =
-			(video::S3DVertex2TCoords *) mesh_buffer->getVertices();
-		u16 *indices = mesh_buffer->getIndices();
-		scene::SMeshBufferLightMap *cloned_buffer =
-			new scene::SMeshBufferLightMap();
-		cloned_buffer->append(v, mesh_buffer->getVertexCount(), indices,
-			mesh_buffer->getIndexCount());
-		return cloned_buffer;
-	}
-	case video::EVT_TANGENTS: {
-		video::S3DVertexTangents *v =
-			(video::S3DVertexTangents *) mesh_buffer->getVertices();
-		u16 *indices = mesh_buffer->getIndices();
-		scene::SMeshBufferTangents *cloned_buffer =
-			new scene::SMeshBufferTangents();
-		cloned_buffer->append(v, mesh_buffer->getVertexCount(), indices,
-			mesh_buffer->getIndexCount());
-		return cloned_buffer;
-	}
-	}
-	// This should not happen.
-	sanity_check(false);
-	return NULL;
-}
-
-scene::SMesh* cloneMesh(scene::IMesh *src_mesh)
-{
-	scene::SMesh* dst_mesh = new scene::SMesh();
-	for (u16 j = 0; j < src_mesh->getMeshBufferCount(); j++) {
-		scene::IMeshBuffer *temp_buf = cloneMeshBuffer(
-			src_mesh->getMeshBuffer(j));
-		dst_mesh->addMeshBuffer(temp_buf);
-		dst_mesh->setTextureSlot(j, src_mesh->getTextureSlot(j));
-		temp_buf->drop();
-	}
-	return dst_mesh;
-}
-
-scene::IMesh* convertNodeboxesToMesh(const std::vector<aabb3f> &boxes,
+MeshStorage MeshOperations::convertNodeboxesToMesh(const std::vector<aabbf> &boxes,
 		const f32 *uv_coords, float expand)
 {
-	scene::SMesh* dst_mesh = new scene::SMesh();
+	MeshStorage dst_mesh;
 
 	for (u16 j = 0; j < 6; j++)
-	{
-		scene::IMeshBuffer *buf = new scene::SMeshBuffer();
-		buf->getMaterial().forEachTexture([] (auto &tex) {
-			tex.MinFilter = video::ETMINF_NEAREST_MIPMAP_NEAREST;
-			tex.MagFilter = video::ETMAGF_NEAREST;
-		});
-		dst_mesh->addMeshBuffer(buf);
-		buf->drop();
-	}
+		dst_mesh[j] = new MeshBuffer();
 
-	video::SColor c(255,255,255,255);
+	img::color8 c(img::PF_RGBA8, 255,255,255,255);
 
-	for (aabb3f box : boxes) {
+	for (aabbf box : boxes) {
 		box.repair();
 
 		box.MinEdge.X -= expand;
@@ -437,52 +305,46 @@ scene::IMesh* convertNodeboxesToMesh(const std::vector<aabb3f> &boxes,
 		v3f min = box.MinEdge;
 		v3f max = box.MaxEdge;
 
-		video::S3DVertex vertices[24] =
-		{
-			// up
-			video::S3DVertex(min.X,max.Y,max.Z, 0,1,0, c, txc[0],txc[1]),
-			video::S3DVertex(max.X,max.Y,max.Z, 0,1,0, c, txc[2],txc[1]),
-			video::S3DVertex(max.X,max.Y,min.Z, 0,1,0, c, txc[2],txc[3]),
-			video::S3DVertex(min.X,max.Y,min.Z, 0,1,0, c, txc[0],txc[3]),
-			// down
-			video::S3DVertex(min.X,min.Y,min.Z, 0,-1,0, c, txc[4],txc[5]),
-			video::S3DVertex(max.X,min.Y,min.Z, 0,-1,0, c, txc[6],txc[5]),
-			video::S3DVertex(max.X,min.Y,max.Z, 0,-1,0, c, txc[6],txc[7]),
-			video::S3DVertex(min.X,min.Y,max.Z, 0,-1,0, c, txc[4],txc[7]),
-			// right
-			video::S3DVertex(max.X,max.Y,min.Z, 1,0,0, c, txc[ 8],txc[9]),
-			video::S3DVertex(max.X,max.Y,max.Z, 1,0,0, c, txc[10],txc[9]),
-			video::S3DVertex(max.X,min.Y,max.Z, 1,0,0, c, txc[10],txc[11]),
-			video::S3DVertex(max.X,min.Y,min.Z, 1,0,0, c, txc[ 8],txc[11]),
-			// left
-			video::S3DVertex(min.X,max.Y,max.Z, -1,0,0, c, txc[12],txc[13]),
-			video::S3DVertex(min.X,max.Y,min.Z, -1,0,0, c, txc[14],txc[13]),
-			video::S3DVertex(min.X,min.Y,min.Z, -1,0,0, c, txc[14],txc[15]),
-			video::S3DVertex(min.X,min.Y,max.Z, -1,0,0, c, txc[12],txc[15]),
-			// back
-			video::S3DVertex(max.X,max.Y,max.Z, 0,0,1, c, txc[16],txc[17]),
-			video::S3DVertex(min.X,max.Y,max.Z, 0,0,1, c, txc[18],txc[17]),
-			video::S3DVertex(min.X,min.Y,max.Z, 0,0,1, c, txc[18],txc[19]),
-			video::S3DVertex(max.X,min.Y,max.Z, 0,0,1, c, txc[16],txc[19]),
-			// front
-			video::S3DVertex(min.X,max.Y,min.Z, 0,0,-1, c, txc[20],txc[21]),
-			video::S3DVertex(max.X,max.Y,min.Z, 0,0,-1, c, txc[22],txc[21]),
-			video::S3DVertex(max.X,min.Y,min.Z, 0,0,-1, c, txc[22],txc[23]),
-			video::S3DVertex(min.X,min.Y,min.Z, 0,0,-1, c, txc[20],txc[23]),
+		std::array<v3f, 24> positions = {
+			v3f(min.X,max.Y,max.Z), v3f(max.X,max.Y,max.Z), v3f(max.X,max.Y,min.Z), v3f(min.X,max.Y,min.Z), // up
+			v3f(min.X,min.Y,min.Z), v3f(max.X,min.Y,min.Z), v3f(max.X,min.Y,max.Z), v3f(min.X,min.Y,max.Z), // down
+			v3f(max.X,max.Y,min.Z), v3f(max.X,max.Y,max.Z), v3f(max.X,min.Y,max.Z), v3f(max.X,min.Y,min.Z), // right
+			v3f(min.X,max.Y,max.Z), v3f(min.X,max.Y,min.Z), v3f(min.X,min.Y,min.Z), v3f(min.X,min.Y,max.Z), // left
+			v3f(max.X,max.Y,max.Z), v3f(min.X,max.Y,max.Z), v3f(min.X,min.Y,max.Z), v3f(max.X,min.Y,max.Z), // back
+			v3f(min.X,max.Y,min.Z), v3f(max.X,max.Y,min.Z), v3f(max.X,min.Y,min.Z), v3f(min.X,min.Y,min.Z)  // front
+		};
+
+		std::array<v3f, 6> normals = {
+			v3f(0,1,0), v3f(0,-1,0), v3f(1,0,0), v3f(-1,0,0), v3f(0,0,1), v3f(0,0,-1)
+		};
+
+		std::array<v2f, 24> uvs = {
+			v2f(txc[0],txc[1]), v2f(txc[2],txc[1]), v2f(txc[2],txc[3]), v2f(txc[0],txc[3]),
+			v2f(txc[4],txc[5]), v2f(txc[6],txc[5]), v2f(txc[6],txc[7]), v2f(txc[4],txc[7]),
+			v2f(txc[ 8],txc[9]), v2f(txc[10],txc[9]), v2f(txc[10],txc[11]), v2f(txc[ 8],txc[11]),
+			v2f(txc[12],txc[13]), v2f(txc[14],txc[13]), v2f(txc[14],txc[15]), v2f(txc[12],txc[15]),
+			v2f(txc[16],txc[17]), v2f(txc[18],txc[17]), v2f(txc[18],txc[19]), v2f(txc[16],txc[19]),
+			v2f(txc[20],txc[21]), v2f(txc[22],txc[21]), v2f(txc[22],txc[23]), v2f(txc[20],txc[23])
 		};
 
 		u16 indices[] = {0,1,2,2,3,0};
 
-		for(u16 j = 0; j < 24; j += 4)
+		MeshStorage mesh;
+		for (u8 i=0; i<6; ++i)
 		{
-			scene::IMeshBuffer *buf = dst_mesh->getMeshBuffer(j / 4);
-			buf->append(vertices + j, 4, indices, 6);
+			MeshBuffer *buf = dst_mesh[i];
+
+			for (u8 j = 0; j < 4; j++)
+				appendSVT(buf, positions[4*i+j], c, normals[i], uvs[4*i+j]);
+
+			for (u8 k = 0; k < 6; k++)
+				buf->setIndexAt(indices[k]);
 		}
 	}
 	return dst_mesh;
 }
 
-void setMaterialFilters(video::SMaterialLayer &tex, bool bilinear, bool trilinear, bool anisotropic)
+/*void setMaterialFilters(video::SMaterialLayer &tex, bool bilinear, bool trilinear, bool anisotropic)
 {
 	if (trilinear)
 		tex.MinFilter = video::ETMINF_LINEAR_MIPMAP_LINEAR;
@@ -494,4 +356,4 @@ void setMaterialFilters(video::SMaterialLayer &tex, bool bilinear, bool trilinea
 	tex.MagFilter = (trilinear || bilinear) ? video::ETMAGF_LINEAR : video::ETMAGF_NEAREST;
 
 	tex.AnisotropicFilter = anisotropic ? 0xFF : 0;
-}
+}*/

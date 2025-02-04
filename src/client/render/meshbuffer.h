@@ -37,7 +37,7 @@ class MeshBuffer
 		} VIBuffer;
 	};
 
-	std::unique_ptr<render::Mesh> GPUBuffer;
+	std::unique_ptr<render::Mesh> VAO;
 
 	aabbf BoundingBox;
 	u32 VertexCmpCount;
@@ -45,9 +45,9 @@ class MeshBuffer
 public:
 	MeshBuffer(MeshBufferType type=MeshBufferType::VERTEX_INDEX,
 		const VertexTypeDescriptor &descr=DefaultVType)
-		: Type(type), std::make_unique<GPUBuffer>(descr)
+		: Type(type), VAO(std::make_unique<render::Mesh>(descr))
 	{
-		for (auto &attr : GPUBuffer->getVertexType().Attributes)
+		for (auto &attr : VAO->getVertexType().Attributes)
 			VertexCmpCount += attr.ComponentCount;
 	}
 
@@ -56,21 +56,20 @@ public:
 		return MeshBufferType;
 	}
 
-	std::optional<ByteArray*> getVertexData();
-	std::optional<const ByteArray*> getVertexData() const;
-
-	std::optional<ByteArray*> getIndexData();
-	std::optional<const ByteArray*> getIndexData() const;
-
 	u32 getVertexCount() const;
 	u32 getIndexCount() const;
+
+	render::Mesh *getVAO() const
+	{
+		return VAO;
+	}
 
 	template<typename T>
 	T getAttrAt(u32 attrN, u32 vertexN) const
 	{
 		u64 attrNum = countElemsBefore(vertexN, attrN);
 
-		auto &vertexAttr = GPUBuffer->getVertexType().Attributes.at(attrN);
+		auto &vertexAttr = VAO->getVertexType().Attributes.at(attrN);
 		switch (vertexAttr.ComponentCount)
 		{
 		case 1: {
@@ -126,6 +125,9 @@ public:
 				return T(0, 0, 0);
 			}
 		}
+		case 4: {
+			return img::getColor8(vdata, attrNum);
+		}
 		default:
 			return 0;
 		}
@@ -151,7 +153,7 @@ public:
 		u64 attrNum = vertexN ? countElemsBefore(vertexN, attrN)
 			: countElemsBefore(getVertexCount(), attrN);
 
-		auto &vertexAttr = GPUBuffer->getVertexType().Attributes.at(attrN);
+		auto &vertexAttr = VAO->getVertexType().Attributes.at(attrN);
 		switch (vertexAttr.ComponentCount)
 		{
 		case 1: {
@@ -223,13 +225,30 @@ public:
 				return;
 			}
 		}
+		case 4: {
+			img::setColor8(vdata, value, attrNum);
+			return;
+		}
 		default:
 			return;
 		}
 	}
 
-	void setIndexAt(u32 index, u32 pos);
+	void setIndexAt(u32 index, std::optional<u32> pos);
+
+	void uploadData(MeshBufferType type=MeshBufferType::VERTEX_INDEX);
+
+	MeshBuffer *copy() const;
 private:
+	std::optional<ByteArray*> getVertexData();
+	std::optional<const ByteArray*> getVertexData() const;
+
+	std::optional<ByteArray*> getIndexData();
+	std::optional<const ByteArray*> getIndexData() const;
+
 	inline u64 countElemsBefore(u32 vertexNumber, u32 attrNumber);
 	inline void checkIndexPos(u32 pos);
+
+	// This method is used internally only in copy()
+	void setData(const void* vdata, u32 vcount, const u32* idata, u32 icount);
 };
