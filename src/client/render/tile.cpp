@@ -5,7 +5,7 @@
 #include "tile.h"
 
 // Sets everything else except the texture in the material
-void TileLayer::applyMaterialOptions(video::SMaterial &material) const
+/*void TileLayer::applyMaterialOptions(video::SMaterial &material) const
 {
 	switch (material_type) {
 	case TILE_MATERIAL_OPAQUE:
@@ -48,4 +48,4 @@ void TileLayer::applyMaterialOptionsWithShaders(video::SMaterial &material) cons
 		material.TextureLayers[0].TextureWrapV = video::ETC_CLAMP_TO_EDGE;
 		material.TextureLayers[1].TextureWrapV = video::ETC_CLAMP_TO_EDGE;
 	}
-}
+}*/

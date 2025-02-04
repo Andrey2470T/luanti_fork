@@ -4,10 +4,8 @@
 
 #pragma once
 
-#include "irrlichttypes.h"
-#include <ITexture.h>
-#include <vector>
-#include <SMaterial.h>
+#include "BasicIncludes.h"
+#include "Render/Texture2D.h"
 
 enum MaterialType{
 	TILE_MATERIAL_BASIC,
@@ -47,7 +45,7 @@ struct FrameSpec
 	FrameSpec() = default;
 
 	u32 texture_id = 0;
-	video::ITexture *texture = nullptr;
+    render::Texture2D *texture = nullptr;
 };
 
 /**
@@ -84,9 +82,9 @@ struct TileLayer
 		return !(*this == other);
 	}
 
-	void applyMaterialOptions(video::SMaterial &material) const;
+    //void applyMaterialOptions(video::SMaterial &material) const;
 
-	void applyMaterialOptionsWithShaders(video::SMaterial &material) const;
+    //void applyMaterialOptionsWithShaders(video::SMaterial &material) const;
 
 	/// @return is this layer semi-transparent?
 	bool isTransparent() const
@@ -104,7 +102,7 @@ struct TileLayer
 
 	// Ordered for size, please do not reorder
 
-	video::ITexture *texture = nullptr;
+    render::Texture2D *texture = nullptr;
 
 	u32 shader_id = 0;
 
@@ -129,7 +127,7 @@ struct TileLayer
 	 * The color of the tile, or if the tile does not own
 	 * a color then the color of the node owning this tile.
 	 */
-	video::SColor color = video::SColor(0, 0, 0, 0);
+    img::color8 color = img::color8(img::PF_RGBA8, 0, 0, 0, 0);
 
 	u8 scale = 1;
 };

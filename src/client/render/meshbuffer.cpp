@@ -1,6 +1,5 @@
 #include "meshbuffer.h"
 #include <assert.h>
-#include "log.h"
 #include <string.h>
 
 u32 MeshBuffer::getVertexCount() const
@@ -29,9 +28,9 @@ u32 MeshBuffer::getIndexCount() const
 
 u32 MeshBuffer::getIndexAt(u32 pos) const
 {
-	checkIndexPos(pos)
+    checkIndexPos(pos);
 
-	return getIndexData()->getUInt32(pos);
+    return getIndexData().value()->getUInt32(pos);
 }
 
 void MeshBuffer::recalculateBoundingBox()
@@ -51,13 +50,13 @@ void MeshBuffer::setIndexAt(u32 index, std::optional<u32> pos)
 	if (pos)
 		checkIndexPos(pos.value());
 
-	getIndexData()->setUInt32(index, pos);
+    getIndexData().value()->setUInt32(index, pos);
 }
 
 void MeshBuffer::uploadData(MeshBufferType type)
 {
-	auto &vdata = getVertexData();
-	auto &idata = getIndexData();
+    auto vdata = getVertexData();
+    auto idata = getIndexData();
 
 	u32 vcount = getVertexCount();
 	u32 icount = getIndexCount();
@@ -67,10 +66,10 @@ void MeshBuffer::uploadData(MeshBufferType type)
 			nullptr, 0);
 	else if (type == MeshBufferType::INDEX)
 		VAO->uploadData(nullptr, 0,
-			dynamic_cast<u32*>(idata.value()->data()), icount);
+            reinterpret_cast<const u32*>(idata.value()->data()), icount);
 	else
 		VAO->uploadData(vdata.value()->data(), vcount,
-			dynamic_cast<u32*>(idata.value()->data()), icount);
+            reinterpret_cast<const u32*>(idata.value()->data()), icount);
 }
 
 MeshBuffer *MeshBuffer::copy() const
@@ -78,7 +77,7 @@ MeshBuffer *MeshBuffer::copy() const
 	MeshBuffer *new_mesh = new MeshBuffer(getType(), getVAO()->getVertexType());
 
 	new_mesh->setData(getVertexData().value()->data(), getVertexCount(),
-		getIndexData().value()->data(), getIndexCount());
+        reinterpret_cast<const u32*>(getIndexData().value()->data()), getIndexCount());
 	new_mesh->setBoundingBox(getBoundingBox());
 	new_mesh->uploadData();
 }
@@ -130,28 +129,28 @@ std::optional<const ByteArray*> MeshBuffer::getIndexData() const
 	};
 }
 
-inline u64 MeshBuffer::countElemsBefore(u32 vertexNumber, u32 attrNumber)
+inline u64 MeshBuffer::countElemsBefore(u32 vertexNumber, u32 attrNumber) const
 {
-	auto &vdata = getVertexData();
+    auto vdata = getVertexData();
 
-	assert(vdata != std::nullopt, "MeshBuffer: attempt to retrieve the attribute in the empty bytearray");
+    assert(vdata != std::nullopt);
 
 	u32 vcount = getVertexCount();
 
-	assert(vertexNumber <= vcount, "MeshBuffer: attempt to retrieve the attribute out of the range");
+    assert(vertexNumber <= vcount);
 	auto &attr = VAO->getVertexType().Attributes.at(attrNumber);
 	return VertexCmpCount * vertexNumber + attrNumber * attr.Offset;
 }
 
-inline void MeshBuffer::checkIndexPos(u32 pos)
+inline void MeshBuffer::checkIndexPos(u32 pos) const
 {
-	auto &idata = getIndexData();
+    auto idata = getIndexData();
 
-	assert(idata != std::nullopt, "MeshBuffer: attempt to retrieve the index in the empty bytearray");
+    assert(idata != std::nullopt);
 
 	u32 icount = getIndexCount();
 
-	assert(pos < icount, "MeshBuffer: attempt to retrieve the index out of the range");
+    assert(pos < icount);
 }
 
 // This method is used internally only in copy()
@@ -159,14 +158,14 @@ void MeshBuffer::setData(const void* vdata, u32 vcount, const u32* idata, u32 ic
 {
 	switch (Type) {
 		case MeshBufferType::VERTEX:
-			memcpy(VBuffer.VData.get().data(), vdata, vcount);
+            memcpy(VBuffer.VData.get()->data(), vdata, vcount);
 			break;
 		case MeshBufferType::INDEX:
-			memcpy(IBuffer.IData.get().data(), idata, icount);
+            memcpy(IBuffer.IData.get()->data(), idata, icount);
 			break;
 		case MeshBufferType::VERTEX_INDEX:
-			memcpy(VBuffer.VData.get().data(), vdata, vcount);
-			memcpy(IBuffer.IData.get().data(), idata, icount);
+            memcpy(VBuffer.VData.get()->data(), vdata, vcount);
+            memcpy(IBuffer.IData.get()->data(), idata, icount);
 			break;
 	}
 }

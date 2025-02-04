@@ -84,7 +84,7 @@ class MeshOperations
 	//! Recalculates all normals of the mesh.
 	/** \param mesh: Mesh on which the operation is performed.
 	\param smooth: Whether to use smoothed normals. */
-	static void recalculateNormals(MeshBuffer *mesh, bool smooth = false, bool angleWeighted = false) const;
+    //static void recalculateNormals(MeshBuffer *mesh, bool smooth = false, bool angleWeighted = false) const;
 
 	/*
 		Check if mesh has valid normals and return true if it does.

@@ -1,10 +1,9 @@
 #pragma once
 
-#include "BasicIncludes.h"
 #include "meshbuffer.h"
 
 // Vertex type with the second (hardware) color (position, color, normal, uv, hw_color)
-extern const VertexTypeDescriptor TwoColorVType;
+extern const render::VertexTypeDescriptor TwoColorVType;
 
 // Getters used for DefaultVType and TwoColorVType
 inline v3f svtGetPos(MeshBuffer *buf, u32 num);

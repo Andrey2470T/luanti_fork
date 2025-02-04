@@ -51,6 +51,8 @@ set(player_SRCS
 
 set(render_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/render/clouds.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/render/defaultVertexTypes.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/render/meshbuffer.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/meshoperations.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/particles.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/renderingengine.cpp

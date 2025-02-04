@@ -4,7 +4,8 @@
 #include "Render/Mesh.h"
 #include "Utils/ByteArray.h"
 #include "Utils/AABB.h"
-#include <unique_ptr>
+#include "Image/Color.h"
+#include <memory>
 #include <optional>
 
 enum class MeshBufferType
@@ -44,7 +45,7 @@ class MeshBuffer
 
 public:
 	MeshBuffer(MeshBufferType type=MeshBufferType::VERTEX_INDEX,
-		const VertexTypeDescriptor &descr=DefaultVType)
+            const render::VertexTypeDescriptor &descr=render::DefaultVType)
 		: Type(type), VAO(std::make_unique<render::Mesh>(descr))
 	{
 		for (auto &attr : VAO->getVertexType().Attributes)
@@ -53,7 +54,7 @@ public:
 
 	MeshBufferType getType() const
 	{
-		return MeshBufferType;
+        return Type;
 	}
 
 	u32 getVertexCount() const;
@@ -61,7 +62,7 @@ public:
 
 	render::Mesh *getVAO() const
 	{
-		return VAO;
+        return VAO.get();
 	}
 
 	template<typename T>
@@ -70,6 +71,7 @@ public:
 		u64 attrNum = countElemsBefore(vertexN, attrN);
 
 		auto &vertexAttr = VAO->getVertexType().Attributes.at(attrN);
+        const ByteArray *vdata = getVertexData().value();
 		switch (vertexAttr.ComponentCount)
 		{
 		case 1: {
@@ -148,12 +150,13 @@ public:
 	void recalculateBoundingBox();
 
 	template<typename T>
-	void setAttrAt(T value, u32 attrN, std::optional<u32> vertexN)
+    void setAttrAt(T value, u32 attrN, std::optional<u32> vertexN=std::nullopt)
 	{
-		u64 attrNum = vertexN ? countElemsBefore(vertexN, attrN)
+        u64 attrNum = vertexN ? countElemsBefore(vertexN.value(), attrN)
 			: countElemsBefore(getVertexCount(), attrN);
 
 		auto &vertexAttr = VAO->getVertexType().Attributes.at(attrN);
+        ByteArray *vdata = getVertexData().value();
 		switch (vertexAttr.ComponentCount)
 		{
 		case 1: {
@@ -234,7 +237,7 @@ public:
 		}
 	}
 
-	void setIndexAt(u32 index, std::optional<u32> pos);
+    void setIndexAt(u32 index, std::optional<u32> pos=std::nullopt);
 
 	void uploadData(MeshBufferType type=MeshBufferType::VERTEX_INDEX);
 
@@ -246,8 +249,8 @@ private:
 	std::optional<ByteArray*> getIndexData();
 	std::optional<const ByteArray*> getIndexData() const;
 
-	inline u64 countElemsBefore(u32 vertexNumber, u32 attrNumber);
-	inline void checkIndexPos(u32 pos);
+    inline u64 countElemsBefore(u32 vertexNumber, u32 attrNumber) const;
+    inline void checkIndexPos(u32 pos) const;
 
 	// This method is used internally only in copy()
 	void setData(const void* vdata, u32 vcount, const u32* idata, u32 icount);

@@ -1,9 +1,9 @@
 #include "defaultVertexTypes.h"
 
 // Vertex type with the second (hardware) color (position, color, normal, uv, hw_color)
-const VertexTypeDescriptor TwoColorVType{
+const render::VertexTypeDescriptor TwoColorVType{
 	"TwoColor3D",
-	{{"HWColor", 4, BasicType::UINT8, VertexAttribute::DataFormat::Normalized}},
+    {{"HWColor", 4, BasicType::UINT8, render::VertexAttribute::DataFormat::Normalized}},
 	true,
 	true,
 	2

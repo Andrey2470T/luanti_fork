@@ -4,16 +4,8 @@
 
 #include "meshoperations.h"
 #include "defaultVertexTypes.h"
-#include "debug.h"
-#include "log.h"
+#include "constants.h"
 #include <cmath>
-#include <iostream>
-#include <IAnimatedMesh.h>
-#include <SAnimatedMesh.h>
-#include <IAnimatedMeshSceneNode.h>
-#include "S3DVertex.h"
-#include "SMesh.h"
-#include "SMeshBuffer.h"
 
 inline static void applyShadeFactor(img::color8& color, float factor)
 {
@@ -94,8 +86,6 @@ void MeshOperations::scaleMesh(MeshBuffer *mesh, v3f scale)
 	if (!mesh)
 		return;
 
-	aabbf bbox{{0.0f, 0.0f, 0.0f}};
-
 	for (u32 i = 0; i < mesh->getVertexCount(); i++) {
 		svtSetPos(mesh, svtGetPos(mesh, i) * scale, i);
 	}
@@ -108,8 +98,6 @@ void MeshOperations::translateMesh(MeshBuffer *mesh, v3f vec)
 {
 	if (!mesh)
 		return;
-
-	aabbf bbox{{0.0f, 0.0f, 0.0f}};
 
 	for (u32 i = 0; i < mesh->getVertexCount(); i++) {
 		svtSetPos(mesh, svtGetPos(mesh, i) + vec, i);
@@ -156,16 +144,18 @@ void MeshOperations::setMeshColorByNormalXYZ(MeshBuffer *mesh,
 {
 	if (!mesh)
 		return;
-	auto colorizator = [=] (u32 i) {
+    auto colorizator = [=] (u32 i) {
 		v3f normal = svtGetNormal(mesh, i);
-		normal = normal.apply(fabs);
+        normal.X = fabs(normal.X);
+        normal.Y = fabs(normal.Y);
+        normal.Z = fabs(normal.Z);
 
 		if (normal.X >= normal.Y && normal.X >= normal.Z)
-			svtSetColor(mesh, colorX);
-		else if (y >= z)
-			svtSetColor(mesh, colorY);
+            svtSetColor(mesh, colorX, i);
+        else if (normal.Y >= normal.Z)
+            svtSetColor(mesh, colorY, i);
 		else
-			svtSetColor(mesh, colorZ);
+            svtSetColor(mesh, colorZ, i);
 
 		svtSetNormal(mesh, normal, i);
 	};
@@ -173,14 +163,14 @@ void MeshOperations::setMeshColorByNormalXYZ(MeshBuffer *mesh,
 }
 
 void MeshOperations::setMeshColorByNormal(MeshBuffer *mesh, const v3f &normal,
-		const video::SColor &color)
+        const img::color8 &color)
 {
 	if (!mesh)
 		return;
-	auto colorizator = [normal, color] (u32 i) {
+    auto colorizator = [normal, color, mesh] (u32 i) {
 		v3f n = svtGetNormal(mesh, i);
 		if (n == normal)
-			svtSetColor(mesh, color);
+            svtSetColor(mesh, color, i);
 	};
 	applyToMesh(mesh, colorizator);
 }
@@ -191,8 +181,8 @@ static void rotateMesh(MeshBuffer *mesh, float degrees)
 	degrees *= M_PI / 180.0f;
 	float c = std::cos(degrees);
 	float s = std::sin(degrees);
-	auto rotator = [c, s] (u32 i) {
-		auto rotate_vec = [c, s] (v3f &vec) {
+    auto rotator = [c, s, mesh] (u32 i) {
+        auto rotate_vec = [c, s] (v3f vec) {
 			float u = vec.*U;
 			float v = vec.*V;
 			vec.*U = c * u - s * v;
@@ -329,7 +319,6 @@ MeshStorage MeshOperations::convertNodeboxesToMesh(const std::vector<aabbf> &box
 
 		u16 indices[] = {0,1,2,2,3,0};
 
-		MeshStorage mesh;
 		for (u8 i=0; i<6; ++i)
 		{
 			MeshBuffer *buf = dst_mesh[i];
