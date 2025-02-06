@@ -41,7 +41,7 @@ class MeshBuffer
 	std::unique_ptr<render::Mesh> VAO;
 
 	aabbf BoundingBox;
-	u32 VertexCmpCount;
+    u32 VertexCmpCount; // summary count of the components per the used vertex type
 
 public:
 	MeshBuffer(MeshBufferType type=MeshBufferType::VERTEX_INDEX,
@@ -152,6 +152,18 @@ public:
 	template<typename T>
     void setAttrAt(T value, u32 attrN, std::optional<u32> vertexN=std::nullopt)
 	{
+        if (attrN == 0) {
+            switch (Type) {
+            case MeshBufferType::VERTEX:
+                VBuffer.VDataCount++;
+                break;
+            case MeshBufferType::INDEX:
+                return;
+            case MeshBufferType::VERTEX_INDEX:
+                VIBuffer.VDataCount++;
+            };
+        }
+
         u64 attrNum = vertexN ? countElemsBefore(vertexN.value(), attrN)
 			: countElemsBefore(getVertexCount(), attrN);
 

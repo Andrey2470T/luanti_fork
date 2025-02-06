@@ -50,6 +50,15 @@ void MeshBuffer::setIndexAt(u32 index, std::optional<u32> pos)
 	if (pos)
 		checkIndexPos(pos.value());
 
+    switch (Type) {
+    case MeshBufferType::VERTEX:
+        return;
+    case MeshBufferType::INDEX:
+        IBuffer.IDataCount++;
+    case MeshBufferType::VERTEX_INDEX:
+        VIBuffer.IDataCount++;
+    };
+
     getIndexData().value()->setUInt32(index, pos);
 }
 
@@ -80,6 +89,8 @@ MeshBuffer *MeshBuffer::copy() const
         reinterpret_cast<const u32*>(getIndexData().value()->data()), getIndexCount());
 	new_mesh->setBoundingBox(getBoundingBox());
 	new_mesh->uploadData();
+
+    return new_mesh;
 }
 
 std::optional<ByteArray*> MeshBuffer::getVertexData()
