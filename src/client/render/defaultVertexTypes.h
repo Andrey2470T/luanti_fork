@@ -6,27 +6,27 @@
 extern const render::VertexTypeDescriptor TwoColorVType;
 
 // Getters used for DefaultVType and TwoColorVType
-inline v3f svtGetPos(MeshBuffer *buf, u32 num);
-inline img::color8 svtGetColor(MeshBuffer *buf, u32 num);
-inline v3f svtGetNormal(MeshBuffer *buf, u32 num);
-inline v2f svtGetUV(MeshBuffer *buf, u32 num);
-inline v3f svtGetUV3F(MeshBuffer *buf, u32 num);
-inline img::color8 svtGetHWColor(MeshBuffer *buf, u32 num);
+v3f svtGetPos(MeshBuffer *buf, u32 num);
+img::color8 svtGetColor(MeshBuffer *buf, u32 num);
+v3f svtGetNormal(MeshBuffer *buf, u32 num);
+v2f svtGetUV(MeshBuffer *buf, u32 num);
+v3f svtGetUV3F(MeshBuffer *buf, u32 num);
+img::color8 svtGetHWColor(MeshBuffer *buf, u32 num);
 
 
 // Setters used for DefaultVType and TwoColorVType
-inline void svtSetPos(MeshBuffer *buf, const v3f &pos, u32 num);
-inline void svtSetColor(MeshBuffer *buf, const img::color8 &c, u32 num);
-inline void svtSetNormal(MeshBuffer *buf, const v3f &normal, u32 num);
-inline void svtSetUV(MeshBuffer *buf, const v2f &uv, u32 num);
-inline void svtSetUV3F(MeshBuffer *buf, const v3f &uv, u32 num);
-inline void svtSetHWColor(MeshBuffer *buf, const img::color8 &hw_c, u32 num);
+void svtSetPos(MeshBuffer *buf, const v3f &pos, u32 num);
+void svtSetColor(MeshBuffer *buf, const img::color8 &c, u32 num);
+void svtSetNormal(MeshBuffer *buf, const v3f &normal, u32 num);
+void svtSetUV(MeshBuffer *buf, const v2f &uv, u32 num);
+void svtSetUV3F(MeshBuffer *buf, const v3f &uv, u32 num);
+void svtSetHWColor(MeshBuffer *buf, const img::color8 &hw_c, u32 num);
 
 // Appends the attributes of the standard vertex type in the end of the mesh buffer
-inline void appendSVT(
+void appendSVT(
     MeshBuffer *buf, const v3f &pos, const img::color8 &c,
-    const v3f &normal, const v2f &uv);
+    const v3f &normal=v3f(), const v2f &uv=v2f());
 // Appends the attributes of the two color vertex type in the end of the mesh buffer
-inline void appendTCVT(
+void appendTCVT(
     MeshBuffer *buf, const v3f &pos, const img::color8 &c,
-    const v3f &normal, const v2f &uv, const img::color8 &hw_c=img::color8());
+    const v3f &normal=v3f(), const v2f &uv=v2f(), const img::color8 &hw_c=img::color8());

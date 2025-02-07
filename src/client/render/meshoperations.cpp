@@ -34,7 +34,7 @@ void MeshOperations::applyFacesShading(img::color8 &color, const v3f normal)
 		applyShadeFactor(color, 0.670820f * x2 + 1.000000f * y2 + 0.836660f * z2);
 }
 
-MeshStorage MeshOperations::createCubeMesh(v3f scale)
+/*MeshStorage MeshOperations::createCubeMesh(v3f scale)
 {
 	img::color8 c(img::PF_RGBA8, 255,255,255,255);
 
@@ -79,7 +79,7 @@ MeshStorage MeshOperations::createCubeMesh(v3f scale)
 	}
 
 	return mesh;
-}
+}*/
 
 void MeshOperations::scaleMesh(MeshBuffer *mesh, v3f scale)
 {

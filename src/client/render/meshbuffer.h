@@ -152,7 +152,7 @@ public:
 	template<typename T>
     void setAttrAt(T value, u32 attrN, std::optional<u32> vertexN=std::nullopt)
 	{
-        if (attrN == 0) {
+        if (!vertexN && attrN == 0) {
             switch (Type) {
             case MeshBufferType::VERTEX:
                 VBuffer.VDataCount++;
