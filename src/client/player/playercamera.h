@@ -4,13 +4,10 @@
 
 #pragma once
 
-#include "irrlichttypes.h"
 #include "inventory.h"
 #include "util/numeric.h"
-#include "client/localplayer.h"
-#include <ICameraSceneNode.h>
-#include <ISceneNode.h>
-#include <plane3d.h>
+#include "client/player/localplayer.h"
+#include "client/render/camera.h"
 #include <array>
 #include <list>
 #include <optional>
@@ -23,18 +20,16 @@ class WieldMeshSceneNode;
 
 struct Nametag
 {
-	scene::ISceneNode *parent_node;
 	std::string text;
-	video::SColor textcolor;
-	std::optional<video::SColor> bgcolor;
+    img::color8 textcolor;
+    std::optional<img::color8> bgcolor;
 	v3f pos;
 
-	Nametag(scene::ISceneNode *a_parent_node,
-			const std::string &text,
-			const video::SColor &textcolor,
-			const std::optional<video::SColor> &bgcolor,
-			const v3f &pos):
-		parent_node(a_parent_node),
+    Nametag(
+            const std::string &text,
+            const img::color8 &textcolor,
+            const std::optional<img::color8> &bgcolor,
+            const v3f &pos):
 		text(text),
 		textcolor(textcolor),
 		bgcolor(bgcolor),
@@ -42,18 +37,18 @@ struct Nametag
 	{
 	}
 
-	video::SColor getBgColor(bool use_fallback) const
+    img::color8 getBgColor(bool use_fallback) const
 	{
 		if (bgcolor)
 			return bgcolor.value();
 		else if (!use_fallback)
-			return video::SColor(0, 0, 0, 0);
-		else if (textcolor.getBrightness() > 186)
+            return img::color8();
+        else if (textcolor.getLuminance() > 186)
 			// Dark background for light text
-			return video::SColor(50, 50, 50, 50);
+            return img::color8(img::PF_RGBA8, 50, 50, 50, 50);
 		else
 			// Light background for dark text
-			return video::SColor(50, 255, 255, 255);
+            return img::color8(img::PF_RGBA8, 50, 255, 255, 255);
 	}
 };
 
@@ -64,78 +59,24 @@ enum CameraMode {CAMERA_MODE_FIRST, CAMERA_MODE_THIRD, CAMERA_MODE_THIRD_FRONT};
 	and performs view bobbing etc. It also displays the wielded tool in front of the
 	first-person camera.
 */
-class Camera
+class PlayerCamera : public Camera
 {
 public:
-	Camera(MapDrawControl &draw_control, Client *client, RenderingEngine *rendering_engine);
-	~Camera();
-
-	// Get camera scene node.
-	// It has the eye transformation, pitch and view bobbing applied.
-	inline scene::ICameraSceneNode* getCameraNode() const
-	{
-		return m_cameranode;
-	}
-
-	// Get the camera position (in absolute scene coordinates).
-	// This has view bobbing applied.
-	inline v3f getPosition() const
-	{
-		return m_camera_position;
-	}
+	PlayerCamera(MapDrawControl &draw_control, Client *client, RenderingEngine *rendering_engine);
+	~PlayerCamera();
 
 	// Returns the absolute position of the head SceneNode in the world
 	inline v3f getHeadPosition() const
 	{
-		return m_headnode->getAbsolutePosition();
-	}
-
-	// Get the camera direction (in absolute camera coordinates).
-	// This has view bobbing applied.
-	inline v3f getDirection() const
-	{
-		return m_camera_direction;
-	}
-
-	// Get the camera offset
-	inline v3s16 getOffset() const
-	{
-		return m_camera_offset;
-	}
-
-	// Horizontal field of view
-	inline f32 getFovX() const
-	{
-		return m_fov_x;
-	}
-
-	// Vertical field of view
-	inline f32 getFovY() const
-	{
-		return m_fov_y;
-	}
-
-	// Get maximum of getFovX() and getFovY()
-	inline f32 getFovMax() const
-	{
-		return MYMAX(m_fov_x, m_fov_y);
+        return m_playerbase_pos + m_head_offset;
 	}
 
 	// Returns a lambda that when called with an object's position and bounding-sphere
 	// radius (both in BS space) returns true if, and only if the object should be
 	// frustum-culled.
-	auto getFrustumCuller() const
+    bool doFrustumCull(const v3f &position, f32 radius) const
 	{
-		return [planes = getFrustumCullPlanes(),
-				camera_offset = intToFloat(m_camera_offset, BS)
-				](v3f position, f32 radius) {
-			v3f pos_camspace = position - camera_offset;
-			for (auto &plane : planes) {
-				if (plane.getDistanceTo(pos_camspace) > radius)
-					return true;
-			}
-			return false;
-		};
+        return m_frustum.frustumCull(position-intToFloat(m_offset, BS), radius);
 	}
 
 	// Notify about new server-sent FOV and initialize smooth FOV transition
@@ -160,7 +101,7 @@ public:
 	// Draw the wielded tool.
 	// This has to happen *after* the main scene is drawn.
 	// Warning: This clears the Z buffer.
-	void drawWieldedTool(irr::core::matrix4* translation=NULL);
+    void drawWieldedTool(matrix4* translation=nullptr);
 
 	// Toggle the current camera mode
 	void toggleCameraMode() {
@@ -184,9 +125,9 @@ public:
 		return m_camera_mode;
 	}
 
-	Nametag *addNametag(scene::ISceneNode *parent_node,
-		const std::string &text, video::SColor textcolor,
-		std::optional<video::SColor> bgcolor, const v3f &pos);
+    Nametag *addNametag(
+        const std::string &text, img::color8 textcolor,
+        std::optional<img::color8> bgcolor, const v3f &pos);
 
 	void removeNametag(Nametag *nametag);
 
@@ -195,17 +136,8 @@ public:
 	inline void addArmInertia(f32 player_yaw);
 
 private:
-	// Use getFrustumCuller().
-	// This helper just exists to decrease the header's number of includes.
-	std::array<core::plane3d<f32>, 4> getFrustumCullPlanes() const;
-
-	// Nodes
-	scene::ISceneNode *m_playernode = nullptr;
-	scene::ISceneNode *m_headnode = nullptr;
-	scene::ICameraSceneNode *m_cameranode = nullptr;
-
-	scene::ISceneManager *m_wieldmgr = nullptr;
-	WieldMeshSceneNode *m_wieldnode = nullptr;
+    //scene::ISceneManager *m_wieldmgr = nullptr;
+    WieldMeshSceneNode *m_wieldnode = nullptr;
 
 	// draw control
 	MapDrawControl& m_draw_control;
@@ -215,12 +147,9 @@ private:
 	// Default Client FOV (as defined by the "fov" setting)
 	f32 m_cache_fov;
 
-	// Absolute camera position
-	v3f m_camera_position;
-	// Absolute camera direction
-	v3f m_camera_direction;
-	// Camera offset
-	v3s16 m_camera_offset;
+    v3f m_playerbase_pos;
+    v3f m_head_offset;
+    v3f m_head_rotation;
 
 	bool m_stepheight_smooth_active = false;
 
@@ -237,11 +166,6 @@ private:
 	v2f m_cam_vel;
 	v2f m_cam_vel_old;
 	v2f m_last_cam_pos;
-
-	// Field of view and aspect ratio stuff
-	f32 m_aspect = 1.0f;
-	f32 m_fov_x = 1.0f;
-	f32 m_fov_y = 1.0f;
 
 	// View bobbing animation frame (0 <= m_view_bobbing_anim < 1)
 	f32 m_view_bobbing_anim = 0.0f;
@@ -275,5 +199,5 @@ private:
 	bool m_show_nametag_backgrounds;
 
 	// Last known light color of the player
-	video::SColor m_player_light_color;
+    img::color8 m_player_light_color;
 };

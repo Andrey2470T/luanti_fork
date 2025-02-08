@@ -4,7 +4,7 @@
 
 #include "localplayer.h"
 #include <cmath>
-#include "mtevent.h"
+#include "client/event/eventsystem.h"
 #include "collision.h"
 #include "nodedef.h"
 #include "settings.h"
@@ -70,13 +70,13 @@ LocalPlayer::~LocalPlayer()
 	m_player_settings.deregisterSettingsCallback();
 }
 
-static aabb3f getNodeBoundingBox(const std::vector<aabb3f> &nodeboxes)
+static aabbf getNodeBoundingBox(const std::vector<aabbf> &nodeboxes)
 {
 	if (nodeboxes.empty())
-		return aabb3f(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+        return aabbf(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
 
 	auto it = nodeboxes.begin();
-	aabb3f b_max(it->MinEdge, it->MaxEdge);
+    aabbf b_max(it->MinEdge, it->MaxEdge);
 
 	++it;
 	for (; it != nodeboxes.end(); ++it)
@@ -144,7 +144,7 @@ bool LocalPlayer::updateSneakNode(Map *map, const v3f &position,
 
 		v3f pf = intToFloat(p, BS);
 		{
-			std::vector<aabb3f> nodeboxes;
+            std::vector<aabbf> nodeboxes;
 			node.getCollisionBoxes(nodemgr, &nodeboxes);
 			pf += getNodeBoundingBox(nodeboxes).getCenter();
 		}
@@ -187,7 +187,7 @@ bool LocalPlayer::updateSneakNode(Map *map, const v3f &position,
 
 	// Update saved top bounding box of sneak node
 	node = map->getNode(m_sneak_node);
-	std::vector<aabb3f> nodeboxes;
+    std::vector<aabbf> nodeboxes;
 	node.getCollisionBoxes(nodemgr, &nodeboxes);
 	m_sneak_node_bb_top = getNodeBoundingBox(nodeboxes);
 
@@ -1039,7 +1039,7 @@ void LocalPlayer::old_move(f32 dtime, Environment *env,
 		if (sneak_node_found) {
 			f32 cb_max = 0.0f;
 			MapNode n = map->getNode(m_sneak_node);
-			std::vector<aabb3f> nodeboxes;
+            std::vector<aabbf> nodeboxes;
 			n.getCollisionBoxes(nodemgr, &nodeboxes);
 			for (const auto &box : nodeboxes) {
 				if (box.MaxEdge.Y > cb_max)
@@ -1150,7 +1150,7 @@ float LocalPlayer::getSlipFactor(Environment *env, const v3f &speedH)
 		if (speedH == v3f(0.0f))
 			slippery *= 2;
 
-		return core::clamp(1.0f / (slippery + 1), 0.001f, 1.0f);
+        return std::clamp(1.0f / (slippery + 1), 0.001f, 1.0f);
 	}
 	return 1.0f;
 }

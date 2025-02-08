@@ -8,7 +8,7 @@
 #include "environment.h"
 #include "constants.h"
 #include "lighting.h"
-#include <string>
+#include "Utils/AABB.h"
 
 class Client;
 class Environment;
@@ -100,7 +100,7 @@ public:
 	std::string hotbar_image = "";
 	std::string hotbar_selected_image = "";
 
-	video::SColor light_color = video::SColor(255, 255, 255, 255);
+    img::color8 light_color = img::color8(img::PF_RGBA8, 255, 255, 255, 255);
 
 	float hurt_tilt_timer = 0.0f;
 	float hurt_tilt_strength = 0.0f;
@@ -147,9 +147,9 @@ public:
 	v3f getEyeOffset() const;
 	void setEyeHeight(float eye_height) { m_eye_height = eye_height; }
 
-	void setCollisionbox(const aabb3f &box) { m_collisionbox = box; }
+    void setCollisionbox(const aabbf &box) { m_collisionbox = box; }
 
-	const aabb3f& getCollisionbox() const { return m_collisionbox; }
+    const aabbf& getCollisionbox() const { return m_collisionbox; }
 
 	float getZoomFOV() const { return m_zoom_fov; }
 	void setZoomFOV(float zoom_fov) { m_zoom_fov = zoom_fov; }
@@ -183,7 +183,7 @@ private:
 
 	v3s16 m_sneak_node = v3s16(32767, 32767, 32767);
 	// Stores the top bounding box of m_sneak_node
-	aabb3f m_sneak_node_bb_top = aabb3f(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+    aabbf m_sneak_node_bb_top = aabbf(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
 	// Whether the player is allowed to sneak
 	bool m_sneak_node_exists = false;
 	// Whether a "sneak ladder" structure is detected at the players pos
@@ -207,7 +207,7 @@ private:
 	u16 m_breath = PLAYER_MAX_BREATH_DEFAULT;
 	f32 m_yaw = 0.0f;
 	f32 m_pitch = 0.0f;
-	aabb3f m_collisionbox = aabb3f(-BS * 0.30f, 0.0f, -BS * 0.30f, BS * 0.30f,
+    aabbf m_collisionbox = aabbf(-BS * 0.30f, 0.0f, -BS * 0.30f, BS * 0.30f,
 		BS * 1.75f, BS * 0.30f);
 	float m_eye_height = 1.625f;
 	float m_zoom_fov = 0.0f;

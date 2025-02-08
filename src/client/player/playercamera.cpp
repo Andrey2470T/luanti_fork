@@ -2,29 +2,27 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 // Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
-#include "camera.h"
+#include "playercamera.h"
 #include "debug.h"
-#include "client.h"
 #include "config.h"
 #include "map.h"
-#include "clientmap.h"     // MapDrawControl
-#include "player.h"
+#include "client/map/clientmap.h"     // MapDrawControl
 #include <cmath>
-#include "client/renderingengine.h"
-#include "client/content_cao.h"
+#include "client/render/renderingengine.h"
+#include "client/ao/genericcao.h"
 #include "settings.h"
-#include "wieldmesh.h"
+#include "client/render/wieldmesh.h"
 #include "noise.h"         // easeCurve
-#include "mtevent.h"
+#include "client/event/eventsystem.h"
 #include "nodedef.h"
 #include "util/numeric.h"
 #include "constants.h"
-#include "fontengine.h"
+#include "client/ui/fontengine.h"
 #include "script/scripting_client.h"
 #include "gettext.h"
-#include <SViewFrustum.h>
-#include <IGUIFont.h>
-#include <IVideoDriver.h>
+#include "Image/Converting.h"
+#include "Utils/Quaternion.h"
+#include "Utils/MathFuncs.h"
 
 #define CAMERA_OFFSET_STEP 200
 #define WIELDMESH_OFFSET_X 55.0f
@@ -32,26 +30,20 @@
 #define WIELDMESH_AMPLITUDE_X 7.0f
 #define WIELDMESH_AMPLITUDE_Y 10.0f
 
-Camera::Camera(MapDrawControl &draw_control, Client *client, RenderingEngine *rendering_engine):
-	m_draw_control(draw_control),
-	m_client(client),
-	m_player_light_color(0xFFFFFFFF)
+PlayerCamera::PlayerCamera(MapDrawControl &draw_control, Client *client, RenderingEngine *rendering_engine):
+	Camera(client), m_draw_control(draw_control),
+    m_client(client), m_player_light_color(img::colorU32NumberToObject(0xFFFFFFFF))
 {
-	auto smgr = rendering_engine->get_scene_manager();
-	// note: making the camera node a child of the player node
-	// would lead to unexpected behavior, so we don't do that.
-	m_playernode = smgr->addEmptySceneNode(smgr->getRootSceneNode());
-	m_headnode = smgr->addEmptySceneNode(m_playernode);
-	m_cameranode = smgr->addCameraSceneNode(smgr->getRootSceneNode());
-	m_cameranode->bindTargetAndRotation(true);
+    //auto smgr = rendering_engine->get_scene_manager();
 
+    //m_playerbase_pos = client->getLocalPlayer()->getPosition();
 	// This needs to be in its own scene manager. It is drawn after
 	// all other 3D scene nodes and before the GUI.
-	m_wieldmgr = smgr->createNewSceneManager();
-	m_wieldmgr->addCameraSceneNode();
-	m_wieldnode = new WieldMeshSceneNode(m_wieldmgr, -1);
-	m_wieldnode->setItem(ItemStack(), m_client);
-	m_wieldnode->drop(); // m_wieldmgr grabbed it
+    //m_wieldmgr = smgr->createNewSceneManager();
+    //m_wieldmgr->addCameraSceneNode();
+    //m_wieldnode = new WieldMeshSceneNode(m_wieldmgr, -1);
+    //m_wieldnode->setItem(ItemStack(), m_client);
+    //m_wieldnode->drop(); // m_wieldmgr grabbed it
 
 	/* TODO: Add a callback function so these can be updated when a setting
 	 *       changes.  At this point in time it doesn't matter (e.g. /set
@@ -72,12 +64,12 @@ Camera::Camera(MapDrawControl &draw_control, Client *client, RenderingEngine *re
 	m_show_nametag_backgrounds  = g_settings->getBool("show_nametag_backgrounds");
 }
 
-Camera::~Camera()
+PlayerCamera::~PlayerCamera()
 {
 	m_wieldmgr->drop();
 }
 
-void Camera::notifyFovChange()
+void PlayerCamera::notifyFovChange()
 {
 	LocalPlayer *player = m_client->getEnv().getLocalPlayer();
 	assert(player);
@@ -112,7 +104,7 @@ inline f32 my_modf(f32 x)
 	return std::modf(x, &dummy);
 }
 
-void Camera::step(f32 dtime)
+void PlayerCamera::step(f32 dtime)
 {
 	if(m_view_bobbing_fall > 0)
 	{
@@ -209,11 +201,11 @@ static inline v2f dir(const v2f &pos_dist)
 	return v2f(std::fabs(x), std::fabs(y));
 }
 
-void Camera::addArmInertia(f32 player_yaw)
+void PlayerCamera::addArmInertia(f32 player_yaw)
 {
 	m_cam_vel.X = std::fabs(rangelim(m_last_cam_pos.X - player_yaw,
 		-100.0f, 100.0f) / 0.016f) * 0.01f;
-	m_cam_vel.Y = std::fabs((m_last_cam_pos.Y - m_camera_direction.Y) / 0.016f);
+    m_cam_vel.Y = std::fabs((m_last_cam_pos.Y - m_direction.Y) / 0.016f);
 	f32 gap_X = std::fabs(WIELDMESH_OFFSET_X - m_wieldmesh_offset.X);
 	f32 gap_Y = std::fabs(WIELDMESH_OFFSET_Y - m_wieldmesh_offset.Y);
 
@@ -244,10 +236,10 @@ void Camera::addArmInertia(f32 player_yaw)
 
 			f32 acc_Y = 0.12f * (m_cam_vel.Y - (gap_Y * 0.1f));
 			m_wieldmesh_offset.Y +=
-				m_last_cam_pos.Y > m_camera_direction.Y ? acc_Y : -acc_Y;
+                m_last_cam_pos.Y > m_direction.Y ? acc_Y : -acc_Y;
 
-			if (m_last_cam_pos.Y != m_camera_direction.Y)
-				m_last_cam_pos.Y = m_camera_direction.Y;
+            if (m_last_cam_pos.Y != m_direction.Y)
+                m_last_cam_pos.Y = m_direction.Y;
 
 			m_wieldmesh_offset.Y = rangelim(m_wieldmesh_offset.Y,
 				WIELDMESH_OFFSET_Y - (WIELDMESH_AMPLITUDE_Y * 0.5f),
@@ -281,11 +273,11 @@ void Camera::addArmInertia(f32 player_yaw)
 	}
 }
 
-void Camera::update(LocalPlayer* player, f32 frametime, f32 tool_reload_ratio)
+void PlayerCamera::update(LocalPlayer* player, f32 frametime, f32 tool_reload_ratio)
 {
 	// Get player position
 	// Smooth the movement when walking up stairs
-	v3f old_player_position = m_playernode->getPosition();
+    v3f old_player_position = m_playerbase_pos;
 	v3f player_position = player->getPosition();
 
 	f32 yaw = player->getYaw();
@@ -313,10 +305,7 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 tool_reload_ratio)
 		player_position.Y = oldy * t + newy * (1-t);
 	}
 
-	// Set player node transformation
-	m_playernode->setPosition(player_position);
-	m_playernode->setRotation(v3f(0, -1 * yaw, 0));
-	m_playernode->updateAbsolutePosition();
+    m_playerbase_pos = player_position;
 
 	// Get camera tilt timer (hurt animation)
 	float cameratilt = fabs(fabs(player->hurt_tilt_timer-0.75)-0.75);
@@ -342,29 +331,26 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 tool_reload_ratio)
 	}
 
 	// Calculate and translate the head SceneNode offsets
-	{
-		v3f eye_offset = player->getEyeOffset();
-		switch(m_camera_mode) {
-		case CAMERA_MODE_FIRST:
-			eye_offset += player->eye_offset_first;
-			break;
-		case CAMERA_MODE_THIRD:
-			eye_offset += player->eye_offset_third;
-			break;
-		case CAMERA_MODE_THIRD_FRONT:
-			eye_offset.X += player->eye_offset_third_front.X;
-			eye_offset.Y += player->eye_offset_third_front.Y;
-			eye_offset.Z -= player->eye_offset_third_front.Z;
-			break;
-		}
+    v3f eye_offset = player->getEyeOffset();
+    switch(m_camera_mode) {
+    case CAMERA_MODE_FIRST:
+        eye_offset += player->eye_offset_first;
+        break;
+    case CAMERA_MODE_THIRD:
+        eye_offset += player->eye_offset_third;
+        break;
+    case CAMERA_MODE_THIRD_FRONT:
+        eye_offset.X += player->eye_offset_third_front.X;
+        eye_offset.Y += player->eye_offset_third_front.Y;
+        eye_offset.Z -= player->eye_offset_third_front.Z;
+        break;
+    }
 
-		// Set head node transformation
-		eye_offset.Y += cameratilt * -player->hurt_tilt_strength + fall_bobbing;
-		m_headnode->setPosition(eye_offset);
-		m_headnode->setRotation(v3f(pitch, 0,
-			cameratilt * player->hurt_tilt_strength));
-		m_headnode->updateAbsolutePosition();
-	}
+    // Set head node transformation
+    eye_offset.Y += cameratilt * -player->hurt_tilt_strength + fall_bobbing;
+    m_head_offset = eye_offset;
+    m_head_rotation = v3f(pitch, 0,
+           cameratilt * player->hurt_tilt_strength);
 
 	// Compute relative camera position and target
 	v3f rel_cam_pos = v3f(0,0,0);
@@ -390,31 +376,37 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 tool_reload_ratio)
 	}
 
 	// Compute absolute camera position and target
-	m_headnode->getAbsoluteTransformation().transformVect(m_camera_position, rel_cam_pos);
-	m_camera_direction = m_headnode->getAbsoluteTransformation()
-			.rotateAndScaleVect(rel_cam_target - rel_cam_pos);
+    m_position = m_playerbase_pos + m_head_offset + rel_cam_pos;
+    //m_headnode->getAbsoluteTransformation().transformVect(m_camera_position, rel_cam_pos);
+    matrix4 rot_transform;
+    rot_transform.buildRotateFromTo(v3f(0,0,1), m_direction);
+    rot_transform.transformVect(m_direction, rel_cam_target - rel_cam_pos);
+    //m_camera_direction = m_headnode->getAbsoluteTransformation()
+    //		.rotateAndScaleVect(rel_cam_target - rel_cam_pos);
 
-	v3f abs_cam_up = m_headnode->getAbsoluteTransformation()
-			.rotateAndScaleVect(rel_cam_up);
+    v3f abs_cam_up;
+    rot_transform.transformVect(abs_cam_up, rel_cam_up);
+    //v3f abs_cam_up = m_headnode->getAbsoluteTransformation()
+    //		.rotateAndScaleVect(rel_cam_up);
 
 	// Separate camera position for calculation
-	v3f my_cp = m_camera_position;
+    v3f my_cp = m_position;
 
 	// Reposition the camera for third person view
 	if (m_camera_mode > CAMERA_MODE_FIRST)
 	{
 		if (m_camera_mode == CAMERA_MODE_THIRD_FRONT)
-			m_camera_direction *= -1;
+            m_direction *= -1;
 
 		my_cp.Y += 2;
 
 		// Calculate new position
 		bool abort = false;
 		for (int i = BS; i <= BS * 2.75; i++) {
-			my_cp.X = m_camera_position.X + m_camera_direction.X * -i;
-			my_cp.Z = m_camera_position.Z + m_camera_direction.Z * -i;
+            my_cp.X = m_position.X + m_direction.X * -i;
+            my_cp.Z = m_position.Z + m_direction.Z * -i;
 			if (i > 12)
-				my_cp.Y = m_camera_position.Y + (m_camera_direction.Y * -i);
+                my_cp.Y = m_position.Y + (m_direction.Y * -i);
 
 			// Prevent camera positioned inside nodes
 			const NodeDefManager *nodemgr = m_client->ndef();
@@ -423,9 +415,9 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 tool_reload_ratio)
 
 			const ContentFeatures& features = nodemgr->get(n);
 			if (features.walkable) {
-				my_cp.X += m_camera_direction.X*-1*-BS/2;
-				my_cp.Z += m_camera_direction.Z*-1*-BS/2;
-				my_cp.Y += m_camera_direction.Y*-1*-BS/2;
+                my_cp.X += m_direction.X*-1*-BS/2;
+                my_cp.Z += m_direction.Z*-1*-BS/2;
+                my_cp.Y += m_direction.Y*-1*-BS/2;
 				abort = true;
 				break;
 			}
@@ -437,24 +429,27 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 tool_reload_ratio)
 	}
 
 	// Update offset if too far away from the center of the map
-	m_camera_offset.X += CAMERA_OFFSET_STEP*
-			(((s16)(my_cp.X/BS) - m_camera_offset.X)/CAMERA_OFFSET_STEP);
-	m_camera_offset.Y += CAMERA_OFFSET_STEP*
-			(((s16)(my_cp.Y/BS) - m_camera_offset.Y)/CAMERA_OFFSET_STEP);
-	m_camera_offset.Z += CAMERA_OFFSET_STEP*
-			(((s16)(my_cp.Z/BS) - m_camera_offset.Z)/CAMERA_OFFSET_STEP);
+    m_offset.X += CAMERA_OFFSET_STEP*
+            (((s16)(my_cp.X/BS) - m_offset.X)/CAMERA_OFFSET_STEP);
+    m_offset.Y += CAMERA_OFFSET_STEP*
+            (((s16)(my_cp.Y/BS) - m_offset.Y)/CAMERA_OFFSET_STEP);
+    m_offset.Z += CAMERA_OFFSET_STEP*
+            (((s16)(my_cp.Z/BS) - m_offset.Z)/CAMERA_OFFSET_STEP);
 
-	// Set camera node transformation
-	m_cameranode->setPosition(my_cp-intToFloat(m_camera_offset, BS));
-	m_cameranode->updateAbsolutePosition();
-	m_cameranode->setUpVector(abs_cam_up);
+    // Set camera node transformation
+    m_position -= intToFloat(m_offset, BS);
+    //m_cameranode->setPosition(my_cp-intToFloat(m_camera_offset, BS));
+    //m_cameranode->updateAbsolutePosition();
+    m_up_vector = abs_cam_up;
+    //m_cameranode->setUpVector(abs_cam_up);
 	// *100.0 helps in large map coordinates
-	m_cameranode->setTarget(my_cp-intToFloat(m_camera_offset, BS) + 100 * m_camera_direction);
+    setDirection(my_cp-intToFloat(m_offset, BS) + m_direction * 100);
+    //m_cameranode->setTarget(my_cp-intToFloat(m_camera_offset, BS) + 100 * m_camera_direction);
 
 	// update the camera position in third-person mode to render blocks behind player
 	// and correctly apply liquid post FX.
 	if (m_camera_mode != CAMERA_MODE_FIRST)
-		m_camera_position = my_cp;
+        m_position = my_cp;
 
 	/*
 	 * Apply server-sent FOV, instantaneous or smooth transition.
@@ -486,17 +481,15 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 tool_reload_ratio)
 	m_curr_fov_degrees = rangelim(m_curr_fov_degrees, 1.0f, 160.0f);
 
 	// FOV and aspect ratio
-	const v2u32 &window_size = RenderingEngine::getWindowSize();
-	m_aspect = (f32) window_size.X / (f32) window_size.Y;
-	m_fov_y = m_curr_fov_degrees * M_PI / 180.0;
+    const v2u &window_size = RenderingEngine::getWindowSize();
+    m_frustum.Aspect = (f32) window_size.X / (f32) window_size.Y;
+    m_frustum.Fovy = m_curr_fov_degrees * M_PI / 180.0;
 	// Increase vertical FOV on lower aspect ratios (<16:10)
-	m_fov_y *= core::clamp(sqrt(16./10. / m_aspect), 1.0, 1.4);
-	m_fov_x = 2 * atan(m_aspect * tan(0.5 * m_fov_y));
-	m_cameranode->setAspectRatio(m_aspect);
-	m_cameranode->setFOV(m_fov_y);
+    m_frustum.Fovy *= std::clamp(sqrt(16./10. / m_frustum.Aspect), 1.0, 1.4);
+    m_frustum.Fovx = 2 * atan(m_frustum.Aspect * tan(0.5 * m_frustum.Fovy));
 
 	// Make new matrices and frustum
-	m_cameranode->updateMatrices();
+    updateMatrices();
 
 	if (m_arm_inertia)
 		addArmInertia(yaw);
@@ -525,12 +518,12 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 tool_reload_ratio)
 		wield_position.Z += 25 * 0.5;
 
 		// Euler angles are PURE EVIL, so why not use quaternions?
-		core::quaternion quat_begin(wield_rotation * core::DEGTORAD);
-		core::quaternion quat_end(v3f(80, 30, 100) * core::DEGTORAD);
-		core::quaternion quat_slerp;
+        Quaternion quat_begin(wield_rotation * DEGTORAD);
+        Quaternion quat_end(v3f(80, 30, 100) * DEGTORAD);
+        Quaternion quat_slerp;
 		quat_slerp.slerp(quat_begin, quat_end, std::sin(digfrac * M_PI));
 		quat_slerp.toEuler(wield_rotation);
-		wield_rotation *= core::RADTODEG;
+        wield_rotation *= RADTODEG;
 	} else {
 		f32 bobfrac = my_modf(m_view_bobbing_anim);
 		wield_position.X -= std::sin(bobfrac*M_PI*2.0) * 3.0;
@@ -568,27 +561,27 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 tool_reload_ratio)
 	}
 }
 
-void Camera::updateViewingRange()
+void PlayerCamera::updateViewingRange()
 {
 	f32 viewing_range = g_settings->getFloat("viewing_range");
 
-	m_cameranode->setNearValue(0.1f * BS);
+    setNearValue(0.1f * BS);
 
 	m_draw_control.wanted_range = std::fmin(adjustDist(viewing_range, getFovMax()), 4000);
 	if (m_draw_control.range_all) {
-		m_cameranode->setFarValue(100000.0);
+        setFarValue(100000.0);
 		return;
 	}
-	m_cameranode->setFarValue((viewing_range < 2000) ? 2000 * BS : viewing_range * BS);
+    setFarValue((viewing_range < 2000) ? 2000 * BS : viewing_range * BS);
 }
 
-void Camera::setDigging(s32 button)
+void PlayerCamera::setDigging(s32 button)
 {
 	if (m_digging_button == -1)
 		m_digging_button = button;
 }
 
-void Camera::wield(const ItemStack &item)
+void PlayerCamera::wield(const ItemStack &item)
 {
 	if (item.name != m_wield_item_next.name ||
 			item.metadata != m_wield_item_next.metadata) {
@@ -600,10 +593,10 @@ void Camera::wield(const ItemStack &item)
 	}
 }
 
-void Camera::drawWieldedTool(irr::core::matrix4* translation)
+void PlayerCamera::drawWieldedTool(matrix4* translation)
 {
 	// Clear Z buffer so that the wielded tool stays in front of world geometry
-	m_wieldmgr->getVideoDriver()->clearBuffers(video::ECBF_DEPTH);
+    /*m_wieldmgr->getVideoDriver()->clearBuffers(video::ECBF_DEPTH);
 
 	// Draw the wielded node (in a separate scene manager)
 	scene::ICameraSceneNode* cam = m_wieldmgr->getActiveCamera();
@@ -624,22 +617,22 @@ void Camera::drawWieldedTool(irr::core::matrix4* translation)
 		cam->updateAbsolutePosition();
 		cam->setTarget(focusPoint);
 	}
-	m_wieldmgr->drawAll();
+    m_wieldmgr->drawAll();*/
 }
 
-void Camera::drawNametags()
+void PlayerCamera::drawNametags()
 {
-	core::matrix4 trans = m_cameranode->getProjectionMatrix();
-	trans *= m_cameranode->getViewMatrix();
+    matrix4 trans = getProjectionMatrix();
+    trans *= getViewMatrix();
 
 	gui::IGUIFont *font = g_fontengine->getFont();
 	video::IVideoDriver *driver = RenderingEngine::get_video_driver();
-	v2u32 screensize = driver->getScreenSize();
+    v2u screensize = driver->getScreenSize();
 
 	for (const Nametag *nametag : m_nametags) {
 		// Nametags are hidden in GenericCAO::updateNametag()
 
-		v3f pos = nametag->parent_node->getAbsolutePosition() + nametag->pos * BS;
+        v3f pos = m_position + nametag->pos * BS;
 		f32 transformed_pos[4] = { pos.X, pos.Y, pos.Z, 1.0f };
 		trans.multiplyWith1x4Matrix(transformed_pos);
 		if (transformed_pos[3] > 0) {
@@ -649,16 +642,16 @@ void Camera::drawNametags()
 				nametag_colorless.c_str());
 			f32 zDiv = transformed_pos[3] == 0.0f ? 1.0f :
 				core::reciprocal(transformed_pos[3]);
-			v2s32 screen_pos;
+            v2i screen_pos;
 			screen_pos.X = screensize.X *
 				(0.5 * transformed_pos[0] * zDiv + 0.5) - textsize.Width / 2;
 			screen_pos.Y = screensize.Y *
 				(0.5 - transformed_pos[1] * zDiv * 0.5) - textsize.Height / 2;
-			core::rect<s32> size(0, 0, textsize.Width, textsize.Height);
+            recti size(0, 0, textsize.Width, textsize.Height);
 
 			auto bgcolor = nametag->getBgColor(m_show_nametag_backgrounds);
-			if (bgcolor.getAlpha() != 0) {
-				core::rect<s32> bg_size(-2, 0, textsize.Width + 2, textsize.Height);
+            if (bgcolor.A() != 0) {
+                recti bg_size(-2, 0, textsize.Width + 2, textsize.Height);
 				driver->draw2DRectangle(bgcolor, bg_size + screen_pos);
 			}
 
@@ -669,29 +662,17 @@ void Camera::drawNametags()
 	}
 }
 
-Nametag *Camera::addNametag(scene::ISceneNode *parent_node,
-		const std::string &text, video::SColor textcolor,
-		std::optional<video::SColor> bgcolor, const v3f &pos)
+Nametag *PlayerCamera::addNametag(
+        const std::string &text, img::color8 textcolor,
+        std::optional<img::color8> bgcolor, const v3f &pos)
 {
-	Nametag *nametag = new Nametag(parent_node, text, textcolor, bgcolor, pos);
+    Nametag *nametag = new Nametag(text, textcolor, bgcolor, pos);
 	m_nametags.push_back(nametag);
 	return nametag;
 }
 
-void Camera::removeNametag(Nametag *nametag)
+void PlayerCamera::removeNametag(Nametag *nametag)
 {
 	m_nametags.remove(nametag);
 	delete nametag;
-}
-
-std::array<core::plane3d<f32>, 4> Camera::getFrustumCullPlanes() const
-{
-	using irr::scene::SViewFrustum;
-	const auto &frustum_planes = m_cameranode->getViewFrustum()->planes;
-	return {
-		frustum_planes[SViewFrustum::VF_LEFT_PLANE],
-		frustum_planes[SViewFrustum::VF_RIGHT_PLANE],
-		frustum_planes[SViewFrustum::VF_BOTTOM_PLANE],
-		frustum_planes[SViewFrustum::VF_TOP_PLANE],
-	};
 }
