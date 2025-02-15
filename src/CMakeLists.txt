@@ -525,14 +525,14 @@ endif()
 if (BUILD_CLIENT)
 	add_subdirectory(client)
 	add_subdirectory(gui)
-	add_subdirectory(irrlicht_changes)
+	add_subdirectory(irrlicht_gui)
 endif(BUILD_CLIENT)
 
 list(APPEND client_SRCS
 	${common_SRCS}
 	${gui_SRCS}
 	${client_network_SRCS}
-	${client_irrlicht_changes_SRCS}
+	${irrlicht_gui_SRCS}
 	${client_SCRIPT_SRCS}
 )
 
