@@ -31,7 +31,7 @@ float RealInputHandler::getJoystickDirection()
 	return joystick.getMovementDirection();
 }
 
-v2s32 RealInputHandler::getMousePos()
+v2i RealInputHandler::getMousePos()
 {
 	auto control = RenderingEngine::get_raw_device()->getCursorControl();
 	if (control) {
@@ -47,7 +47,7 @@ void RealInputHandler::setMousePos(s32 x, s32 y)
 	if (control) {
 		control->setPosition(x, y);
 	} else {
-		m_mousepos = v2s32(x, y);
+        m_mousepos = v2i(x, y);
 	}
 }
 
@@ -88,7 +88,7 @@ void RandomInputHandler::step(float dtime)
 		counter1 -= dtime;
 		if (counter1 < 0.0) {
 			counter1 = 0.1 * Rand(1, 20);
-			mousespeed = v2s32(Rand(-20, 20), Rand(-15, 20));
+            mousespeed = v2i(Rand(-20, 20), Rand(-15, 20));
 		}
 	}
 	mousepos += mousespeed;

@@ -1,4 +1,6 @@
-#include "KeyCache.h"
+#include "keycache.h"
+#include "inputhandler.h"
+#include "hud.h"
 
 void KeyCache::populate_nonchanging()
 {

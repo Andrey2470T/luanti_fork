@@ -12,21 +12,12 @@
 #include "threading/mutex_auto_lock.h"
 #include "util/basic_macros.h"
 #include "util/stream.h"
-#include "Types.h"
 #include "log.h"
+#include "Main/LogStream.h"
+
+using namespace main;
 
 class ILogOutput;
-
-enum LogLevel {
-	LL_NONE, // Special level that is always printed
-	LL_ERROR,
-	LL_WARNING,
-	LL_ACTION,  // In-game actions
-	LL_INFO,
-	LL_VERBOSE,
-	LL_TRACE,
-	LL_MAX,
-};
 
 enum LogColor {
 	LOG_COLOR_NEVER,
@@ -40,7 +31,7 @@ typedef u8 LogLevelMask;
 class Logger {
 public:
 	void addOutput(ILogOutput *out);
-	void addOutput(ILogOutput *out, LogLevel lev);
+    void addOutput(ILogOutput *out, LogLevel lev);
 	void addOutputMasked(ILogOutput *out, LogLevelMask mask);
 	void addOutputMaxLevel(ILogOutput *out, LogLevel lev);
 	LogLevelMask removeOutput(ILogOutput *out);

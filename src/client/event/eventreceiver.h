@@ -1,17 +1,22 @@
 #pragma once
 
-#include "KeyCache.h"
+#include "keycache.h"
+#include "Main/IEventReceiver.h"
+
+class JoystickController;
 
 enum class PointerType {
 	Mouse,
 	Touch,
 };
 
+using namespace main;
+
 class MyEventReceiver : public IEventReceiver
 {
 public:
 	// This is the one method that we have to implement
-	virtual bool OnEvent(const SEvent &event);
+    virtual bool OnEvent(const Event &event);
 
 	bool IsKeyDown(const KeyPress &keyCode) const { return keyIsDown[keyCode]; }
 

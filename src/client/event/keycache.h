@@ -1,7 +1,8 @@
 #pragma once
 
-#include "KeyPress.h"
-#include "KeyType.h"
+#include "keypress.h"
+#include "keytype.h"
+#include <list>
 
 class InputHandler;
 

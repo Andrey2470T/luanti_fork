@@ -1,23 +1,22 @@
-#include "EventReceiver.h"
+#include "eventreceiver.h"
+#include "joystickcontroller.h"
+#include "settings.h"
+#include <assert.h>
+#include "log_internal.h"
+#include "gui/mainmenumanager.h"
+#include "gui/touchcontrols.h"
 
-bool MyEventReceiver::OnEvent(const SEvent &event)
+bool MyEventReceiver::OnEvent(const Event &event)
 {
-	if (event.EventType == irr::EET_LOG_TEXT_EVENT) {
-		static const LogLevel irr_loglev_conv[] = {
-			LL_VERBOSE, // ELL_DEBUG
-			LL_INFO,    // ELL_INFORMATION
-			LL_WARNING, // ELL_WARNING
-			LL_ERROR,   // ELL_ERROR
-			LL_NONE,    // ELL_NONE
-		};
-		assert(event.LogEvent.Level < ARRLEN(irr_loglev_conv));
-		g_logger.log(irr_loglev_conv[event.LogEvent.Level],
-				std::string("Irrlicht: ") + event.LogEvent.Text);
+    if (event.Type == ET_LOG_TEXT_EVENT) {
+        assert(event.Log.Level < LL_MAX);
+        g_logger.log(event.Log.Level,
+                std::string("Irrlicht: ") + event.Log.Text);
 		return true;
-	}
+    }
 
-	if (event.EventType == EET_APPLICATION_EVENT &&
-			event.ApplicationEvent.EventType == EAET_DPI_CHANGED) {
+    if (event.Type == ET_APPLICATION_EVENT &&
+        event.Application.Type == AET_DPI_CHANGED) {
 		// This is a fake setting so that we can use (de)registerChangedCallback
 		// not only to listen for gui/hud_scaling changes, but also for DPI changes.
 		g_settings->setU16("dpi_change_notifier",
@@ -26,7 +25,7 @@ bool MyEventReceiver::OnEvent(const SEvent &event)
 	}
 
 	// This is separate from other keyboard handling so that it also works in menus.
-	if (event.EventType == EET_KEY_INPUT_EVENT) {
+    if (event.Type == ET_KEY_INPUT_EVENT) {
 		const KeyPress keyCode(event.KeyInput);
 		if (keyCode == getKeySetting("keymap_fullscreen")) {
 			if (event.KeyInput.PressedDown && !fullscreen_is_down) {
@@ -44,9 +43,9 @@ bool MyEventReceiver::OnEvent(const SEvent &event)
 		}
 	}
 
-	if (event.EventType == EET_MOUSE_INPUT_EVENT && !event.MouseInput.Simulated)
+    if (event.Type == ET_MOUSE_INPUT_EVENT && !event.MouseInput.Simulated)
 		last_pointer_type = PointerType::Mouse;
-	else if (event.EventType == EET_TOUCH_INPUT_EVENT)
+    else if (event.Type == ET_TOUCH_INPUT_EVENT)
 		last_pointer_type = PointerType::Touch;
 
 	// Let the menu handle events, if one is active.
@@ -57,7 +56,7 @@ bool MyEventReceiver::OnEvent(const SEvent &event)
 	}
 
 	// Remember whether each key is down or up
-	if (event.EventType == irr::EET_KEY_INPUT_EVENT) {
+    if (event.Type == ET_KEY_INPUT_EVENT) {
 		const KeyPress keyCode(event.KeyInput);
 		if (keysListenedFor[keyCode]) {
 			if (event.KeyInput.PressedDown) {
@@ -76,45 +75,45 @@ bool MyEventReceiver::OnEvent(const SEvent &event)
 			return true;
 		}
 
-	} else if (g_touchcontrols && event.EventType == irr::EET_TOUCH_INPUT_EVENT) {
+    } else if (g_touchcontrols && event.Type == ET_TOUCH_INPUT_EVENT) {
 		// In case of touchcontrols, we have to handle different events
 		g_touchcontrols->translateEvent(event);
 		return true;
-	} else if (event.EventType == irr::EET_JOYSTICK_INPUT_EVENT) {
+    } else if (event.Type == ET_JOYSTICK_INPUT_EVENT) {
 		// joystick may be nullptr if game is launched with '--random-input' parameter
-		return joystick && joystick->handleEvent(event.JoystickEvent);
-	} else if (event.EventType == irr::EET_MOUSE_INPUT_EVENT) {
+        return joystick && joystick->handleEvent(event.Joystick);
+    } else if (event.Type == ET_MOUSE_INPUT_EVENT) {
 		// Handle mouse events
-		switch (event.MouseInput.Event) {
-		case EMIE_LMOUSE_PRESSED_DOWN:
+        switch (event.MouseInput.Type) {
+        case MIE_LMOUSE_PRESSED_DOWN:
 			keyIsDown.set(LMBKey);
 			keyWasDown.set(LMBKey);
 			keyWasPressed.set(LMBKey);
 			break;
-		case EMIE_MMOUSE_PRESSED_DOWN:
+        case MIE_MMOUSE_PRESSED_DOWN:
 			keyIsDown.set(MMBKey);
 			keyWasDown.set(MMBKey);
 			keyWasPressed.set(MMBKey);
 			break;
-		case EMIE_RMOUSE_PRESSED_DOWN:
+        case MIE_RMOUSE_PRESSED_DOWN:
 			keyIsDown.set(RMBKey);
 			keyWasDown.set(RMBKey);
 			keyWasPressed.set(RMBKey);
 			break;
-		case EMIE_LMOUSE_LEFT_UP:
+        case MIE_LMOUSE_LEFT_UP:
 			keyIsDown.unset(LMBKey);
 			keyWasReleased.set(LMBKey);
 			break;
-		case EMIE_MMOUSE_LEFT_UP:
+        case MIE_MMOUSE_LEFT_UP:
 			keyIsDown.unset(MMBKey);
 			keyWasReleased.set(MMBKey);
 			break;
-		case EMIE_RMOUSE_LEFT_UP:
+        case MIE_RMOUSE_LEFT_UP:
 			keyIsDown.unset(RMBKey);
 			keyWasReleased.set(RMBKey);
 			break;
-		case EMIE_MOUSE_WHEEL:
-			mouse_wheel += event.MouseInput.Wheel;
+        case MIE_MOUSE_WHEEL:
+            mouse_wheel += event.MouseInput.WheelDelta;
 			break;
 		default:
 			break;

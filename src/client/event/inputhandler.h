@@ -4,11 +4,9 @@
 
 #pragma once
 
-#include "irrlichttypes.h"
-#include "irr_v2d.h"
-#include "joystick_controller.h"
+#include "joystickcontroller.h"
 #include <list>
-#include "keycode.h"
+#include "eventreceiver.h"
 
 class InputHandler
 {
@@ -41,7 +39,7 @@ public:
 	virtual void listenForKey(const KeyPress &keyCode) {}
 	virtual void dontListenForKeys() {}
 
-	virtual v2s32 getMousePos() = 0;
+    virtual v2i getMousePos() = 0;
 	virtual void setMousePos(s32 x, s32 y) = 0;
 
 	virtual s32 getMouseWheel() = 0;
@@ -116,7 +114,7 @@ public:
 		m_receiver->dontListenForKeys();
 	}
 
-	virtual v2s32 getMousePos();
+    virtual v2i getMousePos();
 	virtual void setMousePos(s32 x, s32 y);
 
 	virtual s32 getMouseWheel()
@@ -138,7 +136,7 @@ public:
 
 private:
 	MyEventReceiver *m_receiver = nullptr;
-	v2s32 m_mousepos;
+    v2i m_mousepos;
 };
 
 class RandomInputHandler final : public InputHandler
@@ -158,8 +156,8 @@ public:
 	virtual bool cancelPressed() { return false; }
 	virtual float getJoystickSpeed() { return joystickSpeed; }
 	virtual float getJoystickDirection() { return joystickDirection; }
-	virtual v2s32 getMousePos() { return mousepos; }
-	virtual void setMousePos(s32 x, s32 y) { mousepos = v2s32(x, y); }
+    virtual v2i getMousePos() { return mousepos; }
+    virtual void setMousePos(s32 x, s32 y) { mousepos = v2i(x, y); }
 
 	virtual s32 getMouseWheel() { return 0; }
 
@@ -169,8 +167,8 @@ public:
 
 private:
 	KeyList keydown;
-	v2s32 mousepos;
-	v2s32 mousespeed;
+    v2i mousepos;
+    v2i mousespeed;
 	float joystickSpeed;
 	float joystickDirection;
 };
