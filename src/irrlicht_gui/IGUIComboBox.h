@@ -19,8 +19,8 @@ class IGUIComboBox : public IGUIElement
 {
 public:
 	//! constructor
-	IGUIComboBox(IGUIEnvironment *environment, IGUIElement *parent, s32 id, core::rect<s32> rectangle) :
-			IGUIElement(EGUIET_COMBO_BOX, environment, parent, id, rectangle) {}
+    IGUIComboBox(IGUIEnvironment *environment, std::shared_ptr<IGUIElement> parent, s32 id, recti rectangle) :
+            IGUIElement(GUIElementType::ComboBox, environment, parent, id, rectangle) {}
 
 	//! Returns amount of items in box
 	virtual u32 getItemCount() const = 0;
@@ -59,7 +59,7 @@ public:
 	EGUIA_LOWERRIGHT for right justified, or EGUIA_CENTER for centered text.
 	\param vertical: EGUIA_UPPERLEFT to align with top edge,
 	EGUIA_LOWERRIGHT for bottom edge, or EGUIA_CENTER for centered text (default). */
-	virtual void setTextAlignment(EGUI_ALIGNMENT horizontal, EGUI_ALIGNMENT vertical) = 0;
+    virtual void setTextAlignment(GUIAlignment horizontal, GUIAlignment vertical) = 0;
 
 	//! Set the maximal number of rows for the selection listbox
 	virtual void setMaxSelectionRows(u32 max) = 0;

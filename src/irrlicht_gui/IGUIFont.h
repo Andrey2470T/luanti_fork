@@ -46,14 +46,14 @@ public:
 	\param vcenter: Specifies if the text should be centered vertically into the rectangle.
 	\param clip: Optional pointer to a rectangle against which the text will be clipped.
 	If the pointer is null, no clipping will be done. */
-	virtual void draw(const core::stringw &text, const core::rect<s32> &position,
-			video::SColor color, bool hcenter = false, bool vcenter = false,
-			const core::rect<s32> *clip = 0) = 0;
+    virtual void draw(const core::stringw &text, const recti &position,
+            img::color8 color, bool hcenter = false, bool vcenter = false,
+            const recti *clip = 0) = 0;
 
 	//! Calculates the width and height of a given string of text.
 	/** \return Returns width and height of the area covered by the text if
 	it would be drawn. */
-	virtual core::dimension2du getDimension(const wchar_t *text) const = 0;
+    virtual v2u getDimension(const wchar_t *text) const = 0;
 
 	//! Calculates the index of the character in the text which is on a specific position.
 	/** \param text: Text string.

@@ -24,7 +24,7 @@ class IGUIFileOpenDialog : public IGUIElement
 {
 public:
 	//! constructor
-	IGUIFileOpenDialog(IGUIEnvironment *environment, IGUIElement *parent, s32 id, core::rect<s32> rectangle) :
+    IGUIFileOpenDialog(IGUIEnvironment *environment, std::shared_ptr<IGUIElement>parent, s32 id, recti rectangle) :
 			IGUIElement(EGUIET_FILE_OPEN_DIALOG, environment, parent, id, rectangle) {}
 
 	//! Returns the filename of the selected file converted to wide characters. Returns NULL if no file was selected.

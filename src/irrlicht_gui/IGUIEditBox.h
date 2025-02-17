@@ -5,12 +5,8 @@
 #pragma once
 
 #include "IGUIElement.h"
-#include "SColor.h"
+#include "Image/Color.h"
 
-namespace irr
-{
-namespace gui
-{
 class IGUIFont;
 
 //! Single line edit box for editing simple text.
@@ -23,8 +19,8 @@ class IGUIEditBox : public IGUIElement
 {
 public:
 	//! constructor
-	IGUIEditBox(IGUIEnvironment *environment, IGUIElement *parent, s32 id, core::rect<s32> rectangle) :
-			IGUIElement(EGUIET_EDIT_BOX, environment, parent, id, rectangle) {}
+    IGUIEditBox(IGUIEnvironment *environment, std::shared_ptr<IGUIElement> parent, s32 id, recti rectangle) :
+            IGUIElement(GUIElementType::EditBox, environment, parent, id, rectangle) {}
 
 	//! Sets another skin independent font.
 	/** If this is set to zero, the button uses the font of the skin.
@@ -48,10 +44,10 @@ public:
 	If you set a color, and you want the text displayed with the color
 	of the skin again, call IGUIEditBox::enableOverrideColor(false);
 	\param color: New color of the text. */
-	virtual void setOverrideColor(video::SColor color) = 0;
+    virtual void setOverrideColor(img::color8 color) = 0;
 
 	//! Gets the override color
-	virtual video::SColor getOverrideColor() const = 0;
+    virtual img::color8 getOverrideColor() const = 0;
 
 	//! Sets if the text should use the override color or the color in the gui skin.
 	/** \param enable: If set to true, the override color, which can be set
@@ -83,7 +79,7 @@ public:
 	EGUIA_LOWERRIGHT for right justified, or EGUIA_CENTER for centered text.
 	\param vertical: EGUIA_UPPERLEFT to align with top edge,
 	EGUIA_LOWERRIGHT for bottom edge, or EGUIA_CENTER for centered text (default). */
-	virtual void setTextAlignment(EGUI_ALIGNMENT horizontal, EGUI_ALIGNMENT vertical) = 0;
+    virtual void setTextAlignment(GUIAlignment horizontal, GUIAlignment vertical) = 0;
 
 	//! Enables or disables word wrap.
 	/** \param enable: If set to true, words going over one line are
@@ -122,7 +118,7 @@ public:
 
 	//! Gets the size area of the text in the edit box
 	/** \return The size in pixels of the text */
-	virtual core::dimension2du getTextDimension() = 0;
+    virtual v2u getTextDimension() = 0;
 
 	//! Sets the maximum amount of characters which may be entered in the box.
 	/** \param max: Maximum amount of characters. If 0, the character amount is
@@ -141,11 +137,8 @@ public:
 
 	//! Set the blinktime for the cursor. 2x blinktime is one full cycle.
 	//** \param timeMs Blinktime in milliseconds. When set to 0 the cursor is constantly on without blinking */
-	virtual void setCursorBlinkTime(irr::u32 timeMs) = 0;
+    virtual void setCursorBlinkTime(u32 timeMs) = 0;
 
 	//! Get the cursor blinktime
-	virtual irr::u32 getCursorBlinkTime() const = 0;
+    virtual u32 getCursorBlinkTime() const = 0;
 };
-
-} // end namespace gui
-} // end namespace irr

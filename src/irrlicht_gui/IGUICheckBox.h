@@ -6,11 +6,6 @@
 
 #include "IGUIElement.h"
 
-namespace irr
-{
-namespace gui
-{
-
 //! GUI Check box interface.
 /** \par This element can create the following events of type EGUI_EVENT_TYPE:
 \li EGET_CHECKBOX_CHANGED
@@ -19,8 +14,8 @@ class IGUICheckBox : public IGUIElement
 {
 public:
 	//! constructor
-	IGUICheckBox(IGUIEnvironment *environment, IGUIElement *parent, s32 id, core::rect<s32> rectangle) :
-			IGUIElement(EGUIET_CHECK_BOX, environment, parent, id, rectangle) {}
+    IGUICheckBox(IGUIEnvironment *environment, std::shared_ptr<IGUIElement> parent, s32 id, recti rectangle) :
+            IGUIElement(GUIElementType::CheckBox, environment, parent, id, rectangle) {}
 
 	//! Set if box is checked.
 	virtual void setChecked(bool checked) = 0;
@@ -42,6 +37,3 @@ public:
 	/** \return true if border drawing is enabled, false otherwise */
 	virtual bool isDrawBorderEnabled() const = 0;
 };
-
-} // end namespace gui
-} // end namespace irr

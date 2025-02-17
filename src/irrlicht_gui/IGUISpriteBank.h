@@ -65,7 +65,7 @@ class IGUISpriteBank : public virtual IReferenceCounted
 {
 public:
 	//! Returns the list of rectangles held by the sprite bank
-	virtual core::array<core::rect<s32>> &getPositions() = 0;
+    virtual core::array<recti> &getPositions() = 0;
 
 	//! Returns the array of animated sprites within the sprite bank
 	virtual core::array<SGUISprite> &getSprites() = 0;
@@ -103,9 +103,9 @@ public:
 	\param loop When true animations are looped
 	\param center When true pivot is set to the sprite-center. So it affects pos.
 	*/
-	virtual void draw2DSprite(u32 index, const core::position2di &pos,
-			const core::rect<s32> *clip = 0,
-			const video::SColor &color = video::SColor(255, 255, 255, 255),
+    virtual void draw2DSprite(u32 index, const v2i &pos,
+            const recti *clip = 0,
+            const img::color8 &color = img::color8(255, 255, 255, 255),
 			u32 starttime = 0, u32 currenttime = 0,
 			bool loop = true, bool center = false) = 0;
 
@@ -120,16 +120,16 @@ public:
 		(same as currenttime-starttime in other draw2DSprite function)
 		\param loop When true animations are looped
 	*/
-	virtual void draw2DSprite(u32 index, const core::rect<s32> &destRect,
-			const core::rect<s32> *clip = 0,
-			const video::SColor *const colors = 0,
+    virtual void draw2DSprite(u32 index, const recti &destRect,
+            const recti *clip = 0,
+            const img::color8 *const colors = 0,
 			u32 timeTicks = 0,
 			bool loop = true) = 0;
 
 	//! Draws a sprite batch in 2d using an array of positions and a color
-	virtual void draw2DSpriteBatch(const core::array<u32> &indices, const core::array<core::position2di> &pos,
-			const core::rect<s32> *clip = 0,
-			const video::SColor &color = video::SColor(255, 255, 255, 255),
+    virtual void draw2DSpriteBatch(const core::array<u32> &indices, const core::array<v2i> &pos,
+            const recti *clip = 0,
+            const img::color8 &color = img::color8(255, 255, 255, 255),
 			u32 starttime = 0, u32 currenttime = 0,
 			bool loop = true, bool center = false) = 0;
 };

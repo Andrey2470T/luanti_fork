@@ -20,7 +20,7 @@ class IGUIImage : public IGUIElement
 {
 public:
 	//! constructor
-	IGUIImage(IGUIEnvironment *environment, IGUIElement *parent, s32 id, core::rect<s32> rectangle) :
+    IGUIImage(IGUIEnvironment *environment, std::shared_ptr<IGUIElement>parent, s32 id, recti rectangle) :
 			IGUIElement(EGUIET_IMAGE, environment, parent, id, rectangle) {}
 
 	//! Sets an image texture
@@ -32,7 +32,7 @@ public:
 	//! Sets the color of the image
 	/** \param color Color with which the image is drawn. If the color
 	equals Color(255,255,255,255) it is ignored. */
-	virtual void setColor(video::SColor color) = 0;
+    virtual void setColor(img::color8 color) = 0;
 
 	//! Sets if the image should scale to fit the element
 	virtual void setScaleImage(bool scale) = 0;
@@ -41,7 +41,7 @@ public:
 	virtual void setUseAlphaChannel(bool use) = 0;
 
 	//! Gets the color of the image
-	virtual video::SColor getColor() const = 0;
+    virtual img::color8 getColor() const = 0;
 
 	//! Returns true if the image is scaled to fit, false if not
 	virtual bool isImageScaled() const = 0;
@@ -51,11 +51,11 @@ public:
 
 	//! Sets the source rectangle of the image. By default the full image is used.
 	/** \param sourceRect coordinates inside the image or an area with size 0 for using the full image (default). */
-	virtual void setSourceRect(const core::rect<s32> &sourceRect) = 0;
+    virtual void setSourceRect(const recti &sourceRect) = 0;
 
 	//! Returns the customized source rectangle of the image to be used.
 	/** By default an empty rectangle of width and height 0 is returned which means the full image is used. */
-	virtual core::rect<s32> getSourceRect() const = 0;
+    virtual recti getSourceRect() const = 0;
 
 	//! Restrict drawing-area.
 	/** This allows for example to use the image as a progress bar.

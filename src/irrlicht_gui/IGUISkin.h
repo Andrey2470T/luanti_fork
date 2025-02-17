@@ -4,15 +4,10 @@
 
 #pragma once
 
-#include "IReferenceCounted.h"
-#include "EGUIAlignment.h"
-#include "SColor.h"
-#include "rect.h"
+#include "GUIEnums.h"
+#include "Image/Color.h"
+#include "Utils/Rect.h"
 
-namespace irr
-{
-namespace gui
-{
 class IGUIFont;
 class IGUISpriteBank;
 class IGUIElement;
@@ -26,352 +21,236 @@ environment->setSkin(newskin);
 newskin->drop();
 \endcode
 */
-enum EGUI_SKIN_TYPE
+enum GUISkinType : u8
 {
 	//! Default windows look and feel
-	EGST_WINDOWS_CLASSIC = 0,
+    WindowsClassic = 0,
 
 	//! Like EGST_WINDOWS_CLASSIC, but with metallic shaded windows and buttons
-	EGST_WINDOWS_METALLIC,
+    WindowsMetallic,
 
 	//! Burning's skin
-	EGST_BURNING_SKIN,
+    BurningSkin,
 
 	//! An unknown skin, not serializable at present
-	EGST_UNKNOWN,
+    Unknown,
 
 	//! this value is not used, it only specifies the number of skin types
-	EGST_COUNT
+    Count
 };
 
-//! Names for gui element types
-const c8 *const GUISkinTypeNames[EGST_COUNT + 1] = {
-		"windowsClassic",
-		"windowsMetallic",
-		"burning",
-		"unknown",
-		0,
-	};
-
 //! Enumeration for skin colors
-enum EGUI_DEFAULT_COLOR
+enum class GUIDefaultColor
 {
 	//! Dark shadow for three-dimensional display elements.
-	EGDC_3D_DARK_SHADOW = 0,
+    DarkShadows3D = 0,
 	//! Shadow color for three-dimensional display elements (for edges facing away from the light source).
-	EGDC_3D_SHADOW,
+    Shadow3D,
 	//! Face color for three-dimensional display elements and for dialog box backgrounds.
-	EGDC_3D_FACE,
+    Face3D,
 	//! Highlight color for three-dimensional display elements (for edges facing the light source.)
-	EGDC_3D_HIGH_LIGHT,
+    HighLight3D,
 	//! Light color for three-dimensional display elements (for edges facing the light source.)
-	EGDC_3D_LIGHT,
+    Light3D,
 	//! Active window border.
-	EGDC_ACTIVE_BORDER,
+    ActiveBorder,
 	//! Active window title bar text.
-	EGDC_ACTIVE_CAPTION,
+    ActiveCaption,
 	//! Background color of multiple document interface (MDI) applications.
-	EGDC_APP_WORKSPACE,
+    AppWorkspace,
 	//! Text on a button
-	EGDC_BUTTON_TEXT,
+    ButtonText,
 	//! Grayed (disabled) text.
-	EGDC_GRAY_TEXT,
+    GrayText,
 	//! Item(s) selected in a control.
-	EGDC_HIGH_LIGHT,
+    HighLight,
 	//! Text of item(s) selected in a control.
-	EGDC_HIGH_LIGHT_TEXT,
+    HighLightText,
 	//! Inactive window border.
-	EGDC_INACTIVE_BORDER,
+    InactiveBorder,
 	//! Inactive window caption.
-	EGDC_INACTIVE_CAPTION,
+    InactiveCaption,
 	//! Tool tip text color
-	EGDC_TOOLTIP,
+    Tooltip,
 	//! Tool tip background color
-	EGDC_TOOLTIP_BACKGROUND,
+    TooltipBackground,
 	//! Scrollbar gray area
-	EGDC_SCROLLBAR,
+    Scrollbar,
 	//! Window background
-	EGDC_WINDOW,
+    Window,
 	//! Window symbols like on close buttons, scroll bars and check boxes
-	EGDC_WINDOW_SYMBOL,
+    WindowSymbol,
 	//! Icons in a list or tree
-	EGDC_ICON,
+    Icon,
 	//! Selected icons in a list or tree
-	EGDC_ICON_HIGH_LIGHT,
+    IconHighLight,
 	//! Grayed (disabled) window symbols like on close buttons, scroll bars and check boxes
-	EGDC_GRAY_WINDOW_SYMBOL,
+    GrayWindowSymbol,
 	//! Window background for editable field (editbox, checkbox-field)
-	EGDC_EDITABLE,
+    Editable,
 	//! Grayed (disabled) window background for editable field (editbox, checkbox-field)
-	EGDC_GRAY_EDITABLE,
+    GrayEditable,
 	//! Show focus of window background for editable field (editbox or when checkbox-field is pressed)
-	EGDC_FOCUSED_EDITABLE,
+    FocusedEditable,
 
 	//! this value is not used, it only specifies the amount of default colors
 	//! available.
-	EGDC_COUNT
+    Count
 };
 
-//! Names for default skin colors
-const c8 *const GUISkinColorNames[EGDC_COUNT + 1] = {
-		"3DDarkShadow",
-		"3DShadow",
-		"3DFace",
-		"3DHighlight",
-		"3DLight",
-		"ActiveBorder",
-		"ActiveCaption",
-		"AppWorkspace",
-		"ButtonText",
-		"GrayText",
-		"Highlight",
-		"HighlightText",
-		"InactiveBorder",
-		"InactiveCaption",
-		"ToolTip",
-		"ToolTipBackground",
-		"ScrollBar",
-		"Window",
-		"WindowSymbol",
-		"Icon",
-		"IconHighlight",
-		"GrayWindowSymbol",
-		"Editable",
-		"GrayEditable",
-		"FocusedEditable",
-		0,
-	};
-
 //! Enumeration for default sizes.
-enum EGUI_DEFAULT_SIZE
+enum class GUIDefaultSize
 {
 	//! default with / height of scrollbar. Also width of drop-down button in comboboxes.
-	EGDS_SCROLLBAR_SIZE = 0,
+    ScrollbarSize = 0,
 	//! height of menu
-	EGDS_MENU_HEIGHT,
+    MenuHeight,
 	//! width and height of a window titlebar button (like minimize/maximize/close buttons). The titlebar height is also calculated from that.
-	EGDS_WINDOW_BUTTON_WIDTH,
+    WindowButtonWidth,
 	//! width of a checkbox check
-	EGDS_CHECK_BOX_WIDTH,
+    CheckBoxWidth,
 	//! \deprecated This may be removed by Irrlicht 1.9
-	EGDS_MESSAGE_BOX_WIDTH,
+    MessageBoxWidth,
 	//! \deprecated This may be removed by Irrlicht 1.9
-	EGDS_MESSAGE_BOX_HEIGHT,
+    MessageBoxHeight,
 	//! width of a default button
-	EGDS_BUTTON_WIDTH,
+    ButtonWidth,
 	//! height of a default button (OK and cancel buttons)
-	EGDS_BUTTON_HEIGHT,
+    ButtonHeight,
 	//! distance for text from background
-	EGDS_TEXT_DISTANCE_X,
+    TextDistanceX,
 	//! distance for text from background
-	EGDS_TEXT_DISTANCE_Y,
+    TextDistanceY,
 	//! distance for text in the title bar, from the left of the window rect
-	EGDS_TITLEBARTEXT_DISTANCE_X,
+    TitlebartextDistanceX,
 	//! distance for text in the title bar, from the top of the window rect
-	EGDS_TITLEBARTEXT_DISTANCE_Y,
+    TitlebartextDistanceY,
 	//! free space in a messagebox between borders and contents on all sides
-	EGDS_MESSAGE_BOX_GAP_SPACE,
+    MessageBoxGapSpace,
 	//! minimal space to reserve for messagebox text-width
-	EGDS_MESSAGE_BOX_MIN_TEXT_WIDTH,
+    MessageBoxMinTextWidth,
 	//! maximal space to reserve for messagebox text-width
-	EGDS_MESSAGE_BOX_MAX_TEXT_WIDTH,
+    MessageBoxMaxTextWidth,
 	//! minimal space to reserve for messagebox text-height
-	EGDS_MESSAGE_BOX_MIN_TEXT_HEIGHT,
+    MessageBoxMinTextHeight,
 	//! maximal space to reserve for messagebox text-height
-	EGDS_MESSAGE_BOX_MAX_TEXT_HEIGHT,
+    MessageBoxMaxTextHeight,
 	//! pixels to move an unscaled button image to the right when a button is pressed and the unpressed image looks identical
-	EGDS_BUTTON_PRESSED_IMAGE_OFFSET_X,
+    ButtonPressedImageOffsetX,
 	//! pixels to move an unscaled button image down when a button is pressed  and the unpressed image looks identical
-	EGDS_BUTTON_PRESSED_IMAGE_OFFSET_Y,
+    ButtonPressedImageOffsetY,
 	//! pixels to move the button text to the right when a button is pressed
-	EGDS_BUTTON_PRESSED_TEXT_OFFSET_X,
+    ButtonPressedTextOffsetX,
 	//! pixels to move the button text down when a button is pressed
-	EGDS_BUTTON_PRESSED_TEXT_OFFSET_Y,
+    ButtonPressedTextOffsetY,
 	//! pixels to move an unscaled button sprite to the right when a button is pressed
-	EGDS_BUTTON_PRESSED_SPRITE_OFFSET_X,
+    ButtonPressedSpriteOffsetX,
 	//! pixels to move an unscaled button sprite down when a button is pressed
-	EGDS_BUTTON_PRESSED_SPRITE_OFFSET_Y,
+    ButtonPressedSpriteOffsetY,
 
 	//! this value is not used, it only specifies the amount of default sizes
 	//! available.
-	EGDS_COUNT
+    Count
 };
 
-//! Names for default skin sizes
-const c8 *const GUISkinSizeNames[EGDS_COUNT + 1] = {
-		"ScrollBarSize",
-		"MenuHeight",
-		"WindowButtonWidth",
-		"CheckBoxWidth",
-		"MessageBoxWidth",
-		"MessageBoxHeight",
-		"ButtonWidth",
-		"ButtonHeight",
-		"TextDistanceX",
-		"TextDistanceY",
-		"TitleBarTextX",
-		"TitleBarTextY",
-		"MessageBoxGapSpace",
-		"MessageBoxMinTextWidth",
-		"MessageBoxMaxTextWidth",
-		"MessageBoxMinTextHeight",
-		"MessageBoxMaxTextHeight",
-		"ButtonPressedImageOffsetX",
-		"ButtonPressedImageOffsetY",
-		"ButtonPressedTextOffsetX",
-		"ButtonPressedTextOffsetY",
-		"ButtonPressedSpriteOffsetX",
-		"ButtonPressedSpriteOffsetY",
-		0,
-	};
-
-enum EGUI_DEFAULT_TEXT
+enum class GUIDefaultText : u8
 {
 	//! Text for the OK button on a message box
-	EGDT_MSG_BOX_OK = 0,
+    MsgBoxOk = 0,
 	//! Text for the Cancel button on a message box
-	EGDT_MSG_BOX_CANCEL,
+    MsgBoxCancel,
 	//! Text for the Yes button on a message box
-	EGDT_MSG_BOX_YES,
+    MsgBoxYes,
 	//! Text for the No button on a message box
-	EGDT_MSG_BOX_NO,
+    MsgBoxNo,
 	//! Tooltip text for window close button
-	EGDT_WINDOW_CLOSE,
+    WindowClose,
 	//! Tooltip text for window maximize button
-	EGDT_WINDOW_MAXIMIZE,
+    WindowMaximize,
 	//! Tooltip text for window minimize button
-	EGDT_WINDOW_MINIMIZE,
+    WindowMinimize,
 	//! Tooltip text for window restore button
-	EGDT_WINDOW_RESTORE,
+    WindowRestore,
 
 	//! this value is not used, it only specifies the number of default texts
-	EGDT_COUNT
+    Count
 };
-
-//! Names for default skin sizes
-const c8 *const GUISkinTextNames[EGDT_COUNT + 1] = {
-		"MessageBoxOkay",
-		"MessageBoxCancel",
-		"MessageBoxYes",
-		"MessageBoxNo",
-		"WindowButtonClose",
-		"WindowButtonMaximize",
-		"WindowButtonMinimize",
-		"WindowButtonRestore",
-		0,
-	};
 
 //! Customizable symbols for GUI
-enum EGUI_DEFAULT_ICON
+enum class GUIDefaultIcon
 {
 	//! maximize window button
-	EGDI_WINDOW_MAXIMIZE = 0,
+    WindowMaximize = 0,
 	//! restore window button
-	EGDI_WINDOW_RESTORE,
+    WindowRestore,
 	//! close window button
-	EGDI_WINDOW_CLOSE,
+    WindowClose,
 	//! minimize window button
-	EGDI_WINDOW_MINIMIZE,
+    WindowMinimize,
 	//! resize icon for bottom right corner of a window
-	EGDI_WINDOW_RESIZE,
+    WindowResize,
 	//! scroll bar up button
-	EGDI_CURSOR_UP,
+    CursorUp,
 	//! scroll bar down button
-	EGDI_CURSOR_DOWN,
+    CursorDown,
 	//! scroll bar left button
-	EGDI_CURSOR_LEFT,
+    CursorLeft,
 	//! scroll bar right button
-	EGDI_CURSOR_RIGHT,
+    CursorRight,
 	//! icon for menu children
-	EGDI_MENU_MORE,
+    MenuMore,
 	//! tick for checkbox
-	EGDI_CHECK_BOX_CHECKED,
+    CheckBoxChecked,
 	//! down arrow for dropdown menus
-	EGDI_DROP_DOWN,
+    Dropdown,
 	//! smaller up arrow
-	EGDI_SMALL_CURSOR_UP,
+    SmallCursorUp,
 	//! smaller down arrow
-	EGDI_SMALL_CURSOR_DOWN,
+    SmallCursorDown,
 	//! selection dot in a radio button
-	EGDI_RADIO_BUTTON_CHECKED,
+    RadioButtonChecked,
 	//! << icon indicating there is more content to the left
-	EGDI_MORE_LEFT,
+    MoreLeft,
 	//! >> icon indicating that there is more content to the right
-	EGDI_MORE_RIGHT,
+    MoreRight,
 	//! icon indicating that there is more content above
-	EGDI_MORE_UP,
+    MoreUp,
 	//! icon indicating that there is more content below
-	EGDI_MORE_DOWN,
+    MoreDown,
 	//! plus icon for trees
-	EGDI_EXPAND,
+    Expand,
 
 	//! minus icon for trees
-	EGDI_COLLAPSE,
+    Collapse,
 	//! file icon for file selection
-	EGDI_FILE,
+    File,
 	//! folder icon for file selection
-	EGDI_DIRECTORY,
+    Directory,
 
 	//! value not used, it only specifies the number of icons
-	EGDI_COUNT
+    Count
 };
-
-const c8 *const GUISkinIconNames[EGDI_COUNT + 1] = {
-		"windowMaximize",
-		"windowRestore",
-		"windowClose",
-		"windowMinimize",
-		"windowResize",
-		"cursorUp",
-		"cursorDown",
-		"cursorLeft",
-		"cursorRight",
-		"menuMore",
-		"checkBoxChecked",
-		"dropDown",
-		"smallCursorUp",
-		"smallCursorDown",
-		"radioButtonChecked",
-		"moreLeft",
-		"moreRight",
-		"moreUp",
-		"moreDown",
-		"expand",
-		"collapse",
-		"file",
-		"directory",
-		0,
-	};
 
 // Customizable fonts
-enum EGUI_DEFAULT_FONT
+enum class GUIDefaultFont : u8
 {
 	//! For static text, edit boxes, lists and most other places
-	EGDF_DEFAULT = 0,
+    Default = 0,
 	//! Font for buttons
-	EGDF_BUTTON,
+    Button,
 	//! Font for window title bars
-	EGDF_WINDOW,
+    Window,
 	//! Font for menu items
-	EGDF_MENU,
+    Menu,
 	//! Font for tooltips
-	EGDF_TOOLTIP,
+    Tooltip,
 	//! this value is not used, it only specifies the amount of default fonts
 	//! available.
-	EGDF_COUNT
+    Count
 };
 
-const c8 *const GUISkinFontNames[EGDF_COUNT + 1] = {
-		"defaultFont",
-		"buttonFont",
-		"windowFont",
-		"menuFont",
-		"tooltipFont",
-		0,
-	};
-
 //! A skin modifies the look of the GUI elements.
-class IGUISkin : virtual public IReferenceCounted
+class IGUISkin
 {
 public:
 	//! returns display density scaling factor
@@ -381,32 +260,32 @@ public:
 	virtual void setScale(float scale) = 0;
 
 	//! returns default color
-	virtual video::SColor getColor(EGUI_DEFAULT_COLOR color) const = 0;
+    virtual img::color8 getColor(GUIDefaultColor color) const = 0;
 
 	//! sets a default color
-	virtual void setColor(EGUI_DEFAULT_COLOR which, video::SColor newColor) = 0;
+    virtual void setColor(GUIDefaultColor which, img::color8 newColor) = 0;
 
 	//! returns size for the given size type
-	virtual s32 getSize(EGUI_DEFAULT_SIZE size) const = 0;
+    virtual s32 getSize(GUIDefaultSize size) const = 0;
 
 	//! Returns a default text.
 	/** For example for Message box button captions:
 	"OK", "Cancel", "Yes", "No" and so on. */
-	virtual const wchar_t *getDefaultText(EGUI_DEFAULT_TEXT text) const = 0;
+    virtual const wchar_t *getDefaultText(GUIDefaultText text) const = 0;
 
 	//! Sets a default text.
 	/** For example for Message box button captions:
 	"OK", "Cancel", "Yes", "No" and so on. */
-	virtual void setDefaultText(EGUI_DEFAULT_TEXT which, const wchar_t *newText) = 0;
+    virtual void setDefaultText(GUIDefaultText which, const wchar_t *newText) = 0;
 
 	//! sets a default size
-	virtual void setSize(EGUI_DEFAULT_SIZE which, s32 size) = 0;
+    virtual void setSize(GUIDefaultSize which, s32 size) = 0;
 
 	//! returns the default font
-	virtual IGUIFont *getFont(EGUI_DEFAULT_FONT which = EGDF_DEFAULT) const = 0;
+    virtual IGUIFont *getFont(GUIDefaultFont which = GUIDefaultFont::Default) const = 0;
 
 	//! sets a default font
-	virtual void setFont(IGUIFont *font, EGUI_DEFAULT_FONT which = EGDF_DEFAULT) = 0;
+    virtual void setFont(IGUIFont *font, GUIDefaultFont which = GUIDefaultFont::Default) = 0;
 
 	//! returns the sprite bank
 	virtual IGUISpriteBank *getSpriteBank() const = 0;
@@ -416,48 +295,48 @@ public:
 
 	//! Returns a default icon
 	/** Returns the sprite index within the sprite bank */
-	virtual u32 getIcon(EGUI_DEFAULT_ICON icon) const = 0;
+    virtual u32 getIcon(GUIDefaultIcon icon) const = 0;
 
 	//! Sets a default icon
 	/** Sets the sprite index used for drawing icons like arrows,
 	close buttons and ticks in checkboxes
 	\param icon: Enum specifying which icon to change
 	\param index: The sprite index used to draw this icon */
-	virtual void setIcon(EGUI_DEFAULT_ICON icon, u32 index) = 0;
+    virtual void setIcon(GUIDefaultIcon icon, u32 index) = 0;
 
 	//! draws a standard 3d button pane
 	/** Used for drawing for example buttons in normal state.
 	It uses the colors EGDC_3D_DARK_SHADOW, EGDC_3D_HIGH_LIGHT, EGDC_3D_SHADOW and
-	EGDC_3D_FACE for this. See EGUI_DEFAULT_COLOR for details.
+    EGDC_3D_FACE for this. See GUIDefaultColor for details.
 	\param element: Pointer to the element which wishes to draw this. This parameter
 	is usually not used by IGUISkin, but can be used for example by more complex
 	implementations to find out how to draw the part exactly.
 	\param rect: Defining area where to draw.
 	\param clip: Clip area. */
-	virtual void draw3DButtonPaneStandard(IGUIElement *element,
-			const core::rect<s32> &rect,
-			const core::rect<s32> *clip = 0) = 0;
+    virtual void draw3DButtonPaneStandard(std::shared_ptr<IGUIElement> element,
+            const recti &rect,
+            const recti *clip = 0) = 0;
 	virtual void drawColored3DButtonPaneStandard(IGUIElement* element,
-			const core::rect<s32>& rect,
-			const core::rect<s32>* clip=0,
-			const video::SColor* colors=0) = 0;
+            const recti& rect,
+            const recti* clip=0,
+            const img::color8* colors=0) = 0;
 
 	//! draws a pressed 3d button pane
 	/** Used for drawing for example buttons in pressed state.
 	It uses the colors EGDC_3D_DARK_SHADOW, EGDC_3D_HIGH_LIGHT, EGDC_3D_SHADOW and
-	EGDC_3D_FACE for this. See EGUI_DEFAULT_COLOR for details.
+    EGDC_3D_FACE for this. See GUIDefaultColor for details.
 	\param element: Pointer to the element which wishes to draw this. This parameter
 	is usually not used by IGUISkin, but can be used for example by more complex
 	implementations to find out how to draw the part exactly.
 	\param rect: Defining area where to draw.
 	\param clip: Clip area. */
-	virtual void draw3DButtonPanePressed(IGUIElement *element,
-			const core::rect<s32> &rect,
-			const core::rect<s32> *clip = 0) = 0;
+    virtual void draw3DButtonPanePressed(std::shared_ptr<IGUIElement> element,
+            const recti &rect,
+            const recti *clip = 0) = 0;
 	virtual void drawColored3DButtonPanePressed(IGUIElement* element,
-			const core::rect<s32>& rect,
-			const core::rect<s32>* clip=0,
-			const video::SColor* colors=0) = 0;
+            const recti& rect,
+            const recti* clip=0,
+            const img::color8* colors=0) = 0;
 
 	//! draws a sunken 3d pane
 	/** Used for drawing the background of edit, combo or check boxes.
@@ -471,10 +350,10 @@ public:
 	color or not be drawn at all.
 	\param rect: Defining area where to draw.
 	\param clip: Clip area. */
-	virtual void draw3DSunkenPane(IGUIElement *element,
-			video::SColor bgcolor, bool flat, bool fillBackGround,
-			const core::rect<s32> &rect,
-			const core::rect<s32> *clip = 0) = 0;
+    virtual void draw3DSunkenPane(std::shared_ptr<IGUIElement> element,
+            img::color8 bgcolor, bool flat, bool fillBackGround,
+            const recti &rect,
+            const recti *clip = 0) = 0;
 
 	//! draws a window background
 	/** Used for drawing the background of dialogs and windows.
@@ -490,24 +369,24 @@ public:
 	That is the area without borders and without titlebar.
 	\return Returns rect where it would be good to draw title bar text. This will
 	work even when checkClientArea is set to a non-null value.*/
-	virtual core::rect<s32> draw3DWindowBackground(IGUIElement *element,
-			bool drawTitleBar, video::SColor titleBarColor,
-			const core::rect<s32> &rect,
-			const core::rect<s32> *clip = 0,
-			core::rect<s32> *checkClientArea = 0) = 0;
+    virtual recti draw3DWindowBackground(std::shared_ptr<IGUIElement> element,
+            bool drawTitleBar, img::color8 titleBarColor,
+            const recti &rect,
+            const recti *clip = 0,
+            recti *checkClientArea = 0) = 0;
 
 	//! draws a standard 3d menu pane
 	/** Used for drawing for menus and context menus.
 	It uses the colors EGDC_3D_DARK_SHADOW, EGDC_3D_HIGH_LIGHT, EGDC_3D_SHADOW and
-	EGDC_3D_FACE for this. See EGUI_DEFAULT_COLOR for details.
+    EGDC_3D_FACE for this. See GUIDefaultColor for details.
 	\param element: Pointer to the element which wishes to draw this. This parameter
 	is usually not used by IGUISkin, but can be used for example by more complex
 	implementations to find out how to draw the part exactly.
 	\param rect: Defining area where to draw.
 	\param clip: Clip area. */
-	virtual void draw3DMenuPane(IGUIElement *element,
-			const core::rect<s32> &rect,
-			const core::rect<s32> *clip = 0) = 0;
+    virtual void draw3DMenuPane(std::shared_ptr<IGUIElement> element,
+            const recti &rect,
+            const recti *clip = 0) = 0;
 
 	//! draws a standard 3d tool bar
 	/** Used for drawing for toolbars and menus.
@@ -516,9 +395,9 @@ public:
 	implementations to find out how to draw the part exactly.
 	\param rect: Defining area where to draw.
 	\param clip: Clip area. */
-	virtual void draw3DToolBar(IGUIElement *element,
-			const core::rect<s32> &rect,
-			const core::rect<s32> *clip = 0) = 0;
+    virtual void draw3DToolBar(std::shared_ptr<IGUIElement> element,
+            const recti &rect,
+            const recti *clip = 0) = 0;
 
 	//! draws a tab button
 	/** Used for drawing for tab buttons on top of tabs.
@@ -529,8 +408,8 @@ public:
 	\param rect: Defining area where to draw.
 	\param clip: Clip area.
 	\param alignment Alignment of GUI element. */
-	virtual void draw3DTabButton(IGUIElement *element, bool active,
-			const core::rect<s32> &rect, const core::rect<s32> *clip = 0, gui::EGUI_ALIGNMENT alignment = EGUIA_UPPERLEFT) = 0;
+    virtual void draw3DTabButton(std::shared_ptr<IGUIElement> element, bool active,
+            const recti &rect, const recti *clip = 0, GUIAlignment alignment = GUIAlignment::UpperLeft) = 0;
 
 	//! draws a tab control body
 	/** \param element: Pointer to the element which wishes to draw this. This parameter
@@ -542,8 +421,8 @@ public:
 	\param clip: Clip area.
 	\param tabHeight Height of tab.
 	\param alignment Alignment of GUI element. */
-	virtual void draw3DTabBody(IGUIElement *element, bool border, bool background,
-			const core::rect<s32> &rect, const core::rect<s32> *clip = 0, s32 tabHeight = -1, gui::EGUI_ALIGNMENT alignment = EGUIA_UPPERLEFT) = 0;
+    virtual void draw3DTabBody(std::shared_ptr<IGUIElement> element, bool border, bool background,
+            const recti &rect, const recti *clip = 0, s32 tabHeight = -1, GUIAlignment alignment = GUIAlignment::UpperLeft) = 0;
 
 	//! draws an icon, usually from the skin's sprite bank
 	/** \param element: Pointer to the element which wishes to draw this icon.
@@ -555,9 +434,9 @@ public:
 	\param currenttime: The present time, used to calculate the frame number
 	\param loop: Whether the animation should loop or not
 	\param clip: Clip area. */
-	virtual void drawIcon(IGUIElement *element, EGUI_DEFAULT_ICON icon,
-			const core::position2di position, u32 starttime = 0, u32 currenttime = 0,
-			bool loop = false, const core::rect<s32> *clip = 0) = 0;
+    virtual void drawIcon(std::shared_ptr<IGUIElement> element, GUIDefaultIcon icon,
+            const v2i position, u32 starttime = 0, u32 currenttime = 0,
+            bool loop = false, const recti *clip = 0) = 0;
 
 	//! draws a 2d rectangle.
 	/** \param element: Pointer to the element which wishes to draw this icon.
@@ -568,12 +447,9 @@ public:
 	\param pos: Position of the rectangle.
 	\param clip: Pointer to rectangle against which the rectangle will be clipped.
 	If the pointer is null, no clipping will be performed. */
-	virtual void draw2DRectangle(IGUIElement *element, const video::SColor &color,
-			const core::rect<s32> &pos, const core::rect<s32> *clip = 0) = 0;
+    virtual void draw2DRectangle(std::shared_ptr<IGUIElement>element, const img::color8 &color,
+            const recti &pos, const recti *clip = 0) = 0;
 
 	//! get the type of this skin
-	virtual EGUI_SKIN_TYPE getType() const { return EGST_UNKNOWN; }
+    virtual GUISkinType getType() const { return GUISkinType::Unknown; }
 };
-
-} // end namespace gui
-} // end namespace irr

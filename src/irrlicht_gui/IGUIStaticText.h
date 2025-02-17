@@ -18,7 +18,7 @@ class IGUIStaticText : public IGUIElement
 {
 public:
 	//! constructor
-	IGUIStaticText(IGUIEnvironment *environment, IGUIElement *parent, s32 id, core::rect<s32> rectangle) :
+    IGUIStaticText(IGUIEnvironment *environment, std::shared_ptr<IGUIElement>parent, s32 id, recti rectangle) :
 			IGUIElement(EGUIET_STATIC_TEXT, environment, parent, id, rectangle) {}
 
 	//! Sets another skin independent font.
@@ -43,15 +43,15 @@ public:
 	If you set a color, and you want the text displayed with the color
 	of the skin again, call IGUIStaticText::enableOverrideColor(false);
 	\param color: New color of the text. */
-	virtual void setOverrideColor(video::SColor color) = 0;
+    virtual void setOverrideColor(img::color8 color) = 0;
 
 	//! Gets the override color
 	/** \return: The override color */
-	virtual video::SColor getOverrideColor(void) const = 0;
+    virtual img::color8 getOverrideColor(void) const = 0;
 
 	//! Gets the currently used text color
 	/** Either a skin-color for the current state or the override color */
-	virtual video::SColor getActiveColor() const = 0;
+    virtual img::color8 getActiveColor() const = 0;
 
 	//! Sets if the static text should use the override color or the color in the gui skin.
 	/** \param enable: If set to true, the override color, which can be set
@@ -64,7 +64,7 @@ public:
 	virtual bool isOverrideColorEnabled(void) const = 0;
 
 	//! Sets another color for the background.
-	virtual void setBackgroundColor(video::SColor color) = 0;
+    virtual void setBackgroundColor(img::color8 color) = 0;
 
 	//! Sets whether to draw the background
 	virtual void setDrawBackground(bool draw) = 0;
@@ -75,7 +75,7 @@ public:
 
 	//! Gets the background color
 	/** \return: The background color */
-	virtual video::SColor getBackgroundColor() const = 0;
+    virtual img::color8 getBackgroundColor() const = 0;
 
 	//! Sets whether to draw the border
 	virtual void setDrawBorder(bool draw) = 0;
@@ -89,7 +89,7 @@ public:
 	EGUIA_LOWERRIGHT for right justified, or EGUIA_CENTER for centered text.
 	\param vertical: EGUIA_UPPERLEFT to align with top edge (default),
 	EGUIA_LOWERRIGHT for bottom edge, or EGUIA_CENTER for centered text. */
-	virtual void setTextAlignment(EGUI_ALIGNMENT horizontal, EGUI_ALIGNMENT vertical) = 0;
+    virtual void setTextAlignment(GUIAlignment horizontal, GUIAlignment vertical) = 0;
 
 	//! Enables or disables word wrap for using the static text as multiline text control.
 	/** \param enable: If set to true, words going over one line are

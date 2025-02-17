@@ -38,7 +38,7 @@ class IGUIListBox : public IGUIElement
 {
 public:
 	//! constructor
-	IGUIListBox(IGUIEnvironment *environment, IGUIElement *parent, s32 id, core::rect<s32> rectangle) :
+    IGUIListBox(IGUIEnvironment *environment, std::shared_ptr<IGUIElement>parent, s32 id, recti rectangle) :
 			IGUIElement(EGUIET_LIST_BOX, environment, parent, id, rectangle) {}
 
 	//! returns amount of list items
@@ -92,10 +92,10 @@ public:
 	virtual bool isAutoScrollEnabled() const = 0;
 
 	//! set all item colors at given index to color
-	virtual void setItemOverrideColor(u32 index, video::SColor color) = 0;
+    virtual void setItemOverrideColor(u32 index, img::color8 color) = 0;
 
 	//! set all item colors of specified type at given index to color
-	virtual void setItemOverrideColor(u32 index, EGUI_LISTBOX_COLOR colorType, video::SColor color) = 0;
+    virtual void setItemOverrideColor(u32 index, EGUI_LISTBOX_COLOR colorType, img::color8 color) = 0;
 
 	//! clear all item colors at index
 	virtual void clearItemOverrideColor(u32 index) = 0;
@@ -107,10 +107,10 @@ public:
 	virtual bool hasItemOverrideColor(u32 index, EGUI_LISTBOX_COLOR colorType) const = 0;
 
 	//! return the overwrite color at given item index.
-	virtual video::SColor getItemOverrideColor(u32 index, EGUI_LISTBOX_COLOR colorType) const = 0;
+    virtual img::color8 getItemOverrideColor(u32 index, EGUI_LISTBOX_COLOR colorType) const = 0;
 
 	//! return the default color which is used for the given colorType
-	virtual video::SColor getItemDefaultColor(EGUI_LISTBOX_COLOR colorType) const = 0;
+    virtual img::color8 getItemDefaultColor(EGUI_LISTBOX_COLOR colorType) const = 0;
 
 	//! set the item at the given index
 	virtual void setItem(u32 index, const wchar_t *text, s32 icon) = 0;

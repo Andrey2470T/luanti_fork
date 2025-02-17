@@ -19,7 +19,7 @@ class IGUIScrollBar : public IGUIElement
 {
 public:
 	//! constructor
-	IGUIScrollBar(IGUIEnvironment *environment, IGUIElement *parent, s32 id, core::rect<s32> rectangle) :
+    IGUIScrollBar(IGUIEnvironment *environment, std::shared_ptr<IGUIElement>parent, s32 id, recti rectangle) :
 			IGUIElement(EGUIET_SCROLL_BAR, environment, parent, id, rectangle) {}
 
 	//! sets the maximum value of the scrollbar.
