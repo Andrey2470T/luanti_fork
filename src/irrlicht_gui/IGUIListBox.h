@@ -5,28 +5,24 @@
 #pragma once
 
 #include "IGUIElement.h"
-#include "SColor.h"
+#include "Image/Color.h"
 
-namespace irr
-{
-namespace gui
-{
 class IGUISpriteBank;
 class IGUIScrollBar;
 
 //! Enumeration for listbox colors
-enum EGUI_LISTBOX_COLOR
+enum class GUIListBoxColor : u8
 {
 	//! Color of text
-	EGUI_LBC_TEXT = 0,
+    Text = 0,
 	//! Color of selected text
-	EGUI_LBC_TEXT_HIGHLIGHT,
+    TextHighlight,
 	//! Color of icon
-	EGUI_LBC_ICON,
+    Icon,
 	//! Color of selected icon
-	EGUI_LBC_ICON_HIGHLIGHT,
+    IconHighlight,
 	//! Not used, just counts the number of available colors
-	EGUI_LBC_COUNT
+    Count
 };
 
 //! Default list box GUI element.
@@ -39,7 +35,7 @@ class IGUIListBox : public IGUIElement
 public:
 	//! constructor
     IGUIListBox(IGUIEnvironment *environment, std::shared_ptr<IGUIElement>parent, s32 id, recti rectangle) :
-			IGUIElement(EGUIET_LIST_BOX, environment, parent, id, rectangle) {}
+            IGUIElement(GUIElementType::ListBox, environment, parent, id, rectangle) {}
 
 	//! returns amount of list items
 	virtual u32 getItemCount() const = 0;
@@ -95,22 +91,22 @@ public:
     virtual void setItemOverrideColor(u32 index, img::color8 color) = 0;
 
 	//! set all item colors of specified type at given index to color
-    virtual void setItemOverrideColor(u32 index, EGUI_LISTBOX_COLOR colorType, img::color8 color) = 0;
+    virtual void setItemOverrideColor(u32 index, GUIListBoxColor colorType, img::color8 color) = 0;
 
 	//! clear all item colors at index
 	virtual void clearItemOverrideColor(u32 index) = 0;
 
 	//! clear item color at index for given colortype
-	virtual void clearItemOverrideColor(u32 index, EGUI_LISTBOX_COLOR colorType) = 0;
+    virtual void clearItemOverrideColor(u32 index, GUIListBoxColor colorType) = 0;
 
 	//! has the item at index its color overwritten?
-	virtual bool hasItemOverrideColor(u32 index, EGUI_LISTBOX_COLOR colorType) const = 0;
+    virtual bool hasItemOverrideColor(u32 index, GUIListBoxColor colorType) const = 0;
 
 	//! return the overwrite color at given item index.
-    virtual img::color8 getItemOverrideColor(u32 index, EGUI_LISTBOX_COLOR colorType) const = 0;
+    virtual img::color8 getItemOverrideColor(u32 index, GUIListBoxColor colorType) const = 0;
 
 	//! return the default color which is used for the given colorType
-    virtual img::color8 getItemDefaultColor(EGUI_LISTBOX_COLOR colorType) const = 0;
+    virtual img::color8 getItemDefaultColor(GUIListBoxColor colorType) const = 0;
 
 	//! set the item at the given index
 	virtual void setItem(u32 index, const wchar_t *text, s32 icon) = 0;
@@ -131,6 +127,3 @@ public:
 	//! Access the vertical scrollbar
 	virtual IGUIScrollBar *getVerticalScrollBar() const = 0;
 };
-
-} // end namespace gui
-} // end namespace irr

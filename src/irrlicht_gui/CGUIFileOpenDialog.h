@@ -49,7 +49,7 @@ protected:
 	void setDirectoryName(const irr::io::path &name);
 
 	//! Ensure filenames are converted correct depending on wide-char settings
-	void pathToStringW(irr::core::stringw &result, const irr::io::path &p);
+    void pathToStringW(irr::std::wstring &result, const irr::io::path &p);
 
 	//! fills the listbox with files.
 	void fillListBox();
@@ -60,12 +60,12 @@ protected:
 	//! sends the event that the file choose process has been canceld
 	void sendCancelEvent();
 
-	core::position2d<s32> DragStart;
+    v2i DragStart;
 	io::path FileName;
-	core::stringw FileNameW;
+    std::wstring FileNameW;
 	io::path FileDirectory;
 	io::path FileDirectoryFlat;
-	core::stringw FileDirectoryFlatW;
+    std::wstring FileDirectoryFlatW;
 	io::path RestoreDirectory;
 	io::path StartDirectory;
 

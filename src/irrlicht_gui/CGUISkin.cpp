@@ -22,31 +22,31 @@ CGUISkin::CGUISkin(EGUI_SKIN_TYPE type, video::IVideoDriver* driver)
 {
 	if ((Type == EGST_WINDOWS_CLASSIC) || (Type == EGST_WINDOWS_METALLIC))
 	{
-		Colors[EGDC_3D_DARK_SHADOW]     = video::SColor(101,50,50,50);
-		Colors[EGDC_3D_SHADOW]          = video::SColor(101,130,130,130);
-		Colors[EGDC_3D_FACE]            = video::SColor(220,100,100,100);
-		Colors[EGDC_3D_HIGH_LIGHT]      = video::SColor(101,255,255,255);
-		Colors[EGDC_3D_LIGHT]           = video::SColor(101,210,210,210);
-		Colors[EGDC_ACTIVE_BORDER]      = video::SColor(101,16,14,115);
-		Colors[EGDC_ACTIVE_CAPTION]     = video::SColor(255,255,255,255);
-		Colors[EGDC_APP_WORKSPACE]      = video::SColor(101,100,100,100);
-		Colors[EGDC_BUTTON_TEXT]        = video::SColor(240,10,10,10);
-		Colors[EGDC_GRAY_TEXT]          = video::SColor(240,130,130,130);
-		Colors[EGDC_HIGH_LIGHT]         = video::SColor(101,8,36,107);
-		Colors[EGDC_HIGH_LIGHT_TEXT]    = video::SColor(240,255,255,255);
-		Colors[EGDC_INACTIVE_BORDER]    = video::SColor(101,165,165,165);
-		Colors[EGDC_INACTIVE_CAPTION]   = video::SColor(255,30,30,30);
-		Colors[EGDC_TOOLTIP]            = video::SColor(200,0,0,0);
-		Colors[EGDC_TOOLTIP_BACKGROUND] = video::SColor(200,255,255,225);
-		Colors[EGDC_SCROLLBAR]          = video::SColor(101,230,230,230);
-		Colors[EGDC_WINDOW]             = video::SColor(101,255,255,255);
-		Colors[EGDC_WINDOW_SYMBOL]      = video::SColor(200,10,10,10);
-		Colors[EGDC_ICON]               = video::SColor(200,255,255,255);
-		Colors[EGDC_ICON_HIGH_LIGHT]    = video::SColor(200,8,36,107);
-		Colors[EGDC_GRAY_WINDOW_SYMBOL] = video::SColor(240,100,100,100);
-		Colors[EGDC_EDITABLE] 			= video::SColor(255,255,255,255);
-		Colors[EGDC_GRAY_EDITABLE]		= video::SColor(255,120,120,120);
-		Colors[EGDC_FOCUSED_EDITABLE]	= video::SColor(255,240,240,255);
+		Colors[EGDC_3D_DARK_SHADOW]     = img::color8(101,50,50,50);
+		Colors[EGDC_3D_SHADOW]          = img::color8(101,130,130,130);
+		Colors[EGDC_3D_FACE]            = img::color8(220,100,100,100);
+		Colors[EGDC_3D_HIGH_LIGHT]      = img::color8(101,255,255,255);
+		Colors[EGDC_3D_LIGHT]           = img::color8(101,210,210,210);
+		Colors[EGDC_ACTIVE_BORDER]      = img::color8(101,16,14,115);
+		Colors[EGDC_ACTIVE_CAPTION]     = img::color8(255,255,255,255);
+		Colors[EGDC_APP_WORKSPACE]      = img::color8(101,100,100,100);
+		Colors[EGDC_BUTTON_TEXT]        = img::color8(240,10,10,10);
+		Colors[EGDC_GRAY_TEXT]          = img::color8(240,130,130,130);
+		Colors[EGDC_HIGH_LIGHT]         = img::color8(101,8,36,107);
+		Colors[EGDC_HIGH_LIGHT_TEXT]    = img::color8(240,255,255,255);
+		Colors[EGDC_INACTIVE_BORDER]    = img::color8(101,165,165,165);
+		Colors[EGDC_INACTIVE_CAPTION]   = img::color8(255,30,30,30);
+		Colors[EGDC_TOOLTIP]            = img::color8(200,0,0,0);
+		Colors[EGDC_TOOLTIP_BACKGROUND] = img::color8(200,255,255,225);
+		Colors[EGDC_SCROLLBAR]          = img::color8(101,230,230,230);
+		Colors[EGDC_WINDOW]             = img::color8(101,255,255,255);
+		Colors[EGDC_WINDOW_SYMBOL]      = img::color8(200,10,10,10);
+		Colors[EGDC_ICON]               = img::color8(200,255,255,255);
+		Colors[EGDC_ICON_HIGH_LIGHT]    = img::color8(200,8,36,107);
+		Colors[EGDC_GRAY_WINDOW_SYMBOL] = img::color8(240,100,100,100);
+		Colors[EGDC_EDITABLE] 			= img::color8(255,255,255,255);
+		Colors[EGDC_GRAY_EDITABLE]		= img::color8(255,120,120,120);
+		Colors[EGDC_FOCUSED_EDITABLE]	= img::color8(255,240,240,255);
 
 
 		Sizes[EGDS_SCROLLBAR_SIZE] = 14;
@@ -177,17 +177,17 @@ CGUISkin::~CGUISkin()
 
 
 //! returns default color
-video::SColor CGUISkin::getColor(EGUI_DEFAULT_COLOR color) const
+img::color8 CGUISkin::getColor(EGUI_DEFAULT_COLOR color) const
 {
 	if ((u32)color < EGDC_COUNT)
 		return Colors[color];
 	else
-		return video::SColor();
+		return img::color8();
 }
 
 
 //! sets a default color
-void CGUISkin::setColor(EGUI_DEFAULT_COLOR which, video::SColor newColor)
+void CGUISkin::setColor(EGUI_DEFAULT_COLOR which, img::color8 newColor)
 {
 	if ((u32)which < EGDC_COUNT)
 		Colors[which] = newColor;
@@ -308,9 +308,9 @@ is usually not used by ISkin, but can be used for example by more complex
 implementations to find out how to draw the part exactly. */
 // PATCH
 void CGUISkin::drawColored3DButtonPaneStandard(IGUIElement* element,
-					const core::rect<s32>& r,
-					const core::rect<s32>* clip,
-					const video::SColor* colors)
+					const recti& r,
+					const recti* clip,
+					const img::color8* colors)
 {
 	if (!Driver)
 		return;
@@ -318,7 +318,7 @@ void CGUISkin::drawColored3DButtonPaneStandard(IGUIElement* element,
 	if (!colors)
 		colors = Colors;
 
-	core::rect<s32> rect = r;
+	recti rect = r;
 
 	if ( Type == EGST_BURNING_SKIN )
 	{
@@ -351,8 +351,8 @@ void CGUISkin::drawColored3DButtonPaneStandard(IGUIElement* element,
 	}
 	else
 	{
-		const video::SColor c1 = colors[EGDC_3D_FACE];
-		const video::SColor c2 = c1.getInterpolated(colors[EGDC_3D_DARK_SHADOW], 0.4f);
+		const img::color8 c1 = colors[EGDC_3D_FACE];
+		const img::color8 c2 = c1.getInterpolated(colors[EGDC_3D_DARK_SHADOW], 0.4f);
 		Driver->draw2DRectangle(rect, c1, c1, c2, c2, clip);
 	}
 }
@@ -370,9 +370,9 @@ is usually not used by ISkin, but can be used for example by more complex
 implementations to find out how to draw the part exactly. */
 // PATCH
 void CGUISkin::drawColored3DButtonPanePressed(IGUIElement* element,
-					const core::rect<s32>& r,
-					const core::rect<s32>* clip,
-					const video::SColor* colors)
+					const recti& r,
+					const recti* clip,
+					const img::color8* colors)
 {
 	if (!Driver)
 		return;
@@ -380,7 +380,7 @@ void CGUISkin::drawColored3DButtonPanePressed(IGUIElement* element,
 	if (!colors)
 		colors = Colors;
 
-	core::rect<s32> rect = r;
+	recti rect = r;
 	Driver->draw2DRectangle(colors[EGDC_3D_HIGH_LIGHT], rect, clip);
 
 	rect.LowerRightCorner.X -= 1;
@@ -400,8 +400,8 @@ void CGUISkin::drawColored3DButtonPanePressed(IGUIElement* element,
 	}
 	else
 	{
-		const video::SColor c1 = colors[EGDC_3D_FACE];
-		const video::SColor c2 = c1.getInterpolated(colors[EGDC_3D_DARK_SHADOW], 0.4f);
+		const img::color8 c1 = colors[EGDC_3D_FACE];
+		const img::color8 c2 = c1.getInterpolated(colors[EGDC_3D_DARK_SHADOW], 0.4f);
 		Driver->draw2DRectangle(rect, c1, c1, c2, c2, clip);
 	}
 }
@@ -419,11 +419,11 @@ deep into the ground.
 \param rect: Defining area where to draw.
 \param clip: Clip area.	*/
 // PATCH
-void CGUISkin::drawColored3DSunkenPane(IGUIElement* element, video::SColor bgcolor,
+void CGUISkin::drawColored3DSunkenPane(IGUIElement* element, img::color8 bgcolor,
 				bool flat, bool fillBackGround,
-				const core::rect<s32>& r,
-				const core::rect<s32>* clip,
-				const video::SColor* colors)
+				const recti& r,
+				const recti* clip,
+				const img::color8* colors)
 {
 	if (!Driver)
 		return;
@@ -431,7 +431,7 @@ void CGUISkin::drawColored3DSunkenPane(IGUIElement* element, video::SColor bgcol
 	if (!colors)
 		colors = Colors;
 
-	core::rect<s32> rect = r;
+	recti rect = r;
 
 	if (fillBackGround)
 		Driver->draw2DRectangle(bgcolor, rect, clip);
@@ -508,12 +508,12 @@ void CGUISkin::drawColored3DSunkenPane(IGUIElement* element, video::SColor bgcol
 //! draws a window background
 // return where to draw title bar text.
 // PATCH
-core::rect<s32> CGUISkin::drawColored3DWindowBackground(IGUIElement* element,
-				bool drawTitleBar, video::SColor titleBarColor,
-				const core::rect<s32>& r,
-				const core::rect<s32>* clip,
-				core::rect<s32>* checkClientArea,
-				const video::SColor* colors)
+recti CGUISkin::drawColored3DWindowBackground(IGUIElement* element,
+				bool drawTitleBar, img::color8 titleBarColor,
+				const recti& r,
+				const recti* clip,
+				recti* checkClientArea,
+				const img::color8* colors)
 {
 	if (!Driver)
 	{
@@ -527,7 +527,7 @@ core::rect<s32> CGUISkin::drawColored3DWindowBackground(IGUIElement* element,
 	if (!colors)
 		colors = Colors;
 
-	core::rect<s32> rect = r;
+	recti rect = r;
 
 	// top border
 	rect.LowerRightCorner.Y = rect.UpperLeftCorner.Y + 1;
@@ -603,15 +603,15 @@ core::rect<s32> CGUISkin::drawColored3DWindowBackground(IGUIElement* element,
 		}
 		else if ( Type == EGST_BURNING_SKIN )
 		{
-			const video::SColor c1 = colors[EGDC_WINDOW].getInterpolated ( 0xFFFFFFFF, 0.9f );
-			const video::SColor c2 = colors[EGDC_WINDOW].getInterpolated ( 0xFFFFFFFF, 0.8f );
+			const img::color8 c1 = colors[EGDC_WINDOW].getInterpolated ( 0xFFFFFFFF, 0.9f );
+			const img::color8 c2 = colors[EGDC_WINDOW].getInterpolated ( 0xFFFFFFFF, 0.8f );
 
 			Driver->draw2DRectangle(rect, c1, c1, c2, c2, clip);
 		}
 		else
 		{
-			const video::SColor c2 = colors[EGDC_3D_SHADOW];
-			const video::SColor c1 = colors[EGDC_3D_FACE];
+			const img::color8 c2 = colors[EGDC_3D_SHADOW];
+			const img::color8 c1 = colors[EGDC_3D_FACE];
 			Driver->draw2DRectangle(rect, c1, c1, c1, c2, clip);
 		}
 	}
@@ -637,12 +637,12 @@ core::rect<s32> CGUISkin::drawColored3DWindowBackground(IGUIElement* element,
 			//else
 			if ( Type == EGST_BURNING_SKIN )
 			{
-				const video::SColor c = titleBarColor.getInterpolated( video::SColor(titleBarColor.getAlpha(),255,255,255), 0.8f);
+				const img::color8 c = titleBarColor.getInterpolated( img::color8(titleBarColor.getAlpha(),255,255,255), 0.8f);
 				Driver->draw2DRectangle(rect, titleBarColor, titleBarColor, c, c, clip);
 			}
 			else
 			{
-				const video::SColor c = titleBarColor.getInterpolated(video::SColor(titleBarColor.getAlpha(),0,0,0), 0.2f);
+				const img::color8 c = titleBarColor.getInterpolated(img::color8(titleBarColor.getAlpha(),0,0,0), 0.2f);
 				Driver->draw2DRectangle(rect, titleBarColor, c, titleBarColor, c, clip);
 			}
 		}
@@ -664,8 +664,8 @@ implementations to find out how to draw the part exactly.
 \param clip: Clip area.	*/
 // PATCH
 void CGUISkin::drawColored3DMenuPane(IGUIElement* element,
-			const core::rect<s32>& r, const core::rect<s32>* clip,
-			const video::SColor* colors)
+			const recti& r, const recti* clip,
+			const img::color8* colors)
 {
 	if (!Driver)
 		return;
@@ -673,7 +673,7 @@ void CGUISkin::drawColored3DMenuPane(IGUIElement* element,
 	if (!colors)
 		colors = Colors;
 
-	core::rect<s32> rect = r;
+	recti rect = r;
 
 	if ( Type == EGST_BURNING_SKIN )
 	{
@@ -731,8 +731,8 @@ void CGUISkin::drawColored3DMenuPane(IGUIElement* element,
 		Driver->draw2DRectangle(colors[EGDC_3D_FACE], rect, clip);
 	else
 	{
-		const video::SColor c1 = colors[EGDC_3D_FACE];
-		const video::SColor c2 = colors[EGDC_3D_SHADOW];
+		const img::color8 c1 = colors[EGDC_3D_FACE];
+		const img::color8 c2 = colors[EGDC_3D_SHADOW];
 		Driver->draw2DRectangle(rect, c1, c1, c2, c2, clip);
 	}
 }
@@ -748,9 +748,9 @@ implementations to find out how to draw the part exactly.
 \param clip: Clip area.	*/
 // PATCH
 void CGUISkin::drawColored3DToolBar(IGUIElement* element,
-				const core::rect<s32>& r,
-				const core::rect<s32>* clip,
-				const video::SColor* colors)
+				const recti& r,
+				const recti* clip,
+				const img::color8* colors)
 {
 	if (!Driver)
 		return;
@@ -758,7 +758,7 @@ void CGUISkin::drawColored3DToolBar(IGUIElement* element,
 	if (!colors)
 		colors = Colors;
 
-	core::rect<s32> rect = r;
+	recti rect = r;
 
 	rect.UpperLeftCorner.X = r.UpperLeftCorner.X;
 	rect.UpperLeftCorner.Y = r.LowerRightCorner.Y - 1;
@@ -776,16 +776,16 @@ void CGUISkin::drawColored3DToolBar(IGUIElement* element,
 	else
 	if ( Type == EGST_BURNING_SKIN )
 	{
-		const video::SColor c1 = 0xF0000000 | colors[EGDC_3D_FACE].color;
-		const video::SColor c2 = 0xF0000000 | colors[EGDC_3D_SHADOW].color;
+		const img::color8 c1 = 0xF0000000 | colors[EGDC_3D_FACE].color;
+		const img::color8 c2 = 0xF0000000 | colors[EGDC_3D_SHADOW].color;
 
 		rect.LowerRightCorner.Y += 1;
 		Driver->draw2DRectangle(rect, c1, c2, c1, c2, clip);
 	}
 	else
 	{
-		const video::SColor c1 = colors[EGDC_3D_FACE];
-		const video::SColor c2 = colors[EGDC_3D_SHADOW];
+		const img::color8 c1 = colors[EGDC_3D_FACE];
+		const img::color8 c2 = colors[EGDC_3D_SHADOW];
 		Driver->draw2DRectangle(rect, c1, c1, c2, c2, clip);
 	}
 }
@@ -801,8 +801,8 @@ implementations to find out how to draw the part exactly.
 \param clip: Clip area.	*/
 // PATCH
 void CGUISkin::drawColored3DTabButton(IGUIElement* element, bool active,
-	const core::rect<s32>& frameRect, const core::rect<s32>* clip, EGUI_ALIGNMENT alignment,
-	const video::SColor* colors)
+	const recti& frameRect, const recti* clip, EGUI_ALIGNMENT alignment,
+	const img::color8* colors)
 {
 	if (!Driver)
 		return;
@@ -810,7 +810,7 @@ void CGUISkin::drawColored3DTabButton(IGUIElement* element, bool active,
 	if (!colors)
 		colors = Colors;
 
-	core::rect<s32> tr = frameRect;
+	recti tr = frameRect;
 
 	if ( alignment == EGUIA_UPPERLEFT )
 	{
@@ -888,8 +888,8 @@ implementations to find out how to draw the part exactly.
 \param clip: Clip area.	*/
 // PATCH
 void CGUISkin::drawColored3DTabBody(IGUIElement* element, bool border, bool background,
-	const core::rect<s32>& rect, const core::rect<s32>* clip, s32 tabHeight, EGUI_ALIGNMENT alignment,
-	const video::SColor* colors)
+	const recti& rect, const recti* clip, s32 tabHeight, EGUI_ALIGNMENT alignment,
+	const img::color8* colors)
 {
 	if (!Driver)
 		return;
@@ -897,7 +897,7 @@ void CGUISkin::drawColored3DTabBody(IGUIElement* element, bool border, bool back
 	if (!colors)
 		colors = Colors;
 
-	core::rect<s32> tr = rect;
+	recti tr = rect;
 
 	if ( tabHeight == -1 )
 		tabHeight = getSize(gui::EGDS_BUTTON_HEIGHT);
@@ -965,8 +965,8 @@ void CGUISkin::drawColored3DTabBody(IGUIElement* element, bool border, bool back
 			Driver->draw2DRectangle(colors[EGDC_3D_FACE], tr, clip);
 		else
 		{
-			video::SColor c1 = colors[EGDC_3D_FACE];
-			video::SColor c2 = colors[EGDC_3D_SHADOW];
+			img::color8 c1 = colors[EGDC_3D_FACE];
+			img::color8 c2 = colors[EGDC_3D_SHADOW];
 			Driver->draw2DRectangle(tr, c1, c1, c2, c2, clip);
 		}
 	}
@@ -986,10 +986,10 @@ by more complex implementations to find out how to draw the part exactly.
 \param clip: Clip area.	*/
 // PATCH
 void CGUISkin::drawColoredIcon(IGUIElement* element, EGUI_DEFAULT_ICON icon,
-			const core::position2di position,
+			const v2i position,
 			u32 starttime, u32 currenttime,
-			bool loop, const core::rect<s32>* clip,
-			const video::SColor* colors)
+			bool loop, const recti* clip,
+			const img::color8* colors)
 {
 	if (!SpriteBank)
 		return;
@@ -1012,8 +1012,8 @@ EGUI_SKIN_TYPE CGUISkin::getType() const
 
 //! draws a 2d rectangle.
 void CGUISkin::draw2DRectangle(IGUIElement* element,
-		const video::SColor &color, const core::rect<s32>& pos,
-		const core::rect<s32>* clip)
+		const img::color8 &color, const recti& pos,
+		const recti* clip)
 {
 	Driver->draw2DRectangle(color, pos, clip);
 }
@@ -1021,7 +1021,7 @@ void CGUISkin::draw2DRectangle(IGUIElement* element,
 
 //! gets the colors
 // PATCH
-void CGUISkin::getColors(video::SColor* colors)
+void CGUISkin::getColors(img::color8* colors)
 {
 	u32 i;
 	for (i=0; i<EGDC_COUNT; ++i)

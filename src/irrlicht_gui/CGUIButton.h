@@ -7,7 +7,7 @@
 #include "IGUIButton.h"
 #include "IGUISpriteBank.h"
 #include "ITexture.h"
-#include "SColor.h"
+#include "Image/Color.h"
 
 namespace irr
 {
@@ -19,7 +19,7 @@ class CGUIButton : public IGUIButton
 public:
 	//! constructor
 	CGUIButton(IGUIEnvironment *environment, IGUIElement *parent,
-			s32 id, core::rect<s32> rectangle, bool noclip = false);
+            s32 id, recti rectangle, bool noclip = false);
 
 	//! destructor
 	virtual ~CGUIButton();
@@ -40,13 +40,13 @@ public:
 	IGUIFont *getActiveFont() const override;
 
 	//! Sets another color for the button text.
-	void setOverrideColor(video::SColor color) override;
+    void setOverrideColor(img::color8 color) override;
 
 	//! Gets the override color
-	video::SColor getOverrideColor(void) const override;
+    img::color8 getOverrideColor(void) const override;
 
 	//! Gets the currently used text color
-	video::SColor getActiveColor() const override;
+    img::color8 getActiveColor() const override;
 
 	//! Sets if the button text should use the override color or the color in the gui skin.
 	void enableOverrideColor(bool enable) override;
@@ -55,28 +55,28 @@ public:
 	bool isOverrideColorEnabled(void) const override;
 
 	//! Sets an image which should be displayed on the button when it is in the given state.
-	void setImage(EGUI_BUTTON_IMAGE_STATE state, video::ITexture *image = 0, const core::rect<s32> &sourceRect = core::rect<s32>(0, 0, 0, 0)) override;
+    void setImage(EGUI_BUTTON_IMAGE_STATE state, render::Texture2D *image = 0, const recti &sourceRect = recti(0, 0, 0, 0)) override;
 
 	//! Sets an image which should be displayed on the button when it is in normal state.
-	void setImage(video::ITexture *image = 0) override
+    void setImage(render::Texture2D *image = 0) override
 	{
 		setImage(EGBIS_IMAGE_UP, image);
 	}
 
 	//! Sets an image which should be displayed on the button when it is in normal state.
-	void setImage(video::ITexture *image, const core::rect<s32> &pos) override
+    void setImage(render::Texture2D *image, const recti &pos) override
 	{
 		setImage(EGBIS_IMAGE_UP, image, pos);
 	}
 
 	//! Sets an image which should be displayed on the button when it is in pressed state.
-	void setPressedImage(video::ITexture *image = 0) override
+    void setPressedImage(render::Texture2D *image = 0) override
 	{
 		setImage(EGBIS_IMAGE_DOWN, image);
 	}
 
 	//! Sets an image which should be displayed on the button when it is in pressed state.
-	void setPressedImage(video::ITexture *image, const core::rect<s32> &pos) override
+    void setPressedImage(render::Texture2D *image, const recti &pos) override
 	{
 		setImage(EGBIS_IMAGE_DOWN, image, pos);
 	}
@@ -91,14 +91,14 @@ public:
 	\param color: The color of the sprite
 	*/
 	virtual void setSprite(EGUI_BUTTON_STATE state, s32 index,
-			video::SColor color = video::SColor(255, 255, 255, 255),
+            img::color8 color = img::color8(255, 255, 255, 255),
 			bool loop = false) override;
 
 	//! Get the sprite-index for the given state or -1 when no sprite is set
 	s32 getSpriteIndex(EGUI_BUTTON_STATE state) const override;
 
 	//! Get the sprite color for the given state. Color is only used when a sprite is set.
-	video::SColor getSpriteColor(EGUI_BUTTON_STATE state) const override;
+    img::color8 getSpriteColor(EGUI_BUTTON_STATE state) const override;
 
 	//! Returns if the sprite in the given state does loop
 	bool getSpriteLoop(EGUI_BUTTON_STATE state) const override;
@@ -148,7 +148,7 @@ public:
 	}
 
 protected:
-	void drawSprite(EGUI_BUTTON_STATE state, u32 startTime, const core::position2di &center);
+    void drawSprite(EGUI_BUTTON_STATE state, u32 startTime, const v2i &center);
 	EGUI_BUTTON_IMAGE_STATE getImageState(bool pressed) const;
 
 private:
@@ -165,7 +165,7 @@ private:
 		}
 
 		s32 Index;
-		video::SColor Color;
+        img::color8 Color;
 		bool Loop;
 	};
 
@@ -175,12 +175,12 @@ private:
 	struct ButtonImage
 	{
 		ButtonImage() :
-				Texture(0), SourceRect(core::rect<s32>(0, 0, 0, 0))
+                Texture(0), SourceRect(recti(0, 0, 0, 0))
 		{
 		}
 
 		ButtonImage(const ButtonImage &other) :
-				Texture(0), SourceRect(core::rect<s32>(0, 0, 0, 0))
+                Texture(0), SourceRect(recti(0, 0, 0, 0))
 		{
 			*this = other;
 		}
@@ -210,8 +210,8 @@ private:
 			return Texture == other.Texture && SourceRect == other.SourceRect;
 		}
 
-		video::ITexture *Texture;
-		core::rect<s32> SourceRect;
+        render::Texture2D *Texture;
+        recti SourceRect;
 	};
 
 	ButtonImage ButtonImages[EGBIS_COUNT];
@@ -219,7 +219,7 @@ private:
 	IGUIFont *OverrideFont;
 
 	bool OverrideColorEnabled;
-	video::SColor OverrideColor;
+    img::color8 OverrideColor;
 
 	u32 ClickTime, HoverTime, FocusTime;
 

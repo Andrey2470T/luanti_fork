@@ -15,19 +15,19 @@ class CGUIImage : public IGUIImage
 {
 public:
 	//! constructor
-	CGUIImage(IGUIEnvironment *environment, IGUIElement *parent, s32 id, core::rect<s32> rectangle);
+    CGUIImage(IGUIEnvironment *environment, IGUIElement *parent, s32 id, recti rectangle);
 
 	//! destructor
 	virtual ~CGUIImage();
 
 	//! sets an image
-	void setImage(video::ITexture *image) override;
+    void setImage(render::Texture2D *image) override;
 
 	//! Gets the image texture
-	video::ITexture *getImage() const override;
+    render::Texture2D *getImage() const override;
 
 	//! sets the color of the image
-	void setColor(video::SColor color) override;
+    void setColor(img::color8 color) override;
 
 	//! sets if the image should scale to fit the element
 	void setScaleImage(bool scale) override;
@@ -39,7 +39,7 @@ public:
 	void setUseAlphaChannel(bool use) override;
 
 	//! Gets the color of the image
-	video::SColor getColor() const override;
+    img::color8 getColor() const override;
 
 	//! Returns true if the image is scaled to fit, false if not
 	bool isImageScaled() const override;
@@ -48,16 +48,16 @@ public:
 	bool isAlphaChannelUsed() const override;
 
 	//! Sets the source rectangle of the image. By default the full image is used.
-	void setSourceRect(const core::rect<s32> &sourceRect) override;
+    void setSourceRect(const recti &sourceRect) override;
 
 	//! Returns the customized source rectangle of the image to be used.
-	core::rect<s32> getSourceRect() const override;
+    recti getSourceRect() const override;
 
 	//! Restrict drawing-area.
-	void setDrawBounds(const core::rect<f32> &drawBoundUVs) override;
+    void setDrawBounds(const rectf &drawBoundUVs) override;
 
 	//! Get drawing-area restrictions.
-	core::rect<f32> getDrawBounds() const override;
+    rectf getDrawBounds() const override;
 
 	//! Sets whether to draw a background color (EGDC_3D_DARK_SHADOW) when no texture is set
 	void setDrawBackground(bool draw) override
@@ -72,7 +72,7 @@ public:
 	}
 
 protected:
-	void checkBounds(core::rect<s32> &rect)
+    void checkBounds(recti &rect)
 	{
 		f32 clipWidth = (f32)rect.getWidth();
 		f32 clipHeight = (f32)rect.getHeight();
@@ -84,12 +84,12 @@ protected:
 	}
 
 private:
-	video::ITexture *Texture;
-	video::SColor Color;
+    render::Texture2D *Texture;
+    img::color8 Color;
 	bool UseAlphaChannel;
 	bool ScaleImage;
-	core::rect<s32> SourceRect;
-	core::rect<f32> DrawBounds;
+    recti SourceRect;
+    rectf DrawBounds;
 	bool DrawBackground;
 };
 

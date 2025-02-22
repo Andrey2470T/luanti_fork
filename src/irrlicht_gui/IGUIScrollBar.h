@@ -6,11 +6,6 @@
 
 #include "IGUIElement.h"
 
-namespace irr
-{
-namespace gui
-{
-
 //! Default scroll bar GUI element.
 /** \par This element can create the following events of type EGUI_EVENT_TYPE:
 \li EGET_SCROLL_BAR_CHANGED
@@ -19,8 +14,8 @@ class IGUIScrollBar : public IGUIElement
 {
 public:
 	//! constructor
-    IGUIScrollBar(IGUIEnvironment *environment, std::shared_ptr<IGUIElement>parent, s32 id, recti rectangle) :
-			IGUIElement(EGUIET_SCROLL_BAR, environment, parent, id, rectangle) {}
+    IGUIScrollBar(IGUIEnvironment *environment, std::shared_ptr<IGUIElement> parent, s32 id, recti rectangle) :
+            IGUIElement(GUIElementType::ScrollBar, environment, parent, id, rectangle) {}
 
 	//! sets the maximum value of the scrollbar.
 	virtual void setMax(s32 max) = 0;
@@ -54,6 +49,3 @@ public:
 	//! sets the current position of the scrollbar
 	virtual void setPos(s32 pos) = 0;
 };
-
-} // end namespace gui
-} // end namespace irr

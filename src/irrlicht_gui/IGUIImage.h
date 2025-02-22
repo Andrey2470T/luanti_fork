@@ -5,29 +5,26 @@
 #pragma once
 
 #include "IGUIElement.h"
-#include "SColor.h"
+#include "Image/Color.h"
 
-namespace irr
+namespace render
 {
-namespace video
-{
-class ITexture;
+    class Texture2D;
 }
-namespace gui
-{
+
 //! GUI element displaying an image.
 class IGUIImage : public IGUIElement
 {
 public:
 	//! constructor
-    IGUIImage(IGUIEnvironment *environment, std::shared_ptr<IGUIElement>parent, s32 id, recti rectangle) :
-			IGUIElement(EGUIET_IMAGE, environment, parent, id, rectangle) {}
+    IGUIImage(IGUIEnvironment *environment, std::shared_ptr<IGUIElement> parent, s32 id, recti rectangle) :
+            IGUIElement(GUIElementType::Image, environment, parent, id, rectangle) {}
 
 	//! Sets an image texture
-	virtual void setImage(video::ITexture *image) = 0;
+    virtual void setImage(render::Texture2D *image) = 0;
 
 	//! Gets the image texture
-	virtual video::ITexture *getImage() const = 0;
+    virtual render::Texture2D *getImage() const = 0;
 
 	//! Sets the color of the image
 	/** \param color Color with which the image is drawn. If the color
@@ -65,10 +62,10 @@ public:
 		Unlike normal clipping this does not affect the gui-children.
 		\param drawBoundUVs: Coordinates between 0 and 1 where 0 are for left+top and 1 for right+bottom
 	*/
-	virtual void setDrawBounds(const core::rect<f32> &drawBoundUVs = core::rect<f32>(0.f, 0.f, 1.f, 1.f)) = 0;
+    virtual void setDrawBounds(const rectf &drawBoundUVs = rectf(0.f, 0.f, 1.f, 1.f)) = 0;
 
 	//! Get drawing-area restrictions.
-	virtual core::rect<f32> getDrawBounds() const = 0;
+    virtual rectf getDrawBounds() const = 0;
 
 	//! Sets whether to draw a background color (EGDC_3D_DARK_SHADOW) when no texture is set
 	/** By default it's enabled */
@@ -78,6 +75,3 @@ public:
 	/** \return true if background drawing is enabled, false otherwise */
 	virtual bool isDrawBackgroundEnabled() const = 0;
 };
-
-} // end namespace gui
-} // end namespace irr

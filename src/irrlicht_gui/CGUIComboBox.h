@@ -22,7 +22,7 @@ class CGUIComboBox : public IGUIComboBox
 public:
 	//! constructor
 	CGUIComboBox(IGUIEnvironment *environment, IGUIElement *parent,
-			s32 id, core::rect<s32> rectangle);
+            s32 id, recti rectangle);
 
 	//! Returns amount of items in box
 	u32 getItemCount() const override;
@@ -88,10 +88,10 @@ private:
 		SComboData(const wchar_t *text, u32 data) :
 				Name(text), Data(data) {}
 
-		core::stringw Name;
+        std::wstring Name;
 		u32 Data;
 	};
-	core::array<SComboData> Items;
+    std::vector<SComboData> Items;
 
 	s32 Selected;
 	EGUI_ALIGNMENT HAlign, VAlign;

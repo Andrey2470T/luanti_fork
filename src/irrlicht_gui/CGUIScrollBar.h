@@ -17,7 +17,7 @@ class CGUIScrollBar : public IGUIScrollBar
 public:
 	//! constructor
 	CGUIScrollBar(bool horizontal, IGUIEnvironment *environment,
-			IGUIElement *parent, s32 id, core::rect<s32> rectangle,
+            IGUIElement *parent, s32 id, recti rectangle,
 			bool noclip = false);
 
 	//! destructor
@@ -66,12 +66,12 @@ public:
 
 private:
 	void refreshControls();
-	s32 getPosFromMousePos(const core::position2di &p) const;
+    s32 getPosFromMousePos(const v2i &p) const;
 
 	IGUIButton *UpButton;
 	IGUIButton *DownButton;
 
-	core::rect<s32> SliderRect;
+    recti SliderRect;
 
 	bool Dragging;
 	bool Horizontal;
@@ -86,7 +86,7 @@ private:
 	s32 LargeStep;
 	s32 DesiredPos;
 	u32 LastChange;
-	video::SColor CurrentIconColor;
+    img::color8 CurrentIconColor;
 
 	f32 range() const { return (f32)(Max - Min); }
 };

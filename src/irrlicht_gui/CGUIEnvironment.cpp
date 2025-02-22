@@ -37,7 +37,7 @@ const io::path CGUIEnvironment::DefaultFontName = "#DefaultFont";
 
 //! constructor
 CGUIEnvironment::CGUIEnvironment(io::IFileSystem *fs, video::IVideoDriver *driver, IOSOperator *op) :
-		IGUIElement(EGUIET_ROOT, 0, 0, 0, core::rect<s32>(driver ? core::dimension2d<s32>(driver->getScreenSize()) : core::dimension2d<s32>(0, 0))),
+		IGUIElement(EGUIET_ROOT, 0, 0, 0, recti(driver ? v2i(driver->getScreenSize()) : v2i(0, 0))),
 		Driver(driver), Hovered(0), HoveredNoSubelement(0), Focus(0), LastHoveredMousePos(0, 0), CurrentSkin(0),
 		FileSystem(fs), UserReceiver(0), Operator(op), FocusFlags(EFF_SET_ON_LMOUSE_DOWN | EFF_SET_ON_TAB)
 {
@@ -153,7 +153,7 @@ void CGUIEnvironment::loadBuiltInFont()
 void CGUIEnvironment::drawAll(bool useScreenSize)
 {
 	if (useScreenSize && Driver) {
-		core::dimension2d<s32> dim(Driver->getScreenSize());
+		v2i dim(Driver->getScreenSize());
 		if (AbsoluteRect.LowerRightCorner.X != dim.Width ||
 				AbsoluteRect.UpperLeftCorner.X != 0 ||
 				AbsoluteRect.LowerRightCorner.Y != dim.Height ||
@@ -351,10 +351,10 @@ void CGUIEnvironment::OnPostRender(u32 time)
 			HoveredNoSubelement->getToolTipText().size() &&
 			getSkin() &&
 			getSkin()->getFont(EGDF_TOOLTIP)) {
-		core::rect<s32> pos;
+		recti pos;
 
 		pos.UpperLeftCorner = LastHoveredMousePos;
-		core::dimension2du dim = getSkin()->getFont(EGDF_TOOLTIP)->getDimension(HoveredNoSubelement->getToolTipText().c_str());
+		v2u dim = getSkin()->getFont(EGDF_TOOLTIP)->getDimension(HoveredNoSubelement->getToolTipText().c_str());
 		dim.Width += getSkin()->getSize(EGDS_TEXT_DISTANCE_X) * 2;
 		dim.Height += getSkin()->getSize(EGDS_TEXT_DISTANCE_Y) * 2;
 
@@ -417,7 +417,7 @@ void CGUIEnvironment::clearDeletionQueue()
 }
 
 //
-void CGUIEnvironment::updateHoveredElement(core::position2d<s32> mousePos)
+void CGUIEnvironment::updateHoveredElement(v2i mousePos)
 {
 	IGUIElement *lastHovered = Hovered;
 	IGUIElement *lastHoveredNoSubelement = HoveredNoSubelement;
@@ -503,7 +503,7 @@ bool CGUIEnvironment::postEventFromUser(const SEvent &event)
 	break;
 	case EET_MOUSE_INPUT_EVENT:
 
-		updateHoveredElement(core::position2d<s32>(event.MouseInput.X, event.MouseInput.Y));
+		updateHoveredElement(v2i(event.MouseInput.X, event.MouseInput.Y));
 
 		if (Hovered != Focus) {
 			IGUIElement *focusCandidate = Hovered;
@@ -609,7 +609,7 @@ IGUISkin *CGUIEnvironment::createSkin(EGUI_SKIN_TYPE type)
 }
 
 //! adds a button. The returned pointer must not be dropped.
-IGUIButton *CGUIEnvironment::addButton(const core::rect<s32> &rectangle, IGUIElement *parent, s32 id, const wchar_t *text, const wchar_t *tooltiptext)
+IGUIButton *CGUIEnvironment::addButton(const recti &rectangle, IGUIElement *parent, s32 id, const wchar_t *text, const wchar_t *tooltiptext)
 {
 	IGUIButton *button = new CGUIButton(this, parent ? parent : this, id, rectangle);
 	if (text)
@@ -623,7 +623,7 @@ IGUIButton *CGUIEnvironment::addButton(const core::rect<s32> &rectangle, IGUIEle
 }
 
 //! adds a scrollbar. The returned pointer must not be dropped.
-IGUIScrollBar *CGUIEnvironment::addScrollBar(bool horizontal, const core::rect<s32> &rectangle, IGUIElement *parent, s32 id)
+IGUIScrollBar *CGUIEnvironment::addScrollBar(bool horizontal, const recti &rectangle, IGUIElement *parent, s32 id)
 {
 	IGUIScrollBar *bar = new CGUIScrollBar(horizontal, this, parent ? parent : this, id, rectangle);
 	bar->drop();
@@ -631,15 +631,15 @@ IGUIScrollBar *CGUIEnvironment::addScrollBar(bool horizontal, const core::rect<s
 }
 
 //! Adds an image element.
-IGUIImage *CGUIEnvironment::addImage(video::ITexture *image, core::position2d<s32> pos,
+IGUIImage *CGUIEnvironment::addImage(render::Texture2D *image, v2i pos,
 		bool useAlphaChannel, IGUIElement *parent, s32 id, const wchar_t *text)
 {
-	core::dimension2d<s32> sz(0, 0);
+	v2i sz(0, 0);
 	if (image)
-		sz = core::dimension2d<s32>(image->getOriginalSize());
+		sz = v2i(image->getOriginalSize());
 
 	IGUIImage *img = new CGUIImage(this, parent ? parent : this,
-			id, core::rect<s32>(pos, sz));
+			id, recti(pos, sz));
 
 	if (text)
 		img->setText(text);
@@ -655,7 +655,7 @@ IGUIImage *CGUIEnvironment::addImage(video::ITexture *image, core::position2d<s3
 }
 
 //! adds an image. The returned pointer must not be dropped.
-IGUIImage *CGUIEnvironment::addImage(const core::rect<s32> &rectangle, IGUIElement *parent, s32 id, const wchar_t *text, bool useAlphaChannel)
+IGUIImage *CGUIEnvironment::addImage(const recti &rectangle, IGUIElement *parent, s32 id, const wchar_t *text, bool useAlphaChannel)
 {
 	IGUIImage *img = new CGUIImage(this, parent ? parent : this,
 			id, rectangle);
@@ -671,7 +671,7 @@ IGUIImage *CGUIEnvironment::addImage(const core::rect<s32> &rectangle, IGUIEleme
 }
 
 //! adds a checkbox
-IGUICheckBox *CGUIEnvironment::addCheckBox(bool checked, const core::rect<s32> &rectangle, IGUIElement *parent, s32 id, const wchar_t *text)
+IGUICheckBox *CGUIEnvironment::addCheckBox(bool checked, const recti &rectangle, IGUIElement *parent, s32 id, const wchar_t *text)
 {
 	IGUICheckBox *b = new CGUICheckBox(checked, this,
 			parent ? parent : this, id, rectangle);
@@ -684,7 +684,7 @@ IGUICheckBox *CGUIEnvironment::addCheckBox(bool checked, const core::rect<s32> &
 }
 
 //! adds a list box
-IGUIListBox *CGUIEnvironment::addListBox(const core::rect<s32> &rectangle,
+IGUIListBox *CGUIEnvironment::addListBox(const recti &rectangle,
 		IGUIElement *parent, s32 id, bool drawBackground)
 {
 	IGUIListBox *b = new CGUIListBox(this, parent ? parent : this, id, rectangle,
@@ -719,7 +719,7 @@ IGUIFileOpenDialog *CGUIEnvironment::addFileOpenDialog(const wchar_t *title,
 
 //! adds a static text. The returned pointer must not be dropped.
 IGUIStaticText *CGUIEnvironment::addStaticText(const wchar_t *text,
-		const core::rect<s32> &rectangle,
+		const recti &rectangle,
 		bool border, bool wordWrap,
 		IGUIElement *parent, s32 id, bool background)
 {
@@ -734,7 +734,7 @@ IGUIStaticText *CGUIEnvironment::addStaticText(const wchar_t *text,
 
 //! Adds an edit box. The returned pointer must not be dropped.
 IGUIEditBox *CGUIEnvironment::addEditBox(const wchar_t *text,
-		const core::rect<s32> &rectangle, bool border,
+		const recti &rectangle, bool border,
 		IGUIElement *parent, s32 id)
 {
 	IGUIEditBox *d = new CGUIEditBox(text, border, this,
@@ -745,7 +745,7 @@ IGUIEditBox *CGUIEnvironment::addEditBox(const wchar_t *text,
 }
 
 //! Adds a tab control to the environment.
-IGUITabControl *CGUIEnvironment::addTabControl(const core::rect<s32> &rectangle,
+IGUITabControl *CGUIEnvironment::addTabControl(const recti &rectangle,
 		IGUIElement *parent, bool fillbackground, bool border, s32 id)
 {
 	IGUITabControl *t = new CGUITabControl(this, parent ? parent : this,
@@ -755,7 +755,7 @@ IGUITabControl *CGUIEnvironment::addTabControl(const core::rect<s32> &rectangle,
 }
 
 //! Adds tab to the environment.
-IGUITab *CGUIEnvironment::addTab(const core::rect<s32> &rectangle,
+IGUITab *CGUIEnvironment::addTab(const recti &rectangle,
 		IGUIElement *parent, s32 id)
 {
 	IGUITab *t = new CGUITab(this, parent ? parent : this,
@@ -765,7 +765,7 @@ IGUITab *CGUIEnvironment::addTab(const core::rect<s32> &rectangle,
 }
 
 //! Adds a combo box to the environment.
-IGUIComboBox *CGUIEnvironment::addComboBox(const core::rect<s32> &rectangle,
+IGUIComboBox *CGUIEnvironment::addComboBox(const recti &rectangle,
 		IGUIElement *parent, s32 id)
 {
 	IGUIComboBox *t = new CGUIComboBox(this, parent ? parent : this,
@@ -914,8 +914,8 @@ IGUISpriteBank *CGUIEnvironment::addEmptySpriteBank(const io::path &name)
 }
 
 //! Creates the image list from the given texture.
-IGUIImageList *CGUIEnvironment::createImageList(video::ITexture *texture,
-		core::dimension2d<s32> imageSize, bool useAlphaChannel)
+IGUIImageList *CGUIEnvironment::createImageList(render::Texture2D *texture,
+		v2i imageSize, bool useAlphaChannel)
 {
 	CGUIImageList *imageList = new CGUIImageList(Driver);
 	if (!imageList->createImageList(texture, imageSize, useAlphaChannel)) {

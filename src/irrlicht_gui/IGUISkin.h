@@ -316,7 +316,7 @@ public:
     virtual void draw3DButtonPaneStandard(std::shared_ptr<IGUIElement> element,
             const recti &rect,
             const recti *clip = 0) = 0;
-	virtual void drawColored3DButtonPaneStandard(IGUIElement* element,
+    virtual void drawColored3DButtonPaneStandard(std::shared_ptr<IGUIElement> element,
             const recti& rect,
             const recti* clip=0,
             const img::color8* colors=0) = 0;
@@ -333,7 +333,7 @@ public:
     virtual void draw3DButtonPanePressed(std::shared_ptr<IGUIElement> element,
             const recti &rect,
             const recti *clip = 0) = 0;
-	virtual void drawColored3DButtonPanePressed(IGUIElement* element,
+    virtual void drawColored3DButtonPanePressed(std::shared_ptr<IGUIElement> element,
             const recti& rect,
             const recti* clip=0,
             const img::color8* colors=0) = 0;
@@ -447,7 +447,7 @@ public:
 	\param pos: Position of the rectangle.
 	\param clip: Pointer to rectangle against which the rectangle will be clipped.
 	If the pointer is null, no clipping will be performed. */
-    virtual void draw2DRectangle(std::shared_ptr<IGUIElement>element, const img::color8 &color,
+    virtual void draw2DRectangle(std::shared_ptr<IGUIElement> element, const img::color8 &color,
             const recti &pos, const recti *clip = 0) = 0;
 
 	//! get the type of this skin

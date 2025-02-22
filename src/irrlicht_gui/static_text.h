@@ -33,7 +33,7 @@ namespace gui
 		// StaticText is translated by EnrichedString.
 		// No need to use translate_string()
 		StaticText(const EnrichedString &text, bool border, IGUIEnvironment* environment,
-			IGUIElement* parent, s32 id, const core::rect<s32>& rectangle,
+            IGUIElement* parent, s32 id, const recti& rectangle,
 			bool background = false);
 
 		//! destructor
@@ -86,16 +86,16 @@ namespace gui
 		virtual IGUIFont* getActiveFont() const;
 
 		//! Sets another color for the text.
-		virtual void setOverrideColor(video::SColor color);
+        virtual void setOverrideColor(img::color8 color);
 
 		//! Sets another color for the background.
-		virtual void setBackgroundColor(video::SColor color);
+        virtual void setBackgroundColor(img::color8 color);
 
 		//! Sets whether to draw the background
 		virtual void setDrawBackground(bool draw);
 
 		//! Gets the background color
-		virtual video::SColor getBackgroundColor() const;
+        virtual img::color8 getBackgroundColor() const;
 
 		//! Checks if background drawing is enabled
 		virtual bool isDrawBackgroundEnabled() const;
@@ -110,10 +110,10 @@ namespace gui
 		virtual void setTextAlignment(EGUI_ALIGNMENT horizontal, EGUI_ALIGNMENT vertical);
 
 		//! Gets the override color
-		virtual video::SColor getOverrideColor() const;
+        virtual img::color8 getOverrideColor() const;
 
 		//! Gets the currently used text color
-		virtual video::SColor getActiveColor() const;
+        virtual img::color8 getActiveColor() const;
 
 		//! Sets if the static text should use the overide color or the
 		//! color in the gui skin.

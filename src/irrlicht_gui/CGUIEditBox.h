@@ -17,7 +17,7 @@ class CGUIEditBox : public IGUIEditBox
 public:
 	//! constructor
 	CGUIEditBox(const wchar_t *text, bool border, IGUIEnvironment *environment,
-			IGUIElement *parent, s32 id, const core::rect<s32> &rectangle);
+            IGUIElement *parent, s32 id, const recti &rectangle);
 
 	//! destructor
 	virtual ~CGUIEditBox();
@@ -35,10 +35,10 @@ public:
 	IGUIFont *getActiveFont() const override;
 
 	//! Sets another color for the text.
-	void setOverrideColor(video::SColor color) override;
+    void setOverrideColor(img::color8 color) override;
 
 	//! Gets the override color
-	video::SColor getOverrideColor() const override;
+    img::color8 getOverrideColor() const override;
 
 	//! Sets if the text should use the override color or the
 	//! color in the gui skin.
@@ -86,7 +86,7 @@ public:
 
 	//! Gets the size area of the text in the edit box
 	//! \return Returns the size in pixels of the text
-	core::dimension2du getTextDimension() override;
+    v2u getTextDimension() override;
 
 	//! Sets text justification
 	void setTextAlignment(EGUI_ALIGNMENT horizontal, EGUI_ALIGNMENT vertical) override;
@@ -147,7 +147,7 @@ protected:
 	//! adds a letter to the edit box
 	void inputChar(wchar_t c);
 	//! adds a string to the edit box
-	void inputString(const core::stringw &str);
+    void inputString(const std::wstring &str);
 	//! calculates the current scroll position
 	void calculateScrollPos();
 	//! calculated the FrameRect
@@ -171,13 +171,13 @@ protected:
 	s32 MarkBegin;
 	s32 MarkEnd;
 
-	video::SColor OverrideColor;
+    img::color8 OverrideColor;
 	gui::IGUIFont *OverrideFont, *LastBreakFont;
 	IOSOperator *Operator;
 
 	u32 BlinkStartTime;
 	irr::u32 CursorBlinkTime;
-	core::stringw CursorChar; // IGUIFont::draw needs stringw instead of wchar_t
+    std::wstring CursorChar; // IGUIFont::draw needs stringw instead of wchar_t
 	s32 CursorPos;
 	s32 HScrollPos, VScrollPos; // scroll position in characters
 	u32 Max;
@@ -186,10 +186,10 @@ protected:
 	wchar_t PasswordChar;
 	EGUI_ALIGNMENT HAlign, VAlign;
 
-	core::array<core::stringw> BrokenText;
-	core::array<s32> BrokenTextPositions;
+    std::vector<std::wstring> BrokenText;
+    std::vector<s32> BrokenTextPositions;
 
-	core::rect<s32> CurrentTextRect, FrameRect; // temporary values
+    recti CurrentTextRect, FrameRect; // temporary values
 };
 
 } // end namespace gui

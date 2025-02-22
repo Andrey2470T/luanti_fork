@@ -17,10 +17,10 @@ namespace gui
 
 //! constructor
 CGUIButton::CGUIButton(IGUIEnvironment *environment, IGUIElement *parent,
-		s32 id, core::rect<s32> rectangle, bool noclip) :
+		s32 id, recti rectangle, bool noclip) :
 		IGUIButton(environment, parent, id, rectangle),
 		SpriteBank(0), OverrideFont(0),
-		OverrideColorEnabled(false), OverrideColor(video::SColor(101, 255, 255, 255)),
+		OverrideColorEnabled(false), OverrideColor(img::color8(101, 255, 255, 255)),
 		ClickTime(0), HoverTime(0), FocusTime(0),
 		ClickShiftState(false), ClickControlState(false),
 		IsPushButton(false), Pressed(false),
@@ -72,7 +72,7 @@ void CGUIButton::setSpriteBank(IGUISpriteBank *sprites)
 	SpriteBank = sprites;
 }
 
-void CGUIButton::setSprite(EGUI_BUTTON_STATE state, s32 index, video::SColor color, bool loop)
+void CGUIButton::setSprite(EGUI_BUTTON_STATE state, s32 index, img::color8 color, bool loop)
 {
 	ButtonSprites[(u32)state].Index = index;
 	ButtonSprites[(u32)state].Color = color;
@@ -86,7 +86,7 @@ s32 CGUIButton::getSpriteIndex(EGUI_BUTTON_STATE state) const
 }
 
 //! Get the sprite color for the given state. Color is only used when a sprite is set.
-video::SColor CGUIButton::getSpriteColor(EGUI_BUTTON_STATE state) const
+img::color8 CGUIButton::getSpriteColor(EGUI_BUTTON_STATE state) const
 {
 	return ButtonSprites[(u32)state].Color;
 }
@@ -159,7 +159,7 @@ bool CGUIButton::OnEvent(const SEvent &event)
 		} else if (event.MouseInput.Event == EMIE_LMOUSE_LEFT_UP) {
 			bool wasPressed = Pressed;
 
-			if (!AbsoluteClippingRect.isPointInside(core::position2d<s32>(event.MouseInput.X, event.MouseInput.Y))) {
+			if (!AbsoluteClippingRect.isPointInside(v2i(event.MouseInput.X, event.MouseInput.Y))) {
 				if (!IsPushButton)
 					setPressed(false);
 				return true;
@@ -211,14 +211,14 @@ void CGUIButton::draw()
 		}
 	}
 
-	const core::position2di buttonCenter(AbsoluteRect.getCenter());
+	const v2i buttonCenter(AbsoluteRect.getCenter());
 
 	EGUI_BUTTON_IMAGE_STATE imageState = getImageState(Pressed);
 	if (ButtonImages[(u32)imageState].Texture) {
-		core::position2d<s32> pos(buttonCenter);
-		core::rect<s32> sourceRect(ButtonImages[(u32)imageState].SourceRect);
+		v2i pos(buttonCenter);
+		recti sourceRect(ButtonImages[(u32)imageState].SourceRect);
 		if (sourceRect.getWidth() == 0 && sourceRect.getHeight() == 0)
-			sourceRect = core::rect<s32>(core::position2di(0, 0), ButtonImages[(u32)imageState].Texture->getOriginalSize());
+			sourceRect = recti(v2i(0, 0), ButtonImages[(u32)imageState].Texture->getOriginalSize());
 
 		pos.X -= sourceRect.getWidth() / 2;
 		pos.Y -= sourceRect.getHeight() / 2;
@@ -233,13 +233,13 @@ void CGUIButton::draw()
 		}
 
 		driver->draw2DImage(ButtonImages[(u32)imageState].Texture,
-				ScaleImage ? AbsoluteRect : core::rect<s32>(pos, sourceRect.getSize()),
+				ScaleImage ? AbsoluteRect : recti(pos, sourceRect.getSize()),
 				sourceRect, &AbsoluteClippingRect,
 				0, UseAlphaChannel);
 	}
 
 	if (SpriteBank) {
-		core::position2di pos(buttonCenter);
+		v2i pos(buttonCenter);
 		if (Pressed) {
 			pos.X += skin->getSize(EGDS_BUTTON_PRESSED_SPRITE_OFFSET_X);
 			pos.Y += skin->getSize(EGDS_BUTTON_PRESSED_SPRITE_OFFSET_Y);
@@ -266,7 +266,7 @@ void CGUIButton::draw()
 	if (Text.size()) {
 		IGUIFont *font = getActiveFont();
 
-		core::rect<s32> rect = AbsoluteRect;
+		recti rect = AbsoluteRect;
 		if (Pressed) {
 			rect.UpperLeftCorner.X += skin->getSize(EGDS_BUTTON_PRESSED_TEXT_OFFSET_X);
 			rect.UpperLeftCorner.Y += skin->getSize(EGDS_BUTTON_PRESSED_TEXT_OFFSET_Y);
@@ -281,7 +281,7 @@ void CGUIButton::draw()
 	IGUIElement::draw();
 }
 
-void CGUIButton::drawSprite(EGUI_BUTTON_STATE state, u32 startTime, const core::position2di &center)
+void CGUIButton::drawSprite(EGUI_BUTTON_STATE state, u32 startTime, const v2i &center)
 {
 	u32 stateIdx = (u32)state;
 	s32 spriteIdx = ButtonSprites[stateIdx].Index;
@@ -289,14 +289,14 @@ void CGUIButton::drawSprite(EGUI_BUTTON_STATE state, u32 startTime, const core::
 		return;
 
 	u32 rectIdx = SpriteBank->getSprites()[spriteIdx].Frames[0].rectNumber;
-	core::rect<s32> srcRect = SpriteBank->getPositions()[rectIdx];
+	recti srcRect = SpriteBank->getPositions()[rectIdx];
 
 	IGUISkin *skin = Environment->getSkin();
 	s32 scale = std::max(std::floor(skin->getScale()), 1.0f);
-	core::rect<s32> rect(center, srcRect.getSize() * scale);
+	recti rect(center, srcRect.getSize() * scale);
 	rect -= rect.getSize() / 2;
 
-	const video::SColor colors[] = {
+	const img::color8 colors[] = {
 		ButtonSprites[stateIdx].Color,
 		ButtonSprites[stateIdx].Color,
 		ButtonSprites[stateIdx].Color,
@@ -400,18 +400,18 @@ IGUIFont *CGUIButton::getActiveFont() const
 }
 
 //! Sets another color for the text.
-void CGUIButton::setOverrideColor(video::SColor color)
+void CGUIButton::setOverrideColor(img::color8 color)
 {
 	OverrideColor = color;
 	OverrideColorEnabled = true;
 }
 
-video::SColor CGUIButton::getOverrideColor() const
+img::color8 CGUIButton::getOverrideColor() const
 {
 	return OverrideColor;
 }
 
-irr::video::SColor CGUIButton::getActiveColor() const
+irr::img::color8 CGUIButton::getActiveColor() const
 {
 	if (OverrideColorEnabled)
 		return OverrideColor;
@@ -431,7 +431,7 @@ bool CGUIButton::isOverrideColorEnabled() const
 	return OverrideColorEnabled;
 }
 
-void CGUIButton::setImage(EGUI_BUTTON_IMAGE_STATE state, video::ITexture *image, const core::rect<s32> &sourceRect)
+void CGUIButton::setImage(EGUI_BUTTON_IMAGE_STATE state, render::Texture2D *image, const recti &sourceRect)
 {
 	if (state >= EGBIS_COUNT)
 		return;

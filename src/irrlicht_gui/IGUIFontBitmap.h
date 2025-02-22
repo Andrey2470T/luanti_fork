@@ -6,10 +6,6 @@
 
 #include "IGUIFont.h"
 
-namespace irr
-{
-namespace gui
-{
 class IGUISpriteBank;
 
 //! Font interface.
@@ -17,7 +13,7 @@ class IGUIFontBitmap : public IGUIFont
 {
 public:
 	//! Returns the type of this font
-	EGUI_FONT_TYPE getType() const override { return EGFT_BITMAP; }
+    GUIFontType getType() const override { return GUIFontType::Bitmap; }
 
 	//! returns the parsed Symbol Information
 	virtual IGUISpriteBank *getSpriteBank() const = 0;
@@ -25,6 +21,3 @@ public:
 	//! returns the sprite number from a given character
 	virtual u32 getSpriteNoFromChar(const wchar_t *c) const = 0;
 };
-
-} // end namespace gui
-} // end namespace irr

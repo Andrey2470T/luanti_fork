@@ -16,7 +16,7 @@ namespace gui
 {
 
 //! constructor
-CGUICheckBox::CGUICheckBox(bool checked, IGUIEnvironment *environment, IGUIElement *parent, s32 id, core::rect<s32> rectangle) :
+CGUICheckBox::CGUICheckBox(bool checked, IGUIEnvironment *environment, IGUIElement *parent, s32 id, recti rectangle) :
 		IGUICheckBox(environment, parent, id, rectangle), CheckTime(0), Pressed(false), Checked(checked), Border(false), Background(false)
 {
 	// this element can be tabbed into
@@ -68,7 +68,7 @@ bool CGUICheckBox::OnEvent(const SEvent &event)
 				Pressed = false;
 
 				if (wasPressed && Parent) {
-					if (!AbsoluteClippingRect.isPointInside(core::position2d<s32>(event.MouseInput.X, event.MouseInput.Y))) {
+					if (!AbsoluteClippingRect.isPointInside(v2i(event.MouseInput.X, event.MouseInput.Y))) {
 						Pressed = false;
 						return true;
 					}
@@ -102,11 +102,11 @@ void CGUICheckBox::draw()
 	IGUISkin *skin = Environment->getSkin();
 	if (skin) {
 		video::IVideoDriver *driver = Environment->getVideoDriver();
-		core::rect<s32> frameRect(AbsoluteRect);
+		recti frameRect(AbsoluteRect);
 
 		// draw background
 		if (Background) {
-			video::SColor bgColor = skin->getColor(gui::EGDC_3D_FACE);
+			img::color8 bgColor = skin->getColor(gui::EGDC_3D_FACE);
 			driver->draw2DRectangle(bgColor, frameRect, &AbsoluteClippingRect);
 		}
 
@@ -120,7 +120,7 @@ void CGUICheckBox::draw()
 		const s32 height = skin->getSize(EGDS_CHECK_BOX_WIDTH);
 
 		// the rectangle around the "checked" area.
-		core::rect<s32> checkRect(frameRect.UpperLeftCorner.X,
+		recti checkRect(frameRect.UpperLeftCorner.X,
 				((frameRect.getHeight() - height) / 2) + frameRect.UpperLeftCorner.Y,
 				0, 0);
 

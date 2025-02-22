@@ -36,8 +36,8 @@ CGUIImageList::~CGUIImageList()
 }
 
 //! Creates the image list from texture.
-bool CGUIImageList::createImageList(video::ITexture *texture,
-		core::dimension2d<s32> imageSize,
+bool CGUIImageList::createImageList(render::Texture2D *texture,
+		v2i imageSize,
 		bool useAlphaChannel)
 {
 	if (!texture) {
@@ -58,10 +58,10 @@ bool CGUIImageList::createImageList(video::ITexture *texture,
 }
 
 //! Draws an image and clips it to the specified rectangle if wanted
-void CGUIImageList::draw(s32 index, const core::position2d<s32> &destPos,
-		const core::rect<s32> *clip /*= 0*/)
+void CGUIImageList::draw(s32 index, const v2i &destPos,
+		const recti *clip /*= 0*/)
 {
-	core::rect<s32> sourceRect;
+	recti sourceRect;
 
 	if (!Driver || index < 0 || index >= ImageCount) {
 		return;
@@ -73,7 +73,7 @@ void CGUIImageList::draw(s32 index, const core::position2d<s32> &destPos,
 	sourceRect.LowerRightCorner.Y = sourceRect.UpperLeftCorner.Y + ImageSize.Height;
 
 	Driver->draw2DImage(Texture, destPos, sourceRect, clip,
-			video::SColor(255, 255, 255, 255), UseAlphaChannel);
+			img::color8(255, 255, 255, 255), UseAlphaChannel);
 }
 
 } // end namespace gui

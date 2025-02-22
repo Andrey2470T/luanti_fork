@@ -132,7 +132,7 @@ namespace gui
 			}
 
 			//! Create the actual page texture,
-			bool createPageTexture(const u8& pixel_mode, const core::dimension2du& texture_size)
+            bool createPageTexture(const u8& pixel_mode, const v2u& texture_size)
 			{
 				if( texture )
 					return false;
@@ -175,7 +175,7 @@ namespace gui
 
 				void* ptr = texture->lock();
 				video::ECOLOR_FORMAT format = texture->getColorFormat();
-				core::dimension2du size = texture->getOriginalSize();
+                v2u size = texture->getOriginalSize();
 				video::IImage* pageholder = driver->createImageFromData(format, size, ptr, true, false);
 
 				for (u32 i = 0; i < glyph_to_be_paged.size(); ++i)
@@ -195,17 +195,17 @@ namespace gui
 				dirty = false;
 			}
 
-			video::ITexture* texture;
+            render::Texture2D* texture;
 			u32 available_slots;
 			u32 used_slots;
 			bool dirty;
 
-			core::array<core::vector2di> render_positions;
-			core::array<core::recti> render_source_rects;
-			core::array<video::SColor> render_colors;
+            std::vector<core::vector2di> render_positions;
+            std::vector<core::recti> render_source_rects;
+            std::vector<img::color8> render_colors;
 
 		private:
-			core::array<const SGUITTGlyph*> glyph_to_be_paged;
+            std::vector<const SGUITTGlyph*> glyph_to_be_paged;
 			video::IVideoDriver* driver;
 			io::path name;
 	};
@@ -230,7 +230,7 @@ namespace gui
 			void setBatchLoadSize(u32 batch_size) { batch_load_size = batch_size; }
 
 			//! Sets the maximum texture size for a page of glyphs.
-			void setMaxPageTextureSize(const core::dimension2du& texture_size) { max_page_texture_size = texture_size; }
+            void setMaxPageTextureSize(const v2u& texture_size) { max_page_texture_size = texture_size; }
 
 			//! Get the font size.
 			u32 getFontSize() const { return size; }
@@ -266,16 +266,16 @@ namespace gui
 			void setFontHinting(const bool enable, const bool enable_auto_hinting = true);
 
 			//! Draws some text and clips it to the specified rectangle if wanted.
-			virtual void draw(const core::stringw& text, const core::rect<s32>& position,
-				video::SColor color, bool hcenter=false, bool vcenter=false,
-				const core::rect<s32>* clip=0) override;
+            virtual void draw(const std::wstring& text, const recti& position,
+                img::color8 color, bool hcenter=false, bool vcenter=false,
+                const recti* clip=0) override;
 
-			void draw(const EnrichedString& text, const core::rect<s32>& position,
+            void draw(const EnrichedString& text, const recti& position,
 				bool hcenter=false, bool vcenter=false,
-				const core::rect<s32>* clip=0);
+                const recti* clip=0);
 
 			//! Returns the dimension of a text string.
-			virtual core::dimension2du getDimension(const wchar_t* text) const override;
+            virtual v2u getDimension(const wchar_t* text) const override;
 
 			//! Calculates the index of the character in the text which is on a specific position.
 			virtual s32 getCharacterFromPos(const wchar_t* text, s32 pixel_x) const override;
@@ -314,7 +314,7 @@ namespace gui
 
 			//! This function is for debugging mostly. If the page doesn't exist it returns zero.
 			//! \param page_index Simply return the texture handle of a given page index.
-			video::ITexture* getPageTextureByIndex(const u32& page_index) const;
+            render::Texture2D* getPageTextureByIndex(const u32& page_index) const;
 
 			inline video::IVideoDriver *getDriver() const { return Driver; }
 
@@ -327,7 +327,7 @@ namespace gui
 			bool use_auto_hinting;
 			u32 size;
 			u32 batch_load_size;
-			core::dimension2du max_page_texture_size;
+            v2u max_page_texture_size;
 
 		private:
 			// Manages the FreeType library.
@@ -367,8 +367,8 @@ namespace gui
 			FT_Size_Metrics font_metrics;
 			FT_Int32 load_flags;
 
-			mutable core::array<CGUITTGlyphPage*> Glyph_Pages;
-			mutable core::array<SGUITTGlyph> Glyphs;
+            mutable std::vector<CGUITTGlyphPage*> Glyph_Pages;
+            mutable std::vector<SGUITTGlyph> Glyphs;
 
 			s32 GlobalKerningWidth;
 			s32 GlobalKerningHeight;

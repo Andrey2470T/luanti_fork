@@ -20,7 +20,7 @@ namespace gui
 
 //! constructor
 CGUIComboBox::CGUIComboBox(IGUIEnvironment *environment, IGUIElement *parent,
-		s32 id, core::rect<s32> rectangle) :
+		s32 id, recti rectangle) :
 		IGUIComboBox(environment, parent, id, rectangle),
 		ListButton(nullptr), SelectedText(nullptr), ListBox(nullptr), LastFocus(nullptr),
 		Selected(-1), HAlign(EGUIA_UPPERLEFT), VAlign(EGUIA_CENTER), MaxSelectionRows(5), HasFocus(false),
@@ -269,7 +269,7 @@ bool CGUIComboBox::OnEvent(const SEvent &event)
 
 			switch (event.MouseInput.Event) {
 			case EMIE_LMOUSE_PRESSED_DOWN: {
-				core::position2d<s32> p(event.MouseInput.X, event.MouseInput.Y);
+				v2i p(event.MouseInput.X, event.MouseInput.Y);
 
 				// send to list box
 				if (ListBox && ListBox->isPointInside(p) && ListBox->OnEvent(event))
@@ -278,7 +278,7 @@ bool CGUIComboBox::OnEvent(const SEvent &event)
 				return true;
 			}
 			case EMIE_LMOUSE_LEFT_UP: {
-				core::position2d<s32> p(event.MouseInput.X, event.MouseInput.Y);
+				v2i p(event.MouseInput.X, event.MouseInput.Y);
 
 				// send to list box
 				if (!(ListBox &&
@@ -337,7 +337,7 @@ void CGUIComboBox::sendSelectionChangedEvent()
 void CGUIComboBox::updateListButtonWidth(s32 width)
 {
 	if (ListButton->getRelativePosition().getWidth() != width) {
-		core::rect<s32> r;
+		recti r;
 		r.UpperLeftCorner.X = RelativeRect.getWidth() - width - 2;
 		r.LowerRightCorner.X = RelativeRect.getWidth() - 2;
 		r.UpperLeftCorner.Y = 2;
@@ -387,7 +387,7 @@ void CGUIComboBox::draw()
 	ListButton->setSprite(EGBS_BUTTON_UP, skin->getIcon(EGDI_CURSOR_DOWN), skin->getColor(isEnabled() ? EGDC_WINDOW_SYMBOL : EGDC_GRAY_WINDOW_SYMBOL));
 	ListButton->setSprite(EGBS_BUTTON_DOWN, skin->getIcon(EGDI_CURSOR_DOWN), skin->getColor(isEnabled() ? EGDC_WINDOW_SYMBOL : EGDC_GRAY_WINDOW_SYMBOL));
 
-	core::rect<s32> frameRect(AbsoluteRect);
+	recti frameRect(AbsoluteRect);
 
 	// draw the border
 
@@ -433,7 +433,7 @@ void CGUIComboBox::openCloseMenu()
 			h *= (ActiveFont->getDimension(L"A").Height + 4);
 
 		// open list box
-		core::rect<s32> r(0, AbsoluteRect.getHeight(),
+		recti r(0, AbsoluteRect.getHeight(),
 				AbsoluteRect.getWidth(), AbsoluteRect.getHeight() + h);
 
 		ListBox = new CGUIListBox(Environment, this, -1, r, false, true, true);
@@ -443,7 +443,7 @@ void CGUIComboBox::openCloseMenu()
 
 		// ensure that list box is always completely visible
 		if (ListBox->getAbsolutePosition().LowerRightCorner.Y > Environment->getRootGUIElement()->getAbsolutePosition().getHeight())
-			ListBox->setRelativePosition(core::rect<s32>(0, -ListBox->getAbsolutePosition().getHeight(), AbsoluteRect.getWidth(), 0));
+			ListBox->setRelativePosition(recti(0, -ListBox->getAbsolutePosition().getHeight(), AbsoluteRect.getWidth(), 0));
 
 		for (s32 i = 0; i < (s32)Items.size(); ++i)
 			ListBox->addItem(Items[i].Name.c_str());

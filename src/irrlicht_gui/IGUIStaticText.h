@@ -5,12 +5,8 @@
 #pragma once
 
 #include "IGUIElement.h"
-#include "SColor.h"
+#include "Image/Color.h"
 
-namespace irr
-{
-namespace gui
-{
 class IGUIFont;
 
 //! Multi or single line text label.
@@ -18,8 +14,8 @@ class IGUIStaticText : public IGUIElement
 {
 public:
 	//! constructor
-    IGUIStaticText(IGUIEnvironment *environment, std::shared_ptr<IGUIElement>parent, s32 id, recti rectangle) :
-			IGUIElement(EGUIET_STATIC_TEXT, environment, parent, id, rectangle) {}
+    IGUIStaticText(IGUIEnvironment *environment, std::shared_ptr<IGUIElement> parent, s32 id, recti rectangle) :
+            IGUIElement(GUIElementType::StaticText, environment, parent, id, rectangle) {}
 
 	//! Sets another skin independent font.
 	/** If this is set to zero, the button uses the font of the skin.
@@ -128,6 +124,3 @@ public:
 	//! Checks whether the text in this element should be interpreted as right-to-left
 	virtual bool isRightToLeft() const = 0;
 };
-
-} // end namespace gui
-} // end namespace irr

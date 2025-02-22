@@ -32,12 +32,12 @@ CGUISpriteBank::~CGUISpriteBank()
 		Driver->drop();
 }
 
-core::array<core::rect<s32>> &CGUISpriteBank::getPositions()
+std::vector<recti> &CGUISpriteBank::getPositions()
 {
 	return Rectangles;
 }
 
-core::array<SGUISprite> &CGUISpriteBank::getSprites()
+std::vector<SGUISprite> &CGUISpriteBank::getSprites()
 {
 	return Sprites;
 }
@@ -47,7 +47,7 @@ u32 CGUISpriteBank::getTextureCount() const
 	return Textures.size();
 }
 
-video::ITexture *CGUISpriteBank::getTexture(u32 index) const
+render::Texture2D *CGUISpriteBank::getTexture(u32 index) const
 {
 	if (index < Textures.size())
 		return Textures[index];
@@ -55,7 +55,7 @@ video::ITexture *CGUISpriteBank::getTexture(u32 index) const
 		return 0;
 }
 
-void CGUISpriteBank::addTexture(video::ITexture *texture)
+void CGUISpriteBank::addTexture(render::Texture2D *texture)
 {
 	if (texture)
 		texture->grab();
@@ -63,7 +63,7 @@ void CGUISpriteBank::addTexture(video::ITexture *texture)
 	Textures.push_back(texture);
 }
 
-void CGUISpriteBank::setTexture(u32 index, video::ITexture *texture)
+void CGUISpriteBank::setTexture(u32 index, render::Texture2D *texture)
 {
 	while (index >= Textures.size())
 		Textures.push_back(0);
@@ -91,7 +91,7 @@ void CGUISpriteBank::clear()
 }
 
 //! Add the texture and use it for a single non-animated sprite.
-s32 CGUISpriteBank::addTextureAsSprite(video::ITexture *texture)
+s32 CGUISpriteBank::addTextureAsSprite(render::Texture2D *texture)
 {
 	if (!texture)
 		return -1;
@@ -100,7 +100,7 @@ s32 CGUISpriteBank::addTextureAsSprite(video::ITexture *texture)
 	u32 textureIndex = getTextureCount() - 1;
 
 	u32 rectangleIndex = Rectangles.size();
-	Rectangles.push_back(core::rect<s32>(0, 0, texture->getOriginalSize().Width, texture->getOriginalSize().Height));
+	Rectangles.push_back(recti(0, 0, texture->getOriginalSize().Width, texture->getOriginalSize().Height));
 
 	SGUISprite sprite;
 	sprite.frameTime = 0;
@@ -138,15 +138,15 @@ inline bool CGUISpriteBank::getFrameNr(u32 &frame, u32 index, u32 time, bool loo
 }
 
 //! draws a sprite in 2d with scale and color
-void CGUISpriteBank::draw2DSprite(u32 index, const core::position2di &pos,
-		const core::rect<s32> *clip, const video::SColor &color,
+void CGUISpriteBank::draw2DSprite(u32 index, const v2i &pos,
+		const recti *clip, const img::color8 &color,
 		u32 starttime, u32 currenttime, bool loop, bool center)
 {
 	u32 frame = 0;
 	if (!getFrameNr(frame, index, currenttime - starttime, loop))
 		return;
 
-	const video::ITexture *tex = getTexture(Sprites[index].Frames[frame].textureNumber);
+	const render::Texture2D *tex = getTexture(Sprites[index].Frames[frame].textureNumber);
 	if (!tex)
 		return;
 
@@ -154,23 +154,23 @@ void CGUISpriteBank::draw2DSprite(u32 index, const core::position2di &pos,
 	if (rn >= Rectangles.size())
 		return;
 
-	const core::rect<s32> &r = Rectangles[rn];
-	core::position2di p(pos);
+	const recti &r = Rectangles[rn];
+	v2i p(pos);
 	if (center) {
 		p -= r.getSize() / 2;
 	}
 	Driver->draw2DImage(tex, p, r, clip, color, true);
 }
 
-void CGUISpriteBank::draw2DSprite(u32 index, const core::rect<s32> &destRect,
-		const core::rect<s32> *clip, const video::SColor *const colors,
+void CGUISpriteBank::draw2DSprite(u32 index, const recti &destRect,
+		const recti *clip, const img::color8 *const colors,
 		u32 timeTicks, bool loop)
 {
 	u32 frame = 0;
 	if (!getFrameNr(frame, index, timeTicks, loop))
 		return;
 
-	const video::ITexture *tex = getTexture(Sprites[index].Frames[frame].textureNumber);
+	const render::Texture2D *tex = getTexture(Sprites[index].Frames[frame].textureNumber);
 	if (!tex)
 		return;
 
@@ -181,10 +181,10 @@ void CGUISpriteBank::draw2DSprite(u32 index, const core::rect<s32> &destRect,
 	Driver->draw2DImage(tex, destRect, Rectangles[rn], clip, colors, true);
 }
 
-void CGUISpriteBank::draw2DSpriteBatch(const core::array<u32> &indices,
-		const core::array<core::position2di> &pos,
-		const core::rect<s32> *clip,
-		const video::SColor &color,
+void CGUISpriteBank::draw2DSpriteBatch(const std::vector<u32> &indices,
+		const std::vector<v2i> &pos,
+		const recti *clip,
+		const img::color8 &color,
 		u32 starttime, u32 currenttime,
 		bool loop, bool center)
 {
@@ -192,7 +192,7 @@ void CGUISpriteBank::draw2DSpriteBatch(const core::array<u32> &indices,
 
 	if (!getTextureCount())
 		return;
-	core::array<SDrawBatch> drawBatches(getTextureCount());
+	std::vector<SDrawBatch> drawBatches(getTextureCount());
 	for (u32 i = 0; i < Textures.size(); ++i) {
 		drawBatches.push_back(SDrawBatch());
 		drawBatches[i].positions.reallocate(drawCount);
@@ -217,10 +217,10 @@ void CGUISpriteBank::draw2DSpriteBatch(const core::array<u32> &indices,
 		if (rn >= Rectangles.size())
 			return;
 
-		const core::rect<s32> &r = Rectangles[rn];
+		const recti &r = Rectangles[rn];
 
 		if (center) {
-			core::position2di p = pos[i];
+			v2i p = pos[i];
 			p -= r.getSize() / 2;
 
 			currentBatch.positions.push_back(p);

@@ -22,7 +22,7 @@ namespace gui
 //! constructor
 StaticText::StaticText(const EnrichedString &text, bool border,
 			IGUIEnvironment* environment, IGUIElement* parent,
-			s32 id, const core::rect<s32>& rectangle,
+			s32 id, const recti& rectangle,
 			bool background)
 : IGUIStaticText(environment, parent, id, rectangle),
 	HAlign(EGUIA_UPPERLEFT), VAlign(EGUIA_UPPERLEFT),
@@ -52,7 +52,7 @@ void StaticText::draw()
 		return;
 	video::IVideoDriver* driver = Environment->getVideoDriver();
 
-	core::rect<s32> frameRect(AbsoluteRect);
+	recti frameRect(AbsoluteRect);
 
 	// draw background
 
@@ -73,7 +73,7 @@ void StaticText::draw()
 		if (font != LastBreakFont)
 			updateText();
 
-		core::rect<s32> r = frameRect;
+		recti r = frameRect;
 		s32 height_line = font->getDimension(L"A").Height + font->getKerning(L'A').Y;
 		s32 height_total = height_line * BrokenText.size();
 		if (VAlign == EGUIA_CENTER && WordWrap)
@@ -156,7 +156,7 @@ IGUIFont* StaticText::getActiveFont() const
 }
 
 //! Sets another color for the text.
-void StaticText::setOverrideColor(video::SColor color)
+void StaticText::setOverrideColor(img::color8 color)
 {
 	ColoredText.setDefaultColor(color);
 	updateText();
@@ -164,7 +164,7 @@ void StaticText::setOverrideColor(video::SColor color)
 
 
 //! Sets another color for the text.
-void StaticText::setBackgroundColor(video::SColor color)
+void StaticText::setBackgroundColor(img::color8 color)
 {
 	ColoredText.setBackground(color);
 	Background = true;
@@ -179,7 +179,7 @@ void StaticText::setDrawBackground(bool draw)
 
 
 //! Gets the background color
-video::SColor StaticText::getBackgroundColor() const
+img::color8 StaticText::getBackgroundColor() const
 {
 	IGUISkin *skin = Environment->getSkin();
 
@@ -228,12 +228,12 @@ void StaticText::setTextAlignment(EGUI_ALIGNMENT horizontal, EGUI_ALIGNMENT vert
 }
 
 
-video::SColor StaticText::getOverrideColor() const
+img::color8 StaticText::getOverrideColor() const
 {
 	return ColoredText.getDefaultColor();
 }
 
-video::SColor StaticText::getActiveColor() const
+img::color8 StaticText::getActiveColor() const
 {
 	return getOverrideColor();
 }
@@ -319,7 +319,7 @@ void StaticText::updateText()
 		elWidth -= 2*skin->getSize(EGDS_TEXT_DISTANCE_X);
 	wchar_t c;
 
-	//std::vector<irr::video::SColor> colors;
+	//std::vector<irr::img::color8> colors;
 
 	// We have to deal with right-to-left and left-to-right differently
 	// However, most parts of the following code is the same, it's just
@@ -371,7 +371,7 @@ void StaticText::updateText()
 						// This word is too long to fit in the available space, look for
 						// the Unicode Soft HYphen (SHY / 00AD) character for a place to
 						// break the word at
-						int where = core::stringw(word.c_str()).findFirst( wchar_t(0x00AD) );
+						int where = std::wstring(word.c_str()).findFirst( wchar_t(0x00AD) );
 						if (where != -1)
 						{
 							EnrichedString first = word.substr(0, where);
@@ -488,7 +488,7 @@ void StaticText::updateText()
 				}
 
 				if (c != 0)
-				//	whitespace = core::stringw(&c, 1) + whitespace;
+				//	whitespace = std::wstring(&c, 1) + whitespace;
 				whitespace = cText.substr(i, 1) + whitespace;
 
 				// compute line break
@@ -506,7 +506,7 @@ void StaticText::updateText()
 			else
 			{
 				// yippee this is a word..
-				//word = core::stringw(&c, 1) + word;
+				//word = std::wstring(&c, 1) + word;
 				word = cText.substr(i, 1) + word;
 			}
 		}

@@ -40,9 +40,9 @@ public:
 	bool load(io::IReadFile *file);
 
 	//! draws an text and clips it to the specified rectangle if wanted
-	virtual void draw(const core::stringw &text, const core::rect<s32> &position,
-			video::SColor color, bool hcenter = false,
-			bool vcenter = false, const core::rect<s32> *clip = 0) override;
+    virtual void draw(const std::wstring &text, const recti &position,
+            img::color8 color, bool hcenter = false,
+            bool vcenter = false, const recti *clip = 0) override;
 
 	//! returns the dimension of a text
 	core::dimension2d<u32> getDimension(const wchar_t *text) const override;
@@ -90,7 +90,7 @@ private:
 	void pushTextureCreationFlags(bool (&flags)[3]);
 	void popTextureCreationFlags(const bool (&flags)[3]);
 
-	core::array<SFontArea> Areas;
+    std::vector<SFontArea> Areas;
 	std::map<wchar_t, s32> CharacterMap;
 	video::IVideoDriver *Driver;
 	IGUISpriteBank *SpriteBank;
@@ -99,7 +99,7 @@ private:
 	s32 MaxHeight;
 	s32 GlobalKerningWidth, GlobalKerningHeight;
 
-	core::stringw Invisible;
+    std::wstring Invisible;
 };
 
 } // end namespace gui

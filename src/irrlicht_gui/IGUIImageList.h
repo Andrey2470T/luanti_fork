@@ -3,17 +3,12 @@
 
 #pragma once
 
-#include "IReferenceCounted.h"
-#include "rect.h"
-#include "irrTypes.h"
 
-namespace irr
-{
-namespace gui
-{
+#include "Utils/Rect.h"
+
 
 //! Font interface.
-class IGUIImageList : public virtual IReferenceCounted
+class IGUIImageList
 {
 public:
 	//! Destructor
@@ -35,6 +30,3 @@ public:
 	//! \return Returns the size of the images in the list.
     virtual v2i getImageSize() const = 0;
 };
-
-} // end namespace gui
-} // end namespace irr

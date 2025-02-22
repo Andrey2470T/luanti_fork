@@ -27,36 +27,36 @@ public:
 	CGUISpriteBank(IGUIEnvironment *env);
 	virtual ~CGUISpriteBank();
 
-	core::array<core::rect<s32>> &getPositions() override;
-	core::array<SGUISprite> &getSprites() override;
+    std::vector<recti> &getPositions() override;
+    std::vector<SGUISprite> &getSprites() override;
 
 	u32 getTextureCount() const override;
-	video::ITexture *getTexture(u32 index) const override;
-	void addTexture(video::ITexture *texture) override;
-	void setTexture(u32 index, video::ITexture *texture) override;
+    render::Texture2D *getTexture(u32 index) const override;
+    void addTexture(render::Texture2D *texture) override;
+    void setTexture(u32 index, render::Texture2D *texture) override;
 
 	//! Add the texture and use it for a single non-animated sprite.
-	s32 addTextureAsSprite(video::ITexture *texture) override;
+    s32 addTextureAsSprite(render::Texture2D *texture) override;
 
 	//! clears sprites, rectangles and textures
 	void clear() override;
 
 	//! Draws a sprite in 2d with position and color
-	virtual void draw2DSprite(u32 index, const core::position2di &pos, const core::rect<s32> *clip = 0,
-			const video::SColor &color = video::SColor(255, 255, 255, 255),
+    virtual void draw2DSprite(u32 index, const v2i &pos, const recti *clip = 0,
+            const img::color8 &color = img::color8(255, 255, 255, 255),
 			u32 starttime = 0, u32 currenttime = 0, bool loop = true, bool center = false) override;
 
 	//! Draws a sprite in 2d with destination rectangle and colors
-	virtual void draw2DSprite(u32 index, const core::rect<s32> &destRect,
-			const core::rect<s32> *clip = 0,
-			const video::SColor *const colors = 0,
+    virtual void draw2DSprite(u32 index, const recti &destRect,
+            const recti *clip = 0,
+            const img::color8 *const colors = 0,
 			u32 timeTicks = 0,
 			bool loop = true) override;
 
 	//! Draws a sprite batch in 2d using an array of positions and a color
-	virtual void draw2DSpriteBatch(const core::array<u32> &indices, const core::array<core::position2di> &pos,
-			const core::rect<s32> *clip = 0,
-			const video::SColor &color = video::SColor(255, 255, 255, 255),
+    virtual void draw2DSpriteBatch(const std::vector<u32> &indices, const std::vector<v2i> &pos,
+            const recti *clip = 0,
+            const img::color8 &color = img::color8(255, 255, 255, 255),
 			u32 starttime = 0, u32 currenttime = 0,
 			bool loop = true, bool center = false) override;
 
@@ -65,14 +65,14 @@ protected:
 
 	struct SDrawBatch
 	{
-		core::array<core::position2di> positions;
-		core::array<core::recti> sourceRects;
+        std::vector<v2i> positions;
+        std::vector<core::recti> sourceRects;
 		u32 textureNumber;
 	};
 
-	core::array<SGUISprite> Sprites;
-	core::array<core::rect<s32>> Rectangles;
-	core::array<video::ITexture *> Textures;
+    std::vector<SGUISprite> Sprites;
+    std::vector<recti> Rectangles;
+    std::vector<render::Texture2D *> Textures;
 	IGUIEnvironment *Environment;
 	video::IVideoDriver *Driver;
 };

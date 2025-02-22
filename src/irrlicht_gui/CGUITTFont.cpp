@@ -77,8 +77,8 @@ video::IImage* SGUITTGlyph::createGlyphImage(const FT_Bitmap& bits, video::IVide
 
 	// Determine what our texture size should be.
 	// Add 1 because textures are inclusive-exclusive.
-	core::dimension2du d(bits.width + 1, bits.rows + 1);
-	core::dimension2du texture_size;
+	v2u d(bits.width + 1, bits.rows + 1);
+	v2u texture_size;
 
 	// Create and load our image now.
 	video::IImage* image = 0;
@@ -89,7 +89,7 @@ video::IImage* SGUITTGlyph::createGlyphImage(const FT_Bitmap& bits, video::IVide
 			// Create a blank image and fill it with transparent pixels.
 			texture_size = d.getOptimalSize(true, true);
 			image = driver->createImage(video::ECF_A1R5G5B5, texture_size);
-			image->fill(video::SColor(0, 255, 255, 255));
+			image->fill(img::color8(0, 255, 255, 255));
 
 			// Load the monochrome data in.
 			const u32 image_pitch = image->getPitch() / sizeof(u16);
@@ -117,7 +117,7 @@ video::IImage* SGUITTGlyph::createGlyphImage(const FT_Bitmap& bits, video::IVide
 			// Create our blank image.
 			texture_size = d.getOptimalSize(!driver->queryFeature(video::EVDF_TEXTURE_NPOT), !driver->queryFeature(video::EVDF_TEXTURE_NSQUARE), true, 0);
 			image = driver->createImage(video::ECF_A8R8G8B8, texture_size);
-			image->fill(video::SColor(0, 255, 255, 255));
+			image->fill(img::color8(0, 255, 255, 255));
 
 			// Load the grayscale data in.
 			const float gray_count = static_cast<float>(bits.num_grays);
@@ -402,19 +402,19 @@ CGUITTGlyphPage* CGUITTFont::createGlyphPage(const u8 pixel_mode)
 
 	// Determine our maximum texture size.
 	// If we keep getting 0, set it to 1024x1024, as that number is pretty safe.
-	core::dimension2du max_texture_size = max_page_texture_size;
+	v2u max_texture_size = max_page_texture_size;
 	if (max_texture_size.Width == 0 || max_texture_size.Height == 0)
 		max_texture_size = Driver->getMaxTextureSize();
 	if (max_texture_size.Width == 0 || max_texture_size.Height == 0)
-		max_texture_size = core::dimension2du(1024, 1024);
+		max_texture_size = v2u(1024, 1024);
 
 	// We want to try to put at least 144 glyphs on a single texture.
-	core::dimension2du page_texture_size;
-	if (size <= 21) page_texture_size = core::dimension2du(256, 256);
-	else if (size <= 42) page_texture_size = core::dimension2du(512, 512);
-	else if (size <= 84) page_texture_size = core::dimension2du(1024, 1024);
-	else if (size <= 168) page_texture_size = core::dimension2du(2048, 2048);
-	else page_texture_size = core::dimension2du(4096, 4096);
+	v2u page_texture_size;
+	if (size <= 21) page_texture_size = v2u(256, 256);
+	else if (size <= 42) page_texture_size = v2u(512, 512);
+	else if (size <= 84) page_texture_size = v2u(1024, 1024);
+	else if (size <= 168) page_texture_size = v2u(2048, 2048);
+	else page_texture_size = v2u(4096, 4096);
 
 	if (page_texture_size.Width > max_texture_size.Width || page_texture_size.Height > max_texture_size.Height)
 		page_texture_size = max_texture_size;
@@ -454,7 +454,7 @@ void CGUITTFont::setFontHinting(const bool enable, const bool enable_auto_hintin
 	reset_images();
 }
 
-void CGUITTFont::draw(const core::stringw& text, const core::rect<s32>& position, video::SColor color, bool hcenter, bool vcenter, const core::rect<s32>* clip)
+void CGUITTFont::draw(const std::wstring& text, const recti& position, img::color8 color, bool hcenter, bool vcenter, const recti* clip)
 {
 	// Allow colors to work for strings that have passed through irrlicht by catching
 	// them here and converting them to enriched just before drawing.
@@ -462,7 +462,7 @@ void CGUITTFont::draw(const core::stringw& text, const core::rect<s32>& position
 	draw(s, position, hcenter, vcenter, clip);
 }
 
-void CGUITTFont::draw(const EnrichedString &text, const core::rect<s32>& position, bool hcenter, bool vcenter, const core::rect<s32>* clip)
+void CGUITTFont::draw(const EnrichedString &text, const recti& position, bool hcenter, bool vcenter, const recti* clip)
 {
 	const auto &colors = text.getColors();
 
@@ -478,8 +478,8 @@ void CGUITTFont::draw(const EnrichedString &text, const core::rect<s32>& positio
 	}
 
 	// Set up some variables.
-	core::dimension2d<s32> textDimension;
-	core::position2d<s32> offset = position.UpperLeftCorner;
+	v2i textDimension;
+	v2i offset = position.UpperLeftCorner;
 
 	// Determine offset positions.
 	if (hcenter || vcenter)
@@ -546,13 +546,13 @@ void CGUITTFont::draw(const EnrichedString &text, const core::rect<s32>& positio
 			// Determine rendering information.
 			SGUITTGlyph& glyph = Glyphs[n-1];
 			CGUITTGlyphPage* const page = Glyph_Pages[glyph.glyph_page];
-			page->render_positions.push_back(core::position2di(offset.X + offx, offset.Y + offy));
+			page->render_positions.push_back(v2i(offset.X + offx, offset.Y + offy));
 			page->render_source_rects.push_back(glyph.source_rect);
 			const size_t iterPos = iter - utext.begin();
 			if (iterPos < colors.size())
 				page->render_colors.push_back(colors[iterPos]);
 			else
-				page->render_colors.push_back(video::SColor(255,255,255,255));
+				page->render_colors.push_back(img::color8(255,255,255,255));
 			Render_Map[glyph.glyph_page] = page;
 		}
 		if (n > 0)
@@ -570,9 +570,9 @@ void CGUITTFont::draw(const EnrichedString &text, const core::rect<s32>& positio
 				offset += fallback->getKerning(*l1, (wchar_t) previousChar);
 
 				const u32 current_color = iter - utext.begin();
-				fallback->draw(core::stringw(l1),
-					core::rect<s32>({offset.X-1, offset.Y-1}, position.LowerRightCorner), // ???
-					current_color < colors.size() ? colors[current_color] : video::SColor(255, 255, 255, 255),
+				fallback->draw(std::wstring(l1),
+					recti({offset.X-1, offset.Y-1}, position.LowerRightCorner), // ???
+					current_color < colors.size() ? colors[current_color] : img::color8(255, 255, 255, 255),
 					false, false, clip);
 			}
 
@@ -587,8 +587,8 @@ void CGUITTFont::draw(const EnrichedString &text, const core::rect<s32>& positio
 	update_glyph_pages();
 	auto it = Render_Map.begin();
 	auto ie = Render_Map.end();
-	core::array<core::vector2di> tmp_positions;
-	core::array<core::recti> tmp_source_rects;
+	std::vector<core::vector2di> tmp_positions;
+	std::vector<core::recti> tmp_source_rects;
 	while (it != ie)
 	{
 		CGUITTGlyphPage* page = it->second;
@@ -596,7 +596,7 @@ void CGUITTFont::draw(const EnrichedString &text, const core::rect<s32>& positio
 
 		// render runs of matching color in batch
 		size_t ibegin;
-		video::SColor colprev;
+		img::color8 colprev;
 		for (size_t i = 0; i < page->render_positions.size(); ++i) {
 			ibegin = i;
 			colprev = page->render_colors[i];
@@ -615,7 +615,7 @@ void CGUITTFont::draw(const EnrichedString &text, const core::rect<s32>& positio
 					tmp_positions[i] += core::vector2di(shadow_offset, shadow_offset);
 
 				u32 new_shadow_alpha = core::clamp(core::round32(shadow_alpha * colprev.getAlpha() / 255.0f), 0, 255);
-				video::SColor shadow_color = video::SColor(new_shadow_alpha, 0, 0, 0);
+				img::color8 shadow_color = img::color8(new_shadow_alpha, 0, 0, 0);
 				Driver->draw2DImageBatch(page->texture, tmp_positions, tmp_source_rects, clip, shadow_color, true);
 
 				for (size_t i = 0; i < tmp_positions.size(); ++i)
@@ -888,26 +888,26 @@ video::IImage* CGUITTFont::createTextureFromChar(const char32_t& ch)
 	if (page->dirty)
 		page->updateTexture();
 
-	video::ITexture* tex = page->texture;
+	render::Texture2D* tex = page->texture;
 
 	// Acquire a read-only lock of the corresponding page texture.
 	void* ptr = tex->lock(video::ETLM_READ_ONLY);
 
 	video::ECOLOR_FORMAT format = tex->getColorFormat();
-	core::dimension2du tex_size = tex->getOriginalSize();
+	v2u tex_size = tex->getOriginalSize();
 	video::IImage* pageholder = Driver->createImageFromData(format, tex_size, ptr, true, false);
 
 	// Copy the image data out of the page texture.
-	core::dimension2du glyph_size(glyph.source_rect.getSize());
+	v2u glyph_size(glyph.source_rect.getSize());
 	video::IImage* image = Driver->createImage(format, glyph_size);
-	pageholder->copyTo(image, core::position2di(0, 0), glyph.source_rect);
+	pageholder->copyTo(image, v2i(0, 0), glyph.source_rect);
 
 	tex->unlock();
 	pageholder->drop();
 	return image;
 }
 
-video::ITexture* CGUITTFont::getPageTextureByIndex(const u32& page_index) const
+render::Texture2D* CGUITTFont::getPageTextureByIndex(const u32& page_index) const
 {
 	if (page_index < Glyph_Pages.size())
 		return Glyph_Pages[page_index]->texture;

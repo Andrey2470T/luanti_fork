@@ -8,7 +8,7 @@
 #include "IGUIEnvironment.h"
 #include "IGUIFont.h"
 #include "IVideoDriver.h"
-#include "rect.h"
+#include "Utils/Rect.h"
 #include "os.h"
 #include "Keycodes.h"
 
@@ -29,11 +29,11 @@ namespace gui
 //! constructor
 CGUIEditBox::CGUIEditBox(const wchar_t *text, bool border,
 		IGUIEnvironment *environment, IGUIElement *parent, s32 id,
-		const core::rect<s32> &rectangle) :
+		const recti &rectangle) :
 		IGUIEditBox(environment, parent, id, rectangle),
 		OverwriteMode(false), MouseMarking(false),
 		Border(border), Background(true), OverrideColorEnabled(false), MarkBegin(0), MarkEnd(0),
-		OverrideColor(video::SColor(101, 255, 255, 255)), OverrideFont(0), LastBreakFont(0),
+		OverrideColor(img::color8(101, 255, 255, 255)), OverrideFont(0), LastBreakFont(0),
 		Operator(0), BlinkStartTime(0), CursorBlinkTime(350), CursorChar(L"_"), CursorPos(0), HScrollPos(0), VScrollPos(0), Max(0),
 		WordWrap(false), MultiLine(false), AutoScroll(true), PasswordBox(false),
 		PasswordChar(L'*'), HAlign(EGUIA_UPPERLEFT), VAlign(EGUIA_CENTER),
@@ -102,13 +102,13 @@ IGUIFont *CGUIEditBox::getActiveFont() const
 }
 
 //! Sets another color for the text.
-void CGUIEditBox::setOverrideColor(video::SColor color)
+void CGUIEditBox::setOverrideColor(img::color8 color)
 {
 	OverrideColor = color;
 	OverrideColorEnabled = true;
 }
 
-video::SColor CGUIEditBox::getOverrideColor() const
+img::color8 CGUIEditBox::getOverrideColor() const
 {
 	return OverrideColor;
 }
@@ -157,7 +157,7 @@ void CGUIEditBox::setWordWrap(bool enable)
 
 void CGUIEditBox::updateAbsolutePosition()
 {
-	core::rect<s32> oldAbsoluteRect(AbsoluteRect);
+	recti oldAbsoluteRect(AbsoluteRect);
 	IGUIElement::updateAbsolutePosition();
 	if (oldAbsoluteRect != AbsoluteRect) {
 		calculateFrameRect();
@@ -290,7 +290,7 @@ bool CGUIEditBox::processKey(const SEvent &event)
 
 				if (isEnabled()) {
 					// delete
-					core::stringw s;
+					std::wstring s;
 					s = Text.subString(0, realmbgn);
 					s.append(Text.subString(realmend, Text.size() - realmend));
 					Text = s;
@@ -314,12 +314,12 @@ bool CGUIEditBox::processKey(const SEvent &event)
 				// add the string
 				const c8 *p = Operator->getTextFromClipboard();
 				if (p) {
-					irr::core::stringw widep;
+					irr::std::wstring widep;
 					core::utf8ToWString(widep, p);
 
 					if (MarkBegin == MarkEnd) {
 						// insert text
-						core::stringw s = Text.subString(0, CursorPos);
+						std::wstring s = Text.subString(0, CursorPos);
 						s.append(widep);
 						s.append(Text.subString(CursorPos, Text.size() - CursorPos));
 
@@ -331,7 +331,7 @@ bool CGUIEditBox::processKey(const SEvent &event)
 					} else {
 						// replace text
 
-						core::stringw s = Text.subString(0, realmbgn);
+						std::wstring s = Text.subString(0, realmbgn);
 						s.append(widep);
 						s.append(Text.subString(realmend, Text.size() - realmend));
 
@@ -540,7 +540,7 @@ bool CGUIEditBox::processKey(const SEvent &event)
 				break;
 
 			if (Text.size()) {
-				core::stringw s;
+				std::wstring s;
 
 				if (MarkBegin != MarkEnd) {
 					// delete marked text
@@ -647,7 +647,7 @@ bool CGUIEditBox::processKey(const SEvent &event)
 bool CGUIEditBox::keyDelete()
 {
 	if (Text.size() != 0) {
-		core::stringw s;
+		std::wstring s;
 
 		if (MarkBegin != MarkEnd) {
 			// delete marked text
@@ -702,7 +702,7 @@ void CGUIEditBox::draw()
 		calculateFrameRect();
 	}
 
-	core::rect<s32> localClipRect = FrameRect;
+	recti localClipRect = FrameRect;
 	localClipRect.clipAgainst(AbsoluteClippingRect);
 
 	// draw the text
@@ -719,10 +719,10 @@ void CGUIEditBox::draw()
 
 		// calculate cursor pos
 
-		core::stringw *txtLine = &Text;
+		std::wstring *txtLine = &Text;
 		s32 startPos = 0;
 
-		core::stringw s, s2;
+		std::wstring s, s2;
 
 		// get mark position
 		const bool ml = (!PasswordBox && (WordWrap || MultiLine));
@@ -735,7 +735,7 @@ void CGUIEditBox::draw()
 		// Save the override color information.
 		// Then, alter it if the edit box is disabled.
 		const bool prevOver = OverrideColorEnabled;
-		const video::SColor prevColor = OverrideColor;
+		const img::color8 prevColor = OverrideColor;
 
 		if (Text.size()) {
 			if (!isEnabled() && !OverrideColorEnabled) {
@@ -747,7 +747,7 @@ void CGUIEditBox::draw()
 				setTextRect(i);
 
 				// clipping test - don't draw anything outside the visible area
-				core::rect<s32> c = localClipRect;
+				recti c = localClipRect;
 				c.clipAgainst(CurrentTextRect);
 				if (!c.isValid())
 					continue;
@@ -756,7 +756,7 @@ void CGUIEditBox::draw()
 				if (PasswordBox) {
 					if (BrokenText.size() != 1) {
 						BrokenText.clear();
-						BrokenText.push_back(core::stringw());
+						BrokenText.push_back(std::wstring());
 					}
 					if (BrokenText[0].size() != Text.size()) {
 						BrokenText[0] = Text;
@@ -840,7 +840,7 @@ void CGUIEditBox::draw()
 				CurrentTextRect.UpperLeftCorner.X += charcursorpos;
 
 				if (OverwriteMode) {
-					core::stringw character = Text.subString(CursorPos, 1);
+					std::wstring character = Text.subString(CursorPos, 1);
 					s32 mend = font->getDimension(character.c_str()).Width;
 					// Make sure the cursor box has at least some width to it
 					if (mend <= 0)
@@ -889,9 +889,9 @@ bool CGUIEditBox::isAutoScrollEnabled() const
 
 //! Gets the area of the text in the edit box
 //! \return Returns the size in pixels of the text
-core::dimension2du CGUIEditBox::getTextDimension()
+v2u CGUIEditBox::getTextDimension()
 {
-	core::rect<s32> ret;
+	recti ret;
 
 	setTextRect(0);
 	ret = CurrentTextRect;
@@ -902,7 +902,7 @@ core::dimension2du CGUIEditBox::getTextDimension()
 		ret.addInternalPoint(CurrentTextRect.LowerRightCorner);
 	}
 
-	return core::dimension2du(ret.getSize());
+	return v2u(ret.getSize());
 }
 
 //! Sets the maximum amount of characters which may be entered in the box.
@@ -979,7 +979,7 @@ bool CGUIEditBox::processMouse(const SEvent &event)
 			return true;
 		} else {
 			if (!AbsoluteClippingRect.isPointInside(
-						core::position2d<s32>(event.MouseInput.X, event.MouseInput.Y))) {
+						v2i(event.MouseInput.X, event.MouseInput.Y))) {
 				return false;
 			} else {
 				// move cursor
@@ -996,7 +996,7 @@ bool CGUIEditBox::processMouse(const SEvent &event)
 			}
 		}
 	case EMIE_MMOUSE_PRESSED_DOWN: {
-		if (!AbsoluteClippingRect.isPointInside(core::position2d<s32>(
+		if (!AbsoluteClippingRect.isPointInside(v2i(
 					event.MouseInput.X, event.MouseInput.Y)))
 			return false;
 
@@ -1011,7 +1011,7 @@ bool CGUIEditBox::processMouse(const SEvent &event)
 
 		// paste from the primary selection
 		inputString([&] {
-			irr::core::stringw inserted_text;
+			irr::std::wstring inserted_text;
 			if (!Operator)
 				return inserted_text;
 			const c8 *inserted_text_utf8 = Operator->getTextFromPrimarySelection();
@@ -1036,7 +1036,7 @@ s32 CGUIEditBox::getCursorPos(s32 x, s32 y)
 
 	const u32 lineCount = (WordWrap || MultiLine) ? BrokenText.size() : 1;
 
-	core::stringw *txtLine = 0;
+	std::wstring *txtLine = 0;
 	s32 startPos = 0;
 	x += 3;
 
@@ -1087,9 +1087,9 @@ void CGUIEditBox::breakText()
 
 	LastBreakFont = font;
 
-	core::stringw line;
-	core::stringw word;
-	core::stringw whitespace;
+	std::wstring line;
+	std::wstring word;
+	std::wstring whitespace;
 	s32 lastLineStart = 0;
 	s32 size = Text.size();
 	s32 length = 0;
@@ -1185,7 +1185,7 @@ void CGUIEditBox::setTextRect(s32 line)
 	if (!font)
 		return;
 
-	core::dimension2du d;
+	v2u d;
 
 	// get text dimension
 	const u32 lineCount = (WordWrap || MultiLine) ? BrokenText.size() : 1;
@@ -1258,16 +1258,16 @@ void CGUIEditBox::inputChar(wchar_t c)
 {
 	if (c == 0)
 		return;
-	core::stringw s(&c, 1);
+	std::wstring s(&c, 1);
 	inputString(s);
 }
 
-void CGUIEditBox::inputString(const core::stringw &str)
+void CGUIEditBox::inputString(const std::wstring &str)
 {
 	if (!isEnabled())
 		return;
 
-	core::stringw s;
+	std::wstring s;
 	u32 len = str.size();
 
 	if (MarkBegin != MarkEnd) {
@@ -1353,7 +1353,7 @@ void CGUIEditBox::calculateScrollPos()
 		// get cursor position
 		// get cursor area
 		irr::u32 cursorWidth = font->getDimension(CursorChar.c_str()).Width;
-		core::stringw *txtLine = hasBrokenText ? &BrokenText[cursLine] : &Text;
+		std::wstring *txtLine = hasBrokenText ? &BrokenText[cursLine] : &Text;
 		s32 cPos = hasBrokenText ? CursorPos - BrokenTextPositions[cursLine] : CursorPos; // column
 		s32 cStart = font->getDimension(txtLine->subString(0, cPos).c_str()).Width;       // pixels from text-start
 		s32 cEnd = cStart + cursorWidth;

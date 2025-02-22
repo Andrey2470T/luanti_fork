@@ -60,7 +60,7 @@ void CGUIFont::setMaxHeight()
 
 	MaxHeight = 0;
 
-	core::array<core::rect<s32>> &p = SpriteBank->getPositions();
+	std::vector<recti> &p = SpriteBank->getPositions();
 
 	for (u32 i = 0; i < p.size(); ++i) {
 		const s32 t = p[i].getHeight();
@@ -171,24 +171,24 @@ void CGUIFont::readPositions(video::IImage *image, s32 &lowerRightPositions)
 
 	const core::dimension2d<u32> size = image->getDimension();
 
-	video::SColor colorTopLeft = image->getPixel(0, 0);
+	img::color8 colorTopLeft = image->getPixel(0, 0);
 	colorTopLeft.setAlpha(255);
 	image->setPixel(0, 0, colorTopLeft);
-	video::SColor colorLowerRight = image->getPixel(1, 0);
-	video::SColor colorBackGround = image->getPixel(2, 0);
-	video::SColor colorBackGroundTransparent = 0;
+	img::color8 colorLowerRight = image->getPixel(1, 0);
+	img::color8 colorBackGround = image->getPixel(2, 0);
+	img::color8 colorBackGroundTransparent = 0;
 
 	image->setPixel(1, 0, colorBackGround);
 
 	// start parsing
 
-	core::position2d<s32> pos(0, 0);
+	v2i pos(0, 0);
 	for (pos.Y = 0; pos.Y < (s32)size.Height; ++pos.Y) {
 		for (pos.X = 0; pos.X < (s32)size.Width; ++pos.X) {
-			const video::SColor c = image->getPixel(pos.X, pos.Y);
+			const img::color8 c = image->getPixel(pos.X, pos.Y);
 			if (c == colorTopLeft) {
 				image->setPixel(pos.X, pos.Y, colorBackGroundTransparent);
-				SpriteBank->getPositions().push_back(core::rect<s32>(pos, pos));
+				SpriteBank->getPositions().push_back(recti(pos, pos));
 			} else if (c == colorLowerRight) {
 				// too many lower right points
 				if (SpriteBank->getPositions().size() <= (u32)lowerRightPositions) {
@@ -307,15 +307,15 @@ core::dimension2d<u32> CGUIFont::getDimension(const wchar_t *text) const
 }
 
 //! draws some text and clips it to the specified rectangle if wanted
-void CGUIFont::draw(const core::stringw &text, const core::rect<s32> &position,
-		video::SColor color,
-		bool hcenter, bool vcenter, const core::rect<s32> *clip)
+void CGUIFont::draw(const std::wstring &text, const recti &position,
+		img::color8 color,
+		bool hcenter, bool vcenter, const recti *clip)
 {
 	if (!Driver || !SpriteBank)
 		return;
 
-	core::dimension2d<s32> textDimension; // NOTE: don't make this u32 or the >> later on can fail when the dimension width is < position width
-	core::position2d<s32> offset = position.UpperLeftCorner;
+	v2i textDimension; // NOTE: don't make this u32 or the >> later on can fail when the dimension width is < position width
+	v2i offset = position.UpperLeftCorner;
 
 	if (hcenter || vcenter || clip)
 		textDimension = getDimension(text.c_str());
@@ -327,14 +327,14 @@ void CGUIFont::draw(const core::stringw &text, const core::rect<s32> &position,
 		offset.Y += (position.getHeight() - textDimension.Height) >> 1;
 
 	if (clip) {
-		core::rect<s32> clippedRect(offset, textDimension);
+		recti clippedRect(offset, textDimension);
 		clippedRect.clipAgainst(*clip);
 		if (!clippedRect.isValid())
 			return;
 	}
 
-	core::array<u32> indices(text.size());
-	core::array<core::position2di> offsets(text.size());
+	std::vector<u32> indices(text.size());
+	std::vector<v2i> offsets(text.size());
 
 	for (u32 i = 0; i < text.size(); i++) {
 		wchar_t c = text[i];

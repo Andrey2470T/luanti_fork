@@ -15,7 +15,7 @@ class CGUICheckBox : public IGUICheckBox
 {
 public:
 	//! constructor
-	CGUICheckBox(bool checked, IGUIEnvironment *environment, IGUIElement *parent, s32 id, core::rect<s32> rectangle);
+    CGUICheckBox(bool checked, IGUIEnvironment *environment, IGUIElement *parent, s32 id, recti rectangle);
 
 	//! set if box is checked
 	void setChecked(bool checked) override;

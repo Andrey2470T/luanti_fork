@@ -21,7 +21,7 @@ class CGUITab : public IGUITab
 public:
 	//! constructor
 	CGUITab(IGUIEnvironment *environment,
-			IGUIElement *parent, const core::rect<s32> &rectangle,
+            IGUIElement *parent, const recti &rectangle,
 			s32 id);
 
 	//! draws the element and its children
@@ -31,23 +31,23 @@ public:
 	void setDrawBackground(bool draw = true) override;
 
 	//! sets the color of the background, if it should be drawn.
-	void setBackgroundColor(video::SColor c) override;
+    void setBackgroundColor(img::color8 c) override;
 
 	//! sets the color of the text
-	void setTextColor(video::SColor c) override;
+    void setTextColor(img::color8 c) override;
 
 	//! returns true if the tab is drawing its background, false if not
 	bool isDrawingBackground() const override;
 
 	//! returns the color of the background
-	video::SColor getBackgroundColor() const override;
+    img::color8 getBackgroundColor() const override;
 
-	video::SColor getTextColor() const override;
+    img::color8 getTextColor() const override;
 
 private:
-	video::SColor BackColor;
+    img::color8 BackColor;
 	bool OverrideTextColorEnabled;
-	video::SColor TextColor;
+    img::color8 TextColor;
 	bool DrawBackground;
 };
 
@@ -57,7 +57,7 @@ class CGUITabControl : public IGUITabControl
 public:
 	//! destructor
 	CGUITabControl(IGUIEnvironment *environment,
-			IGUIElement *parent, const core::rect<s32> &rectangle,
+            IGUIElement *parent, const recti &rectangle,
 			bool fillbackground = true, bool border = true, s32 id = -1);
 
 	//! destructor
@@ -149,7 +149,7 @@ private:
 	//! Left index calculation based on the selected tab
 	s32 calculateScrollIndexFromActive();
 	s32 calcTabWidth(IGUIFont *font, const wchar_t *text) const;
-	core::rect<s32> calcTabPos();
+    recti calcTabPos();
 	void setVisibleTab(s32 idx);
 	void removeTabButNotChild(s32 idx);
 
@@ -157,7 +157,7 @@ private:
 	void recalculateScrollBar();
 	void refreshSprites();
 
-	core::array<IGUITab *> Tabs;
+    std::vector<IGUITab *> Tabs;
 	s32 ActiveTabIndex;
 	bool Border;
 	bool FillBackground;

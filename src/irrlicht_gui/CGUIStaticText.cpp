@@ -8,7 +8,7 @@
 #include "IGUIEnvironment.h"
 #include "IGUIFont.h"
 #include "IVideoDriver.h"
-#include "rect.h"
+#include "Utils/Rect.h"
 
 namespace irr
 {
@@ -18,13 +18,13 @@ namespace gui
 //! constructor
 CGUIStaticText::CGUIStaticText(const wchar_t *text, bool border,
 		IGUIEnvironment *environment, IGUIElement *parent,
-		s32 id, const core::rect<s32> &rectangle,
+		s32 id, const recti &rectangle,
 		bool background) :
 		IGUIStaticText(environment, parent, id, rectangle),
 		HAlign(EGUIA_UPPERLEFT), VAlign(EGUIA_UPPERLEFT),
 		Border(border), OverrideColorEnabled(false), OverrideBGColorEnabled(false), WordWrap(false), Background(background),
 		RestrainTextInside(true), RightToLeft(false),
-		OverrideColor(video::SColor(101, 255, 255, 255)), BGColor(video::SColor(101, 210, 210, 210)),
+		OverrideColor(img::color8(101, 255, 255, 255)), BGColor(img::color8(101, 210, 210, 210)),
 		OverrideFont(0), LastBreakFont(0)
 {
 	Text = text;
@@ -51,7 +51,7 @@ void CGUIStaticText::draw()
 		return;
 	video::IVideoDriver *driver = Environment->getVideoDriver();
 
-	core::rect<s32> frameRect(AbsoluteRect);
+	recti frameRect(AbsoluteRect);
 
 	// draw background
 
@@ -93,7 +93,7 @@ void CGUIStaticText::draw()
 				if (font != LastBreakFont)
 					breakText();
 
-				core::rect<s32> r = frameRect;
+				recti r = frameRect;
 				s32 height = font->getDimension(L"A").Height + kerningHeight;
 				s32 totalHeight = height * BrokenText.size();
 				if (VAlign == EGUIA_CENTER) {
@@ -157,14 +157,14 @@ IGUIFont *CGUIStaticText::getActiveFont() const
 }
 
 //! Sets another color for the text.
-void CGUIStaticText::setOverrideColor(video::SColor color)
+void CGUIStaticText::setOverrideColor(img::color8 color)
 {
 	OverrideColor = color;
 	OverrideColorEnabled = true;
 }
 
 //! Sets another color for the text.
-void CGUIStaticText::setBackgroundColor(video::SColor color)
+void CGUIStaticText::setBackgroundColor(img::color8 color)
 {
 	BGColor = color;
 	OverrideBGColorEnabled = true;
@@ -178,7 +178,7 @@ void CGUIStaticText::setDrawBackground(bool draw)
 }
 
 //! Gets the background color
-video::SColor CGUIStaticText::getBackgroundColor() const
+img::color8 CGUIStaticText::getBackgroundColor() const
 {
 	return BGColor;
 }
@@ -217,12 +217,12 @@ void CGUIStaticText::setTextAlignment(EGUI_ALIGNMENT horizontal, EGUI_ALIGNMENT 
 	VAlign = vertical;
 }
 
-video::SColor CGUIStaticText::getOverrideColor() const
+img::color8 CGUIStaticText::getOverrideColor() const
 {
 	return OverrideColor;
 }
 
-irr::video::SColor CGUIStaticText::getActiveColor() const
+irr::img::color8 CGUIStaticText::getActiveColor() const
 {
 	if (OverrideColorEnabled)
 		return OverrideColor;
@@ -285,9 +285,9 @@ void CGUIStaticText::breakText()
 
 	LastBreakFont = font;
 
-	core::stringw line;
-	core::stringw word;
-	core::stringw whitespace;
+	std::wstring line;
+	std::wstring word;
+	std::wstring whitespace;
 	s32 size = Text.size();
 	s32 length = 0;
 	s32 elWidth = RelativeRect.getWidth();
@@ -335,8 +335,8 @@ void CGUIStaticText::breakText()
 						// break the word at
 						int where = word.findFirst(wchar_t(0x00AD));
 						if (where != -1) {
-							core::stringw first = word.subString(0, where);
-							core::stringw second = word.subString(where, word.size() - where);
+							std::wstring first = word.subString(0, where);
+							std::wstring second = word.subString(where, word.size() - where);
 							BrokenText.push_back(line + first + L"-");
 							const s32 secondLength = font->getDimension(second.c_str()).Width;
 
@@ -428,7 +428,7 @@ void CGUIStaticText::breakText()
 				}
 
 				if (c != 0)
-					whitespace = core::stringw(&c, 1) + whitespace;
+					whitespace = std::wstring(&c, 1) + whitespace;
 
 				// compute line break
 				if (lineBreak) {
@@ -442,7 +442,7 @@ void CGUIStaticText::breakText()
 				}
 			} else {
 				// yippee this is a word..
-				word = core::stringw(&c, 1) + word;
+				word = std::wstring(&c, 1) + word;
 			}
 		}
 

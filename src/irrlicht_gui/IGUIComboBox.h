@@ -6,11 +6,6 @@
 
 #include "IGUIElement.h"
 
-namespace irr
-{
-namespace gui
-{
-
 //! Combobox widget
 /** \par This element can create the following events of type EGUI_EVENT_TYPE:
 \li EGET_COMBO_BOX_CHANGED
@@ -67,6 +62,3 @@ public:
 	//! Get the maximal number of rows for the selection listbox
 	virtual u32 getMaxSelectionRows() const = 0;
 };
-
-} // end namespace gui
-} // end namespace irr

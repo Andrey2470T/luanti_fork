@@ -4,38 +4,32 @@
 
 #pragma once
 
-#include "IReferenceCounted.h"
-#include "SColor.h"
-#include "rect.h"
-#include "irrString.h"
-
-namespace irr
-{
-namespace gui
-{
+#include "GUIEnums.h"
+#include "Image/Color.h"
+#include "Utils/Rect.h"
 
 //! An enum for the different types of GUI font.
-enum EGUI_FONT_TYPE
+enum class GUIFontType : u8
 {
 	//! Bitmap fonts loaded from an XML file or a texture.
-	EGFT_BITMAP = 0,
+    Bitmap = 0,
 
 	//! Scalable vector fonts loaded from an XML file.
 	/** These fonts reside in system memory and use no video memory
 	until they are displayed. These are slower than bitmap fonts
 	but can be easily scaled and rotated. */
-	EGFT_VECTOR,
+    Vector,
 
 	//! A font which uses a the native API provided by the operating system.
 	/** Currently not used. */
-	EGFT_OS,
+    OS,
 
 	//! An external font type provided by the user.
-	EGFT_CUSTOM
+    Custom
 };
 
 //! Font interface.
-class IGUIFont : public virtual IReferenceCounted
+class IGUIFont
 {
 public:
 	//! Draws some text and clips it to the specified rectangle if wanted.
@@ -46,7 +40,7 @@ public:
 	\param vcenter: Specifies if the text should be centered vertically into the rectangle.
 	\param clip: Optional pointer to a rectangle against which the text will be clipped.
 	If the pointer is null, no clipping will be done. */
-    virtual void draw(const core::stringw &text, const recti &position,
+    virtual void draw(const std::wstring &text, const recti &position,
             img::color8 color, bool hcenter = false, bool vcenter = false,
             const recti *clip = 0) = 0;
 
@@ -63,7 +57,7 @@ public:
 	virtual s32 getCharacterFromPos(const wchar_t *text, s32 pixel_x) const = 0;
 
 	//! Returns the type of this font
-	virtual EGUI_FONT_TYPE getType() const { return EGFT_CUSTOM; }
+    virtual GUIFontType getType() const { return GUIFontType::Custom; }
 
 	//! Sets global kerning width for the font.
 	virtual void setKerningWidth(s32 kerning) = 0;
@@ -82,7 +76,7 @@ public:
 	which supports kerning pairs a string such as 'Wo' may have the 'o'
 	tucked neatly under the 'W'.
 	*/
-	virtual core::vector2di getKerning(const wchar_t thisLetter = 0, const wchar_t previousLetter = 0) const = 0;
+    virtual v2i getKerning(const wchar_t thisLetter = 0, const wchar_t previousLetter = 0) const = 0;
 
 	//! Define which characters should not be drawn by the font.
 	/** For example " " would not draw any space which is usually blank in
@@ -91,6 +85,3 @@ public:
 	*/
 	virtual void setInvisibleCharacters(const wchar_t *s) = 0;
 };
-
-} // end namespace gui
-} // end namespace irr

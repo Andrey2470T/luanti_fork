@@ -20,7 +20,7 @@ namespace gui
 
 //! constructor
 CGUIListBox::CGUIListBox(IGUIEnvironment *environment, IGUIElement *parent,
-		s32 id, core::rect<s32> rectangle, bool clip,
+		s32 id, recti rectangle, bool clip,
 		bool drawBack, bool moveOverSelect) :
 		IGUIListBox(environment, parent, id, rectangle),
 		Selected(-1),
@@ -351,7 +351,7 @@ bool CGUIListBox::OnEvent(const SEvent &event)
 			break;
 
 		case EET_MOUSE_INPUT_EVENT: {
-			core::position2d<s32> p(event.MouseInput.X, event.MouseInput.Y);
+			v2i p(event.MouseInput.X, event.MouseInput.Y);
 
 			switch (event.MouseInput.Event) {
 			case EMIE_MOUSE_WHEEL:
@@ -434,14 +434,14 @@ void CGUIListBox::draw()
 	IGUISkin *skin = Environment->getSkin();
 	updateScrollBarSize(skin->getSize(EGDS_SCROLLBAR_SIZE));
 
-	core::rect<s32> *clipRect = 0;
+	recti *clipRect = 0;
 
 	// draw background
-	core::rect<s32> frameRect(AbsoluteRect);
+	recti frameRect(AbsoluteRect);
 
 	// draw items
 
-	core::rect<s32> clientClip(AbsoluteRect);
+	recti clientClip(AbsoluteRect);
 	clientClip.UpperLeftCorner.Y += 1;
 	clientClip.UpperLeftCorner.X += 1;
 	if (ScrollBar->isVisible())
@@ -473,12 +473,12 @@ void CGUIListBox::draw()
 			if (i == Selected && hl)
 				skin->draw2DRectangle(this, skin->getColor(EGDC_HIGH_LIGHT), frameRect, &clientClip);
 
-			core::rect<s32> textRect = frameRect;
+			recti textRect = frameRect;
 			textRect.UpperLeftCorner.X += 3;
 
 			if (Font) {
 				if (IconBank && (Items[i].Icon > -1)) {
-					core::position2di iconPos = textRect.UpperLeftCorner;
+					v2i iconPos = textRect.UpperLeftCorner;
 					iconPos.Y += textRect.getHeight() / 2;
 					iconPos.X += ItemsIconWidth / 2;
 
@@ -650,7 +650,7 @@ void CGUIListBox::swapItems(u32 index1, u32 index2)
 	Items[index2] = dummmy;
 }
 
-void CGUIListBox::setItemOverrideColor(u32 index, video::SColor color)
+void CGUIListBox::setItemOverrideColor(u32 index, img::color8 color)
 {
 	for (u32 c = 0; c < EGUI_LBC_COUNT; ++c) {
 		Items[index].OverrideColors[c].Use = true;
@@ -658,7 +658,7 @@ void CGUIListBox::setItemOverrideColor(u32 index, video::SColor color)
 	}
 }
 
-void CGUIListBox::setItemOverrideColor(u32 index, EGUI_LISTBOX_COLOR colorType, video::SColor color)
+void CGUIListBox::setItemOverrideColor(u32 index, EGUI_LISTBOX_COLOR colorType, img::color8 color)
 {
 	if (index >= Items.size() || colorType < 0 || colorType >= EGUI_LBC_COUNT)
 		return;
@@ -690,19 +690,19 @@ bool CGUIListBox::hasItemOverrideColor(u32 index, EGUI_LISTBOX_COLOR colorType) 
 	return Items[index].OverrideColors[colorType].Use;
 }
 
-video::SColor CGUIListBox::getItemOverrideColor(u32 index, EGUI_LISTBOX_COLOR colorType) const
+img::color8 CGUIListBox::getItemOverrideColor(u32 index, EGUI_LISTBOX_COLOR colorType) const
 {
 	if ((u32)index >= Items.size() || colorType < 0 || colorType >= EGUI_LBC_COUNT)
-		return video::SColor();
+		return img::color8();
 
 	return Items[index].OverrideColors[colorType].Color;
 }
 
-video::SColor CGUIListBox::getItemDefaultColor(EGUI_LISTBOX_COLOR colorType) const
+img::color8 CGUIListBox::getItemDefaultColor(EGUI_LISTBOX_COLOR colorType) const
 {
 	IGUISkin *skin = Environment->getSkin();
 	if (!skin)
-		return video::SColor();
+		return img::color8();
 
 	switch (colorType) {
 	case EGUI_LBC_TEXT:
@@ -714,7 +714,7 @@ video::SColor CGUIListBox::getItemDefaultColor(EGUI_LISTBOX_COLOR colorType) con
 	case EGUI_LBC_ICON_HIGHLIGHT:
 		return skin->getColor(EGDC_ICON_HIGH_LIGHT);
 	default:
-		return video::SColor();
+		return img::color8();
 	}
 }
 

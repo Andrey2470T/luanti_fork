@@ -63,8 +63,8 @@ public:
 	IGUISkin *createSkin(EGUI_SKIN_TYPE type) override;
 
 	//! Creates the image list from the given texture.
-	virtual IGUIImageList *createImageList(video::ITexture *texture,
-			core::dimension2d<s32> imageSize, bool useAlphaChannel) override;
+    virtual IGUIImageList *createImageList(render::Texture2D *texture,
+            v2i imageSize, bool useAlphaChannel) override;
 
 	//! returns the font
 	IGUIFont *getFont(const io::path &filename) override;
@@ -85,26 +85,26 @@ public:
 	IGUISpriteBank *addEmptySpriteBank(const io::path &name) override;
 
 	//! adds an button. The returned pointer must not be dropped.
-	IGUIButton *addButton(const core::rect<s32> &rectangle, IGUIElement *parent = 0, s32 id = -1, const wchar_t *text = 0, const wchar_t *tooltiptext = 0) override;
+    IGUIButton *addButton(const recti &rectangle, IGUIElement *parent = 0, s32 id = -1, const wchar_t *text = 0, const wchar_t *tooltiptext = 0) override;
 
 	//! adds a scrollbar. The returned pointer must not be dropped.
-	virtual IGUIScrollBar *addScrollBar(bool horizontal, const core::rect<s32> &rectangle,
+    virtual IGUIScrollBar *addScrollBar(bool horizontal, const recti &rectangle,
 			IGUIElement *parent = 0, s32 id = -1) override;
 
 	//! Adds an image element.
-	virtual IGUIImage *addImage(video::ITexture *image, core::position2d<s32> pos,
+    virtual IGUIImage *addImage(render::Texture2D *image, v2i pos,
 			bool useAlphaChannel = true, IGUIElement *parent = 0, s32 id = -1, const wchar_t *text = 0) override;
 
 	//! adds an image. The returned pointer must not be dropped.
-	virtual IGUIImage *addImage(const core::rect<s32> &rectangle,
+    virtual IGUIImage *addImage(const recti &rectangle,
 			IGUIElement *parent = 0, s32 id = -1, const wchar_t *text = 0, bool useAlphaChannel = true) override;
 
 	//! adds a checkbox
-	virtual IGUICheckBox *addCheckBox(bool checked, const core::rect<s32> &rectangle,
+    virtual IGUICheckBox *addCheckBox(bool checked, const recti &rectangle,
 			IGUIElement *parent = 0, s32 id = -1, const wchar_t *text = 0) override;
 
 	//! adds a list box
-	virtual IGUIListBox *addListBox(const core::rect<s32> &rectangle,
+    virtual IGUIListBox *addListBox(const recti &rectangle,
 			IGUIElement *parent = 0, s32 id = -1, bool drawBackground = false) override;
 
 	//! Adds a file open dialog.
@@ -113,23 +113,23 @@ public:
 			bool restoreCWD = false, io::path::char_type *startDir = 0) override;
 
 	//! adds a static text. The returned pointer must not be dropped.
-	virtual IGUIStaticText *addStaticText(const wchar_t *text, const core::rect<s32> &rectangle,
+    virtual IGUIStaticText *addStaticText(const wchar_t *text, const recti &rectangle,
 			bool border = false, bool wordWrap = true, IGUIElement *parent = 0, s32 id = -1, bool drawBackground = false) override;
 
 	//! Adds an edit box. The returned pointer must not be dropped.
-	virtual IGUIEditBox *addEditBox(const wchar_t *text, const core::rect<s32> &rectangle,
+    virtual IGUIEditBox *addEditBox(const wchar_t *text, const recti &rectangle,
 			bool border = false, IGUIElement *parent = 0, s32 id = -1) override;
 
 	//! Adds a tab control to the environment.
-	virtual IGUITabControl *addTabControl(const core::rect<s32> &rectangle,
+    virtual IGUITabControl *addTabControl(const recti &rectangle,
 			IGUIElement *parent = 0, bool fillbackground = false, bool border = true, s32 id = -1) override;
 
 	//! Adds tab to the environment.
-	virtual IGUITab *addTab(const core::rect<s32> &rectangle,
+    virtual IGUITab *addTab(const recti &rectangle,
 			IGUIElement *parent = 0, s32 id = -1) override;
 
 	//! Adds a combo box to the environment.
-	virtual IGUIComboBox *addComboBox(const core::rect<s32> &rectangle,
+    virtual IGUIComboBox *addComboBox(const recti &rectangle,
 			IGUIElement *parent = 0, s32 id = -1) override;
 
 	//! sets the focus to an element
@@ -168,7 +168,7 @@ private:
 	//! clears the deletion queue
 	void clearDeletionQueue();
 
-	void updateHoveredElement(core::position2d<s32> mousePos);
+    void updateHoveredElement(v2i mousePos);
 
 	void loadBuiltInFont();
 
@@ -205,19 +205,19 @@ private:
 
 	SToolTip ToolTip;
 
-	core::array<SFont> Fonts;
-	core::array<SSpriteBank> Banks;
+    std::vector<SFont> Fonts;
+    std::vector<SSpriteBank> Banks;
 	video::IVideoDriver *Driver;
 	IGUIElement *Hovered;
 	IGUIElement *HoveredNoSubelement; // subelements replaced by their parent, so you only have 'real' elements here
 	IGUIElement *Focus;
-	core::position2d<s32> LastHoveredMousePos;
+    v2i LastHoveredMousePos;
 	IGUISkin *CurrentSkin;
 	io::IFileSystem *FileSystem;
 	IEventReceiver *UserReceiver;
 	IOSOperator *Operator;
 	u32 FocusFlags;
-	core::array<IGUIElement *> DeletionQueue;
+    std::vector<IGUIElement *> DeletionQueue;
 
 	static const io::path DefaultFontName;
 };

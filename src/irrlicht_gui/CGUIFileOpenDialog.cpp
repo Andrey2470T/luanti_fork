@@ -27,7 +27,7 @@ CGUIFileOpenDialog::CGUIFileOpenDialog(const wchar_t *title,
 		IGUIEnvironment *environment, IGUIElement *parent, s32 id,
 		bool restoreCWD, io::path::char_type *startDir) :
 		IGUIFileOpenDialog(environment, parent, id,
-				core::rect<s32>((parent->getAbsolutePosition().getWidth() - FOD_WIDTH) / 2,
+				recti((parent->getAbsolutePosition().getWidth() - FOD_WIDTH) / 2,
 						(parent->getAbsolutePosition().getHeight() - FOD_HEIGHT) / 2,
 						(parent->getAbsolutePosition().getWidth() - FOD_WIDTH) / 2 + FOD_WIDTH,
 						(parent->getAbsolutePosition().getHeight() - FOD_HEIGHT) / 2 + FOD_HEIGHT)),
@@ -50,7 +50,7 @@ CGUIFileOpenDialog::CGUIFileOpenDialog(const wchar_t *title,
 		return;
 
 	IGUISpriteBank *sprites = 0;
-	video::SColor color(255, 255, 255, 255);
+	img::color8 color(255, 255, 255, 255);
 	IGUISkin *skin = Environment->getSkin();
 	if (skin) {
 		sprites = skin->getSpriteBank();
@@ -60,7 +60,7 @@ CGUIFileOpenDialog::CGUIFileOpenDialog(const wchar_t *title,
 	const s32 buttonw = skin ? skin->getSize(EGDS_WINDOW_BUTTON_WIDTH) : 2;
 	const s32 posx = RelativeRect.getWidth() - buttonw - 4;
 
-	CloseButton = Environment->addButton(core::rect<s32>(posx, 3, posx + buttonw, 3 + buttonw), this, -1,
+	CloseButton = Environment->addButton(recti(posx, 3, posx + buttonw, 3 + buttonw), this, -1,
 			L"", skin ? skin->getDefaultText(EGDT_WINDOW_CLOSE) : L"Close");
 	CloseButton->setSubElement(true);
 	CloseButton->setTabStop(false);
@@ -73,25 +73,25 @@ CGUIFileOpenDialog::CGUIFileOpenDialog(const wchar_t *title,
 	CloseButton->grab();
 
 	OKButton = Environment->addButton(
-			core::rect<s32>(RelativeRect.getWidth() - 80, 30, RelativeRect.getWidth() - 10, 50),
+			recti(RelativeRect.getWidth() - 80, 30, RelativeRect.getWidth() - 10, 50),
 			this, -1, skin ? skin->getDefaultText(EGDT_MSG_BOX_OK) : L"OK");
 	OKButton->setSubElement(true);
 	OKButton->setAlignment(EGUIA_LOWERRIGHT, EGUIA_LOWERRIGHT, EGUIA_UPPERLEFT, EGUIA_UPPERLEFT);
 	OKButton->grab();
 
 	CancelButton = Environment->addButton(
-			core::rect<s32>(RelativeRect.getWidth() - 80, 55, RelativeRect.getWidth() - 10, 75),
+			recti(RelativeRect.getWidth() - 80, 55, RelativeRect.getWidth() - 10, 75),
 			this, -1, skin ? skin->getDefaultText(EGDT_MSG_BOX_CANCEL) : L"Cancel");
 	CancelButton->setSubElement(true);
 	CancelButton->setAlignment(EGUIA_LOWERRIGHT, EGUIA_LOWERRIGHT, EGUIA_UPPERLEFT, EGUIA_UPPERLEFT);
 	CancelButton->grab();
 
-	FileBox = Environment->addListBox(core::rect<s32>(10, 55, RelativeRect.getWidth() - 90, 230), this, -1, true);
+	FileBox = Environment->addListBox(recti(10, 55, RelativeRect.getWidth() - 90, 230), this, -1, true);
 	FileBox->setSubElement(true);
 	FileBox->setAlignment(EGUIA_UPPERLEFT, EGUIA_LOWERRIGHT, EGUIA_UPPERLEFT, EGUIA_LOWERRIGHT);
 	FileBox->grab();
 
-	FileNameText = Environment->addEditBox(0, core::rect<s32>(10, 30, RelativeRect.getWidth() - 90, 50), true, this);
+	FileNameText = Environment->addEditBox(0, recti(10, 30, RelativeRect.getWidth() - 90, 50), true, this);
 	FileNameText->setSubElement(true);
 	FileNameText->setAlignment(EGUIA_UPPERLEFT, EGUIA_LOWERRIGHT, EGUIA_UPPERLEFT, EGUIA_UPPERLEFT);
 	FileNameText->grab();
@@ -263,7 +263,7 @@ bool CGUIFileOpenDialog::OnEvent(const SEvent &event)
 
 							return true;
 
-					move(core::position2d<s32>(event.MouseInput.X - DragStart.X, event.MouseInput.Y - DragStart.Y));
+					move(v2i(event.MouseInput.X - DragStart.X, event.MouseInput.Y - DragStart.Y));
 					DragStart.X = event.MouseInput.X;
 					DragStart.Y = event.MouseInput.Y;
 					return true;
@@ -288,7 +288,7 @@ void CGUIFileOpenDialog::draw()
 
 	IGUISkin *skin = Environment->getSkin();
 
-	core::rect<s32> rect = AbsoluteRect;
+	recti rect = AbsoluteRect;
 
 	rect = skin->draw3DWindowBackground(this, true, skin->getColor(EGDC_ACTIVE_BORDER),
 			rect, &AbsoluteClippingRect);
@@ -307,7 +307,7 @@ void CGUIFileOpenDialog::draw()
 	IGUIElement::draw();
 }
 
-void CGUIFileOpenDialog::pathToStringW(irr::core::stringw &result, const irr::io::path &p)
+void CGUIFileOpenDialog::pathToStringW(irr::std::wstring &result, const irr::io::path &p)
 {
 	core::multibyteToWString(result, p);
 }
@@ -326,7 +326,7 @@ void CGUIFileOpenDialog::fillListBox()
 	FileBox->clear();
 
 	FileList = FileSystem->createFileList();
-	core::stringw s;
+	std::wstring s;
 
 	if (FileList) {
 		for (u32 i = 0; i < FileList->getFileCount(); ++i) {

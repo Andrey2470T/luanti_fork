@@ -14,7 +14,7 @@ namespace gui
 {
 
 //! constructor
-CGUIImage::CGUIImage(IGUIEnvironment *environment, IGUIElement *parent, s32 id, core::rect<s32> rectangle) :
+CGUIImage::CGUIImage(IGUIEnvironment *environment, IGUIElement *parent, s32 id, recti rectangle) :
 		IGUIImage(environment, parent, id, rectangle), Texture(0), Color(255, 255, 255, 255),
 		UseAlphaChannel(false), ScaleImage(false), DrawBounds(0.f, 0.f, 1.f, 1.f), DrawBackground(true)
 {}
@@ -27,7 +27,7 @@ CGUIImage::~CGUIImage()
 }
 
 //! sets an image
-void CGUIImage::setImage(video::ITexture *image)
+void CGUIImage::setImage(render::Texture2D *image)
 {
 	if (image == Texture)
 		return;
@@ -42,19 +42,19 @@ void CGUIImage::setImage(video::ITexture *image)
 }
 
 //! Gets the image texture
-video::ITexture *CGUIImage::getImage() const
+render::Texture2D *CGUIImage::getImage() const
 {
 	return Texture;
 }
 
 //! sets the color of the image
-void CGUIImage::setColor(video::SColor color)
+void CGUIImage::setColor(img::color8 color)
 {
 	Color = color;
 }
 
 //! Gets the color of the image
-video::SColor CGUIImage::getColor() const
+img::color8 CGUIImage::getColor() const
 {
 	return Color;
 }
@@ -69,21 +69,21 @@ void CGUIImage::draw()
 	video::IVideoDriver *driver = Environment->getVideoDriver();
 
 	if (Texture) {
-		core::rect<s32> sourceRect(SourceRect);
+		recti sourceRect(SourceRect);
 		if (sourceRect.getWidth() == 0 || sourceRect.getHeight() == 0) {
-			sourceRect = core::rect<s32>(core::dimension2di(Texture->getOriginalSize()));
+			sourceRect = recti(core::dimension2di(Texture->getOriginalSize()));
 		}
 
 		if (ScaleImage) {
-			const video::SColor Colors[] = {Color, Color, Color, Color};
+			const img::color8 Colors[] = {Color, Color, Color, Color};
 
-			core::rect<s32> clippingRect(AbsoluteClippingRect);
+			recti clippingRect(AbsoluteClippingRect);
 			checkBounds(clippingRect);
 
 			driver->draw2DImage(Texture, AbsoluteRect, sourceRect,
 					&clippingRect, Colors, UseAlphaChannel);
 		} else {
-			core::rect<s32> clippingRect(AbsoluteRect.UpperLeftCorner, sourceRect.getSize());
+			recti clippingRect(AbsoluteRect.UpperLeftCorner, sourceRect.getSize());
 			checkBounds(clippingRect);
 			clippingRect.clipAgainst(AbsoluteClippingRect);
 
@@ -91,7 +91,7 @@ void CGUIImage::draw()
 					&clippingRect, Color, UseAlphaChannel);
 		}
 	} else if (DrawBackground) {
-		core::rect<s32> clippingRect(AbsoluteClippingRect);
+		recti clippingRect(AbsoluteClippingRect);
 		checkBounds(clippingRect);
 
 		skin->draw2DRectangle(this, skin->getColor(EGDC_3D_DARK_SHADOW), AbsoluteRect, &clippingRect);
@@ -125,19 +125,19 @@ bool CGUIImage::isAlphaChannelUsed() const
 }
 
 //! Sets the source rectangle of the image. By default the full image is used.
-void CGUIImage::setSourceRect(const core::rect<s32> &sourceRect)
+void CGUIImage::setSourceRect(const recti &sourceRect)
 {
 	SourceRect = sourceRect;
 }
 
 //! Returns the customized source rectangle of the image to be used.
-core::rect<s32> CGUIImage::getSourceRect() const
+recti CGUIImage::getSourceRect() const
 {
 	return SourceRect;
 }
 
 //! Restrict target drawing-area.
-void CGUIImage::setDrawBounds(const core::rect<f32> &drawBoundUVs)
+void CGUIImage::setDrawBounds(const rectf &drawBoundUVs)
 {
 	DrawBounds = drawBoundUVs;
 	DrawBounds.UpperLeftCorner.X = core::clamp(DrawBounds.UpperLeftCorner.X, 0.f, 1.f);
@@ -151,7 +151,7 @@ void CGUIImage::setDrawBounds(const core::rect<f32> &drawBoundUVs)
 }
 
 //! Get target drawing-area restrictions.
-core::rect<f32> CGUIImage::getDrawBounds() const
+rectf CGUIImage::getDrawBounds() const
 {
 	return DrawBounds;
 }

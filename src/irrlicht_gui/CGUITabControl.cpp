@@ -9,7 +9,7 @@
 #include "IGUIEnvironment.h"
 #include "IGUIFont.h"
 #include "IVideoDriver.h"
-#include "rect.h"
+#include "Utils/Rect.h"
 #include "os.h"
 
 namespace irr
@@ -23,7 +23,7 @@ namespace gui
 
 //! constructor
 CGUITab::CGUITab(IGUIEnvironment *environment,
-		IGUIElement *parent, const core::rect<s32> &rectangle,
+		IGUIElement *parent, const recti &rectangle,
 		s32 id) :
 		IGUITab(environment, parent, id, rectangle),
 		BackColor(0, 0, 0, 0), OverrideTextColorEnabled(false), TextColor(255, 0, 0, 0),
@@ -55,19 +55,19 @@ void CGUITab::setDrawBackground(bool draw)
 }
 
 //! sets the color of the background, if it should be drawn.
-void CGUITab::setBackgroundColor(video::SColor c)
+void CGUITab::setBackgroundColor(img::color8 c)
 {
 	BackColor = c;
 }
 
 //! sets the color of the text
-void CGUITab::setTextColor(video::SColor c)
+void CGUITab::setTextColor(img::color8 c)
 {
 	OverrideTextColorEnabled = true;
 	TextColor = c;
 }
 
-video::SColor CGUITab::getTextColor() const
+img::color8 CGUITab::getTextColor() const
 {
 	if (OverrideTextColorEnabled)
 		return TextColor;
@@ -82,7 +82,7 @@ bool CGUITab::isDrawingBackground() const
 }
 
 //! returns the color of the background
-video::SColor CGUITab::getBackgroundColor() const
+img::color8 CGUITab::getBackgroundColor() const
 {
 	return BackColor;
 }
@@ -93,7 +93,7 @@ video::SColor CGUITab::getBackgroundColor() const
 
 //! constructor
 CGUITabControl::CGUITabControl(IGUIEnvironment *environment,
-		IGUIElement *parent, const core::rect<s32> &rectangle,
+		IGUIElement *parent, const recti &rectangle,
 		bool fillbackground, bool border, s32 id) :
 		IGUITabControl(environment, parent, id, rectangle),
 		ActiveTabIndex(-1),
@@ -110,7 +110,7 @@ CGUITabControl::CGUITabControl(IGUIEnvironment *environment,
 		TabHeight = skin->getSize(gui::EGDS_BUTTON_HEIGHT) + 2;
 	}
 
-	UpButton = Environment->addButton(core::rect<s32>(0, 0, 10, 10), this);
+	UpButton = Environment->addButton(recti(0, 0, 10, 10), this);
 
 	if (UpButton) {
 		UpButton->setSpriteBank(sprites);
@@ -121,7 +121,7 @@ CGUITabControl::CGUITabControl(IGUIEnvironment *environment,
 		UpButton->grab();
 	}
 
-	DownButton = Environment->addButton(core::rect<s32>(0, 0, 10, 10), this);
+	DownButton = Environment->addButton(recti(0, 0, 10, 10), this);
 
 	if (DownButton) {
 		DownButton->setSpriteBank(sprites);
@@ -153,7 +153,7 @@ CGUITabControl::~CGUITabControl()
 
 void CGUITabControl::refreshSprites()
 {
-	video::SColor color(255, 255, 255, 255);
+	img::color8 color(255, 255, 255, 255);
 	IGUISkin *skin = Environment->getSkin();
 	if (skin) {
 		color = skin->getColor(isEnabled() ? EGDC_WINDOW_SYMBOL : EGDC_GRAY_WINDOW_SYMBOL);
@@ -199,7 +199,7 @@ s32 CGUITabControl::addTab(IGUITab *tab)
 //! Insert the tab at the given index
 IGUITab *CGUITabControl::insertTab(s32 idx, const wchar_t *caption, s32 id)
 {
-	if (idx < 0 || idx > (s32)Tabs.size()) // idx == Tabs.size() is indeed OK here as core::array can handle that
+	if (idx < 0 || idx > (s32)Tabs.size()) // idx == Tabs.size() is indeed OK here as std::vector can handle that
 		return NULL;
 
 	CGUITab *tab = new CGUITab(Environment, this, calcTabPos(), id);
@@ -226,7 +226,7 @@ s32 CGUITabControl::insertTab(s32 idx, IGUITab *tab, bool serializationMode)
 {
 	if (!tab)
 		return -1;
-	if (idx > (s32)Tabs.size() && !serializationMode) // idx == Tabs.size() is indeed OK here as core::array can handle that
+	if (idx > (s32)Tabs.size() && !serializationMode) // idx == Tabs.size() is indeed OK here as std::vector can handle that
 		return -1;
 	// Not allowing to add same tab twice as it would make things complicated (serialization or setting active visible)
 	if (getTabIndex(tab) >= 0)
@@ -503,9 +503,9 @@ s32 CGUITabControl::calculateScrollIndexFromActive()
 	return i + 1;
 }
 
-core::rect<s32> CGUITabControl::calcTabPos()
+recti CGUITabControl::calcTabPos()
 {
-	core::rect<s32> r;
+	recti r;
 	r.UpperLeftCorner.X = 0;
 	r.LowerRightCorner.X = AbsoluteRect.getWidth();
 	if (Border) {
@@ -543,7 +543,7 @@ void CGUITabControl::draw()
 	IGUIFont *font = skin->getFont();
 	video::IVideoDriver *driver = Environment->getVideoDriver();
 
-	core::rect<s32> frameRect(AbsoluteRect);
+	recti frameRect(AbsoluteRect);
 
 	// some empty background as placeholder when there are no tabs
 	if (Tabs.empty())
@@ -561,7 +561,7 @@ void CGUITabControl::draw()
 		frameRect.LowerRightCorner.Y -= 2;
 	}
 
-	core::rect<s32> tr;
+	recti tr;
 	s32 pos = frameRect.UpperLeftCorner.X + 2;
 
 	bool needLeftScroll = CurrentScrollTabIndex > 0;
@@ -607,7 +607,7 @@ void CGUITabControl::draw()
 			skin->draw3DTabButton(this, false, frameRect, &AbsoluteClippingRect, VerticalAlignment);
 
 			// draw text
-			core::rect<s32> textClipRect(frameRect); // TODO: exact size depends on borders in draw3DTabButton which we don't get with current interface
+			recti textClipRect(frameRect); // TODO: exact size depends on borders in draw3DTabButton which we don't get with current interface
 			textClipRect.clipAgainst(AbsoluteClippingRect);
 			font->draw(text, frameRect, Tabs[i]->getTextColor(),
 					true, true, &textClipRect);
@@ -626,7 +626,7 @@ void CGUITabControl::draw()
 			skin->draw3DTabButton(this, true, frameRect, &AbsoluteClippingRect, VerticalAlignment);
 
 			// draw text
-			core::rect<s32> textClipRect(frameRect); // TODO: exact size depends on borders in draw3DTabButton which we don't get with current interface
+			recti textClipRect(frameRect); // TODO: exact size depends on borders in draw3DTabButton which we don't get with current interface
 			textClipRect.clipAgainst(AbsoluteClippingRect);
 			font->draw(activeTab->getText(), frameRect, activeTab->getTextColor(),
 					true, true, &textClipRect);
@@ -766,7 +766,7 @@ void CGUITabControl::setTabVerticalAlignment(EGUI_ALIGNMENT alignment)
 	recalculateScrollButtonPlacement();
 	recalculateScrollBar();
 
-	core::rect<s32> r(calcTabPos());
+	recti r(calcTabPos());
 	for (u32 i = 0; i < Tabs.size(); ++i) {
 		Tabs[i]->setRelativePosition(r);
 	}
@@ -798,9 +798,9 @@ void CGUITabControl::recalculateScrollButtonPlacement()
 		DownButton->setAlignment(EGUIA_LOWERRIGHT, EGUIA_LOWERRIGHT, EGUIA_LOWERRIGHT, EGUIA_LOWERRIGHT);
 	}
 
-	UpButton->setRelativePosition(core::rect<s32>(ButtonX, ButtonY, ButtonX + ButtonSize, ButtonY + ButtonHeight));
+	UpButton->setRelativePosition(recti(ButtonX, ButtonY, ButtonX + ButtonSize, ButtonY + ButtonHeight));
 	ButtonX += ButtonSize + 1;
-	DownButton->setRelativePosition(core::rect<s32>(ButtonX, ButtonY, ButtonX + ButtonSize, ButtonY + ButtonHeight));
+	DownButton->setRelativePosition(recti(ButtonX, ButtonY, ButtonX + ButtonSize, ButtonY + ButtonHeight));
 }
 
 //! Get the alignment of the tabs
@@ -811,11 +811,11 @@ EGUI_ALIGNMENT CGUITabControl::getTabVerticalAlignment() const
 
 s32 CGUITabControl::getTabAt(s32 xpos, s32 ypos) const
 {
-	core::position2di p(xpos, ypos);
+	v2i p(xpos, ypos);
 	IGUISkin *skin = Environment->getSkin();
 	IGUIFont *font = skin->getFont();
 
-	core::rect<s32> frameRect(AbsoluteRect);
+	recti frameRect(AbsoluteRect);
 
 	if (VerticalAlignment == EGUIA_UPPERLEFT) {
 		frameRect.UpperLeftCorner.Y += 2;

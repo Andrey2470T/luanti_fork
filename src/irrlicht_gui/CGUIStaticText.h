@@ -16,7 +16,7 @@ class CGUIStaticText : public IGUIStaticText
 public:
 	//! constructor
 	CGUIStaticText(const wchar_t *text, bool border, IGUIEnvironment *environment,
-			IGUIElement *parent, s32 id, const core::rect<s32> &rectangle,
+            IGUIElement *parent, s32 id, const recti &rectangle,
 			bool background = false);
 
 	//! destructor
@@ -35,16 +35,16 @@ public:
 	IGUIFont *getActiveFont() const override;
 
 	//! Sets another color for the text.
-	void setOverrideColor(video::SColor color) override;
+    void setOverrideColor(img::color8 color) override;
 
 	//! Sets another color for the background.
-	void setBackgroundColor(video::SColor color) override;
+    void setBackgroundColor(img::color8 color) override;
 
 	//! Sets whether to draw the background
 	void setDrawBackground(bool draw) override;
 
 	//! Gets the background color
-	video::SColor getBackgroundColor() const override;
+    img::color8 getBackgroundColor() const override;
 
 	//! Checks if background drawing is enabled
 	bool isDrawBackgroundEnabled() const override;
@@ -59,10 +59,10 @@ public:
 	void setTextAlignment(EGUI_ALIGNMENT horizontal, EGUI_ALIGNMENT vertical) override;
 
 	//! Gets the override color
-	video::SColor getOverrideColor() const override;
+    img::color8 getOverrideColor() const override;
 
 	//! Gets the currently used text color
-	video::SColor getActiveColor() const override;
+    img::color8 getActiveColor() const override;
 
 	//! Sets if the static text should use the override color or the
 	//! color in the gui skin.
@@ -120,11 +120,11 @@ private:
 	bool RestrainTextInside;
 	bool RightToLeft;
 
-	video::SColor OverrideColor, BGColor;
+    img::color8 OverrideColor, BGColor;
 	gui::IGUIFont *OverrideFont;
 	gui::IGUIFont *LastBreakFont; // stored because: if skin changes, line break must be recalculated.
 
-	core::array<core::stringw> BrokenText;
+    std::vector<std::wstring> BrokenText;
 };
 
 } // end namespace gui

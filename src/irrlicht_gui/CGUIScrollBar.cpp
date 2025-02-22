@@ -20,7 +20,7 @@ namespace gui
 //! constructor
 CGUIScrollBar::CGUIScrollBar(bool horizontal, IGUIEnvironment *environment,
 		IGUIElement *parent, s32 id,
-		core::rect<s32> rectangle, bool noclip) :
+		recti rectangle, bool noclip) :
 		IGUIScrollBar(environment, parent, id, rectangle),
 		UpButton(0),
 		DownButton(0), Dragging(false), Horizontal(horizontal),
@@ -117,7 +117,7 @@ bool CGUIScrollBar::OnEvent(const SEvent &event)
 			}
 			break;
 		case EET_MOUSE_INPUT_EVENT: {
-			const core::position2di p(event.MouseInput.X, event.MouseInput.Y);
+			const v2i p(event.MouseInput.X, event.MouseInput.Y);
 			bool isInside = isPointInside(p);
 			switch (event.MouseInput.Event) {
 			case EMIE_MOUSE_WHEEL:
@@ -243,7 +243,7 @@ void CGUIScrollBar::draw()
 	if (!skin)
 		return;
 
-	video::SColor iconColor = skin->getColor(isEnabled() ? EGDC_WINDOW_SYMBOL : EGDC_GRAY_WINDOW_SYMBOL);
+	img::color8 iconColor = skin->getColor(isEnabled() ? EGDC_WINDOW_SYMBOL : EGDC_GRAY_WINDOW_SYMBOL);
 	if (iconColor != CurrentIconColor) {
 		refreshControls();
 	}
@@ -279,7 +279,7 @@ void CGUIScrollBar::updateAbsolutePosition()
 }
 
 //!
-s32 CGUIScrollBar::getPosFromMousePos(const core::position2di &pos) const
+s32 CGUIScrollBar::getPosFromMousePos(const v2i &pos) const
 {
 	f32 w, p;
 	if (Horizontal) {
@@ -388,7 +388,7 @@ s32 CGUIScrollBar::getPos() const
 //! refreshes the position and text on child buttons
 void CGUIScrollBar::refreshControls()
 {
-	CurrentIconColor = video::SColor(255, 255, 255, 255);
+	CurrentIconColor = img::color8(255, 255, 255, 255);
 
 	IGUISkin *skin = Environment->getSkin();
 	IGUISpriteBank *sprites = 0;
@@ -402,7 +402,7 @@ void CGUIScrollBar::refreshControls()
 		const s32 h = RelativeRect.getHeight();
 		const s32 w = (h < RelativeRect.getWidth() / 2) ? h : RelativeRect.getWidth() / 2;
 		if (!UpButton) {
-			UpButton = new CGUIButton(Environment, this, -1, core::rect<s32>(0, 0, w, h), NoClip);
+			UpButton = new CGUIButton(Environment, this, -1, recti(0, 0, w, h), NoClip);
 			UpButton->setSubElement(true);
 			UpButton->setTabStop(false);
 		}
@@ -411,10 +411,10 @@ void CGUIScrollBar::refreshControls()
 			UpButton->setSprite(EGBS_BUTTON_UP, skin->getIcon(EGDI_CURSOR_LEFT), CurrentIconColor);
 			UpButton->setSprite(EGBS_BUTTON_DOWN, skin->getIcon(EGDI_CURSOR_LEFT), CurrentIconColor);
 		}
-		UpButton->setRelativePosition(core::rect<s32>(0, 0, w, h));
+		UpButton->setRelativePosition(recti(0, 0, w, h));
 		UpButton->setAlignment(EGUIA_UPPERLEFT, EGUIA_UPPERLEFT, EGUIA_UPPERLEFT, EGUIA_LOWERRIGHT);
 		if (!DownButton) {
-			DownButton = new CGUIButton(Environment, this, -1, core::rect<s32>(RelativeRect.getWidth() - w, 0, RelativeRect.getWidth(), h), NoClip);
+			DownButton = new CGUIButton(Environment, this, -1, recti(RelativeRect.getWidth() - w, 0, RelativeRect.getWidth(), h), NoClip);
 			DownButton->setSubElement(true);
 			DownButton->setTabStop(false);
 		}
@@ -423,13 +423,13 @@ void CGUIScrollBar::refreshControls()
 			DownButton->setSprite(EGBS_BUTTON_UP, skin->getIcon(EGDI_CURSOR_RIGHT), CurrentIconColor);
 			DownButton->setSprite(EGBS_BUTTON_DOWN, skin->getIcon(EGDI_CURSOR_RIGHT), CurrentIconColor);
 		}
-		DownButton->setRelativePosition(core::rect<s32>(RelativeRect.getWidth() - w, 0, RelativeRect.getWidth(), h));
+		DownButton->setRelativePosition(recti(RelativeRect.getWidth() - w, 0, RelativeRect.getWidth(), h));
 		DownButton->setAlignment(EGUIA_LOWERRIGHT, EGUIA_LOWERRIGHT, EGUIA_UPPERLEFT, EGUIA_LOWERRIGHT);
 	} else {
 		const s32 w = RelativeRect.getWidth();
 		const s32 h = (w < RelativeRect.getHeight() / 2) ? w : RelativeRect.getHeight() / 2;
 		if (!UpButton) {
-			UpButton = new CGUIButton(Environment, this, -1, core::rect<s32>(0, 0, w, h), NoClip);
+			UpButton = new CGUIButton(Environment, this, -1, recti(0, 0, w, h), NoClip);
 			UpButton->setSubElement(true);
 			UpButton->setTabStop(false);
 		}
@@ -438,10 +438,10 @@ void CGUIScrollBar::refreshControls()
 			UpButton->setSprite(EGBS_BUTTON_UP, skin->getIcon(EGDI_CURSOR_UP), CurrentIconColor);
 			UpButton->setSprite(EGBS_BUTTON_DOWN, skin->getIcon(EGDI_CURSOR_UP), CurrentIconColor);
 		}
-		UpButton->setRelativePosition(core::rect<s32>(0, 0, w, h));
+		UpButton->setRelativePosition(recti(0, 0, w, h));
 		UpButton->setAlignment(EGUIA_UPPERLEFT, EGUIA_LOWERRIGHT, EGUIA_UPPERLEFT, EGUIA_UPPERLEFT);
 		if (!DownButton) {
-			DownButton = new CGUIButton(Environment, this, -1, core::rect<s32>(0, RelativeRect.getHeight() - h, w, RelativeRect.getHeight()), NoClip);
+			DownButton = new CGUIButton(Environment, this, -1, recti(0, RelativeRect.getHeight() - h, w, RelativeRect.getHeight()), NoClip);
 			DownButton->setSubElement(true);
 			DownButton->setTabStop(false);
 		}
@@ -450,7 +450,7 @@ void CGUIScrollBar::refreshControls()
 			DownButton->setSprite(EGBS_BUTTON_UP, skin->getIcon(EGDI_CURSOR_DOWN), CurrentIconColor);
 			DownButton->setSprite(EGBS_BUTTON_DOWN, skin->getIcon(EGDI_CURSOR_DOWN), CurrentIconColor);
 		}
-		DownButton->setRelativePosition(core::rect<s32>(0, RelativeRect.getHeight() - h, w, RelativeRect.getHeight()));
+		DownButton->setRelativePosition(recti(0, RelativeRect.getHeight() - h, w, RelativeRect.getHeight()));
 		DownButton->setAlignment(EGUIA_UPPERLEFT, EGUIA_LOWERRIGHT, EGUIA_LOWERRIGHT, EGUIA_LOWERRIGHT);
 	}
 }

@@ -4,88 +4,73 @@
 
 #pragma once
 
-#include "IReferenceCounted.h"
-#include "irrArray.h"
-#include "SColor.h"
-#include "rect.h"
+#include "Image/Color.h"
+#include "Utils/Rect.h"
 
-namespace irr
+namespace render
 {
-
-namespace video
-{
-class ITexture;
-} // end namespace video
-
-namespace gui
-{
+    class Texture2D;
+}
 
 //! A single sprite frame.
 // Note for implementer: Can't fix variable names to uppercase as this is a public interface used since a while
-struct SGUISpriteFrame
+struct GUISpriteFrame
 {
-	SGUISpriteFrame() :
-			textureNumber(0), rectNumber(0)
-	{
-	}
-
-	SGUISpriteFrame(u32 textureIndex, u32 positionIndex) :
-			textureNumber(textureIndex), rectNumber(positionIndex)
+    GUISpriteFrame() = default;
+    GUISpriteFrame(u32 textureIndex, u32 positionIndex) :
+        textureNumber(textureIndex), rectNumber(positionIndex)
 	{
 	}
 
 	//! Texture index in IGUISpriteBank
-	u32 textureNumber;
-
+    u32 textureNumber = 0;
 	//! Index in IGUISpriteBank::getPositions()
-	u32 rectNumber;
+    u32 rectNumber = 0;
 };
 
 //! A sprite composed of several frames.
 // Note for implementer: Can't fix variable names to uppercase as this is a public interface used since a while
-struct SGUISprite
+struct GUISprite
 {
-	SGUISprite() :
-			frameTime(0) {}
-	SGUISprite(const SGUISpriteFrame &firstFrame) :
-			frameTime(0)
+    GUISprite() = default;
+    GUISprite(const GUISpriteFrame &firstFrame)
 	{
 		Frames.push_back(firstFrame);
 	}
 
-	core::array<SGUISpriteFrame> Frames;
-	u32 frameTime;
+    std::vector<GUISpriteFrame> Frames;
+    u32 frameTime = 0;
 };
 
 //! Sprite bank interface.
 /** See http://http://irrlicht.sourceforge.net/forum//viewtopic.php?f=9&t=25742
  * for more information how to use the spritebank.
  */
-class IGUISpriteBank : public virtual IReferenceCounted
+class IGUISpriteBank
 {
 public:
 	//! Returns the list of rectangles held by the sprite bank
-    virtual core::array<recti> &getPositions() = 0;
+    virtual std::vector<recti> &getPositions() = 0;
 
 	//! Returns the array of animated sprites within the sprite bank
-	virtual core::array<SGUISprite> &getSprites() = 0;
+    virtual std::vector<GUISprite> &getSprites() = 0;
 
 	//! Returns the number of textures held by the sprite bank
 	virtual u32 getTextureCount() const = 0;
 
 	//! Gets the texture with the specified index
-	virtual video::ITexture *getTexture(u32 index) const = 0;
+    virtual render::Texture2D *getTexture(u32 index) const = 0;
 
 	//! Adds a texture to the sprite bank
-	virtual void addTexture(video::ITexture *texture) = 0;
+    virtual void addTexture(render::Texture2D *texture) = 0;
 
 	//! Changes one of the textures in the sprite bank
-	virtual void setTexture(u32 index, video::ITexture *texture) = 0;
+    virtual void setTexture(u32 index, render::Texture2D *texture) = 0;
 
 	//! Add the texture and use it for a single non-animated sprite.
 	/** The texture and the corresponding rectangle and sprite will all be added to the end of each array.
 	 \returns The index of the sprite or -1 on failure */
-	virtual s32 addTextureAsSprite(video::ITexture *texture) = 0;
+    virtual s32 addTextureAsSprite(render::Texture2D *texture) = 0;
 
 	//! Clears sprites, rectangles and textures
 	virtual void clear() = 0;
@@ -105,7 +90,7 @@ public:
 	*/
     virtual void draw2DSprite(u32 index, const v2i &pos,
             const recti *clip = 0,
-            const img::color8 &color = img::color8(255, 255, 255, 255),
+            const img::color8 &color = img::color8(img::PF_RGBA8, 255, 255, 255, 255),
 			u32 starttime = 0, u32 currenttime = 0,
 			bool loop = true, bool center = false) = 0;
 
@@ -127,12 +112,9 @@ public:
 			bool loop = true) = 0;
 
 	//! Draws a sprite batch in 2d using an array of positions and a color
-    virtual void draw2DSpriteBatch(const core::array<u32> &indices, const core::array<v2i> &pos,
+    virtual void draw2DSpriteBatch(const std::vector<u32> &indices, const std::vector<v2i> &pos,
             const recti *clip = 0,
-            const img::color8 &color = img::color8(255, 255, 255, 255),
+            const img::color8 &color = img::color8(img::PF_RGBA8, 255, 255, 255, 255),
 			u32 starttime = 0, u32 currenttime = 0,
 			bool loop = true, bool center = false) = 0;
 };
-
-} // end namespace gui
-} // end namespace irr

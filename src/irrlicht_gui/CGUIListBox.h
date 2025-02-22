@@ -20,7 +20,7 @@ class CGUIListBox : public IGUIListBox
 public:
 	//! constructor
 	CGUIListBox(IGUIEnvironment *environment, IGUIElement *parent,
-			s32 id, core::rect<s32> rectangle, bool clip = true,
+			s32 id, recti rectangle, bool clip = true,
 			bool drawBack = false, bool moveOverSelect = false);
 
 	//! destructor
@@ -85,10 +85,10 @@ public:
 	void updateAbsolutePosition() override;
 
 	//! set all item colors at given index to color
-	void setItemOverrideColor(u32 index, video::SColor color) override;
+	void setItemOverrideColor(u32 index, img::color8 color) override;
 
 	//! set all item colors of specified type at given index to color
-	void setItemOverrideColor(u32 index, EGUI_LISTBOX_COLOR colorType, video::SColor color) override;
+	void setItemOverrideColor(u32 index, EGUI_LISTBOX_COLOR colorType, img::color8 color) override;
 
 	//! clear all item colors at index
 	void clearItemOverrideColor(u32 index) override;
@@ -100,10 +100,10 @@ public:
 	bool hasItemOverrideColor(u32 index, EGUI_LISTBOX_COLOR colorType) const override;
 
 	//! return the overwrite color at given item index.
-	video::SColor getItemOverrideColor(u32 index, EGUI_LISTBOX_COLOR colorType) const override;
+	img::color8 getItemOverrideColor(u32 index, EGUI_LISTBOX_COLOR colorType) const override;
 
 	//! return the default color which is used for the given colorType
-	video::SColor getItemDefaultColor(EGUI_LISTBOX_COLOR colorType) const override;
+	img::color8 getItemDefaultColor(EGUI_LISTBOX_COLOR colorType) const override;
 
 	//! set the item at the given index
 	void setItem(u32 index, const wchar_t *text, s32 icon) override;
@@ -127,14 +127,14 @@ public:
 private:
 	struct ListItem
 	{
-		core::stringw Text;
+		std::wstring Text;
 		s32 Icon = -1;
 
 		// A multicolor extension
 		struct ListItemOverrideColor
 		{
 			bool Use = false;
-			video::SColor Color;
+			img::color8 Color;
 		};
 		ListItemOverrideColor OverrideColors[EGUI_LBC_COUNT]{};
 	};
@@ -150,7 +150,7 @@ private:
 	// get labels used for serialization
 	bool getSerializationLabels(EGUI_LISTBOX_COLOR colorType, core::stringc &useColorLabel, core::stringc &colorLabel) const;
 
-	core::array<ListItem> Items;
+	std::vector<ListItem> Items;
 	s32 Selected;
 	s32 ItemHeight;
 	s32 ItemHeightOverride;
@@ -161,7 +161,7 @@ private:
 	gui::IGUIScrollBar *ScrollBar;
 	u32 selectTime;
 	u32 LastKeyTime;
-	core::stringw KeyBuffer;
+	std::wstring KeyBuffer;
 	bool Selecting;
 	bool DrawBack;
 	bool MoveOverSelect;

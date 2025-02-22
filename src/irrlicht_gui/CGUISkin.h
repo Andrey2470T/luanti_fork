@@ -33,10 +33,10 @@ namespace gui
 		virtual void setScale(float scale) { Scale = scale; }
 
 		//! returns default color
-		virtual video::SColor getColor(EGUI_DEFAULT_COLOR color) const;
+        virtual img::color8 getColor(EGUI_DEFAULT_COLOR color) const;
 
 		//! sets a default color
-		virtual void setColor(EGUI_DEFAULT_COLOR which, video::SColor newColor);
+        virtual void setColor(EGUI_DEFAULT_COLOR which, img::color8 newColor);
 
 		//! returns size for the given size type
 		virtual s32 getSize(EGUI_DEFAULT_SIZE size) const;
@@ -87,16 +87,16 @@ namespace gui
 		is usually not used by ISkin, but can be used for example by more complex
 		implementations to find out how to draw the part exactly. */
 		virtual void draw3DButtonPaneStandard(IGUIElement* element,
-				const core::rect<s32>& rect,
-				const core::rect<s32>* clip=0)
+                const recti& rect,
+                const recti* clip=0)
 		{
 			drawColored3DButtonPaneStandard(element, rect,clip);
 		}
 
 		virtual void drawColored3DButtonPaneStandard(IGUIElement* element,
-				const core::rect<s32>& rect,
-				const core::rect<s32>* clip=0,
-				const video::SColor* colors=0);
+                const recti& rect,
+                const recti* clip=0,
+                const img::color8* colors=0);
 
 		//! draws a pressed 3d button pane
 		/** Used for drawing for example buttons in pressed state.
@@ -108,16 +108,16 @@ namespace gui
 		is usually not used by ISkin, but can be used for example by more complex
 		implementations to find out how to draw the part exactly. */
 		virtual void draw3DButtonPanePressed(IGUIElement* element,
-				const core::rect<s32>& rect,
-				const core::rect<s32>* clip=0)
+                const recti& rect,
+                const recti* clip=0)
 		{
 			drawColored3DButtonPanePressed(element, rect, clip);
 		}
 
 		virtual void drawColored3DButtonPanePressed(IGUIElement* element,
-				const core::rect<s32>& rect,
-				const core::rect<s32>* clip=0,
-				const video::SColor* colors=0);
+                const recti& rect,
+                const recti* clip=0,
+                const img::color8* colors=0);
 
 		//! draws a sunken 3d pane
 		/** Used for drawing the background of edit, combo or check boxes.
@@ -130,20 +130,20 @@ namespace gui
 		\param rect: Defining area where to draw.
 		\param clip: Clip area.	*/
 		virtual void draw3DSunkenPane(IGUIElement* element,
-				video::SColor bgcolor, bool flat,
+                img::color8 bgcolor, bool flat,
 				bool fillBackGround,
-				const core::rect<s32>& rect,
-				const core::rect<s32>* clip=0)
+                const recti& rect,
+                const recti* clip=0)
 		{
 			drawColored3DSunkenPane(element, bgcolor, flat, fillBackGround, rect, clip);
 		}
 
 		virtual void drawColored3DSunkenPane(IGUIElement* element,
-				video::SColor bgcolor, bool flat,
+                img::color8 bgcolor, bool flat,
 				bool fillBackGround,
-				const core::rect<s32>& rect,
-				const core::rect<s32>* clip=0,
-				const video::SColor* colors=0);
+                const recti& rect,
+                const recti* clip=0,
+                const img::color8* colors=0);
 
 		//! draws a window background
 		/** Used for drawing the background of dialogs and windows.
@@ -159,22 +159,22 @@ namespace gui
 		That is the area without borders and without titlebar.
 		\return Returns rect where it would be good to draw title bar text. This will
 		work even when checkClientArea is set to a non-null value.*/
-		virtual core::rect<s32> draw3DWindowBackground(IGUIElement* element,
-				bool drawTitleBar, video::SColor titleBarColor,
-				const core::rect<s32>& rect,
-				const core::rect<s32>* clip,
-				core::rect<s32>* checkClientArea)
+        virtual recti draw3DWindowBackground(IGUIElement* element,
+                bool drawTitleBar, img::color8 titleBarColor,
+                const recti& rect,
+                const recti* clip,
+                recti* checkClientArea)
 		{
 			return drawColored3DWindowBackground(element, drawTitleBar, titleBarColor,
 				rect, clip, checkClientArea);
 		}
 
-		virtual core::rect<s32> drawColored3DWindowBackground(IGUIElement* element,
-				bool drawTitleBar, video::SColor titleBarColor,
-				const core::rect<s32>& rect,
-				const core::rect<s32>* clip,
-				core::rect<s32>* checkClientArea,
-				const video::SColor* colors=0);
+        virtual recti drawColored3DWindowBackground(IGUIElement* element,
+                bool drawTitleBar, img::color8 titleBarColor,
+                const recti& rect,
+                const recti* clip,
+                recti* checkClientArea,
+                const img::color8* colors=0);
 
 		//! draws a standard 3d menu pane
 		/** Used for drawing for menus and context menus.
@@ -186,16 +186,16 @@ namespace gui
 		\param rect: Defining area where to draw.
 		\param clip: Clip area.	*/
 		virtual void draw3DMenuPane(IGUIElement* element,
-				const core::rect<s32>& rect,
-				const core::rect<s32>* clip=0)
+                const recti& rect,
+                const recti* clip=0)
 		{
 			drawColored3DMenuPane(element, rect, clip);
 		}
 
 		virtual void drawColored3DMenuPane(IGUIElement* element,
-				const core::rect<s32>& rect,
-				const core::rect<s32>* clip=0,
-				const video::SColor* colors=0);
+                const recti& rect,
+                const recti* clip=0,
+                const img::color8* colors=0);
 
 		//! draws a standard 3d tool bar
 		/** Used for drawing for toolbars and menus.
@@ -205,16 +205,16 @@ namespace gui
 		\param rect: Defining area where to draw.
 		\param clip: Clip area.	*/
 		virtual void draw3DToolBar(IGUIElement* element,
-				const core::rect<s32>& rect,
-				const core::rect<s32>* clip=0)
+                const recti& rect,
+                const recti* clip=0)
 		{
 			drawColored3DToolBar(element, rect, clip);
 		}
 
 		virtual void drawColored3DToolBar(IGUIElement* element,
-				const core::rect<s32>& rect,
-				const core::rect<s32>* clip=0,
-				const video::SColor* colors=0);
+                const recti& rect,
+                const recti* clip=0,
+                const img::color8* colors=0);
 
 		//! draws a tab button
 		/** Used for drawing for tab buttons on top of tabs.
@@ -225,14 +225,14 @@ namespace gui
 		\param rect: Defining area where to draw.
 		\param clip: Clip area.	*/
 		virtual void draw3DTabButton(IGUIElement* element, bool active,
-			const core::rect<s32>& rect, const core::rect<s32>* clip=0, EGUI_ALIGNMENT alignment=EGUIA_UPPERLEFT)
+            const recti& rect, const recti* clip=0, EGUI_ALIGNMENT alignment=EGUIA_UPPERLEFT)
 		{
 			drawColored3DTabButton(element, active, rect, clip, alignment);
 		}
 
 		virtual void drawColored3DTabButton(IGUIElement* element, bool active,
-			const core::rect<s32>& rect, const core::rect<s32>* clip=0, EGUI_ALIGNMENT alignment=EGUIA_UPPERLEFT,
-			const video::SColor* colors=0);
+            const recti& rect, const recti* clip=0, EGUI_ALIGNMENT alignment=EGUIA_UPPERLEFT,
+            const img::color8* colors=0);
 
 		//! draws a tab control body
 		/** \param element: Pointer to the element which wishes to draw this. This parameter
@@ -243,14 +243,14 @@ namespace gui
 		\param rect: Defining area where to draw.
 		\param clip: Clip area.	*/
 		virtual void draw3DTabBody(IGUIElement* element, bool border, bool background,
-			const core::rect<s32>& rect, const core::rect<s32>* clip=0, s32 tabHeight=-1, EGUI_ALIGNMENT alignment=EGUIA_UPPERLEFT)
+            const recti& rect, const recti* clip=0, s32 tabHeight=-1, EGUI_ALIGNMENT alignment=EGUIA_UPPERLEFT)
 		{
 			drawColored3DTabBody(element, border, background, rect, clip, tabHeight, alignment);
 		}
 
 		virtual void drawColored3DTabBody(IGUIElement* element, bool border, bool background,
-			const core::rect<s32>& rect, const core::rect<s32>* clip=0, s32 tabHeight=-1, EGUI_ALIGNMENT alignment=EGUIA_UPPERLEFT,
-			const video::SColor* colors=0);
+            const recti& rect, const recti* clip=0, s32 tabHeight=-1, EGUI_ALIGNMENT alignment=EGUIA_UPPERLEFT,
+            const img::color8* colors=0);
 
 		//! draws an icon, usually from the skin's sprite bank
 		/** \param element: Pointer to the element which wishes to draw this icon.
@@ -263,18 +263,18 @@ namespace gui
 		\param loop: Whether the animation should loop or not
 		\param clip: Clip area.	*/
 		virtual void drawIcon(IGUIElement* element, EGUI_DEFAULT_ICON icon,
-				const core::position2di position,
+                const v2i position,
 				u32 starttime=0, u32 currenttime=0,
-				bool loop=false, const core::rect<s32>* clip=0)
+                bool loop=false, const recti* clip=0)
 		{
 			drawColoredIcon(element, icon, position, starttime, currenttime, loop, clip);
 		}
 
 		virtual void drawColoredIcon(IGUIElement* element, EGUI_DEFAULT_ICON icon,
-				const core::position2di position,
+                const v2i position,
 				u32 starttime=0, u32 currenttime=0,
-				bool loop=false, const core::rect<s32>* clip=0,
-				const video::SColor* colors=0);
+                bool loop=false, const recti* clip=0,
+                const img::color8* colors=0);
 
 		//! draws a 2d rectangle.
 		/** \param element: Pointer to the element which wishes to draw this icon.
@@ -285,25 +285,25 @@ namespace gui
 		\param pos: Position of the rectangle.
 		\param clip: Pointer to rectangle against which the rectangle will be clipped.
 		If the pointer is null, no clipping will be performed. */
-		virtual void draw2DRectangle(IGUIElement* element, const video::SColor &color,
-				const core::rect<s32>& pos, const core::rect<s32>* clip = 0);
+        virtual void draw2DRectangle(IGUIElement* element, const img::color8 &color,
+                const recti& pos, const recti* clip = 0);
 
 
 		//! get the type of this skin
 		virtual EGUI_SKIN_TYPE getType() const;
 
 		//! gets the colors
-		virtual void getColors(video::SColor* colors); // ::PATCH:
+        virtual void getColors(img::color8* colors); // ::PATCH:
 
 	private:
 
 		float Scale = 1.0f;
-		video::SColor Colors[EGDC_COUNT];
+        img::color8 Colors[EGDC_COUNT];
 		s32 Sizes[EGDS_COUNT];
 		u32 Icons[EGDI_COUNT];
 		IGUIFont* Fonts[EGDF_COUNT];
 		IGUISpriteBank* SpriteBank;
-		core::stringw Texts[EGDT_COUNT];
+        std::wstring Texts[EGDT_COUNT];
 		video::IVideoDriver* Driver;
 		bool UseGradient;
 
