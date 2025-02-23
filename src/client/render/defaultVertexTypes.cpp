@@ -4,15 +4,31 @@
 const render::VertexTypeDescriptor TwoColorVType{
 	"TwoColor3D",
     {{"HWColor", 4, BasicType::UINT8, render::VertexAttribute::DataFormat::Normalized}},
+    3,
+    4,
 	true,
 	true,
 	2
+};
+// 2D Vertex type (xy position, rgba color, uv)
+const render::VertexTypeDescriptor VType2D{
+    "Standard2D",
+    {},
+    2,
+    4,
+    false,
+    true,
+    2
 };
 
 // Getters used for DefaultVType and TwoColorVType
 inline v3f svtGetPos(MeshBuffer *buf, u32 num)
 {
 	return buf->getAttrAt<v3f>(0, num);
+}
+inline v2f svtGetPos2D(MeshBuffer *buf, u32 num)
+{
+    return buf->getAttrAt<v2f>(0, num);
 }
 inline img::color8 svtGetColor(MeshBuffer *buf, u32 num)
 {
@@ -26,7 +42,7 @@ inline v2f svtGetUV(MeshBuffer *buf, u32 num)
 {
 	return buf->getAttrAt<v2f>(3, num);
 }
-inline v3f svtGetUV3F(MeshBuffer *buf, u32 num)
+inline v3f svtGetUV3D(MeshBuffer *buf, u32 num)
 {
     return buf->getAttrAt<v3f>(3, num);
 }
@@ -40,6 +56,10 @@ inline img::color8 svtGetHWColor(MeshBuffer *buf, u32 num)
 inline void svtSetPos(MeshBuffer *buf, const v3f &pos, u32 num)
 {
 	buf->setAttrAt<v3f>(pos, 0, num);
+}
+inline void svtSetPos2D(MeshBuffer *buf, const v2f &pos, u32 num)
+{
+    buf->setAttrAt<v2f>(pos, 0, num);
 }
 inline void svtSetColor(MeshBuffer *buf, const img::color8 &c, u32 num)
 {
@@ -60,7 +80,7 @@ inline void svtSetUV(MeshBuffer *buf, const v2f &uv, u32 num)
         buf->setAttrAt<v2f>(uv, 3, num);
 }
 
-inline void svtSetUV3F(MeshBuffer *buf, const v3f &uv, u32 num)
+inline void svtSetUV3D(MeshBuffer *buf, const v3f &uv, u32 num)
 {
     auto vertexType = buf->getVAO()->getVertexType();
 
@@ -192,6 +212,24 @@ inline void appendTCVT(
         firstCustomAttrIndex = 5;
     }
     buf->setAttrAt<img::color8>(hw_c, 4);
+
+    fillEmptyCustomAttribs(buf, firstCustomAttrIndex);
+}
+
+// Appends the attributes of the standard 2D vertex type in the end of the mesh buffer
+void appendVT2D(
+    MeshBuffer *buf, const v2f &pos, const img::color8 &c, const v2f &uv)
+{
+    u8 firstCustomAttrIndex = 2;
+    buf->setAttrAt<v2f>(pos, 0);
+    buf->setAttrAt<img::color8>(c, 1);
+
+    auto vertexType = buf->getVAO()->getVertexType();
+
+    if (vertexType.InitUV) {
+        buf->setAttrAt<v2f>(uv, 2);
+        firstCustomAttrIndex = 3;
+    }
 
     fillEmptyCustomAttribs(buf, firstCustomAttrIndex);
 }
