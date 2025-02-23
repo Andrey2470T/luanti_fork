@@ -1,4 +1,4 @@
-#include "meshcreator.h"
+#include "meshcreator3d.h"
 #include "defaultVertexTypes.h"
 #include "Utils/Plane3D.h"
 

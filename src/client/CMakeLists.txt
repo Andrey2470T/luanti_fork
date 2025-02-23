@@ -54,7 +54,7 @@ set(render_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/render/clouds.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/defaultVertexTypes.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/meshbuffer.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/render/meshcreator.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/render/meshcreator3d.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/meshoperations.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/particles.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/renderingengine.cpp
@@ -101,6 +101,7 @@ set(ui_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/gameui.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/guiscalingfilter.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/hud.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/meshcreator2d.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/minimap.cpp
 )
 
