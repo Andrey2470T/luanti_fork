@@ -1,9 +1,9 @@
 set(ao_SRCS
-	${CMAKE_CURRENT_SOURCE_DIR}/ao/clientactiveobject.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ao/clientactiveobjectmgr.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ao/genericcao.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ao/smokepuffcso.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ao/testcao.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ao/clientActiveObject.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ao/clientActiveObjectMgr.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ao/genericCAO.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ao/smokePuffCSO.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ao/testCAO.cpp
 )
 
 set(event_SRCS
@@ -65,9 +65,9 @@ set(render_SRCS
 
 set(shadows_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/shadows/dynamicshadows.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/shadows/dynamicshadowsrender.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/shadows/shadowsscreenquad.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/shadows/shadowsshadercallbacks.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/shadows/dynamicShadowsRender.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/shadows/shadowsScreenQuad.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/shadows/shadowsShaderCallbacks.cpp
 )
 
 set(sound_SRCS ${CMAKE_CURRENT_SOURCE_DIR}/sound/sound.cpp)
