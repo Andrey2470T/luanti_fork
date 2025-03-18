@@ -79,5 +79,5 @@ public:
 
 private:
     ResourceInfo *getResourceByID(const std::vector<std::unique_ptr<ResourceInfo>> &resources, u32 id) const;
-    std::string findFirstExistentDefaultPath(const std::vector<std::string> &defpaths, const std::string &name, bool image=false);
+    std::string findFirstExistentDefaultPath(const std::vector<std::string> &defpaths, const std::string &name, ResourceType type);
 };

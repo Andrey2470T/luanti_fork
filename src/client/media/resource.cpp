@@ -95,15 +95,15 @@ ResourceInfo *ResourceCache::getOrLoad(ResourceType _type, const std::string &_n
 
 	switch(_type) {
 		case ResourceType::TEXTURE: {
-			target_path = findFirstExistentDefaultPath(TextureResourceInfo::defpaths, _name, true);
+			target_path = findFirstExistentDefaultPath(TextureResourceInfo::defpaths, _name, _type);
 			break;
 		}
 		case ResourceType::IMAGE: {
-			target_path = findFirstExistentDefaultPath(ImageResourceInfo::defpaths, _name, true);
+			target_path = findFirstExistentDefaultPath(ImageResourceInfo::defpaths, _name, _type);
 			break;
 		}
 		case ResourceType::SHADER: {
-			target_path = findFirstExistentDefaultPath(ShaderResourceInfo::defpaths, _name);
+			target_path = findFirstExistentDefaultPath(ShaderResourceInfo::defpaths, _name, _type);
 			break;
 		}
 		default:
@@ -117,7 +117,7 @@ ResourceInfo *ResourceCache::getOrLoad(ResourceType _type, const std::string &_n
 	fs::path abs_p = fs::absolute(_name, err);
 
 	if (fs::exists(abs_p))
-		target_path = abs_p.string();
+		target_path = abs_p.parent_path().string();
 	else {
 		infostream << "ResourceCache::getOrLoad(): Couldn't load the resource with name " << _name << " from any known source path" << std::endl;
 		return nullptr;
@@ -204,20 +204,27 @@ ResourceInfo *ResourceCache::getResourceByID(const std::vector<std::unique_ptr<R
 		return resources.at(id).get();
 }
 
-std::string ResourceCache::findFirstExistentDefaultPath(const std::vector<std::string> &defpaths, const std::string &name, bool image)
+std::string ResourceCache::findFirstExistentDefaultPath(const std::vector<std::string> &defpaths, const std::string &name, ResourceType type)
 {
 	for (auto &p : defpaths) {
-		if (image) {
+		if (type == ResourceType::IMAGE || type == ResourceType::TEXTURE) {
 			for (auto &ext : img::SIE) {
 				fs::path fs_p(p / (name + ext));
-				if (fs::exists(p))
-					return fs_p.string();
+				if (fs::exists(fs_p))
+					return p;
 			}
 		}
+		else if (type == ResourceType::SHADER) {
+			fs::path vs_p(p / name / "opengl_vertex.glsl");
+			fs::path fs_p(p / name / "opengl_fragment.glsl");
+			
+			if (fs::exists(vs_p) && fs::exists(fs_p))
+			    return p;
+        }
 		else {
 			fs::path fs_p(p / name);
 			if (fs::exists(fs_p))
-				return fs_p.string();
+				return p;
 		}
 	}
 
