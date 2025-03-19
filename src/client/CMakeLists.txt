@@ -26,10 +26,8 @@ set(media_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/media/clientmedia.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/media/filecache.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/media/imagefilters.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/media/imagesource.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/media/shader.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/media/texturepaths.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/media/texturesource.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/media/resource.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/media/resource_loader.cpp
 )
 
 set(pipeline_SRCS

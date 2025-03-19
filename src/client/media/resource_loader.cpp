@@ -4,6 +4,32 @@
 #include "settings.h"
 #include "filesys.h"
 
+ResourceLoader::ResourceLoader()
+{
+	enable_waving_water = g_settings->getBool("enable_waving_water");
+	water_wave_height = g_settings->getFloat("water_wave_height");
+	water_wave_length = g_settings->getFloat("water_wave_length");
+	water_wave_speed = g_settings->getFloat("water_wave_speed");
+	enable_waving_leaves = g_settings->getBool("enable_waving_leaves");
+	enable_waving_plants = g_settings->getBool("enable_waving_plants");
+	tone_mapping = g_settings->getBool("tone_mapping");
+	enable_dynamic_shadows = g_settings->getBool("enable_dynamic_shadows");
+	shadow_map_color = g_settings->getBool("shadow_map_color");
+	shadow_poisson_filter = g_settings->getBool("shadow_poisson_filter");
+	enable_water_reflections = g_settings->getBool("enable_water_reflections");
+	enable_translucent_foliage = g_settings->getBool("enable_translucent_foliage");
+	enable_node_specular = g_settings->getBool("enable_node_specular");
+	shadow_filters = g_settings->getS32("shadow_filters");
+	shadow_soft_radius = std::max(1.0f, g_settings->getFloat("shadow_soft_radius"));
+	enable_bloom = g_settings->getBool("enable_bloom");
+	enable_bloom_debug = g_settings->getBool("enable_bloom_debug");
+	enable_auto_exposure = g_settings->getBool("enable_auto_exposure");
+	antialiasing = g_settings->get("antialiasing");
+	fsaa = std::max(2, g_settings->getU16("fsaa");
+	debanding = g_settings->getBool("debanding");
+	enable_volumetric_lighting = g_settings->getBool("enable_volumetric_lighting");
+}
+
 img::Image *ResourceLoader::loadImage(const std::string &path)
 {
 	return ImageLoader::load(path);
@@ -19,70 +45,50 @@ render::Texture2D *ResourceLoader::loadTexture(const std::string &path)
 
 render::Shader *ResourceLoader::loadShader(const std::string &path)
 {
-	std::ostringstream header, 
+	std::ostringstream header;
 
 	header << std::noboolalpha << std::showpoint;
 	header << "#version 320\n";
-    
-    bool enable_waving_water = g_settings->getBool("enable_waving_water");
+
 	header << "#define ENABLE_WAVING_WATER " << enable_waving_water << "\n";
 	if (enable_waving_water) {
-		header << "#define WATER_WAVE_HEIGHT " << g_settings->getFloat("water_wave_height") << "\n";
-		header << "#define WATER_WAVE_LENGTH " << g_settings->getFloat("water_wave_length") << "\n";
-		header << "#define WATER_WAVE_SPEED " << g_settings->getFloat("water_wave_speed") << "\n";
+		header << "#define WATER_WAVE_HEIGHT " << water_wave_height << "\n";
+		header << "#define WATER_WAVE_LENGTH " << water_wave_length << "\n";
+		header << "#define WATER_WAVE_SPEED " << water_wave_speed << "\n";
 	}
 	
-	header << "#define ENABLE_WAVING_LEAVES " << g_settings->getBool("enable_waving_leaves") << "\n";
-	header << "#define ENABLE_WAVING_PLANTS " << g_settings->getBool("enable_waving_plants") << "\n";
+	header << "#define ENABLE_WAVING_LEAVES " << enable_waving_leaves << "\n";
+	header << "#define ENABLE_WAVING_PLANTS " << enable_waving_plants << "\n";
 	
-	header << "#define ENABLE_TONE_MAPPING " << g_settings->getBool("tone_mapping") << "\n";
+	header << "#define ENABLE_TONE_MAPPING " << tone_mapping << "\n";
 
-	if (g_settings->getBool("enable_dynamic_shadows")) {
+	if (enable_dynamic_shadows) {
 		header << "#define ENABLE_DYNAMIC_SHADOWS 1\n";
-		if (g_settings->getBool("shadow_map_color"))
-			header << "#define COLORED_SHADOWS 1\n";
+		header << "#define COLORED_SHADOWS " << (u8)shadow_map_color << "\n";
+		header << "#define POISSON_FILTER " << (u8)shadow_poisson_filter << "\n";
+		header << "#define ENABLE_WATER_REFLECTIONS " << (u8)enable_water_reflections << "\n";
+		header << "#define ENABLE_TRANSLUCENT_FOLIAGE " << (u8)enable_translucent_foliage << "\n";
+		header << "#define ENABLE_NODE_SPECULAR " << (u8)enable_node_specular << "\n";
 
-		if (g_settings->getBool("shadow_poisson_filter"))
-			header << "#define POISSON_FILTER 1\n";
-
-		if (g_settings->getBool("enable_water_reflections"))
-			header << "#define ENABLE_WATER_REFLECTIONS 1\n";
-
-		if (g_settings->getBool("enable_translucent_foliage"))
-			header << "#define ENABLE_TRANSLUCENT_FOLIAGE 1\n";
-
-		if (g_settings->getBool("enable_node_specular"))
-			header << "#define ENABLE_NODE_SPECULAR 1\n";
-
-		s32 shadow_filter = g_settings->getS32("shadow_filters");
-        header << "#define SHADOW_FILTER " << shadow_filter << "\n";
-
-		f32 shadow_soft_radius = g_settings->getFloat("shadow_soft_radius");
-		if (shadow_soft_radius < 1.0f)
-			shadow_soft_radius = 1.0f;
-		    header << "#define SOFTSHADOWRADIUS " << shadow_soft_radius << "\n";
+        header << "#define SHADOW_FILTER " << shadow_filters << "\n";
+		header << "#define SOFTSHADOWRADIUS " << shadow_soft_radius << "\n";
 	}
 
-	if (g_settings->getBool("enable_bloom")) {
+	if (enable_bloom) {
 		header << "#define ENABLE_BLOOM 1\n";
-		if (g_settings->getBool("enable_bloom_debug"))
-			header << "#define ENABLE_BLOOM_DEBUG 1\n";
+		header << "#define ENABLE_BLOOM_DEBUG " << (u8)enable_bloom_debug << "\n";
 	}
 
-	if (g_settings->getBool("enable_auto_exposure"))
-		header << "#define ENABLE_AUTO_EXPOSURE 1\n";
+	header << "#define ENABLE_AUTO_EXPOSURE " << (u8)enable_auto_exposure << "\n";
 
-	if (g_settings->get("antialiasing") == "ssaa") {
+	if (antialiasing == "ssaa") {
 		header << "#define ENABLE_SSAA 1\n";
-		u16 ssaa_scale = std::max(2, g_settings->getU16("fsaa"));
-		header << "#define SSAA_SCALE " << ssaa_scale << ".\n";
+		header << "#define SSAA_SCALE " << fsaa << ".\n";
 	}
 
-	if (g_settings->getBool("debanding"))
-		header << "#define ENABLE_DITHERING 1\n";
+	header << "#define ENABLE_DITHERING " << (u8)debanding << "\n";
 
-	if (g_settings->getBool("enable_volumetric_lighting"))
-		header << "#define VOLUMETRIC_LIGHT 1\n";
+	header << "#define VOLUMETRIC_LIGHT " << (u8)enable_volumetric_lighting << "\n";
 	
 	std::string final_header = "#line 0\n"; // reset the line counter for meaningful diagnostics
 

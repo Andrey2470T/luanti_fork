@@ -412,6 +412,7 @@ set(independent_SRCS
 	craftdef.cpp
 	debug.cpp
 	face_position_cache.cpp
+	file.cpp
 	gettext_plural_form.cpp
 	httpfetch.cpp
 	hud.cpp
