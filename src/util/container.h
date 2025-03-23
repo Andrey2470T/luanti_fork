@@ -72,6 +72,10 @@ class MutexedMap
 public:
 	MutexedMap() = default;
 
+	MutexedMap(std::initializer_list<Key, Value> l)
+		: m_values(l)
+	{}
+
 	void set(const Key &name, const Value &value)
 	{
 		MutexAutoLock lock(m_mutex);
@@ -94,8 +98,8 @@ public:
 		MutexAutoLock lock(m_mutex);
 		std::vector<Value> result;
 		result.reserve(m_values.size());
-		for (auto it = m_values.begin(); it != m_values.end(); ++it)
-			result.push_back(it->second);
+		for (auto p : m_values)
+			result.push_back(p.second);
 		return result;
 	}
 
@@ -106,6 +110,36 @@ private:
 	mutable std::mutex m_mutex;
 };
 
+/*
+    Thread-safe vector
+*/
+
+template<class T>
+class MutexedVector
+{
+public:
+    MutexedVector() = default;
+
+	MutexedVector(std::initializer_list<T> l)
+		: m_data(l)
+	{}
+
+    void append(const T &element)
+    {
+        MutexAutoLock lock(m_mutex);
+        m_data.push_back(element);
+    }
+
+    T get(u32 i) const
+    {
+        MutexAutoLock lock(m_mutex);
+        return m_data.at(i);
+    }
+
+private:
+    std::vector<T> m_data;
+    mutable std::mutex m_mutex;
+};
 
 /*
 	Thread-safe double-ended queue
