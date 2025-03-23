@@ -1,33 +1,36 @@
+#include <fstream>
 #include "file.h"
+#include "log.h"
 
-static std::string File::read(fs::path p)
+bool File::read(fs::path p, std::string &read_data)
 {
     std::ifstream is(p);
 
     if (!is.is_open()) {
         errorstream << "File::read(): Failed to open " << p << std::endl;
-        return "";
+        return false;
     }
 
     u32 size = is.tellg();
 
-    std::string read_str;
-    read_str.resize(size);
+    read_data.resize(size);
 
     is.seekg(0);
-    is.read(&read_str[0], size);
+    is.read(&read_data[0], size);
 
-    return read_str;
+    return true;
 }
 
-static void File::write(fs::path p, std::string content, bool rewrite)
+bool File::write(fs::path p, std::string_view content, bool rewrite)
 {
-    std::ofstream os(p, std::ios::out | (rewrite ? std::ios::out : std::ios::app));
+    std::ofstream os(p, rewrite ? std::ios::out : std::ios::app);
 
     if (!os.is_open()) {
         errorstream << "File::write(): Failed to open " << p << std::endl;
-        return;
+        return false;
     }
 
-    os.write(&content, content.size());
+    os.write(&content[0], content.size());
+    
+    return true;
 }

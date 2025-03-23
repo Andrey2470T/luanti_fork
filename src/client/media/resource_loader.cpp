@@ -1,8 +1,9 @@
 #include "resource_loader.h"
 #include "Image/ImageLoader.h"
-#include "FilesystemVersions.h"
+#include "Render/Texture2D.h"
+#include "Render/Shader.h"
 #include "settings.h"
-#include "filesys.h"
+#include "file.h"
 
 ResourceLoader::ResourceLoader()
 {
@@ -25,22 +26,23 @@ ResourceLoader::ResourceLoader()
 	enable_bloom_debug = g_settings->getBool("enable_bloom_debug");
 	enable_auto_exposure = g_settings->getBool("enable_auto_exposure");
 	antialiasing = g_settings->get("antialiasing");
-	fsaa = std::max(2, g_settings->getU16("fsaa");
+    fsaa = std::max((u16)2, g_settings->getU16("fsaa"));
 	debanding = g_settings->getBool("debanding");
 	enable_volumetric_lighting = g_settings->getBool("enable_volumetric_lighting");
 }
 
 img::Image *ResourceLoader::loadImage(const std::string &path)
 {
-	return ImageLoader::load(path);
+    return img::ImageLoader::load(path);
 }
 
 render::Texture2D *ResourceLoader::loadTexture(const std::string &path)
 {
-	img::Image *img = ImageLoader::load(path);
+    img::Image *img = img::ImageLoader::load(path);
 	
 	fs::path name = fs::path(path).stem();
-	return new render::Texture2D(name.string(), img, render::TextureSettings());
+
+    return new render::Texture2D(name.string(), std::make_unique<img::Image>(img), render::TextureSettings());
 }
 
 render::Shader *ResourceLoader::loadShader(const std::string &path)
@@ -50,20 +52,20 @@ render::Shader *ResourceLoader::loadShader(const std::string &path)
 	header << std::noboolalpha << std::showpoint;
 	header << "#version 320\n";
 
-	header << "#define ENABLE_WAVING_WATER " << enable_waving_water << "\n";
+	header << "#define ENABLE_WAVING_WATER " << (u8)enable_waving_water << "\n";
 	if (enable_waving_water) {
 		header << "#define WATER_WAVE_HEIGHT " << water_wave_height << "\n";
 		header << "#define WATER_WAVE_LENGTH " << water_wave_length << "\n";
 		header << "#define WATER_WAVE_SPEED " << water_wave_speed << "\n";
 	}
 	
-	header << "#define ENABLE_WAVING_LEAVES " << enable_waving_leaves << "\n";
-	header << "#define ENABLE_WAVING_PLANTS " << enable_waving_plants << "\n";
+	header << "#define ENABLE_WAVING_LEAVES " << (u8)enable_waving_leaves << "\n";
+	header << "#define ENABLE_WAVING_PLANTS " << (u8)enable_waving_plants << "\n";
 	
-	header << "#define ENABLE_TONE_MAPPING " << tone_mapping << "\n";
+	header << "#define ENABLE_TONE_MAPPING " << (u8)tone_mapping << "\n";
 
+    header << "#define ENABLE_DYNAMIC_SHADOWS " << (u8)enable_dynamic_shadows << "\n";
 	if (enable_dynamic_shadows) {
-		header << "#define ENABLE_DYNAMIC_SHADOWS 1\n";
 		header << "#define COLORED_SHADOWS " << (u8)shadow_map_color << "\n";
 		header << "#define POISSON_FILTER " << (u8)shadow_poisson_filter << "\n";
 		header << "#define ENABLE_WATER_REFLECTIONS " << (u8)enable_water_reflections << "\n";
@@ -74,10 +76,9 @@ render::Shader *ResourceLoader::loadShader(const std::string &path)
 		header << "#define SOFTSHADOWRADIUS " << shadow_soft_radius << "\n";
 	}
 
-	if (enable_bloom) {
-		header << "#define ENABLE_BLOOM 1\n";
+    header << "#define ENABLE_BLOOM " << (u8)enable_bloom << "\n";
+	if (enable_bloom)
 		header << "#define ENABLE_BLOOM_DEBUG " << (u8)enable_bloom_debug << "\n";
-	}
 
 	header << "#define ENABLE_AUTO_EXPOSURE " << (u8)enable_auto_exposure << "\n";
 
@@ -92,15 +93,20 @@ render::Shader *ResourceLoader::loadShader(const std::string &path)
 	
 	std::string final_header = "#line 0\n"; // reset the line counter for meaningful diagnostics
 
-	std::string vertex_code = header.str() + final_header + File::read(fs::path(path / "opengl_vertex.glsl"));
-	std::string fragment_code = header.str() + final_header + File::read(fs::path(path / "opengl_fragment.glsl"));
-	std::string geometry_code = File::read(fs::path(path / "opengl_geometry.glsl"));
+    std::string vs_code, fs_code, gs_code;
+    File::read(fs::path(path) / "opengl_vertex.glsl", vs_code);
+    File::read(fs::path(path) / "opengl_fragment.glsl", fs_code);
+    File::read(fs::path(path) / "opengl_geometry.glsl", gs_code);
+
+    std::string vertex_code = header.str() + final_header + vs_code;
+    std::string fragment_code = header.str() + final_header + fs_code;
+    std::string geometry_code;
 	
-	if (!geometry_code.empty())
-	     geometry_code = header.str() + final_header + geometry_code;
+    if (!gs_code.empty())
+         geometry_code = header.str() + final_header + gs_code;
 
     return new render::Shader(vertex_code, fragment_code, geometry_code);
 }
 
-MeshBuffer *ResourceLoader::loadMesh(const std::strint &path)
+MeshBuffer *ResourceLoader::loadMesh(const std::string &path)
 {}

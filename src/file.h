@@ -1,10 +1,13 @@
 #pragma once
 
 #include "BasicIncludes.h"
+#include "FilesystemVersions.h"
+#include <string_view>
 
 class File
 {
-    static std::string read(fs::path p);
+public:
+    static bool read(fs::path p, std::string &read_data);
 
-    static void write(fs::path p, std::string content, bool rewrite=false);
+    static bool write(fs::path p, std::string_view content, bool rewrite=false);
 };

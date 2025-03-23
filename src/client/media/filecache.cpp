@@ -6,7 +6,7 @@
 #include "filecache.h"
 
 #include "log.h"
-#include "filesys.h"
+#include "file.h"
 #include <string>
 #include <iostream>
 #include <fstream>
@@ -14,75 +14,41 @@
 
 void FileCache::createDir()
 {
-	if (!fs::CreateAllDirs(m_dir)) {
-		errorstream << "Could not create cache directory: "
-			<< m_dir << std::endl;
-	}
-}
-
-bool FileCache::loadByPath(const std::string &path, std::ostream &os)
-{
-	auto fis = open_ifstream(path.c_str(), false);
-	if (!fis.good())
-		return false;
-
-	bool bad = false;
-	for(;;){
-		char buf[4096];
-		fis.read(buf, sizeof(buf));
-		std::streamsize len = fis.gcount();
-		os.write(buf, len);
-		if(fis.eof())
-			break;
-		if(!fis.good()){
-			bad = true;
-			break;
-		}
-	}
-	if(bad){
-		errorstream<<"FileCache: Failed to read file from cache: \""
-				<<path<<"\""<<std::endl;
-	}
-
-	return !bad;
-}
-
-bool FileCache::updateByPath(const std::string &path, std::string_view data)
-{
-	createDir();
-
-	auto file = open_ofstream(path.c_str(), true);
-	if (!file.good())
-		return false;
-
-	file << data;
-	file.close();
-
-	return !file.fail();
+    try {
+        fs::create_directories(m_dir);
+    }
+    catch (const fs::filesystem_error &err) {
+        errorstream << "FileCache::createDir(): " << err.what() << std::endl;
+    }
 }
 
 bool FileCache::update(const std::string &name, std::string_view data)
 {
-	std::string path = m_dir + DIR_DELIM + name;
-	return updateByPath(path, data);
+    fs::path path = m_dir / name;
+	return File::write(path, data, true);
 }
 
 bool FileCache::load(const std::string &name, std::ostream &os)
 {
-	std::string path = m_dir + DIR_DELIM + name;
-	return loadByPath(path, os);
+    fs::path path = m_dir / name;
+    std::string data;
+	bool status = File::read(path, data);
+	
+	if (status)
+	    os << data;
+	return status;
 }
 
 bool FileCache::exists(const std::string &name)
 {
-	std::string path = m_dir + DIR_DELIM + name;
-	return fs::PathExists(path);
+    fs::path path = m_dir / name;
+    return fs::exists(path);
 }
 
 bool FileCache::updateCopyFile(const std::string &name, const std::string &src_path)
 {
-	std::string path = m_dir + DIR_DELIM + name;
+    fs::path path = m_dir / name;
 
 	createDir();
-	return fs::CopyFileContents(src_path, path);
+    return fs::copy_file(src_path, path);
 }
