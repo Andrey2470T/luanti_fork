@@ -1,7 +1,6 @@
 #include "resource.h"
 #include "FilesystemVersions.h"
 #include "porting.h"
-#include <system_error>
 #include "threading/mutex_auto_lock.h"
 #include "settings.h"
 #include "Image/ImageLoader.h"
@@ -40,6 +39,10 @@ std::vector<std::string> TextureResourceInfo::defpaths = getTexturesDefaultPaths
 std::vector<std::string> ImageResourceInfo::defpaths = TextureResourceInfo::defpaths;
 std::vector<std::string> ShaderResourceInfo::defpaths = getShaderDefaultPaths();
 
+ResourceCache::ResourceCache(img::ImageModifier *mdf)
+    : loader(std::make_unique<ResourceLoader>(mdf))
+{}
+
 ResourceInfo *ResourceCache::get(ResourceType _type, const std::string &_name)
 {
     MutexAutoLock lock(resource_mutex);
@@ -72,6 +75,13 @@ ResourceInfo *ResourceCache::get(ResourceType _type, const std::string &_name)
 			
             return (it != meshes.end() ? it->get() : nullptr);
 		}
+        case ResourceType::PALETTE: {
+            auto it = std::find(palettes.begin(), palettes.end(), [_name] (const std::unique_ptr<PaletteResourceInfo> &elem) {
+                return elem->name == _name;
+            });
+
+            return (it != palettes.end() ? it->get() : nullptr);
+        }
 	};
 }
 
@@ -111,6 +121,14 @@ ResourceInfo *ResourceCache::getByID(ResourceType _type, u32 _id)
         }
         else
             return meshes.at(_id).get();
+    }
+    case ResourceType::PALETTE: {
+        if (_id >= palettes.size()) {
+            infostream << "ResourceCache::getResourceByID(): Palette resource ID " << _id << " is out of range" << std::endl;
+            return nullptr;
+        }
+        else
+            return palettes.at(_id).get();
     }
     }
 }
@@ -221,6 +239,22 @@ ResourceInfo *ResourceCache::getOrLoad(ResourceType _type, const std::string &_n
 			);
 			return meshes.back().get();
 		}
+        case ResourceType::PALETTE: {
+            img::Palette *palette = loader->loadPalette(target_path);
+
+            if (!palette) {
+                infostream << "ResourceCache::getOrLoad(): Couldn't load the palette image with name " << _name << std::endl;
+                return nullptr;
+            }
+
+            palettes.emplace_back(
+                ResourceType::PALETTE,
+                _name,
+                target_path,
+                palette
+                );
+            return palettes.back().get();
+        }
 		default:
 			return nullptr;
 	};

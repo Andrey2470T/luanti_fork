@@ -4,12 +4,11 @@
 
 #pragma once
 
-#include "irrlichttypes.h"
+#include "BasicIncludes.h"
 #include "filecache.h"
 #include "util/basic_macros.h"
 #include <map>
 #include <set>
-#include <vector>
 #include <unordered_map>
 
 class Client;

@@ -5,6 +5,8 @@
 namespace img
 {
     class Image;
+	class ImageModifier;
+	struct Palette;
 };
 
 namespace render
@@ -17,6 +19,8 @@ class MeshBuffer;
 
 class ResourceLoader
 {
+	img::ImageModifier *mdf;
+
 	bool enable_waving_water;
 	f32 water_wave_height;
 	f32 water_wave_length;
@@ -40,11 +44,11 @@ class ResourceLoader
 	bool debanding;
 	bool enable_volumetric_lighting;
 public:
-	ResourceLoader();
+	ResourceLoader(img::ImageModifier *_mdf);
 
 	img::Image *loadImage(const std::string &path);
 	render::Texture2D *loadTexture(const std::string &path);
 	render::Shader *loadShader(const std::string &path);
     MeshBuffer *loadMesh(const std::string &path);
-	
+	img::Palette *loadPalette(const std::string &path);
 };

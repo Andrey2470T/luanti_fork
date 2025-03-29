@@ -25,7 +25,6 @@ set(map_SRCS
 set(media_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/media/clientmedia.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/media/filecache.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/media/imagefilters.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/media/resource.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/media/resource_loader.cpp
 )

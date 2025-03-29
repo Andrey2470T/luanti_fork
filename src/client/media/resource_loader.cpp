@@ -1,11 +1,14 @@
 #include "resource_loader.h"
 #include "Image/ImageLoader.h"
+#include "Image/ImageFilters.h"
 #include "Render/Texture2D.h"
 #include "Render/Shader.h"
 #include "settings.h"
 #include "file.h"
+#include "log.h"
 
-ResourceLoader::ResourceLoader()
+ResourceLoader::ResourceLoader(img::ImageModifier *_mdf)
+	: mdf(_mdf)
 {
 	enable_waving_water = g_settings->getBool("enable_waving_water");
 	water_wave_height = g_settings->getFloat("water_wave_height");
@@ -33,12 +36,22 @@ ResourceLoader::ResourceLoader()
 
 img::Image *ResourceLoader::loadImage(const std::string &path)
 {
-    return img::ImageLoader::load(path);
+    img::Image *img = img::ImageLoader::load(path);
+
+	if (!img) {
+		errorstream << "ResourceLoader: Couldn't load the image (" << path << ")" << std::endl;
+		return nullptr;
+	}
+
+	return img::Align2Npot2(img, mdf);
 }
 
 render::Texture2D *ResourceLoader::loadTexture(const std::string &path)
 {
-    img::Image *img = img::ImageLoader::load(path);
+    img::Image *img = loadImage(path);
+
+	if (!img)
+		return nullptr;
 	
 	fs::path name = fs::path(path).stem();
 
@@ -110,3 +123,46 @@ render::Shader *ResourceLoader::loadShader(const std::string &path)
 
 MeshBuffer *ResourceLoader::loadMesh(const std::string &path)
 {}
+
+img::Palette *ResourceLoader::loadPalette(const std::string &path)
+{
+	img::Image *img = loadImage(path);
+
+    if (!img)
+        return nullptr;
+
+    v2u size = img->getSize();
+    u32 area = size.X * size.Y;
+
+    if (area > 256) {
+        warningstream << "ResourceLoader::loadPalette(): the specified"
+            << " palette image \"" << fs::path().stem() << "\" is larger than 256"
+            << " pixels, using the first 256." << std::endl;
+        area = 256;
+    }
+    else if (256 % area != 0) {
+        warningstream << "ResourceLoader::loadPalette(): the "
+                      << "specified palette image \"" << fs::path().stem() << "\" does not "
+            << "contain power of two pixels." << std::endl;
+    }
+
+    std::vector<img::color8> colors(256);
+    std::vector<img::color8>::iterator colors_iter = colors.begin();
+
+    // We stretch the palette so it will fit 256 values
+    // This many param2 values will have the same color
+    u32 step = 256 / area;
+    // For each pixel in the image
+    for (u32 i = 0; i < area; i++) {
+        img::color8 c = mdf->getPixel(img, i % size.X, i / size.X);
+        // Fill in palette with 'step' colors
+        for (u32 j = 0; j < step; j++) {
+            *colors_iter = c;
+            colors_iter++;
+        }
+    }
+
+    delete img;
+
+    return new img::Palette(true, area, colors);
+}
