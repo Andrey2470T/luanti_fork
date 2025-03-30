@@ -1,15 +1,62 @@
 #pragma once
 
 #include "Image/ImageModifier.h"
-#include "resource_loader.h"
+#include "resource.h"
+
+#define PARSE_FUNC(MODIFIER_NAME) \
+    static void parse##MODIFIER_NAME(img::Image *src, img::Image *dest, const std::string &mod)
+
+class TexModParser
+{
+public:
+    static void determineModifier(img::Image *src, img::Image *dest, const std::string &mod);
+private:
+    PARSE_FUNC(Crack);
+    PARSE_FUNC(Combine);
+    PARSE_FUNC(Fill);
+    PARSE_FUNC(Brighten);
+    PARSE_FUNC(NoAlpha);
+    PARSE_FUNC(MakeAlpha);
+    PARSE_FUNC(Transform);
+    PARSE_FUNC(InventoryCube);
+    PARSE_FUNC(LowPart);
+    PARSE_FUNC(VerticalFrame);
+    PARSE_FUNC(Mask);
+    PARSE_FUNC(Multiply);
+    PARSE_FUNC(Screen);
+    PARSE_FUNC(Colorize);
+    PARSE_FUNC(ApplyFiltersForMesh);
+    PARSE_FUNC(Resize);
+    PARSE_FUNC(Opacity);
+    PARSE_FUNC(Invert);
+    PARSE_FUNC(Sheet);
+    PARSE_FUNC(PNG);
+    PARSE_FUNC(HSL);
+    PARSE_FUNC(Overlay);
+    PARSE_FUNC(Contrast);
+};
 
 class TextureGenerator
 {
+    ResourceCache *resCache;
+    img::ImageModifier *imgMdf;
 public:
-    TextureGenerator();
+    TextureGenerator(ResourceCache *cache, img::ImageModifier *mdf);
 
     render::Texture2D *generate(const std::string &texmod_str);
     render::Texture2D *generateForMesh(const std::string &name);
 private:
     bool generatePart(const std::string &texmod_str_part, img::Image *base_img);
+
+    void upscaleToLargest(img::Image *img1, img::Image *img2);
+
+    img::Image *createInventoryCubeImage(
+        img::Image *img1, img::Image *img2, img::Image *img3);
+    
+    img::Image *createDummyImage();
+
+    img::Image *createCrack(img::Image *img, s32 frame_index,
+		v2u size, u8 tiles);
+    
+    void blitImagesWithUpscaling(const img::Image *src, img::Image *dest);
 };

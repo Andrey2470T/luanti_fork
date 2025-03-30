@@ -72,7 +72,7 @@ class MutexedMap
 public:
 	MutexedMap() = default;
 
-	MutexedMap(std::initializer_list<Key, Value> l)
+    MutexedMap(std::initializer_list<std::pair<Key, Value>> l)
 		: m_values(l)
 	{}
 
