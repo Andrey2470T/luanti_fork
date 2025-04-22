@@ -15,6 +15,8 @@ enum class ResourceType
 
 struct ResourceInfo
 {
+    virtual ~ResourceInfo() = default;
+
     ResourceType type;
     std::string name;
 
