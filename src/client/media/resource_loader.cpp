@@ -55,7 +55,7 @@ render::Texture2D *ResourceLoader::loadTexture(const std::string &path)
 	
 	fs::path name = fs::path(path).stem();
 
-    return new render::Texture2D(name.string(), std::make_unique<img::Image>(img), render::TextureSettings());
+    return new render::Texture2D(name.string(), std::unique_ptr<img::Image>(img), render::TextureSettings());
 }
 
 render::Shader *ResourceLoader::loadShader(const std::string &path)
