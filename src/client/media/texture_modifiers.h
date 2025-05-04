@@ -40,11 +40,13 @@ class TextureGenerator
 {
     ResourceCache *resCache;
     img::ImageModifier *imgMdf;
+
+    bool meshFilterNeeded;
 public:
     TextureGenerator(ResourceCache *cache, img::ImageModifier *mdf);
 
-    render::Texture2D *generate(const std::string &texmod_str);
-    render::Texture2D *generateForMesh(const std::string &name);
+    img::Image *generate(const std::string &texmod_str);
+    img::Image *generateForMesh(const std::string &name);
 private:
     bool generatePart(const std::string &texmod_str_part, img::Image *base_img);
 
@@ -58,5 +60,5 @@ private:
     img::Image *createCrack(img::Image *img, s32 frame_index,
 		v2u size, u8 tiles);
     
-    void blitImagesWithUpscaling(const img::Image *src, img::Image *dest);
+    void blitImagesWithUpscaling(img::Image *src, img::Image *dest);
 };
