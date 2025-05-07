@@ -4,54 +4,54 @@
 #include "log.h"
 #include "settings.h"
 
-void TexModParser::determineModifier(img::Image *src, img::Image *dest, const std::string &mod)
+bool TexModParser::determineModifier(TextureGenerator *texgen, img::Image *dest, const std::string &mod)
 {
     if (str_starts_with(mod, "crack"))
-        parseCrack(src, dest, mod);
+        return parseCrack(texgen, dest, mod);
     else if (str_starts_with(mod, "combine"))
-        parseCombine(src, dest, mod);
+        return parseCombine(texgen, dest, mod);
     else if (str_starts_with(mod, "fill"))
-        parseFill(src, dest, mod);
+        return parseFill(texgen, dest, mod);
     else if (str_starts_with(mod, "brighten"))
-        parseBrighten(src, dest, mod);
+        return parseBrighten(texgen, dest, mod);
     else if (str_starts_with(mod, "noalpha"))
-        parseNoAlpha(src, dest, mod);
+        return parseNoAlpha(texgen, dest, mod);
     else if (str_starts_with(mod, "makealpha"))
-        parseMakeAlpha(src, dest, mod);
+        return parseMakeAlpha(texgen, dest, mod);
     else if (str_starts_with(mod, "transform"))
-        parseTransform(src, dest, mod);
+        return parseTransform(texgen, dest, mod);
     else if (str_starts_with(mod, "inventorycube"))
-        parseInventoryCube(src, dest, mod);
+        return parseInventoryCube(texgen, dest, mod);
     else if (str_starts_with(mod, "lowpart"))
-        parseLowPart(src, dest, mod);
+        return parseLowPart(texgen, dest, mod);
     else if (str_starts_with(mod, "verticalframe"))
-        parseVerticalFrame(src, dest, mod);
+        return parseVerticalFrame(texgen, dest, mod);
     else if (str_starts_with(mod, "mask"))
-        parseMask(src, dest, mod);
+        return parseMask(texgen, dest, mod);
     else if (str_starts_with(mod, "multiply"))
-        parseMultiply(src, dest, mod);
+        return parseMultiply(texgen, dest, mod);
     else if (str_starts_with(mod, "screen"))
-        parseScreen(src, dest, mod);
+        return parseScreen(texgen, dest, mod);
     else if (str_starts_with(mod, "colorize"))
-        parseColorize(src, dest, mod);
+        return parseColorize(texgen, dest, mod);
     else if (str_starts_with(mod, "applyfiltersformesh"))
-        parseApplyFiltersForMesh(src, dest, mod);
+        return parseApplyFiltersForMesh(texgen, dest, mod);
     else if (str_starts_with(mod, "resize"))
-        parseResize(src, dest, mod);
+        return parseResize(texgen, dest, mod);
     else if (str_starts_with(mod, "opacity"))
-        parseOpacity(src, dest, mod);
+        return parseOpacity(texgen, dest, mod);
     else if (str_starts_with(mod, "invert"))
-        parseInvert(src, dest, mod);
+        return parseInvert(texgen, dest, mod);
     else if (str_starts_with(mod, "sheet"))
-        parseSheet(src, dest, mod);
+        return parseSheet(texgen, dest, mod);
     else if (str_starts_with(mod, "png"))
-        parsePNG(src, dest, mod);
+        return parsePNG(texgen, dest, mod);
     else if (str_starts_with(mod, "hsl"))
-        parseHSL(src, dest, mod);
+        return parseHSL(texgen, dest, mod);
     else if (str_starts_with(mod, "overlay"))
-        parseOverlay(src, dest, mod);
+        return parseOverlay(texgen, dest, mod);
     else if (str_starts_with(mod, "contrast"))
-        parseContrast(src, dest, mod);
+        return parseContrast(texgen, dest, mod);
 }
 
 TextureGenerator::TextureGenerator(ResourceCache *cache, img::ImageModifier *mdf)
@@ -219,6 +219,8 @@ bool TextureGenerator::generatePart(const std::string &texmod_str_part, img::Ima
 					<< "\", cancelling." << std::endl; \
             return false;
         }
+
+        return TexModParser::determineModifier(this, base_img, texmod_str_part);
     }
 
     return true;

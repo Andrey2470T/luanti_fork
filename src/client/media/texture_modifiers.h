@@ -4,12 +4,14 @@
 #include "resource.h"
 
 #define PARSE_FUNC(MODIFIER_NAME) \
-    static void parse##MODIFIER_NAME(img::Image *src, img::Image *dest, const std::string &mod)
+    static bool parse##MODIFIER_NAME(TextureGenerator *texgen, img::Image *dest, const std::string &mod)
+
+class TextureGenerator;
 
 class TexModParser
 {
 public:
-    static void determineModifier(img::Image *src, img::Image *dest, const std::string &mod);
+    static bool determineModifier(TextureGenerator *texgen, img::Image *dest, const std::string &mod);
 private:
     PARSE_FUNC(Crack);
     PARSE_FUNC(Combine);
@@ -42,6 +44,8 @@ class TextureGenerator
     img::ImageModifier *imgMdf;
 
     bool meshFilterNeeded;
+
+    friend TexModParser;
 public:
     TextureGenerator(ResourceCache *cache, img::ImageModifier *mdf);
 
