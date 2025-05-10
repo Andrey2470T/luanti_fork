@@ -6,52 +6,59 @@
 
 bool TexModParser::determineModifier(TextureGenerator *texgen, img::Image *dest, const std::string &mod)
 {
-    if (str_starts_with(mod, "crack"))
+    if (str_starts_with(mod, "[crack"))
         return parseCrack(texgen, dest, mod);
-    else if (str_starts_with(mod, "combine"))
+    else if (str_starts_with(mod, "[combine"))
         return parseCombine(texgen, dest, mod);
-    else if (str_starts_with(mod, "fill"))
+    else if (str_starts_with(mod, "[fill"))
         return parseFill(texgen, dest, mod);
-    else if (str_starts_with(mod, "brighten"))
+    else if (str_starts_with(mod, "[brighten"))
         return parseBrighten(texgen, dest, mod);
-    else if (str_starts_with(mod, "noalpha"))
+    else if (str_starts_with(mod, "[noalpha"))
         return parseNoAlpha(texgen, dest, mod);
-    else if (str_starts_with(mod, "makealpha"))
+    else if (str_starts_with(mod, "[makealpha"))
         return parseMakeAlpha(texgen, dest, mod);
-    else if (str_starts_with(mod, "transform"))
+    else if (str_starts_with(mod, "[transform"))
         return parseTransform(texgen, dest, mod);
-    else if (str_starts_with(mod, "inventorycube"))
+    else if (str_starts_with(mod, "[inventorycube"))
         return parseInventoryCube(texgen, dest, mod);
-    else if (str_starts_with(mod, "lowpart"))
+    else if (str_starts_with(mod, "[lowpart"))
         return parseLowPart(texgen, dest, mod);
-    else if (str_starts_with(mod, "verticalframe"))
+    else if (str_starts_with(mod, "[verticalframe"))
         return parseVerticalFrame(texgen, dest, mod);
-    else if (str_starts_with(mod, "mask"))
+    else if (str_starts_with(mod, "[mask"))
         return parseMask(texgen, dest, mod);
-    else if (str_starts_with(mod, "multiply"))
+    else if (str_starts_with(mod, "[multiply"))
         return parseMultiply(texgen, dest, mod);
-    else if (str_starts_with(mod, "screen"))
+    else if (str_starts_with(mod, "[screen"))
         return parseScreen(texgen, dest, mod);
-    else if (str_starts_with(mod, "colorize"))
+    else if (str_starts_with(mod, "[colorize"))
         return parseColorize(texgen, dest, mod);
-    else if (str_starts_with(mod, "applyfiltersformesh"))
+    else if (str_starts_with(mod, "[applyfiltersformesh"))
         return parseApplyFiltersForMesh(texgen, dest, mod);
-    else if (str_starts_with(mod, "resize"))
+    else if (str_starts_with(mod, "[resize"))
         return parseResize(texgen, dest, mod);
-    else if (str_starts_with(mod, "opacity"))
+    else if (str_starts_with(mod, "[opacity"))
         return parseOpacity(texgen, dest, mod);
-    else if (str_starts_with(mod, "invert"))
+    else if (str_starts_with(mod, "[invert"))
         return parseInvert(texgen, dest, mod);
-    else if (str_starts_with(mod, "sheet"))
+    else if (str_starts_with(mod, "[sheet"))
         return parseSheet(texgen, dest, mod);
-    else if (str_starts_with(mod, "png"))
+    else if (str_starts_with(mod, "[png"))
         return parsePNG(texgen, dest, mod);
-    else if (str_starts_with(mod, "hsl"))
+    else if (str_starts_with(mod, "[hsl"))
         return parseHSL(texgen, dest, mod);
-    else if (str_starts_with(mod, "overlay"))
+    else if (str_starts_with(mod, "[overlay"))
         return parseOverlay(texgen, dest, mod);
-    else if (str_starts_with(mod, "contrast"))
+    else if (str_starts_with(mod, "[hardlight"))
+        return parseHardlight(texgen, dest, mod);
+    else if (str_starts_with(mod, "[contrast"))
         return parseContrast(texgen, dest, mod);
+    else
+        errorstream << "TexModParser::determineModifier(): Invalid "
+                       " modification: \"" << mod << "\"" << std::endl;
+
+    return true;
 }
 
 TextureGenerator::TextureGenerator(ResourceCache *cache, img::ImageModifier *mdf)
@@ -61,6 +68,8 @@ TextureGenerator::TextureGenerator(ResourceCache *cache, img::ImageModifier *mdf
                        g_settings->getBool("trilinear_filter") ||
                        g_settings->getBool("bilinear_filter") ||
                        g_settings->getBool("anisotropic_filter");
+
+    minTextureSize = g_settings->getU16("texture_min_size");
 }
 
 img::Image *TextureGenerator::generate(const std::string &texmod_str)
@@ -143,7 +152,8 @@ img::Image *TextureGenerator::generate(const std::string &texmod_str)
         }
 
         if (baseimg) {
-            blitImagesWithUpscaling(tmp, baseimg);
+            v2u tmpSize = tmp->getSize();
+            blitImages(tmp, baseimg, v2u(0, 0), &tmpSize);
             delete tmp;
         } else {
             baseimg = tmp;
@@ -209,11 +219,11 @@ bool TextureGenerator::generatePart(const std::string &texmod_str_part, img::Ima
             imgMdf->copyTo(img, base_img);
         }
         else
-            blitImagesWithUpscaling(img, base_img);
+            blitImages(img, base_img, v2u(0), nullptr, true);
     }
     // Then this is a texture modifier
     else {
-        if (!base_img) {
+        if (!base_img && !str_starts_with(texmod_str_part, "[fill")) {
             errorstream << "TextureGenerator::generatePart(): base_img == nullptr" \
 					<< " for texmod_str_part\"" << texmod_str_part \
 					<< "\", cancelling." << std::endl; \
@@ -366,7 +376,7 @@ img::Image *TextureGenerator::createCrack(img::Image *img, s32 frame_index,
         img::Image *crack_frame = new img::Image(img::PF_RGBA8, frame_size.X, frame_size.Y);
 
         imgMdf->copyTo(img, crack_frame, nullptr, &frame);
-        imgMdf->copyTo(crack_frame, crack_tile);
+        imgMdf->copyTo(crack_frame, crack_tile, nullptr, nullptr, true);
         delete crack_frame;
     }
     if (tiles == 1)
@@ -385,13 +395,14 @@ img::Image *TextureGenerator::createCrack(img::Image *img, s32 frame_index,
     return result;
 }
 
-void TextureGenerator::blitImagesWithUpscaling(img::Image *src, img::Image *dest)
+void TextureGenerator::blitImages(img::Image *src, img::Image *dest, const v2u &dstPos, const v2u *size, bool upscale)
 {
-    upscaleToLargest(src, dest);
+    if (upscale)
+        upscaleToLargest(src, dest);
 
-    for (u32 x = 0; x < dest->getWidth(); x++)
-        for (u32 y = 0; y < dest->getHeight(); y++) {
-            auto pixel = doBlend(imgMdf->getPixelColor(src, x, y), imgMdf->getPixelColor(dest, x, y), img::BM_ALPHA);
-            imgMdf->setPixelColor(dest, x, y, pixel);
-        }
+    imgMdf->setBlendMode(img::BM_ALPHA);
+
+    rectu srcRect(v2u(0), size->X, size->Y);
+    rectu dstRect(dstPos, size->X, size->Y);
+    imgMdf->copyTo(src, dest, &srcRect, &dstRect);
 }

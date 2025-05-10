@@ -35,7 +35,10 @@ private:
     PARSE_FUNC(PNG);
     PARSE_FUNC(HSL);
     PARSE_FUNC(Overlay);
+    PARSE_FUNC(Hardlight);
     PARSE_FUNC(Contrast);
+
+    static u32 parseImageTransform(const std::string &transform_s);
 };
 
 class TextureGenerator
@@ -44,6 +47,7 @@ class TextureGenerator
     img::ImageModifier *imgMdf;
 
     bool meshFilterNeeded;
+    u16 minTextureSize;
 
     friend TexModParser;
 public:
@@ -51,6 +55,15 @@ public:
 
     img::Image *generate(const std::string &texmod_str);
     img::Image *generateForMesh(const std::string &name);
+
+    ResourceCache *getResourceCache() const
+    {
+        return resCache;
+    }
+    img::ImageModifier *getImageModifier() const
+    {
+        return imgMdf;
+    }
 private:
     bool generatePart(const std::string &texmod_str_part, img::Image *base_img);
 
@@ -64,5 +77,5 @@ private:
     img::Image *createCrack(img::Image *img, s32 frame_index,
 		v2u size, u8 tiles);
     
-    void blitImagesWithUpscaling(img::Image *src, img::Image *dest);
+    void blitImages(img::Image *src, img::Image *dest, const v2u &dstPos=v2u(0, 0), const v2u *srcSize=nullptr, bool upscale=false);
 };
