@@ -99,7 +99,6 @@ set(ui_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/fontengine.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/gameformspec.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/gameui.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ui/guiscalingfilter.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/hud.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/meshcreator2d.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/minimap.cpp

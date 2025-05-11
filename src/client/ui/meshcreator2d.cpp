@@ -1,5 +1,6 @@
 #include "meshcreator2d.h"
 #include "Image/ImageFilters.h"
+#include "settings.h"
 
 Image2D9Slice::Image2D9Slice(img::ImageModifier *img_mdf, MeshCreator2D *creator2d,
                              const rectu &src_rect, const rectu &dest_rect,
@@ -58,17 +59,25 @@ void Image2D9Slice::createSlice(u8 x, u8 y)
     };
 
     v2i destSize(destRect.getWidth(), destRect.getHeight());
-    img::Image *img = baseTex->downloadData().at(0);
-    img::Image *sliceImg = img::applyCleanScalePowerOf2(img, srcSize, destSize, mdf);
 
-    std::ostringstream texName("Image2D9Slice:");
-    texName << x << "," << y;
-    render::Texture2D *sliceTex = new render::Texture2D(texName.str(), std::unique_ptr<img::Image>(sliceImg), baseTex->getParameters());
+    render::Texture2D *sliceTex;
 
-    auto sliceSize = sliceImg->getSize();
+    if (g_settings->getBool("gui_scaling_filter")) {
+        img::Image *img = baseTex->downloadData().at(0);
+        img::Image *sliceImg = img::applyCleanScalePowerOf2(img, srcSize, destSize, mdf);
+
+        std::ostringstream texName("Image2D9Slice:");
+        texName << x << "," << y;
+        sliceTex = new render::Texture2D(texName.str(), std::unique_ptr<img::Image>(sliceImg), baseTex->getParameters());
+    }
+    else
+        sliceTex = baseTex;
+
+
+    auto sliceSize = sliceTex->getSize();
     rectf srcf(v2f(sliceSize.X, sliceSize.Y));
     rectf destf(v2f(destRect.ULC.X, destRect.ULC.Y), v2f(destRect.LRC.X, destRect.LRC.Y));
-    MeshBuffer *sliceRect = creator2D->createImageRectangle(sliceImg->getSize(), srcf, destf, rectColors, false);
+    MeshBuffer *sliceRect = creator2D->createImageRectangle(sliceSize, srcf, destf, rectColors, false);
 
     slices[y*3+x] = sliceRect;
     textures[y*3+x] = sliceTex;
