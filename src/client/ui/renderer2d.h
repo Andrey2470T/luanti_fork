@@ -1,6 +1,5 @@
 #pragma once
 
-#include "BasicIncludes.h"
 #include <memory>
 #include "FilesystemVersions.h"
 #include "Utils/Rect.h"
@@ -19,6 +18,7 @@ namespace img
 
 class MeshBuffer;
 class ResourceCache;
+struct Image2D9Slice;
 
 using namespace render;
 
@@ -42,6 +42,7 @@ public:
     void draw2DLine(MeshBuffer *line);
     void draw2DRectangle(MeshBuffer *rect);
     void draw2DImage(MeshBuffer *rect, Texture2D *tex);
+    void draw2D9SlicedImage(Image2D9Slice *img);
 
     void setRenderState(bool alpha, bool texShader);
     void setTexture(Texture2D *tex);

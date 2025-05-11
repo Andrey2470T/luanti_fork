@@ -4,6 +4,7 @@
 #include "Render/Texture2D.h"
 #include "Utils/Matrix4.h"
 #include "client/render/meshbuffer.h"
+#include "meshcreator2d.h"
 
 void Renderer2D::draw2DLine(MeshBuffer *line)
 {
@@ -22,6 +23,12 @@ void Renderer2D::draw2DImage(MeshBuffer *rect, Texture2D *tex)
     setTexture(tex);
 
     draw2DRectangle(rect);
+}
+
+void Renderer2D::draw2D9SlicedImage(Image2D9Slice *img)
+{
+    for (u8 i = 0; i < 9; i++)
+        img->drawSlice(this, i);
 }
 
 void Renderer2D::setRenderState(bool alpha, bool texShader)
