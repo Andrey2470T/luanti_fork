@@ -4,28 +4,40 @@
 #include "Render/Texture2D.h"
 #include "Utils/Matrix4.h"
 #include "client/render/meshbuffer.h"
-#include "meshcreator2d.h"
+#include "extra_images.h"
+#include "settings.h"
 
-void Renderer2D::draw2DLine(MeshBuffer *line)
+void Renderer2D::drawLine(MeshBuffer *line)
 {
     auto vao = line->getVAO();
     vao->draw(render::PT_LINES, 2);
 }
 
-void Renderer2D::draw2DRectangle(MeshBuffer *rect)
+void Renderer2D::drawRectangle(MeshBuffer *rect)
 {
     auto vao = rect->getVAO();
     vao->draw(render::PT_TRIANGLE_FAN, 4);
 }
 
-void Renderer2D::draw2DImage(MeshBuffer *rect, Texture2D *tex)
+void Renderer2D::drawImage(MeshBuffer *rect, Texture2D *tex)
 {
     setTexture(tex);
 
-    draw2DRectangle(rect);
+    drawRectangle(rect);
 }
 
-void Renderer2D::draw2D9SlicedImage(Image2D9Slice *img)
+void Renderer2D::drawImageFiltered(MeshBuffer *rect, ImageFiltered *img)
+{
+	if (!g_settings->getBool("gui_scaling_filter"))
+	    return;
+
+    if (!img->output_tex)
+        return;
+
+    drawImage(rect, img->output_tex);
+}
+
+void Renderer2D::draw9SlicedImage(Image2D9Slice *img)
 {
     for (u8 i = 0; i < 9; i++)
         img->drawSlice(this, i);
@@ -94,9 +106,9 @@ void Renderer2D::disableScissorTest()
 
 void Renderer2D::init2DShaders()
 {
-    ResourceInfo *noTex2D = resCache->getOrLoad(ResourceType::SHADER, "renderer2D_noTex");
-    ResourceInfo *tex2D = resCache->getOrLoad(ResourceType::SHADER, "renderer2D");
+    ResourceInfo<render::Shader> *noTex2D = resCache->getOrLoad<render::Shader>(ResourceType::SHADER, "renderer2D_noTex");
+    ResourceInfo<render::Shader> *tex2D = resCache->getOrLoad<render::Shader>(ResourceType::SHADER, "renderer2D");
 
-    NoTexShader2D = dynamic_cast<ShaderResourceInfo*>(noTex2D)->data.get();
-    Shader2D = dynamic_cast<ShaderResourceInfo*>(tex2D)->data.get();
+    NoTexShader2D = noTex2D->data.get();
+    Shader2D = tex2D->data.get();
 }

@@ -55,8 +55,8 @@ bool TexModParser::parseCrack(TextureGenerator *texgen, img::Image *dest, const 
             It is an image with a number of cracking stages
             horizontally tiled.
         */
-        img::Image *img_crack = dynamic_cast<ImageResourceInfo*>(texgen->resCache->getOrLoad(
-                ResourceType::IMAGE, "crack_anylength.png"))->data.get();
+        img::Image *img_crack = texgen->resCache->getOrLoad<img::Image>(
+            ResourceType::IMAGE, "crack_anylength.png")->data.get();
 
         if (!img_crack)
             return false;

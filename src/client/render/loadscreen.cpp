@@ -1,30 +1,44 @@
 #include "loadscreen.h"
-#include "client/ui/fontengine.h"
+//#include "client/ui/fontengine.h"
 #include "Utils/Rect.h"
 #include "Render/Texture2D.h"
 #include "irrlicht_gui/GUIEnums.h"
 #include "client/media/resource.h"
 #include "settings.h"
-#include "client/render/clouds.h"
+//#include "client/render/clouds.h"
+#include "client/ui/extra_images.h"
+#include "meshbuffer.h"
 
-LoadScreen::LoadScreen(ResourceCache *_cache, IGUIEnvironment *_guienv)
-    : cache(_cache)
+LoadScreen::LoadScreen(ResourceCache *_cache, Renderer2D *_renderer, IGUIEnvironment *_guienv)
+    : cache(_cache), renderer(_renderer)
 {
-    guitext = std::make_unique<GUIStaticText>(_guienv, L"", recti(), false, false);
-    guitext->setTextAlignment(GUIAlignment::Center, GUIAlignment::UpperLeft);
+    //guitext = std::make_unique<GUIStaticText>(_guienv, L"", recti(), false, false);
+   // guitext->setTextAlignment(GUIAlignment::Center, GUIAlignment::UpperLeft);
 
-    ResourceInfo *progress_info = cache->getOrLoad(ResourceType::TEXTURE, "progress_bar.png");
-    ResourceInfo *progress_bg_info = cache->getOrLoad(ResourceType::TEXTURE, "progress_bar_bg.png");
+    ResourceInfo<render::Texture2D> *progress_info = cache->getOrLoad<render::Texture2D>(ResourceType::TEXTURE, "progress_bar.png");
+    ResourceInfo<render::Texture2D> *progress_bg_info = cache->getOrLoad<render::Texture2D>(ResourceType::TEXTURE, "progress_bar_bg.png");
 
-    progress_img = dynamic_cast<TextureResourceInfo*>(progress_info)->data.get();
-    progress_bg_img = dynamic_cast<TextureResourceInfo*>(progress_bg_info)->data.get();
+    progress_img = std::make_unique<ImageFiltered>(progress_info->data.get());
+    progress_bg_img = std::make_unique<ImageFiltered>(progress_bg_info->data.get());
+
+    auto progress_img_size = progress_img->input_tex->getSize();
+    auto progress_bg_img_size = progress_bg_img->input_tex->getSize();
+
+    progress_img->filter("", v2i(progress_img_size.X, progress_img_size.Y), v2i(progress_img_size.X, progress_img_size.Y));
+    progress_bg_img->filter("", v2i(progress_bg_img_size.X, progress_bg_img_size.Y), v2i(progress_bg_img_size.X, progress_bg_img_size.Y));
+
 
     g_settings->registerChangedCallback("menu_clouds", settingChangedCallback, this);
 	g_settings->registerChangedCallback("display_density", settingChangedCallback, this);
 }
 
+LoadScreen::~LoadScreen()
+{
+    g_settings->deregisterAllChangedCallbacks(this);
+}
+
 void LoadScreen::updateText(v2u screensize, const std::wstring &text, f32 dtime,
-    s32 percent, f32 display_density, f32 *shutdown_progress)
+    s32 percent, f32 display_density, f32 *shutdown_progress, MeshCreator2D *creator)
 {
     v2i center((s32)screensize.X/2, (s32)screensize.Y/2);
     v2i textsize(g_fontengine->getTextWidth(text), g_fontengine->getTextHeight());
@@ -37,17 +51,17 @@ void LoadScreen::updateText(v2u screensize, const std::wstring &text, f32 dtime,
     if (menu_clouds)
         g_menuclouds->step(dtime*3);
 
-    int percent_min = 0;
-    int percent_max = percent;
+    s32 percent_min = 0;
+    s32 percent_max = percent;
     if (shutdown_progress) {
         *shutdown_progress = fmodf(*shutdown_progress + (dtime * 50.0f), 140.0f);
-        percent_max = std::min((int) *shutdown_progress, 100);
-        percent_min = std::max((int) *shutdown_progress - 40, 0);
+        percent_max = std::min((s32)*shutdown_progress, 100);
+        percent_min = std::max((s32)*shutdown_progress - 40, 0);
     }
     // draw progress bar
     if ((percent_min >= 0) && (percent_max <= 100)) {
 #ifndef __ANDROID__
-        const v2u &img_size = progress_bg_img->getSize();
+        const v2u &img_size = progress_bg_img->output_tex->getSize();
         f32 density = gui_scaling * display_density;
         u32 imgW = std::clamp(img_size.X, 200u, 600u) * density;
         u32 imgH = std::clamp(img_size.Y, 24u, 72u) * density;
@@ -57,8 +71,15 @@ void LoadScreen::updateText(v2u screensize, const std::wstring &text, f32 dtime,
         u32 imgW = screensize.X / 2.2f;
         u32 imgH = floor(imgW * imgRatio);
 #endif
-        v2i img_pos((screensize.X - imgW) / 2, (screensize.Y - imgH) / 2);
+        v2f img_pos((screensize.X - imgW) / 2, (screensize.Y - imgH) / 2);
+        rectf srcRect(v2f(imgW, imgH));
+        rectf destRect(img_pos, imgW, imgH);
 
+        MeshBuffer *pimg_rect = progress_rect.release();
+        MeshBuffer *pimg_bg_rect = progress_bg_rect.release();
+
+        delete pimg_rect;
+        delete pimg_bg_rect;
     }
 }
 

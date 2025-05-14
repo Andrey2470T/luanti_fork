@@ -1,6 +1,5 @@
 #pragma once
 
-#include <memory>
 #include "FilesystemVersions.h"
 #include "Utils/Rect.h"
 
@@ -14,11 +13,13 @@ namespace render
 namespace img
 {
     class Image;
+    class ImageModifier;
 }
 
 class MeshBuffer;
 class ResourceCache;
 struct Image2D9Slice;
+struct ImageFiltered;
 
 using namespace render;
 
@@ -39,10 +40,11 @@ public:
         init2DShaders();
     }
     
-    void draw2DLine(MeshBuffer *line);
-    void draw2DRectangle(MeshBuffer *rect);
-    void draw2DImage(MeshBuffer *rect, Texture2D *tex);
-    void draw2D9SlicedImage(Image2D9Slice *img);
+    void drawLine(MeshBuffer *line);
+    void drawRectangle(MeshBuffer *rect);
+    void drawImage(MeshBuffer *rect, Texture2D *tex);
+    void drawImageFiltered(MeshBuffer *rect, ImageFiltered *img);
+    void draw9SlicedImage(Image2D9Slice *img);
 
     void setRenderState(bool alpha, bool texShader);
     void setTexture(Texture2D *tex);

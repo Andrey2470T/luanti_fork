@@ -1,95 +1,5 @@
 #include "meshcreator2d.h"
-#include "Image/ImageFilters.h"
-#include "settings.h"
-
-Image2D9Slice::Image2D9Slice(img::ImageModifier *img_mdf, MeshCreator2D *creator2d,
-                             const rectu &src_rect, const rectu &dest_rect,
-                             const rectu &middle_rect, render::Texture2D *base_tex,
-                             const RectColors &colors)
-    : mdf(img_mdf), creator2D(creator2d), srcRect(src_rect), destRect(dest_rect),
-      middleRect(middle_rect), baseTex(base_tex), rectColors(colors)
-{
-    if (middleRect.LRC.X < 0)
-        middleRect.LRC.X += srcRect.getWidth();
-    if (middleRect.LRC.Y < 0)
-        middleRect.LRC.Y += srcRect.getHeight();
-}
-
-void Image2D9Slice::createSlice(u8 x, u8 y)
-{
-    v2i srcSize(srcRect.getWidth(), srcRect.getHeight());
-    v2i lower_right_offset = srcSize - v2i(middleRect.LRC.X, middleRect.LRC.Y);
-
-    switch (x) {
-    case 0:
-        destRect.LRC.X = destRect.ULC.X + middleRect.ULC.X;
-        srcRect.LRC.X = srcRect.ULC.X + middleRect.ULC.X;
-        break;
-
-    case 1:
-        destRect.ULC.X += middleRect.ULC.X;
-        destRect.LRC.X -= lower_right_offset.X;
-        srcRect.ULC.X += middleRect.ULC.X;
-        srcRect.LRC.X -= lower_right_offset.X;
-        break;
-
-    case 2:
-        destRect.ULC.X = destRect.LRC.X - lower_right_offset.X;
-        srcRect.ULC.X = srcRect.LRC.X - lower_right_offset.X;
-        break;
-    };
-
-    switch (y) {
-    case 0:
-        destRect.LRC.Y = destRect.ULC.Y + middleRect.ULC.Y;
-        srcRect.LRC.Y = srcRect.ULC.Y + middleRect.ULC.Y;
-        break;
-
-    case 1:
-        destRect.ULC.Y += middleRect.ULC.Y;
-        destRect.LRC.Y -= lower_right_offset.Y;
-        srcRect.ULC.Y += middleRect.ULC.Y;
-        srcRect.LRC.Y -= lower_right_offset.Y;
-        break;
-
-    case 2:
-        destRect.ULC.Y = destRect.LRC.Y - lower_right_offset.Y;
-        srcRect.ULC.Y = srcRect.LRC.Y - lower_right_offset.Y;
-        break;
-    };
-
-    v2i destSize(destRect.getWidth(), destRect.getHeight());
-
-    render::Texture2D *sliceTex;
-
-    if (g_settings->getBool("gui_scaling_filter")) {
-        img::Image *img = baseTex->downloadData().at(0);
-        img::Image *sliceImg = img::applyCleanScalePowerOf2(img, srcSize, destSize, mdf);
-
-        std::ostringstream texName("Image2D9Slice:");
-        texName << x << "," << y;
-        sliceTex = new render::Texture2D(texName.str(), std::unique_ptr<img::Image>(sliceImg), baseTex->getParameters());
-    }
-    else
-        sliceTex = baseTex;
-
-
-    auto sliceSize = sliceTex->getSize();
-    rectf srcf(v2f(sliceSize.X, sliceSize.Y));
-    rectf destf(v2f(destRect.ULC.X, destRect.ULC.Y), v2f(destRect.LRC.X, destRect.LRC.Y));
-    MeshBuffer *sliceRect = creator2D->createImageRectangle(sliceSize, srcf, destf, rectColors, false);
-
-    slices[y*3+x] = sliceRect;
-    textures[y*3+x] = sliceTex;
-}
-
- void Image2D9Slice::drawSlice(Renderer2D *rnd, u8 i)
-{
-     if (!slices[i] || !textures[i])
-        return;
-
-     rnd->draw2DImage(slices[i], textures[i]);
- }
+#include "extra_images.h"
 
 MeshBuffer *MeshCreator2D::createLine(
     const v2f &startPos, const v2f &endPos, const img::color8 &color)
@@ -161,12 +71,12 @@ MeshBuffer *MeshCreator2D::createImageUnitRectangle(bool flip)
 }
 
 Image2D9Slice *MeshCreator2D::createImage2D9Slice(
-    img::ImageModifier *mdf,
+    ResourceCache *res,
     const rectu &src_rect, const rectu &dest_rect,
     const rectu &middle_rect, render::Texture2D *base_tex,
     const RectColors &colors)
 {
-    Image2D9Slice *slicedImg = new Image2D9Slice(mdf, this, src_rect, dest_rect, middle_rect, base_tex, colors);
+    Image2D9Slice *slicedImg = new Image2D9Slice(this, res, src_rect, dest_rect, middle_rect, base_tex, colors);
 
     for (u8 x = 0; x < 3; x++)
         for (u8 y = 0; y < 3; y++)

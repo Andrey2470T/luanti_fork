@@ -9,27 +9,8 @@
 
 typedef std::array<img::color8, 4> RectColors;
 class MeshCreator2D;
-
-struct Image2D9Slice
-{
-    img::ImageModifier *mdf;
-    MeshCreator2D *creator2D;
-    rectu srcRect, destRect, middleRect;
-    render::Texture2D *baseTex;
-    RectColors rectColors;
-
-    std::array<MeshBuffer *, 9> slices;
-    std::array<render::Texture2D *, 9> textures;
-
-public:
-    Image2D9Slice(img::ImageModifier *img_mdf, MeshCreator2D *creator2d,
-                  const rectu &src_rect, const rectu &dest_rect,
-                  const rectu &middle_rect, render::Texture2D *base_tex,
-                  const RectColors &colors);
-
-    void createSlice(u8 x, u8 y);
-    void drawSlice(Renderer2D *rnd, u8 i);
-};
+class ResourceCache;
+struct Image2D9Slice;
 
 class MeshCreator2D
 {
@@ -72,7 +53,7 @@ public:
     MeshBuffer *createImageUnitRectangle(bool flip);
 
     Image2D9Slice *createImage2D9Slice(
-        img::ImageModifier *mdf,
+        ResourceCache *res,
         const rectu &src_rect, const rectu &dest_rect,
         const rectu &middle_rect, render::Texture2D *base_tex,
         const RectColors &colors);
