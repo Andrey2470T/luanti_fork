@@ -7,16 +7,22 @@
 
 img::ImageModifier *g_imgmodifier = new img::ImageModifier();
 
-ImageFiltered::ImageFiltered(render::Texture2D *tex)
-    : input_tex(tex)
+ImageFiltered::ImageFiltered(ResourceCache *resCache, render::Texture2D *tex)
+    : cache(resCache), input_tex(tex)
 {}
 
 void ImageFiltered::filter(const std::string &name, const v2i &srcSize, const v2i &destSize)
 {
+	if (!g_settings->getBool("gui_scaling_filter"))
+	    return;
+    if (output_tex)
+        cache->clearResource<render::Texture2D>(ResourceType::TEXTURE, output_tex);
     img::Image *img = input_tex->downloadData().at(0);
     img::Image *filteredImg = img::applyCleanScalePowerOf2(img, srcSize, destSize, g_imgmodifier);
     output_tex = new render::Texture2D(
         name, std::unique_ptr<img::Image>(filteredImg), input_tex->getParameters());
+
+    cache->cacheResource<render::Texture2D>(ResourceType::TEXTURE, output_tex);
 }
 
 Image2D9Slice::Image2D9Slice(MeshCreator2D *creator2d,

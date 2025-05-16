@@ -19,10 +19,11 @@ extern img::ImageModifier *g_imgmodifier;
 
 struct ImageFiltered
 {
+    ResourceCache *cache;
     render::Texture2D *output_tex;
     render::Texture2D *input_tex;
 
-    ImageFiltered(render::Texture2D *tex);
+    ImageFiltered(ResourceCache *resCache, render::Texture2D *tex);
 
     void filter(const std::string &name, const v2i &srcSize, const v2i &destSize);
 };
