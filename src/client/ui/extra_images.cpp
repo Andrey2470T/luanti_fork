@@ -4,6 +4,7 @@
 #include "settings.h"
 #include "client/media/resource.h"
 #include "meshcreator2d.h"
+#include "sprite_rect.h"
 
 img::ImageModifier *g_imgmodifier = new img::ImageModifier();
 
@@ -85,11 +86,11 @@ void Image2D9Slice::createSlice(u8 x, u8 y)
         break;
     };
 
-    slices[y*3+x] = std::make_unique(
-        baseTex, creator2D, cache, renderer2d, srcRect, destRect, g_settings->getBool("gui_scaling_filter"));
+    slices[y*3+x] = std::make_unique<SpriteRect>(
+        baseTex, creator2D, renderer2d, cache, srcRect, destRect, g_settings->getBool("gui_scaling_filter"));
 }
 
-void Image2D9Slice::drawSlice(Renderer2D *rnd, u8 i)
+void Image2D9Slice::drawSlice(u8 i) const
 {
     if (!slices[i])
         return;

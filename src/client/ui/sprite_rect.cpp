@@ -10,13 +10,18 @@ SpriteRect::SpriteRect(render::Texture2D *_tex, MeshCreator2D *_creator, Rendere
 	rect = std::unique_ptr<MeshBuffer>(_creator->createImageRectangle(
         _tex->getSize(), srcRect, destRect, {}, false));
 
-    texture = std::make_unique(cache, _tex);
+    texture = std::make_unique<ImageFiltered>(cache, _tex);
     if (applyFilter && g_settings->getBool("gui_scaling_filter")) {
         v2f srcSize = srcRect.getSize();
         v2f destSize = destRect.getSize();
         texture->filter(_tex->getName(),
             v2i(srcSize.X, srcSize.Y), v2i(destSize.X, destSize.Y));
     }
+}
+
+v2u SpriteRect::getSize() const
+{
+    return texture->output_tex->getSize();
 }
 
 void SpriteRect::updateRect(const rectf &r)
@@ -35,7 +40,7 @@ void SpriteRect::updateRect(const v2f &ulc, const v2f &lrc)
 	area.LRC = lrc;
 }
 
-void SpriteRect::setClipRect(const rectf &r)
+void SpriteRect::setClipRect(const recti &r)
 {
 	renderer->setClipRect(r);
 }
@@ -53,7 +58,7 @@ void SpriteRect::scale(const v2f &scale)
 	updateRect(center-size/2, center+size/2);
 }
 
-void SpriteRecr::flush()
+void SpriteRect::flush()
 {
 	rect->uploadData(MeshBufferType::VERTEX);
 }

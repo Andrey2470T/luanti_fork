@@ -1,8 +1,6 @@
 #pragma once
 
-#include "BasicIncludes.h"
 #include <memory>
-#include <optional>
 #include "Utils/Rect.h"
 #include "Render/Texture2D.h"
 
@@ -25,9 +23,10 @@ public:
     SpriteRect(render::Texture2D *_tex, MeshCreator2D *_creator, Renderer2D *_renderer,
         ResourceCache *cache, const rectf &srcRect, const rectf &destRect, bool applyFilter=false);
 
+    v2u getSize() const;
     void updateRect(const rectf &r);
     void updateRect(const v2f &ulc, const v2f &lrc);
-    void setClipRect(const rectf &r);
+    void setClipRect(const recti &r);
     
     void move(const v2f &shift);
     void scale(const v2f &scale);

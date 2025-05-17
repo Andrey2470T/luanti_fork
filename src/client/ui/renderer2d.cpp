@@ -40,7 +40,7 @@ void Renderer2D::drawImageFiltered(MeshBuffer *rect, ImageFiltered *img)
 void Renderer2D::draw9SlicedImage(Image2D9Slice *img)
 {
     for (u8 i = 0; i < 9; i++)
-        img->drawSlice(this, i);
+        img->drawSlice(i);
 }
 
 void Renderer2D::setRenderState(bool alpha, bool texShader)

@@ -47,6 +47,6 @@ struct Image2D9Slice
                   const std::array<img::color8, 4> &colors);
 
     void createSlice(u8 x, u8 y);
-    void drawSlice(Renderer2D *rnd, u8 i);
+    void drawSlice(u8 i) const;
 };
 

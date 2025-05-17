@@ -8,47 +8,47 @@
 //#include "client/render/clouds.h"
 #include "client/ui/extra_images.h"
 #include "meshbuffer.h"
+#include "client/ui/sprite_rect.h"
 
-LoadScreen::LoadScreen(ResourceCache *_cache, Renderer2D *_renderer, IGUIEnvironment *_guienv)
+LoadScreen::LoadScreen(ResourceCache *_cache, Renderer2D *_renderer, MeshCreator2D *_creator, IGUIEnvironment *_guienv)
     : cache(_cache), renderer(_renderer)
 {
     //guitext = std::make_unique<GUIStaticText>(_guienv, L"", recti(), false, false);
    // guitext->setTextAlignment(GUIAlignment::Center, GUIAlignment::UpperLeft);
 
-    ResourceInfo<render::Texture2D> *progress_info = cache->getOrLoad<render::Texture2D>(ResourceType::TEXTURE, "progress_bar.png");
-    ResourceInfo<render::Texture2D> *progress_bg_info = cache->getOrLoad<render::Texture2D>(ResourceType::TEXTURE, "progress_bar_bg.png");
+    auto progress_img = cache->getOrLoad<render::Texture2D>(ResourceType::TEXTURE, "progress_bar.png")->data.get();
+    auto progress_bg_img = cache->getOrLoad<render::Texture2D>(ResourceType::TEXTURE, "progress_bar_bg.png")->data.get();
 
-    progress_img = std::make_unique<ImageFiltered>(progress_info->data.get());
-    progress_bg_img = std::make_unique<ImageFiltered>(progress_bg_info->data.get());
+    auto progress_img_size = progress_img->getSize();
+    auto progress_bg_img_size = progress_bg_img->getSize();
 
-    auto progress_img_size = progress_img->input_tex->getSize();
-    auto progress_bg_img_size = progress_bg_img->input_tex->getSize();
+    rectf progress_img_size_f(v2f(progress_img_size.X, progress_img_size.Y));
+    rectf progress_bg_img_size_f(v2f(progress_bg_img_size.X, progress_bg_img_size.Y));
 
-    progress_img->filter("", v2i(progress_img_size.X, progress_img_size.Y), v2i(progress_img_size.X, progress_img_size.Y));
-    progress_bg_img->filter("", v2i(progress_bg_img_size.X, progress_bg_img_size.Y), v2i(progress_bg_img_size.X, progress_bg_img_size.Y));
-
-
-    g_settings->registerChangedCallback("menu_clouds", settingChangedCallback, this);
-	g_settings->registerChangedCallback("display_density", settingChangedCallback, this);
+    progress_rect = std::make_unique<SpriteRect>(
+        progress_img, _creator, _renderer, _cache, progress_img_size_f, progress_img_size_f, true);
+    progress_bg_rect = std::make_unique<SpriteRect>(
+        progress_bg_img, _creator, _renderer, _cache, progress_bg_img_size_f, progress_bg_img_size_f, true);
 }
 
-LoadScreen::~LoadScreen()
+void LoadScreen::updateText(v2u screensize, const std::wstring &text, f32 dtime, bool menu_clouds,
+                            s32 percent, f32 scale_f, f32 *shutdown_progress, MeshCreator2D *creator)
 {
-    g_settings->deregisterAllChangedCallbacks(this);
-}
+    if (percent == last_percent)
+        return;
 
-void LoadScreen::updateText(v2u screensize, const std::wstring &text, f32 dtime,
-    s32 percent, f32 display_density, f32 *shutdown_progress, MeshCreator2D *creator)
-{
-    v2i center((s32)screensize.X/2, (s32)screensize.Y/2);
-    v2i textsize(g_fontengine->getTextWidth(text), g_fontengine->getTextHeight());
+    last_percent = percent;
+    draw_clouds = menu_clouds;
 
-    recti textarea(center-textsize/2, center+textsize/2);
+    //v2i center((s32)screensize.X/2, (s32)screensize.Y/2);
+    //v2i textsize(g_fontengine->getTextWidth(text), g_fontengine->getTextHeight());
 
-    guitext->setRelativePosition(textarea);
-    guitext->setText(text);
+    //recti textarea(center-textsize/2, center+textsize/2);
 
-    if (menu_clouds)
+    //guitext->setRelativePosition(textarea);
+    //guitext->setText(text);
+
+    if (draw_clouds)
         g_menuclouds->step(dtime*3);
 
     s32 percent_min = 0;
@@ -61,10 +61,9 @@ void LoadScreen::updateText(v2u screensize, const std::wstring &text, f32 dtime,
     // draw progress bar
     if ((percent_min >= 0) && (percent_max <= 100)) {
 #ifndef __ANDROID__
-        const v2u &img_size = progress_bg_img->output_tex->getSize();
-        f32 density = gui_scaling * display_density;
-        u32 imgW = std::clamp(img_size.X, 200u, 600u) * density;
-        u32 imgH = std::clamp(img_size.Y, 24u, 72u) * density;
+        auto img_size = progress_bg_rect->getSize();
+        u32 imgW = std::clamp(img_size.X, 200u, 600u) * scale_f;
+        u32 imgH = std::clamp(img_size.Y, 24u, 72u) * scale_f;
 #else
         const v2u img_size(256, 48);
         f32 imgRatio = (f32)img_size.Y / img_size.X;
@@ -72,14 +71,17 @@ void LoadScreen::updateText(v2u screensize, const std::wstring &text, f32 dtime,
         u32 imgH = floor(imgW * imgRatio);
 #endif
         v2f img_pos((screensize.X - imgW) / 2, (screensize.Y - imgH) / 2);
-        rectf srcRect(v2f(imgW, imgH));
-        rectf destRect(img_pos, imgW, imgH);
 
-        MeshBuffer *pimg_rect = progress_rect.release();
-        MeshBuffer *pimg_bg_rect = progress_bg_rect.release();
+        rectf new_progress_bg_size(img_pos, img_pos + v2f(imgW, imgH));
+        rectf new_progress_size(
+            v2f(img_pos.X + (percent_min * imgW) / 100, img_pos.Y),
+            v2f(img_pos.X + (percent_max * imgW) / 100, img_pos.Y + imgH));
 
-        delete pimg_rect;
-        delete pimg_bg_rect;
+        progress_bg_rect->updateRect(new_progress_bg_size);
+        progress_rect->updateRect(new_progress_size);
+
+        progress_rect->setClipRect(
+            recti(percent_min * img_size.X / 100, 0, percent_max * img_size.X / 100, img_size.Y));
     }
 }
 
@@ -88,31 +90,9 @@ void LoadScreen::draw() const
     //driver->setFog(RenderingEngine::MENU_SKY_COLOR);
     //driver->beginScene(true, true, RenderingEngine::MENU_SKY_COLOR);
 
-    if (menu_clouds)
+    if (draw_clouds)
         g_menucloudsmgr->drawAll();
 
-    /*draw2DImageFilterScaled(get_video_driver(), progress_img_bg,
-                                    core::rect<s32>(img_pos.X, img_pos.Y,
-                                                    img_pos.X + imgW,
-                                                    img_pos.Y + imgH),
-                                    core::rect<s32>(0, 0, img_size.Width,
-                                                    img_size.Height),
-                                    0, 0, true);
-
-            draw2DImageFilterScaled(get_video_driver(), progress_img,
-                                    core::rect<s32>(img_pos.X + (percent_min * imgW) / 100, img_pos.Y,
-                                                    img_pos.X + (percent_max * imgW) / 100,
-                                                    img_pos.Y + imgH),
-                                    core::rect<s32>(percent_min * img_size.Width / 100, 0,
-                                                    percent_max * img_size.Width / 100,
-                                                    img_size.Height),
-                                    0, 0, true);*/
-}
-
-void LoadScreen::settingChangedCallback(const std::string &name, void *data)
-{
-    if (name == "menu_clouds")
-        menu_clouds = g_settings->getBool(name);
-    else if (name == "gui_scaling")
-        gui_scaling = g_settings->getFloat(name, 0.5f, 20.0f);
+    progress_bg_rect->draw();
+    progress_rect->draw();
 }

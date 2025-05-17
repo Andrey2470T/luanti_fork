@@ -53,9 +53,9 @@ public:
     MeshBuffer *createImageUnitRectangle(bool flip);
 
     Image2D9Slice *createImage2D9Slice(
-        ResourceCache *res,
-        const rectu &src_rect, const rectu &dest_rect,
-        const rectu &middle_rect, render::Texture2D *base_tex,
+        ResourceCache *res, Renderer2D *rnd,
+        const rectf &src_rect, const rectf &dest_rect,
+        const rectf &middle_rect, render::Texture2D *base_tex,
         const RectColors &colors);
 private:
     void appendVertex(MeshBuffer *buf, const v2f &pos, const img::color8 &color=img::color8(), const v2f &uv=v2f());
