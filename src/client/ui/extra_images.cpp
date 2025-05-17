@@ -9,7 +9,10 @@ img::ImageModifier *g_imgmodifier = new img::ImageModifier();
 
 ImageFiltered::ImageFiltered(ResourceCache *resCache, render::Texture2D *tex)
     : cache(resCache), input_tex(tex)
-{}
+{
+	if (!g_settings->getBool("gui_scaling_filter"))
+	    output_tex = tex;
+}
 
 void ImageFiltered::filter(const std::string &name, const v2i &srcSize, const v2i &destSize)
 {
@@ -26,10 +29,11 @@ void ImageFiltered::filter(const std::string &name, const v2i &srcSize, const v2
 }
 
 Image2D9Slice::Image2D9Slice(MeshCreator2D *creator2d,
-                             ResourceCache *resCache, const rectu &src_rect, const rectu &dest_rect,
-                             const rectu &middle_rect, render::Texture2D *base_tex,
+                             ResourceCache *resCache, Renderer2D *renderer,
+                             const rectf &src_rect, const rectf &dest_rect,
+                             const rectf &middle_rect, render::Texture2D *base_tex,
                              const std::array<img::color8, 4> &colors)
-    : creator2D(creator2d), cache(resCache), srcRect(src_rect),
+    : creator2D(creator2d), cache(resCache), renderer2d(renderer), srcRect(src_rect),
     destRect(dest_rect), middleRect(middle_rect), baseTex(base_tex), rectColors(colors)
 {
     if (middleRect.LRC.X < 0)
@@ -40,8 +44,8 @@ Image2D9Slice::Image2D9Slice(MeshCreator2D *creator2d,
 
 void Image2D9Slice::createSlice(u8 x, u8 y)
 {
-    v2i srcSize(srcRect.getWidth(), srcRect.getHeight());
-    v2i lower_right_offset = srcSize - v2i(middleRect.LRC.X, middleRect.LRC.Y);
+    v2f srcSize(srcRect.getWidth(), srcRect.getHeight());
+    v2f lower_right_offset = srcSize - v2f(middleRect.LRC.X, middleRect.LRC.Y);
 
     switch (x) {
     case 0:
@@ -81,41 +85,14 @@ void Image2D9Slice::createSlice(u8 x, u8 y)
         break;
     };
 
-    v2i destSize(destRect.getWidth(), destRect.getHeight());
-
-    render::Texture2D *sliceTex;
-
-    if (g_settings->getBool("gui_scaling_filter")) {
-        ImageFiltered *filteredTex = new ImageFiltered(baseTex);
-
-        std::ostringstream texName("Image2D9Slice:");
-        texName << x << "," << y;
-        filteredTex->filter(texName.str(), srcSize, destSize);
-        sliceTex = filteredTex->output_tex;
-        delete filteredTex;
-    }
-    else
-        sliceTex = baseTex->copy();
-
-    cache->cacheResource(ResourceType::TEXTURE, sliceTex, sliceTex->getName());
-    auto sliceSize = sliceTex->getSize();
-    rectf srcf(v2f(sliceSize.X, sliceSize.Y));
-    rectf destf(v2f(destRect.ULC.X, destRect.ULC.Y), v2f(destRect.LRC.X, destRect.LRC.Y));
-    MeshBuffer *sliceRect = creator2D->createImageRectangle(sliceSize, srcf, destf, rectColors, false);
-    cache->cacheResource(ResourceType::MESH, sliceRect, "");
-
-    if (slices[y*3+x])
-        cache->clearResource(ResourceType::TEXTURE, slices[y*3+x]);
-    if (textures[y*3+x])
-        cache->clearResource(ResourceType::MESH, slices[y*3+x]);
-    slices[y*3+x] = sliceRect;
-    textures[y*3+x] = sliceTex;
+    slices[y*3+x] = std::make_unique(
+        baseTex, creator2D, cache, renderer2d, srcRect, destRect, g_settings->getBool("gui_scaling_filter"));
 }
 
 void Image2D9Slice::drawSlice(Renderer2D *rnd, u8 i)
 {
-    if (!slices[i] || !textures[i])
+    if (!slices[i])
         return;
 
-    rnd->drawImage(slices[i], textures[i]);
+    slices[i]->draw();
 }

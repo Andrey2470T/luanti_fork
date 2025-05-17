@@ -2,6 +2,7 @@
 
 #include "Utils/Rect.h"
 #include <array>
+#include <memory>
 #include "Image/ImageModifier.h"
 
 namespace render
@@ -13,7 +14,7 @@ class MeshCreator2D;
 class MeshBuffer;
 class ResourceCache;
 class Renderer2D;
-
+class SpriteRect;
 
 extern img::ImageModifier *g_imgmodifier;
 
@@ -32,16 +33,17 @@ struct Image2D9Slice
 {
     MeshCreator2D *creator2D;
     ResourceCache *cache;
-    rectu srcRect, destRect, middleRect;
+    Renderer2D *renderer2d;
+    rectf srcRect, destRect, middleRect;
     render::Texture2D *baseTex;
     std::array<img::color8, 4> rectColors;
 
-    std::array<MeshBuffer*, 9> slices;
-    std::array<render::Texture2D*, 9> textures;
+    std::array<std::unique_ptr<SpriteRect>, 9> slices;
 
     Image2D9Slice(MeshCreator2D *creator2d,
-                  ResourceCache *resCache, const rectu &src_rect, const rectu &dest_rect,
-                  const rectu &middle_rect, render::Texture2D *base_tex,
+                  ResourceCache *resCache, Renderer2D *renderer,
+                  const rectf &src_rect, const rectf &dest_rect,
+                  const rectf &middle_rect, render::Texture2D *base_tex,
                   const std::array<img::color8, 4> &colors);
 
     void createSlice(u8 x, u8 y);

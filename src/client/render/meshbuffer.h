@@ -42,6 +42,8 @@ class MeshBuffer
 
 	aabbf BoundingBox;
     u32 VertexCmpCount; // summary count of the components per the used vertex type
+    bool vertexDirty = false;
+    bool indexDirty = false;
 
 public:
 	MeshBuffer(MeshBufferType type=MeshBufferType::VERTEX_INDEX,
@@ -247,6 +249,8 @@ public:
 		default:
 			return;
 		}
+		
+		vertexDirty = true;
 	}
 
     void setIndexAt(u32 index, std::optional<u32> pos=std::nullopt);

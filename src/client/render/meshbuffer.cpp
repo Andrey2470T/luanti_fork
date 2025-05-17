@@ -60,6 +60,8 @@ void MeshBuffer::setIndexAt(u32 index, std::optional<u32> pos)
     };
 
     getIndexData().value()->setUInt32(index, pos);
+    
+    indexDirty = true;
 }
 
 void MeshBuffer::uploadData(MeshBufferType type)
@@ -70,15 +72,22 @@ void MeshBuffer::uploadData(MeshBufferType type)
 	u32 vcount = getVertexCount();
 	u32 icount = getIndexCount();
 
-	if (type == MeshBufferType::VERTEX)
+	if (type == MeshBufferType::VERTEX && vertexDirty) {
 		VAO->uploadData(vdata.value()->data(), vcount,
 			nullptr, 0);
-	else if (type == MeshBufferType::INDEX)
+		vertexDirty = false;
+	}
+	else if (type == MeshBufferType::INDEX && indexDirty) {
 		VAO->uploadData(nullptr, 0,
             reinterpret_cast<const u32*>(idata.value()->data()), icount);
-	else
+        indexDirty = false;
+    }
+	else if (vertexDirty && indexDirty) {
 		VAO->uploadData(vdata.value()->data(), vcount,
             reinterpret_cast<const u32*>(idata.value()->data()), icount);
+            vertexDirty = false;
+            indexDirty = false;
+    }
 }
 
 MeshBuffer *MeshBuffer::copy() const

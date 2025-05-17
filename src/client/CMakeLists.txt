@@ -104,6 +104,7 @@ set(ui_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/meshcreator2d.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/minimap.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/renderer2d.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/sprite_rect.cpp
 )
 
 set(client_SRCS
