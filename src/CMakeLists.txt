@@ -609,9 +609,7 @@ target_link_libraries(EngineCommon
 if(USE_OPENSSL)
 	target_link_libraries(EngineCommon OpenSSL::Crypto)
 endif()
-get_target_property(
-	IRRLICHT_INCLUDES IrrlichtRedo INTERFACE_INCLUDE_DIRECTORIES)
-target_include_directories(EngineCommon PRIVATE ${IRRLICHT_INCLUDES})
+
 if(PRECOMPILE_HEADERS)
 	target_precompile_headers(EngineCommon PRIVATE ${PRECOMPILED_HEADERS_LIST})
 endif()
@@ -683,6 +681,7 @@ if(BUILD_CLIENT)
 		${PROJECT_NAME}
 		${ZLIB_LIBRARIES}
 		IrrlichtRedo
+		rectpack2D
 		${ZSTD_LIBRARY}
 		${SOUND_LIBRARIES}
 		${SQLITE3_LIBRARY}
@@ -751,6 +750,7 @@ if(BUILD_CLIENT)
 	if(BUILD_WITH_TRACY)
 		target_link_libraries(${PROJECT_NAME} Tracy::TracyClient)
 	endif()
+	target_link_libraries(${PROJECT_NAME} ZipExtractor)
 
 	if(PRECOMPILE_HEADERS)
 		target_precompile_headers(${PROJECT_NAME} PRIVATE ${PRECOMPILED_HEADERS_LIST})
@@ -769,9 +769,6 @@ if(BUILD_SERVER)
 	)
 
 	# don't link the irrlicht library
-	get_target_property(
-		IRRLICHT_INCLUDES IrrlichtRedo INTERFACE_INCLUDE_DIRECTORIES)
-	target_include_directories(${PROJECT_NAME}server PRIVATE ${IRRLICHT_INCLUDES})
 	target_link_libraries(
 		${PROJECT_NAME}server
 		${ZLIB_LIBRARIES}
@@ -829,6 +826,7 @@ if(BUILD_SERVER)
 	if(BUILD_WITH_TRACY)
 		target_link_libraries(${PROJECT_NAME}server Tracy::TracyClient)
 	endif()
+	target_link_libraries(${PROJECT_NAME}server ZipExtractor)
 
 	if(PRECOMPILE_HEADERS)
 		target_precompile_headers(${PROJECT_NAME}server PRIVATE ${PRECOMPILED_HEADERS_LIST})
