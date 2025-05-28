@@ -45,7 +45,8 @@ Rectpack2DAtlas::Rectpack2DAtlas(const std::string &name, u32 num, u32 maxTextur
 
     for (; start_i < images.size(); start_i++) {
         auto tileImg = images.at(start_i);
-        u32 tileArea = tileImg->getWidth() * tileImg->getHeight();
+        v2u size = tileImg->getClipSize();
+        u32 tileArea = size.X * size.Y;
 
         if ((atlasArea + tileArea) > maxArea)
             break;
@@ -53,6 +54,7 @@ Rectpack2DAtlas::Rectpack2DAtlas(const std::string &name, u32 num, u32 maxTextur
         AtlasTile *newTile = nullptr;
         auto animationProps = animatedImages.find(start_i);
 
+        // Animated images have the clip region restricting within the top frame
         if (animationProps != animatedImages.end()) {
             newTile = new AnimatedAtlasTile(tileImg, num, animationProps->second.first, animationProps->second.second);
             animatedTiles.push_back(start_i);
@@ -136,7 +138,7 @@ void Rectpack2DAtlas::drawTiles(const std::vector<u32> &tiles_indices)
     texture->unbind();
 }
 
-/*void Rectpack2DAtlas::updateAnimatedTiles(f32 time, render::DrawContext *ctxt)
+void Rectpack2DAtlas::updateAnimatedTiles(f32 time, render::DrawContext *ctxt)
 {
     if (animatedTiles.empty())
         return;
@@ -160,6 +162,17 @@ void Rectpack2DAtlas::drawTiles(const std::vector<u32> &tiles_indices)
             continue;
 
         rectu frame_coords = tile->getFrameCoords(tile->cur_frame);
-        texture->uploadSubData()
+        tile->image->setClipRegion(frame_coords.ULC.X, frame_coords.ULC.Y, frame_coords.getWidth(), frame_coords.getHeight());
+
+        texture->uploadSubData(tile->pos.X, tile->pos.Y, tile->image);
     }
-}*/
+
+    if (hasAnimations) {
+        texture->bind();
+        texture->flush();
+
+        if (texture->hasMipMaps())
+            texture->regenerateMipMaps();
+        texture->unbind();
+    }
+}

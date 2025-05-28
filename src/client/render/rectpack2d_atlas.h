@@ -17,7 +17,7 @@ struct AtlasTile
 	u32 atlasNum;
 
     AtlasTile(img::Image *img, u32 num)
-        : size(img->getSize()), image(img), atlasNum(num)
+        : size(img->getClipSize()), image(img), atlasNum(num)
     {}
     virtual ~AtlasTile() = default;
 
