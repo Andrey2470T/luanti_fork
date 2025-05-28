@@ -2,15 +2,13 @@
 
 using empty_rects = empty_spaces<false>;
 
-rectf AtlasTile::toUV() const
+rectf AtlasTile::toUV(u32 atlasSize) const
 {
-    v2u imgSize = image->getSize();
-
     return rectf(
-        (f32)pos.X / imgSize.X,
-        (f32)pos.Y / imgSize.Y,
-        (f32)(pos.X + size.X) / imgSize.X,
-        (f32)(pos.Y + size.Y) / imgSize.Y
+        (f32)pos.X / atlasSize,
+        (f32)pos.Y / atlasSize,
+        (f32)(pos.X + size.X) / atlasSize,
+        (f32)(pos.Y + size.Y) / atlasSize
     );
 }
 
@@ -36,8 +34,8 @@ void AnimatedAtlasTile::updateFrame(f32 time)
     cur_frame = (u32)(time * 1000 / frame_length_ms) % frame_count;
 }
 
-Rectpack2DAtlas::Rectpack2DAtlas(const std::string &name, u32 num, u32 maxTextureSize,
-    const std::vector<img::Image *> &images, const std::unordered_map<u32, std::pair<u32, u32> > &animatedImages, u32 &start_i)
+Rectpack2DAtlas::Rectpack2DAtlas(const std::string &name, u32 num, u32 maxTextureSize, bool hasMips,
+        const std::vector<img::Image *> &images, const std::unordered_map<u32, std::pair<u32, u32> > &animatedImages, u32 &start_i)
     : Atlas(), maxSize(maxTextureSize)
 {
     u32 atlasArea = 0;
@@ -70,6 +68,13 @@ Rectpack2DAtlas::Rectpack2DAtlas(const std::string &name, u32 num, u32 maxTextur
 
     actualSize = std::pow(2u, (u32)std::ceil(std::log2(std::sqrt((f32)atlasArea))));
     packTiles();
+
+    u8 maxMipLevel = hasMips ? (u8)std::ceil(std::log2((f32)actualSize)) : 0;
+    createTexture(name, num, actualSize, maxMipLevel);
+    drawTiles();
+
+    if (hasMips)
+        texture->regenerateMipMaps();
 }
 
 bool Rectpack2DAtlas::addTile(const AtlasTile *tile)
@@ -118,15 +123,13 @@ void Rectpack2DAtlas::packTiles()
     rects.clear();
 }
 
-void Rectpack2DAtlas::drawTiles(const std::vector<u32> &tiles_indices)
+void Rectpack2DAtlas::drawTiles()
 {
     if (!texture)
         return;
 
 
-    for (u32 tile_i : tiles_indices) {
-        auto tile = getTile(tile_i);
-
+    for (auto &tile : tiles) {
         if (!tile)
             continue;
 
@@ -138,12 +141,12 @@ void Rectpack2DAtlas::drawTiles(const std::vector<u32> &tiles_indices)
     texture->unbind();
 }
 
-void Rectpack2DAtlas::updateAnimatedTiles(f32 time, render::DrawContext *ctxt)
+void Rectpack2DAtlas::updateAnimatedTiles(f32 time)
 {
     if (animatedTiles.empty())
         return;
 
-    bool hasAnimations = false;
+    bool animationsUpdated = false;
     for (u32 anim_i : animatedTiles) {
         if (anim_i > tiles.size()-1)
             continue;
@@ -153,21 +156,20 @@ void Rectpack2DAtlas::updateAnimatedTiles(f32 time, render::DrawContext *ctxt)
         if (tile->frame_count == 0)
             continue;
 
-        hasAnimations = true;
-
         u32 prevFrame = tile->cur_frame;
         tile->updateFrame(time);
 
         if (prevFrame == tile->cur_frame)
             continue;
 
+        animationsUpdated = true;
         rectu frame_coords = tile->getFrameCoords(tile->cur_frame);
         tile->image->setClipRegion(frame_coords.ULC.X, frame_coords.ULC.Y, frame_coords.getWidth(), frame_coords.getHeight());
 
         texture->uploadSubData(tile->pos.X, tile->pos.Y, tile->image);
     }
 
-    if (hasAnimations) {
+    if (animationsUpdated) {
         texture->bind();
         texture->flush();
 

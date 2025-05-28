@@ -20,7 +20,7 @@ public:
 
         render::TextureSettings settings;
         settings.isRenderTarget = false;
-        settings.hasMipMaps = true;
+        settings.hasMipMaps = maxMipLevel > 0 ? true : false;
         settings.maxMipLevel = maxMipLevel;
 
         texture = std::make_unique<render::StreamTexture2D>(
@@ -44,5 +44,5 @@ public:
     
     virtual void packTiles() = 0;
     
-    virtual void drawTiles(const std::vector<u32> &tiles_indices) = 0;
+    virtual void drawTiles() = 0;
 };

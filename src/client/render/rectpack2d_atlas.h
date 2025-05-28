@@ -21,7 +21,7 @@ struct AtlasTile
     {}
     virtual ~AtlasTile() = default;
 
-	rectf toUV() const;
+    rectf toUV(u32 atlasSize) const;
 	
 	bool operator==(const AtlasTile *other)
 	{
@@ -58,7 +58,7 @@ class Rectpack2DAtlas : public Atlas
     u32 maxSize;
     u32 actualSize;
 public:
-    Rectpack2DAtlas(const std::string &name, u32 num, u32 maxTextureSize,
+    Rectpack2DAtlas(const std::string &name, u32 num, u32 maxTextureSize, bool hasMips,
         const std::vector<img::Image *> &images, const std::unordered_map<u32, std::pair<u32, u32>> &animatedImages, u32 &start_i);
 
     bool addTile(const AtlasTile *tile);
@@ -66,7 +66,7 @@ public:
 
     void packTiles() override;
 
-    void drawTiles(const std::vector<u32> &tiles_indices) override;
+    void drawTiles() override;
 
-    void updateAnimatedTiles(f32 time, render::DrawContext *ctxt);
+    void updateAnimatedTiles(f32 time);
 };
