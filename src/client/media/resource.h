@@ -14,7 +14,8 @@ enum class ResourceType
     IMAGE,
     SHADER,
     MESH,
-    PALETTE//,
+    PALETTE,
+    ATLAS//,
     //FONT
 };
 
@@ -48,6 +49,8 @@ public:
     void clearResource(T *res);
 };
 
+class Atlas;
+
 class ResourceCache
 {
     std::unique_ptr<ResourceSubCache<img::Image>> images;
@@ -55,6 +58,7 @@ class ResourceCache
     std::unique_ptr<ResourceSubCache<render::Shader>> shaders;
     std::unique_ptr<ResourceSubCache<MeshBuffer>> meshes;
     std::unique_ptr<ResourceSubCache<img::Palette>> palettes;
+    std::unique_ptr<ResourceSubCache<Atlas>> atlases;
     //std::unique_ptr<ResourceSubCache<IGUIFont>> fonts;
     
     std::unique_ptr<ResourceLoader> loader;
@@ -188,6 +192,8 @@ ResourceInfo<T> *ResourceCache::get(ResourceType _type, const std::string &_name
         return meshes->get(_name);
     case ResourceType::PALETTE:
         return palettes->get(_name);
+    case ResourceType::ATLAS:
+        return atlases->get(_name);
     }
 }
 
@@ -206,6 +212,8 @@ ResourceInfo<T> *ResourceCache::getByID(ResourceType _type, u32 _id)
         return meshes->getByID(_id);
     case ResourceType::PALETTE:
         return palettes->getByID(_id);
+    case ResourceType::ATLAS:
+        return atlases->getByID(_id);
     }
 }
 
@@ -224,6 +232,8 @@ ResourceInfo<T> *ResourceCache::getOrLoad(ResourceType _type, const std::string 
         return meshes->getOrLoad(_name);
     case ResourceType::PALETTE:
         return palettes->getOrLoad(_name);
+    case ResourceType::ATLAS:
+        return atlases->getOrLoad(_name);
     }
 }
 
@@ -242,6 +252,8 @@ u32 ResourceCache::cacheResource(ResourceType _type, T *res, const std::string &
         return meshes->cacheResource(res, name);
     case ResourceType::PALETTE:
         return palettes->cacheResource(res, name);
+    case ResourceType::ATLAS:
+        return atlases->cacheResource(res, name);
     }
 }
 
@@ -260,6 +272,8 @@ void ResourceCache::clearResource(ResourceType _type, u32 id)
         return meshes->clearResource(id);
     case ResourceType::PALETTE:
         return palettes->clearResource(id);
+    case ResourceType::ATLAS:
+        return atlases->clearResource(id);
     }
 }
 
@@ -278,5 +292,7 @@ void ResourceCache::clearResource(ResourceType _type, T *res)
         return meshes->clearResource(res);
     case ResourceType::PALETTE:
         return palettes->clearResource(res);
+    case ResourceType::ATLAS:
+        return atlases->clearResource(res);
     }
 }

@@ -258,6 +258,11 @@ public:
 	void uploadData(MeshBufferType type=MeshBufferType::VERTEX_INDEX);
 
 	MeshBuffer *copy() const;
+
+    bool operator==(const MeshBuffer *other_buffer) const
+    {
+        return VAO.get() == other_buffer->getVAO();
+    }
 private:
 	std::optional<ByteArray*> getVertexData();
 	std::optional<const ByteArray*> getVertexData() const;

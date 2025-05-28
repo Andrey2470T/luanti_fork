@@ -119,5 +119,10 @@ ResourceCache::ResourceCache(img::ImageModifier *mdf)
             return resLoader->loadPalette(name);
         }
     ));
+    atlases.reset(new ResourceSubCache<Atlas>(
+        {},
+        nullptr,
+        nullptr
+    ));
 }
 
