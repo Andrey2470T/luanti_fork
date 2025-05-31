@@ -2,34 +2,9 @@
 
 #include "atlas.h"
 #include <rectpack2D/finders_interface.h>
-#include <Render/DrawContext.h>>
 #include <unordered_map>
 
 using namespace rectpack2D;
-
-struct AtlasTile
-{
-	v2u pos;
-	v2u size;
-	
-	img::Image *image;
-	
-	u32 atlasNum;
-
-    AtlasTile(img::Image *img, u32 num)
-        : size(img->getClipSize()), image(img), atlasNum(num)
-    {}
-    virtual ~AtlasTile() = default;
-
-    rectf toUV(u32 atlasSize) const;
-	
-	bool operator==(const AtlasTile *other)
-	{
-		return image == other->image;
-    }
-
-    size_t hash() const;
-};
 
 struct AnimatedAtlasTile : public AtlasTile
 {

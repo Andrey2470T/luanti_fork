@@ -2,21 +2,6 @@
 
 using empty_rects = empty_spaces<false>;
 
-rectf AtlasTile::toUV(u32 atlasSize) const
-{
-    return rectf(
-        (f32)pos.X / atlasSize,
-        (f32)pos.Y / atlasSize,
-        (f32)(pos.X + size.X) / atlasSize,
-        (f32)(pos.Y + size.Y) / atlasSize
-    );
-}
-
-size_t AtlasTile::hash() const
-{
-    return std::hash<img::Image*>{}(image);
-}
-
 rectu AnimatedAtlasTile::getFrameCoords(u32 frame_num) const
 {
     frame_num = std::clamp<u32>((frame_count - 1) - frame_num, 0, frame_count);

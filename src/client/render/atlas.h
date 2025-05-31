@@ -4,7 +4,40 @@
 #include <Image/Image.h>
 #include <Render/StreamTexture2D.h>
 
-class ResourceCache;
+struct AtlasTile
+{
+	v2u pos;
+	v2u size;
+	
+	img::Image *image;
+	
+	u32 atlasNum;
+
+    AtlasTile(img::Image *img, u32 num)
+        : size(img->getClipSize()), image(img), atlasNum(num)
+    {}
+    virtual ~AtlasTile() = default;
+
+    rectf toUV(u32 atlasSize) const
+    {
+    	return rectf(
+            (f32)pos.X / atlasSize,
+            (f32)pos.Y / atlasSize,
+            (f32)(pos.X + size.X) / atlasSize,
+            (f32)(pos.Y + size.Y) / atlasSize
+        );
+    }
+	
+	bool operator==(const AtlasTile *other)
+	{
+		return image == other->image;
+    }
+
+    size_t hash() const
+    {
+    	return std::hash<img::Image*>{}(image);
+    }
+};
 
 class Atlas
 {

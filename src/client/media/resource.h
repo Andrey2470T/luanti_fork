@@ -7,6 +7,7 @@
 #include <functional>
 #include "FilesystemVersions.h"
 #include "threading/mutex_auto_lock.h"
+#include <Render/TTFont.h>
 
 enum class ResourceType
 {
@@ -15,8 +16,8 @@ enum class ResourceType
     SHADER,
     MESH,
     PALETTE,
-    ATLAS//,
-    //FONT
+    ATLAS,
+    FONT
 };
 
 
@@ -51,6 +52,15 @@ public:
 
 class Atlas;
 
+namespace render
+{
+    class TTFont;
+}
+
+extern std::string fontPathFinder(
+    render::FontMode mode, render::FontStyle style, std::optional<u32> size
+);
+
 class ResourceCache
 {
     std::unique_ptr<ResourceSubCache<img::Image>> images;
@@ -59,7 +69,7 @@ class ResourceCache
     std::unique_ptr<ResourceSubCache<MeshBuffer>> meshes;
     std::unique_ptr<ResourceSubCache<img::Palette>> palettes;
     std::unique_ptr<ResourceSubCache<Atlas>> atlases;
-    //std::unique_ptr<ResourceSubCache<IGUIFont>> fonts;
+    std::unique_ptr<ResourceSubCache<render::TTFont>> fonts;
     
     std::unique_ptr<ResourceLoader> loader;
 
@@ -125,6 +135,10 @@ ResourceInfo<T> *ResourceSubCache<T>::getOrLoad(const std::string &name)
     if (cachedRes)
         return cachedRes;
 
+    if (!findPathCallback) {
+    	infostream << "ResourceSubCache<T>::getOrLoad(): No finding path callback provided" << std::endl;
+        return;
+    }
     std::string target_path = findPathCallback(name);
 
     if (target_path.empty()) {
@@ -138,10 +152,14 @@ ResourceInfo<T> *ResourceSubCache<T>::getOrLoad(const std::string &name)
         }
     }
 
+    if (!loadCallback) {
+    	infostream << "ResourceSubCache<T>::getOrLoad(): No loading callback provided" << std::endl;
+        return;
+    }
     T *res = loadCallback(name);
 
     if (!res) {
-        infostream << "ResourceCache::getOrLoad(): Couldn't load the resource with name " << name << std::endl;
+        infostream << "ResourceSubCache<T>::getOrLoad(): Couldn't load the resource with name " << name << std::endl;
         return nullptr;
     }
 
@@ -194,6 +212,8 @@ ResourceInfo<T> *ResourceCache::get(ResourceType _type, const std::string &_name
         return palettes->get(_name);
     case ResourceType::ATLAS:
         return atlases->get(_name);
+    case ResourceType::FONT:
+        return fonts->get(_name);
     }
 }
 
@@ -214,6 +234,8 @@ ResourceInfo<T> *ResourceCache::getByID(ResourceType _type, u32 _id)
         return palettes->getByID(_id);
     case ResourceType::ATLAS:
         return atlases->getByID(_id);
+    case ResourceType::FONT:
+        return fonts->getByID(_id);
     }
 }
 
@@ -234,6 +256,8 @@ ResourceInfo<T> *ResourceCache::getOrLoad(ResourceType _type, const std::string 
         return palettes->getOrLoad(_name);
     case ResourceType::ATLAS:
         return atlases->getOrLoad(_name);
+    case ResourceType::FONT:
+        return fonts->getOrLoad(_name);
     }
 }
 
@@ -254,6 +278,8 @@ u32 ResourceCache::cacheResource(ResourceType _type, T *res, const std::string &
         return palettes->cacheResource(res, name);
     case ResourceType::ATLAS:
         return atlases->cacheResource(res, name);
+    case ResourceType::FONT:
+        return fonts->cacheResource(res, name);
     }
 }
 
@@ -274,6 +300,8 @@ void ResourceCache::clearResource(ResourceType _type, u32 id)
         return palettes->clearResource(id);
     case ResourceType::ATLAS:
         return atlases->clearResource(id);
+    case ResourceType::FONT:
+        return fonts->clearResource(id);
     }
 }
 
@@ -294,5 +322,7 @@ void ResourceCache::clearResource(ResourceType _type, T *res)
         return palettes->clearResource(res);
     case ResourceType::ATLAS:
         return atlases->clearResource(res);
+    case ResourceType::FONT:
+        return fonts->clearResource(res);
     }
 }
