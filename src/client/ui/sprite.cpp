@@ -4,11 +4,12 @@
 #include "extra_images.h"
 
 UISprite::UISprite(render::Texture2D *_tex, MeshCreator2D *_creator, Renderer2D *_renderer,
-    ResourceCache *cache, const rectf &srcRect, const rectf &destRect, bool applyFilter)
+    ResourceCache *cache, const rectf &srcRect, const rectf &destRect,
+    const std::array<img::color8, 4> &colors, bool applyFilter)
     : renderer(_renderer), area(destRect)
 {
 	rect = std::unique_ptr<MeshBuffer>(_creator->createImageRectangle(
-        _tex->getSize(), srcRect, destRect, {}, false));
+        _tex->getSize(), srcRect, destRect, colors, false));
 
     texture = std::make_unique<ImageFiltered>(cache, _tex);
     if (applyFilter && g_settings->getBool("gui_scaling_filter")) {
@@ -38,6 +39,8 @@ void UISprite::updateRect(const v2f &ulc, const v2f &lrc)
 	
 	area.ULC = ulc;
 	area.LRC = lrc;
+	
+	dirty = true;
 }
 
 void UISprite::setClipRect(const recti &r)
@@ -58,10 +61,24 @@ void UISprite::scale(const v2f &scale)
 	updateRect(center-size/2, center+size/2);
 }
 
+void UISprite::setColors(const std::array<img::color8, 4> &colors)
+{
+	rect->setAttrAt<img::color8>(colors.at(0), 1, 0);
+	rect->setAttrAt<img::color8>(colors.at(1), 1, 1);
+	rect->setAttrAt<img::color8>(colors.at(2), 1, 2);
+	rect->setAttrAt<img::color8>(colors.at(3), 1, 3);
+	
+	dirty = true;
+}
+	
 void UISprite::flush()
 {
+	if (!dirty)
+	    return;
 	rect->uploadData(MeshBufferType::VERTEX);
+	dirty = false;
 }
+
 void UISprite::draw() const
 {
 	renderer->drawImageFiltered(rect.get(), texture.get());

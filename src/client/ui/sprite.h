@@ -19,9 +19,12 @@ class UISprite
 
     // The texture can be simple or filtered by the MT scaling filter
 	std::unique_ptr<ImageFiltered> texture;
+	
+	bool dirty = true;
 public:
     UISprite(render::Texture2D *_tex, MeshCreator2D *_creator, Renderer2D *_renderer,
-        ResourceCache *cache, const rectf &srcRect, const rectf &destRect, bool applyFilter=false);
+        ResourceCache *cache, const rectf &srcRect, const rectf &destRect,
+        const std::array<img::color8, 4> &colors, bool applyFilter=false);
 
     v2u getSize() const;
     void updateRect(const rectf &r);
@@ -30,6 +33,8 @@ public:
     
     void move(const v2f &shift);
     void scale(const v2f &scale);
+    
+    void setColors(const std::array<img::color8, 4> &colors);
     
     void flush();
     void draw() const;
