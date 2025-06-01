@@ -22,10 +22,6 @@ struct AnimatedAtlasTile : public AtlasTile
 
 class Rectpack2DAtlas : public Atlas
 {
-    // Saves only unique tiles (determined by the hash)
-    std::unordered_map<size_t, u32> hash_to_index;
-
-    std::vector<std::unique_ptr<AtlasTile>> tiles;
     std::vector<u32> animatedTiles;
 
     std::vector<rect_xywh> rects;
@@ -36,12 +32,7 @@ public:
     Rectpack2DAtlas(const std::string &name, u32 num, u32 maxTextureSize, bool hasMips,
         const std::vector<img::Image *> &images, const std::unordered_map<u32, std::pair<u32, u32>> &animatedImages, u32 &start_i);
 
-    bool addTile(const AtlasTile *tile);
-    AtlasTile *getTile(u32 i) const;
-
     void packTiles() override;
-
-    void drawTiles() override;
 
     void updateAnimatedTiles(f32 time);
 };

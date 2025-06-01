@@ -4,13 +4,14 @@ using empty_rects = empty_spaces<false>;
 
 rectu AnimatedAtlasTile::getFrameCoords(u32 frame_num) const
 {
-    frame_num = std::clamp<u32>((frame_count - 1) - frame_num, 0, frame_count);
-
+    frame_num = std::clamp<u32>((frame_count - 1) - frame_num, 0, frame_count-1);
+    
+    u32 h = image->getHeight();
     return rectu(
         0,
-        (u32)((f32)frame_num / frame_count * size.Y),
+        (u32)((f32)frame_num / frame_count * h),
         size.X,
-        (u32)((f32)((frame_num + 1) / frame_count) * size.Y)
+        (u32)((f32)((frame_num + 1) / frame_count) * h)
     );
 }
 
@@ -57,32 +58,6 @@ Rectpack2DAtlas::Rectpack2DAtlas(const std::string &name, u32 num, u32 maxTextur
     u8 maxMipLevel = hasMips ? (u8)std::ceil(std::log2((f32)actualSize)) : 0;
     createTexture(name, num, actualSize, maxMipLevel);
     drawTiles();
-
-    if (hasMips)
-        texture->regenerateMipMaps();
-}
-
-bool Rectpack2DAtlas::addTile(const AtlasTile *tile)
-{
-    size_t tileHash = tile->hash();
-
-    auto it = hash_to_index.find(tileHash);
-
-    if (it != hash_to_index.end())
-        return false;
-
-    tiles.emplace_back(std::move(tile));
-    hash_to_index[tileHash] = tiles.size();
-
-    return true;
-}
-
-AtlasTile *Rectpack2DAtlas::getTile(u32 i) const
-{
-    if (i > tiles.size()-1)
-        return nullptr;
-
-    return tiles.at(i).get();
 }
 
 void Rectpack2DAtlas::packTiles()
@@ -108,24 +83,6 @@ void Rectpack2DAtlas::packTiles()
     rects.clear();
 }
 
-void Rectpack2DAtlas::drawTiles()
-{
-    if (!texture)
-        return;
-
-
-    for (auto &tile : tiles) {
-        if (!tile)
-            continue;
-
-        texture->uploadSubData(tile->pos.X, tile->pos.Y, tile->image);
-    }
-
-    texture->bind();
-    texture->flush();
-    texture->unbind();
-}
-
 void Rectpack2DAtlas::updateAnimatedTiles(f32 time)
 {
     if (animatedTiles.empty())
@@ -136,7 +93,7 @@ void Rectpack2DAtlas::updateAnimatedTiles(f32 time)
         if (anim_i > tiles.size()-1)
             continue;
 
-        auto *tile = dynamic_cast<AnimatedAtlasTile*>(tiles.at(anim_i).get());
+        auto *tile = dynamic_cast<AnimatedAtlasTile*>(getTile(anim_i));
 
         if (tile->frame_count == 0)
             continue;
@@ -149,17 +106,13 @@ void Rectpack2DAtlas::updateAnimatedTiles(f32 time)
 
         animationsUpdated = true;
         rectu frame_coords = tile->getFrameCoords(tile->cur_frame);
-        tile->image->setClipRegion(frame_coords.ULC.X, frame_coords.ULC.Y, frame_coords.getWidth(), frame_coords.getHeight());
+        tile->image->setClipRegion(
+            frame_coords.ULC.X, frame_coords.ULC.Y,
+            frame_coords.getWidth(), frame_coords.getHeight());
 
-        texture->uploadSubData(tile->pos.X, tile->pos.Y, tile->image);
+        markDirty(anim_i);
     }
 
-    if (animationsUpdated) {
-        texture->bind();
-        texture->flush();
-
-        if (texture->hasMipMaps())
-            texture->regenerateMipMaps();
-        texture->unbind();
-    }
+    if (animationsUpdated)
+        drawTiles();
 }
