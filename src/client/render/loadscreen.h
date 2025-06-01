@@ -16,7 +16,8 @@ class ResourceCache;
 class GUIStaticText;
 class IGUIEnvironment;
 class Renderer2D;
-class SpriteRect;
+class UISprite;
+class UITextSprite;
 class MeshCreator2D;
 
 class LoadScreen
@@ -24,9 +25,9 @@ class LoadScreen
 	ResourceCache *cache;
     Renderer2D *renderer;
 
-	std::unique_ptr<GUIStaticText> guitext;
-    std::unique_ptr<SpriteRect> progress_bg_rect;
-    std::unique_ptr<SpriteRect> progress_rect;
+	std::unique_ptr<UITextSprite> guitext;
+    std::unique_ptr<UISprite> progress_bg_rect;
+    std::unique_ptr<UISprite> progress_rect;
 
     bool draw_clouds;
     s32 last_percent = 0;

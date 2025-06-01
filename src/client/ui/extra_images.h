@@ -14,7 +14,7 @@ class MeshCreator2D;
 class MeshBuffer;
 class ResourceCache;
 class Renderer2D;
-class SpriteRect;
+class UISprite;
 
 extern img::ImageModifier *g_imgmodifier;
 
@@ -38,7 +38,7 @@ struct Image2D9Slice
     render::Texture2D *baseTex;
     std::array<img::color8, 4> rectColors;
 
-    std::array<std::unique_ptr<SpriteRect>, 9> slices;
+    std::array<std::unique_ptr<UISprite>, 9> slices;
 
     Image2D9Slice(MeshCreator2D *creator2d,
                   ResourceCache *resCache, Renderer2D *renderer,

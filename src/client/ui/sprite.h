@@ -11,7 +11,7 @@ class ImageFiltered;
 class ResourceCache;
 
 // Rectangle mesh with some mapped texture on it
-class SpriteRect
+class UISprite
 {
 	Renderer2D *renderer;
 	std::unique_ptr<MeshBuffer> rect;
@@ -20,7 +20,7 @@ class SpriteRect
     // The texture can be simple or filtered by the MT scaling filter
 	std::unique_ptr<ImageFiltered> texture;
 public:
-    SpriteRect(render::Texture2D *_tex, MeshCreator2D *_creator, Renderer2D *_renderer,
+    UISprite(render::Texture2D *_tex, MeshCreator2D *_creator, Renderer2D *_renderer,
         ResourceCache *cache, const rectf &srcRect, const rectf &destRect, bool applyFilter=false);
 
     v2u getSize() const;

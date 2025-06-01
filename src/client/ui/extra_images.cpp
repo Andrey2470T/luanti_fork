@@ -86,7 +86,7 @@ void Image2D9Slice::createSlice(u8 x, u8 y)
         break;
     };
 
-    slices[y*3+x] = std::make_unique<SpriteRect>(
+    slices[y*3+x] = std::make_unique<UISprite>(
         baseTex, creator2D, renderer2d, cache, srcRect, destRect, g_settings->getBool("gui_scaling_filter"));
 }
 

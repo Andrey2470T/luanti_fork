@@ -1,9 +1,9 @@
-#include "sprite_rect.h"
+#include "sprite.h"
 #include "meshcreator2d.h"
 #include "settings.h"
 #include "extra_images.h"
 
-SpriteRect::SpriteRect(render::Texture2D *_tex, MeshCreator2D *_creator, Renderer2D *_renderer,
+UISprite::UISprite(render::Texture2D *_tex, MeshCreator2D *_creator, Renderer2D *_renderer,
     ResourceCache *cache, const rectf &srcRect, const rectf &destRect, bool applyFilter)
     : renderer(_renderer), area(destRect)
 {
@@ -19,17 +19,17 @@ SpriteRect::SpriteRect(render::Texture2D *_tex, MeshCreator2D *_creator, Rendere
     }
 }
 
-v2u SpriteRect::getSize() const
+v2u UISprite::getSize() const
 {
     return texture->output_tex->getSize();
 }
 
-void SpriteRect::updateRect(const rectf &r)
+void UISprite::updateRect(const rectf &r)
 {
 	updateRect(r.ULC, r.LRC);
 }
 
-void SpriteRect::updateRect(const v2f &ulc, const v2f &lrc)
+void UISprite::updateRect(const v2f &ulc, const v2f &lrc)
 {
 	rect->setAttrAt<v2f>(ulc, 0, 0);
 	rect->setAttrAt<v2f>(v2f(lrc.X, ulc.Y), 0, 1);
@@ -40,17 +40,17 @@ void SpriteRect::updateRect(const v2f &ulc, const v2f &lrc)
 	area.LRC = lrc;
 }
 
-void SpriteRect::setClipRect(const recti &r)
+void UISprite::setClipRect(const recti &r)
 {
 	renderer->setClipRect(r);
 }
 
-void SpriteRect::move(const v2f &shift)
+void UISprite::move(const v2f &shift)
 {
 	updateRect(area.ULC + shift, area.LRC + shift);
 }
 
-void SpriteRect::scale(const v2f &scale)
+void UISprite::scale(const v2f &scale)
 {
 	v2f size = area.getSize();
 	size *= scale;
@@ -58,11 +58,11 @@ void SpriteRect::scale(const v2f &scale)
 	updateRect(center-size/2, center+size/2);
 }
 
-void SpriteRect::flush()
+void UISprite::flush()
 {
 	rect->uploadData(MeshBufferType::VERTEX);
 }
-void SpriteRect::draw() const
+void UISprite::draw() const
 {
 	renderer->drawImageFiltered(rect.get(), texture.get());
 }
