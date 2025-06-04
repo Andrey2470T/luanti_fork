@@ -6,308 +6,292 @@
 
 #include "CGUISkin.h"
 
-#include "IGUIFont.h"
+#include <Render/Texture2D.h>
+#include <Image/Converting.h>
+#include <Render/TTFont.h>
 #include "IGUISpriteBank.h"
 #include "IGUIElement.h"
-#include "IVideoDriver.h"
-#include "IAttributes.h"
+#include "client/media/resource.h"
+#include "client/ui/renderer2d.h"
 
-namespace irr
+GUISkin::GUISkin(GUISkinType type)
+    : Type(type)
 {
-namespace gui
-{
-
-CGUISkin::CGUISkin(EGUI_SKIN_TYPE type, video::IVideoDriver* driver)
-: SpriteBank(0), Driver(driver), Type(type)
-{
-	if ((Type == EGST_WINDOWS_CLASSIC) || (Type == EGST_WINDOWS_METALLIC))
+    if ((Type == GUISkinType::WindowsClassic) || (Type == GUISkinType::WindowsMetallic))
 	{
-		Colors[EGDC_3D_DARK_SHADOW]     = img::color8(101,50,50,50);
-		Colors[EGDC_3D_SHADOW]          = img::color8(101,130,130,130);
-		Colors[EGDC_3D_FACE]            = img::color8(220,100,100,100);
-		Colors[EGDC_3D_HIGH_LIGHT]      = img::color8(101,255,255,255);
-		Colors[EGDC_3D_LIGHT]           = img::color8(101,210,210,210);
-		Colors[EGDC_ACTIVE_BORDER]      = img::color8(101,16,14,115);
-		Colors[EGDC_ACTIVE_CAPTION]     = img::color8(255,255,255,255);
-		Colors[EGDC_APP_WORKSPACE]      = img::color8(101,100,100,100);
-		Colors[EGDC_BUTTON_TEXT]        = img::color8(240,10,10,10);
-		Colors[EGDC_GRAY_TEXT]          = img::color8(240,130,130,130);
-		Colors[EGDC_HIGH_LIGHT]         = img::color8(101,8,36,107);
-		Colors[EGDC_HIGH_LIGHT_TEXT]    = img::color8(240,255,255,255);
-		Colors[EGDC_INACTIVE_BORDER]    = img::color8(101,165,165,165);
-		Colors[EGDC_INACTIVE_CAPTION]   = img::color8(255,30,30,30);
-		Colors[EGDC_TOOLTIP]            = img::color8(200,0,0,0);
-		Colors[EGDC_TOOLTIP_BACKGROUND] = img::color8(200,255,255,225);
-		Colors[EGDC_SCROLLBAR]          = img::color8(101,230,230,230);
-		Colors[EGDC_WINDOW]             = img::color8(101,255,255,255);
-		Colors[EGDC_WINDOW_SYMBOL]      = img::color8(200,10,10,10);
-		Colors[EGDC_ICON]               = img::color8(200,255,255,255);
-		Colors[EGDC_ICON_HIGH_LIGHT]    = img::color8(200,8,36,107);
-		Colors[EGDC_GRAY_WINDOW_SYMBOL] = img::color8(240,100,100,100);
-		Colors[EGDC_EDITABLE] 			= img::color8(255,255,255,255);
-		Colors[EGDC_GRAY_EDITABLE]		= img::color8(255,120,120,120);
-		Colors[EGDC_FOCUSED_EDITABLE]	= img::color8(255,240,240,255);
+        Colors[(u8)GUIDefaultColor::DarkShadows3D]      = img::color8(img::PF_RGBA8, 101,50,50,50);
+        Colors[(u8)GUIDefaultColor::Shadow3D]           = img::color8(img::PF_RGBA8, 101,130,130,130);
+        Colors[(u8)GUIDefaultColor::Face3D]             = img::color8(img::PF_RGBA8, 220,100,100,100);
+        Colors[(u8)GUIDefaultColor::HighLight3D]        = img::color8(img::PF_RGBA8, 101,255,255,255);
+        Colors[(u8)GUIDefaultColor::Light3D]            = img::color8(img::PF_RGBA8, 101,210,210,210);
+        Colors[(u8)GUIDefaultColor::ActiveBorder]       = img::color8(img::PF_RGBA8, 101,16,14,115);
+        Colors[(u8)GUIDefaultColor::ActiveCaption]      = img::color8(img::PF_RGBA8, 255,255,255,255);
+        Colors[(u8)GUIDefaultColor::AppWorkspace]       = img::color8(img::PF_RGBA8, 101,100,100,100);
+        Colors[(u8)GUIDefaultColor::ButtonText]         = img::color8(img::PF_RGBA8, 240,10,10,10);
+        Colors[(u8)GUIDefaultColor::GrayText]           = img::color8(img::PF_RGBA8, 240,130,130,130);
+        Colors[(u8)GUIDefaultColor::HighLight]          = img::color8(img::PF_RGBA8, 101,8,36,107);
+        Colors[(u8)GUIDefaultColor::HighLightText]      = img::color8(img::PF_RGBA8, 240,255,255,255);
+        Colors[(u8)GUIDefaultColor::InactiveBorder]     = img::color8(img::PF_RGBA8, 101,165,165,165);
+        Colors[(u8)GUIDefaultColor::InactiveCaption]    = img::color8(img::PF_RGBA8, 255,30,30,30);
+        Colors[(u8)GUIDefaultColor::Tooltip]            = img::color8(img::PF_RGBA8, 200,0,0,0);
+        Colors[(u8)GUIDefaultColor::TooltipBackground]  = img::color8(img::PF_RGBA8, 200,255,255,225);
+        Colors[(u8)GUIDefaultColor::Scrollbar]          = img::color8(img::PF_RGBA8, 101,230,230,230);
+        Colors[(u8)GUIDefaultColor::Window]             = img::color8(img::PF_RGBA8, 101,255,255,255);
+        Colors[(u8)GUIDefaultColor::WindowSymbol]       = img::color8(img::PF_RGBA8, 200,10,10,10);
+        Colors[(u8)GUIDefaultColor::Icon]               = img::color8(img::PF_RGBA8, 200,255,255,255);
+        Colors[(u8)GUIDefaultColor::IconHighLight]      = img::color8(img::PF_RGBA8, 200,8,36,107);
+        Colors[(u8)GUIDefaultColor::GrayWindowSymbol]   = img::color8(img::PF_RGBA8, 240,100,100,100);
+        Colors[(u8)GUIDefaultColor::Editable] 			= img::color8(img::PF_RGBA8, 255,255,255,255);
+        Colors[(u8)GUIDefaultColor::GrayEditable]		= img::color8(img::PF_RGBA8, 255,120,120,120);
+        Colors[(u8)GUIDefaultColor::FocusedEditable]	= img::color8(img::PF_RGBA8, 255,240,240,255);
 
 
-		Sizes[EGDS_SCROLLBAR_SIZE] = 14;
-		Sizes[EGDS_MENU_HEIGHT] = 30;
-		Sizes[EGDS_WINDOW_BUTTON_WIDTH] = 15;
-		Sizes[EGDS_CHECK_BOX_WIDTH] = 18;
-		Sizes[EGDS_MESSAGE_BOX_WIDTH] = 500;
-		Sizes[EGDS_MESSAGE_BOX_HEIGHT] = 200;
-		Sizes[EGDS_BUTTON_WIDTH] = 80;
-		Sizes[EGDS_BUTTON_HEIGHT] = 30;
+        Sizes[(u8)GUIDefaultSize::ScrollbarSize] = 14;
+        Sizes[(u8)GUIDefaultSize::MenuHeight] = 30;
+        Sizes[(u8)GUIDefaultSize::WindowButtonWidth] = 15;
+        Sizes[(u8)GUIDefaultSize::CheckBoxWidth] = 18;
+        Sizes[(u8)GUIDefaultSize::MessageBoxWidth] = 500;
+        Sizes[(u8)GUIDefaultSize::MessageBoxHeight] = 200;
+        Sizes[(u8)GUIDefaultSize::ButtonWidth] = 80;
+        Sizes[(u8)GUIDefaultSize::ButtonHeight] = 30;
 
-		Sizes[EGDS_TEXT_DISTANCE_X] = 2;
-		Sizes[EGDS_TEXT_DISTANCE_Y] = 0;
+        Sizes[(u8)GUIDefaultSize::TextDistanceX] = 2;
+        Sizes[(u8)GUIDefaultSize::TextDistanceY] = 0;
 
-		Sizes[EGDS_TITLEBARTEXT_DISTANCE_X] = 2;
-		Sizes[EGDS_TITLEBARTEXT_DISTANCE_Y] = 0;
+        Sizes[(u8)GUIDefaultSize::TitlebartextDistanceX] = 2;
+        Sizes[(u8)GUIDefaultSize::TitlebartextDistanceY] = 0;
 	}
 	else
 	{
 		//0x80a6a8af
-		Colors[EGDC_3D_DARK_SHADOW] 	=	0x60767982;
+        Colors[(u8)GUIDefaultColor::Shadow3D]           =	img::colorU32NumberToObject(0x60767982);
 		//Colors[EGDC_3D_FACE]			=	0xc0c9ccd4;		// tab background
-		Colors[EGDC_3D_FACE]			=	0xc0cbd2d9;		// tab background
-		Colors[EGDC_3D_SHADOW]			=	0x50e4e8f1;		// tab background, and left-top highlight
-		Colors[EGDC_3D_HIGH_LIGHT]		=	0x40c7ccdc;
-		Colors[EGDC_3D_LIGHT]			=	0x802e313a;
-		Colors[EGDC_ACTIVE_BORDER]		=	0x80404040;		// window title
-		Colors[EGDC_ACTIVE_CAPTION] 	=	0xffd0d0d0;
-		Colors[EGDC_APP_WORKSPACE]		=	0xc0646464;		// unused
-		Colors[EGDC_BUTTON_TEXT]		=	0xd0161616;
-		Colors[EGDC_GRAY_TEXT]			=	0x3c141414;
-		Colors[EGDC_HIGH_LIGHT]			=	0x6c606060;
-		Colors[EGDC_HIGH_LIGHT_TEXT]	=	0xd0e0e0e0;
-		Colors[EGDC_INACTIVE_BORDER]	=	0xf0a5a5a5;
-		Colors[EGDC_INACTIVE_CAPTION]	=	0xffd2d2d2;
-		Colors[EGDC_TOOLTIP]			=	0xf00f2033;
-		Colors[EGDC_TOOLTIP_BACKGROUND]	= 	0xc0cbd2d9;
-		Colors[EGDC_SCROLLBAR]			= 	0xf0e0e0e0;
-		Colors[EGDC_WINDOW]				= 	0xf0f0f0f0;
-		Colors[EGDC_WINDOW_SYMBOL]		= 	0xd0161616;
-		Colors[EGDC_ICON]				= 	0xd0161616;
-		Colors[EGDC_ICON_HIGH_LIGHT]	= 	0xd0606060;
-		Colors[EGDC_GRAY_WINDOW_SYMBOL] = 	0x3c101010;
-		Colors[EGDC_EDITABLE] 			= 	0xf0ffffff;
-		Colors[EGDC_GRAY_EDITABLE]		= 	0xf0cccccc;
-		Colors[EGDC_FOCUSED_EDITABLE]	= 	0xf0fffff0;
+        Colors[(u8)GUIDefaultColor::Face3D]             =	img::colorU32NumberToObject(0xc0cbd2d9);		// tab background
+        Colors[(u8)GUIDefaultColor::Shadow3D]			=	img::colorU32NumberToObject(0x50e4e8f1);		// tab background, and left-top highlight
+        Colors[(u8)GUIDefaultColor::HighLight3D]		=	img::colorU32NumberToObject(0x40c7ccdc);
+        Colors[(u8)GUIDefaultColor::Light3D]			=	img::colorU32NumberToObject(0x802e313a);
+        Colors[(u8)GUIDefaultColor::ActiveBorder]		=	img::colorU32NumberToObject(0x80404040);		// window title
+        Colors[(u8)GUIDefaultColor::ActiveCaption]      =	img::colorU32NumberToObject(0xffd0d0d0);
+        Colors[(u8)GUIDefaultColor::AppWorkspace]		=	img::colorU32NumberToObject(0xc0646464);		// unused
+        Colors[(u8)GUIDefaultColor::ButtonText]         =	img::colorU32NumberToObject(0xd0161616);
+        Colors[(u8)GUIDefaultColor::GrayText]			=	img::colorU32NumberToObject(0x3c141414);
+        Colors[(u8)GUIDefaultColor::HighLight]			=	img::colorU32NumberToObject(0x6c606060);
+        Colors[(u8)GUIDefaultColor::HighLightText]      =	img::colorU32NumberToObject(0xd0e0e0e0);
+        Colors[(u8)GUIDefaultColor::InactiveBorder]     =	img::colorU32NumberToObject(0xf0a5a5a5);
+        Colors[(u8)GUIDefaultColor::InactiveCaption]	=	img::colorU32NumberToObject(0xffd2d2d2);
+        Colors[(u8)GUIDefaultColor::Tooltip]			=	img::colorU32NumberToObject(0xf00f2033);
+        Colors[(u8)GUIDefaultColor::TooltipBackground]	= 	img::colorU32NumberToObject(0xc0cbd2d9);
+        Colors[(u8)GUIDefaultColor::Scrollbar]			= 	img::colorU32NumberToObject(0xf0e0e0e0);
+        Colors[(u8)GUIDefaultColor::Window]				= 	img::colorU32NumberToObject(0xf0f0f0f0);
+        Colors[(u8)GUIDefaultColor::WindowSymbol]		= 	img::colorU32NumberToObject(0xd0161616);
+        Colors[(u8)GUIDefaultColor::Icon]				= 	img::colorU32NumberToObject(0xd0161616);
+        Colors[(u8)GUIDefaultColor::IconHighLight]      = 	img::colorU32NumberToObject(0xd0606060);
+        Colors[(u8)GUIDefaultColor::GrayWindowSymbol]   = 	img::colorU32NumberToObject(0x3c101010);
+        Colors[(u8)GUIDefaultColor::Editable] 			= 	img::colorU32NumberToObject(0xf0ffffff);
+        Colors[(u8)GUIDefaultColor::GrayEditable]		= 	img::colorU32NumberToObject(0xf0cccccc);
+        Colors[(u8)GUIDefaultColor::FocusedEditable]	= 	img::colorU32NumberToObject(0xf0fffff0);
 
-		Sizes[EGDS_SCROLLBAR_SIZE] = 14;
-		Sizes[EGDS_MENU_HEIGHT] = 48;
-		Sizes[EGDS_WINDOW_BUTTON_WIDTH] = 15;
-		Sizes[EGDS_CHECK_BOX_WIDTH] = 18;
-		Sizes[EGDS_MESSAGE_BOX_WIDTH] = 500;
-		Sizes[EGDS_MESSAGE_BOX_HEIGHT] = 200;
-		Sizes[EGDS_BUTTON_WIDTH] = 80;
-		Sizes[EGDS_BUTTON_HEIGHT] = 30;
+        Sizes[(u8)GUIDefaultSize::ScrollbarSize] = 14;
+        Sizes[(u8)GUIDefaultSize::MenuHeight] = 48;
+        Sizes[(u8)GUIDefaultSize::WindowButtonWidth] = 15;
+        Sizes[(u8)GUIDefaultSize::CheckBoxWidth] = 18;
+        Sizes[(u8)GUIDefaultSize::MessageBoxWidth] = 500;
+        Sizes[(u8)GUIDefaultSize::MessageBoxHeight] = 200;
+        Sizes[(u8)GUIDefaultSize::ButtonWidth] = 80;
+        Sizes[(u8)GUIDefaultSize::ButtonHeight] = 30;
 
-		Sizes[EGDS_TEXT_DISTANCE_X] = 3;
-		Sizes[EGDS_TEXT_DISTANCE_Y] = 2;
+        Sizes[(u8)GUIDefaultSize::TextDistanceX] = 3;
+        Sizes[(u8)GUIDefaultSize::TextDistanceY] = 2;
 
-		Sizes[EGDS_TITLEBARTEXT_DISTANCE_X] = 3;
-		Sizes[EGDS_TITLEBARTEXT_DISTANCE_Y] = 2;
+        Sizes[(u8)GUIDefaultSize::TitlebartextDistanceX] = 3;
+        Sizes[(u8)GUIDefaultSize::TitlebartextDistanceY] = 2;
 	}
 
-	Sizes[EGDS_MESSAGE_BOX_GAP_SPACE] = 15;
-	Sizes[EGDS_MESSAGE_BOX_MIN_TEXT_WIDTH] = 0;
-	Sizes[EGDS_MESSAGE_BOX_MAX_TEXT_WIDTH] = 500;
-	Sizes[EGDS_MESSAGE_BOX_MIN_TEXT_HEIGHT] = 0;
-	Sizes[EGDS_MESSAGE_BOX_MAX_TEXT_HEIGHT] = 99999;
+    Sizes[(u8)GUIDefaultSize::MessageBoxGapSpace] = 15;
+    Sizes[(u8)GUIDefaultSize::MessageBoxMinTextWidth] = 0;
+    Sizes[(u8)GUIDefaultSize::MessageBoxMaxTextWidth] = 500;
+    Sizes[(u8)GUIDefaultSize::MessageBoxMinTextHeight] = 0;
+    Sizes[(u8)GUIDefaultSize::MessageBoxMaxTextHeight] = 99999;
 
-	Sizes[EGDS_BUTTON_PRESSED_IMAGE_OFFSET_X] = 1;
-	Sizes[EGDS_BUTTON_PRESSED_IMAGE_OFFSET_Y] = 1;
-	Sizes[EGDS_BUTTON_PRESSED_TEXT_OFFSET_X] = 0;
-	Sizes[EGDS_BUTTON_PRESSED_TEXT_OFFSET_Y] = 2;
+    Sizes[(u8)GUIDefaultSize::ButtonPressedImageOffsetX] = 1;
+    Sizes[(u8)GUIDefaultSize::ButtonPressedImageOffsetY] = 1;
+    Sizes[(u8)GUIDefaultSize::ButtonPressedTextOffsetX] = 0;
+    Sizes[(u8)GUIDefaultSize::ButtonPressedTextOffsetY] = 2;
 
-	Texts[EGDT_MSG_BOX_OK] = L"OK";
-	Texts[EGDT_MSG_BOX_CANCEL] = L"Cancel";
-	Texts[EGDT_MSG_BOX_YES] = L"Yes";
-	Texts[EGDT_MSG_BOX_NO] = L"No";
-	Texts[EGDT_WINDOW_CLOSE] = L"Close";
-	Texts[EGDT_WINDOW_RESTORE] = L"Restore";
-	Texts[EGDT_WINDOW_MINIMIZE] = L"Minimize";
-	Texts[EGDT_WINDOW_MAXIMIZE] = L"Maximize";
+    Texts[(u8)GUIDefaultText::MsgBoxOk] = L"OK";
+    Texts[(u8)GUIDefaultText::MsgBoxCancel] = L"Cancel";
+    Texts[(u8)GUIDefaultText::MsgBoxYes] = L"Yes";
+    Texts[(u8)GUIDefaultText::MsgBoxNo] = L"No";
+    Texts[(u8)GUIDefaultText::WindowClose] = L"Close";
+    Texts[(u8)GUIDefaultText::WindowRestore] = L"Restore";
+    Texts[(u8)GUIDefaultText::WindowMinimize] = L"Minimize";
+    Texts[(u8)GUIDefaultText::WindowMaximize] = L"Maximize";
 
-	Icons[EGDI_WINDOW_MAXIMIZE] = 225;
-	Icons[EGDI_WINDOW_RESTORE] = 226;
-	Icons[EGDI_WINDOW_CLOSE] = 227;
-	Icons[EGDI_WINDOW_MINIMIZE] = 228;
-	Icons[EGDI_CURSOR_UP] = 229;
-	Icons[EGDI_CURSOR_DOWN] = 230;
-	Icons[EGDI_CURSOR_LEFT] = 231;
-	Icons[EGDI_CURSOR_RIGHT] = 232;
-	Icons[EGDI_MENU_MORE] = 232;
-	Icons[EGDI_CHECK_BOX_CHECKED] = 233;
-	Icons[EGDI_DROP_DOWN] = 234;
-	Icons[EGDI_SMALL_CURSOR_UP] = 235;
-	Icons[EGDI_SMALL_CURSOR_DOWN] = 236;
-	Icons[EGDI_RADIO_BUTTON_CHECKED] = 237;
-	Icons[EGDI_MORE_LEFT] = 238;
-	Icons[EGDI_MORE_RIGHT] = 239;
-	Icons[EGDI_MORE_UP] = 240;
-	Icons[EGDI_MORE_DOWN] = 241;
-	Icons[EGDI_WINDOW_RESIZE] = 242;
-	Icons[EGDI_EXPAND] = 243;
-	Icons[EGDI_COLLAPSE] = 244;
+    Icons[(u8)GUIDefaultIcon::WindowMaximize] = 225;
+    Icons[(u8)GUIDefaultIcon::WindowRestore] = 226;
+    Icons[(u8)GUIDefaultIcon::WindowClose] = 227;
+    Icons[(u8)GUIDefaultIcon::WindowMinimize] = 228;
+    Icons[(u8)GUIDefaultIcon::CursorUp] = 229;
+    Icons[(u8)GUIDefaultIcon::CursorDown] = 230;
+    Icons[(u8)GUIDefaultIcon::CursorLeft] = 231;
+    Icons[(u8)GUIDefaultIcon::CursorRight] = 232;
+    Icons[(u8)GUIDefaultIcon::MenuMore] = 232;
+    Icons[(u8)GUIDefaultIcon::CheckBoxChecked] = 233;
+    Icons[(u8)GUIDefaultIcon::Dropdown] = 234;
+    Icons[(u8)GUIDefaultIcon::SmallCursorUp] = 235;
+    Icons[(u8)GUIDefaultIcon::SmallCursorDown] = 236;
+    Icons[(u8)GUIDefaultIcon::RadioButtonChecked] = 237;
+    Icons[(u8)GUIDefaultIcon::MoreLeft] = 238;
+    Icons[(u8)GUIDefaultIcon::MoreRight] = 239;
+    Icons[(u8)GUIDefaultIcon::MoreUp] = 240;
+    Icons[(u8)GUIDefaultIcon::MoreDown] = 241;
+    Icons[(u8)GUIDefaultIcon::WindowResize] = 242;
+    Icons[(u8)GUIDefaultIcon::Expand] = 243;
+    Icons[(u8)GUIDefaultIcon::Collapse] = 244;
 
-	Icons[EGDI_FILE] = 245;
-	Icons[EGDI_DIRECTORY] = 246;
+    Icons[(u8)GUIDefaultIcon::File] = 245;
+    Icons[(u8)GUIDefaultIcon::Directory] = 246;
 
-	for (u32 i=0; i<EGDF_COUNT; ++i)
-		Fonts[i] = 0;
-
-	UseGradient = (Type == EGST_WINDOWS_METALLIC) || (Type == EGST_BURNING_SKIN) ;
+    for (u8 i = 0; i < (u8)GUIDefaultFont::Count; i++)
+        Fonts[i] = nullptr;
+    UseGradient = (Type == GUISkinType::WindowsMetallic) || (Type == GUISkinType::BurningSkin) ;
 }
 
-
-//! destructor
-CGUISkin::~CGUISkin()
+GUISkin::~GUISkin()
 {
-	for (u32 i=0; i<EGDF_COUNT; ++i)
-	{
-		if (Fonts[i])
-			Fonts[i]->drop();
-	}
-
-	if (SpriteBank)
-		SpriteBank->drop();
+    for (u8 i = 0; i < (u8)GUIDefaultFont::Count; i++) {
+        auto font = Fonts[i];
+        if (!font)
+            continue;
+        cache->clearResource<render::TTFont>(ResourceType::FONT, font);
+    }
 }
-
 
 //! returns default color
-img::color8 CGUISkin::getColor(EGUI_DEFAULT_COLOR color) const
+img::color8 GUISkin::getColor(GUIDefaultColor color) const
 {
-	if ((u32)color < EGDC_COUNT)
-		return Colors[color];
+    if ((u8)color < (u8)GUIDefaultColor::Count)
+        return Colors[(u8)color];
 	else
 		return img::color8();
 }
 
 
 //! sets a default color
-void CGUISkin::setColor(EGUI_DEFAULT_COLOR which, img::color8 newColor)
+void GUISkin::setColor(GUIDefaultColor which, img::color8 newColor)
 {
-	if ((u32)which < EGDC_COUNT)
-		Colors[which] = newColor;
+    if ((u8)which < (u8)GUIDefaultColor::Count)
+        Colors[(u8)which] = newColor;
 }
 
 
 //! returns size for the given size type
-s32 CGUISkin::getSize(EGUI_DEFAULT_SIZE size) const
+s32 GUISkin::getSize(GUIDefaultSize size) const
 {
-	if ((u32)size < EGDS_COUNT)
-		return Sizes[size];
+    if ((u8)size < (u8)GUIDefaultSize::Count)
+        return Sizes[(u8)size];
 	else
 		return 0;
 }
 
 
 //! sets a default size
-void CGUISkin::setSize(EGUI_DEFAULT_SIZE which, s32 size)
+void GUISkin::setSize(GUIDefaultSize which, s32 size)
 {
-	if ((u32)which < EGDS_COUNT)
-		Sizes[which] = size;
+    if ((u8)which < (u8)GUIDefaultSize::Count)
+        Sizes[(u8)which] = size;
 }
 
 
 //! returns the default font
-IGUIFont* CGUISkin::getFont(EGUI_DEFAULT_FONT which) const
+render::TTFont *GUISkin::getFont(GUIDefaultFont which) const
 {
-	if (((u32)which < EGDF_COUNT) && Fonts[which])
-		return Fonts[which];
+    if (((u8)which < (u8)GUIDefaultFont::Count) && Fonts[(u8)which])
+        return Fonts[(u8)which];
 	else
-		return Fonts[EGDF_DEFAULT];
+        return Fonts[(u8)GUIDefaultFont::Default];
 }
 
 
 //! sets a default font
-void CGUISkin::setFont(IGUIFont* font, EGUI_DEFAULT_FONT which)
+void GUISkin::setFont(render::TTFont *font, GUIDefaultFont which)
 {
-	if ((u32)which >= EGDF_COUNT)
+    if ((u8)which >= (u8)GUIDefaultFont::Count)
 		return;
 
-	if (font)
-	{
-		font->grab();
-		if (Fonts[which])
-			Fonts[which]->drop();
-
-		Fonts[which] = font;
-	}
+    if (font) {
+        if (Fonts[(u8)which])
+            cache->clearResource<render::TTFont>(ResourceType::FONT, Fonts[(u8)which]);
+        Fonts[(u8)which] = font;
+        cache->cacheResource<render::TTFont>(ResourceType::FONT, font);
+    }
 }
 
 
 //! gets the sprite bank stored
-IGUISpriteBank* CGUISkin::getSpriteBank() const
+IGUISpriteBank *GUISkin::getSpriteBank() const
 {
-	return SpriteBank;
+    return SpriteBank.get();
 }
 
 
 //! set a new sprite bank or remove one by passing 0
-void CGUISkin::setSpriteBank(IGUISpriteBank* bank)
+void GUISkin::setSpriteBank(IGUISpriteBank *bank)
 {
 	if (bank)
-		bank->grab();
-
-	if (SpriteBank)
-		SpriteBank->drop();
-
-	SpriteBank = bank;
+        SpriteBank = bank;
 }
 
 
 //! Returns a default icon
-u32 CGUISkin::getIcon(EGUI_DEFAULT_ICON icon) const
+u32 GUISkin::getIcon(GUIDefaultIcon icon) const
 {
-	if ((u32)icon < EGDI_COUNT)
-		return Icons[icon];
+    if ((u8)icon < (u8)GUIDefaultIcon::Count)
+        return Icons[(u8)icon];
 	else
 		return 0;
 }
 
 
 //! Sets a default icon
-void CGUISkin::setIcon(EGUI_DEFAULT_ICON icon, u32 index)
+void GUISkin::setIcon(GUIDefaultIcon icon, u32 index)
 {
-	if ((u32)icon < EGDI_COUNT)
-		Icons[icon] = index;
+    if ((u8)icon < (u8)GUIDefaultIcon::Count)
+        Icons[(u8)icon] = index;
 }
 
 
 //! Returns a default text. For example for Message box button captions:
 //! "OK", "Cancel", "Yes", "No" and so on.
-const wchar_t* CGUISkin::getDefaultText(EGUI_DEFAULT_TEXT text) const
+std::wstring GUISkin::getDefaultText(GUIDefaultText text) const
 {
-	if ((u32)text < EGDT_COUNT)
-		return Texts[text].c_str();
+    if ((u8)text < (u8)GUIDefaultText::Count)
+        return Texts[(u8)text];
 	else
-		return Texts[0].c_str();
+        return Texts[0];
 }
 
 
 //! Sets a default text. For example for Message box button captions:
 //! "OK", "Cancel", "Yes", "No" and so on.
-void CGUISkin::setDefaultText(EGUI_DEFAULT_TEXT which, const wchar_t* newText)
+void GUISkin::setDefaultText(GUIDefaultText which, const std::wstring &newText)
 {
-	if ((u32)which < EGDT_COUNT)
-		Texts[which] = newText;
+    if ((u8)which < (u8)GUIDefaultText::Count)
+        Texts[(u8)which] = newText;
 }
 
 
 //! draws a standard 3d button pane
 /**	Used for drawing for example buttons in normal state.
 It uses the colors EGDC_3D_DARK_SHADOW, EGDC_3D_HIGH_LIGHT, EGDC_3D_SHADOW and
-EGDC_3D_FACE for this. See EGUI_DEFAULT_COLOR for details.
+EGDC_3D_FACE for this. See GUIDefaultColor for details.
 \param rect: Defining area where to draw.
 \param clip: Clip area.
 \param element: Pointer to the element which wishes to draw this. This parameter
 is usually not used by ISkin, but can be used for example by more complex
 implementations to find out how to draw the part exactly. */
 // PATCH
-void CGUISkin::drawColored3DButtonPaneStandard(IGUIElement* element,
+void CGUISkin::drawColored3DButtonPaneStandard(std::shared_ptr<IGUIElement> element,
 					const recti& r,
 					const recti* clip,
 					const img::color8* colors)
@@ -362,14 +346,14 @@ void CGUISkin::drawColored3DButtonPaneStandard(IGUIElement* element,
 //! draws a pressed 3d button pane
 /**	Used for drawing for example buttons in pressed state.
 It uses the colors EGDC_3D_DARK_SHADOW, EGDC_3D_HIGH_LIGHT, EGDC_3D_SHADOW and
-EGDC_3D_FACE for this. See EGUI_DEFAULT_COLOR for details.
+EGDC_3D_FACE for this. See GUIDefaultColor for details.
 \param rect: Defining area where to draw.
 \param clip: Clip area.
 \param element: Pointer to the element which wishes to draw this. This parameter
 is usually not used by ISkin, but can be used for example by more complex
 implementations to find out how to draw the part exactly. */
 // PATCH
-void CGUISkin::drawColored3DButtonPanePressed(IGUIElement* element,
+void CGUISkin::drawColored3DButtonPanePressed(std::shared_ptr<IGUIElement> element,
 					const recti& r,
 					const recti* clip,
 					const img::color8* colors)
@@ -419,7 +403,7 @@ deep into the ground.
 \param rect: Defining area where to draw.
 \param clip: Clip area.	*/
 // PATCH
-void CGUISkin::drawColored3DSunkenPane(IGUIElement* element, img::color8 bgcolor,
+void CGUISkin::drawColored3DSunkenPane(std::shared_ptr<IGUIElement> element, img::color8 bgcolor,
 				bool flat, bool fillBackGround,
 				const recti& r,
 				const recti* clip,
@@ -508,7 +492,7 @@ void CGUISkin::drawColored3DSunkenPane(IGUIElement* element, img::color8 bgcolor
 //! draws a window background
 // return where to draw title bar text.
 // PATCH
-recti CGUISkin::drawColored3DWindowBackground(IGUIElement* element,
+recti CGUISkin::drawColored3DWindowBackground(std::shared_ptr<IGUIElement> element,
 				bool drawTitleBar, img::color8 titleBarColor,
 				const recti& r,
 				const recti* clip,
@@ -656,14 +640,14 @@ recti CGUISkin::drawColored3DWindowBackground(IGUIElement* element,
 //! draws a standard 3d menu pane
 /**	Used for drawing for menus and context menus.
 It uses the colors EGDC_3D_DARK_SHADOW, EGDC_3D_HIGH_LIGHT, EGDC_3D_SHADOW and
-EGDC_3D_FACE for this. See EGUI_DEFAULT_COLOR for details.
+EGDC_3D_FACE for this. See GUIDefaultColor for details.
 \param element: Pointer to the element which wishes to draw this. This parameter
 is usually not used by ISkin, but can be used for example by more complex
 implementations to find out how to draw the part exactly.
 \param rect: Defining area where to draw.
 \param clip: Clip area.	*/
 // PATCH
-void CGUISkin::drawColored3DMenuPane(IGUIElement* element,
+void CGUISkin::drawColored3DMenuPane(std::shared_ptr<IGUIElement> element,
 			const recti& r, const recti* clip,
 			const img::color8* colors)
 {
@@ -747,7 +731,7 @@ implementations to find out how to draw the part exactly.
 \param rect: Defining area where to draw.
 \param clip: Clip area.	*/
 // PATCH
-void CGUISkin::drawColored3DToolBar(IGUIElement* element,
+void CGUISkin::drawColored3DToolBar(std::shared_ptr<IGUIElement> element,
 				const recti& r,
 				const recti* clip,
 				const img::color8* colors)
@@ -800,7 +784,7 @@ implementations to find out how to draw the part exactly.
 \param rect: Defining area where to draw.
 \param clip: Clip area.	*/
 // PATCH
-void CGUISkin::drawColored3DTabButton(IGUIElement* element, bool active,
+void CGUISkin::drawColored3DTabButton(std::shared_ptr<IGUIElement> element, bool active,
 	const recti& frameRect, const recti* clip, EGUI_ALIGNMENT alignment,
 	const img::color8* colors)
 {
@@ -887,7 +871,7 @@ implementations to find out how to draw the part exactly.
 \param rect: Defining area where to draw.
 \param clip: Clip area.	*/
 // PATCH
-void CGUISkin::drawColored3DTabBody(IGUIElement* element, bool border, bool background,
+void CGUISkin::drawColored3DTabBody(std::shared_ptr<IGUIElement> element, bool border, bool background,
 	const recti& rect, const recti* clip, s32 tabHeight, EGUI_ALIGNMENT alignment,
 	const img::color8* colors)
 {
@@ -985,7 +969,7 @@ by more complex implementations to find out how to draw the part exactly.
 \param loop: Whether the animation should loop or not
 \param clip: Clip area.	*/
 // PATCH
-void CGUISkin::drawColoredIcon(IGUIElement* element, EGUI_DEFAULT_ICON icon,
+void CGUISkin::drawColoredIcon(std::shared_ptr<IGUIElement> element, GUIDefaultIcon icon,
 			const v2i position,
 			u32 starttime, u32 currenttime,
 			bool loop, const recti* clip,
@@ -1004,14 +988,14 @@ void CGUISkin::drawColoredIcon(IGUIElement* element, EGUI_DEFAULT_ICON icon,
 // END PATCH
 
 
-EGUI_SKIN_TYPE CGUISkin::getType() const
+GUISkinType CGUISkin::getType() const
 {
 	return Type;
 }
 
 
 //! draws a 2d rectangle.
-void CGUISkin::draw2DRectangle(IGUIElement* element,
+void CGUISkin::draw2DRectangle(std::shared_ptr<IGUIElement> element,
 		const img::color8 &color, const recti& pos,
 		const recti* clip)
 {
@@ -1024,10 +1008,6 @@ void CGUISkin::draw2DRectangle(IGUIElement* element,
 void CGUISkin::getColors(img::color8* colors)
 {
 	u32 i;
-	for (i=0; i<EGDC_COUNT; ++i)
+    for (i=0; i<(u32)GUIDefaultColor::Count; ++i)
 		colors[i] = Colors[i];
 }
-// END PATCH
-
-} // end namespace gui
-} // end namespace irr
