@@ -3,6 +3,8 @@
 #include "client/render/atlas.h"
 #include <Render/TTFont.h>
 
+#define MAX_GLYPHS_COUNT 0xFFFF
+
 struct Glyph : public AtlasTile
 {
 	char16_t symbol;

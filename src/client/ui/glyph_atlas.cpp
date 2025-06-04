@@ -27,7 +27,7 @@ GlyphAtlas::GlyphAtlas(u32 num, render::TTFont *ttfont, char16_t &offset)
     createTexture(prefix.str(), num, tex_size, 0, format);
         
     u16 slots = tex_size / size * tex_size / size;
-    slots_count = std::min<u16>(0xFFFF-1 - offset, slots);
+    slots_count = std::min<u16>(MAX_GLYPHS_COUNT-1 - offset, slots);
     chars_offset = offset;
     offset += slots_count;
 }

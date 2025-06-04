@@ -3,6 +3,7 @@
 #include <memory>
 #include <Image/Image.h>
 #include <Render/StreamTexture2D.h>
+#include <Render/TTFont.h>>
 #include <list>
 
 struct AtlasTile
@@ -19,15 +20,7 @@ struct AtlasTile
     {}
     virtual ~AtlasTile() = default;
 
-    rectf toUV(u32 atlasSize) const
-    {
-    	return rectf(
-            (f32)pos.X / atlasSize,
-            (f32)pos.Y / atlasSize,
-            (f32)(pos.X + size.X) / atlasSize,
-            (f32)(pos.Y + size.Y) / atlasSize
-        );
-    }
+    rectf toUV(u32 atlasSize) const;
 	
 	bool operator==(const AtlasTile *other)
 	{
@@ -38,6 +31,12 @@ struct AtlasTile
     {
     	return std::hash<img::Image*>{}(image);
     }
+};
+
+enum class AtlasType : u8
+{
+    RECTPACK2D,
+    GLYPH
 };
 
 class Atlas
@@ -53,19 +52,7 @@ protected:
 public:
     Atlas() = default;
 
-    void createTexture(const std::string &name, u32 num, u32 size, u8 maxMipLevel, img::PixelFormat format=img::PF_RGBA8)
-    {
-        std::string texName = name + "Atlas";
-        texName += num;
-
-        render::TextureSettings settings;
-        settings.isRenderTarget = false;
-        settings.hasMipMaps = maxMipLevel > 0 ? true : false;
-        settings.maxMipLevel = maxMipLevel;
-
-        texture = std::make_unique<render::StreamTexture2D>(
-            texName, size, size, format, settings);
-    }
+    void createTexture(const std::string &name, u32 num, u32 size, u8 maxMipLevel, img::PixelFormat format=img::PF_RGBA8);
     
     render::StreamTexture2D *getTexture() const
     {
@@ -76,40 +63,22 @@ public:
     {
         return texture->getSize().X;
     }
-    
-    bool addTile(const AtlasTile *tile)
+
+    u32 getTilesCount() const
     {
-        size_t tileHash = tile->hash();
-
-        auto it = hash_to_index.find(tileHash);
-
-        if (it != hash_to_index.end())
-            return false;
-
-        tiles.emplace_back(std::move(tile));
-        hash_to_index[tileHash] = tiles.size();
-        markDirty(tiles.size());
-
-        return true;
+        return tiles.size();
     }
 
-    AtlasTile *getTile(u32 i) const
+    std::string getName() const
     {
-        if (i > tiles.size()-1)
-            return nullptr;
+        return texture->getName();
+    }
+    
+    bool addTile(const AtlasTile *tile);
 
-        return tiles.at(i).get();
-    }
+    AtlasTile *getTile(u32 i) const;
     
-    void markDirty(u32 i)
-    {
-        auto it = std::find(dirty_tiles.begin(), dirty_tiles.end(), i);
-    
-        if (it != dirty_tiles.end())
-            return;
-            
-        dirty_tiles.push_back(i);
-    }
+    void markDirty(u32 i);
     
     bool canFit(const rectu &area, const rectu &tile) const
     {
@@ -118,27 +87,42 @@ public:
     
     virtual void packTiles() = 0;
     
-    void drawTiles()
+    void drawTiles();
+
+    bool operator==(const Atlas *other) const;
+};
+
+class ResourceCache;
+
+
+class AtlasPool
+{
+    AtlasType type;
+    std::string prefixName;
+
+    ResourceCache *cache;
+    u32 maxTextureSize;
+    bool hasMips;
+
+    std::vector<Atlas *> atlases;
+public:
+    AtlasPool(AtlasType _type, const std::string &_name, ResourceCache *_cache, u32 _maxTextureSize, bool _hasMips)
+        : type(_type), prefixName(_name), cache(_cache), maxTextureSize(_maxTextureSize), hasMips(_hasMips)
+    {}
+
+    ~AtlasPool();
+
+    Atlas *getAtlas(u32 i) const
     {
-        if (!texture || dirty_tiles.empty())
-            return;
+        if (i > atlases.size()-1)
+            return nullptr;
 
-        for (u32 dirty_i : dirty_tiles) {
-        	auto tile = getTile(dirty_i);
-
-            if (!tile)
-                continue;
-
-            texture->uploadSubData(tile->pos.X, tile->pos.Y, tile->image);
-        }
-
-        texture->bind();
-        texture->flush();
-        texture->unbind();
-        
-        if (texture->hasMipMaps())
-            texture->regenerateMipMaps();
-        
-        dirty_tiles.clear();
+        return atlases.at(i);
     }
+
+    // Recursively create and fill new atlases with tiles while the internal image counter doesn't reach some limit
+    void buildRectpack2DAtlas(const std::vector<img::Image *> &images, const std::unordered_map<u32, std::pair<u32, u32>> &animatedImages);
+    void buildGlyphAtlas(render::TTFont *ttfont);
+
+    void updateAnimatedTiles(f32 time);
 };
