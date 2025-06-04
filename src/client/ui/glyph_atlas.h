@@ -21,7 +21,8 @@ class GlyphAtlas : public Atlas
     char16_t chars_offset=0;
 public:
     GlyphAtlas(u32 num, render::TTFont *ttfont, char16_t &offset);
-        
+
+    Glyph *getByChar(wchar_t ch) const;
     void fill(u32 num, const img::color8 &c);
     
     void packTiles() override;

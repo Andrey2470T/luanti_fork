@@ -49,11 +49,11 @@ protected:
     std::unordered_map<size_t, u32> hash_to_index;
     std::vector<std::unique_ptr<AtlasTile>> tiles;
     
-    std:list<u32> dirty_tiles;
+    std::list<u32> dirty_tiles;
 public:
     Atlas() = default;
 
-    void createTexture(const std::string &name, u32 num, u32 size, u8 maxMipLevel)
+    void createTexture(const std::string &name, u32 num, u32 size, u8 maxMipLevel, img::PixelFormat format=img::PF_RGBA8)
     {
         std::string texName = name + "Atlas";
         texName += num;
@@ -64,7 +64,7 @@ public:
         settings.maxMipLevel = maxMipLevel;
 
         texture = std::make_unique<render::StreamTexture2D>(
-            texName, size, size, img::PF_RGBA8, settings);
+            texName, size, size, format, settings);
     }
     
     render::StreamTexture2D *getTexture() const
@@ -72,9 +72,9 @@ public:
     	return texture.get();
     }
     
-    v2u getTextureSize() const
+    u32 getTextureSize() const
     {
-    	return texture->getSize();
+        return texture->getSize().X;
     }
     
     bool addTile(const AtlasTile *tile)
@@ -103,7 +103,7 @@ public:
     
     void markDirty(u32 i)
     {
-    	auto it = dirty_tiles.find(i);
+        auto it = std::find(dirty_tiles.begin(), dirty_tiles.end(), i);
     
         if (it != dirty_tiles.end())
             return;

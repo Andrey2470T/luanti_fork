@@ -101,11 +101,12 @@ set(ui_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/fontengine.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/gameformspec.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/gameui.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/glyph_atlas.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/hud.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/meshcreator2d.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/minimap.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/renderer2d.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ui/sprite_rect.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/sprite.cpp
 )
 
 set(client_SRCS
