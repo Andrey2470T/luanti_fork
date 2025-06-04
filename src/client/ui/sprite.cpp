@@ -86,10 +86,9 @@ void UISprite::draw()
 
 
 UIAnimatedSprite::UIAnimatedSprite(v2u texSize, u32 _frameLength, MeshCreator2D *_creator, Renderer2D *_renderer,
-    ResourceCache *cache, const rectf &srcRect, const rectf &destRect,
-    const std::array<img::color8, 4> &colors, bool applyFilter)
+    ResourceCache *cache, const std::array<img::color8, 4> &colors, bool applyFilter)
     : UISprite(new render::Texture2D("AnimatedSprite", texSize.X, texSize.Y, img::PF_RGBA8), _creator, _renderer,
-        cache, srcRect, destRect, colors, applyFilter), frameLength(_frameLength)
+        cache, rectf(v2f(texSize.X, texSize.Y)), rectf(v2f(texSize.X, texSize.Y)), colors, applyFilter), frameLength(_frameLength)
 {}
 
 void UIAnimatedSprite::addFrame(img::Image *img, const rectf &r)
@@ -156,7 +155,28 @@ void UIAnimatedSprite::drawFrame(u32 time, bool loop)
 
         tex->uploadData(framesImages.at(f->imgIndex));
         texture->filter(tex->getName(), v2i(size.X, size.Y), v2i(size.X, size.Y));
+
+        flush();
+        curFrameNum = newFrameNum;
     }
 
     renderer->drawImageFiltered(rect.get(), texture.get());
+}
+
+std::vector<UIAnimatedSprite *> UISpriteBank::getSprites() const
+{
+    std::vector<UIAnimatedSprite *> spritesRes(sprites.size());
+
+    for (u32 i = 0; i < sprites.size(); i++)
+        spritesRes.at(i) = sprites.at(i).get();
+
+    return spritesRes;
+}
+
+void UISpriteBank::drawSprite(u32 index, u32 curTime, bool loop)
+{
+    if (index > sprites.size()-1)
+        return;
+
+    sprites.at(index)->drawFrame(curTime, loop);
 }

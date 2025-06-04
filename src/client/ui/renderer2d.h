@@ -40,6 +40,10 @@ public:
         init2DShaders();
     }
     
+    DrawContext *getContext() const
+    {
+        return Context;
+    }
     void drawLine(MeshBuffer *line);
     void drawRectangle(MeshBuffer *rect);
     void drawImage(MeshBuffer *rect, Texture2D *tex);

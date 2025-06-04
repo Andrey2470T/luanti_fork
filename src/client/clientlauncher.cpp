@@ -337,8 +337,8 @@ void ClientLauncher::config_guienv()
 	skin->setColor(gui::EGDC_WINDOW_SYMBOL, video::SColor(255, 255, 255, 255));
 	skin->setColor(gui::EGDC_BUTTON_TEXT, video::SColor(255, 255, 255, 255));
 	skin->setColor(gui::EGDC_3D_LIGHT, video::SColor(0, 0, 0, 0));
-	skin->setColor(gui::EGDC_3D_HIGH_LIGHT, video::SColor(255, 30, 30, 30));
-	skin->setColor(gui::EGDC_3D_SHADOW, video::SColor(255, 0, 0, 0));
+	skin->setColor(gui::GUIDefaultColor::HighLight3D, video::SColor(255, 30, 30, 30));
+	skin->setColor(gui::GUIDefaultColor::Shadow3D, video::SColor(255, 0, 0, 0));
 	skin->setColor(gui::EGDC_HIGH_LIGHT, video::SColor(255, 70, 120, 50));
 	skin->setColor(gui::EGDC_HIGH_LIGHT_TEXT, video::SColor(255, 255, 255, 255));
 	skin->setColor(gui::EGDC_EDITABLE, video::SColor(255, 128, 128, 128));

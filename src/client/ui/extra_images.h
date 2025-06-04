@@ -23,8 +23,10 @@ struct ImageFiltered
     ResourceCache *cache;
     render::Texture2D *output_tex;
     render::Texture2D *input_tex;
+    bool filtered = false;
 
     ImageFiltered(ResourceCache *resCache, render::Texture2D *tex);
+    ~ImageFiltered();
 
     void filter(const std::string &name, const v2i &srcSize, const v2i &destSize);
 };

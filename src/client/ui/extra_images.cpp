@@ -15,6 +15,12 @@ ImageFiltered::ImageFiltered(ResourceCache *resCache, render::Texture2D *tex)
 	    output_tex = tex;
 }
 
+ImageFiltered::~ImageFiltered()
+{
+    if (filtered)
+        cache->cacheResource<render::Texture2D>(ResourceType::TEXTURE, output_tex);
+}
+
 void ImageFiltered::filter(const std::string &name, const v2i &srcSize, const v2i &destSize)
 {
 	if (!g_settings->getBool("gui_scaling_filter"))
@@ -26,6 +32,7 @@ void ImageFiltered::filter(const std::string &name, const v2i &srcSize, const v2
     output_tex = new render::Texture2D(
         name, std::unique_ptr<img::Image>(filteredImg), input_tex->getParameters());
 
+    filtered = true;
     cache->cacheResource<render::Texture2D>(ResourceType::TEXTURE, output_tex);
 }
 
