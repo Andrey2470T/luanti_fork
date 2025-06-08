@@ -1,15 +1,17 @@
 #include "sprite.h"
-#include "meshcreator2d.h"
+#include "batcher2d.h"
 #include "settings.h"
 #include "extra_images.h"
 
-UISprite::UISprite(render::Texture2D *_tex, MeshCreator2D *_creator, Renderer2D *_renderer,
+UISprite::UISprite(render::Texture2D *_tex, Renderer2D *_renderer,
     ResourceCache *cache, const rectf &srcRect, const rectf &destRect,
     const std::array<img::color8, 4> &colors, bool applyFilter)
     : renderer(_renderer), area(destRect)
 {
-	rect = std::unique_ptr<MeshBuffer>(_creator->createImageRectangle(
-        _tex->getSize(), srcRect, destRect, colors, false));
+    rect = std::make_unique<MeshBuffer>(true);
+
+    Batcher2D::appendImageRectangle(rect.get(),
+        _tex->getSize(), srcRect, destRect, colors, false);
 
     texture = std::make_unique<ImageFiltered>(cache, _tex);
     if (applyFilter && g_settings->getBool("gui_scaling_filter")) {
@@ -85,9 +87,9 @@ void UISprite::draw()
 }
 
 
-UIAnimatedSprite::UIAnimatedSprite(v2u texSize, u32 _frameLength, MeshCreator2D *_creator, Renderer2D *_renderer,
+UIAnimatedSprite::UIAnimatedSprite(v2u texSize, u32 _frameLength, Renderer2D *_renderer,
     ResourceCache *cache, const std::array<img::color8, 4> &colors, bool applyFilter)
-    : UISprite(new render::Texture2D("AnimatedSprite", texSize.X, texSize.Y, img::PF_RGBA8), _creator, _renderer,
+    : UISprite(new render::Texture2D("AnimatedSprite", texSize.X, texSize.Y, img::PF_RGBA8), _renderer,
         cache, rectf(v2f(texSize.X, texSize.Y)), rectf(v2f(texSize.X, texSize.Y)), colors, applyFilter), frameLength(_frameLength)
 {}
 

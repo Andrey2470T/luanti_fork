@@ -26,9 +26,9 @@ LoadScreen::LoadScreen(ResourceCache *_cache, Renderer2D *_renderer, MeshCreator
     rectf progress_bg_img_size_f(v2f(progress_bg_img_size.X, progress_bg_img_size.Y));
 
     progress_rect = std::make_unique<UISprite>(
-        progress_img, _creator, _renderer, _cache, progress_img_size_f, progress_img_size_f, std::array<img::color8, 4>(), true);
+        progress_img, _renderer, _cache, progress_img_size_f, progress_img_size_f, std::array<img::color8, 4>(), true);
     progress_bg_rect = std::make_unique<UISprite>(
-        progress_bg_img, _creator, _renderer, _cache, progress_bg_img_size_f, progress_bg_img_size_f, std::array<img::color8, 4>(), true);
+        progress_bg_img, _renderer, _cache, progress_bg_img_size_f, progress_bg_img_size_f, std::array<img::color8, 4>(), true);
 }
 
 void LoadScreen::updateText(v2u screensize, const std::wstring &text, f32 dtime, bool menu_clouds,

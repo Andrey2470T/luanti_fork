@@ -49,12 +49,12 @@ set(player_SRCS
 )
 
 set(render_SRCS
+	${CMAKE_CURRENT_SOURCE_DIR}/render/batcher3d.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/camera.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/clouds.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/defaultVertexTypes.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/loadscreen.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/meshbuffer.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/render/meshcreator3d.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/meshoperations.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/particles.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/rectpack2d_atlas.cpp
@@ -97,13 +97,13 @@ if(USE_SOUND)
 endif()
 
 set(ui_SRCS
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/batcher2d.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/extra_images.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/fontengine.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/gameformspec.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/gameui.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/glyph_atlas.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/hud.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ui/meshcreator2d.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/minimap.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/renderer2d.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/sprite.cpp

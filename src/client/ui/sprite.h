@@ -4,7 +4,6 @@
 #include "Utils/Rect.h"
 #include "Render/Texture2D.h"
 
-class MeshCreator2D;
 class Renderer2D;
 class MeshBuffer;
 class ImageFiltered;
@@ -23,7 +22,7 @@ protected:
 	
 	bool dirty = true;
 public:
-    UISprite(render::Texture2D *_tex, MeshCreator2D *_creator, Renderer2D *_renderer,
+    UISprite(render::Texture2D *_tex, Renderer2D *_renderer,
         ResourceCache *cache, const rectf &srcRect, const rectf &destRect,
         const std::array<img::color8, 4> &colors, bool applyFilter=false);
 
@@ -67,7 +66,7 @@ class UIAnimatedSprite : public UISprite
     u32 curFrameNum = 0;
     u32 frameLength = 0;
 public:
-    UIAnimatedSprite(v2u texSize, u32 _frameLength, MeshCreator2D *_creator, Renderer2D *_renderer,
+    UIAnimatedSprite(v2u texSize, u32 _frameLength, Renderer2D *_renderer,
         ResourceCache *cache, const std::array<img::color8, 4> &colors, bool applyFilter=false);
 
     void addFrame(img::Image *img, const rectf &r);
@@ -83,13 +82,12 @@ public:
 
 class UISpriteBank
 {
-    MeshCreator2D *creator;
     ResourceCache *cache;
     Renderer2D *renderer;
     std::vector<std::unique_ptr<UIAnimatedSprite>> sprites;
 public:
-    UISpriteBank(MeshCreator2D *_creator, ResourceCache *_cache, Renderer2D *_renderer)
-        : creator(_creator), cache(_cache), renderer(_renderer)
+    UISpriteBank(ResourceCache *_cache, Renderer2D *_renderer)
+        : cache(_cache), renderer(_renderer)
     {}
     UISpriteBank &operator=(const UISpriteBank &bank)
     {
@@ -120,7 +118,7 @@ public:
     void addSprite(const rectf &r, img::Image *img, u32 frameLength,
         const std::array<img::color8, 4> &colors=std::array<img::color8, 4>(), bool applyFilter=false)
     {
-        sprites.emplace_back(img->getSize(), frameLength, creator, renderer, cache, colors, applyFilter);
+        sprites.emplace_back(img->getSize(), frameLength, renderer, cache, colors, applyFilter);
         sprites.back().get()->addFrame(img, r);
     }
     void addImageAsSprite(img::Image *img, u32 frameLength)

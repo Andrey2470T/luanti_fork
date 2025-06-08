@@ -3,7 +3,7 @@
 #include "Image/ImageFilters.h"
 #include "settings.h"
 #include "client/media/resource.h"
-#include "meshcreator2d.h"
+#include "batcher2d.h"
 #include "sprite.h"
 
 img::ImageModifier *g_imgmodifier = new img::ImageModifier();
@@ -94,7 +94,7 @@ void Image2D9Slice::createSlice(u8 x, u8 y)
     };
 
     slices[y*3+x] = std::make_unique<UISprite>(
-        baseTex, creator2D, renderer2d, cache, srcRect, destRect, std::array<img::color8, 4>(), g_settings->getBool("gui_scaling_filter"));
+        baseTex, renderer2d, cache, srcRect, destRect, std::array<img::color8, 4>(), g_settings->getBool("gui_scaling_filter"));
 }
 
 void Image2D9Slice::drawSlice(u8 i) const
