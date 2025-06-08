@@ -134,4 +134,9 @@ public:
     }
 
     void drawSprite(u32 index, u32 curTime, bool loop=false);
+    void drawSprites(u32 curTime, bool loop=false)
+    {
+    	for (u32 i = 0; i < sprites.size(); i++)
+            drawSprite(i, curTime, loop);
+    }
 };

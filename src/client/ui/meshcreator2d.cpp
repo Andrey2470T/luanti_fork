@@ -4,7 +4,7 @@
 MeshBuffer *MeshCreator2D::createLine(
     const v2f &startPos, const v2f &endPos, const img::color8 &color)
 {
-    MeshBuffer *buf = new MeshBuffer(MeshBufferType::VERTEX, CurVT);
+    MeshBuffer *buf = new MeshBuffer(false, CurVT);
 
     appendLine(buf, startPos, endPos, color);
 
@@ -20,7 +20,7 @@ MeshBuffer *MeshCreator2D::createTriangle(
     const v2f &pos1, const v2f &pos2, const v2f &pos3, const img::color8 &color,
     const v2f &uv1, const v2f &uv2, const v2f &uv3)
 {
-    MeshBuffer *buf = new MeshBuffer(MeshBufferType::VERTEX, CurVT);
+    MeshBuffer *buf = new MeshBuffer(false, CurVT);
 
     appendTriangle(buf, pos1, pos2, pos3, color);
 
@@ -31,7 +31,7 @@ MeshBuffer *MeshCreator2D::createRectangle(
     const rectf &rect, const std::array<img::color8, 4> &colors,
     const std::array<v2f, 4> &uvs)
 {
-    MeshBuffer *buf = new MeshBuffer(MeshBufferType::VERTEX_INDEX, CurVT);
+    MeshBuffer *buf = new MeshBuffer(true, CurVT);
 
     appendRectangle(buf, rect, colors, uvs);
 

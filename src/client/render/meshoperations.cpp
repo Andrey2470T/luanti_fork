@@ -90,7 +90,7 @@ void MeshOperations::scaleMesh(MeshBuffer *mesh, v3f scale)
 		svtSetPos(mesh, svtGetPos(mesh, i) * scale, i);
 	}
 
-	mesh->uploadData(MeshBufferType::VERTEX);
+    mesh->uploadVertexData();
 	mesh->recalculateBoundingBox();
 }
 
@@ -103,7 +103,7 @@ void MeshOperations::translateMesh(MeshBuffer *mesh, v3f vec)
 		svtSetPos(mesh, svtGetPos(mesh, i) + vec, i);
 	}
 
-	mesh->uploadData(MeshBufferType::VERTEX);
+    mesh->uploadVertexData();
 	mesh->recalculateBoundingBox();
 }
 
@@ -121,7 +121,7 @@ void MeshOperations::colorizeMesh(MeshBuffer *mesh, const img::color8 &color,
 		svtSetColor(mesh, res_c, i);
 	}
 
-	mesh->uploadData(MeshBufferType::VERTEX);
+    mesh->uploadVertexData();
 }
 
 template <typename F>
@@ -134,7 +134,7 @@ static void applyToMesh(MeshBuffer *mesh, const F &fn)
 		fn(i);
 	}
 
-	mesh->uploadData(MeshBufferType::VERTEX);
+    mesh->uploadVertexData();
 }
 
 void MeshOperations::setMeshColorByNormalXYZ(MeshBuffer *mesh,

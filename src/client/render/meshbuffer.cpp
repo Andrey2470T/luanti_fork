@@ -1,40 +1,15 @@
 #include "meshbuffer.h"
 #include <assert.h>
-#include <string.h>
-
-u32 MeshBuffer::getVertexCount() const
-{
-	switch (Type) {
-		case MeshBufferType::VERTEX:
-			return VBuffer.VDataCount;
-		case MeshBufferType::VERTEX_INDEX:
-			return VIBuffer.VDataCount;
-		default:
-			return 0;
-	};
-}
-
-u32 MeshBuffer::getIndexCount() const
-{
-	switch (Type) {
-		case MeshBufferType::INDEX:
-			return IBuffer.IDataCount;
-		case MeshBufferType::VERTEX_INDEX:
-			return VIBuffer.IDataCount;
-		default:
-			return 0;
-	};
-}
 
 u32 MeshBuffer::getIndexAt(u32 pos) const
 {
-    checkIndexPos(pos);
-
-    return getIndexData().value()->getUInt32(pos);
+    assert(hasIBO() && IBuffer.Data && pos < getIndexCount());
+    return IBuffer.Data->getUInt32(pos);
 }
 
 void MeshBuffer::recalculateBoundingBox()
 {
+    if (!hasVBO()) return;
 	u32 vcount = getVertexCount();
 	if (vcount) {
 		BoundingBox.reset(getAttrAt<v3f>(0, 0));
@@ -47,145 +22,79 @@ void MeshBuffer::recalculateBoundingBox()
 
 void MeshBuffer::setIndexAt(u32 index, std::optional<u32> pos)
 {
+    assert(hasIBO() && IBuffer.Data);
 	if (pos)
-		checkIndexPos(pos.value());
+        assert(pos < getIndexCount());
+    else
+        IBuffer.DataCount++;
 
-    switch (Type) {
-    case MeshBufferType::VERTEX:
-        return;
-    case MeshBufferType::INDEX:
-        IBuffer.IDataCount++;
-    case MeshBufferType::VERTEX_INDEX:
-        VIBuffer.IDataCount++;
-    };
+    IBuffer.Data->setUInt32(index, pos);
 
-    getIndexData().value()->setUInt32(index, pos);
-    
-    indexDirty = true;
+    IBuffer.StartChange = IBuffer.StartChange != std::nullopt ?
+        std::min<u32>(VBuffer.StartChange.value(), pos.value()) : pos;
+    IBuffer.EndChange = IBuffer.EndChange != std::nullopt ?
+        std::max<u32>(IBuffer.EndChange.value(), pos.value()) : pos;
+    IBuffer.Dirty = true;
 }
 
-void MeshBuffer::uploadData(MeshBufferType type)
+void MeshBuffer::reallocateData()
 {
-    auto vdata = getVertexData();
-    auto idata = getIndexData();
+    if (Type == MeshBufferType::INDEX)
+        return;
+    VAO->reallocate(VBuffer.Data.get(), VBuffer.DataCount, (const u32 *)IBuffer.Data.get(), IBuffer.DataCount);
+    VBuffer.Dirty = false;
+    IBuffer.Dirty = false;
+}
 
-	u32 vcount = getVertexCount();
-	u32 icount = getIndexCount();
+void MeshBuffer::uploadVertexData()
+{
+    if (Type == MeshBufferType::INDEX || VBuffer.DataCount == 0 || !VBuffer.Dirty)
+        return;
 
-	if (type == MeshBufferType::VERTEX && vertexDirty) {
-		VAO->uploadData(vdata.value()->data(), vcount,
-			nullptr, 0);
-		vertexDirty = false;
-	}
-	else if (type == MeshBufferType::INDEX && indexDirty) {
-		VAO->uploadData(nullptr, 0,
-            reinterpret_cast<const u32*>(idata.value()->data()), icount);
-        indexDirty = false;
-    }
-	else if (vertexDirty && indexDirty) {
-		VAO->uploadData(vdata.value()->data(), vcount,
-            reinterpret_cast<const u32*>(idata.value()->data()), icount);
-            vertexDirty = false;
-            indexDirty = false;
-    }
+    u32 startV = VBuffer.StartChange.value();
+    u32 endV = VBuffer.EndChange.value();
+    VAO->uploadVertexData(VBuffer.Data.get(), endV - startV + 1, startV);
+
+    VBuffer.StartChange = std::nullopt;
+    VBuffer.EndChange = std::nullopt;
+    VBuffer.Dirty = false;
+}
+
+void MeshBuffer::uploadIndexData()
+{
+    if (Type == MeshBufferType::VERTEX || IBuffer.DataCount == 0 || !IBuffer.Dirty)
+        return;
+
+    u32 startI = IBuffer.StartChange.value();
+    u32 endI = IBuffer.EndChange.value();
+    VAO->uploadIndexData((const u32 *)IBuffer.Data.get(), endI - startI + 1, startI);
+
+    IBuffer.StartChange = std::nullopt;
+    IBuffer.EndChange = std::nullopt;
+    IBuffer.Dirty = false;
 }
 
 MeshBuffer *MeshBuffer::copy() const
 {
-	MeshBuffer *new_mesh = new MeshBuffer(getType(), getVAO()->getVertexType());
+    MeshBuffer *new_mesh = nullptr;
+    if (Type == MeshBufferType::INDEX) new_mesh = new MeshBuffer(VAO);
+    else new_mesh = new MeshBuffer(Type != MeshBufferType::VERTEX, getVAO()->getVertexType());
 
-	new_mesh->setData(getVertexData().value()->data(), getVertexCount(),
-        reinterpret_cast<const u32*>(getIndexData().value()->data()), getIndexCount());
-	new_mesh->setBoundingBox(getBoundingBox());
-	new_mesh->uploadData();
+    if (hasVBO())
+        memcpy(new_mesh->VBuffer.Data.get()->data(), VBuffer.Data.get()->data(), getVertexCount());
+    if (hasIBO())
+        memcpy(new_mesh->IBuffer.Data.get()->data(), IBuffer.Data.get()->data(), getIndexCount());
+
+    new_mesh->reallocateData();
+    new_mesh->setBoundingBox(getBoundingBox());
 
     return new_mesh;
 }
 
-std::optional<ByteArray*> MeshBuffer::getVertexData()
-{
-	switch (Type) {
-		case MeshBufferType::VERTEX:
-			return VBuffer.VData.get();
-		case MeshBufferType::VERTEX_INDEX:
-			return VIBuffer.VData.get();
-		default:
-			return std::nullopt;
-	};
-}
-
-std::optional<const ByteArray*> MeshBuffer::getVertexData() const
-{
-	switch (Type) {
-		case MeshBufferType::VERTEX:
-			return const_cast<const ByteArray*>(VBuffer.VData.get());
-		case MeshBufferType::VERTEX_INDEX:
-			return const_cast<const ByteArray*>(VIBuffer.VData.get());
-		default:
-			return std::nullopt;
-	};
-}
-
-std::optional<ByteArray*> MeshBuffer::getIndexData()
-{
-	switch (Type) {
-		case MeshBufferType::INDEX:
-			return IBuffer.IData.get();
-		case MeshBufferType::VERTEX_INDEX:
-			return VIBuffer.IData.get();
-		default:
-			return std::nullopt;
-	};
-}
-std::optional<const ByteArray*> MeshBuffer::getIndexData() const
-{
-	switch (Type) {
-		case MeshBufferType::INDEX:
-			return const_cast<const ByteArray*>(IBuffer.IData.get());
-		case MeshBufferType::VERTEX_INDEX:
-			return const_cast<const ByteArray*>(VIBuffer.IData.get());
-		default:
-			return std::nullopt;
-	};
-}
-
 inline u64 MeshBuffer::countElemsBefore(u32 vertexNumber, u32 attrNumber) const
 {
-    auto vdata = getVertexData();
+    assert(hasVBO() && VBuffer.Data && vertexNumber <= getVertexCount());
 
-    assert(vdata != std::nullopt);
-
-	u32 vcount = getVertexCount();
-
-    assert(vertexNumber <= vcount);
 	auto &attr = VAO->getVertexType().Attributes.at(attrNumber);
 	return VertexCmpCount * vertexNumber + attrNumber * attr.Offset;
-}
-
-inline void MeshBuffer::checkIndexPos(u32 pos) const
-{
-    auto idata = getIndexData();
-
-    assert(idata != std::nullopt);
-
-	u32 icount = getIndexCount();
-
-    assert(pos < icount);
-}
-
-// This method is used internally only in copy()
-void MeshBuffer::setData(const void* vdata, u32 vcount, const u32* idata, u32 icount)
-{
-	switch (Type) {
-		case MeshBufferType::VERTEX:
-            memcpy(VBuffer.VData.get()->data(), vdata, vcount);
-			break;
-		case MeshBufferType::INDEX:
-            memcpy(IBuffer.IData.get()->data(), idata, icount);
-			break;
-		case MeshBufferType::VERTEX_INDEX:
-            memcpy(VBuffer.VData.get()->data(), vdata, vcount);
-            memcpy(IBuffer.IData.get()->data(), idata, icount);
-			break;
-	}
 }

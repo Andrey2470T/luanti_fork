@@ -4,7 +4,7 @@
 
 MeshBuffer *MeshCreator3D::createPoint(const v3f &pos)
 {
-    MeshBuffer *buf = new MeshBuffer(MeshBufferType::VERTEX_INDEX, State.CurVT);
+    MeshBuffer *buf = new MeshBuffer(true, State.CurVT);
 
     appendVertex(buf, pos);
 
@@ -14,7 +14,7 @@ MeshBuffer *MeshCreator3D::createPoint(const v3f &pos)
 MeshBuffer *MeshCreator3D::createLine(
     const v3f &startPos, const v3f &endPos)
 {
-    MeshBuffer *buf = new MeshBuffer(MeshBufferType::VERTEX_INDEX, State.CurVT);
+    MeshBuffer *buf = new MeshBuffer(true, State.CurVT);
 
     appendLine(buf, startPos, endPos);
 
@@ -29,7 +29,7 @@ MeshBuffer *MeshCreator3D::createLine(const line3f &line)
 MeshBuffer *MeshCreator3D::createTriangle(
     const v3f &pos1, const v3f &pos2, const v3f &pos3)
 {
-    MeshBuffer *buf = new MeshBuffer(MeshBufferType::VERTEX_INDEX, State.CurVT);
+    MeshBuffer *buf = new MeshBuffer(true, State.CurVT);
 
     appendTriangle(buf, pos1, pos2, pos3);
 
@@ -39,7 +39,7 @@ MeshBuffer *MeshCreator3D::createTriangle(
 MeshBuffer *MeshCreator3D::createFace(
     const v3f &pos1, const v3f &pos2, const v3f &pos3, const v3f &pos4)
 {
-    MeshBuffer *buf = new MeshBuffer(MeshBufferType::VERTEX_INDEX, State.CurVT);
+    MeshBuffer *buf = new MeshBuffer(true, State.CurVT);
 
     appendFace(buf, pos1, pos2, pos3, pos4);
 
@@ -89,7 +89,7 @@ inline void rotateFace(v3f &pos1, v3f &pos2, v3f &pos3, v3f &pos4, RotationAxis 
 
 MeshBuffer *MeshCreator3D::createBox()
 {
-    MeshBuffer *buf = new MeshBuffer(MeshBufferType::VERTEX_INDEX, State.CurVT);
+    MeshBuffer *buf = new MeshBuffer(true, State.CurVT);
 
     v3f pos1(-0.5f, -0.5f, -0.5f);
     v3f pos2(0.5f, -0.5f, -0.5f);

@@ -8,7 +8,7 @@
 //#include "client/render/clouds.h"
 #include "client/ui/extra_images.h"
 #include "meshbuffer.h"
-#include "client/ui/sprite_rect.h"
+#include "client/ui/sprite.h"
 
 LoadScreen::LoadScreen(ResourceCache *_cache, Renderer2D *_renderer, MeshCreator2D *_creator, IGUIEnvironment *_guienv)
     : cache(_cache), renderer(_renderer)
@@ -26,13 +26,13 @@ LoadScreen::LoadScreen(ResourceCache *_cache, Renderer2D *_renderer, MeshCreator
     rectf progress_bg_img_size_f(v2f(progress_bg_img_size.X, progress_bg_img_size.Y));
 
     progress_rect = std::make_unique<UISprite>(
-        progress_img, _creator, _renderer, _cache, progress_img_size_f, progress_img_size_f, true);
+        progress_img, _creator, _renderer, _cache, progress_img_size_f, progress_img_size_f, std::array<img::color8, 4>(), true);
     progress_bg_rect = std::make_unique<UISprite>(
-        progress_bg_img, _creator, _renderer, _cache, progress_bg_img_size_f, progress_bg_img_size_f, true);
+        progress_bg_img, _creator, _renderer, _cache, progress_bg_img_size_f, progress_bg_img_size_f, std::array<img::color8, 4>(), true);
 }
 
 void LoadScreen::updateText(v2u screensize, const std::wstring &text, f32 dtime, bool menu_clouds,
-                            s32 percent, f32 scale_f, f32 *shutdown_progress, MeshCreator2D *creator)
+    s32 percent, f32 scale_f, f32 *shutdown_progress, MeshCreator2D *creator)
 {
     if (percent == last_percent)
         return;

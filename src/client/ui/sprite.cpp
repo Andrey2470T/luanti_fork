@@ -75,7 +75,7 @@ void UISprite::flush()
 {
 	if (!dirty)
 	    return;
-	rect->uploadData(MeshBufferType::VERTEX);
+    rect->uploadVertexData();
 	dirty = false;
 }
 

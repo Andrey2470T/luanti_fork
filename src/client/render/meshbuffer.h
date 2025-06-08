@@ -1,12 +1,12 @@
 #pragma once
 
-#include "BasicIncludes.h"
 #include "Render/Mesh.h"
 #include "Utils/ByteArray.h"
 #include "Utils/AABB.h"
 #include "Image/Color.h"
 #include <memory>
 #include <optional>
+#include <assert.h>
 
 enum class MeshBufferType
 {
@@ -19,61 +19,67 @@ class MeshBuffer
 {
 	MeshBufferType Type;
 
-	union {
-		struct {
-			std::unique_ptr<ByteArray> VData;
-			u32 VDataCount;
-		} VBuffer;
+    struct SubMeshBuffer
+    {
+        std::unique_ptr<ByteArray> Data;
+        u32 DataCount;
+        bool Dirty = false;
 
-		struct {
-			std::unique_ptr<ByteArray> IData;
-			u32 IDataCount;
-		} IBuffer;
+        // Range of changed elements (vertices or indices)
+        std::optional<u32> StartChange = std::nullopt;
+        std::optional<u32> EndChange = std::nullopt;
+    };
 
-		struct {
-			std::unique_ptr<ByteArray> VData;
-			u32 VDataCount;
-			std::unique_ptr<ByteArray> IData;
-			u32 IDataCount;
-		} VIBuffer;
-	};
+    SubMeshBuffer VBuffer;
+    SubMeshBuffer IBuffer;
 
-	std::unique_ptr<render::Mesh> VAO;
+    std::shared_ptr<render::Mesh> VAO;
 
 	aabbf BoundingBox;
     u32 VertexCmpCount; // summary count of the components per the used vertex type
-    bool vertexDirty = false;
-    bool indexDirty = false;
-
 public:
-	MeshBuffer(MeshBufferType type=MeshBufferType::VERTEX_INDEX,
-            const render::VertexTypeDescriptor &descr=render::DefaultVType)
-		: Type(type), VAO(std::make_unique<render::Mesh>(descr))
+    // Allows to create either VERTEX or VERTEX_INDEX buffer types
+    MeshBuffer(bool createIBO = true, const render::VertexTypeDescriptor &descr=render::DefaultVType)
+        : Type(createIBO ? MeshBufferType::VERTEX_INDEX : MeshBufferType::VERTEX),
+          VAO(std::make_unique<render::Mesh>(descr, createIBO))
 	{
 		for (auto &attr : VAO->getVertexType().Attributes)
 			VertexCmpCount += attr.ComponentCount;
 	}
+    // Creates always INDEX type not creating a new VAO
+    MeshBuffer(const std::shared_ptr<render::Mesh> &sharedMesh)
+        : Type(MeshBufferType::INDEX), VAO(sharedMesh)
+    {
+        for (auto &attr : VAO->getVertexType().Attributes)
+            VertexCmpCount += attr.ComponentCount;
+    }
 
 	MeshBufferType getType() const
 	{
         return Type;
 	}
 
-	u32 getVertexCount() const;
-	u32 getIndexCount() const;
+    u32 getVertexCount() const
+    {
+        return VBuffer.DataCount;
+    }
+    u32 getIndexCount() const
+    {
+        return IBuffer.DataCount;
+    }
 
 	render::Mesh *getVAO() const
 	{
         return VAO.get();
 	}
 
-	template<typename T>
-	T getAttrAt(u32 attrN, u32 vertexN) const
+    template<typename T>
+    T getAttrAt(u32 attrN, u32 vertexN) const
 	{
 		u64 attrNum = countElemsBefore(vertexN, attrN);
 
 		auto &vertexAttr = VAO->getVertexType().Attributes.at(attrN);
-        const ByteArray *vdata = getVertexData().value();
+        const ByteArray *vdata = VBuffer.Data.get();
 		switch (vertexAttr.ComponentCount)
 		{
 		case 1: {
@@ -133,11 +139,11 @@ public:
 			return img::getColor8(vdata, attrNum);
 		}
 		default:
-			return 0;
+            assert("MeshBuffer::getAttrAt() Couldn't extract the attribute");
 		}
-	}
+    }
 
-	u32 getIndexAt(u32 pos) const;
+    u32 getIndexAt(u32 pos) const;
 
 	const aabbf &getBoundingBox() const
 	{
@@ -151,26 +157,17 @@ public:
 
 	void recalculateBoundingBox();
 
-	template<typename T>
+    template<typename T>
     void setAttrAt(T value, u32 attrN, std::optional<u32> vertexN=std::nullopt)
 	{
-        if (!vertexN && attrN == 0) {
-            switch (Type) {
-            case MeshBufferType::VERTEX:
-                VBuffer.VDataCount++;
-                break;
-            case MeshBufferType::INDEX:
-                return;
-            case MeshBufferType::VERTEX_INDEX:
-                VIBuffer.VDataCount++;
-            };
-        }
-
         u64 attrNum = vertexN ? countElemsBefore(vertexN.value(), attrN)
 			: countElemsBefore(getVertexCount(), attrN);
 
+        if (!vertexN)
+            VBuffer.DataCount++;
+
 		auto &vertexAttr = VAO->getVertexType().Attributes.at(attrN);
-        ByteArray *vdata = getVertexData().value();
+        ByteArray *vdata = VBuffer.Data.get();
 		switch (vertexAttr.ComponentCount)
 		{
 		case 1: {
@@ -249,13 +246,20 @@ public:
 		default:
 			return;
 		}
-		
-		vertexDirty = true;
-	}
+
+        u32 v = vertexN.value();
+        VBuffer.StartChange = VBuffer.StartChange != std::nullopt ?
+            std::min<u32>(VBuffer.StartChange.value(), v) : v;
+        VBuffer.EndChange = VBuffer.EndChange != std::nullopt ?
+            std::max<u32>(VBuffer.EndChange.value(), v) : v;
+        VBuffer.Dirty = true;
+    }
 
     void setIndexAt(u32 index, std::optional<u32> pos=std::nullopt);
 
-	void uploadData(MeshBufferType type=MeshBufferType::VERTEX_INDEX);
+    void reallocateData();
+    void uploadVertexData();
+    void uploadIndexData();
 
 	MeshBuffer *copy() const;
 
@@ -264,15 +268,14 @@ public:
         return VAO.get() == other_buffer->getVAO();
     }
 private:
-	std::optional<ByteArray*> getVertexData();
-	std::optional<const ByteArray*> getVertexData() const;
-
-	std::optional<ByteArray*> getIndexData();
-	std::optional<const ByteArray*> getIndexData() const;
-
     inline u64 countElemsBefore(u32 vertexNumber, u32 attrNumber) const;
-    inline void checkIndexPos(u32 pos) const;
 
-	// This method is used internally only in copy()
-	void setData(const void* vdata, u32 vcount, const u32* idata, u32 icount);
+    inline bool hasVBO() const
+    {
+        return Type == MeshBufferType::VERTEX || Type == MeshBufferType::VERTEX_INDEX;
+    }
+    inline bool hasIBO() const
+    {
+        return Type == MeshBufferType::INDEX || Type == MeshBufferType::VERTEX_INDEX;
+    }
 };
