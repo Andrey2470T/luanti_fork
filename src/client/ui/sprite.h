@@ -9,13 +9,16 @@ class MeshBuffer;
 class ImageFiltered;
 class ResourceCache;
 
-// Rectangle mesh with some mapped texture on it
+// 2D mesh consisting from some count of rectangles
+// with some mapped texture on them
 class UISprite
 {
 protected:
 	Renderer2D *renderer;
 	std::unique_ptr<MeshBuffer> rect;
 	rectf area;
+
+    std::vector<rectf> subRects;
 
     // The texture can be simple or filtered by the MT scaling filter
 	std::unique_ptr<ImageFiltered> texture;
@@ -27,17 +30,20 @@ public:
         const std::array<img::color8, 4> &colors, bool applyFilter=false);
 
     v2u getSize() const;
-    void updateRect(const rectf &r);
-    void updateRect(const v2f &ulc, const v2f &lrc);
+
+    void addRect(const rectf &srcRect, const rectf &destRect,
+        const std::array<img::color8, 4> &colors);
+    void updateRect(u32 n, const rectf &r);
+    void updateRect(u32 n, const v2f &ulc, const v2f &lrc);
     void setClipRect(const recti &r);
     
-    void move(const v2f &shift);
-    void scale(const v2f &scale);
+    void move(u32 n, const v2f &shift);
+    void scale(u32 n, const v2f &scale);
     
-    void setColors(const std::array<img::color8, 4> &colors);
-    void setColor(const img::color8 &color)
+    void setColors(u32 n, const std::array<img::color8, 4> &colors);
+    void setColor(u32 n, const img::color8 &color)
     {
-        setColors({color, color, color, color});
+        setColors(n, {color, color, color, color});
     }
     
     void flush();
@@ -56,6 +62,7 @@ struct UISpriteFrame
     u32 rectIndex;
 };
 
+// 2D animated mesh consisting from one rectangle and frames images
 class UIAnimatedSprite : public UISprite
 {
     std::vector<std::unique_ptr<UISpriteFrame>> frames;

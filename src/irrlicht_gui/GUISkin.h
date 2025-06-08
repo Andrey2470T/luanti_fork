@@ -5,6 +5,7 @@
 #pragma once
 
 #include "GUIEnums.h"
+#include "client/ui/sprite.h"
 #include <Image/Color.h>
 #include <Utils/Rect.h>
 #include <Render/TTFont.h>
@@ -259,10 +260,10 @@ public:
     ~GUISkin();
 
     //! returns display density scaling factor
-    float getScale() const { return Scale; }
+    f32 getScale() const { return Scale; }
 
     //! sets display density scaling factor
-    void setScale(float scale) { Scale = scale; }
+    void setScale(f32 scale) { Scale = scale; }
 
     //! returns default color
     img::color8 getColor(GUIDefaultColor color) const;
@@ -318,16 +319,17 @@ public:
     \param element: Pointer to the element which wishes to draw this. This parameter
     is usually not used by ISkin, but can be used for example by more complex
     implementations to find out how to draw the part exactly. */
-    void draw3DButtonPaneStandard(UISprite *sprite,
-        const recti& rect,
-        const recti* clip=0)
+    void update3DButtonPaneStandard(UISprite *sprite,
+        const rectf& rect,
+        const recti* clip, u32 &rectN)
     {
-        drawColored3DButtonPaneStandard(sprite, rect, clip);
+        updateColored3DButtonPaneStandard(sprite, rect, clip, rectN);
     }
 
-    void drawColored3DButtonPaneStandard(UISprite *sprite,
-        const recti& rect,
-        const recti* clip=0,
+    void updateColored3DButtonPaneStandard(UISprite *sprite,
+        const rectf &rect,
+        const recti* clip,
+        u32 &rectN,
         const img::color8 *colors=nullptr);
 
     //! draws a pressed 3d button pane
@@ -339,16 +341,17 @@ public:
     \param element: Pointer to the element which wishes to draw this. This parameter
     is usually not used by ISkin, but can be used for example by more complex
     implementations to find out how to draw the part exactly. */
-    void draw3DButtonPanePressed(UISprite *sprite,
-        const recti& rect,
-        const recti* clip=0)
+    void update3DButtonPanePressed(UISprite *sprite,
+        const rectf& rect,
+        const recti* clip, u32 &rectN)
     {
-        drawColored3DButtonPanePressed(sprite, rect, clip);
+        updateColored3DButtonPanePressed(sprite, rect, clip, rectN);
     }
 
-    void drawColored3DButtonPanePressed(UISprite *sprite,
-        const recti& rect,
-        const recti* clip=0,
+    void updateColored3DButtonPanePressed(UISprite *sprite,
+        const rectf& rect,
+        const recti* clip,
+        u32 &rectN,
         const img::color8 *colors=nullptr);
 
     //! draws a sunken 3d pane
@@ -361,20 +364,21 @@ public:
     deep into the ground.
     \param rect: Defining area where to draw.
     \param clip: Clip area.	*/
-    void draw3DSunkenPane(UISprite *sprite,
+    void update3DSunkenPane(UISprite *sprite,
         img::color8 bgcolor, bool flat,
         bool fillBackGround,
-        const recti& rect,
-        const recti* clip=0)
+        const rectf& rect,
+        const recti* clip, u32 &rectN)
     {
-        drawColored3DSunkenPane(sprite, bgcolor, flat, fillBackGround, rect, clip);
+        updateColored3DSunkenPane(sprite, bgcolor, flat, fillBackGround, rect, clip, rectN);
     }
 
-    void drawColored3DSunkenPane(UISprite *sprite,
+    void updateColored3DSunkenPane(UISprite *sprite,
         img::color8 bgcolor, bool flat,
         bool fillBackGround,
-        const recti& rect,
-        const recti* clip=0,
+        const rectf& rect,
+        const recti* clip,
+        u32 &rectN,
         const img::color8 *colors=nullptr);
 
     //! draws a window background
@@ -391,21 +395,21 @@ public:
     That is the area without borders and without titlebar.
     \return Returns rect where it would be good to draw title bar text. This will
     work even when checkClientArea is set to a non-null value.*/
-    recti draw3DWindowBackground(UISprite *sprite,
+    rectf update3DWindowBackground(UISprite *sprite,
         bool drawTitleBar, img::color8 titleBarColor,
-        const recti& rect,
+        const rectf& rect,
         const recti* clip,
-        recti* checkClientArea)
+        rectf* checkClientArea)
     {
-        return drawColored3DWindowBackground(sprite, drawTitleBar, titleBarColor,
+        return updateColored3DWindowBackground(sprite, drawTitleBar, titleBarColor,
             rect, clip, checkClientArea);
     }
 
-    recti drawColored3DWindowBackground(UISprite *sprite,
+    rectf updateColored3DWindowBackground(UISprite *sprite,
         bool drawTitleBar, img::color8 titleBarColor,
-        const recti& rect,
+        const rectf& rect,
         const recti* clip,
-        recti* checkClientArea,
+        rectf* checkClientArea,
         const img::color8 *colors=nullptr);
 
     //! draws a standard 3d menu pane
@@ -417,15 +421,15 @@ public:
     implementations to find out how to draw the part exactly.
     \param rect: Defining area where to draw.
     \param clip: Clip area.	*/
-    void draw3DMenuPane(UISprite *sprite,
-        const recti& rect,
+    void update3DMenuPane(UISprite *sprite,
+        const rectf& rect,
         const recti* clip=0)
     {
-        drawColored3DMenuPane(sprite, rect, clip);
+        updateColored3DMenuPane(sprite, rect, clip);
     }
 
-    void drawColored3DMenuPane(UISprite *sprite,
-        const recti& rect,
+    void updateColored3DMenuPane(UISprite *sprite,
+        const rectf& rect,
         const recti* clip=0,
         const img::color8 *colors=nullptr);
 
@@ -436,15 +440,15 @@ public:
     implementations to find out how to draw the part exactly.
     \param rect: Defining area where to draw.
     \param clip: Clip area.	*/
-    void draw3DToolBar(UISprite *sprite,
-        const recti& rect,
+    void update3DToolBar(UISprite *sprite,
+        const rectf& rect,
         const recti* clip=0)
     {
-        drawColored3DToolBar(sprite, rect, clip);
+        updateColored3DToolBar(sprite, rect, clip);
     }
 
-    void drawColored3DToolBar(UISprite *sprite,
-        const recti& rect,
+    void updateColored3DToolBar(UISprite *sprite,
+        const rectf& rect,
         const recti* clip=0,
         const img::color8 *colors=nullptr);
 
@@ -456,14 +460,14 @@ public:
     \param active: Specifies if the tab is currently active.
     \param rect: Defining area where to draw.
     \param clip: Clip area.	*/
-    void draw3DTabButton(UISprite *sprite, bool active,
-        const recti& rect, const recti* clip=0, GUIAlignment alignment=GUIAlignment::UpperLeft)
+    void update3DTabButton(UISprite *sprite, bool active,
+        const rectf& rect, const recti* clip=0, GUIAlignment alignment=GUIAlignment::UpperLeft)
     {
-        drawColored3DTabButton(sprite, active, rect, clip, alignment);
+        updateColored3DTabButton(sprite, active, rect, clip, alignment);
     }
 
-    void drawColored3DTabButton(UISprite *sprite, bool active,
-        const recti& rect, const recti* clip=0, GUIAlignment alignment=GUIAlignment::UpperLeft,
+    void updateColored3DTabButton(UISprite *sprite, bool active,
+        const rectf& rect, const recti* clip=0, GUIAlignment alignment=GUIAlignment::UpperLeft,
         const img::color8 *colors=nullptr);
 
     //! draws a tab control body
@@ -474,14 +478,14 @@ public:
     \param background: Specifies if the background should be drawn.
     \param rect: Defining area where to draw.
     \param clip: Clip area.	*/
-    void draw3DTabBody(UISprite *sprite, bool border, bool background,
-        const recti& rect, const recti* clip=0, s32 tabHeight=-1, GUIAlignment alignment=GUIAlignment::UpperLeft)
+    void update3DTabBody(UISprite *sprite, bool border, bool background,
+        const rectf& rect, const recti* clip=0, s32 tabHeight=-1, GUIAlignment alignment=GUIAlignment::UpperLeft)
     {
-        drawColored3DTabBody(sprite, border, background, rect, clip, tabHeight, alignment);
+        updateColored3DTabBody(sprite, border, background, rect, clip, tabHeight, alignment);
     }
 
-    void drawColored3DTabBody(UISprite *sprite, bool border, bool background,
-        const recti& rect, const recti* clip=0, s32 tabHeight=-1, GUIAlignment alignment=GUIAlignment::UpperLeft,
+    void updateColored3DTabBody(UISprite *sprite, bool border, bool background,
+        const rectf& rect, const recti* clip=0, s32 tabHeight=-1, GUIAlignment alignment=GUIAlignment::UpperLeft,
         const img::color8 *colors=nullptr);
 
     //! draws an icon, usually from the skin's sprite bank
@@ -494,32 +498,19 @@ public:
     \param currenttime: The present time, used to calculate the frame number
     \param loop: Whether the animation should loop or not
     \param clip: Clip area.	*/
-    void drawIcon(UISprite *sprite, GUIDefaultIcon icon,
-        const v2i position,
+    void updateIcon(GUIDefaultIcon icon,
+        const rectf &rect,
         u32 starttime=0, u32 currenttime=0,
         bool loop=false, const recti* clip=0)
     {
-        drawColoredIcon(sprite, icon, position, starttime, currenttime, loop, clip);
+        updateColoredIcon(icon, rect, starttime, currenttime, loop, clip);
     }
 
-    void drawColoredIcon(UISprite *sprite, GUIDefaultIcon icon,
-        const v2i position,
+    void updateColoredIcon(GUIDefaultIcon icon,
+        const rectf &rect, bool gray,
         u32 starttime=0, u32 currenttime=0,
         bool loop=false, const recti* clip=0,
         const img::color8 *colors=nullptr);
-
-    //! draws a 2d rectangle.
-    /** \param element: Pointer to the element which wishes to draw this icon.
-    This parameter is usually not used by IGUISkin, but can be used for example
-    by more complex implementations to find out how to draw the part exactly.
-    \param color: Color of the rectangle to draw. The alpha component specifies how
-    transparent the rectangle will be.
-    \param pos: Position of the rectangle.
-    \param clip: Pointer to rectangle against which the rectangle will be clipped.
-    If the pointer is null, no clipping will be performed. */
-    void draw2DRectangle(UISprite *sprite, const img::color8 &color,
-        const recti& pos, const recti* clip = 0);
-
 
     //! get the type of this skin
     GUISkinType getType() const;
@@ -542,4 +533,17 @@ private:
     bool UseGradient;
 
     GUISkinType Type;
+
+    inline void updateRect(UISprite *sprite, const img::color8 &newColor, const rectf &newRect, u32 &rectN)
+    {
+        sprite->setColor(rectN, newColor);
+        sprite->updateRect(rectN, newRect);
+        rectN++;
+    }
+    inline void updateRect(UISprite *sprite, const std::array<img::color8, 4> &newColors, const rectf &newRect, u32 &rectN)
+    {
+        sprite->setColors(rectN, newColors);
+        sprite->updateRect(rectN, newRect);
+        rectN++;
+    }
 };

@@ -336,7 +336,7 @@ void ClientLauncher::config_guienv()
 
 	skin->setColor(gui::EGDC_WINDOW_SYMBOL, video::SColor(255, 255, 255, 255));
 	skin->setColor(gui::EGDC_BUTTON_TEXT, video::SColor(255, 255, 255, 255));
-	skin->setColor(gui::EGDC_3D_LIGHT, video::SColor(0, 0, 0, 0));
+	skin->setColor(gui::GUIDefaultColor::Light3D, video::SColor(0, 0, 0, 0));
 	skin->setColor(gui::GUIDefaultColor::HighLight3D, video::SColor(255, 30, 30, 30));
 	skin->setColor(gui::GUIDefaultColor::Shadow3D, video::SColor(255, 0, 0, 0));
 	skin->setColor(gui::EGDC_HIGH_LIGHT, video::SColor(255, 70, 120, 50));
@@ -349,7 +349,7 @@ void ClientLauncher::config_guienv()
 	skin->setScale(density);
 	skin->setSize(gui::EGDS_CHECK_BOX_WIDTH, (s32)(17.0f * density));
 	skin->setSize(gui::EGDS_SCROLLBAR_SIZE, (s32)(21.0f * density));
-	skin->setSize(gui::EGDS_WINDOW_BUTTON_WIDTH, (s32)(15.0f * density));
+	skin->setSize(gui::GUIDefaultSize::WindowButtonWidth, (s32)(15.0f * density));
 
 	static u32 orig_sprite_id = skin->getIcon(gui::EGDI_CHECK_BOX_CHECKED);
 	static std::unordered_map<std::string, u32> sprite_ids;

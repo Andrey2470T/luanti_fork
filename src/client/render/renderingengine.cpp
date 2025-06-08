@@ -305,7 +305,7 @@ void RenderingEngine::draw_load_screen(const std::wstring &text,
 
 	gui::IGUIStaticText *guitext =
 			gui::StaticText::add(guienv, text, textrect, false, false);
-	guitext->setTextAlignment(gui::EGUIA_CENTER, gui::EGUIA_UPPERLEFT);
+	guitext->setTextAlignment(gui::EGUIA_CENTER, gui::GUIAlignment::UpperLeft);
 
 	auto *driver = get_video_driver();
 

@@ -25,7 +25,7 @@ StaticText::StaticText(const EnrichedString &text, bool border,
 			s32 id, const recti& rectangle,
 			bool background)
 : IGUIStaticText(environment, parent, id, rectangle),
-	HAlign(EGUIA_UPPERLEFT), VAlign(EGUIA_UPPERLEFT),
+	HAlign(GUIAlignment::UpperLeft), VAlign(GUIAlignment::UpperLeft),
 	Border(border), WordWrap(false), Background(background),
 	RestrainTextInside(true), RightToLeft(false),
 	OverrideFont(0), LastBreakFont(0)
@@ -184,7 +184,7 @@ img::color8 StaticText::getBackgroundColor() const
 	IGUISkin *skin = Environment->getSkin();
 
 	return (ColoredText.hasBackground() || !skin) ?
-		ColoredText.getBackground() : skin->getColor(gui::EGDC_3D_FACE);
+		ColoredText.getBackground() : skin->getColor(gui::GUIDefaultColor::Face3D);
 }
 
 
@@ -221,7 +221,7 @@ bool StaticText::isTextRestrainedInside() const
 }
 
 
-void StaticText::setTextAlignment(EGUI_ALIGNMENT horizontal, EGUI_ALIGNMENT vertical)
+void StaticText::setTextAlignment(GUIAlignment horizontal, GUIAlignment vertical)
 {
 	HAlign = horizontal;
 	VAlign = vertical;

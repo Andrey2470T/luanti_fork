@@ -341,5 +341,5 @@ void make_button_grid_title(gui::IGUIStaticText *text, touch_gui_button_id btn, 
 	dim = core::dimension2du(dim.Width * 1.25f, dim.Height * 1.25f); // avoid clipping
 	text->setRelativePosition(core::recti(pos.X - dim.Width / 2, rect.LowerRightCorner.Y,
 			pos.X + dim.Width / 2, rect.LowerRightCorner.Y + dim.Height));
-	text->setTextAlignment(gui::EGUIA_CENTER, gui::EGUIA_UPPERLEFT);
+	text->setTextAlignment(gui::EGUIA_CENTER, gui::GUIAlignment::UpperLeft);
 }

@@ -66,7 +66,7 @@ GUISkin::GUISkin(GUISkinType type, ResourceCache *_cache, Renderer2D *_renderer)
 	{
 		//0x80a6a8af
         Colors[(u8)GUIDefaultColor::Shadow3D]           =	img::colorU32NumberToObject(0x60767982);
-		//Colors[EGDC_3D_FACE]			=	0xc0c9ccd4;		// tab background
+        //Colors[GUIDefaultColor::Face3D]			=	0xc0c9ccd4;		// tab background
         Colors[(u8)GUIDefaultColor::Face3D]             =	img::colorU32NumberToObject(0xc0cbd2d9);		// tab background
         Colors[(u8)GUIDefaultColor::Shadow3D]			=	img::colorU32NumberToObject(0x50e4e8f1);		// tab background, and left-top highlight
         Colors[(u8)GUIDefaultColor::HighLight3D]		=	img::colorU32NumberToObject(0x40c7ccdc);
@@ -285,22 +285,25 @@ void GUISkin::setDefaultText(GUIDefaultText which, const std::wstring &newText)
 //! draws a standard 3d button pane
 /**	Used for drawing for example buttons in normal state.
 It uses the colors GUIDefaultColor::DarkShadows3D, GUIDefaultColor::HighLight3D, GUIDefaultColor::Shadow3D and
-EGDC_3D_FACE for this. See GUIDefaultColor for details.
+GUIDefaultColor::Face3D for this. See GUIDefaultColor for details.
 \param rect: Defining area where to draw.
 \param clip: Clip area.
 \param element: Pointer to the element which wishes to draw this. This parameter
 is usually not used by ISkin, but can be used for example by more complex
 implementations to find out how to draw the part exactly. */
 // PATCH
-void GUISkin::drawColored3DButtonPaneStandard(UISprite *sprite,
-    const recti& r,
+void GUISkin::updateColored3DButtonPaneStandard(UISprite *sprite,
+    const rectf& r,
     const recti* clip,
+    u32 &rectN,
     const img::color8 *colors)
 {
     if (!colors)
         colors = Colors.data();
 
-    rectf rect(r.ULC.X, r.ULC.Y, r.LRC.X, r.LRC.Y);
+    sprite->setClipRect(*clip);
+
+    rectf rect(r);
 
     if ( Type == GUISkinType::BurningSkin )
 	{
@@ -309,39 +312,32 @@ void GUISkin::drawColored3DButtonPaneStandard(UISprite *sprite,
         rect.LRC.X += 1.0f;
         rect.LRC.Y += 1.0f;
         img::color8 whiteC(img::PF_RGBA8, 255, 255, 255, 255);
-        draw3DSunkenPane(sprite, colors[ (u8)GUIDefaultColor::Window ].linInterp(whiteC, 0.9f ),
-            false, true, rect, clip);
+        update3DSunkenPane(sprite, colors[ (u8)GUIDefaultColor::Window ].linInterp(whiteC, 0.9f ),
+            false, true, rect, clip, rectN);
 		return;
 	}
 
-    sprite->setClipRect(*clip);
-
-    sprite->setColor(colors[(u8)GUIDefaultColor::DarkShadows3D]);
-    sprite->updateRect(rect);
+    updateRect(sprite, colors[(u8)GUIDefaultColor::DarkShadows3D], rect, rectN);
 
     rect.LRC.X -= 1.0f;
     rect.LRC.Y -= 1.0f;
-    sprite->setColor(colors[(u8)GUIDefaultColor::HighLight3D]);
-    sprite->updateRect(rect);
+    updateRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], rect, rectN);
 
     rect.ULC.X += 1.0f;
     rect.ULC.Y += 1.0f;
-    sprite->setColor(colors[(u8)GUIDefaultColor::Shadow3D]);
-    sprite->updateRect(rect);
+    updateRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], rect, rectN);
 
     rect.LRC.X -= 1.0f;
     rect.LRC.Y -= 1.0f;
 
 	if (!UseGradient)
-	{
-		Driver->draw2DRectangle(colors[EGDC_3D_FACE], rect, clip);
-	}
+        updateRect(sprite, colors[(u8)GUIDefaultColor::Face3D], rect, rectN);
 	else
 	{
-		const img::color8 c1 = colors[EGDC_3D_FACE];
-        const img::color8 c2 = c1.getInterpolated(colors[GUIDefaultColor::DarkShadows3D], 0.4f);
-		Driver->draw2DRectangle(rect, c1, c1, c2, c2, clip);
-	}
+        const img::color8 c1 = colors[(u8)GUIDefaultColor::Face3D];
+        const img::color8 c2 = c1.linInterp(colors[(u8)GUIDefaultColor::DarkShadows3D], 0.4f);
+        updateRect(sprite, {c1, c1, c2, c2}, rect, rectN);
+    }
 }
 // END PATCH
 
@@ -349,48 +345,46 @@ void GUISkin::drawColored3DButtonPaneStandard(UISprite *sprite,
 //! draws a pressed 3d button pane
 /**	Used for drawing for example buttons in pressed state.
 It uses the colors GUIDefaultColor::DarkShadows3D, GUIDefaultColor::HighLight3D, GUIDefaultColor::Shadow3D and
-EGDC_3D_FACE for this. See GUIDefaultColor for details.
+GUIDefaultColor::Face3D for this. See GUIDefaultColor for details.
 \param rect: Defining area where to draw.
 \param clip: Clip area.
 \param element: Pointer to the element which wishes to draw this. This parameter
 is usually not used by ISkin, but can be used for example by more complex
 implementations to find out how to draw the part exactly. */
 // PATCH
-void CGUISkin::drawColored3DButtonPanePressed(std::shared_ptr<IGUIElement> element,
-					const recti& r,
-					const recti* clip,
-					const img::color8* colors)
+void GUISkin::updateColored3DButtonPanePressed(UISprite *sprite,
+    const rectf& r,
+    const recti* clip,
+    u32 &rectN,
+    const img::color8* colors)
 {
-	if (!Driver)
-		return;
-
 	if (!colors)
-		colors = Colors;
+        colors = Colors.data();
 
-	recti rect = r;
-    Driver->draw2DRectangle(colors[GUIDefaultColor::HighLight3D], rect, clip);
+    sprite->setClipRect(*clip);
+
+    rectf rect = r;
+    updateRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], rect, rectN);
 
     rect.LRC.X -= 1;
     rect.LRC.Y -= 1;
-    Driver->draw2DRectangle(colors[GUIDefaultColor::DarkShadows3D], rect, clip);
+    updateRect(sprite, colors[(u8)GUIDefaultColor::DarkShadows3D], rect, rectN);
 
     rect.ULC.X += 1;
     rect.ULC.Y += 1;
-    Driver->draw2DRectangle(colors[GUIDefaultColor::Shadow3D], rect, clip);
+    updateRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], rect, rectN);
 
     rect.ULC.X += 1;
     rect.ULC.Y += 1;
 
-	if (!UseGradient)
-	{
-		Driver->draw2DRectangle(colors[EGDC_3D_FACE], rect, clip);
-	}
-	else
-	{
-		const img::color8 c1 = colors[EGDC_3D_FACE];
-        const img::color8 c2 = c1.getInterpolated(colors[GUIDefaultColor::DarkShadows3D], 0.4f);
-		Driver->draw2DRectangle(rect, c1, c1, c2, c2, clip);
-	}
+    if (!UseGradient)
+        updateRect(sprite, colors[(u8)GUIDefaultColor::Face3D], rect, rectN);
+    else
+    {
+        const img::color8 c1 = colors[(u8)GUIDefaultColor::Face3D];
+        const img::color8 c2 = c1.linInterp(colors[(u8)GUIDefaultColor::DarkShadows3D], 0.4f);
+        updateRect(sprite, {c1, c1, c2, c2}, rect, rectN);
+    }
 }
 // END PATCH
 
@@ -406,88 +400,96 @@ deep into the ground.
 \param rect: Defining area where to draw.
 \param clip: Clip area.	*/
 // PATCH
-void CGUISkin::drawColored3DSunkenPane(std::shared_ptr<IGUIElement> element, img::color8 bgcolor,
-				bool flat, bool fillBackGround,
-				const recti& r,
-				const recti* clip,
-				const img::color8* colors)
+void GUISkin::updateColored3DSunkenPane(UISprite *sprite, img::color8 bgcolor,
+    bool flat, bool fillBackGround,
+    const rectf& r,
+    const recti* clip,
+    u32 &rectN,
+    const img::color8* colors)
 {
-	if (!Driver)
-		return;
-
 	if (!colors)
-		colors = Colors;
+        colors = Colors.data();
 
-	recti rect = r;
+    rectf rect = r;
 
-	if (fillBackGround)
-		Driver->draw2DRectangle(bgcolor, rect, clip);
+    if (fillBackGround) {
+        updateRect(sprite, bgcolor, rect, rectN);
+    }
 
 	if (flat)
 	{
 		// draw flat sunken pane
 
+        // top
         rect.LRC.Y = rect.ULC.Y + 1;
-        Driver->draw2DRectangle(colors[GUIDefaultColor::Shadow3D], rect, clip);	// top
+        updateRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], rect, rectN);
 
+        // left
         ++rect.ULC.Y;
         rect.LRC.Y = r.LRC.Y;
         rect.LRC.X = rect.ULC.X + 1;
-        Driver->draw2DRectangle(colors[GUIDefaultColor::Shadow3D], rect, clip);	// left
+        updateRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], rect, rectN);
 
+        // right
 		rect = r;
         ++rect.ULC.Y;
         rect.ULC.X = rect.LRC.X - 1;
-        Driver->draw2DRectangle(colors[GUIDefaultColor::HighLight3D], rect, clip);	// right
+        updateRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], rect, rectN);
 
+        // bottom
 		rect = r;
         ++rect.ULC.X;
         rect.ULC.Y = r.LRC.Y - 1;
         --rect.LRC.X;
-        Driver->draw2DRectangle(colors[GUIDefaultColor::HighLight3D], rect, clip);	// bottom
+        updateRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], rect, rectN);
 	}
 	else
 	{
 		// draw deep sunken pane
+
+        // top
         rect.LRC.Y = rect.ULC.Y + 1;
-        Driver->draw2DRectangle(colors[GUIDefaultColor::Shadow3D], rect, clip);	// top
+        updateRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], rect, rectN);
         ++rect.ULC.X;
         ++rect.ULC.Y;
         --rect.LRC.X;
         ++rect.LRC.Y;
-        Driver->draw2DRectangle(colors[GUIDefaultColor::DarkShadows3D], rect, clip);
+        updateRect(sprite, colors[(u8)GUIDefaultColor::DarkShadows3D], rect, rectN);
 
+        // left
         rect.ULC.X = r.ULC.X;
         rect.ULC.Y = r.ULC.Y+1;
         rect.LRC.X = rect.ULC.X + 1;
         rect.LRC.Y = r.LRC.Y;
-        Driver->draw2DRectangle(colors[GUIDefaultColor::Shadow3D], rect, clip);	// left
+        updateRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], rect, rectN);
         ++rect.ULC.X;
         ++rect.ULC.Y;
         ++rect.LRC.X;
         --rect.LRC.Y;
-        Driver->draw2DRectangle(colors[GUIDefaultColor::DarkShadows3D], rect, clip);
+        updateRect(sprite, colors[(u8)GUIDefaultColor::DarkShadows3D], rect, rectN);
 
+        // right
 		rect = r;
         rect.ULC.X = rect.LRC.X - 1;
         ++rect.ULC.Y;
-        Driver->draw2DRectangle(colors[GUIDefaultColor::HighLight3D], rect, clip);	// right
+        updateRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], rect, rectN);
         --rect.ULC.X;
         ++rect.ULC.Y;
         --rect.LRC.X;
         --rect.LRC.Y;
-		Driver->draw2DRectangle(colors[EGDC_3D_LIGHT], rect, clip);
+        updateRect(sprite, colors[(u8)GUIDefaultColor::Light3D], rect, rectN);
 
+        // bottom
 		rect = r;
         ++rect.ULC.X;
         rect.ULC.Y = r.LRC.Y - 1;
         --rect.LRC.X;
-        Driver->draw2DRectangle(colors[GUIDefaultColor::HighLight3D], rect, clip);	// bottom
+        updateRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], rect, rectN);
         ++rect.ULC.X;
         --rect.ULC.Y;
         --rect.LRC.X;
         --rect.LRC.Y;
-		Driver->draw2DRectangle(colors[EGDC_3D_LIGHT], rect, clip);
+        updateRect(sprite, colors[(u8)GUIDefaultColor::Light3D], rect, rectN);
 	}
 }
 // END PATCH
@@ -495,41 +497,31 @@ void CGUISkin::drawColored3DSunkenPane(std::shared_ptr<IGUIElement> element, img
 //! draws a window background
 // return where to draw title bar text.
 // PATCH
-recti CGUISkin::drawColored3DWindowBackground(std::shared_ptr<IGUIElement> element,
-				bool drawTitleBar, img::color8 titleBarColor,
-				const recti& r,
-				const recti* clip,
-				recti* checkClientArea,
-				const img::color8* colors)
+rectf GUISkin::updateColored3DWindowBackground(UISprite *sprite,
+    bool drawTitleBar, img::color8 titleBarColor,
+    const rectf& r,
+    const recti* clip,
+    rectf* checkClientArea,
+    const img::color8* colors)
 {
-	if (!Driver)
-	{
-		if ( checkClientArea )
-		{
-			*checkClientArea = r;
-		}
-		return r;
-	}
-
 	if (!colors)
-		colors = Colors;
+        colors = Colors.data();
 
-	recti rect = r;
+    sprite->setClipRect(*clip);
+
+    u32 rectN = 0;
+    rectf rect = r;
 
 	// top border
     rect.LRC.Y = rect.ULC.Y + 1;
 	if ( !checkClientArea )
-	{
-        Driver->draw2DRectangle(colors[GUIDefaultColor::HighLight3D], rect, clip);
-	}
+        updateRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], rect, rectN);
 
 	// left border
     rect.LRC.Y = r.LRC.Y;
     rect.LRC.X = rect.ULC.X + 1;
 	if ( !checkClientArea )
-	{
-        Driver->draw2DRectangle(colors[GUIDefaultColor::HighLight3D], rect, clip);
-	}
+        updateRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], rect, rectN);
 
 	// right border dark outer line
     rect.ULC.X = r.LRC.X - 1;
@@ -537,9 +529,7 @@ recti CGUISkin::drawColored3DWindowBackground(std::shared_ptr<IGUIElement> eleme
     rect.ULC.Y = r.ULC.Y;
     rect.LRC.Y = r.LRC.Y;
 	if ( !checkClientArea )
-	{
-        Driver->draw2DRectangle(colors[GUIDefaultColor::DarkShadows3D], rect, clip);
-	}
+        updateRect(sprite, colors[(u8)GUIDefaultColor::DarkShadows3D], rect, rectN);
 
 	// right border bright innner line
     rect.ULC.X -= 1;
@@ -547,9 +537,7 @@ recti CGUISkin::drawColored3DWindowBackground(std::shared_ptr<IGUIElement> eleme
     rect.ULC.Y += 1;
     rect.LRC.Y -= 1;
 	if ( !checkClientArea )
-	{
-        Driver->draw2DRectangle(colors[GUIDefaultColor::Shadow3D], rect, clip);
-	}
+        updateRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], rect, rectN);
 
 	// bottom border dark outer line
     rect.ULC.X = r.ULC.X;
@@ -557,9 +545,7 @@ recti CGUISkin::drawColored3DWindowBackground(std::shared_ptr<IGUIElement> eleme
     rect.LRC.Y = r.LRC.Y;
     rect.LRC.X = r.LRC.X;
 	if ( !checkClientArea )
-	{
-        Driver->draw2DRectangle(colors[GUIDefaultColor::DarkShadows3D], rect, clip);
-	}
+        updateRect(sprite, colors[(u8)GUIDefaultColor::DarkShadows3D], rect, rectN);
 
 	// bottom border bright inner line
     rect.ULC.X += 1;
@@ -567,9 +553,7 @@ recti CGUISkin::drawColored3DWindowBackground(std::shared_ptr<IGUIElement> eleme
     rect.ULC.Y -= 1;
     rect.LRC.Y -= 1;
 	if ( !checkClientArea )
-	{
-        Driver->draw2DRectangle(colors[GUIDefaultColor::Shadow3D], rect, clip);
-	}
+        updateRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], rect, rectN);
 
 	// client area for background
 	rect = r;
@@ -586,20 +570,20 @@ recti CGUISkin::drawColored3DWindowBackground(std::shared_ptr<IGUIElement> eleme
 	{
 		if (!UseGradient)
 		{
-			Driver->draw2DRectangle(colors[EGDC_3D_FACE], rect, clip);
+            updateRect(sprite, colors[(u8)GUIDefaultColor::Face3D], rect, rectN);
 		}
         else if ( Type == GUISkinType::BurningSkin )
 		{
-            const img::color8 c1 = colors[GUIDefaultColor::Window].getInterpolated ( 0xFFFFFFFF, 0.9f );
-            const img::color8 c2 = colors[GUIDefaultColor::Window].getInterpolated ( 0xFFFFFFFF, 0.8f );
+            const img::color8 c1 = colors[(u8)GUIDefaultColor::Window].linInterp ( img::color8(img::PF_RGBA8, 255, 255, 255, 255), 0.9f );
+            const img::color8 c2 = colors[(u8)GUIDefaultColor::Window].linInterp ( img::color8(img::PF_RGBA8, 255, 255, 255, 255), 0.8f );
 
-			Driver->draw2DRectangle(rect, c1, c1, c2, c2, clip);
+            updateRect(sprite, {c1, c1, c2, c2}, rect, rectN);
 		}
 		else
 		{
-            const img::color8 c2 = colors[GUIDefaultColor::Shadow3D];
-			const img::color8 c1 = colors[EGDC_3D_FACE];
-			Driver->draw2DRectangle(rect, c1, c1, c1, c2, clip);
+            const img::color8 c2 = colors[(u8)GUIDefaultColor::Shadow3D];
+            const img::color8 c1 = colors[(u8)GUIDefaultColor::Face3D];
+            updateRect(sprite, {c1, c1, c2, c2}, rect, rectN);
 		}
 	}
 
@@ -608,7 +592,7 @@ recti CGUISkin::drawColored3DWindowBackground(std::shared_ptr<IGUIElement> eleme
     rect.ULC.X += 2;
     rect.ULC.Y += 2;
     rect.LRC.X -= 2;
-    rect.LRC.Y = rect.ULC.Y + getSize(EGDS_WINDOW_BUTTON_WIDTH) + 2;
+    rect.LRC.Y = rect.ULC.Y + getSize(GUIDefaultSize::WindowButtonWidth) + 2;
 
 	if (drawTitleBar )
 	{
@@ -624,13 +608,13 @@ recti CGUISkin::drawColored3DWindowBackground(std::shared_ptr<IGUIElement> eleme
 			//else
             if ( Type == GUISkinType::BurningSkin )
 			{
-				const img::color8 c = titleBarColor.getInterpolated( img::color8(titleBarColor.getAlpha(),255,255,255), 0.8f);
-				Driver->draw2DRectangle(rect, titleBarColor, titleBarColor, c, c, clip);
+                const img::color8 c = titleBarColor.linInterp(img::color8(img::PF_RGBA8, titleBarColor.A(),255,255,255), 0.8f);
+                updateRect(sprite, {titleBarColor, titleBarColor, c, c}, rect, rectN);
 			}
 			else
 			{
-				const img::color8 c = titleBarColor.getInterpolated(img::color8(titleBarColor.getAlpha(),0,0,0), 0.2f);
-				Driver->draw2DRectangle(rect, titleBarColor, c, titleBarColor, c, clip);
+                const img::color8 c = titleBarColor.linInterp(img::color8(img::PF_RGBA8, titleBarColor.A(),0,0,0), 0.2f);
+                updateRect(sprite, {titleBarColor, c, titleBarColor, c}, rect, rectN);
 			}
 		}
 	}
@@ -643,29 +627,29 @@ recti CGUISkin::drawColored3DWindowBackground(std::shared_ptr<IGUIElement> eleme
 //! draws a standard 3d menu pane
 /**	Used for drawing for menus and context menus.
 It uses the colors GUIDefaultColor::DarkShadows3D, GUIDefaultColor::HighLight3D, GUIDefaultColor::Shadow3D and
-EGDC_3D_FACE for this. See GUIDefaultColor for details.
+GUIDefaultColor::Face3D for this. See GUIDefaultColor for details.
 \param element: Pointer to the element which wishes to draw this. This parameter
 is usually not used by ISkin, but can be used for example by more complex
 implementations to find out how to draw the part exactly.
 \param rect: Defining area where to draw.
 \param clip: Clip area.	*/
 // PATCH
-void CGUISkin::drawColored3DMenuPane(std::shared_ptr<IGUIElement> element,
-			const recti& r, const recti* clip,
-			const img::color8* colors)
+void GUISkin::updateColored3DMenuPane(UISprite *sprite,
+    const rectf& r, const recti* clip,
+    const img::color8* colors)
 {
-	if (!Driver)
-		return;
-
 	if (!colors)
-		colors = Colors;
+        colors = Colors.data();
 
-	recti rect = r;
+    sprite->setClipRect(*clip);
+
+    u32 rectN = 0;
+    rectf rect = r;
 
     if ( Type == GUISkinType::BurningSkin )
 	{
         rect.ULC.Y -= 3;
-		draw3DButtonPaneStandard(element, rect, clip);
+        update3DButtonPaneStandard(sprite, rect, clip, rectN);
 		return;
 	}
 
@@ -678,35 +662,35 @@ void CGUISkin::drawColored3DMenuPane(std::shared_ptr<IGUIElement> element,
 	// but there aren't that much menus visible anyway.
 
     rect.LRC.Y = rect.ULC.Y + 1;
-    Driver->draw2DRectangle(colors[GUIDefaultColor::HighLight3D], rect, clip);
+    updateRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], rect, rectN);
 
     rect.LRC.Y = r.LRC.Y;
     rect.LRC.X = rect.ULC.X + 1;
-    Driver->draw2DRectangle(colors[GUIDefaultColor::HighLight3D], rect, clip);
+    updateRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], rect, rectN);
 
     rect.ULC.X = r.LRC.X - 1;
     rect.LRC.X = r.LRC.X;
     rect.ULC.Y = r.ULC.Y;
     rect.LRC.Y = r.LRC.Y;
-    Driver->draw2DRectangle(colors[GUIDefaultColor::DarkShadows3D], rect, clip);
+    updateRect(sprite, colors[(u8)GUIDefaultColor::DarkShadows3D], rect, rectN);
 
     rect.ULC.X -= 1;
     rect.LRC.X -= 1;
     rect.ULC.Y += 1;
     rect.LRC.Y -= 1;
-    Driver->draw2DRectangle(colors[GUIDefaultColor::Shadow3D], rect, clip);
+    updateRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], rect, rectN);
 
     rect.ULC.X = r.ULC.X;
     rect.ULC.Y = r.LRC.Y - 1;
     rect.LRC.Y = r.LRC.Y;
     rect.LRC.X = r.LRC.X;
-    Driver->draw2DRectangle(colors[GUIDefaultColor::DarkShadows3D], rect, clip);
+    updateRect(sprite, colors[(u8)GUIDefaultColor::DarkShadows3D], rect, rectN);
 
     rect.ULC.X += 1;
     rect.LRC.X -= 1;
     rect.ULC.Y -= 1;
     rect.LRC.Y -= 1;
-    Driver->draw2DRectangle(colors[GUIDefaultColor::Shadow3D], rect, clip);
+    updateRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], rect, rectN);
 
 	rect = r;
     rect.ULC.X +=1;
@@ -715,12 +699,12 @@ void CGUISkin::drawColored3DMenuPane(std::shared_ptr<IGUIElement> element,
     rect.LRC.Y -= 2;
 
 	if (!UseGradient)
-		Driver->draw2DRectangle(colors[EGDC_3D_FACE], rect, clip);
+        updateRect(sprite, colors[(u8)GUIDefaultColor::Face3D], rect, rectN);
 	else
 	{
-		const img::color8 c1 = colors[EGDC_3D_FACE];
-        const img::color8 c2 = colors[GUIDefaultColor::Shadow3D];
-		Driver->draw2DRectangle(rect, c1, c1, c2, c2, clip);
+        const img::color8 c1 = colors[(u8)GUIDefaultColor::Face3D];
+        const img::color8 c2 = colors[(u8)GUIDefaultColor::Shadow3D];
+        updateRect(sprite, {c1, c1, c2, c2}, rect, rectN);
 	}
 }
 // END PATCH
@@ -734,46 +718,46 @@ implementations to find out how to draw the part exactly.
 \param rect: Defining area where to draw.
 \param clip: Clip area.	*/
 // PATCH
-void CGUISkin::drawColored3DToolBar(std::shared_ptr<IGUIElement> element,
-				const recti& r,
-				const recti* clip,
-				const img::color8* colors)
+void GUISkin::updateColored3DToolBar(UISprite *sprite,
+    const rectf& r,
+    const recti* clip,
+    const img::color8* colors)
 {
-	if (!Driver)
-		return;
-
 	if (!colors)
-		colors = Colors;
+        colors = Colors.data();
 
-	recti rect = r;
+    sprite->setClipRect(*clip);
+
+    u32 rectN = 0;
+    rectf rect = r;
 
     rect.ULC.X = r.ULC.X;
     rect.ULC.Y = r.LRC.Y - 1;
     rect.LRC.Y = r.LRC.Y;
     rect.LRC.X = r.LRC.X;
-    Driver->draw2DRectangle(colors[GUIDefaultColor::Shadow3D], rect, clip);
+    updateRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], rect, rectN);
 
 	rect = r;
     rect.LRC.Y -= 1;
 
 	if (!UseGradient)
 	{
-		Driver->draw2DRectangle(colors[EGDC_3D_FACE], rect, clip);
+        updateRect(sprite, colors[(u8)GUIDefaultColor::Face3D], rect, rectN);
 	}
 	else
     if ( Type == GUISkinType::BurningSkin )
 	{
-		const img::color8 c1 = 0xF0000000 | colors[EGDC_3D_FACE].color;
-        const img::color8 c2 = 0xF0000000 | colors[GUIDefaultColor::Shadow3D].color;
+        const img::color8 c1 = img::colorU32NumberToObject(0xF0000000 | img::colorObjectToU32Number(colors[(u8)GUIDefaultColor::Face3D]));
+        const img::color8 c2 = img::colorU32NumberToObject(0xF0000000 | img::colorObjectToU32Number(colors[(u8)GUIDefaultColor::Shadow3D]));
 
         rect.LRC.Y += 1;
-		Driver->draw2DRectangle(rect, c1, c2, c1, c2, clip);
+        updateRect(sprite, {c1, c2, c1, c2}, rect, rectN);
 	}
 	else
 	{
-		const img::color8 c1 = colors[EGDC_3D_FACE];
-        const img::color8 c2 = colors[GUIDefaultColor::Shadow3D];
-		Driver->draw2DRectangle(rect, c1, c1, c2, c2, clip);
+        const img::color8 c1 = colors[(u8)GUIDefaultColor::Face3D];
+        const img::color8 c2 = colors[(u8)GUIDefaultColor::Shadow3D];
+        updateRect(sprite, {c1, c1, c2, c2}, rect, rectN);
 	}
 }
 // END PATCH
@@ -787,60 +771,60 @@ implementations to find out how to draw the part exactly.
 \param rect: Defining area where to draw.
 \param clip: Clip area.	*/
 // PATCH
-void CGUISkin::drawColored3DTabButton(std::shared_ptr<IGUIElement> element, bool active,
-	const recti& frameRect, const recti* clip, EGUI_ALIGNMENT alignment,
+void GUISkin::updateColored3DTabButton(UISprite *sprite, bool active,
+    const rectf& frameRect, const recti* clip, GUIAlignment alignment,
 	const img::color8* colors)
 {
-	if (!Driver)
-		return;
-
 	if (!colors)
-		colors = Colors;
+        colors = Colors.data();
 
-	recti tr = frameRect;
+    sprite->setClipRect(*clip);
 
-	if ( alignment == EGUIA_UPPERLEFT )
+    u32 rectN = 0;
+    rectf tr = frameRect;
+
+    if ( alignment == GUIAlignment::UpperLeft )
 	{
         tr.LRC.X -= 2;
         tr.LRC.Y = tr.ULC.Y + 1;
         tr.ULC.X += 1;
-        Driver->draw2DRectangle(colors[GUIDefaultColor::HighLight3D], tr, clip);
+        updateRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], tr, rectN);
 
 		// draw left highlight
 		tr = frameRect;
         tr.LRC.X = tr.ULC.X + 1;
         tr.ULC.Y += 1;
-        Driver->draw2DRectangle(colors[GUIDefaultColor::HighLight3D], tr, clip);
+        updateRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], tr, rectN);
 
 		// draw grey background
 		tr = frameRect;
         tr.ULC.X += 1;
         tr.ULC.Y += 1;
         tr.LRC.X -= 2;
-		Driver->draw2DRectangle(colors[EGDC_3D_FACE], tr, clip);
+        updateRect(sprite, colors[(u8)GUIDefaultColor::Face3D], tr, rectN);
 
 		// draw right middle gray shadow
         tr.LRC.X += 1;
         tr.ULC.X = tr.LRC.X - 1;
-        Driver->draw2DRectangle(colors[GUIDefaultColor::Shadow3D], tr, clip);
+        updateRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], tr, rectN);
 
         tr.LRC.X += 1;
         tr.ULC.X += 1;
         tr.ULC.Y += 1;
-        Driver->draw2DRectangle(colors[GUIDefaultColor::DarkShadows3D], tr, clip);
+        updateRect(sprite, colors[(u8)GUIDefaultColor::DarkShadows3D], tr, rectN);
 	}
 	else
 	{
         tr.LRC.X -= 2;
         tr.ULC.Y = tr.LRC.Y - 1;
         tr.ULC.X += 1;
-        Driver->draw2DRectangle(colors[GUIDefaultColor::HighLight3D], tr, clip);
+        updateRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], tr, rectN);
 
 		// draw left highlight
 		tr = frameRect;
         tr.LRC.X = tr.ULC.X + 1;
         tr.LRC.Y -= 1;
-        Driver->draw2DRectangle(colors[GUIDefaultColor::HighLight3D], tr, clip);
+        updateRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], tr, rectN);
 
 		// draw grey background
 		tr = frameRect;
@@ -848,18 +832,18 @@ void CGUISkin::drawColored3DTabButton(std::shared_ptr<IGUIElement> element, bool
         tr.ULC.Y -= 1;
         tr.LRC.X -= 2;
         tr.LRC.Y -= 1;
-		Driver->draw2DRectangle(colors[EGDC_3D_FACE], tr, clip);
+        updateRect(sprite, colors[(u8)GUIDefaultColor::Face3D], tr, rectN);
 
 		// draw right middle gray shadow
         tr.LRC.X += 1;
         tr.ULC.X = tr.LRC.X - 1;
         //tr.LRC.Y -= 1;
-        Driver->draw2DRectangle(colors[GUIDefaultColor::Shadow3D], tr, clip);
+        updateRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], tr, rectN);
 
         tr.LRC.X += 1;
         tr.ULC.X += 1;
         tr.LRC.Y -= 1;
-        Driver->draw2DRectangle(colors[GUIDefaultColor::DarkShadows3D], tr, clip);
+        updateRect(sprite, colors[(u8)GUIDefaultColor::DarkShadows3D], tr, rectN);
 	}
 }
 // END PATCH
@@ -874,63 +858,63 @@ implementations to find out how to draw the part exactly.
 \param rect: Defining area where to draw.
 \param clip: Clip area.	*/
 // PATCH
-void CGUISkin::drawColored3DTabBody(std::shared_ptr<IGUIElement> element, bool border, bool background,
-	const recti& rect, const recti* clip, s32 tabHeight, EGUI_ALIGNMENT alignment,
+void GUISkin::updateColored3DTabBody(UISprite *sprite, bool border, bool background,
+    const rectf& rect, const recti* clip, s32 tabHeight, GUIAlignment alignment,
 	const img::color8* colors)
 {
-	if (!Driver)
-		return;
-
 	if (!colors)
-		colors = Colors;
+        colors = Colors.data();
 
-	recti tr = rect;
+    sprite->setClipRect(*clip);
+
+    u32 rectN = 0;
+    rectf tr = rect;
 
 	if ( tabHeight == -1 )
-		tabHeight = getSize(gui::EGDS_BUTTON_HEIGHT);
+        tabHeight = getSize(GUIDefaultSize::ButtonHeight);
 
 	// draw border.
 	if (border)
 	{
-		if ( alignment == EGUIA_UPPERLEFT )
+        if ( alignment == GUIAlignment::UpperLeft )
 		{
 			// draw left hightlight
             tr.ULC.Y += tabHeight + 2;
             tr.LRC.X = tr.ULC.X + 1;
-            Driver->draw2DRectangle(colors[GUIDefaultColor::HighLight3D], tr, clip);
+            updateRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], tr, rectN);
 
 			// draw right shadow
             tr.ULC.X = rect.LRC.X - 1;
             tr.LRC.X = tr.ULC.X + 1;
-            Driver->draw2DRectangle(colors[GUIDefaultColor::Shadow3D], tr, clip);
+            updateRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], tr, rectN);
 
 			// draw lower shadow
 			tr = rect;
             tr.ULC.Y = tr.LRC.Y - 1;
-            Driver->draw2DRectangle(colors[GUIDefaultColor::Shadow3D], tr, clip);
+            updateRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], tr, rectN);
 		}
 		else
 		{
 			// draw left hightlight
             tr.LRC.Y -= tabHeight + 2;
             tr.LRC.X = tr.ULC.X + 1;
-            Driver->draw2DRectangle(colors[GUIDefaultColor::HighLight3D], tr, clip);
+            updateRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], tr, rectN);
 
 			// draw right shadow
             tr.ULC.X = rect.LRC.X - 1;
             tr.LRC.X = tr.ULC.X + 1;
-            Driver->draw2DRectangle(colors[GUIDefaultColor::Shadow3D], tr, clip);
+            updateRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], tr, rectN);
 
 			// draw lower shadow
 			tr = rect;
             tr.LRC.Y = tr.ULC.Y + 1;
-            Driver->draw2DRectangle(colors[GUIDefaultColor::HighLight3D], tr, clip);
+            updateRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], tr, rectN);
 		}
 	}
 
 	if (background)
 	{
-		if ( alignment == EGUIA_UPPERLEFT )
+        if ( alignment == GUIAlignment::UpperLeft )
 		{
 			tr = rect;
             tr.ULC.Y += tabHeight + 2;
@@ -949,12 +933,12 @@ void CGUISkin::drawColored3DTabBody(std::shared_ptr<IGUIElement> element, bool b
 		}
 
 		if (!UseGradient)
-			Driver->draw2DRectangle(colors[EGDC_3D_FACE], tr, clip);
+            updateRect(sprite, colors[(u8)GUIDefaultColor::Face3D], tr, rectN);
 		else
 		{
-			img::color8 c1 = colors[EGDC_3D_FACE];
-            img::color8 c2 = colors[GUIDefaultColor::Shadow3D];
-			Driver->draw2DRectangle(tr, c1, c1, c2, c2, clip);
+            img::color8 c1 = colors[(u8)GUIDefaultColor::Face3D];
+            img::color8 c2 = colors[(u8)GUIDefaultColor::Shadow3D];
+            updateRect(sprite, {c1, c1, c2, c2}, tr, rectN);
 		}
 	}
 }
@@ -972,43 +956,35 @@ by more complex implementations to find out how to draw the part exactly.
 \param loop: Whether the animation should loop or not
 \param clip: Clip area.	*/
 // PATCH
-void CGUISkin::drawColoredIcon(std::shared_ptr<IGUIElement> element, GUIDefaultIcon icon,
-			const v2i position,
-			u32 starttime, u32 currenttime,
-			bool loop, const recti* clip,
-			const img::color8* colors)
+void GUISkin::updateColoredIcon(GUIDefaultIcon icon,
+    const rectf &rect, bool gray,
+    u32 starttime, u32 currenttime,
+    bool loop, const recti* clip,
+    const img::color8* colors)
 {
 	if (!SpriteBank)
 		return;
 
 	if (!colors)
-		colors = Colors;
+        colors = Colors.data();
 
-	bool gray = element && !element->isEnabled();
-	SpriteBank->draw2DSprite(Icons[icon], position, clip,
-            colors[gray? EGDC_GRAY_WINDOW_SYMBOL : GUIDefaultColor::Window_SYMBOL], starttime, currenttime, loop, true);
+    auto sprite = SpriteBank->getSprite(Icons[(u8)icon]);
+    sprite->setColor(0, colors[gray ? (u8)GUIDefaultColor::GrayWindowSymbol : (u8)GUIDefaultColor::WindowSymbol]);
+    sprite->updateRect(0, rect);
+
+    SpriteBank->drawSprite(Icons[(u8)icon], currenttime, loop);
 }
 // END PATCH
 
 
-GUISkinType CGUISkin::getType() const
+GUISkinType GUISkin::getType() const
 {
 	return Type;
 }
 
-
-//! draws a 2d rectangle.
-void CGUISkin::draw2DRectangle(std::shared_ptr<IGUIElement> element,
-		const img::color8 &color, const recti& pos,
-		const recti* clip)
-{
-	Driver->draw2DRectangle(color, pos, clip);
-}
-
-
 //! gets the colors
 // PATCH
-void CGUISkin::getColors(img::color8* colors)
+void GUISkin::getColors(img::color8* colors)
 {
 	u32 i;
     for (i=0; i<(u32)GUIDefaultColor::Count; ++i)
