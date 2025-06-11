@@ -33,6 +33,8 @@ public:
     {
         appendRectangle(buf, rectf(v2f(-1.0f, 1.0f), v2f(1.0f, -1.0f)), {});
     }
+    static void appendEllipse(MeshBuffer *buf, f32 a, f32 b, const v2u &img_size, const v2f &center,
+        const img::color8 &c, u32 uv_start_angle_offset=0);
 
     static void appendImageRectangle(MeshBuffer *buf, const v2u &imgSize,
         const rectf &srcRect, const rectf &destRect, const std::array<img::color8, 4> &colors, bool flip);

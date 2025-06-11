@@ -45,9 +45,9 @@ public:
         return Context;
     }
     void drawLine(MeshBuffer *line);
-    void drawRectangle(MeshBuffer *rect);
-    void drawImage(MeshBuffer *rect, Texture2D *tex);
-    void drawImageFiltered(MeshBuffer *rect, ImageFiltered *img);
+    void drawRectangle(MeshBuffer *rects, u32 n=0);
+    void drawImage(MeshBuffer *rects, Texture2D *tex, u32 n=0);
+    void drawImageFiltered(MeshBuffer *rects, ImageFiltered *img, u32 n=0);
     void draw9SlicedImage(Image2D9Slice *img);
 
     void setRenderState(bool alpha, bool texShader);

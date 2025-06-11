@@ -13,20 +13,20 @@ void Renderer2D::drawLine(MeshBuffer *line)
     vao->draw(render::PT_LINES, 2);
 }
 
-void Renderer2D::drawRectangle(MeshBuffer *rect)
+void Renderer2D::drawRectangle(MeshBuffer *rects, u32 n)
 {
-    auto vao = rect->getVAO();
-    vao->draw(render::PT_TRIANGLE_FAN, 4);
+    auto vao = rects->getVAO();
+    vao->draw(render::PT_TRIANGLE_FAN, 4, n);
 }
 
-void Renderer2D::drawImage(MeshBuffer *rect, Texture2D *tex)
+void Renderer2D::drawImage(MeshBuffer *rects, Texture2D *tex, u32 n)
 {
     setTexture(tex);
 
-    drawRectangle(rect);
+    drawRectangle(rects, n);
 }
 
-void Renderer2D::drawImageFiltered(MeshBuffer *rect, ImageFiltered *img)
+void Renderer2D::drawImageFiltered(MeshBuffer *rects, ImageFiltered *img, u32 n)
 {
 	if (!g_settings->getBool("gui_scaling_filter"))
 	    return;
@@ -34,7 +34,7 @@ void Renderer2D::drawImageFiltered(MeshBuffer *rect, ImageFiltered *img)
     if (!img->output_tex)
         return;
 
-    drawImage(rect, img->output_tex);
+    drawImage(rects, img->output_tex, n);
 }
 
 void Renderer2D::draw9SlicedImage(Image2D9Slice *img)
@@ -65,7 +65,6 @@ void Renderer2D::setRenderState(bool alpha, bool texShader)
 void Renderer2D::setTexture(Texture2D *tex)
 {
     Context->setActiveUnit(0, tex);
-
     texture0 = tex;
 }
 

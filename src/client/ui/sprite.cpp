@@ -1,7 +1,79 @@
 #include "sprite.h"
 #include "batcher2d.h"
 #include "settings.h"
-#include "extra_images.h"
+#include "client/render/defaultVertexTypes.h"
+
+void UIShape::updatePrimitive(MeshBuffer *buf, u32 primitiveNum, bool pos_or_colors)
+{
+    if (primitiveNum > primitives.size()-1)
+        return;
+
+    Primitive *p = primitives.at(primitiveNum).get();
+
+    u32 startV = 0;
+
+    for (u32 i = 0; i < primitiveNum; i++)
+        startV += primitives[i]->primVCounts[(u8)primitives[i]->type];
+
+    switch (p->type) {
+    case UIPrimitiveType::LINE: {
+        auto line = dynamic_cast<Line *>(p);
+        if (pos_or_colors) {
+            svtSetPos2D(buf, line->start_p, startV);
+            svtSetPos2D(buf, line->end_p, startV+1);
+        }
+        else {
+            svtSetColor(buf, line->start_c, startV);
+            svtSetColor(buf, line->end_c, startV);
+        }
+    }
+    case UIPrimitiveType::TRIANGLE: {
+        auto trig = dynamic_cast<Triangle *>(p);
+        if (pos_or_colors) {
+            svtSetPos2D(buf, trig->p1, startV);
+            svtSetPos2D(buf, trig->p2, startV+1);
+            svtSetPos2D(buf, trig->p3, startV+2);
+        }
+        else {
+            svtSetColor(buf, trig->c1, startV);
+            svtSetColor(buf, trig->c2, startV+1);
+            svtSetColor(buf, trig->c3, startV+2);
+        }
+    }
+    case UIPrimitiveType::RECTANGLE: {
+        auto rect = dynamic_cast<Rectangle *>(p);
+        if (pos_or_colors) {
+            svtSetPos2D(buf, rect->r.ULC, startV);
+            svtSetPos2D(buf, v2f(rect->r.LRC.X, rect->r.ULC.Y), startV+1);
+            svtSetPos2D(buf, rect->r.LRC, startV+2);
+            svtSetPos2D(buf, v2f(rect->r.ULC.X, rect->r.LRC.Y), startV+3);
+        }
+        else {
+            svtSetColor(buf, rect->colors[0], startV);
+            svtSetColor(buf, rect->colors[1], startV+1);
+            svtSetColor(buf, rect->colors[2], startV+2);
+            svtSetColor(buf, rect->colors[3], startV+3);
+        }
+    }
+    case UIPrimitiveType::ELLIPSE: {
+        auto ellipse = dynamic_cast<Ellipse *>(p);
+
+        if (pos_or_colors)
+            svtSetPos2D(buf, ellipse->center, startV);
+        else
+            svtSetColor(buf, ellipse->c, startV);
+
+        for (u8 i = 0; i < Primitive::primVCounts[(u8)UIPrimitiveType::ELLIPSE]-1; i++) {
+            u32 curAngle = i * PI / 4;
+            v2f relPos(ellipse->a * cos(curAngle), ellipse->b * sin(curAngle));
+            if (pos_or_colors)
+                svtSetPos2D(buf, ellipse->center + relPos, startV+i+1);
+            else
+                svtSetColor(buf, ellipse->c, startV+i+1);
+        }
+    }
+    }
+}
 
 UISprite::UISprite(render::Texture2D *_tex, Renderer2D *_renderer,
     ResourceCache *cache, const rectf &srcRect, const rectf &destRect,

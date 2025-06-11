@@ -35,6 +35,24 @@ void Batcher2D::appendRectangle(MeshBuffer *buf, const rectf &rect, const std::a
         buf->setIndexAt(indices[i]);
 }
 
+void Batcher2D::appendEllipse(MeshBuffer *buf, f32 a, f32 b, const v2u &img_size, const v2f &center,
+    const img::color8 &c, u32 uv_start_angle_offset)
+{
+    const u32 angleStep = PI / 4;
+    const u32 vertexCount = 8;
+
+    appendVertex(buf, center, c, v2f(0.5));
+    for (u8 i = 0; i < vertexCount; i++) {
+        u32 curAngle = i * angleStep;
+        v2f relPos(a * cos(curAngle), b * sin(curAngle));
+
+        v2f uvRelPos = v2f(
+            a * cos(curAngle + uv_start_angle_offset * angleStep),
+            b * sin(curAngle + uv_start_angle_offset * angleStep)) / v2f(img_size.X, img_size.Y);
+        appendVertex(buf, center + relPos, c, v2f(0.5f) + uvRelPos);
+    }
+}
+
 void Batcher2D::appendImageRectangle(MeshBuffer *buf, const v2u &imgSize,
     const rectf &srcRect, const rectf &destRect, const std::array<img::color8, 4> &colors, bool flip)
 {
