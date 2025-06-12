@@ -19,7 +19,7 @@ namespace img
 class MeshBuffer;
 class ResourceCache;
 struct Image2D9Slice;
-struct ImageFiltered;
+class UIShape;
 
 using namespace render;
 
@@ -44,11 +44,10 @@ public:
     {
         return Context;
     }
-    void drawLine(MeshBuffer *line);
-    void drawRectangle(MeshBuffer *rects, u32 n=0);
-    void drawImage(MeshBuffer *rects, Texture2D *tex, u32 n=0);
-    void drawImageFiltered(MeshBuffer *rects, ImageFiltered *img, u32 n=0);
-    void draw9SlicedImage(Image2D9Slice *img);
+    // Draws n count of adjacent primitives of the same type
+    // 'offset_n' is a primitive number with which to start drawing
+    // 'count_n' is a primitive count which needs to draw
+    void drawPrimitives(UIShape *shape, MeshBuffer *buf, u32 offset_n=0, u32 count_n=1);
 
     void setRenderState(bool alpha, bool texShader);
     void setTexture(Texture2D *tex);

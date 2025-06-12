@@ -2,13 +2,11 @@
 //#include "client/ui/fontengine.h"
 #include "Utils/Rect.h"
 #include "Render/Texture2D.h"
-#include "irrlicht_gui/GUIEnums.h"
 #include "client/media/resource.h"
-#include "settings.h"
 //#include "client/render/clouds.h"
 #include "client/ui/extra_images.h"
-#include "meshbuffer.h"
 #include "client/ui/sprite.h"
+#include "client/ui/renderer2d.h"
 
 LoadScreen::LoadScreen(ResourceCache *_cache, Renderer2D *_renderer, MeshCreator2D *_creator, IGUIEnvironment *_guienv)
     : cache(_cache), renderer(_renderer)
@@ -77,10 +75,12 @@ void LoadScreen::updateText(v2u screensize, const std::wstring &text, f32 dtime,
             v2f(img_pos.X + (percent_min * imgW) / 100, img_pos.Y),
             v2f(img_pos.X + (percent_max * imgW) / 100, img_pos.Y + imgH));
 
-        progress_bg_rect->updateRect(new_progress_bg_size);
-        progress_rect->updateRect(new_progress_size);
+        progress_bg_rect->getShape()->updateRectangle(0, new_progress_bg_size, {});
+        progress_bg_rect->flush();
+        progress_rect->getShape()->updateRectangle(0, new_progress_size, {});
+        progress_rect->flush();
 
-        progress_rect->setClipRect(
+        renderer->setClipRect(
             recti(percent_min * img_size.X / 100, 0, percent_max * img_size.X / 100, img_size.Y));
     }
 }

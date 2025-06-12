@@ -1,8 +1,9 @@
 #include "sprite.h"
 #include "batcher2d.h"
-#include "settings.h"
 #include "client/render/defaultVertexTypes.h"
-#include "extra_images.h"
+#include "renderer2d.h"
+
+std::array<u8, 4> primVCounts = {2, 3, 4, 9};
 
 void UIShape::updateLine(u32 n, const v2f &start_p, const v2f &end_p, const img::color8 &start_c, const img::color8 &end_c)
 {
@@ -123,7 +124,7 @@ void UIShape::updateBuffer(MeshBuffer *buf, u32 primitiveNum, bool pos_or_colors
     u32 startV = 0;
 
     for (u32 i = 0; i < primitiveNum; i++)
-        startV += primitives[i]->primVCounts[(u8)primitives[i]->type];
+        startV += primVCounts[(u8)primitives[i]->type];
 
     switch (p->type) {
     case UIPrimitiveType::LINE: {
@@ -173,7 +174,7 @@ void UIShape::updateBuffer(MeshBuffer *buf, u32 primitiveNum, bool pos_or_colors
         else
             svtSetColor(buf, ellipse->c, startV);
 
-        for (u8 i = 0; i < Primitive::primVCounts[(u8)UIPrimitiveType::ELLIPSE]-1; i++) {
+        for (u8 i = 0; i < primVCounts[(u8)UIPrimitiveType::ELLIPSE]-1; i++) {
             u32 curAngle = i * PI / 4;
             v2f relPos(ellipse->a * cos(curAngle), ellipse->b * sin(curAngle));
             if (pos_or_colors)
@@ -195,32 +196,52 @@ void UIShape::updateMaxArea(const v2f &ulc, const v2f &lrc)
     maxAreaInit = true;
 }
 
-UISprite::UISprite(img::Image *img, Renderer2D *_renderer,
-    ResourceCache *cache, const rectf &srcRect, const rectf &destRect,
-    const std::array<img::color8, 4> &colors, bool filter, bool addRect)
+UISprite::UISprite(render::Texture2D *tex, Renderer2D *_renderer,
+    ResourceCache *cache, const rectf &uvRect, const rectf &posRect,
+    const std::array<img::color8, 4> &colors, bool addRect)
     : renderer(_renderer), mesh(std::make_unique<MeshBuffer>(true)),
-      shape(std::make_unique<UIShape>())
+    shape(std::make_unique<UIShape>()), texture(tex)
 {
     if (addRect) {
-        shape->addRectangle(destRect, colors);
-        Batcher2D::appendImageRectangle(mesh.get(), img->getSize(), srcRect, destRect, colors, false);
-    }
-
-    texture = std::make_unique<render::Texture2D>("SpriteTexture", std::unique_ptr<img::Image>(img));
-    applyFilter = filter && g_settings->getBool("gui_scaling_filter");
-
-    if (applyFilter) {
-        v2f srcSize = srcRect.getSize();
-        v2f destSize = destRect.getSize();
-        texture->filter(_tex->getName(),
-            v2i(srcSize.X, srcSize.Y), v2i(destSize.X, destSize.Y));
+        shape->addRectangle(posRect, colors);
+        Batcher2D::appendImageRectangle(mesh.get(), tex->getSize(), uvRect, posRect, colors, false);
     }
 }
 
-UIAnimatedSprite::UIAnimatedSprite(v2u texSize, u32 _frameLength, Renderer2D *_renderer,
-    ResourceCache *cache, const std::array<img::color8, 4> &colors, bool applyFilter)
-    : UISprite(new render::Texture2D("AnimatedSprite", texSize.X, texSize.Y, img::PF_RGBA8), _renderer,
-        cache, rectf(v2f(texSize.X, texSize.Y)), rectf(v2f(texSize.X, texSize.Y)), colors, applyFilter), frameLength(_frameLength)
+void UISprite::setClipRect(const recti &r)
+{
+    renderer->setClipRect(r);
+}
+
+void UISprite::draw()
+{
+    if (shape->getPrimitiveCount() == 0)
+        return;
+
+    renderer->setTexture(texture);
+
+    auto prevType = shape->getPrimitiveType(0);
+    u32 pOffset = 0;
+    u32 pCount = 1;
+    for (u32 i = 0; i < shape->getPrimitiveCount(); i++) {
+        auto curType = shape->getPrimitiveType(i);
+
+        if (curType == prevType)
+            ++pCount;
+        else {
+            renderer->drawPrimitives(shape.get(), mesh.get(), pOffset, pCount);
+
+            pCount = 0;
+            pOffset = i;
+            prevType = curType;
+        }
+    }
+}
+
+UIAnimatedSprite::UIAnimatedSprite(render::Texture2D *texture, u32 _frameLength, Renderer2D *_renderer,
+    ResourceCache *cache, const std::array<img::color8, 4> &colors)
+    : UISprite(texture, _renderer, cache, rectf(v2f(texture->getSize().X, texture->getSize().Y)),
+        rectf(v2f(texture->getSize().X, texture->getSize().Y)), colors), frameLength(_frameLength)
 {}
 
 u32 UIAnimatedSprite::addImage(img::Image *img)
@@ -228,11 +249,6 @@ u32 UIAnimatedSprite::addImage(img::Image *img)
     auto imgIt = std::find(framesImages.begin(), framesImages.end(), img);
 
     if (imgIt == framesImages.end()) {
-        if (applyFilter) {
-            auto tex = texture->output_tex;
-            auto size = tex->getSize();
-            texture->filter(tex->getName(), v2i(size.X, size.Y), v2i(size.X, size.Y));
-        }
         framesImages.push_back(img);
         return framesImages.size()-1;
     }
@@ -253,34 +269,11 @@ void UIAnimatedSprite::drawFrame(u32 time, bool loop)
         newFrameNum = (n >= frames.size()) ? frames.size() - 1 : n;
 
     auto frameImg = framesImages.at(frames.at(newFrameNum));
-    auto tex = texture->output_tex;
-    auto size = tex->getSize();
 
     if (newFrameNum != curFrameNum) {
-        tex->uploadData(frameImg);
-        texture->filter(tex->getName(), v2i(size.X, size.Y), v2i(size.X, size.Y));
-
-        flush();
+        texture->uploadData(frameImg);
         curFrameNum = newFrameNum;
     }
 
-    renderer->drawImageFiltered(rect.get(), texture.get());
-}
-
-std::vector<UIAnimatedSprite *> UISpriteBank::getSprites() const
-{
-    std::vector<UIAnimatedSprite *> spritesRes(sprites.size());
-
-    for (u32 i = 0; i < sprites.size(); i++)
-        spritesRes.at(i) = sprites.at(i).get();
-
-    return spritesRes;
-}
-
-void UISpriteBank::drawSprite(u32 index, u32 curTime, bool loop)
-{
-    if (index > sprites.size()-1)
-        return;
-
-    sprites.at(index)->drawFrame(curTime, loop);
+    draw();
 }

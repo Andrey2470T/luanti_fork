@@ -4,12 +4,10 @@
 #include "Utils/Line2D.h"
 #include "Utils/Rect.h"
 #include "Render/Texture2D.h"
-#include "renderer2d.h"
 
-typedef std::array<img::color8, 4> RectColors;
-class MeshCreator2D;
 class ResourceCache;
 struct Image2D9Slice;
+class Renderer2D;
 
 class Batcher2D
 {
@@ -43,10 +41,4 @@ public:
         appendImageRectangle(buf, v2u(1), rectf(v2f(1.0f)),
             rectf(v2f(-1.0f, 1.0f), v2f(1.0f, -1.0f)), {}, flip);
     }
-
-    Image2D9Slice *createImage2D9Slice(
-        ResourceCache *res, Renderer2D *rnd,
-        const rectf &src_rect, const rectf &dest_rect,
-        const rectf &middle_rect, render::Texture2D *base_tex,
-        const RectColors &colors);
 };

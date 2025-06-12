@@ -3,7 +3,6 @@
 #include "util/string.h"
 #include "util/base64.h"
 #include "log.h"
-#include "Image/ImageFilters.h"
 #include "Image/ImageLoader.h"
 #include "Image/Converting.h"
 
@@ -618,9 +617,6 @@ bool TexModParser::parseColorize(TextureGenerator *texgen, img::Image *dest, con
 */
 bool TexModParser::parseApplyFiltersForMesh(TextureGenerator *texgen, img::Image *dest, const std::string &mod)
 {
-    if (texgen->meshFilterNeeded)
-        img::imageCleanTransparent(dest, 0, texgen->imgMdf);
-
     //const bool filter = m_setting_trilinear_filter || m_setting_bilinear_filter;
     const s32 scaleto = texgen->meshFilterNeeded ? texgen->minTextureSize : 1;
     if (scaleto > 1) {

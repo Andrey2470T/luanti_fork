@@ -1,6 +1,5 @@
 #include "resource_loader.h"
 #include "Image/ImageLoader.h"
-#include "Image/ImageFilters.h"
 #include "Render/Texture2D.h"
 #include "Render/Shader.h"
 #include "settings.h"
@@ -10,6 +9,8 @@
 ResourceLoader::ResourceLoader(img::ImageModifier *_mdf)
 	: mdf(_mdf)
 {
+    enableGUIFiltering = g_settings->getBool("gui_scaling_filter");
+
 	enable_waving_water = g_settings->getBool("enable_waving_water");
 	water_wave_height = g_settings->getFloat("water_wave_height");
 	water_wave_length = g_settings->getFloat("water_wave_length");
@@ -43,7 +44,12 @@ img::Image *ResourceLoader::loadImage(const std::string &path)
 		return nullptr;
 	}
 
-	return img::Align2Npot2(img, mdf);
+    if (enableGUIFiltering) {
+        auto newImg = mdf->copyWith2NPot2Scaling(img);
+        delete img;
+        img = newImg;
+    }
+    return img;
 }
 
 render::Texture2D *ResourceLoader::loadTexture(const std::string &path)

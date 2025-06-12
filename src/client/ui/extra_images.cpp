@@ -1,45 +1,16 @@
 #include "extra_images.h"
 #include "Render/Texture2D.h"
-#include "Image/ImageFilters.h"
-#include "settings.h"
-#include "client/media/resource.h"
 #include "batcher2d.h"
 #include "sprite.h"
 
 img::ImageModifier *g_imgmodifier = new img::ImageModifier();
 
-ImageFiltered::ImageFiltered(ResourceCache *resCache, render::Texture2D *tex)
-    : cache(resCache), output_tex(tex), input_tex(tex)
-{}
-
-ImageFiltered::~ImageFiltered()
-{
-    if (filtered)
-        cache->cacheResource<render::Texture2D>(ResourceType::TEXTURE, output_tex);
-}
-
-void ImageFiltered::filter(const std::string &name, const v2i &srcSize, const v2i &destSize)
-{
-	if (!g_settings->getBool("gui_scaling_filter"))
-	    return;
-    if (filtered)
-        cache->clearResource<render::Texture2D>(ResourceType::TEXTURE, output_tex);
-    img::Image *img = input_tex->downloadData().at(0);
-    img::Image *filteredImg = img::applyCleanScalePowerOf2(img, srcSize, destSize, g_imgmodifier);
-    output_tex = new render::Texture2D(
-        name, std::unique_ptr<img::Image>(filteredImg), input_tex->getParameters());
-
-    filtered = true;
-    cache->cacheResource<render::Texture2D>(ResourceType::TEXTURE, output_tex);
-}
-
-Image2D9Slice::Image2D9Slice(MeshCreator2D *creator2d,
-                             ResourceCache *resCache, Renderer2D *renderer,
+Image2D9Slice::Image2D9Slice(ResourceCache *resCache, Renderer2D *renderer,
                              const rectf &src_rect, const rectf &dest_rect,
                              const rectf &middle_rect, render::Texture2D *base_tex,
                              const std::array<img::color8, 4> &colors)
-    : creator2D(creator2d), cache(resCache), renderer2d(renderer), srcRect(src_rect),
-    destRect(dest_rect), middleRect(middle_rect), baseTex(base_tex), rectColors(colors)
+    : UISprite(base_tex, renderer, resCache, src_rect, dest_rect, colors, false), srcRect(src_rect),
+        destRect(dest_rect), middleRect(middle_rect), rectColors(colors)
 {
     if (middleRect.LRC.X < 0)
         middleRect.LRC.X += srcRect.getWidth();
@@ -90,14 +61,15 @@ void Image2D9Slice::createSlice(u8 x, u8 y)
         break;
     };
 
-    slices[y*3+x] = std::make_unique<UISprite>(
-        baseTex, renderer2d, cache, srcRect, destRect, std::array<img::color8, 4>(), g_settings->getBool("gui_scaling_filter"));
+    shape->addRectangle(destRect, rectColors);
+    Batcher2D::appendImageRectangle(mesh.get(), texture->getSize(), srcRect, destRect, rectColors, false);
 }
 
-void Image2D9Slice::drawSlice(u8 i) const
+void Image2D9Slice::createSlices()
 {
-    if (!slices[i])
-        return;
+    for (u8 x = 0; x < 3; x++)
+        for (u8 y = 0; y < 3; y++)
+            createSlice(x, y);
 
-    slices[i]->draw();
+    flush();
 }

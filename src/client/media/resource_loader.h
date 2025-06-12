@@ -20,6 +20,7 @@ class MeshBuffer;
 class ResourceLoader
 {
 	img::ImageModifier *mdf;
+    bool enableGUIFiltering = false;
 
 	bool enable_waving_water;
 	f32 water_wave_height;

@@ -12,11 +12,10 @@
 
 
 class IGUIFont;
-class UISpriteBank;
+class UIAnimatedSprite;
 class IGUIElement;
 class ResourceCache;
 class Renderer2D;
-class UISprite;
 
 //! Enumeration of available default skins.
 /** To set one of the skins, use the following code, for example to set
@@ -283,14 +282,14 @@ public:
     //! sets a default font
     void setFont(render::TTFont *font, GUIDefaultFont which=GUIDefaultFont::Default);
 
-    //! sets the sprite bank used for drawing icons
-    void setSpriteBank(UISpriteBank *bank);
+    //! sets the sprite used for drawing icons
+    void setSprite(UIAnimatedSprite *bank);
 
-    //! gets the sprite bank used for drawing icons
-    UISpriteBank *getSpriteBank() const;
+    //! gets the sprite used for drawing icons
+    UIAnimatedSprite *getSprite() const;
 
     //! Returns a default icon
-    /** Returns the sprite index within the sprite bank */
+    /** Returns the sprite index within the sprite */
     u32 getIcon(GUIDefaultIcon icon) const;
 
     //! Sets a default icon
@@ -498,19 +497,18 @@ public:
     \param currenttime: The present time, used to calculate the frame number
     \param loop: Whether the animation should loop or not
     \param clip: Clip area.	*/
-    void updateIcon(GUIDefaultIcon icon,
+    void updateIcon(
         const rectf &rect,
         u32 starttime=0, u32 currenttime=0,
         bool loop=false, const recti* clip=0)
     {
-        updateColoredIcon(icon, rect, starttime, currenttime, loop, clip);
+        updateColoredIcon(rect, starttime, currenttime, loop, clip);
     }
 
-    void updateColoredIcon(GUIDefaultIcon icon,
-        const rectf &rect, bool gray,
-        u32 starttime=0, u32 currenttime=0,
-        bool loop=false, const recti* clip=0,
-        const img::color8 *colors=nullptr);
+    void updateColoredIcon(const rectf &rect, bool gray,
+                           u32 starttime=0, u32 currenttime=0,
+                           bool loop=false, const recti* clip=0,
+                           const img::color8 *colors=nullptr);
 
     //! get the type of this skin
     GUISkinType getType() const;
@@ -527,23 +525,24 @@ private:
     std::array<s32, (u8)GUIDefaultSize::Count>              Sizes;
     std::array<u32, (u8)GUIDefaultIcon::Count>              Icons;
     std::array<render::TTFont *, (u8)GUIDefaultFont::Count> Fonts;
-    std::unique_ptr<UISpriteBank>                           SpriteBank;
+    std::unique_ptr<UIAnimatedSprite>                       Sprite;
     std::array<std::wstring, (u8)GUIDefaultText::Count>     Texts;
 
     bool UseGradient;
 
     GUISkinType Type;
 
-    inline void updateRect(UISprite *sprite, const img::color8 &newColor, const rectf &newRect, u32 &rectN)
-    {
-        sprite->setColor(rectN, newColor);
-        sprite->updateRect(rectN, newRect);
-        rectN++;
-    }
     inline void updateRect(UISprite *sprite, const std::array<img::color8, 4> &newColors, const rectf &newRect, u32 &rectN)
     {
-        sprite->setColors(rectN, newColors);
-        sprite->updateRect(rectN, newRect);
+        auto shape = sprite->getShape();
+        sprite->getShape()->updateRectangle(rectN, newRect, newColors);
+        auto buf = sprite->getBuffer();
+        shape->updateBuffer(buf, rectN, true);
+        shape->updateBuffer(buf, rectN, false);
         rectN++;
+    }
+    inline void updateRect(UISprite *sprite, const img::color8 &newColor, const rectf &newRect, u32 &rectN)
+    {
+        updateRect(sprite, {newColor, newColor, newColor, newColor}, newRect, rectN);
     }
 };

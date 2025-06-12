@@ -10,7 +10,6 @@
 #include <Image/Converting.h>
 #include <Render/TTFont.h>
 #include "client/ui/sprite.h"
-#include "IGUIElement.h"
 #include "client/media/resource.h"
 #include "client/ui/renderer2d.h"
 #include <Render/DrawContext.h>
@@ -229,18 +228,18 @@ void GUISkin::setFont(render::TTFont *font, GUIDefaultFont which)
 }
 
 
-//! gets the sprite bank stored
-UISpriteBank *GUISkin::getSpriteBank() const
+//! gets the sprite stored
+UIAnimatedSprite *GUISkin::getSprite() const
 {
-    return SpriteBank.get();
+    return Sprite.get();
 }
 
 
-//! set a new sprite bank or remove one by passing 0
-void GUISkin::setSpriteBank(UISpriteBank *bank)
+//! set a new sprite or remove one by passing 0
+void GUISkin::setSprite(UIAnimatedSprite *bank)
 {
     if (bank)
-        SpriteBank.reset(bank);
+        Sprite.reset(bank);
 }
 
 
@@ -956,23 +955,21 @@ by more complex implementations to find out how to draw the part exactly.
 \param loop: Whether the animation should loop or not
 \param clip: Clip area.	*/
 // PATCH
-void GUISkin::updateColoredIcon(GUIDefaultIcon icon,
+void GUISkin::updateColoredIcon(
     const rectf &rect, bool gray,
     u32 starttime, u32 currenttime,
     bool loop, const recti* clip,
     const img::color8* colors)
 {
-	if (!SpriteBank)
+    if (!Sprite)
 		return;
 
 	if (!colors)
         colors = Colors.data();
 
-    auto sprite = SpriteBank->getSprite(Icons[(u8)icon]);
-    sprite->setColor(0, colors[gray ? (u8)GUIDefaultColor::GrayWindowSymbol : (u8)GUIDefaultColor::WindowSymbol]);
-    sprite->updateRect(0, rect);
-
-    SpriteBank->drawSprite(Icons[(u8)icon], currenttime, loop);
+    u32 rectN = 0;
+    updateRect(Sprite.get(), colors[gray ? (u8)GUIDefaultColor::GrayWindowSymbol : (u8)GUIDefaultColor::WindowSymbol], rect, rectN);
+    Sprite->drawFrame(currenttime, loop);
 }
 // END PATCH
 

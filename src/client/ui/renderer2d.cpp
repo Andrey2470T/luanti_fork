@@ -5,42 +5,33 @@
 #include "Utils/Matrix4.h"
 #include "client/render/meshbuffer.h"
 #include "extra_images.h"
-#include "settings.h"
+#include "sprite.h"
 
-void Renderer2D::drawLine(MeshBuffer *line)
+void Renderer2D::drawPrimitives(UIShape *shape, MeshBuffer *buf, u32 offset_n, u32 count_n)
 {
-    auto vao = line->getVAO();
-    vao->draw(render::PT_LINES, 2);
-}
+    auto vao = buf->getVAO();
 
-void Renderer2D::drawRectangle(MeshBuffer *rects, u32 n)
-{
-    auto vao = rects->getVAO();
-    vao->draw(render::PT_TRIANGLE_FAN, 4, n);
-}
+    u32 startVCount = 0;
 
-void Renderer2D::drawImage(MeshBuffer *rects, Texture2D *tex, u32 n)
-{
-    setTexture(tex);
+    for (u32 i = 0; i < offset_n; i++)
+        startVCount += primVCounts[(u8)shape->getPrimitiveType(i)];
 
-    drawRectangle(rects, n);
-}
-
-void Renderer2D::drawImageFiltered(MeshBuffer *rects, ImageFiltered *img, u32 n)
-{
-	if (!g_settings->getBool("gui_scaling_filter"))
-	    return;
-
-    if (!img->output_tex)
-        return;
-
-    drawImage(rects, img->output_tex, n);
-}
-
-void Renderer2D::draw9SlicedImage(Image2D9Slice *img)
-{
-    for (u8 i = 0; i < 9; i++)
-        img->drawSlice(i);
+    auto pType = shape->getPrimitiveType(offset_n);
+    u8 vcount = primVCounts[(u8)pType] * count_n;
+    switch(pType) {
+    case UIPrimitiveType::LINE:
+        vao->draw(render::PT_LINES, vcount, startVCount);
+        break;
+    case UIPrimitiveType::TRIANGLE:
+        vao->draw(render::PT_TRIANGLES, vcount, startVCount);
+        break;
+    case UIPrimitiveType::RECTANGLE:
+        vao->draw(render::PT_TRIANGLE_FAN, vcount, startVCount);
+        break;
+    case UIPrimitiveType::ELLIPSE:
+        vao->draw(render::PT_TRIANGLE_FAN, vcount, startVCount);
+        break;
+    }
 }
 
 void Renderer2D::setRenderState(bool alpha, bool texShader)

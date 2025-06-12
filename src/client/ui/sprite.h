@@ -3,11 +3,10 @@
 #include <memory>
 #include <Utils/Rect.h>
 #include <Render/Texture2D.h>
-#include "renderer2d.h"
 #include "client/render/meshbuffer.h"
 
+class Renderer2D;
 class MeshBuffer;
-class ImageFiltered;
 class ResourceCache;
 
 enum class UIPrimitiveType : u8
@@ -18,12 +17,12 @@ enum class UIPrimitiveType : u8
 	ELLIPSE
 };
 
+extern std::array<u8, 4> primVCounts;
+
 class UIShape
 {
 	struct Primitive {
 		UIPrimitiveType type;
-
-        constexpr static std::array<u8, 4> primVCounts = {2, 3, 4, 9};
 
         Primitive(UIPrimitiveType _type)
             : type(_type)
@@ -69,7 +68,16 @@ class UIShape
     bool maxAreaInit = false;
 public:
 	UIShape() = default;
-	
+
+    UIPrimitiveType getPrimitiveType(u32 n) const
+    {
+        auto p = primitives.at(n).get();
+        return p->type;
+    }
+    u32 getPrimitiveCount() const
+    {
+        return primitives.size();
+    }
 	void addLine(const v2f &start_p, const v2f &end_p, const img::color8 &start_c, const img::color8 &end_c) {
         primitives.emplace_back((Primitive *)(new Line(start_p, end_p, start_c, end_c)));
         updateMaxArea(start_p, end_p);
@@ -113,13 +121,13 @@ protected:
     std::unique_ptr<UIShape> shape;
 
     // The texture can be simple or filtered by the MT scaling filter
-    std::unique_ptr<render::Texture2D> texture;
+    render::Texture2D *texture;
 
     bool applyFilter = false;
 public:
-    UISprite(img::Image *img, Renderer2D *_renderer,
+    UISprite(render::Texture2D *tex, Renderer2D *_renderer,
         ResourceCache *cache, const rectf &srcRect, const rectf &destRect,
-        const std::array<img::color8, 4> &colors, bool filter=false, bool addRect=true);
+        const std::array<img::color8, 4> &colors, bool addRect=true);
 
     v2u getSize() const
     {
@@ -131,20 +139,18 @@ public:
     {
         return shape.get();
     }
-
-    void setClipRect(const recti &r)
+    MeshBuffer *getBuffer() const
     {
-        renderer->setClipRect(r);
+        return mesh.get();
     }
+
+    void setClipRect(const recti &r);
     
     void flush()
     {
         mesh->uploadVertexData();
     }
-    virtual void draw()
-    {
-        renderer->drawImageFiltered(mesh.get(), texture.get());
-    }
+    virtual void draw();
 };
 
 
@@ -157,8 +163,8 @@ class UIAnimatedSprite : public UISprite
     u32 curFrameNum = 0;
     u32 frameLength = 0;
 public:
-    UIAnimatedSprite(v2u texSize, u32 _frameLength, Renderer2D *_renderer,
-        ResourceCache *cache, const std::array<img::color8, 4> &colors, bool applyFilter=false);
+    UIAnimatedSprite(render::Texture2D *tex, u32 _frameLength, Renderer2D *_renderer,
+        ResourceCache *cache, const std::array<img::color8, 4> &colors);
 
     u32 addImage(img::Image *img);
     void addFrame(u32 i)
@@ -171,63 +177,4 @@ public:
         drawFrame(0);
     }
     void drawFrame(u32 time, bool loop=false);
-};
-
-class UISpriteBank
-{
-    ResourceCache *cache;
-    Renderer2D *renderer;
-    std::vector<std::unique_ptr<UIAnimatedSprite>> sprites;
-public:
-    UISpriteBank(ResourceCache *_cache, Renderer2D *_renderer)
-        : cache(_cache), renderer(_renderer)
-    {}
-    UISpriteBank &operator=(const UISpriteBank &bank)
-    {
-        clear();
-        
-        sprites.resize(bank.getSpritesCount());
-        for (u32 i = 0; i < bank.getSpritesCount(); i++)
-            sprites.at(i).reset(bank.getSprite(i));
-
-        return *this;
-    }
-
-    std::vector<UIAnimatedSprite *> getSprites() const;
-
-    u32 getSpritesCount() const
-    {
-        return sprites.size();
-    }
-
-    UIAnimatedSprite *getSprite(u32 index) const
-    {
-        if (index > sprites.size()-1)
-            return nullptr;
-
-        return sprites.at(index).get();
-    }
-
-    void addSprite(const rectf &r, img::Image *img, u32 frameLength,
-        const std::array<img::color8, 4> &colors=std::array<img::color8, 4>(), bool applyFilter=false)
-    {
-        sprites.emplace_back(img->getSize(), frameLength, renderer, cache, colors, applyFilter);
-        sprites.back().get()->addFrame(img, r);
-    }
-    void addImageAsSprite(img::Image *img, u32 frameLength)
-    {
-        v2u size = img->getSize();
-        addSprite(rectf(v2f(size.X, size.Y)), img, frameLength);
-    }
-    void clear()
-    {
-        sprites.clear();
-    }
-
-    void drawSprite(u32 index, u32 curTime, bool loop=false);
-    void drawSprites(u32 curTime, bool loop=false)
-    {
-    	for (u32 i = 0; i < sprites.size(); i++)
-            drawSprite(i, curTime, loop);
-    }
 };

@@ -69,18 +69,3 @@ void Batcher2D::appendImageRectangle(MeshBuffer *buf, const v2u &imgSize,
 
     appendRectangle(buf, destRect, colors, tcoords);
 }
-
-Image2D9Slice *Batcher2D::createImage2D9Slice(
-    ResourceCache *res, Renderer2D *rnd,
-    const rectf &src_rect, const rectf &dest_rect,
-    const rectf &middle_rect, render::Texture2D *base_tex,
-    const RectColors &colors)
-{
-    Image2D9Slice *slicedImg = new Image2D9Slice(this, res, rnd, src_rect, dest_rect, middle_rect, base_tex, colors);
-
-    for (u8 x = 0; x < 3; x++)
-        for (u8 y = 0; y < 3; y++)
-            slicedImg->createSlice(x, y);
-
-    return slicedImg;
-}
