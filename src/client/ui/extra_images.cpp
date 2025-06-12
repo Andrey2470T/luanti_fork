@@ -9,11 +9,8 @@
 img::ImageModifier *g_imgmodifier = new img::ImageModifier();
 
 ImageFiltered::ImageFiltered(ResourceCache *resCache, render::Texture2D *tex)
-    : cache(resCache), input_tex(tex)
-{
-	if (!g_settings->getBool("gui_scaling_filter"))
-	    output_tex = tex;
-}
+    : cache(resCache), output_tex(tex), input_tex(tex)
+{}
 
 ImageFiltered::~ImageFiltered()
 {
@@ -25,7 +22,7 @@ void ImageFiltered::filter(const std::string &name, const v2i &srcSize, const v2
 {
 	if (!g_settings->getBool("gui_scaling_filter"))
 	    return;
-    if (output_tex)
+    if (filtered)
         cache->clearResource<render::Texture2D>(ResourceType::TEXTURE, output_tex);
     img::Image *img = input_tex->downloadData().at(0);
     img::Image *filteredImg = img::applyCleanScalePowerOf2(img, srcSize, destSize, g_imgmodifier);

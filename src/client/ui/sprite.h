@@ -3,9 +3,9 @@
 #include <memory>
 #include <Utils/Rect.h>
 #include <Render/Texture2D.h>
-//#include <Utils/MathFuncs.h>
+#include "renderer2d.h"
+#include "client/render/meshbuffer.h"
 
-class Renderer2D;
 class MeshBuffer;
 class ImageFiltered;
 class ResourceCache;
@@ -20,7 +20,6 @@ enum class UIPrimitiveType : u8
 
 class UIShape
 {
-public:
 	struct Primitive {
 		UIPrimitiveType type;
 
@@ -65,6 +64,10 @@ public:
         {}
 	};
 
+    std::vector<std::unique_ptr<Primitive>> primitives;
+    rectf maxArea;
+    bool maxAreaInit = false;
+public:
 	UIShape() = default;
 	
 	void addLine(const v2f &start_p, const v2f &end_p, const img::color8 &start_c, const img::color8 &end_c) {
@@ -84,40 +87,20 @@ public:
         updateMaxArea(center - v2f(a/2, b/2), center+v2f(a/2, b/2));
     }
 
-    void updateLine(u32 n, const v2f &start_p, const v2f &end_p, const img::color8 &start_c, const img::color8 &end_c)
-    {
-        auto line = dynamic_cast<Line *>(getPrimitive(n));
-        line->start_p = start_p;
-        line->end_p = end_p;
-        line->start_c = start_c;
-        line->end_c = end_c;
-        updateMaxArea(start_p, end_p);
-    }
-    
-    Primitive *getPrimitive(u32 n) const
-    {
-        return primitives.at(n).get();
-    }
+    void updateLine(u32 n, const v2f &start_p, const v2f &end_p, const img::color8 &start_c, const img::color8 &end_c);
+    void updateTriangle(u32 n, const v2f &p1, const v2f &p2, const v2f &p3, const img::color8 &c1, const img::color8 &c2, const img::color8 &c3);
+    void updateRectangle(u32 n, const rectf &r, const std::array<img::color8, 4> &colors);
+    void updateEllipse(u32 n, f32 a, f32 b, const v2f &center, const img::color8 &c);
+
+    void movePrimitive(u32 n, const v2f &shift);
+    void scalePrimitive(u32 n, const v2f &scale);
+
     rectf getMaxArea() const
     {
         return maxArea;
     }
     void updateBuffer(MeshBuffer *buf, u32 primitiveNum, bool pos_or_colors=true);
-
-    void updateMaxArea(const v2f &ulc, const v2f &lrc)
-    {
-        maxArea.ULC.X = maxAreaInit ? std::min<f32>(maxArea.ULC.X, ulc.X) : ulc.X;
-        maxArea.ULC.Y = maxAreaInit ? std::min<f32>(maxArea.ULC.Y, ulc.Y) : ulc.Y;
-        maxArea.LRC.X = maxAreaInit ? std::max<f32>(maxArea.LRC.X, lrc.X) : lrc.X;
-        maxArea.LRC.Y = maxAreaInit ? std::max<f32>(maxArea.LRC.Y, lrc.Y) : lrc.Y;
-
-        maxAreaInit = true;
-    }
-
-private:
-    std::vector<std::unique_ptr<Primitive>> primitives;
-    rectf maxArea;
-    bool maxAreaInit = false;
+    void updateMaxArea(const v2f &ulc, const v2f &lrc);
 };
 
 // 2D mesh consisting from some count of rectangles
@@ -126,17 +109,17 @@ class UISprite
 {
 protected:
 	Renderer2D *renderer;
-	std::unique_ptr<MeshBuffer> rect;
+    std::unique_ptr<MeshBuffer> mesh;
     std::unique_ptr<UIShape> shape;
 
     // The texture can be simple or filtered by the MT scaling filter
-	std::unique_ptr<ImageFiltered> texture;
-	
-	bool dirty = true;
+    std::unique_ptr<render::Texture2D> texture;
+
+    bool applyFilter = false;
 public:
-    UISprite(render::Texture2D *_tex, Renderer2D *_renderer,
+    UISprite(img::Image *img, Renderer2D *_renderer,
         ResourceCache *cache, const rectf &srcRect, const rectf &destRect,
-        const std::array<img::color8, 4> &colors, bool applyFilter=false);
+        const std::array<img::color8, 4> &colors, bool filter=false, bool addRect=true);
 
     v2u getSize() const
     {
@@ -148,44 +131,28 @@ public:
     {
         return shape.get();
     }
-    void addRect(const rectf &srcRect, const rectf &destRect,
-        const std::array<img::color8, 4> &colors);
-    void updateRect(u32 n, const rectf &r);
-    void updateRect(u32 n, const v2f &ulc, const v2f &lrc);
-    void setClipRect(const recti &r);
-    
-    void move(u32 n, const v2f &shift);
-    void scale(u32 n, const v2f &scale);
-    
-    void setColors(u32 n, const std::array<img::color8, 4> &colors);
-    void setColor(u32 n, const img::color8 &color)
+
+    void setClipRect(const recti &r)
     {
-        setColors(n, {color, color, color, color});
+        renderer->setClipRect(r);
     }
     
-    void flush();
-    virtual void draw();
+    void flush()
+    {
+        mesh->uploadVertexData();
+    }
+    virtual void draw()
+    {
+        renderer->drawImageFiltered(mesh.get(), texture.get());
+    }
 };
 
-struct UISpriteFrame
-{
-    UISpriteFrame() = default;
-
-    UISpriteFrame(u32 _imgIndex, u32 _rectIndex)
-        : imgIndex(_imgIndex), rectIndex(_rectIndex)
-    {}
-
-    u32 imgIndex;
-    u32 rectIndex;
-};
 
 // 2D animated mesh consisting from one rectangle and frames images
 class UIAnimatedSprite : public UISprite
 {
-    std::vector<std::unique_ptr<UISpriteFrame>> frames;
-
     std::vector<img::Image *> framesImages;
-    std::vector<rectf> framesRects;
+    std::vector<u32> frames;
 
     u32 curFrameNum = 0;
     u32 frameLength = 0;
@@ -193,9 +160,11 @@ public:
     UIAnimatedSprite(v2u texSize, u32 _frameLength, Renderer2D *_renderer,
         ResourceCache *cache, const std::array<img::color8, 4> &colors, bool applyFilter=false);
 
-    void addFrame(img::Image *img, const rectf &r);
-
-    std::vector<UISpriteFrame *> getFrames() const;
+    u32 addImage(img::Image *img);
+    void addFrame(u32 i)
+    {
+        frames.push_back(i);
+    }
 
     void draw() override
     {

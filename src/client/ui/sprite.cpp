@@ -2,8 +2,118 @@
 #include "batcher2d.h"
 #include "settings.h"
 #include "client/render/defaultVertexTypes.h"
+#include "extra_images.h"
 
-void UIShape::updatePrimitive(MeshBuffer *buf, u32 primitiveNum, bool pos_or_colors)
+void UIShape::updateLine(u32 n, const v2f &start_p, const v2f &end_p, const img::color8 &start_c, const img::color8 &end_c)
+{
+    auto line = dynamic_cast<Line *>(primitives.at(n).get());
+    line->start_p = start_p;
+    line->end_p = end_p;
+    line->start_c = start_c;
+    line->end_c = end_c;
+    updateMaxArea(start_p, end_p);
+}
+void UIShape::updateTriangle(u32 n, const v2f &p1, const v2f &p2, const v2f &p3, const img::color8 &c1, const img::color8 &c2, const img::color8 &c3)
+{
+    auto trig = dynamic_cast<Triangle *>(primitives.at(n).get());
+    trig->p1 = p1;
+    trig->p2 = p2;
+    trig->p3 = p3;
+    trig->c1 = c1;
+    trig->c2 = c2;
+    trig->c3 = c3;
+    updateMaxArea(v2f(p1.X, p3.Y), p2);
+}
+void UIShape::updateRectangle(u32 n, const rectf &r, const std::array<img::color8, 4> &colors)
+{
+    auto rect = dynamic_cast<Rectangle *>(primitives.at(n).get());
+    rect->r = r;
+    rect->colors = colors;
+    updateMaxArea(r.ULC, r.LRC);
+}
+void UIShape::updateEllipse(u32 n, f32 a, f32 b, const v2f &center, const img::color8 &c)
+{
+    auto ellipse = dynamic_cast<Ellipse *>(primitives.at(n).get());
+    ellipse->a = a;
+    ellipse->b = b;
+    ellipse->center = center;
+    ellipse->c = c;
+    updateMaxArea(center - v2f(a/2, b/2), center+v2f(a/2, b/2));
+}
+
+void UIShape::movePrimitive(u32 n, const v2f &shift)
+{
+    auto prim = primitives.at(n).get();
+
+    switch(prim->type) {
+    case UIPrimitiveType::LINE: {
+        auto line = dynamic_cast<Line *>(prim);
+        line->start_p += shift;
+        line->end_p += shift;
+        updateMaxArea(line->start_p, line->end_p);
+    }
+    case UIPrimitiveType::TRIANGLE: {
+        auto trig = dynamic_cast<Triangle *>(prim);
+        trig->p1 += shift;
+        trig->p2 += shift;
+        trig->p3 += shift;
+        updateMaxArea(v2f(trig->p1.X, trig->p3.Y), trig->p2);
+    }
+    case UIPrimitiveType::RECTANGLE: {
+        auto rect = dynamic_cast<Rectangle *>(prim);
+        rect->r.ULC += shift;
+        rect->r.LRC += shift;
+        updateMaxArea(rect->r.ULC, rect->r.LRC);
+    }
+    case UIPrimitiveType::ELLIPSE: {
+        auto ellipse = dynamic_cast<Ellipse *>(prim);
+        ellipse->center += shift;
+        updateMaxArea(ellipse->center - v2f(ellipse->a/2,
+            ellipse->b/2), ellipse->center+v2f(ellipse->a/2, ellipse->b/2));
+    }
+    }
+}
+void UIShape::scalePrimitive(u32 n, const v2f &scale)
+{
+    auto prim = primitives.at(n).get();
+
+    switch(prim->type) {
+    case UIPrimitiveType::LINE: {
+        auto line = dynamic_cast<Line *>(prim);
+        v2f c = (line->start_p + line->end_p) / 2;
+
+        line->start_p = c + (line->start_p - c) * scale;
+        line->end_p = c + (line->end_p - c) * scale;
+        updateMaxArea(line->start_p, line->end_p);
+    }
+    case UIPrimitiveType::TRIANGLE: {
+        auto trig = dynamic_cast<Triangle *>(prim);
+        v2f c = (trig->p1 + trig->p2 + trig->p3) / 3;
+
+        trig->p1 = c + (trig->p1 - c) * scale;
+        trig->p2 = c + (trig->p2 - c) * scale;
+        trig->p3 = c + (trig->p3 - c) * scale;
+        updateMaxArea(v2f(trig->p1.X, trig->p3.Y), trig->p2);
+    }
+    case UIPrimitiveType::RECTANGLE: {
+        auto rect = dynamic_cast<Rectangle *>(prim);
+        v2f c = rect->r.getCenter();
+
+        rect->r.ULC = c + (rect->r.ULC - c) * scale;
+        rect->r.LRC = c + (rect->r.LRC - c) * scale;
+        updateMaxArea(rect->r.ULC, rect->r.LRC);
+    }
+    case UIPrimitiveType::ELLIPSE: {
+        auto ellipse = dynamic_cast<Ellipse *>(prim);
+        ellipse->a *= scale.X;
+        ellipse->b *= scale.Y;
+        updateMaxArea(ellipse->center - v2f(ellipse->a/2,
+            ellipse->b/2), ellipse->center+v2f(ellipse->a/2, ellipse->b/2));
+    }
+    }
+}
+
+void UIShape::updateBuffer(MeshBuffer *buf, u32 primitiveNum, bool pos_or_colors)
 {
     if (primitiveNum > primitives.size()-1)
         return;
@@ -24,7 +134,7 @@ void UIShape::updatePrimitive(MeshBuffer *buf, u32 primitiveNum, bool pos_or_col
         }
         else {
             svtSetColor(buf, line->start_c, startV);
-            svtSetColor(buf, line->end_c, startV);
+            svtSetColor(buf, line->end_c, startV+1);
         }
     }
     case UIPrimitiveType::TRIANGLE: {
@@ -75,17 +185,31 @@ void UIShape::updatePrimitive(MeshBuffer *buf, u32 primitiveNum, bool pos_or_col
     }
 }
 
-UISprite::UISprite(render::Texture2D *_tex, Renderer2D *_renderer,
-    ResourceCache *cache, const rectf &srcRect, const rectf &destRect,
-    const std::array<img::color8, 4> &colors, bool applyFilter)
-    : renderer(_renderer), area(destRect)
+void UIShape::updateMaxArea(const v2f &ulc, const v2f &lrc)
 {
-    rect = std::make_unique<MeshBuffer>(true);
+    maxArea.ULC.X = maxAreaInit ? std::min<f32>(maxArea.ULC.X, ulc.X) : ulc.X;
+    maxArea.ULC.Y = maxAreaInit ? std::min<f32>(maxArea.ULC.Y, ulc.Y) : ulc.Y;
+    maxArea.LRC.X = maxAreaInit ? std::max<f32>(maxArea.LRC.X, lrc.X) : lrc.X;
+    maxArea.LRC.Y = maxAreaInit ? std::max<f32>(maxArea.LRC.Y, lrc.Y) : lrc.Y;
 
-    addRect(srcRect, destRect, colors);
+    maxAreaInit = true;
+}
 
-    texture = std::make_unique<ImageFiltered>(cache, _tex);
-    if (applyFilter && g_settings->getBool("gui_scaling_filter")) {
+UISprite::UISprite(img::Image *img, Renderer2D *_renderer,
+    ResourceCache *cache, const rectf &srcRect, const rectf &destRect,
+    const std::array<img::color8, 4> &colors, bool filter, bool addRect)
+    : renderer(_renderer), mesh(std::make_unique<MeshBuffer>(true)),
+      shape(std::make_unique<UIShape>())
+{
+    if (addRect) {
+        shape->addRectangle(destRect, colors);
+        Batcher2D::appendImageRectangle(mesh.get(), img->getSize(), srcRect, destRect, colors, false);
+    }
+
+    texture = std::make_unique<render::Texture2D>("SpriteTexture", std::unique_ptr<img::Image>(img));
+    applyFilter = filter && g_settings->getBool("gui_scaling_filter");
+
+    if (applyFilter) {
         v2f srcSize = srcRect.getSize();
         v2f destSize = destRect.getSize();
         texture->filter(_tex->getName(),
@@ -93,129 +217,27 @@ UISprite::UISprite(render::Texture2D *_tex, Renderer2D *_renderer,
     }
 }
 
-v2u UISprite::getSize() const
-{
-    return texture->output_tex->getSize();
-}
-
-void UISprite::updateRect(u32 n, const rectf &r)
-{
-    updateRect(n, r.ULC, r.LRC);
-}
-
-void UISprite::updateRect(u32 n, const v2f &ulc, const v2f &lrc)
-{
-    u32 vertexShift = n * 4;
-    rect->setAttrAt<v2f>(ulc, 0, vertexShift);
-    rect->setAttrAt<v2f>(v2f(lrc.X, ulc.Y), 0, vertexShift+1);
-    rect->setAttrAt<v2f>(lrc, 0, vertexShift+2);
-    rect->setAttrAt<v2f>(v2f(ulc.X, lrc.Y), 0, vertexShift+3);
-
-    auto &subRect = subRects.at(n);
-    subRect.ULC = ulc;
-    subRect.LRC = lrc;
-
-    for (auto &r : subRects) {
-        area.ULC.X = std::min<f32>(area.ULC.X, r.ULC.X);
-        area.ULC.Y = std::min<f32>(area.ULC.Y, r.ULC.Y);
-        area.LRC.X = std::max<f32>(area.LRC.X, r.LRC.X);
-        area.LRC.Y = std::max<f32>(area.LRC.Y, r.LRC.Y);
-    }
-	
-	dirty = true;
-}
-
-void UISprite::setClipRect(const recti &r)
-{
-	renderer->setClipRect(r);
-}
-
-void UISprite::move(u32 n, const v2f &shift)
-{
-    updateRect(n, area.ULC + shift, area.LRC + shift);
-}
-
-void UISprite::scale(u32 n, const v2f &scale)
-{
-    auto subRect = subRects.at(n);
-    v2f size = subRect.getSize();
-	size *= scale;
-	v2f center = area.getCenter();
-    updateRect(n, center-size/2, center+size/2);
-}
-
-void UISprite::setColors(u32 n, const std::array<img::color8, 4> &colors)
-{
-    u32 vertexShift = n * 4;
-    rect->setAttrAt<img::color8>(colors.at(0), 1, vertexShift);
-    rect->setAttrAt<img::color8>(colors.at(1), 1, vertexShift+1);
-    rect->setAttrAt<img::color8>(colors.at(2), 1, vertexShift+2);
-    rect->setAttrAt<img::color8>(colors.at(3), 1, vertexShift+3);
-	
-	dirty = true;
-}
-	
-void UISprite::flush()
-{
-	if (!dirty)
-	    return;
-    rect->uploadVertexData();
-	dirty = false;
-}
-
-void UISprite::draw()
-{
-	renderer->drawImageFiltered(rect.get(), texture.get());
-}
-
-
 UIAnimatedSprite::UIAnimatedSprite(v2u texSize, u32 _frameLength, Renderer2D *_renderer,
     ResourceCache *cache, const std::array<img::color8, 4> &colors, bool applyFilter)
     : UISprite(new render::Texture2D("AnimatedSprite", texSize.X, texSize.Y, img::PF_RGBA8), _renderer,
         cache, rectf(v2f(texSize.X, texSize.Y)), rectf(v2f(texSize.X, texSize.Y)), colors, applyFilter), frameLength(_frameLength)
 {}
 
-void UIAnimatedSprite::addFrame(img::Image *img, const rectf &r)
+u32 UIAnimatedSprite::addImage(img::Image *img)
 {
-    auto texSize = getSize();
-
-    if (texSize.getLengthSQ() < img->getSize().getLengthSQ())
-        return;
-
-    if (!area.isRectInside(r))
-        return;
-
     auto imgIt = std::find(framesImages.begin(), framesImages.end(), img);
 
-    u32 imgIndex;
-    if (imgIt != framesImages.end())
-        imgIndex = std::distance(framesImages.begin(), imgIt);
-    else {
+    if (imgIt == framesImages.end()) {
+        if (applyFilter) {
+            auto tex = texture->output_tex;
+            auto size = tex->getSize();
+            texture->filter(tex->getName(), v2i(size.X, size.Y), v2i(size.X, size.Y));
+        }
         framesImages.push_back(img);
-        imgIndex = framesImages.size()-1;
+        return framesImages.size()-1;
     }
 
-    auto rectIt = std::find(framesRects.begin(), framesRects.end(), r);
-
-    u32 rectIndex;
-    if (rectIt != framesRects.end())
-        rectIndex = std::distance(framesRects.begin(), rectIt);
-    else {
-        framesRects.push_back(r);
-        rectIndex = framesRects.size()-1;
-    }
-
-    frames.emplace_back(imgIndex, rectIndex);
-}
-
-std::vector<UISpriteFrame *> UIAnimatedSprite::getFrames() const
-{
-    std::vector<UISpriteFrame *> resFrames(frames.size());
-
-    for (u32 i = 0; i < frames.size(); i++)
-        resFrames[i] = frames[i].get();
-
-    return resFrames;
+    return std::distance(framesImages.begin(), imgIt);
 }
 
 void UIAnimatedSprite::drawFrame(u32 time, bool loop)
@@ -230,14 +252,12 @@ void UIAnimatedSprite::drawFrame(u32 time, bool loop)
     else
         newFrameNum = (n >= frames.size()) ? frames.size() - 1 : n;
 
-    UISpriteFrame *f = frames.at(newFrameNum).get();
+    auto frameImg = framesImages.at(frames.at(newFrameNum));
     auto tex = texture->output_tex;
     auto size = tex->getSize();
 
     if (newFrameNum != curFrameNum) {
-        updateRect(0, framesRects.at(f->rectIndex));
-
-        tex->uploadData(framesImages.at(f->imgIndex));
+        tex->uploadData(frameImg);
         texture->filter(tex->getName(), v2i(size.X, size.Y), v2i(size.X, size.Y));
 
         flush();
