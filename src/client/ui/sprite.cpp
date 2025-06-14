@@ -197,10 +197,10 @@ void UIShape::updateMaxArea(const v2f &ulc, const v2f &lrc)
 }
 
 UISprite::UISprite(render::Texture2D *tex, Renderer2D *_renderer,
-    ResourceCache *cache, const rectf &uvRect, const rectf &posRect,
-    const std::array<img::color8, 4> &colors, bool addRect)
-    : renderer(_renderer), mesh(std::make_unique<MeshBuffer>(true)),
-    shape(std::make_unique<UIShape>()), texture(tex)
+    ResourceCache *_cache, const rectf &uvRect, const rectf &posRect,
+    const std::array<img::color8, 4> &colors, bool addRect, bool streamTexture)
+    : renderer(_renderer), cache(_cache), mesh(std::make_unique<MeshBuffer>(true)),
+    shape(std::make_unique<UIShape>()), texture(tex), streamTex(streamTexture)
 {
     if (addRect) {
         shape->addRectangle(posRect, colors);

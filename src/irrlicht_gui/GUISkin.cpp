@@ -10,12 +10,11 @@
 #include <Image/Converting.h>
 #include <Render/TTFont.h>
 #include "client/ui/sprite.h"
-#include "client/media/resource.h"
 #include "client/ui/renderer2d.h"
 #include <Render/DrawContext.h>
 
-GUISkin::GUISkin(GUISkinType type, ResourceCache *_cache, Renderer2D *_renderer)
-    : cache(_cache), renderer(_renderer), Type(type)
+GUISkin::GUISkin(GUISkinType type, Renderer2D *_renderer)
+    : renderer(_renderer), Type(type)
 {
     if ((Type == GUISkinType::WindowsClassic) || (Type == GUISkinType::WindowsMetallic))
 	{
@@ -157,16 +156,6 @@ GUISkin::GUISkin(GUISkinType type, ResourceCache *_cache, Renderer2D *_renderer)
     UseGradient = (Type == GUISkinType::WindowsMetallic) || (Type == GUISkinType::BurningSkin) ;
 }
 
-GUISkin::~GUISkin()
-{
-    for (u8 i = 0; i < (u8)GUIDefaultFont::Count; i++) {
-        auto font = Fonts[i];
-        if (!font)
-            continue;
-        cache->clearResource<render::TTFont>(ResourceType::FONT, font);
-    }
-}
-
 //! returns default color
 img::color8 GUISkin::getColor(GUIDefaultColor color) const
 {
@@ -219,12 +208,7 @@ void GUISkin::setFont(render::TTFont *font, GUIDefaultFont which)
     if ((u8)which >= (u8)GUIDefaultFont::Count)
 		return;
 
-    if (font) {
-        if (Fonts[(u8)which])
-            cache->clearResource<render::TTFont>(ResourceType::FONT, Fonts[(u8)which]);
-        Fonts[(u8)which] = font;
-        cache->cacheResource<render::TTFont>(ResourceType::FONT, font);
-    }
+    Fonts[(u8)which] = font;
 }
 
 

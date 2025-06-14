@@ -49,6 +49,7 @@ set(player_SRCS
 )
 
 set(render_SRCS
+        ${CMAKE_CURRENT_SOURCE_DIR}/render/atlas.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/batcher3d.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/camera.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/clouds.cpp
@@ -107,6 +108,7 @@ set(ui_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/minimap.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/renderer2d.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/sprite.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/text_sprite.cpp
 )
 
 set(client_SRCS

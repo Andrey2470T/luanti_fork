@@ -14,7 +14,6 @@
 class IGUIFont;
 class UIAnimatedSprite;
 class IGUIElement;
-class ResourceCache;
 class Renderer2D;
 
 //! Enumeration of available default skins.
@@ -253,7 +252,7 @@ enum class GUIDefaultFont : u8
 class GUISkin
 {
 public:
-    GUISkin(GUISkinType type, ResourceCache *_cache, Renderer2D *_renderer);
+    GUISkin(GUISkinType type, Renderer2D *_renderer);
 
     //! destructor
     ~GUISkin();
@@ -517,7 +516,6 @@ public:
     void getColors(img::color8* colors); // ::PATCH:
 
 private:
-    ResourceCache *cache;
     Renderer2D *renderer;
 
     f32 Scale = 1.0f;

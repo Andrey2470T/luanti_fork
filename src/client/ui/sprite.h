@@ -117,17 +117,18 @@ class UISprite
 {
 protected:
 	Renderer2D *renderer;
+    ResourceCache *cache;
     std::unique_ptr<MeshBuffer> mesh;
     std::unique_ptr<UIShape> shape;
 
     // The texture can be simple or filtered by the MT scaling filter
     render::Texture2D *texture;
 
-    bool applyFilter = false;
+    bool streamTex = false;
 public:
     UISprite(render::Texture2D *tex, Renderer2D *_renderer,
-        ResourceCache *cache, const rectf &srcRect, const rectf &destRect,
-        const std::array<img::color8, 4> &colors, bool addRect=true);
+        ResourceCache *_cache, const rectf &srcRect, const rectf &destRect,
+        const std::array<img::color8, 4> &colors, bool addRect=true, bool streamTexture=false);
 
     v2u getSize() const
     {

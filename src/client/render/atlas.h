@@ -3,7 +3,7 @@
 #include <memory>
 #include <Image/Image.h>
 #include <Render/StreamTexture2D.h>
-#include <Render/TTFont.h>>
+#include <Render/TTFont.h>
 #include <list>
 
 struct AtlasTile

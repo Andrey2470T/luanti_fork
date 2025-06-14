@@ -14,7 +14,7 @@ rectf AtlasTile::toUV(u32 atlasSize) const
 }
 
 
-void Atlas::createTexture(const std::string &name, u32 num, u32 size, u8 maxMipLevel, img::PixelFormat format=img::PF_RGBA8)
+void Atlas::createTexture(const std::string &name, u32 num, u32 size, u8 maxMipLevel, img::PixelFormat format)
 {
     std::string texName = name + "Atlas";
     texName += num;

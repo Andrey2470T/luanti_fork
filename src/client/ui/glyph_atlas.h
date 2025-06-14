@@ -2,16 +2,16 @@
 
 #include "client/render/atlas.h"
 #include <Render/TTFont.h>
+#include "irrlicht_gui/GUISkin.h"
 
 #define MAX_GLYPHS_COUNT 0xFFFF
 
 struct Glyph : public AtlasTile
 {
 	char16_t symbol;
-	img::color8 color;
 
-    Glyph(char16_t _symbol, const img::color8 &_color, u32 num, render::TTFont *font)
-        : AtlasTile(font->getGlyphImage(_symbol, _color), num),  symbol(_symbol), color(_color)
+    Glyph(char16_t _symbol, u32 num, render::TTFont *font)
+        : AtlasTile(font->getGlyphImage(_symbol), num),  symbol(_symbol)
     {}
 };
 
@@ -25,7 +25,38 @@ public:
     GlyphAtlas(u32 num, render::TTFont *ttfont, char16_t &offset);
 
     Glyph *getByChar(wchar_t ch) const;
-    void fill(u32 num, const img::color8 &c);
+    void fill(u32 num);
     
     void packTiles() override;
+private:
+    std::string composeAtlasName(render::FontMode mode, render::FontStyle style, u32 size);
+};
+
+
+// Handling fonts caching and creating of the glyph atlases
+class FontRenderer
+{
+    ResourceCache *cache;
+
+    std::map<u64, render::TTFont *> fonts;
+    std::map<u64, AtlasPool> glyphAtlases;
+
+    std::array<u32, 3> defaultSizes;
+public:
+    FontRenderer(ResourceCache *_cache);
+
+    ~FontRenderer();
+
+    render::TTFont *getFont(render::FontMode mode, render::FontStyle style, std::optional<u32> size) const;
+    AtlasPool *getPool(render::FontMode mode, render::FontStyle style, std::optional<u32> size);
+
+    void addFont(render::FontMode mode, render::FontStyle style, std::optional<u32> size);
+    void addFontInSkin(GUISkin *skin, render::FontMode mode, render::FontStyle style,
+        std::optional<u32> size, GUIDefaultFont which=GUIDefaultFont::Default);
+private:
+    void readDefaultFontSizes();
+    static void font_sizes_changed(const std::string &name, void *userdata)
+    {
+        reinterpret_cast<FontRenderer *>(userdata)->readDefaultFontSizes();
+    }
 };

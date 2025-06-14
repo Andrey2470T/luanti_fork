@@ -57,10 +57,6 @@ namespace render
     class TTFont;
 }
 
-extern std::string fontPathFinder(
-    render::FontMode mode, render::FontStyle style, std::optional<u32> size
-);
-
 class ResourceCache
 {
     std::unique_ptr<ResourceSubCache<img::Image>> images;
@@ -170,6 +166,14 @@ ResourceInfo<T> *ResourceSubCache<T>::getOrLoad(const std::string &name)
 template<class T>
 u32 ResourceSubCache<T>::cacheResource(T *res, const std::string &name)
 {
+    auto it = std::find(cache.begin(), cache.end(), [res] (const std::unique_ptr<ResourceInfo<T>> &elem)
+    {
+        return elem.get()->data.get() == res;
+    });
+
+    if (it != cache.end())
+        return std::distance(cache.begin(), it);
+
     cache.emplace_back(name, "", res);
     return cache.size()-1;
 }
