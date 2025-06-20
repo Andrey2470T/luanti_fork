@@ -107,6 +107,9 @@ public:
     {
         return maxArea;
     }
+
+    static u32 countRequiredVCount(const std::vector<UIPrimitiveType> &primitives);
+    static u32 countRequiredICount(const std::vector<UIPrimitiveType> &primitives);
     void updateBuffer(MeshBuffer *buf, u32 primitiveNum, bool pos_or_colors=true);
     void updateMaxArea(const v2f &ulc, const v2f &lrc);
 };
@@ -126,9 +129,17 @@ protected:
 
     bool streamTex = false;
 public:
+    // Creates an empty sprite
+    UISprite(render::Texture2D *tex, Renderer2D *_renderer, ResourceCache *_cache, bool streamTexture=false);
+
+    // Creates a single rectangle mesh
     UISprite(render::Texture2D *tex, Renderer2D *_renderer,
         ResourceCache *_cache, const rectf &srcRect, const rectf &destRect,
-        const std::array<img::color8, 4> &colors, bool addRect=true, bool streamTexture=false);
+        const std::array<img::color8, 4> &colors, bool streamTexture=false);
+
+    // Creates (without buffer filling) multiple-primitive mesh
+    UISprite(render::Texture2D *tex, Renderer2D *_renderer, ResourceCache *_cache,
+        const std::vector<UIPrimitiveType> &primitives, bool streamTexture=false);
 
     v2u getSize() const
     {

@@ -114,6 +114,28 @@ void UIShape::scalePrimitive(u32 n, const v2f &scale)
     }
 }
 
+u32 UIShape::countRequiredVCount(const std::vector<UIPrimitiveType> &primitives)
+{
+    u32 count = 0;
+
+    for (u32 i = 0; i < primitives.size(); i++)
+        count += primVCounts[(u8)primitives[i]];
+
+    return count;
+}
+
+u32 UIShape::countRequiredICount(const std::vector<UIPrimitiveType> &primitives)
+{
+    u32 count = 0;
+
+    for (u32 i = 0; i < primitives.size(); i++) {
+        if (primitives[i] == UIPrimitiveType::RECTANGLE)
+            count += 6;
+    }
+
+    return count;
+}
+
 void UIShape::updateBuffer(MeshBuffer *buf, u32 primitiveNum, bool pos_or_colors)
 {
     if (primitiveNum > primitives.size()-1)
@@ -196,17 +218,33 @@ void UIShape::updateMaxArea(const v2f &ulc, const v2f &lrc)
     maxAreaInit = true;
 }
 
+UISprite::UISprite(render::Texture2D *tex, Renderer2D *_renderer, ResourceCache *_cache,bool streamTexture)
+    : renderer(_renderer), cache(_cache), mesh(std::make_unique<MeshBuffer>(true, VType2D,
+        streamTexture ? render::MeshUsage::DYNAMIC : render::MeshUsage::STATIC)),
+      shape(std::make_unique<UIShape>()), texture(tex), streamTex(streamTexture)
+{}
+
+// Creates a single rectangle mesh
 UISprite::UISprite(render::Texture2D *tex, Renderer2D *_renderer,
     ResourceCache *_cache, const rectf &uvRect, const rectf &posRect,
-    const std::array<img::color8, 4> &colors, bool addRect, bool streamTexture)
-    : renderer(_renderer), cache(_cache), mesh(std::make_unique<MeshBuffer>(true)),
+    const std::array<img::color8, 4> &colors, bool streamTexture)
+    : renderer(_renderer), cache(_cache),
+    mesh(std::make_unique<MeshBuffer>(UIShape::countRequiredVCount({UIPrimitiveType::RECTANGLE}),
+        UIShape::countRequiredICount({UIPrimitiveType::RECTANGLE}), true, VType2D, streamTexture ? render::MeshUsage::DYNAMIC : render::MeshUsage::STATIC)),
     shape(std::make_unique<UIShape>()), texture(tex), streamTex(streamTexture)
 {
-    if (addRect) {
-        shape->addRectangle(posRect, colors);
-        Batcher2D::appendImageRectangle(mesh.get(), tex->getSize(), uvRect, posRect, colors, false);
-    }
+    shape->addRectangle(posRect, colors);
+    Batcher2D::appendImageRectangle(mesh.get(), tex->getSize(), uvRect, posRect, colors, false);
 }
+
+// Creates (without buffer filling) multiple-primitive mesh
+UISprite::UISprite(render::Texture2D *tex, Renderer2D *_renderer, ResourceCache *_cache,
+    const std::vector<UIPrimitiveType> &primitives, bool streamTexture)
+    : renderer(_renderer), cache(_cache),
+    mesh(std::make_unique<MeshBuffer>(UIShape::countRequiredVCount(primitives),
+        UIShape::countRequiredICount(primitives), true, VType2D, streamTexture ? render::MeshUsage::DYNAMIC : render::MeshUsage::STATIC)),
+    shape(std::make_unique<UIShape>()), texture(tex), streamTex(streamTexture)
+{}
 
 void UISprite::setClipRect(const recti &r)
 {

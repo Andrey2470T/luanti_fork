@@ -133,6 +133,8 @@ FontRenderer::~FontRenderer()
 {
     for (auto &p : fonts)
         cache->clearResource<render::TTFont>(ResourceType::FONT, p.second);
+
+    g_settings->deregisterAllChangedCallbacks(this);
 }
 
 render::TTFont *FontRenderer::getFont(render::FontMode mode, render::FontStyle style, std::optional<u32> size) const
@@ -195,35 +197,33 @@ void FontRenderer::addFont(render::FontMode mode, render::FontStyle style, std::
     else
         path_setting = prefix + "font_path" + suffix;
 
-    std::string path1 = g_settings->get(path_setting);
-    std::string path2 = Settings::getLayer(SL_DEFAULTS)->get(path_setting);
-
     std::array<std::string, 2> paths = {
         g_settings->get(path_setting),
         Settings::getLayer(SL_DEFAULTS)->get(path_setting)
     };
 
     for (auto &path : paths) {
-        if (fs::exists(path)) {
-            auto font = render::TTFont::load(path, size.value(), 0, true, true, font_shadow, font_shadow_alpha);
+        if (!fs::exists(path))
+            continue;
 
-            if (!font)
-                continue;
+        auto font = render::TTFont::load(path, size.value(), 0, true, true, font_shadow, font_shadow_alpha);
 
-            auto font_it = std::find(fonts.begin(), fonts.end(), font);
+        if (!font)
+            continue;
 
-            if (font_it != fonts.end()) {
-                delete font;
-                continue;
-            }
-            u64 hash = render::TTFont::hash(font);
+        auto font_it = std::find(fonts.begin(), fonts.end(), font);
 
-            fonts[hash] = font;
-            cache->cacheResource<render::TTFont>(ResourceType::FONT, font);
-
-            glyphAtlases[hash] = AtlasPool(AtlasType::GLYPH, "", cache, 0, false);
-            glyphAtlases[hash].buildGlyphAtlas(font);
+        if (font_it != fonts.end()) {
+            delete font;
+            continue;
         }
+        u64 hash = render::TTFont::hash(font);
+
+        fonts[hash] = font;
+        cache->cacheResource<render::TTFont>(ResourceType::FONT, font);
+
+        glyphAtlases[hash] = AtlasPool(AtlasType::GLYPH, "", cache, 0, false);
+        glyphAtlases[hash].buildGlyphAtlas(font);
     }
 }
 
@@ -231,7 +231,6 @@ void FontRenderer::addFontInSkin(GUISkin *skin, render::FontMode mode, render::F
     std::optional<u32> size, GUIDefaultFont which)
 {
     addFont(mode, style, size);
-
     skin->setFont(fonts[render::TTFont::hash(size.value(), true, style, mode)], which);
 }
 

@@ -20,27 +20,34 @@ void MeshBuffer::recalculateBoundingBox()
 		BoundingBox.reset(0, 0, 0);
 }
 
-void MeshBuffer::setIndexAt(u32 index, std::optional<u32> pos)
+void MeshBuffer::setIndexAt(u32 index, u32 pos)
 {
-    assert(hasIBO() && IBuffer.Data);
-	if (pos)
-        assert(pos < getIndexCount());
-    else
-        IBuffer.DataCount++;
+    assert(hasIBO() && IBuffer.Data && pos < IBuffer.Data->count());
 
     IBuffer.Data->setUInt32(index, pos);
 
+    IBuffer.DataCount = pos+1;
     IBuffer.StartChange = IBuffer.StartChange != std::nullopt ?
-        std::min<u32>(VBuffer.StartChange.value(), pos.value()) : pos;
+        std::min<u32>(VBuffer.StartChange.value(), pos) : pos;
     IBuffer.EndChange = IBuffer.EndChange != std::nullopt ?
-        std::max<u32>(IBuffer.EndChange.value(), pos.value()) : pos;
+        std::max<u32>(IBuffer.EndChange.value(), pos) : pos;
     IBuffer.Dirty = true;
 }
 
-void MeshBuffer::reallocateData()
+void MeshBuffer::reallocateData(u32 vertexCount, u32 indexCount)
 {
+    auto vType = VAO->getVertexType();
+    if (vertexCount == VBuffer.Data->count() / vType.Attributes.size() && indexCount == IBuffer.Data->count())
+        return;
+
+    if (hasIBO() && IBuffer.Data && indexCount > 0)
+        IBuffer.Data->reallocate(indexCount, sizeof(u32) * indexCount);
+
     if (Type == MeshBufferType::INDEX)
         return;
+
+    VBuffer.Data->reallocate(vType.Attributes.size() * vertexCount, render::sizeOfVertexType(vType) * vertexCount);
+
     VAO->reallocate(VBuffer.Data.get(), VBuffer.DataCount, (const u32 *)IBuffer.Data.get(), IBuffer.DataCount);
     VBuffer.Dirty = false;
     IBuffer.Dirty = false;
@@ -85,7 +92,7 @@ MeshBuffer *MeshBuffer::copy() const
     if (hasIBO())
         memcpy(new_mesh->IBuffer.Data.get()->data(), IBuffer.Data.get()->data(), getIndexCount());
 
-    new_mesh->reallocateData();
+    new_mesh->reallocateData(hasVBO() ? getVertexCount() : 0, hasIBO() ? getIndexCount() : 0);
     new_mesh->setBoundingBox(getBoundingBox());
 
     return new_mesh;
@@ -93,7 +100,8 @@ MeshBuffer *MeshBuffer::copy() const
 
 inline u64 MeshBuffer::countElemsBefore(u32 vertexNumber, u32 attrNumber) const
 {
-    assert(hasVBO() && VBuffer.Data && vertexNumber <= getVertexCount());
+    auto vType = VAO->getVertexType();
+    assert(hasVBO() && VBuffer.Data && vertexNumber <= VBuffer.Data->count() / vType.Attributes.size());
 
 	auto &attr = VAO->getVertexType().Attributes.at(attrNumber);
 	return VertexCmpCount * vertexNumber + attrNumber * attr.Offset;

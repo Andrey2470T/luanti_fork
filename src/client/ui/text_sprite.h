@@ -25,8 +25,8 @@ class UITextSprite : public UISprite
 	
 	render::TTFont *overrideFont;
 public:
-    UITextSprite(render::StreamTexture2D *tex, const EnrichedString &text, const rectf &posRect, Renderer2D *renderer, ResourceCache *resCache,
-        bool border = false, bool wordWrap = true, bool fillBackground = false);
+    UITextSprite(render::StreamTexture2D *tex, const EnrichedString &text, Renderer2D *renderer,
+        ResourceCache *resCache, bool border = false, bool wordWrap = true, bool fillBackground = false);
     ~UITextSprite();
 
     void setOverrideFont(render::TTFont *font);

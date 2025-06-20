@@ -27,13 +27,16 @@ void svtSetUV3D(MeshBuffer *buf, const v3f &uv, u32 num);
 void svtSetHWColor(MeshBuffer *buf, const img::color8 &hw_c, u32 num);
 
 // Appends the attributes of the standard vertex type in the end of the mesh buffer
+// Note: 'buf' already must have a preallocated storage for this new vertex!
 void appendSVT(
     MeshBuffer *buf, const v3f &pos, const img::color8 &c,
     const v3f &normal=v3f(), const v2f &uv=v2f());
 // Appends the attributes of the two color vertex type in the end of the mesh buffer
+// Note: 'buf' already must have a preallocated storage for this new vertex!
 void appendTCVT(
     MeshBuffer *buf, const v3f &pos, const img::color8 &c,
     const v3f &normal=v3f(), const v2f &uv=v2f(), const img::color8 &hw_c=img::color8());
 // Appends the attributes of the standard 2D vertex type in the end of the mesh buffer
+// Note: 'buf' already must have a preallocated storage for this new vertex!
 void appendVT2D(
     MeshBuffer *buf, const v2f &pos, const img::color8 &c, const v2f &uv=v2f());

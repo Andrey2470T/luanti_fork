@@ -22,6 +22,7 @@ class MeshBuffer
     struct SubMeshBuffer
     {
         std::unique_ptr<ByteArray> Data;
+        // As usually we allocate some data storage at once, 'DataCount' can be less 'Data.size()'
         u32 DataCount;
         bool Dirty = false;
 
@@ -38,14 +39,25 @@ class MeshBuffer
 	aabbf BoundingBox;
     u32 VertexCmpCount; // summary count of the components per the used vertex type
 public:
-    // Allows to create either VERTEX or VERTEX_INDEX buffer types
-    MeshBuffer(bool createIBO = true, const render::VertexTypeDescriptor &descr=render::DefaultVType)
+    // Creates either VERTEX or VERTEX_INDEX buffer types
+    MeshBuffer(bool createIBO = true, const render::VertexTypeDescriptor &descr=render::DefaultVType,
+        render::MeshUsage usage=render::MeshUsage::STATIC)
         : Type(createIBO ? MeshBufferType::VERTEX_INDEX : MeshBufferType::VERTEX),
-          VAO(std::make_unique<render::Mesh>(descr, createIBO))
+          VAO(std::make_shared<render::Mesh>(descr, createIBO, usage))
 	{
 		for (auto &attr : VAO->getVertexType().Attributes)
 			VertexCmpCount += attr.ComponentCount;
 	}
+    // Creates either VERTEX or VERTEX_INDEX buffer types allocating the storage for 'vertexCount' and 'indexCount'
+    MeshBuffer(u32 vertexCount, u32 indexCount=0, bool createIBO = true,
+        const render::VertexTypeDescriptor &descr=render::DefaultVType,
+        render::MeshUsage usage=render::MeshUsage::STATIC)
+        : Type(createIBO ? MeshBufferType::VERTEX_INDEX : MeshBufferType::VERTEX),
+        VAO(std::make_shared<render::Mesh>(nullptr, vertexCount, nullptr, indexCount, descr, createIBO, usage))
+    {
+        for (auto &attr : VAO->getVertexType().Attributes)
+            VertexCmpCount += attr.ComponentCount;
+    }
     // Creates always INDEX type not creating a new VAO
     MeshBuffer(const std::shared_ptr<render::Mesh> &sharedMesh)
         : Type(MeshBufferType::INDEX), VAO(sharedMesh)
@@ -158,13 +170,9 @@ public:
 	void recalculateBoundingBox();
 
     template<typename T>
-    void setAttrAt(T value, u32 attrN, std::optional<u32> vertexN=std::nullopt)
+    void setAttrAt(T value, u32 attrN, u32 vertexN)
 	{
-        u64 attrNum = vertexN ? countElemsBefore(vertexN.value(), attrN)
-			: countElemsBefore(getVertexCount(), attrN);
-
-        if (!vertexN)
-            VBuffer.DataCount++;
+        u64 attrNum = countElemsBefore(vertexN, attrN);
 
 		auto &vertexAttr = VAO->getVertexType().Attributes.at(attrN);
         ByteArray *vdata = VBuffer.Data.get();
@@ -247,17 +255,17 @@ public:
 			return;
 		}
 
-        u32 v = vertexN.value();
+        VBuffer.DataCount = vertexN+1;
         VBuffer.StartChange = VBuffer.StartChange != std::nullopt ?
-            std::min<u32>(VBuffer.StartChange.value(), v) : v;
+            std::min<u32>(VBuffer.StartChange.value(), vertexN) : vertexN;
         VBuffer.EndChange = VBuffer.EndChange != std::nullopt ?
-            std::max<u32>(VBuffer.EndChange.value(), v) : v;
+            std::max<u32>(VBuffer.EndChange.value(), vertexN) : vertexN;
         VBuffer.Dirty = true;
     }
 
-    void setIndexAt(u32 index, std::optional<u32> pos=std::nullopt);
+    void setIndexAt(u32 index, u32 pos);
 
-    void reallocateData();
+    void reallocateData(u32 vertexCount, u32 indexCount=0);
     void uploadVertexData();
     void uploadIndexData();
 

@@ -2,10 +2,20 @@
 #include "client/media/resource.h"
 #include "irrlicht_gui/GUISkin.h"
 
-UITextSprite::UITextSprite(render::StreamTexture2D *tex, const EnrichedString &text, const rectf &posRect,
+inline std::vector<UIPrimitiveType> getGlyphs(u32 count)
+{
+    std::vector<UIPrimitiveType> glyphs(count);
+
+    for (u32 i = 0; i < count; i++)
+        glyphs[i] = UIPrimitiveType::RECTANGLE;
+
+    return glyphs;
+}
+
+UITextSprite::UITextSprite(render::StreamTexture2D *tex, const EnrichedString &text,
     Renderer2D *renderer, ResourceCache *resCache, bool border, bool wordWrap, bool fillBackground)
-    : UISprite(tex, renderer, resCache, posRect, posRect, {}, false, true), drawBorder(border),
-    wordWrap(wordWrap), drawBackground(fillBackground)
+    : UISprite(tex, renderer, resCache, getGlyphs(text.size()), true), drawBorder(border),
+    drawBackground(fillBackground),  wordWrap(wordWrap)
 {
     setText(text);
 }

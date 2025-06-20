@@ -9,7 +9,9 @@ Image2D9Slice::Image2D9Slice(ResourceCache *resCache, Renderer2D *renderer,
                              const rectf &src_rect, const rectf &dest_rect,
                              const rectf &middle_rect, render::Texture2D *base_tex,
                              const std::array<img::color8, 4> &colors)
-    : UISprite(base_tex, renderer, resCache, src_rect, dest_rect, colors, false), srcRect(src_rect),
+    : UISprite(base_tex, renderer, resCache, {UIPrimitiveType::RECTANGLE, UIPrimitiveType::RECTANGLE,
+      UIPrimitiveType::RECTANGLE, UIPrimitiveType::RECTANGLE, UIPrimitiveType::RECTANGLE, UIPrimitiveType::RECTANGLE,
+      UIPrimitiveType::RECTANGLE, UIPrimitiveType::RECTANGLE, UIPrimitiveType::RECTANGLE}), srcRect(src_rect),
         destRect(dest_rect), middleRect(middle_rect), rectColors(colors)
 {
     if (middleRect.LRC.X < 0)

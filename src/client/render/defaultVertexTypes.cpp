@@ -98,6 +98,7 @@ inline void fillEmptyCustomAttribs(MeshBuffer *buf, u8 firstCustomAtrribIndex)
 {
     auto vertexType = buf->getVAO()->getVertexType();
 
+    u32 lastVNum = buf->getVertexCount()-1;
     for (u8 i = firstCustomAtrribIndex; i < vertexType.Attributes.size(); i++) {
         auto &attrib = vertexType.Attributes[i];
 
@@ -106,34 +107,34 @@ inline void fillEmptyCustomAttribs(MeshBuffer *buf, u8 firstCustomAtrribIndex)
 
             switch (attrib.ComponentType) {
             case BasicType::UINT8:
-                buf->setAttrAt<u8>(0, firstCustomAtrribIndex);
+                buf->setAttrAt<u8>(0, firstCustomAtrribIndex, lastVNum);
                 break;
              case BasicType::CHAR:
-                buf->setAttrAt<char>(0, firstCustomAtrribIndex);
+                buf->setAttrAt<char>(0, firstCustomAtrribIndex, lastVNum);
                 break;
              case BasicType::UINT16:
-                buf->setAttrAt<u16>(0, firstCustomAtrribIndex);
+                buf->setAttrAt<u16>(0, firstCustomAtrribIndex, lastVNum);
                 break;
             case BasicType::SHORT:
-                buf->setAttrAt<s16>(0, firstCustomAtrribIndex);
+                buf->setAttrAt<s16>(0, firstCustomAtrribIndex, lastVNum);
                 break;
             case BasicType::UINT32:
-                buf->setAttrAt<u32>(0, firstCustomAtrribIndex);
+                buf->setAttrAt<u32>(0, firstCustomAtrribIndex, lastVNum);
                 break;
             case BasicType::INT:
-                buf->setAttrAt<s32>(0, firstCustomAtrribIndex);
+                buf->setAttrAt<s32>(0, firstCustomAtrribIndex, lastVNum);
                 break;
             case BasicType::FLOAT:
-                buf->setAttrAt<f32>(0.0f, firstCustomAtrribIndex);
+                buf->setAttrAt<f32>(0.0f, firstCustomAtrribIndex, lastVNum);
                 break;
             case BasicType::UINT64:
-                buf->setAttrAt<u64>(0, firstCustomAtrribIndex);
+                buf->setAttrAt<u64>(0, firstCustomAtrribIndex, lastVNum);
                 break;
             case BasicType::LONG_INT:
-                 buf->setAttrAt<long int>(0, firstCustomAtrribIndex);
+                 buf->setAttrAt<long int>(0, firstCustomAtrribIndex, lastVNum);
                 break;
             case BasicType::DOUBLE:
-                buf->setAttrAt<f64>(0.0, firstCustomAtrribIndex);
+                buf->setAttrAt<f64>(0.0, firstCustomAtrribIndex, lastVNum);
                 break;
             default:
                 break;
@@ -142,12 +143,12 @@ inline void fillEmptyCustomAttribs(MeshBuffer *buf, u8 firstCustomAtrribIndex)
         case 2: {
             switch (attrib.ComponentType) {
             case BasicType::UINT32:
-                buf->setAttrAt<v2u>(v2u(), firstCustomAtrribIndex);
+                buf->setAttrAt<v2u>(v2u(), firstCustomAtrribIndex, lastVNum);
                 break;
             case BasicType::INT:
-                buf->setAttrAt<v2i>(v2i(), firstCustomAtrribIndex);
+                buf->setAttrAt<v2i>(v2i(), firstCustomAtrribIndex, lastVNum);
             case BasicType::FLOAT:
-                buf->setAttrAt<v2f>(v2f(), firstCustomAtrribIndex);
+                buf->setAttrAt<v2f>(v2f(), firstCustomAtrribIndex, lastVNum);
             default:
                 break;
             }
@@ -155,12 +156,12 @@ inline void fillEmptyCustomAttribs(MeshBuffer *buf, u8 firstCustomAtrribIndex)
         case 3: {
             switch (attrib.ComponentType) {
             case BasicType::UINT32:
-                buf->setAttrAt<v3u>(v3u(), firstCustomAtrribIndex);
+                buf->setAttrAt<v3u>(v3u(), firstCustomAtrribIndex, lastVNum);
                 break;
             case BasicType::INT:
-                buf->setAttrAt<v3i>(v3i(), firstCustomAtrribIndex);
+                buf->setAttrAt<v3i>(v3i(), firstCustomAtrribIndex, lastVNum);
             case BasicType::FLOAT:
-                buf->setAttrAt<v3f>(v3f(), firstCustomAtrribIndex);
+                buf->setAttrAt<v3f>(v3f(), firstCustomAtrribIndex, lastVNum);
             default:
                 break;
             }
@@ -170,22 +171,24 @@ inline void fillEmptyCustomAttribs(MeshBuffer *buf, u8 firstCustomAtrribIndex)
 }
 
 // Appends the attributes of the standard vertex type in the end of the mesh buffer
+// Note: 'buf' already must have a preallocated storage for this new vertex!
 inline void appendSVT(
     MeshBuffer *buf, const v3f &pos, const img::color8 &c,
     const v3f &normal, const v2f &uv)
 {
+    u32 newVNum = buf->getVertexCount();
     u8 firstCustomAttrIndex = 2;
-	buf->setAttrAt<v3f>(pos, 0);
-	buf->setAttrAt<img::color8>(c, 1);
+    buf->setAttrAt<v3f>(pos, 0, newVNum);
+    buf->setAttrAt<img::color8>(c, 1, newVNum);
 
     auto vertexType = buf->getVAO()->getVertexType();
 
     if (vertexType.InitNormal) {
-        buf->setAttrAt<v3f>(normal, 2);
+        buf->setAttrAt<v3f>(normal, 2, newVNum);
         firstCustomAttrIndex = 3;
     }
     if (vertexType.InitUV) {
-        buf->setAttrAt<v2f>(uv, 3);
+        buf->setAttrAt<v2f>(uv, 3, newVNum);
         firstCustomAttrIndex = 4;
     }
 
@@ -193,41 +196,45 @@ inline void appendSVT(
 }
 
 // Appends the attributes of the two color vertex type in the end of the mesh buffer
+// Note: 'buf' already must have a preallocated storage for this new vertex!
 inline void appendTCVT(
     MeshBuffer *buf, const v3f &pos, const img::color8 &c,
     const v3f &normal, const v2f &uv, const img::color8 &hw_c)
 {
+    u32 newVNum = buf->getVertexCount();
     u8 firstCustomAttrIndex = 3;
-    buf->setAttrAt<v3f>(pos, 0);
-    buf->setAttrAt<img::color8>(c, 1);
+    buf->setAttrAt<v3f>(pos, 0, newVNum);
+    buf->setAttrAt<img::color8>(c, 1, newVNum);
 
     auto vertexType = buf->getVAO()->getVertexType();
 
     if (vertexType.InitNormal) {
-        buf->setAttrAt<v3f>(normal, 2);
+        buf->setAttrAt<v3f>(normal, 2, newVNum);
         firstCustomAttrIndex = 4;
     }
     if (vertexType.InitUV) {
-        buf->setAttrAt<v2f>(uv, 3);
+        buf->setAttrAt<v2f>(uv, 3, newVNum);
         firstCustomAttrIndex = 5;
     }
-    buf->setAttrAt<img::color8>(hw_c, 4);
+    buf->setAttrAt<img::color8>(hw_c, 4, newVNum);
 
     fillEmptyCustomAttribs(buf, firstCustomAttrIndex);
 }
 
 // Appends the attributes of the standard 2D vertex type in the end of the mesh buffer
+// Note: 'buf' already must have a preallocated storage for this new vertex!
 void appendVT2D(
     MeshBuffer *buf, const v2f &pos, const img::color8 &c, const v2f &uv)
 {
+    u32 newVNum = buf->getVertexCount();
     u8 firstCustomAttrIndex = 2;
-    buf->setAttrAt<v2f>(pos, 0);
-    buf->setAttrAt<img::color8>(c, 1);
+    buf->setAttrAt<v2f>(pos, 0, newVNum);
+    buf->setAttrAt<img::color8>(c, 1, newVNum);
 
     auto vertexType = buf->getVAO()->getVertexType();
 
     if (vertexType.InitUV) {
-        buf->setAttrAt<v2f>(uv, 2);
+        buf->setAttrAt<v2f>(uv, 2, newVNum);
         firstCustomAttrIndex = 3;
     }
 

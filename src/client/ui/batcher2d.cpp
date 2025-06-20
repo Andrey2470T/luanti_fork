@@ -31,8 +31,9 @@ void Batcher2D::appendRectangle(MeshBuffer *buf, const rectf &rect, const std::a
     appendVertex(buf, rect.LRC, colors[2], uv.LRC);
     appendVertex(buf, v2f(rect.ULC.X, rect.LRC.Y), colors[3], v2f(uv.ULC.X, uv.LRC.Y));
 
+    u32 newINum = buf->getIndexCount();
     for (u32 i = 0; i < 6; i++)
-        buf->setIndexAt(indices[i]);
+        buf->setIndexAt(indices[i], newINum);
 }
 
 void Batcher2D::appendEllipse(MeshBuffer *buf, f32 a, f32 b, const v2u &img_size, const v2f &center,
