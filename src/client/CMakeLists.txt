@@ -100,7 +100,6 @@ endif()
 set(ui_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/batcher2d.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/extra_images.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ui/fontengine.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/gameformspec.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/gameui.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/glyph_atlas.cpp

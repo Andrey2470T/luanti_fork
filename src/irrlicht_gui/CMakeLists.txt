@@ -6,16 +6,12 @@ if (BUILD_CLIENT)
 		${CMAKE_CURRENT_SOURCE_DIR}/CGUIEditBox.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/CGUIEnvironment.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/CGUIFileOpenDialog.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/CGUIFont.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/CGUIImage.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/CGUIListBox.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/CGUIScrollBar.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/GUISkin.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/CGUIStaticText.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/CGUITabControl.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/CGUIImageList.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/static_text.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/CGUITTFont.cpp
 	)
 
 	# CMake require us to set a local scope and then parent scope
