@@ -120,6 +120,11 @@ public:
         return atlases.at(i);
     }
 
+    u32 getAtlasCount() const
+    {
+        return atlases.size();
+    }
+
     // Recursively create and fill new atlases with tiles while the internal image counter doesn't reach some limit
     void buildRectpack2DAtlas(const std::vector<img::Image *> &images, const std::unordered_map<u32, std::pair<u32, u32>> &animatedImages);
     void buildGlyphAtlas(render::TTFont *ttfont);

@@ -81,6 +81,19 @@ void MeshBuffer::uploadIndexData()
     IBuffer.Dirty = false;
 }
 
+void MeshBuffer::clear()
+{
+    VBuffer.Data->clear();
+    VBuffer.DataCount = 0;
+    VBuffer.Dirty = false;
+
+    if (hasIBO() && IBuffer.Data) {
+        IBuffer.Data->clear();
+        IBuffer.DataCount = 0;
+        IBuffer.Dirty = false;
+    }
+}
+
 MeshBuffer *MeshBuffer::copy() const
 {
     MeshBuffer *new_mesh = nullptr;

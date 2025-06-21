@@ -29,5 +29,7 @@ public:
 private:
     void createSlice(u8 x, u8 y);
     void createSlices();
+
+    void draw() override;
 };
 

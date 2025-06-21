@@ -253,9 +253,11 @@ void UISprite::setClipRect(const recti &r)
 
 void UISprite::draw()
 {
-    if (shape->getPrimitiveCount() == 0)
+    if (shape->getPrimitiveCount() == 0 || !visible)
         return;
 
+    renderer->setRenderState(true, false);
+    renderer->setUniforms(1.0f, false);
     renderer->setTexture(texture);
 
     auto prevType = shape->getPrimitiveType(0);
@@ -280,7 +282,9 @@ UIAnimatedSprite::UIAnimatedSprite(render::Texture2D *texture, u32 _frameLength,
     ResourceCache *cache, const std::array<img::color8, 4> &colors)
     : UISprite(texture, _renderer, cache, rectf(v2f(texture->getSize().X, texture->getSize().Y)),
         rectf(v2f(texture->getSize().X, texture->getSize().Y)), colors), frameLength(_frameLength)
-{}
+{
+    visible = true;
+}
 
 u32 UIAnimatedSprite::addImage(img::Image *img)
 {

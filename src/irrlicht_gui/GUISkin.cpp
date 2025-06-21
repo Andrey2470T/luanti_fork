@@ -277,14 +277,11 @@ implementations to find out how to draw the part exactly. */
 // PATCH
 void GUISkin::updateColored3DButtonPaneStandard(UISprite *sprite,
     const rectf& r,
-    const recti* clip,
     u32 &rectN,
     const img::color8 *colors)
 {
     if (!colors)
         colors = Colors.data();
-
-    sprite->setClipRect(*clip);
 
     rectf rect(r);
 
@@ -296,7 +293,7 @@ void GUISkin::updateColored3DButtonPaneStandard(UISprite *sprite,
         rect.LRC.Y += 1.0f;
         img::color8 whiteC(img::PF_RGBA8, 255, 255, 255, 255);
         update3DSunkenPane(sprite, colors[ (u8)GUIDefaultColor::Window ].linInterp(whiteC, 0.9f ),
-            false, true, rect, clip, rectN);
+            false, true, rect, rectN);
 		return;
 	}
 
@@ -337,14 +334,11 @@ implementations to find out how to draw the part exactly. */
 // PATCH
 void GUISkin::updateColored3DButtonPanePressed(UISprite *sprite,
     const rectf& r,
-    const recti* clip,
     u32 &rectN,
     const img::color8* colors)
 {
 	if (!colors)
         colors = Colors.data();
-
-    sprite->setClipRect(*clip);
 
     rectf rect = r;
     updateRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], rect, rectN);
@@ -386,7 +380,6 @@ deep into the ground.
 void GUISkin::updateColored3DSunkenPane(UISprite *sprite, img::color8 bgcolor,
     bool flat, bool fillBackGround,
     const rectf& r,
-    const recti* clip,
     u32 &rectN,
     const img::color8* colors)
 {
@@ -483,14 +476,11 @@ void GUISkin::updateColored3DSunkenPane(UISprite *sprite, img::color8 bgcolor,
 rectf GUISkin::updateColored3DWindowBackground(UISprite *sprite,
     bool drawTitleBar, img::color8 titleBarColor,
     const rectf& r,
-    const recti* clip,
     rectf* checkClientArea,
     const img::color8* colors)
 {
 	if (!colors)
         colors = Colors.data();
-
-    sprite->setClipRect(*clip);
 
     u32 rectN = 0;
     rectf rect = r;
@@ -618,13 +608,11 @@ implementations to find out how to draw the part exactly.
 \param clip: Clip area.	*/
 // PATCH
 void GUISkin::updateColored3DMenuPane(UISprite *sprite,
-    const rectf& r, const recti* clip,
+    const rectf& r,
     const img::color8* colors)
 {
 	if (!colors)
         colors = Colors.data();
-
-    sprite->setClipRect(*clip);
 
     u32 rectN = 0;
     rectf rect = r;
@@ -632,7 +620,7 @@ void GUISkin::updateColored3DMenuPane(UISprite *sprite,
     if ( Type == GUISkinType::BurningSkin )
 	{
         rect.ULC.Y -= 3;
-        update3DButtonPaneStandard(sprite, rect, clip, rectN);
+        update3DButtonPaneStandard(sprite, rect, rectN);
 		return;
 	}
 
@@ -703,13 +691,10 @@ implementations to find out how to draw the part exactly.
 // PATCH
 void GUISkin::updateColored3DToolBar(UISprite *sprite,
     const rectf& r,
-    const recti* clip,
     const img::color8* colors)
 {
 	if (!colors)
         colors = Colors.data();
-
-    sprite->setClipRect(*clip);
 
     u32 rectN = 0;
     rectf rect = r;
@@ -755,13 +740,11 @@ implementations to find out how to draw the part exactly.
 \param clip: Clip area.	*/
 // PATCH
 void GUISkin::updateColored3DTabButton(UISprite *sprite, bool active,
-    const rectf& frameRect, const recti* clip, GUIAlignment alignment,
+    const rectf& frameRect, GUIAlignment alignment,
 	const img::color8* colors)
 {
 	if (!colors)
         colors = Colors.data();
-
-    sprite->setClipRect(*clip);
 
     u32 rectN = 0;
     rectf tr = frameRect;
@@ -842,13 +825,11 @@ implementations to find out how to draw the part exactly.
 \param clip: Clip area.	*/
 // PATCH
 void GUISkin::updateColored3DTabBody(UISprite *sprite, bool border, bool background,
-    const rectf& rect, const recti* clip, s32 tabHeight, GUIAlignment alignment,
+    const rectf& rect, s32 tabHeight, GUIAlignment alignment,
 	const img::color8* colors)
 {
 	if (!colors)
         colors = Colors.data();
-
-    sprite->setClipRect(*clip);
 
     u32 rectN = 0;
     rectf tr = rect;
@@ -942,7 +923,7 @@ by more complex implementations to find out how to draw the part exactly.
 void GUISkin::updateColoredIcon(
     const rectf &rect, bool gray,
     u32 starttime, u32 currenttime,
-    bool loop, const recti* clip,
+    bool loop,
     const img::color8* colors)
 {
     if (!Sprite)

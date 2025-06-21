@@ -2,6 +2,7 @@
 #include "Render/Texture2D.h"
 #include "batcher2d.h"
 #include "sprite.h"
+#include "renderer2d.h"
 
 img::ImageModifier *g_imgmodifier = new img::ImageModifier();
 
@@ -14,6 +15,7 @@ Image2D9Slice::Image2D9Slice(ResourceCache *resCache, Renderer2D *renderer,
       UIPrimitiveType::RECTANGLE, UIPrimitiveType::RECTANGLE, UIPrimitiveType::RECTANGLE}), srcRect(src_rect),
         destRect(dest_rect), middleRect(middle_rect), rectColors(colors)
 {
+    visible = true;
     if (middleRect.LRC.X < 0)
         middleRect.LRC.X += srcRect.getWidth();
     if (middleRect.LRC.Y < 0)
@@ -74,4 +76,13 @@ void Image2D9Slice::createSlices()
             createSlice(x, y);
 
     flush();
+}
+
+void Image2D9Slice::draw()
+{
+    renderer->setRenderState(true, true);
+    renderer->setUniforms(1.0f, true);
+    renderer->setTexture(texture);
+
+    renderer->drawPrimitives(shape.get(), mesh.get(), 0, 9);
 }

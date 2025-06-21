@@ -269,6 +269,8 @@ public:
     void uploadVertexData();
     void uploadIndexData();
 
+    void clear();
+
 	MeshBuffer *copy() const;
 
     bool operator==(const MeshBuffer *other_buffer) const

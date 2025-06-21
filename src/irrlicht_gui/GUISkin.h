@@ -319,14 +319,13 @@ public:
     implementations to find out how to draw the part exactly. */
     void update3DButtonPaneStandard(UISprite *sprite,
         const rectf& rect,
-        const recti* clip, u32 &rectN)
+        u32 &rectN)
     {
-        updateColored3DButtonPaneStandard(sprite, rect, clip, rectN);
+        updateColored3DButtonPaneStandard(sprite, rect, rectN);
     }
 
     void updateColored3DButtonPaneStandard(UISprite *sprite,
         const rectf &rect,
-        const recti* clip,
         u32 &rectN,
         const img::color8 *colors=nullptr);
 
@@ -341,14 +340,13 @@ public:
     implementations to find out how to draw the part exactly. */
     void update3DButtonPanePressed(UISprite *sprite,
         const rectf& rect,
-        const recti* clip, u32 &rectN)
+        u32 &rectN)
     {
-        updateColored3DButtonPanePressed(sprite, rect, clip, rectN);
+        updateColored3DButtonPanePressed(sprite, rect, rectN);
     }
 
     void updateColored3DButtonPanePressed(UISprite *sprite,
         const rectf& rect,
-        const recti* clip,
         u32 &rectN,
         const img::color8 *colors=nullptr);
 
@@ -366,16 +364,15 @@ public:
         img::color8 bgcolor, bool flat,
         bool fillBackGround,
         const rectf& rect,
-        const recti* clip, u32 &rectN)
+        u32 &rectN)
     {
-        updateColored3DSunkenPane(sprite, bgcolor, flat, fillBackGround, rect, clip, rectN);
+        updateColored3DSunkenPane(sprite, bgcolor, flat, fillBackGround, rect, rectN);
     }
 
     void updateColored3DSunkenPane(UISprite *sprite,
         img::color8 bgcolor, bool flat,
         bool fillBackGround,
         const rectf& rect,
-        const recti* clip,
         u32 &rectN,
         const img::color8 *colors=nullptr);
 
@@ -396,17 +393,15 @@ public:
     rectf update3DWindowBackground(UISprite *sprite,
         bool drawTitleBar, img::color8 titleBarColor,
         const rectf& rect,
-        const recti* clip,
         rectf* checkClientArea)
     {
         return updateColored3DWindowBackground(sprite, drawTitleBar, titleBarColor,
-            rect, clip, checkClientArea);
+            rect, checkClientArea);
     }
 
     rectf updateColored3DWindowBackground(UISprite *sprite,
         bool drawTitleBar, img::color8 titleBarColor,
         const rectf& rect,
-        const recti* clip,
         rectf* checkClientArea,
         const img::color8 *colors=nullptr);
 
@@ -420,15 +415,13 @@ public:
     \param rect: Defining area where to draw.
     \param clip: Clip area.	*/
     void update3DMenuPane(UISprite *sprite,
-        const rectf& rect,
-        const recti* clip=0)
+        const rectf& rect)
     {
-        updateColored3DMenuPane(sprite, rect, clip);
+        updateColored3DMenuPane(sprite, rect);
     }
 
     void updateColored3DMenuPane(UISprite *sprite,
         const rectf& rect,
-        const recti* clip=0,
         const img::color8 *colors=nullptr);
 
     //! draws a standard 3d tool bar
@@ -439,15 +432,13 @@ public:
     \param rect: Defining area where to draw.
     \param clip: Clip area.	*/
     void update3DToolBar(UISprite *sprite,
-        const rectf& rect,
-        const recti* clip=0)
+        const rectf& rect)
     {
-        updateColored3DToolBar(sprite, rect, clip);
+        updateColored3DToolBar(sprite, rect);
     }
 
     void updateColored3DToolBar(UISprite *sprite,
         const rectf& rect,
-        const recti* clip=0,
         const img::color8 *colors=nullptr);
 
     //! draws a tab button
@@ -459,13 +450,13 @@ public:
     \param rect: Defining area where to draw.
     \param clip: Clip area.	*/
     void update3DTabButton(UISprite *sprite, bool active,
-        const rectf& rect, const recti* clip=0, GUIAlignment alignment=GUIAlignment::UpperLeft)
+        const rectf& rect, GUIAlignment alignment=GUIAlignment::UpperLeft)
     {
-        updateColored3DTabButton(sprite, active, rect, clip, alignment);
+        updateColored3DTabButton(sprite, active, rect, alignment);
     }
 
     void updateColored3DTabButton(UISprite *sprite, bool active,
-        const rectf& rect, const recti* clip=0, GUIAlignment alignment=GUIAlignment::UpperLeft,
+        const rectf& rect, GUIAlignment alignment=GUIAlignment::UpperLeft,
         const img::color8 *colors=nullptr);
 
     //! draws a tab control body
@@ -477,13 +468,13 @@ public:
     \param rect: Defining area where to draw.
     \param clip: Clip area.	*/
     void update3DTabBody(UISprite *sprite, bool border, bool background,
-        const rectf& rect, const recti* clip=0, s32 tabHeight=-1, GUIAlignment alignment=GUIAlignment::UpperLeft)
+        const rectf& rect, s32 tabHeight=-1, GUIAlignment alignment=GUIAlignment::UpperLeft)
     {
-        updateColored3DTabBody(sprite, border, background, rect, clip, tabHeight, alignment);
+        updateColored3DTabBody(sprite, border, background, rect, tabHeight, alignment);
     }
 
     void updateColored3DTabBody(UISprite *sprite, bool border, bool background,
-        const rectf& rect, const recti* clip=0, s32 tabHeight=-1, GUIAlignment alignment=GUIAlignment::UpperLeft,
+        const rectf& rect, s32 tabHeight=-1, GUIAlignment alignment=GUIAlignment::UpperLeft,
         const img::color8 *colors=nullptr);
 
     //! draws an icon, usually from the skin's sprite bank
@@ -499,14 +490,14 @@ public:
     void updateIcon(
         const rectf &rect,
         u32 starttime=0, u32 currenttime=0,
-        bool loop=false, const recti* clip=0)
+        bool loop=false)
     {
-        updateColoredIcon(rect, starttime, currenttime, loop, clip);
+        updateColoredIcon(rect, starttime, currenttime, loop);
     }
 
     void updateColoredIcon(const rectf &rect, bool gray,
                            u32 starttime=0, u32 currenttime=0,
-                           bool loop=false, const recti* clip=0,
+                           bool loop=false,
                            const img::color8 *colors=nullptr);
 
     //! get the type of this skin

@@ -5,8 +5,9 @@
 #include "irrlicht_gui/GUIEnums.h"
 #include <Render/TTFont.h>
 #include <Render/StreamTexture2D.h>
+#include "irrlicht_gui/GUISkin.h"
 
-class GUISkin;
+class FontRenderer;
 
 class UITextSprite : public UISprite
 {
@@ -24,9 +25,10 @@ class UITextSprite : public UISprite
     bool rightToLeft = false;
 	
 	render::TTFont *overrideFont;
+    recti clipRect;
 public:
     UITextSprite(render::StreamTexture2D *tex, const EnrichedString &text, Renderer2D *renderer,
-        ResourceCache *resCache, bool border = false, bool wordWrap = true, bool fillBackground = false);
+        ResourceCache *resCache, const recti &clip, bool border = false, bool wordWrap = true, bool fillBackground = false);
     ~UITextSprite();
 
     void setOverrideFont(render::TTFont *font);
@@ -34,18 +36,35 @@ public:
     {
         return overrideFont;
     }
-    render::TTFont *getActiveFont() const;
+    render::TTFont *getActiveFont() const
+    {
+        return overrideFont ? overrideFont : skin->getFont();
+    }
 
-    void setOverrideColor(const img::color8 &c);
-    img::color8 getOverrideColor() const;
-    img::color8 getActiveColor() const;
+    void setColor(const img::color8 &c);
+    img::color8 getColor() const
+    {
+        return text.getDefaultColor();
+    }
 
     void setBackgroundColor(const img::color8 &c);
-    img::color8 getBackgroundColor() const;
+    img::color8 getBackgroundColor() const
+    {
+        return drawBackground ? text.getBackground() : skin->getColor(GUIDefaultColor::Face3D);
+    }
 
-    void enableDrawBackground(bool draw);
-    void enableDrawBorder(bool draw);
-    void enableClipText(bool clip);
+    void enableDrawBackground(bool draw)
+    {
+        drawBackground = draw;
+    }
+    void enableDrawBorder(bool draw)
+    {
+        drawBorder = draw;
+    }
+    void enableClipText(bool clip)
+    {
+        clipText = clip;
+    }
     void enableWordWrap(bool wrap);
     void enableRightToLeft(bool rtl);
 
@@ -75,10 +94,15 @@ public:
     void setText(const EnrichedString &text);
     void setText(const std::wstring &text)
     {
-        setText(EnrichedString(text, getOverrideColor()));
+        setText(EnrichedString(text, getColor()));
     }
 
+    void setClipRect(const recti &r) override;
+
     void draw() override;
+
+    void updateBuffer(rectf &&r, FontRenderer *font_renderer);
 private:
-    void updateText();
+    void updateWrappedText();
+    u32 getBrokenTextWidth() const;
 };

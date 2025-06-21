@@ -112,6 +112,13 @@ public:
     static u32 countRequiredICount(const std::vector<UIPrimitiveType> &primitives);
     void updateBuffer(MeshBuffer *buf, u32 primitiveNum, bool pos_or_colors=true);
     void updateMaxArea(const v2f &ulc, const v2f &lrc);
+
+    void clear()
+    {
+        primitives.clear();
+        maxArea = rectf();
+        maxAreaInit = false;
+    }
 };
 
 // 2D mesh consisting from some count of rectangles
@@ -128,6 +135,7 @@ protected:
     render::Texture2D *texture;
 
     bool streamTex = false;
+    bool visible = false;
 public:
     // Creates an empty sprite
     UISprite(render::Texture2D *tex, Renderer2D *_renderer, ResourceCache *_cache, bool streamTexture=false);
@@ -156,7 +164,17 @@ public:
         return mesh.get();
     }
 
-    void setClipRect(const recti &r);
+    bool isVisible() const
+    {
+        return visible;
+    }
+
+    void setVisible(bool yes)
+    {
+        visible = yes;
+    }
+
+    virtual void setClipRect(const recti &r);
     
     void flush()
     {
