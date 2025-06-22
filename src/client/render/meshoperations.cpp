@@ -34,53 +34,6 @@ void MeshOperations::applyFacesShading(img::color8 &color, const v3f normal)
 		applyShadeFactor(color, 0.670820f * x2 + 1.000000f * y2 + 0.836660f * z2);
 }
 
-/*MeshStorage MeshOperations::createCubeMesh(v3f scale)
-{
-	img::color8 c(img::PF_RGBA8, 255,255,255,255);
-
-	std::array<v3f, 24> positions = {
-		v3f(-0.5,+0.5,-0.5),  v3f(-0.5,+0.5,+0.5),  v3f(+0.5,+0.5,+0.5),  v3f(+0.5,+0.5,-0.5), // Up
-		v3f(-0.5,-0.5,-0.5),  v3f(+0.5,-0.5,-0.5),  v3f(+0.5,-0.5,+0.5),  v3f(-0.5,-0.5,+0.5), // Down
-		v3f(+0.5,-0.5,-0.5),  v3f(+0.5,+0.5,-0.5),  v3f(+0.5,+0.5,+0.5),  v3f(+0.5,-0.5,+0.5), // Right
-		v3f(-0.5,-0.5,-0.5),  v3f(-0.5,-0.5,+0.5),  v3f(-0.5,+0.5,+0.5),  v3f(-0.5,+0.5,-0.5), // Left
-		v3f(-0.5,-0.5,+0.5),  v3f(+0.5,-0.5,+0.5),  v3f(+0.5,+0.5,+0.5),  v3f(-0.5,+0.5,+0.5), // Back
-		v3f(-0.5,-0.5,-0.5),  v3f(-0.5,+0.5,-0.5),  v3f(+0.5,+0.5,-0.5),  v3f(+0.5,-0.5,-0.5)  // Front
-	};
-
-	std::array<v3f, 6> normals = {
-		// Up			Down			Right			Left			Back			Front
-		v3f(0,1,0),		v3f(0,-1,0),	v3f(1,0,0),		v3f(-1,0,0),	v3f(0,0,1),		v3f(0,0,-1)
-	};
-
-	std::array<v2f, 24> uvs = {
-		v2f(0,1),  v2f(0,0),  v2f(1,0),  v2f(1,1),  // Up
-		v2f(0,0),  v2f(1,0),  v2f(1,1),  v2f(0,1),  // Down
-		v2f(0,1),  v2f(0,0),  v2f(1,0),  v2f(1,1),  // Right
-		v2f(1,1),  v2f(0,1),  v2f(0,0),  v2f(1,0),  // Left
-		v2f(1,1),  v2f(0,1),  v2f(0,0),  v2f(1,0),  // Back
-		v2f(0,1),  v2f(0,0),  v2f(1,0),  v2f(1,1)   // Front
-	};
-
-	u32 indices[6] = {0,1,2,2,3,0};
-
-	MeshStorage mesh;
-	for (u8 i=0; i<6; ++i)
-	{
-		MeshBuffer *buf = new MeshBuffer();
-
-		for (u8 j = 0; j < 4; j++)
-			appendSVT(buf, positions[4*i+j], c, normals[i], uvs[4*i+j]);
-
-		for (u8 k = 0; k < 6; k++)
-			buf->setIndexAt(indices[k]);
-
-		scaleMesh(buf, scale);
-		mesh[i] = buf;
-	}
-
-	return mesh;
-}*/
-
 void MeshOperations::scaleMesh(MeshBuffer *mesh, v3f scale)
 {
 	if (!mesh)

@@ -4,8 +4,6 @@
 #include "sprite.h"
 #include "renderer2d.h"
 
-img::ImageModifier *g_imgmodifier = new img::ImageModifier();
-
 Image2D9Slice::Image2D9Slice(ResourceCache *resCache, Renderer2D *renderer,
                              const rectf &src_rect, const rectf &dest_rect,
                              const rectf &middle_rect, render::Texture2D *base_tex,

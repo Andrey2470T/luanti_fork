@@ -1,7 +1,10 @@
 #pragma once
 
 #include "FilesystemVersions.h"
-#include "Utils/Rect.h"
+#include <Utils/Rect.h>
+#include <Image/ImageModifier.h>
+
+extern img::ImageModifier *g_imgmodifier;
 
 namespace render
 {
@@ -49,6 +52,7 @@ public:
     // 'count_n' is a primitive count which needs to draw
     void drawPrimitives(UIShape *shape, MeshBuffer *buf, u32 offset_n=0, u32 count_n=1);
 
+    void setBasicRenderState(bool alpha);
     void setRenderState(bool alpha, bool texShader);
     void setTexture(Texture2D *tex);
     void setUniforms(f32 thickness, bool texShader);

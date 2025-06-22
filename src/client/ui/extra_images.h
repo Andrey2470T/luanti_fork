@@ -3,7 +3,6 @@
 #include "Utils/Rect.h"
 #include <array>
 #include <memory>
-#include "Image/ImageModifier.h"
 #include "sprite.h"
 
 namespace render
@@ -14,8 +13,6 @@ namespace render
 class MeshBuffer;
 class Renderer2D;
 class UISprite;
-
-extern img::ImageModifier *g_imgmodifier;
 
 class Image2D9Slice : public UISprite
 {

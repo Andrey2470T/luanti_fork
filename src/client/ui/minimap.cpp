@@ -4,14 +4,18 @@
 
 #include "minimap.h"
 #include <cmath>
-#include "client.h"
+#include "client/client.h"
+#include "nodedef.h"
 #include "clientmap.h"
 #include "settings.h"
-#include "shader.h"
 #include "mapblock.h"
-#include "client/renderingengine.h"
-#include "client/texturesource.h"
 #include "gettext.h"
+#include "renderer2d.h"
+#include "client/media/resource.h"
+#include "batcher2d.h"
+#include "voxel.h"
+#include <Render/DrawContext.h>
+
 
 ////
 //// MinimapUpdateThread
@@ -161,20 +165,12 @@ void MinimapUpdateThread::getMap(v3s16 pos, s16 size, s16 height)
 //// Mapper
 ////
 
-Minimap::Minimap(Client *client)
+Minimap::Minimap(Client *_client, Renderer2D *_renderer, ResourceCache *_cache)
+    : UISprite(nullptr, _renderer, _cache, {UIPrimitiveType::RECTANGLE}, true),
+      client(_client), data(new MinimapData()), m_ndef(_client->getNodeDefManager())
 {
-	this->client    = client;
-	this->driver    = RenderingEngine::get_video_driver();
-	this->m_tsrc    = client->getTextureSource();
-	this->m_shdrsrc = client->getShaderSource();
-	this->m_ndef    = client->getNodeDefManager();
-
-	m_angle = 0.f;
-	m_current_mode_index = 0;
-
 	// Initialize static settings
-	m_surface_mode_scan_height =
-		g_settings->getBool("minimap_double_scan_height") ? 256 : 128;
+    m_surface_mode_scan_height = g_settings->getBool("minimap_double_scan_height") ? 256 : 128;
 
 	// Initialize minimap modes
 	addMode(MINIMAP_TYPE_OFF);
@@ -185,16 +181,21 @@ Minimap::Minimap(Client *client)
 	addMode(MINIMAP_TYPE_RADAR,   256);
 	addMode(MINIMAP_TYPE_RADAR,   128);
 
-	// Initialize minimap data
-	data = std::make_unique<MinimapData>();
-	data->map_invalidated = true;
-
 	data->minimap_shape_round = g_settings->getBool("minimap_shape_round");
 
 	setModeIndex(0);
 
 	// Create mesh buffer for minimap
-	m_meshbuffer = createMinimapMeshBuffer();
+    shape->addRectangle(rectf(v2f(-1.0f, 1.0f), v2f(1.0f, -1.0f)), {});
+    Batcher2D::appendImageUnitRectangle(mesh.get(), false);
+
+    data->minimap_overlay_round = cache->getOrLoad<render::Texture2D>(ResourceType::TEXTURE, "minimap_overlay_round.png")->data.get();
+    data->minimap_overlay_square = cache->getOrLoad<render::Texture2D>(ResourceType::TEXTURE, "minimap_overlay_square.png")->data.get();
+    data->player_marker =cache->getOrLoad<render::Texture2D>(ResourceType::TEXTURE, "player_marker.png")->data.get();
+    data->object_marker_red = cache->getOrLoad<render::Texture2D>(ResourceType::TEXTURE, "object_marker_red.png")->data.get();
+    data->textures_initialised = true;
+
+    m_minimap_shader = cache->getOrLoad<render::Shader>(ResourceType::SHADER, "minimap_shader")->data.get();
 
 	// Initialize and start thread
 	m_minimap_update_thread = std::make_unique<MinimapUpdateThread>();
@@ -207,19 +208,17 @@ Minimap::~Minimap()
 	m_minimap_update_thread->stop();
 	m_minimap_update_thread->wait();
 
-	m_meshbuffer.reset();
+    //m_meshbuffer.reset();
 
 	if (data->minimap_mask_round)
-		data->minimap_mask_round->drop();
+        cache->clearResource<img::Image>(ResourceType::IMAGE, data->minimap_mask_round);
 	if (data->minimap_mask_square)
-		data->minimap_mask_square->drop();
+        cache->clearResource<img::Image>(ResourceType::IMAGE, data->minimap_mask_square);
 
-	driver->removeTexture(data->texture);
-	driver->removeTexture(data->heightmap_texture);
+    // Dynamic textures are not cached
+    delete data->texture;
+    delete data->heightmap_texture;
 
-	m_markers.clear();
-
-	data.reset();
 	m_minimap_update_thread.reset();
 }
 
@@ -380,27 +379,27 @@ void Minimap::setAngle(f32 angle)
 	m_angle = angle;
 }
 
-void Minimap::blitMinimapPixelsToImageRadar(video::IImage *map_image)
+void Minimap::blitMinimapPixelsToImageRadar(img::Image *map_image)
 {
-	video::SColor c(240, 0, 0, 0);
+    img::color8 c(img::PF_RGBA8, 0, 0, 0, 240);
 	for (s16 x = 0; x < data->mode.map_size; x++)
 	for (s16 z = 0; z < data->mode.map_size; z++) {
 		MinimapPixel *mmpixel = &data->minimap_scan[x + z * data->mode.map_size];
 
 		if (mmpixel->air_count > 0)
-			c.setGreen(core::clamp(core::round32(32 + mmpixel->air_count * 8), 0, 255));
+            c.G(32 + mmpixel->air_count * 8);
 		else
-			c.setGreen(0);
+            c.G(0);
 
-		map_image->setPixel(x, data->mode.map_size - z - 1, c);
+        g_imgmodifier->setPixel(map_image, x, data->mode.map_size - z - 1, c);
 	}
 }
 
 void Minimap::blitMinimapPixelsToImageSurface(
-	video::IImage *map_image, video::IImage *heightmap_image)
+    img::Image *map_image, img::Image *heightmap_image)
 {
 	// This variable creation/destruction has a 1% cost on rendering minimap
-	video::SColor tilecolor;
+    img::color8 tilecolor(img::PF_RGBA8, 0, 0, 0, 240);
 	for (s16 x = 0; x < data->mode.map_size; x++)
 	for (s16 z = 0; z < data->mode.map_size; z++) {
 		MinimapPixel *mmpixel = &data->minimap_scan[x + z * data->mode.map_size];
@@ -414,54 +413,43 @@ void Minimap::blitMinimapPixelsToImageSurface(
 		else
 			mmpixel->n.getColor(f, &tilecolor);
 
-		tilecolor.setRed(tilecolor.getRed() * f.minimap_color.getRed() / 255);
-		tilecolor.setGreen(tilecolor.getGreen() * f.minimap_color.getGreen() / 255);
-		tilecolor.setBlue(tilecolor.getBlue() * f.minimap_color.getBlue() / 255);
-		tilecolor.setAlpha(240);
+        tilecolor.R(tilecolor.R() * f.minimap_color.getRed());
+        tilecolor.G(tilecolor.G() * f.minimap_color.getGreen());
+        tilecolor.B(tilecolor.B() * f.minimap_color.getBlue());
 
-		map_image->setPixel(x, data->mode.map_size - z - 1, tilecolor);
-
-		u32 h = mmpixel->height;
-		heightmap_image->setPixel(x,data->mode.map_size - z - 1,
-			video::SColor(255, h, h, h));
+        g_imgmodifier->setPixel(map_image, x, data->mode.map_size - z - 1, tilecolor);
+        g_imgmodifier->setPixel(heightmap_image, x, data->mode.map_size - z - 1, img::color8(img::PF_R8, mmpixel->height));
 	}
 }
 
-video::IImage *Minimap::getMinimapMask()
+img::Image *Minimap::getMinimapMask()
 {
 	if (data->minimap_shape_round) {
 		if (!data->minimap_mask_round) {
 			// Get round minimap textures
-			data->minimap_mask_round = driver->createImage(
-				m_tsrc->getTexture("minimap_mask_round.png"),
-				core::position2d<s32>(0, 0),
-				core::dimension2d<u32>(MINIMAP_MAX_SX, MINIMAP_MAX_SY));
+            data->minimap_mask_round = cache->getOrLoad<img::Image>(ResourceType::IMAGE, "minimap_mask_round.png")->data.get();
 		}
 		return data->minimap_mask_round;
 	}
 
 	if (!data->minimap_mask_square) {
 		// Get square minimap textures
-		data->minimap_mask_square = driver->createImage(
-			m_tsrc->getTexture("minimap_mask_square.png"),
-			core::position2d<s32>(0, 0),
-			core::dimension2d<u32>(MINIMAP_MAX_SX, MINIMAP_MAX_SY));
+        data->minimap_mask_square = cache->getOrLoad<img::Image>(ResourceType::IMAGE, "minimap_mask_square.png")->data.get();
 	}
 	return data->minimap_mask_square;
 }
 
-video::ITexture *Minimap::getMinimapTexture()
+render::Texture2D *Minimap::getMinimapTexture()
 {
 	// update minimap textures when new scan is ready
 	if (data->map_invalidated && data->mode.type != MINIMAP_TYPE_TEXTURE)
 		return data->texture;
 
 	// create minimap and heightmap images in memory
-	core::dimension2d<u32> dim(data->mode.map_size, data->mode.map_size);
-	video::IImage *map_image       = driver->createImage(video::ECF_A8R8G8B8, dim);
-	video::IImage *heightmap_image = driver->createImage(video::ECF_A8R8G8B8, dim);
-	video::IImage *minimap_image   = driver->createImage(video::ECF_A8R8G8B8,
-		core::dimension2d<u32>(MINIMAP_MAX_SX, MINIMAP_MAX_SY));
+    v2u size(data->mode.map_size, data->mode.map_size);
+    img::Image *map_image       = new img::Image(img::PF_RGBA8, size.X, size.Y, img::color8(img::PF_RGBA8, 0, 0, 0, 255));
+    img::Image *heightmap_image = new img::Image(img::PF_RGBA8, size.X, size.Y);
+    img::Image *minimap_image   = new img::Image(img::PF_RGBA8, MINIMAP_MAX_SX, MINIMAP_MAX_SY);
 
 	// Blit MinimapPixels to images
 	switch(data->mode.type) {
@@ -475,48 +463,44 @@ video::ITexture *Minimap::getMinimapTexture()
 		break;
 	case MINIMAP_TYPE_TEXTURE:
 		// FIXME: this is a pointless roundtrip through the gpu
-		video::ITexture* texture = m_tsrc->getTexture(data->mode.texture);
-		video::IImage* image = driver->createImageFromData(
-			texture->getColorFormat(), texture->getSize(),
-			texture->lock(video::ETLM_READ_ONLY), true, false);
+        img::Image* image = cache->getOrLoad<img::Image>(ResourceType::IMAGE, data->mode.texture)->data.get();
 
-		auto dim = image->getDimension();
+        v2u size = image->getSize();
+        rectu destRect(
+            v2u(((data->mode.map_size - (static_cast<int>(size.X))) >> 1)
+                    - data->pos.X / data->mode.scale,
+                ((data->mode.map_size - (static_cast<int>(size.Y))) >> 1)
+                    + data->pos.Z / data->mode.scale),
+            size
+        );
+        g_imgmodifier->copyTo(image, map_image, nullptr, &destRect);
 
-		map_image->fill(video::SColor(255, 0, 0, 0));
-		image->copyTo(map_image,
-			irr::core::vector2d<int> {
-				((data->mode.map_size - (static_cast<int>(dim.Width))) >> 1)
-					- data->pos.X / data->mode.scale,
-				((data->mode.map_size - (static_cast<int>(dim.Height))) >> 1)
-					+ data->pos.Z / data->mode.scale
-			});
-
-		image->drop();
-		texture->unlock();
+        cache->clearResource<img::Image>(ResourceType::IMAGE, image);
 	}
 
-	map_image->copyToScaling(minimap_image);
-	map_image->drop();
+    g_imgmodifier->copyTo(map_image, minimap_image, nullptr, nullptr, true);
+    delete map_image;
 
-	video::IImage *minimap_mask = getMinimapMask();
+    img::Image *minimap_mask = getMinimapMask();
 
 	for (s16 y = 0; y < MINIMAP_MAX_SY; y++)
 	for (s16 x = 0; x < MINIMAP_MAX_SX; x++) {
-		const video::SColor &mask_col = minimap_mask->getPixel(x, y);
-		if (!mask_col.getAlpha())
-			minimap_image->setPixel(x, y, video::SColor(0,0,0,0));
+        auto mask_col = g_imgmodifier->getPixel(minimap_mask, x, y);
+        if (!mask_col.A())
+            g_imgmodifier->setPixel(minimap_image, x, y, img::color8(img::PF_RGBA8, 0,0,0,0));
 	}
 
 	if (data->texture)
-		driver->removeTexture(data->texture);
+        delete data->texture;
 	if (data->heightmap_texture)
-		driver->removeTexture(data->heightmap_texture);
+        delete data->heightmap_texture;
 
-	data->texture = driver->addTexture("minimap__", minimap_image);
-	data->heightmap_texture =
-		driver->addTexture("minimap_heightmap__", heightmap_image);
-	minimap_image->drop();
-	heightmap_image->drop();
+    render::TextureSettings settings;
+    settings.minF = render::TMF_LINEAR_MIPMAP_LINEAR;
+    settings.magF = render::TMAGF_LINEAR;
+    settings.isRenderTarget = false;
+    data->texture = new render::Texture2D("minimap__", std::unique_ptr<img::Image>(minimap_image), settings);
+    data->heightmap_texture = new render::Texture2D("minimap_heightmap__", std::unique_ptr<img::Image>(heightmap_image), settings);
 
 	data->map_invalidated = true;
 
@@ -527,78 +511,47 @@ v3f Minimap::getYawVec()
 {
 	if (data->minimap_shape_round) {
 		return v3f(
-			std::cos(m_angle * core::DEGTORAD),
-			std::sin(m_angle * core::DEGTORAD),
+            std::cos(degToRad(m_angle)),
+            std::sin(degToRad(m_angle)),
 			1.0);
 	}
 
 	return v3f(1.0, 0.0, 1.0);
 }
 
-irr_ptr<scene::SMeshBuffer> Minimap::createMinimapMeshBuffer()
-{
-	auto buf = make_irr<scene::SMeshBuffer>();
-	auto &vertices = buf->Vertices->Data;
-	auto &indices = buf->Indices->Data;
-	vertices.resize(4);
-	indices.resize(6);
-	static const video::SColor c(255, 255, 255, 255);
-
-	vertices[0] = video::S3DVertex(-1, -1, 0, 0, 0, 1, c, 0, 1);
-	vertices[1] = video::S3DVertex(-1,  1, 0, 0, 0, 1, c, 0, 0);
-	vertices[2] = video::S3DVertex( 1,  1, 0, 0, 0, 1, c, 1, 0);
-	vertices[3] = video::S3DVertex( 1, -1, 0, 0, 0, 1, c, 1, 1);
-
-	indices[0] = 0;
-	indices[1] = 1;
-	indices[2] = 2;
-	indices[3] = 2;
-	indices[4] = 3;
-	indices[5] = 0;
-
-	buf->setHardwareMappingHint(scene::EHM_STATIC);
-	return buf;
-}
-
-void Minimap::drawMinimap(core::rect<s32> rect)
+void Minimap::drawMinimap(recti rect)
 {
 	if (data->mode.type == MINIMAP_TYPE_OFF)
 		return;
 
 	// Get textures
-	video::ITexture *minimap_texture = getMinimapTexture();
+    render::Texture2D *minimap_texture = getMinimapTexture();
 	if (!minimap_texture)
 		return;
-	if (!data->textures_initialised) {
-		data->minimap_overlay_round = m_tsrc->getTexture("minimap_overlay_round.png");
-		data->minimap_overlay_square = m_tsrc->getTexture("minimap_overlay_square.png");
-		data->player_marker = m_tsrc->getTexture("player_marker.png");
-		data->object_marker_red = m_tsrc->getTexture("object_marker_red.png");
-		data->textures_initialised = true;
-	}
 
 	updateActiveMarkers();
 
-	core::rect<s32> oldViewPort = driver->getViewPort();
+    /*core::rect<s32> oldViewPort = driver->getViewPort();
 	core::matrix4 oldProjMat = driver->getTransform(video::ETS_PROJECTION);
 	core::matrix4 oldViewMat = driver->getTransform(video::ETS_VIEW);
 
 	driver->setViewPort(rect);
 	driver->setTransform(video::ETS_PROJECTION, core::matrix4());
-	driver->setTransform(video::ETS_VIEW, core::matrix4());
+    driver->setTransform(video::ETS_VIEW, core::matrix4());*/
 
-	core::matrix4 matrix;
+    matrix4 matrix;
 	matrix.makeIdentity();
 
-	video::SMaterial &material = m_meshbuffer->getMaterial();
-	material.forEachTexture([] (auto &tex) {
-		tex.MinFilter = video::ETMINF_LINEAR_MIPMAP_LINEAR;
-		tex.MagFilter = video::ETMAGF_LINEAR;
-	});
-	material.TextureLayers[0].Texture = minimap_texture;
-	material.TextureLayers[1].Texture = data->heightmap_texture;
+    renderer->setBasicRenderState(true);
 
-	if (data->mode.type == MINIMAP_TYPE_SURFACE) {
+    auto ctxt = renderer->getContext();
+    ctxt->setActiveUnit(0, minimap_texture);
+    ctxt->setActiveUnit(1, data->heightmap_texture);
+
+    /*if (data->mode.type == MINIMAP_TYPE_SURFACE) {
+        ctxt->setShader(m_minimap_shader);
+
+
 		auto sid = m_shdrsrc->getShaderRaw("minimap_shader", true);
 		material.MaterialType = m_shdrsrc->getShaderInfo(sid).material;
 	} else {
@@ -666,21 +619,20 @@ void Minimap::drawMinimap(core::rect<s32> rect)
 			s_pos.Y + posf.Y + marker_size2);
 		driver->draw2DImage(data->object_marker_red, dest_rect,
 			img_rect, &dest_rect, &c[0], true);
-	}
+    }*/
 }
 
-MinimapMarker *Minimap::addMarker(scene::ISceneNode *parent_node)
+void Minimap::addMarker(v3f pos)
 {
-	auto m = std::make_unique<MinimapMarker>(parent_node);
-	auto ret = m.get();
-	m_markers.push_back(std::move(m));
-	return ret;
+    m_markers.push_back(pos);
 }
 
-void Minimap::removeMarker(MinimapMarker **m)
+void Minimap::removeMarker(v3f pos)
 {
-	m_markers.remove_if([ptr = *m](const auto &up) { return up.get() == ptr; });
-	*m = nullptr;
+    auto it = std::find(m_markers.begin(), m_markers.end(), pos);
+
+    if (it != m_markers.end())
+        m_markers.erase(it);
 }
 
 void Minimap::updateActiveMarkers()

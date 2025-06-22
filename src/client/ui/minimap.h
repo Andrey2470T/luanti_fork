@@ -4,34 +4,20 @@
 
 #pragma once
 
-#include "irrlichttypes.h"
-#include "irr_ptr.h"
-#include "rect.h"
-#include "SMeshBuffer.h"
+#include <BasicIncludes.h>
+#include <Image/Image.h>
+#include <Render/StreamTexture2D.h>
+#include <Render/Shader.h>
+#include "sprite.h"
 
 #include "../hud.h"
 #include "mapnode.h"
 #include "util/thread.h"
-#include <map>
-#include <string>
-#include <vector>
-
-namespace irr {
-	namespace video {
-		class IVideoDriver;
-		class IImage;
-		class ITexture;
-	}
-
-	namespace scene {
-		class ISceneNode;
-	}
-}
 
 class Client;
 class NodeDefManager;
-class ITextureSource;
-class IShaderSource;
+class Renderer2D;
+class ResourceCache;
 class VoxelManipulator;
 
 #define MINIMAP_MAX_SX 512
@@ -51,13 +37,6 @@ struct MinimapModeDef {
 	u16 scale;
 };
 
-struct MinimapMarker {
-	MinimapMarker(scene::ISceneNode *parent_node):
-		parent_node(parent_node)
-	{
-	}
-	scene::ISceneNode *parent_node;
-};
 struct MinimapPixel {
 	//! The topmost node that the minimap displays.
 	MapNode n;
@@ -68,25 +47,25 @@ struct MinimapPixel {
 struct MinimapMapblock {
 	void getMinimapNodes(VoxelManipulator *vmanip, const v3s16 &pos);
 
-	MinimapPixel data[MAP_BLOCKSIZE * MAP_BLOCKSIZE];
+    std::array<MinimapPixel, MAP_BLOCKSIZE * MAP_BLOCKSIZE> data;
 };
 
 struct MinimapData {
 	MinimapModeDef mode;
 	v3s16 pos;
 	v3s16 old_pos;
-	MinimapPixel minimap_scan[MINIMAP_MAX_SX * MINIMAP_MAX_SY];
-	bool map_invalidated;
+    std::array<MinimapPixel, MINIMAP_MAX_SX * MINIMAP_MAX_SY> minimap_scan;
+    bool map_invalidated = true;
 	bool minimap_shape_round;
-	video::IImage *minimap_mask_round = nullptr;
-	video::IImage *minimap_mask_square = nullptr;
-	video::ITexture *texture = nullptr;
-	video::ITexture *heightmap_texture = nullptr;
+    img::Image *minimap_mask_round = nullptr;
+    img::Image *minimap_mask_square = nullptr;
+    render::Texture2D *texture = nullptr;
+    render::Texture2D *heightmap_texture = nullptr;
 	bool textures_initialised = false; // True if the following textures are not nullptrs.
-	video::ITexture *minimap_overlay_round = nullptr;
-	video::ITexture *minimap_overlay_square = nullptr;
-	video::ITexture *player_marker = nullptr;
-	video::ITexture *object_marker_red = nullptr;
+    render::Texture2D *minimap_overlay_round = nullptr;
+    render::Texture2D *minimap_overlay_square = nullptr;
+    render::Texture2D *player_marker = nullptr;
+    render::Texture2D *object_marker_red = nullptr;
 };
 
 struct QueuedMinimapUpdate {
@@ -115,9 +94,10 @@ private:
 	std::map<v3s16, MinimapMapblock *> m_blocks_cache;
 };
 
-class Minimap {
+class Minimap : public UISprite
+{
 public:
-	Minimap(Client *client);
+    Minimap(Client *_client, Renderer2D *_renderer, ResourceCache *_cache);
 	~Minimap();
 
 	void addBlock(v3s16 pos, MinimapMapblock *data);
@@ -144,36 +124,31 @@ public:
 
 	MinimapModeDef getModeDef() const { return data->mode; }
 
-	video::IImage *getMinimapMask();
-	video::ITexture *getMinimapTexture();
+    img::Image *getMinimapMask();
+    render::Texture2D *getMinimapTexture();
 
-	void blitMinimapPixelsToImageRadar(video::IImage *map_image);
-	void blitMinimapPixelsToImageSurface(video::IImage *map_image,
-		video::IImage *heightmap_image);
+    void blitMinimapPixelsToImageRadar(img::Image *map_image);
+    void blitMinimapPixelsToImageSurface(img::Image *map_image,
+        img::Image *heightmap_image);
 
-	irr_ptr<scene::SMeshBuffer> createMinimapMeshBuffer();
-
-	MinimapMarker* addMarker(scene::ISceneNode *parent_node);
-	void removeMarker(MinimapMarker **marker);
+    void addMarker(v3f pos);
+    void removeMarker(v3f pos);
 
 	void updateActiveMarkers();
-	void drawMinimap(core::rect<s32> rect);
+    void drawMinimap(recti rect);
 
-	video::IVideoDriver *driver;
 	Client* client;
 	std::unique_ptr<MinimapData> data;
 
 private:
-	ITextureSource *m_tsrc;
-	IShaderSource *m_shdrsrc;
+    render::Shader *m_minimap_shader;
 	const NodeDefManager *m_ndef;
 	std::unique_ptr<MinimapUpdateThread> m_minimap_update_thread;
-	irr_ptr<scene::SMeshBuffer> m_meshbuffer;
 	std::vector<MinimapModeDef> m_modes;
-	size_t m_current_mode_index;
+    size_t m_current_mode_index = 0;
 	u16 m_surface_mode_scan_height;
-	f32 m_angle;
+    f32 m_angle = 0.0f;
 	std::mutex m_mutex;
-	std::list<std::unique_ptr<MinimapMarker>> m_markers;
+    std::list<v3f> m_markers;
 	std::list<v2f> m_active_markers;
 };

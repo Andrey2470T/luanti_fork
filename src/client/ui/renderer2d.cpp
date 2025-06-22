@@ -7,6 +7,8 @@
 #include "extra_images.h"
 #include "sprite.h"
 
+img::ImageModifier *g_imgmodifier = new img::ImageModifier();
+
 void Renderer2D::drawPrimitives(UIShape *shape, MeshBuffer *buf, u32 offset_n, u32 count_n)
 {
     auto vao = buf->getVAO();
@@ -34,7 +36,7 @@ void Renderer2D::drawPrimitives(UIShape *shape, MeshBuffer *buf, u32 offset_n, u
     }
 }
 
-void Renderer2D::setRenderState(bool alpha, bool texShader)
+void Renderer2D::setBasicRenderState(bool alpha)
 {
     Context->enableDepthTest(true);
     Context->setDepthFunc(CF_LESS);
@@ -46,6 +48,11 @@ void Renderer2D::setRenderState(bool alpha, bool texShader)
         Context->setBlendMode(GLBlendMode::ALPHA);
     else
         Context->setBlendMode(GLBlendMode::NORMAL);
+}
+
+void Renderer2D::setRenderState(bool alpha, bool texShader)
+{
+    setBasicRenderState(alpha);
 
     if (texShader)
         Context->setShader(Shader2D);
