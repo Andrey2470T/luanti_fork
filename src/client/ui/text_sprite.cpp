@@ -17,7 +17,7 @@ inline std::vector<UIPrimitiveType> getGlyphs(u32 count, bool background, bool b
 
 UITextSprite::UITextSprite(render::StreamTexture2D *tex, const EnrichedString &text,
     Renderer2D *renderer, ResourceCache *resCache, const recti &clip, bool border, bool wordWrap, bool fillBackground)
-    : UISprite(tex, renderer, resCache, true), drawBorder(border),
+    : UISprite(tex, renderer, resCache, false, false), drawBorder(border),
     drawBackground(fillBackground),  wordWrap(wordWrap), clipRect(clip)
 {
     setText(text);

@@ -40,3 +40,5 @@ void appendTCVT(
 // Note: 'buf' already must have a preallocated storage for this new vertex!
 void appendVT2D(
     MeshBuffer *buf, const v2f &pos, const img::color8 &c, const v2f &uv=v2f());
+
+void appendIndex(MeshBuffer *buf, u32 index);

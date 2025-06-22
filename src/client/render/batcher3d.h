@@ -3,71 +3,45 @@
 #include "meshbuffer.h"
 #include "Utils/Matrix4.h"
 
-struct MeshCreator3DState
-{
-    render::VertexTypeDescriptor CurVT = render::DefaultVType;
-    bool ContainsHW = false;
-
-    matrix4 CurTransform;
-
-    img::color8 CurColor;
-};
 // Class creating meshbuffers of various 3D shapes (point, line, quad, cube and etc)
-class MeshCreator3D
+class Batcher3D
 {
-    MeshCreator3DState State;
-
 public:
-    MeshCreator3D() = default;
+    static bool addTCVT;
+    static matrix4 curTransform;
 
-    MeshBuffer *createPoint(const v3f &pos);
+    static void appendVertex(MeshBuffer *buf, v3f pos,
+        const img::color8 &color=img::color8(), const v3f &normal=v3f(), const v2f &uv=v2f());
 
-    MeshBuffer *createLine(
-        const v3f &startPos, const v3f &endPos);
-
-    MeshBuffer *createLine(const line3f &line);
-
-    // pos1, pos2, pos3 must be ordered counter-clockwise!
-    MeshBuffer *createTriangle(
-        const v3f &pos1, const v3f &pos2, const v3f &pos3);
-
-    MeshBuffer *createFace(
-        const v3f &pos1, const v3f &pos2, const v3f &pos3, const v3f &pos4);
-
-    MeshBuffer *createFace();
-
-    MeshBuffer *createBox();
-
-    MeshCreator3DState getState() const
+    static void appendLine(MeshBuffer *buf, const v3f &startPos, const v3f &endPos,
+        const img::color8 &color=img::color8());
+    static void appendLine(MeshBuffer *buf, const line3f &line,
+        const img::color8 &color=img::color8())
     {
-        return State;
+        appendLine(buf, line.Start, line.End, color);
     }
 
-    void setCurrentVertexType(const render::VertexTypeDescriptor &newVT)
+    // Vertices attributes must be ordered clockwise!
+    // The first triangle vertex is the left
+    // The first face vertex is the upper left
+    static void appendTriangle(MeshBuffer *buf, const std::array<v3f, 3> &positions,
+        const img::color8 &color=img::color8(), const std::array<v2f, 3> &uvs={v2f(0.0f, 0.0f), v2f(0.5f, 1.0f), v2f(1.0f, 0.0f)});
+    // 'rotation' in degrees!
+    static void appendTriangle(MeshBuffer *buf, const std::array<v2f, 3> &positions, const v3f &rotation,
+        const img::color8 &color=img::color8(), const std::array<v2f, 3> &uvs={v2f(0.0f, 0.0f), v2f(0.5f, 1.0f), v2f(1.0f, 0.0f)});
+
+    static void appendFace(MeshBuffer *buf, const std::array<v3f, 4> &positions,
+        const std::array<img::color8, 4> &colors, const rectf &uvs={v2f(0.0f, 1.0f), v2f(1.0f, 0.0f)});
+    static void appendFace(MeshBuffer *buf, const rectf &positions, const v3f &rotation,
+        const std::array<img::color8, 4> &colors, const rectf &uvs={v2f(0.0f, 1.0f), v2f(1.0f, 0.0f)});
+    static void appendUnitFace(MeshBuffer *buf, const std::array<img::color8, 4> &colors)
     {
-        State.CurVT = newVT;
+        appendFace(buf, {v3f(-1.0f, 1.0f, 0.0f), v3f(1.0f, 1.0f, 0.0f), v3f(1.0f, -1.0f, 0.0f), v3f(-1.0f, -1.0f, 0.0f)}, colors);
     }
 
-    void markContainsHW(bool yes)
+    static void appendBox(MeshBuffer *buf, const aabbf &box, const std::array<img::color8, 8> &colors);
+    static void appendUnitBox(MeshBuffer *buf, const std::array<img::color8, 8> &colors)
     {
-        State.ContainsHW = yes;
+        appendBox(buf, {v3f(-1.0f, -1.0f, -1.0f), v3f(1.0f, 1.0f, 1.0f)}, colors);
     }
-
-    void setCurrentTransform(const matrix4 &newTransform)
-    {
-        State.CurTransform = newTransform;
-    }
-
-    void setCurrentColor(const img::color8 &color)
-    {
-        State.CurColor = color;
-    }
-
-private:
-    void appendVertex(MeshBuffer *buf, const v3f &pos,
-        v3f normal=v3f(), v2f uv=v2f());
-    void appendLine(MeshBuffer *buf, const v3f &startPos, const v3f &endPos);
-    // pos1, pos2, pos3 must be ordered counter-clockwise!
-    void appendTriangle(MeshBuffer *buf, const v3f &pos1, const v3f &pos2, const v3f &pos3);
-    void appendFace(MeshBuffer *buf, const v3f &pos1, const v3f &pos2, const v3f &pos3, const v3f &pos4);
 };

@@ -327,7 +327,7 @@ MeshStorage MeshOperations::convertNodeboxesToMesh(const std::vector<aabbf> &box
 				appendSVT(buf, positions[4*i+j], c, normals[i], uvs[4*i+j]);
 
 			for (u8 k = 0; k < 6; k++)
-				buf->setIndexAt(indices[k]);
+                appendIndex(buf, indices[k]);
 		}
 	}
 	return dst_mesh;

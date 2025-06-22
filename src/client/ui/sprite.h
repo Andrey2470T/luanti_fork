@@ -131,23 +131,23 @@ protected:
     std::unique_ptr<MeshBuffer> mesh;
     std::unique_ptr<UIShape> shape;
 
-    // The texture can be simple or filtered by the MT scaling filter
-    render::Texture2D *texture;
+    render::Texture2D *texture = nullptr;
 
     bool streamTex = false;
     bool visible = false;
 public:
     // Creates an empty sprite
-    UISprite(render::Texture2D *tex, Renderer2D *_renderer, ResourceCache *_cache, bool streamTexture=false);
+    UISprite(render::Texture2D *tex, Renderer2D *_renderer, ResourceCache *_cache,
+        bool streamTexture=false, bool staticUsage=true);
 
     // Creates a single rectangle mesh
     UISprite(render::Texture2D *tex, Renderer2D *_renderer,
         ResourceCache *_cache, const rectf &srcRect, const rectf &destRect,
-        const std::array<img::color8, 4> &colors, bool streamTexture=false);
+        const std::array<img::color8, 4> &colors, bool streamTexture=false, bool staticUsage=true);
 
     // Creates (without buffer filling) multiple-primitive mesh
     UISprite(render::Texture2D *tex, Renderer2D *_renderer, ResourceCache *_cache,
-        const std::vector<UIPrimitiveType> &primitives, bool streamTexture=false);
+        const std::vector<UIPrimitiveType> &primitives, bool streamTexture=false, bool staticUsage=true);
 
     v2u getSize() const
     {

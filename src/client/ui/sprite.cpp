@@ -2,6 +2,7 @@
 #include "batcher2d.h"
 #include "client/render/defaultVertexTypes.h"
 #include "renderer2d.h"
+#include <Render/StreamTexture2D.h>
 
 std::array<u8, 4> primVCounts = {2, 3, 4, 9};
 
@@ -218,19 +219,20 @@ void UIShape::updateMaxArea(const v2f &ulc, const v2f &lrc)
     maxAreaInit = true;
 }
 
-UISprite::UISprite(render::Texture2D *tex, Renderer2D *_renderer, ResourceCache *_cache,bool streamTexture)
+UISprite::UISprite(render::Texture2D *tex, Renderer2D *_renderer, ResourceCache *_cache,
+    bool streamTexture, bool staticUsage)
     : renderer(_renderer), cache(_cache), mesh(std::make_unique<MeshBuffer>(true, VType2D,
-        streamTexture ? render::MeshUsage::DYNAMIC : render::MeshUsage::STATIC)),
+        staticUsage ? render::MeshUsage::STATIC : render::MeshUsage::DYNAMIC)),
       shape(std::make_unique<UIShape>()), texture(tex), streamTex(streamTexture)
 {}
 
 // Creates a single rectangle mesh
 UISprite::UISprite(render::Texture2D *tex, Renderer2D *_renderer,
     ResourceCache *_cache, const rectf &uvRect, const rectf &posRect,
-    const std::array<img::color8, 4> &colors, bool streamTexture)
+    const std::array<img::color8, 4> &colors, bool streamTexture, bool staticUsage)
     : renderer(_renderer), cache(_cache),
     mesh(std::make_unique<MeshBuffer>(UIShape::countRequiredVCount({UIPrimitiveType::RECTANGLE}),
-        UIShape::countRequiredICount({UIPrimitiveType::RECTANGLE}), true, VType2D, streamTexture ? render::MeshUsage::DYNAMIC : render::MeshUsage::STATIC)),
+        UIShape::countRequiredICount({UIPrimitiveType::RECTANGLE}), true, VType2D, staticUsage ? render::MeshUsage::STATIC : render::MeshUsage::DYNAMIC)),
     shape(std::make_unique<UIShape>()), texture(tex), streamTex(streamTexture)
 {
     shape->addRectangle(posRect, colors);
@@ -239,10 +241,10 @@ UISprite::UISprite(render::Texture2D *tex, Renderer2D *_renderer,
 
 // Creates (without buffer filling) multiple-primitive mesh
 UISprite::UISprite(render::Texture2D *tex, Renderer2D *_renderer, ResourceCache *_cache,
-    const std::vector<UIPrimitiveType> &primitives, bool streamTexture)
+    const std::vector<UIPrimitiveType> &primitives, bool streamTexture, bool staticUsage)
     : renderer(_renderer), cache(_cache),
     mesh(std::make_unique<MeshBuffer>(UIShape::countRequiredVCount(primitives),
-        UIShape::countRequiredICount(primitives), true, VType2D, streamTexture ? render::MeshUsage::DYNAMIC : render::MeshUsage::STATIC)),
+        UIShape::countRequiredICount(primitives), true, VType2D, staticUsage ? render::MeshUsage::STATIC : render::MeshUsage::DYNAMIC)),
     shape(std::make_unique<UIShape>()), texture(tex), streamTex(streamTexture)
 {}
 
@@ -256,9 +258,11 @@ void UISprite::draw()
     if (shape->getPrimitiveCount() == 0 || !visible)
         return;
 
-    renderer->setRenderState(true, false);
-    renderer->setUniforms(1.0f, false);
-    renderer->setTexture(texture);
+    renderer->setRenderState(true, texture != nullptr);
+    renderer->setUniforms(1.0f, texture != nullptr);
+
+    if (texture)
+        renderer->setTexture(texture);
 
     auto prevType = shape->getPrimitiveType(0);
     u32 pOffset = 0;
@@ -281,7 +285,7 @@ void UISprite::draw()
 UIAnimatedSprite::UIAnimatedSprite(render::Texture2D *texture, u32 _frameLength, Renderer2D *_renderer,
     ResourceCache *cache, const std::array<img::color8, 4> &colors)
     : UISprite(texture, _renderer, cache, rectf(v2f(texture->getSize().X, texture->getSize().Y)),
-        rectf(v2f(texture->getSize().X, texture->getSize().Y)), colors), frameLength(_frameLength)
+        rectf(v2f(texture->getSize().X, texture->getSize().Y)), colors, true), frameLength(_frameLength)
 {
     visible = true;
 }
@@ -315,6 +319,8 @@ void UIAnimatedSprite::drawFrame(u32 time, bool loop)
     if (newFrameNum != curFrameNum) {
         texture->uploadData(frameImg);
         curFrameNum = newFrameNum;
+        texture->bind();
+        dynamic_cast<render::StreamTexture2D *>(texture)->flush();
     }
 
     draw();

@@ -94,7 +94,7 @@ inline void svtSetHWColor(MeshBuffer *buf, const img::color8 &hw_c, u32 num)
 }
 
 
-inline void fillEmptyCustomAttribs(MeshBuffer *buf, u8 firstCustomAtrribIndex)
+void fillEmptyCustomAttribs(MeshBuffer *buf, u8 firstCustomAtrribIndex)
 {
     auto vertexType = buf->getVAO()->getVertexType();
 
@@ -223,7 +223,7 @@ inline void appendTCVT(
 
 // Appends the attributes of the standard 2D vertex type in the end of the mesh buffer
 // Note: 'buf' already must have a preallocated storage for this new vertex!
-void appendVT2D(
+inline void appendVT2D(
     MeshBuffer *buf, const v2f &pos, const img::color8 &c, const v2f &uv)
 {
     u32 newVNum = buf->getVertexCount();
@@ -239,4 +239,10 @@ void appendVT2D(
     }
 
     fillEmptyCustomAttribs(buf, firstCustomAttrIndex);
+}
+
+inline void appendIndex(MeshBuffer *buf, u32 index)
+{
+    u32 newINum = buf->getIndexCount();
+    buf->setIndexAt(index, newINum);
 }
