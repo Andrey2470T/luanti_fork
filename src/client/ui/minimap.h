@@ -134,7 +134,7 @@ public:
     void addMarker(v3f pos);
     void removeMarker(v3f pos);
 
-	void updateActiveMarkers();
+    void updateActiveMarkers(recti rect);
     void drawMinimap(recti rect);
 
 	Client* client;

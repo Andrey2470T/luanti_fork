@@ -122,6 +122,7 @@ void UITextSprite::updateBuffer(rectf &&r, FontRenderer *font_renderer)
         ++rectN;
         auto bg_color = getBackgroundColor();
         shape->addRectangle(r, {bg_color, bg_color, bg_color, bg_color});
+        reallocateBuffer();
         Batcher2D::appendRectangle(mesh.get(), r, {bg_color, bg_color, bg_color, bg_color}, {v2f(), v2f()});
     }
 
@@ -129,6 +130,7 @@ void UITextSprite::updateBuffer(rectf &&r, FontRenderer *font_renderer)
         std::array<img::color8, 4> colors;
         for (u32 i = 0; i < 4; i++) {
             shape->addRectangle(r, colors);
+            reallocateBuffer();
             Batcher2D::appendRectangle(mesh.get(), r, colors, {v2f(), v2f()});
         }
 
@@ -249,12 +251,14 @@ void UITextSprite::updateBuffer(rectf &&r, FontRenderer *font_renderer)
                 shadowColors[3].A(shadowAlpha);
 
                 shape->addRectangle(glyphShadowPos, shadowColors);
+                reallocateBuffer();
                 Batcher2D::appendImageRectangle(mesh.get(), v2u(atlasSize), glyphUV, glyphShadowPos, shadowColors, false);
             }
 
             std::array<img::color8, 4> arrColors = {colors[0], colors[1], colors[2], colors[3]};
 
             shape->addRectangle(glyphPos, arrColors);
+            reallocateBuffer();
             Batcher2D::appendImageRectangle(mesh.get(), v2u(atlasSize), glyphUV, glyphPos, arrColors, false);
 
             offset.X += advance;
@@ -320,7 +324,7 @@ void UITextSprite::updateBuffer(rectf &&r, FontRenderer *font_renderer)
         rc.ULC.Y += height_line;
     }
 
-    flush();
+    mesh->uploadData();
 }
 void UITextSprite::updateWrappedText()
 {

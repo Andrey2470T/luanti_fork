@@ -47,6 +47,12 @@ void MeshBuffer::reallocateData(u32 vertexCount, u32 indexCount)
         return;
 
     VBuffer.Data->reallocate(vType.Attributes.size() * vertexCount, render::sizeOfVertexType(vType) * vertexCount);
+}
+
+void MeshBuffer::uploadData()
+{
+    if (!VBuffer.Dirty && !IBuffer.Dirty)
+        return;
 
     VAO->reallocate(VBuffer.Data.get(), VBuffer.DataCount, (const u32 *)IBuffer.Data.get(), IBuffer.DataCount);
     VBuffer.Dirty = false;

@@ -113,6 +113,13 @@ public:
     void updateBuffer(MeshBuffer *buf, u32 primitiveNum, bool pos_or_colors=true);
     void updateMaxArea(const v2f &ulc, const v2f &lrc);
 
+    void removePrimitive(u32 i)
+    {
+        if (i >= getPrimitiveCount())
+            return;
+
+        primitives.erase(primitives.begin()+i);
+    }
     void clear()
     {
         primitives.clear();
@@ -173,6 +180,8 @@ public:
     {
         visible = yes;
     }
+
+    void reallocateBuffer();
 
     virtual void setClipRect(const recti &r);
     

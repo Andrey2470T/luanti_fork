@@ -15,6 +15,7 @@
 #include "batcher2d.h"
 #include "voxel.h"
 #include <Render/DrawContext.h>
+#include "client/player/playercamera.h"
 
 
 ////
@@ -187,6 +188,7 @@ Minimap::Minimap(Client *_client, Renderer2D *_renderer, ResourceCache *_cache)
 
 	// Create mesh buffer for minimap
     shape->addRectangle(rectf(v2f(-1.0f, 1.0f), v2f(1.0f, -1.0f)), {});
+    reallocateBuffer();
     Batcher2D::appendImageUnitRectangle(mesh.get(), false);
 
     data->minimap_overlay_round = cache->getOrLoad<render::Texture2D>(ResourceType::TEXTURE, "minimap_overlay_round.png")->data.get();
@@ -531,95 +533,66 @@ void Minimap::drawMinimap(recti rect)
 
 	updateActiveMarkers();
 
-    /*core::rect<s32> oldViewPort = driver->getViewPort();
-	core::matrix4 oldProjMat = driver->getTransform(video::ETS_PROJECTION);
-	core::matrix4 oldViewMat = driver->getTransform(video::ETS_VIEW);
+    auto ctxt = renderer->getContext();
+    recti oldViewPort = ctxt->getViewportSize();
+    //core::matrix4 oldProjMat = driver->getTransform(video::ETS_PROJECTION);
+    //core::matrix4 oldViewMat = driver->getTransform(video::ETS_VIEW);
 
-	driver->setViewPort(rect);
-	driver->setTransform(video::ETS_PROJECTION, core::matrix4());
-    driver->setTransform(video::ETS_VIEW, core::matrix4());*/
+    ctxt->setViewportSize(rect);
+    //driver->setTransform(video::ETS_PROJECTION, core::matrix4());
+    //driver->setTransform(video::ETS_VIEW, core::matrix4());
 
     matrix4 matrix;
 	matrix.makeIdentity();
 
     renderer->setBasicRenderState(true);
 
-    auto ctxt = renderer->getContext();
     ctxt->setActiveUnit(0, minimap_texture);
     ctxt->setActiveUnit(1, data->heightmap_texture);
 
-    /*if (data->mode.type == MINIMAP_TYPE_SURFACE) {
+    render::Shader *targetShader;
+    if (data->mode.type == MINIMAP_TYPE_SURFACE) {
+        targetShader = m_minimap_shader;
         ctxt->setShader(m_minimap_shader);
-
-
-		auto sid = m_shdrsrc->getShaderRaw("minimap_shader", true);
-		material.MaterialType = m_shdrsrc->getShaderInfo(sid).material;
+        m_minimap_shader->setUniform3Float("yawVec", getYawVec());
 	} else {
-		material.MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL;
+        //material.MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL;
 	}
 
 	if (data->minimap_shape_round)
-		matrix.setRotationDegrees(core::vector3df(0, 0, 360 - m_angle));
+        matrix.setRotationDegrees(v3f(0, 0, 360 - m_angle));
 
 	// Draw minimap
-	driver->setTransform(video::ETS_WORLD, matrix);
-	driver->setMaterial(material);
-	driver->drawMeshBuffer(m_meshbuffer.get());
+    targetShader->setUniform4x4Matrix("mWorld", matrix);
+    renderer->drawPrimitives(shape.get(), mesh.get());
 
 	// Draw overlay
-	video::ITexture *minimap_overlay = data->minimap_shape_round ?
+    render::Texture2D *minimap_overlay = data->minimap_shape_round ?
 		data->minimap_overlay_round : data->minimap_overlay_square;
-	material.TextureLayers[0].Texture = minimap_overlay;
-	material.MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL;
-	driver->setMaterial(material);
-	driver->drawMeshBuffer(m_meshbuffer.get());
+    ctxt->setActiveUnit(0, minimap_overlay);
+    //material.MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL;
+    //driver->setMaterial(material);
+    renderer->drawPrimitives(shape.get(), mesh.get());
 
 	// Draw player marker on minimap
 	if (data->minimap_shape_round) {
-		matrix.setRotationDegrees(core::vector3df(0, 0, 0));
+        matrix.setRotationDegrees(v3f(0, 0, 0));
 	} else {
-		matrix.setRotationDegrees(core::vector3df(0, 0, m_angle));
+        matrix.setRotationDegrees(v3f(0, 0, m_angle));
 	}
 
-	material.TextureLayers[0].Texture = data->player_marker;
-	driver->setTransform(video::ETS_WORLD, matrix);
-	driver->setMaterial(material);
-	driver->drawMeshBuffer(m_meshbuffer.get());
+    ctxt->setActiveUnit(0, data->player_marker);
+    //driver->setTransform(video::ETS_WORLD, matrix);
+    //driver->setMaterial(material);
+    renderer->drawPrimitives(shape.get(), mesh.get());
 
 	// Reset transformations
-	driver->setTransform(video::ETS_VIEW, oldViewMat);
-	driver->setTransform(video::ETS_PROJECTION, oldProjMat);
-	driver->setViewPort(oldViewPort);
+    //driver->setTransform(video::ETS_VIEW, oldViewMat);
+    //driver->setTransform(video::ETS_PROJECTION, oldProjMat);
+    ctxt->setViewportSize(oldViewPort);
 
 	// Draw player markers
-	v2s32 s_pos(rect.UpperLeftCorner.X, rect.UpperLeftCorner.Y);
-	core::dimension2di imgsize(data->object_marker_red->getOriginalSize());
-	core::rect<s32> img_rect(0, 0, imgsize.Width, imgsize.Height);
-	static const video::SColor col(255, 255, 255, 255);
-	static const video::SColor c[4] = {col, col, col, col};
-	f32 sin_angle = std::sin(m_angle * core::DEGTORAD);
-	f32 cos_angle = std::cos(m_angle * core::DEGTORAD);
-	s32 marker_size2 =  0.025 * (float)rect.getWidth();;
-	for (std::list<v2f>::const_iterator
-			i = m_active_markers.begin();
-			i != m_active_markers.end(); ++i) {
-		v2f posf = *i;
-		if (data->minimap_shape_round) {
-			f32 t1 = posf.X * cos_angle - posf.Y * sin_angle;
-			f32 t2 = posf.X * sin_angle + posf.Y * cos_angle;
-			posf.X = t1;
-			posf.Y = t2;
-		}
-		posf.X = (posf.X + 0.5) * (float)rect.getWidth();
-		posf.Y = (posf.Y + 0.5) * (float)rect.getHeight();
-		core::rect<s32> dest_rect(
-			s_pos.X + posf.X - marker_size2,
-			s_pos.Y + posf.Y - marker_size2,
-			s_pos.X + posf.X + marker_size2,
-			s_pos.Y + posf.Y + marker_size2);
-		driver->draw2DImage(data->object_marker_red, dest_rect,
-			img_rect, &dest_rect, &c[0], true);
-    }*/
+    renderer->drawPrimitives(shape.get(), mesh.get(), 1, m_active_markers.size());
 }
 
 void Minimap::addMarker(v3f pos)
@@ -635,34 +608,66 @@ void Minimap::removeMarker(v3f pos)
         m_markers.erase(it);
 }
 
-void Minimap::updateActiveMarkers()
+void Minimap::updateActiveMarkers(recti rect)
 {
-	video::IImage *minimap_mask = getMinimapMask();
+    img::Image *minimap_mask = getMinimapMask();
 
 	m_active_markers.clear();
+
+    // Clear all ealier added markers
+    for (u32 i = 1; i < shape->getPrimitiveCount(); i++) shape->removePrimitive(i);
+
 	v3f cam_offset = intToFloat(client->getCamera()->getOffset(), BS);
 	v3s16 pos_offset = data->pos - v3s16(data->mode.map_size / 2,
 			data->mode.scan_height / 2,
 			data->mode.map_size / 2);
 
-	for (auto &&marker : m_markers) {
-		v3s16 pos = floatToInt(marker->parent_node->getAbsolutePosition() +
-			cam_offset, BS) - pos_offset;
+    v2i s_pos = rect.ULC;
+    v2u imgsize = data->object_marker_red->getSize();
+    rectf img_rect(0.0f, 0.0f, imgsize.X, imgsize.Y);
+    const img::color8 col(img::PF_RGBA8, 255, 255, 255, 255);
+    const std::array<img::color8, 4> c = {col, col, col, col};
+    f32 sin_angle = std::sin(degToRad(m_angle));
+    f32 cos_angle = std::cos(degToRad(m_angle));
+    s32 marker_size2 =  0.025 * (f32)rect.getWidth();
+
+    for (v3f marker : m_markers) {
+        v3s16 pos = floatToInt(marker + cam_offset, BS) - pos_offset;
 		if (pos.X < 0 || pos.X > data->mode.map_size ||
 				pos.Y < 0 || pos.Y > data->mode.scan_height ||
 				pos.Z < 0 || pos.Z > data->mode.map_size) {
 			continue;
 		}
-		pos.X = ((float)pos.X / data->mode.map_size) * MINIMAP_MAX_SX;
-		pos.Z = ((float)pos.Z / data->mode.map_size) * MINIMAP_MAX_SY;
-		const video::SColor &mask_col = minimap_mask->getPixel(pos.X, pos.Z);
-		if (!mask_col.getAlpha()) {
+        pos.X = ((f32)pos.X / data->mode.map_size) * MINIMAP_MAX_SX;
+        pos.Z = ((f32)pos.Z / data->mode.map_size) * MINIMAP_MAX_SY;
+        img::color8 mask_col = g_imgmodifier->getPixel(minimap_mask, pos.X, pos.Z);
+        if (!mask_col.A()) {
 			continue;
 		}
 
-		m_active_markers.emplace_back(((float)pos.X / (float)MINIMAP_MAX_SX) - 0.5,
-			(1.0 - (float)pos.Z / (float)MINIMAP_MAX_SY) - 0.5);
+        v2f am(((f32)pos.X / (f32)MINIMAP_MAX_SX) - 0.5,
+            (1.0 - (f32)pos.Z / (f32)MINIMAP_MAX_SY) - 0.5);
+        m_active_markers.push_back(am);
+
+        if (data->minimap_shape_round) {
+            f32 t1 = am.X * cos_angle - am.Y * sin_angle;
+            f32 t2 = am.X * sin_angle + am.Y * cos_angle;
+            am.X = t1;
+            am.Y = t2;
+        }
+        am.X = (am.X + 0.5) * (f32)rect.getWidth();
+        am.Y = (am.Y + 0.5) * (f32)rect.getHeight();
+        rectf destRect(
+            s_pos.X + am.X - marker_size2,
+            s_pos.Y + am.Y - marker_size2,
+            s_pos.X + am.X + marker_size2,
+            s_pos.Y + am.Y + marker_size2);
+        shape->addRectangle(destRect, c);
+        reallocateBuffer();
+        Batcher2D::appendImageRectangle(mesh.get(), imgsize, img_rect, destRect, c, false);
 	}
+
+    mesh->uploadData();
 }
 
 ////

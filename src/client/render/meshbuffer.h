@@ -57,6 +57,8 @@ public:
     {
         for (auto &attr : VAO->getVertexType().Attributes)
             VertexCmpCount += attr.ComponentCount;
+
+        reallocateData(vertexCount, indexCount);
     }
     // Creates always INDEX type not creating a new VAO
     MeshBuffer(const std::shared_ptr<render::Mesh> &sharedMesh)
@@ -266,6 +268,8 @@ public:
     void setIndexAt(u32 index, u32 pos);
 
     void reallocateData(u32 vertexCount, u32 indexCount=0);
+
+    void uploadData();
     void uploadVertexData();
     void uploadIndexData();
 

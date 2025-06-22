@@ -1,11 +1,17 @@
-uniform mat4 mWorld;
+#version 320 core
 
-varying lowp vec4 varColor;
-varying mediump vec2 varTexCoord;
+uniform mWorld;
+
+layout (location = 0) in vec2 pos;
+layout (location = 1) in vec4 color;
+layout (location = 2) in vec2 uv;
+
+out vec4 varColor;
+out vec2 varTexCoord;
 
 void main(void)
 {
-	varTexCoord = inTexCoord0.st;
-	gl_Position = mWorldViewProj * inVertexPosition;
-	varColor = inVertexColor;
+	varTexCoord = uv;
+	gl_Position = mWorld * inVertexPosition;
+	varColor = color;
 }

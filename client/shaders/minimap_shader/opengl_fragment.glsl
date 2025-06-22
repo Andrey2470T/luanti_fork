@@ -1,13 +1,17 @@
+#version 320 core
+
 uniform sampler2D baseTexture;
 uniform sampler2D normalTexture;
 uniform vec3 yawVec;
 
-varying lowp vec4 varColor;
-varying mediump vec2 varTexCoord;
+in vec4 varColor;
+in vec2 varTexCoord;
+
+out vec4 color;
 
 void main (void)
 {
-	vec2 uv = varTexCoord.st;
+	vec2 uv = varTexCoord;
 
 	//texture sampling rate
 	const float step = 1.0 / 256.0;
@@ -28,8 +32,6 @@ void main (void)
 	float specular = pow(clamp(dot(reflect(L, bump.xyz), yawVec), 0.0, 1.0), 1.0);
 	float diffuse = dot(yawVec, bump.xyz);
 
-	vec3 color = (1.1 * diffuse + 0.05 * height + 0.5 * specular) * base.rgb;
-	vec4 col = vec4(color.rgb, base.a);
-	col *= varColor;
-	gl_FragColor = vec4(col.rgb, base.a);
+	color = vec4(vec3(1.1 * diffuse + 0.05 * height + 0.5 * specular) * base.rgb, base.a);
+	color *= varColor;
 }

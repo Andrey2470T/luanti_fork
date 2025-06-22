@@ -248,6 +248,18 @@ UISprite::UISprite(render::Texture2D *tex, Renderer2D *_renderer, ResourceCache 
     shape(std::make_unique<UIShape>()), texture(tex), streamTex(streamTexture)
 {}
 
+void UISprite::reallocateBuffer()
+{
+    std::vector<UIPrimitiveType> prims(shape->getPrimitiveCount());
+
+    for (u32 i = 0; shape->getPrimitiveCount(); i++)
+        prims[i] = shape->getPrimitiveType(i);
+    mesh->reallocateData(
+        UIShape::countRequiredVCount(prims),
+        UIShape::countRequiredICount(prims)
+    );
+}
+
 void UISprite::setClipRect(const recti &r)
 {
     renderer->setClipRect(r);
