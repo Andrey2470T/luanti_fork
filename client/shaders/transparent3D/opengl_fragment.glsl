@@ -1,9 +1,9 @@
 #version 320 core
 
-uniform int uAlphaDiscard;
-uniform float uAlphaRef;
-uniform int uTextureUsage0;
-uniform sampler2D uTextureUnit0;
+uniform int mAlphaDiscard;
+uniform float mAlphaRef;
+uniform int mTextureUsage0;
+uniform sampler2D mTexture0;
 
 layout (std140) uniform fogParams {
     int enable;
@@ -14,27 +14,29 @@ layout (std140) uniform fogParams {
     float density;
 };
 
-in vec2 vTextureCoord0;
+in vec2 vUV0;
 in vec4 vVertexColor;
 in float vFogCoord;
+
+out vec4 outColor;
 
 float computeFog()
 {
 	const float LOG2 = 1.442695;
 	float FogFactor = 0.0;
 
-	if (uFogType == 0) // Exp
+	if (mFogParams.type == 0) // Exp
 	{
-		FogFactor = exp2(-fogParams.density * vFogCoord * LOG2);
+		FogFactor = exp2(-mFogParams.density * vFogCoord * LOG2);
 	}
-	else if (fogParams.type == 1) // Linear
+	else if (mFogParams.type == 1) // Linear
 	{
-		float Scale = 1.0 / (fogParams.end - fogParams.start);
-		FogFactor = (fogParams.end - vFogCoord) * Scale;
+		float Scale = 1.0 / (mFogParams.end - mFogParams.start);
+		FogFactor = (mFogParams.end - vFogCoord) * Scale;
 	}
-	else if (fogParams.type == 2) // Exp2
+	else if (mFogParams.type == 2) // Exp2
 	{
-		FogFactor = exp2(-fogParams.density * fogParams.density * vFogCoord * vFogCoord * LOG2);
+		FogFactor = exp2(-mFogParams.density * mFogParams.density * vFogCoord * vFogCoord * LOG2);
 	}
 
 	FogFactor = clamp(FogFactor, 0.0, 1.0);
@@ -46,23 +48,23 @@ void main()
 {
 	vec4 Color = vVertexColor;
 
-	if (bool(uTextureUsage0)) {
-		Color *= texture2D(uTextureUnit0, vTextureCoord0);
+	if (bool(mTextureUsage0)) {
+		Color *= texture2D(mTexture0, vUV0);
 		
-		if (uAlphaDiscard == 0 && Color.a < uAlphaRef)
+		if (mAlphaDiscard == 0 && Color.a < mAlphaRef)
 	        discard;
 	}
 	
-	if (uAlphaDiscard == 1 && Color.a < uAlphaRef)
+	if (mAlphaDiscard == 1 && Color.a < mAlphaRef)
         discard;
 
-	if (bool(fogParams.enable))
+	if (bool(mFogParams.enable))
 	{
 		float FogFactor = computeFog();
-		vec4 FogColor = fogParams.color;
+		vec4 FogColor = mFogParams.color;
 		FogColor.a = 1.0;
 		Color = mix(FogColor, Color, FogFactor);
 	}
 
-	gl_FragColor = Color;
+	outColor = Color;
 }

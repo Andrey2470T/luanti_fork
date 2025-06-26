@@ -5,27 +5,30 @@ layout (location = 1) in vec4 color;
 layout (location = 2) in vec3 normal;
 layout (location = 3) in vec2 uv;
 
-uniform mat4 uWVPMatrix;
-uniform mat4 uWVMatrix;
-uniform mat4 uTMatrix0;
+layout (std140) uniform mMatrices {
+	mat4 worldViewProj;
+	mat4 worldView;
+	mat4 world;
+	mat4 texture0;
+};
 
-uniform float uThickness;
+uniform float mThickness;
 
-out vec2 vTextureCoord0;
+out vec2 vUV0;
 out vec4 vVertexColor;
 out float vFogCoord;
 
 void main()
 {
-	gl_Position = uWVPMatrix * vec4(pos, 1.0);
-	gl_PointSize = uThickness;
+	gl_Position = mMatrices.worldViewProj * vec4(pos, 1.0);
+	gl_PointSize = mThickness;
 
 	vec4 TextureCoord0 = vec4(uv.x, uv.y, 1.0, 1.0);
-	vTextureCoord0 = vec4(uTMatrix0 * TextureCoord0).xy;
+	vUV0 = vec4(mMatrices.texture0 * TextureCoord0).xy;
 
 	vVertexColor = color.bgra;
 
-	vec3 Position = (uWVMatrix * vec4(pos, 1.0)).xyz;
+	vec3 Position = (mMatrices.worldView * vec4(pos, 1.0)).xyz;
 
 	vFogCoord = length(Position);
 }

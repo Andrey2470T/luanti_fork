@@ -2,15 +2,11 @@
 
 precision mediump float;
 
-/* Input */
+in vec4 vVertexColor;
 
-in vec4 outColor;
-
-/* Output */
-
-out vec4 color;
+out vec4 outColor;
 
 void main()
 {
-	color = outColor;
+	outColor = vVertexColor;
 }

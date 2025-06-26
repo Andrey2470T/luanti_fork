@@ -2,26 +2,20 @@
 
 precision mediump float;
 
-/* Uniforms */
+uniform int mTextureUsage0;
+uniform sampler2D mTexture0;
 
-uniform int textureUsed;
-uniform sampler2D texture;
+in vec2 vUV0;
+in vec4 vVertexColor;
 
-/* Inputs */
-
-in vec2 outUV;
-in vec4 outColor;
-
-/* Output */
-
-out vec4 color;
+out vec4 outColor;
 
 void main()
 {
-	vec4 Color = outColor;
+	vec4 Color = vVertexColor;
 
-	if (bool(textureUsed))
-		Color *= texture2D(texture, outUV);
+	if (bool(mTextureUsage0))
+		Color *= texture2D(mTexture0, vUV0);
 
-	color = Color;
+	outColor = Color;
 }

@@ -1,17 +1,17 @@
 #version 320 core
 
-uniform mWorld;
-
 layout (location = 0) in vec2 pos;
 layout (location = 1) in vec4 color;
 layout (location = 2) in vec2 uv;
 
-out vec4 varColor;
-out vec2 varTexCoord;
+uniform mat4 mWorld;
+
+out vec4 vVertexColor;
+out vec2 vUV0;
 
 void main(void)
 {
-	varTexCoord = uv;
-	gl_Position = mWorld * inVertexPosition;
-	varColor = color;
+	vUV0 = uv;
+	gl_Position = mWorld * pos;
+	vVertexColor = color;
 }
