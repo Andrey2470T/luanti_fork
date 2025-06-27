@@ -59,7 +59,7 @@ set(render_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/render/meshoperations.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/particles.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/rectpack2d_atlas.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/render/renderingengine.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/render/rendersystem.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/sky.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/tile.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/wieldmesh.cpp

@@ -13,8 +13,6 @@ namespace main
 };
 
 class ResourceCache;
-class GUIStaticText;
-class IGUIEnvironment;
 class Renderer2D;
 class UISprite;
 class UITextSprite;
@@ -24,7 +22,6 @@ class LoadScreen
 {
 	ResourceCache *cache;
     Renderer2D *renderer;
-    FontManager *mgr;
 
 	std::unique_ptr<UITextSprite> guitext;
     std::unique_ptr<UISprite> progress_bg_rect;
@@ -33,7 +30,7 @@ class LoadScreen
     bool draw_clouds;
     s32 last_percent = 0;
 public:
-    LoadScreen(ResourceCache *_cache, Renderer2D *_renderer, FontManager *_mgr, IGUIEnvironment *_guienv);
+    LoadScreen(ResourceCache *_cache, Renderer2D *_renderer, FontManager *_mgr);
 
     ~LoadScreen();
 

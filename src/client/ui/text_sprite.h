@@ -26,6 +26,8 @@ class UITextSprite : public UISprite
 	
 	render::TTFont *overrideFont;
     recti clipRect;
+
+    FontManager *mgr;
 public:
     UITextSprite(FontManager *font_manager, const EnrichedString &text, Renderer2D *renderer,
         ResourceCache *resCache, const recti &clip, bool border = false, bool wordWrap = true, bool fillBackground = false);
@@ -101,9 +103,9 @@ public:
 
     void draw() override;
 
-    void updateBuffer(rectf &&r, FontManager *font_manager);
+    void updateBuffer(rectf &&r);
 private:
     void updateWrappedText();
     u32 getBrokenTextWidth() const;
-    render::Texture2D *getGlyphAtlasTexture(FontManager *renderer) const;
+    render::Texture2D *getGlyphAtlasTexture() const;
 };

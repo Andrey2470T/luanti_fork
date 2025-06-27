@@ -17,8 +17,8 @@ inline std::vector<UIPrimitiveType> getGlyphs(u32 count, bool background, bool b
 
 UITextSprite::UITextSprite(FontManager *font_manager, const EnrichedString &text,
     Renderer2D *renderer, ResourceCache *resCache, const recti &clip, bool border, bool wordWrap, bool fillBackground)
-    : UISprite(getGlyphAtlasTexture(font_manager), renderer, resCache, false, false), drawBorder(border),
-    drawBackground(fillBackground),  wordWrap(wordWrap), clipRect(clip)
+    : UISprite(getGlyphAtlasTexture(), renderer, resCache, false, false), drawBorder(border),
+    drawBackground(fillBackground),  wordWrap(wordWrap), clipRect(clip), mgr(font_manager)
 {
     setText(text);
 }
@@ -38,12 +38,18 @@ void UITextSprite::setOverrideFont(render::TTFont *font)
     cache->cacheResource<render::TTFont>(ResourceType::FONT, overrideFont);
 
     updateWrappedText();
+
+    texture = getGlyphAtlasTexture();
 }
 
 void UITextSprite::setColor(const img::color8 &c)
 {
     text.setDefaultColor(c);
-    updateWrappedText();
+
+    if (text.hasBackground())
+        setBackgroundColor(text.getBackground());
+    else
+        enableDrawBackground(false);
 }
 
 void UITextSprite::setBackgroundColor(const img::color8 &c)
@@ -112,7 +118,7 @@ void UITextSprite::draw()
     }
 }
 
-void UITextSprite::updateBuffer(rectf &&r, FontManager *font_manager)
+void UITextSprite::updateBuffer(rectf &&r)
 {
     shape->clear();
     mesh->clear();
@@ -158,10 +164,17 @@ void UITextSprite::updateBuffer(rectf &&r, FontManager *font_manager)
         rc.ULC.X = rc.LRC.X - getBrokenTextWidth();
     }
 
-    auto fontAtlases = font_manager->getPool(font->getMode(), font->getStyle(), font->getCurrentSize());
+    auto fontAtlases = mgr->getPool(font->getMode(), font->getStyle(), font->getCurrentSize());
 
     if (!fontAtlases)
         return;
+
+    auto atlas = dynamic_cast<GlyphAtlas *>(fontAtlases->getAtlas(0));
+
+    if (!atlas)
+        return;
+
+    u32 atlasSize = atlas->getTextureSize();
 
     for (const auto &str : brokenText) {
         if (hAlign == GUIAlignment::LowerRight)
@@ -220,23 +233,13 @@ void UITextSprite::updateBuffer(rectf &&r, FontManager *font_manager)
             offset.X += offx;
             offset.Y += offy;
 
-            rectf glyphUV;
-            v2u glyphSize;
-            u32 atlasSize;
-            for (u32 i = 0; i < fontAtlases->getAtlasCount(); i++) {
-                auto curAtlas = dynamic_cast<GlyphAtlas *>(fontAtlases->getAtlas(i));
+            Glyph *glyph = atlas->getByChar((wchar_t)ch);
 
-                Glyph *glyph = curAtlas->getByChar((wchar_t)ch);
+            if (!glyph)
+                continue;
 
-                if (!glyph)
-                    continue;
-
-                atlasSize = curAtlas->getTextureSize();
-                glyphUV = glyph->toUV(atlasSize);
-                glyphSize = glyph->size;
-            }
-
-            rectf glyphPos(offset, v2f(glyphSize.X, glyphSize.Y));
+            rectf glyphUV = glyph->toUV(atlasSize);
+            rectf glyphPos(offset, v2f(glyph->size.X, glyph->size.Y));
 
             u32 shadowOffset, shadowAlpha;
             font->getShadowParameters(&shadowOffset, &shadowAlpha);
@@ -329,11 +332,6 @@ void UITextSprite::updateBuffer(rectf &&r, FontManager *font_manager)
 void UITextSprite::updateWrappedText()
 {
     brokenText.clear();
-
-    if (text.hasBackground())
-        setBackgroundColor(text.getBackground());
-    else
-        enableDrawBackground(false);
 
     if (!wordWrap) {
         brokenText.push_back(text);
@@ -549,10 +547,10 @@ u32 UITextSprite::getBrokenTextWidth() const
     return w;
 }
 
-render::Texture2D *UITextSprite::getGlyphAtlasTexture(FontManager *manager) const
+render::Texture2D *UITextSprite::getGlyphAtlasTexture() const
 {
     auto font = getActiveFont();
-    auto pool = manager->getPoolOrCreate(font->getMode(), font->getStyle(), font->getCurrentSize());
+    auto pool = mgr->getPoolOrCreate(font->getMode(), font->getStyle(), font->getCurrentSize());
 
     return pool->getAtlas(0)->getTexture(); // Beforehand assume each glyph atlas pool contains one atlas each
 }

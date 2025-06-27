@@ -8,10 +8,10 @@
 #include "client/ui/renderer2d.h"
 #include "client/ui/text_sprite.h"
 
-LoadScreen::LoadScreen(ResourceCache *_cache, Renderer2D *_renderer, FontManager *_mgr, IGUIEnvironment *_guienv)
-    : cache(_cache), renderer(_renderer), mgr(_mgr)
+LoadScreen::LoadScreen(ResourceCache *_cache, Renderer2D *_renderer, FontManager *_mgr)
+    : cache(_cache), renderer(_renderer)
 {
-    guitext = std::make_unique<UITextSprite>(mgr, EnrichedString(L""), renderer, cache, recti());
+    guitext = std::make_unique<UITextSprite>(_mgr, EnrichedString(L""), renderer, cache, recti());
     guitext->setAlignment(GUIAlignment::Center, GUIAlignment::UpperLeft);
 
     auto progress_img = cache->getOrLoad<render::Texture2D>(ResourceType::TEXTURE, "progress_bar.png")->data.get();
@@ -44,7 +44,7 @@ void LoadScreen::updateText(v2u screensize, const std::wstring &text, f32 dtime,
     v2f textsize(font->getTextWidth(text), font->getTextHeight(text));
 
     guitext->setText(text);
-    guitext->updateBuffer(rectf(center-textsize/2, center+textsize/2), mgr);
+    guitext->updateBuffer(rectf(center-textsize/2, center+textsize/2));
 
     if (draw_clouds)
         g_menuclouds->step(dtime*3);
