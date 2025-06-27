@@ -34,21 +34,23 @@ private:
 
 
 // Handling fonts caching and creating of the glyph atlases
-class FontRenderer
+class FontManager
 {
     ResourceCache *cache;
 
-    std::map<u64, render::TTFont *> fonts;
-    std::map<u64, AtlasPool> glyphAtlases;
+    std::map<u64, std::pair<render::TTFont *, std::unique_ptr<AtlasPool>>> fonts;
 
     std::array<u32, 3> defaultSizes;
 public:
-    FontRenderer(ResourceCache *_cache);
+    FontManager(ResourceCache *_cache);
 
-    ~FontRenderer();
+    ~FontManager();
 
     render::TTFont *getFont(render::FontMode mode, render::FontStyle style, std::optional<u32> size) const;
     AtlasPool *getPool(render::FontMode mode, render::FontStyle style, std::optional<u32> size);
+
+    render::TTFont *getFontOrCreate(render::FontMode mode, render::FontStyle style, std::optional<u32> size);
+    AtlasPool *getPoolOrCreate(render::FontMode mode, render::FontStyle style, std::optional<u32> size);
 
     void addFont(render::FontMode mode, render::FontStyle style, std::optional<u32> size);
     void addFontInSkin(GUISkin *skin, render::FontMode mode, render::FontStyle style,
@@ -57,6 +59,6 @@ private:
     void readDefaultFontSizes();
     static void font_sizes_changed(const std::string &name, void *userdata)
     {
-        reinterpret_cast<FontRenderer *>(userdata)->readDefaultFontSizes();
+        reinterpret_cast<FontManager *>(userdata)->readDefaultFontSizes();
     }
 };

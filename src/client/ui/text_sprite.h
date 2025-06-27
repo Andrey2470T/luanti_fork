@@ -7,7 +7,7 @@
 #include <Render/StreamTexture2D.h>
 #include "irrlicht_gui/GUISkin.h"
 
-class FontRenderer;
+class FontManager;
 
 class UITextSprite : public UISprite
 {
@@ -27,7 +27,7 @@ class UITextSprite : public UISprite
 	render::TTFont *overrideFont;
     recti clipRect;
 public:
-    UITextSprite(render::StreamTexture2D *tex, const EnrichedString &text, Renderer2D *renderer,
+    UITextSprite(FontManager *font_manager, const EnrichedString &text, Renderer2D *renderer,
         ResourceCache *resCache, const recti &clip, bool border = false, bool wordWrap = true, bool fillBackground = false);
     ~UITextSprite();
 
@@ -101,8 +101,9 @@ public:
 
     void draw() override;
 
-    void updateBuffer(rectf &&r, FontRenderer *font_renderer);
+    void updateBuffer(rectf &&r, FontManager *font_manager);
 private:
     void updateWrappedText();
     u32 getBrokenTextWidth() const;
+    render::Texture2D *getGlyphAtlasTexture(FontManager *renderer) const;
 };

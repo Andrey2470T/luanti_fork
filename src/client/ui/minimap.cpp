@@ -197,7 +197,7 @@ Minimap::Minimap(Client *_client, Renderer2D *_renderer, ResourceCache *_cache)
     data->object_marker_red = cache->getOrLoad<render::Texture2D>(ResourceType::TEXTURE, "object_marker_red.png")->data.get();
     data->textures_initialised = true;
 
-    m_minimap_shader = cache->getOrLoad<render::Shader>(ResourceType::SHADER, "minimap_shader")->data.get();
+    m_minimap_shader = cache->getOrLoad<render::Shader>(ResourceType::SHADER, "minimap")->data.get();
 
 	// Initialize and start thread
 	m_minimap_update_thread = std::make_unique<MinimapUpdateThread>();
@@ -450,7 +450,7 @@ render::Texture2D *Minimap::getMinimapTexture()
 	// create minimap and heightmap images in memory
     v2u size(data->mode.map_size, data->mode.map_size);
     img::Image *map_image       = new img::Image(img::PF_RGBA8, size.X, size.Y, img::color8(img::PF_RGBA8, 0, 0, 0, 255));
-    img::Image *heightmap_image = new img::Image(img::PF_RGBA8, size.X, size.Y);
+    img::Image *heightmap_image = new img::Image(img::PF_R8, size.X, size.Y);
     img::Image *minimap_image   = new img::Image(img::PF_RGBA8, MINIMAP_MAX_SX, MINIMAP_MAX_SY);
 
 	// Blit MinimapPixels to images
@@ -531,7 +531,7 @@ void Minimap::drawMinimap(recti rect)
 	if (!minimap_texture)
 		return;
 
-	updateActiveMarkers();
+    updateActiveMarkers(rect);
 
     auto ctxt = renderer->getContext();
     recti oldViewPort = ctxt->getViewportSize();

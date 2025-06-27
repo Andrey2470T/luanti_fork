@@ -1,5 +1,4 @@
 #include "loadscreen.h"
-//#include "client/ui/fontengine.h"
 #include "Utils/Rect.h"
 #include "Render/Texture2D.h"
 #include "client/media/resource.h"
@@ -7,12 +6,13 @@
 #include "client/ui/extra_images.h"
 #include "client/ui/sprite.h"
 #include "client/ui/renderer2d.h"
+#include "client/ui/text_sprite.h"
 
-LoadScreen::LoadScreen(ResourceCache *_cache, Renderer2D *_renderer, MeshCreator2D *_creator, IGUIEnvironment *_guienv)
-    : cache(_cache), renderer(_renderer)
+LoadScreen::LoadScreen(ResourceCache *_cache, Renderer2D *_renderer, FontManager *_mgr, IGUIEnvironment *_guienv)
+    : cache(_cache), renderer(_renderer), mgr(_mgr)
 {
-    //guitext = std::make_unique<GUIStaticText>(_guienv, L"", recti(), false, false);
-   // guitext->setTextAlignment(GUIAlignment::Center, GUIAlignment::UpperLeft);
+    guitext = std::make_unique<UITextSprite>(mgr, EnrichedString(L""), renderer, cache, recti());
+    guitext->setAlignment(GUIAlignment::Center, GUIAlignment::UpperLeft);
 
     auto progress_img = cache->getOrLoad<render::Texture2D>(ResourceType::TEXTURE, "progress_bar.png")->data.get();
     auto progress_bg_img = cache->getOrLoad<render::Texture2D>(ResourceType::TEXTURE, "progress_bar_bg.png")->data.get();
@@ -30,7 +30,7 @@ LoadScreen::LoadScreen(ResourceCache *_cache, Renderer2D *_renderer, MeshCreator
 }
 
 void LoadScreen::updateText(v2u screensize, const std::wstring &text, f32 dtime, bool menu_clouds,
-    s32 percent, f32 scale_f, f32 *shutdown_progress, MeshCreator2D *creator)
+    s32 percent, f32 scale_f, f32 *shutdown_progress)
 {
     if (percent == last_percent)
         return;
@@ -38,13 +38,13 @@ void LoadScreen::updateText(v2u screensize, const std::wstring &text, f32 dtime,
     last_percent = percent;
     draw_clouds = menu_clouds;
 
-    //v2i center((s32)screensize.X/2, (s32)screensize.Y/2);
-    //v2i textsize(g_fontengine->getTextWidth(text), g_fontengine->getTextHeight());
+    v2f center(screensize.X/2, screensize.Y/2);
 
-    //recti textarea(center-textsize/2, center+textsize/2);
+    auto font = guitext->getActiveFont();
+    v2f textsize(font->getTextWidth(text), font->getTextHeight(text));
 
-    //guitext->setRelativePosition(textarea);
-    //guitext->setText(text);
+    guitext->setText(text);
+    guitext->updateBuffer(rectf(center-textsize/2, center+textsize/2), mgr);
 
     if (draw_clouds)
         g_menuclouds->step(dtime*3);
@@ -95,4 +95,6 @@ void LoadScreen::draw() const
 
     progress_bg_rect->draw();
     progress_rect->draw();
+
+    guitext->draw();
 }

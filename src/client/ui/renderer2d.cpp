@@ -70,7 +70,7 @@ void Renderer2D::setUniforms(f32 thickness, bool texShader)
 {
     Shader *cur_shader = texShader ? Shader2D : NoTexShader2D;
 
-    cur_shader->setUniformFloat("thickness", thickness);
+    cur_shader->setUniformFloat("mThickness", thickness);
 
     auto cur_viewport = Context->getViewportSize();
     matrix4 proj;
@@ -78,11 +78,11 @@ void Renderer2D::setUniforms(f32 thickness, bool texShader)
     f32 yInv2 = 2.0f / cur_viewport.getHeight();
     proj.setScale({ xInv2, -yInv2, 0.0f });
     proj.setTranslation({ -1.0f, 1.0f, 0.0f });
-    cur_shader->setUniform4x4Matrix("projection", proj);
+    cur_shader->setUniform4x4Matrix("mProjection", proj);
 
-    cur_shader->setUniformInt("textureUsed", (s32)texShader);
+    cur_shader->setUniformInt("mTextureUsage0", (s32)texShader);
     if (texShader) {
-        cur_shader->setUniformInt("texture", 0);
+        cur_shader->setUniformInt("mTexture0", 0);
     }
 }
 

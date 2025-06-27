@@ -15,9 +15,9 @@ inline std::vector<UIPrimitiveType> getGlyphs(u32 count, bool background, bool b
     return glyphs;
 }
 
-UITextSprite::UITextSprite(render::StreamTexture2D *tex, const EnrichedString &text,
+UITextSprite::UITextSprite(FontManager *font_manager, const EnrichedString &text,
     Renderer2D *renderer, ResourceCache *resCache, const recti &clip, bool border, bool wordWrap, bool fillBackground)
-    : UISprite(tex, renderer, resCache, false, false), drawBorder(border),
+    : UISprite(getGlyphAtlasTexture(font_manager), renderer, resCache, false, false), drawBorder(border),
     drawBackground(fillBackground),  wordWrap(wordWrap), clipRect(clip)
 {
     setText(text);
@@ -112,7 +112,7 @@ void UITextSprite::draw()
     }
 }
 
-void UITextSprite::updateBuffer(rectf &&r, FontRenderer *font_renderer)
+void UITextSprite::updateBuffer(rectf &&r, FontManager *font_manager)
 {
     shape->clear();
     mesh->clear();
@@ -158,7 +158,7 @@ void UITextSprite::updateBuffer(rectf &&r, FontRenderer *font_renderer)
         rc.ULC.X = rc.LRC.X - getBrokenTextWidth();
     }
 
-    auto fontAtlases = font_renderer->getPool(font->getMode(), font->getStyle(), font->getCurrentSize());
+    auto fontAtlases = font_manager->getPool(font->getMode(), font->getStyle(), font->getCurrentSize());
 
     if (!fontAtlases)
         return;
@@ -547,6 +547,14 @@ u32 UITextSprite::getBrokenTextWidth() const
     }
 
     return w;
+}
+
+render::Texture2D *UITextSprite::getGlyphAtlasTexture(FontManager *manager) const
+{
+    auto font = getActiveFont();
+    auto pool = manager->getPoolOrCreate(font->getMode(), font->getStyle(), font->getCurrentSize());
+
+    return pool->getAtlas(0)->getTexture(); // Beforehand assume each glyph atlas pool contains one atlas each
 }
 
 

@@ -73,19 +73,19 @@ class ResourceCache
 public:
     ResourceCache(img::ImageModifier *mdf);
 
-    template <typename T>
+    template <class T>
     ResourceInfo<T> *get(ResourceType _type, const std::string &_name);
-    template <typename T>
+    template <class T>
     ResourceInfo<T> *getByID(ResourceType _type, u32 _id);
-    template<typename T>
+    template<class T>
     ResourceInfo<T> *getOrLoad(ResourceType _type, const std::string &_name);
 
-    template<typename T>
+    template<class T>
     u32 cacheResource(ResourceType _type, T *res, const std::string &name="");
 
-    template<typename T>
+    template<class T>
     void clearResource(ResourceType _type, u32 id);
-    template<typename T>
+    template<class T>
     void clearResource(ResourceType _type, T *res);
 };
 
@@ -199,7 +199,7 @@ void ResourceSubCache<T>::clearResource(T *res)
         cache.erase(it);
 }
 
-template <typename T>
+template <class T>
 ResourceInfo<T> *ResourceCache::get(ResourceType _type, const std::string &_name)
 {
     MutexAutoLock lock(resource_mutex);
@@ -221,7 +221,7 @@ ResourceInfo<T> *ResourceCache::get(ResourceType _type, const std::string &_name
     }
 }
 
-template <typename T>
+template <class T>
 ResourceInfo<T> *ResourceCache::getByID(ResourceType _type, u32 _id)
 {
     MutexAutoLock lock(resource_mutex);
@@ -243,7 +243,7 @@ ResourceInfo<T> *ResourceCache::getByID(ResourceType _type, u32 _id)
     }
 }
 
-template <typename T>
+template <class T>
 ResourceInfo<T> *ResourceCache::getOrLoad(ResourceType _type, const std::string &_name)
 {
     MutexAutoLock lock(resource_mutex);
@@ -265,7 +265,7 @@ ResourceInfo<T> *ResourceCache::getOrLoad(ResourceType _type, const std::string 
     }
 }
 
-template<typename T>
+template<class T>
 u32 ResourceCache::cacheResource(ResourceType _type, T *res, const std::string &name)
 {
     MutexAutoLock lock(resource_mutex);
@@ -287,7 +287,7 @@ u32 ResourceCache::cacheResource(ResourceType _type, T *res, const std::string &
     }
 }
 
-template<typename T>
+template<class T>
 void ResourceCache::clearResource(ResourceType _type, u32 id)
 {
     MutexAutoLock lock(resource_mutex);
@@ -309,7 +309,7 @@ void ResourceCache::clearResource(ResourceType _type, u32 id)
     }
 }
 
-template<typename T>
+template<class T>
 void ResourceCache::clearResource(ResourceType _type, T *res)
 {
     MutexAutoLock lock(resource_mutex);

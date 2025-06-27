@@ -122,42 +122,66 @@ static std::vector<std::string> settings = {
     "dpi_change_notifier", "display_density_factor", "gui_scaling",
 };
 
-FontRenderer::FontRenderer(ResourceCache *_cache)
+FontManager::FontManager(ResourceCache *_cache)
     : cache(_cache)
 {
     for (auto &name : settings)
         g_settings->registerChangedCallback(name, font_sizes_changed, this);
 }
 
-FontRenderer::~FontRenderer()
+FontManager::~FontManager()
 {
     for (auto &p : fonts)
-        cache->clearResource<render::TTFont>(ResourceType::FONT, p.second);
+        cache->clearResource<render::TTFont>(ResourceType::FONT, p.second.first);
 
     g_settings->deregisterAllChangedCallbacks(this);
 }
 
-render::TTFont *FontRenderer::getFont(render::FontMode mode, render::FontStyle style, std::optional<u32> size) const
+render::TTFont *FontManager::getFont(render::FontMode mode, render::FontStyle style, std::optional<u32> size) const
 {
     auto it = fonts.find(render::TTFont::hash(size.value(), true, style, mode));
 
     if (it == fonts.end())
         return nullptr;
 
-    return it->second;
+    return it->second.first;
 }
 
-AtlasPool *FontRenderer::getPool(render::FontMode mode, render::FontStyle style, std::optional<u32> size)
+AtlasPool *FontManager::getPool(render::FontMode mode, render::FontStyle style, std::optional<u32> size)
 {
-    auto it = glyphAtlases.find(render::TTFont::hash(size.value(), true, style, mode));
+    auto it = fonts.find(render::TTFont::hash(size.value(), true, style, mode));
 
-    if (it == glyphAtlases.end())
+    if (it == fonts.end())
         return nullptr;
 
-    return &it->second;
+    return it->second.second.get();
 }
 
-void FontRenderer::addFont(render::FontMode mode, render::FontStyle style, std::optional<u32> size)
+render::TTFont *FontManager::getFontOrCreate(render::FontMode mode, render::FontStyle style, std::optional<u32> size)
+{
+    auto font = getFont(mode, style, size);
+
+    if (!font) {
+        addFont(mode, style, size);
+        font = fonts[render::TTFont::hash(size.value(), true, style, mode)].first;
+    }
+
+    return font;
+}
+
+AtlasPool *FontManager::getPoolOrCreate(render::FontMode mode, render::FontStyle style, std::optional<u32> size)
+{
+    auto pool = getPool(mode, style, size);
+
+    if (!pool) {
+        addFont(mode, style, size);
+        pool = fonts[render::TTFont::hash(size.value(), true, style, mode)].second.get();
+    }
+
+    return pool;
+}
+
+void FontManager::addFont(render::FontMode mode, render::FontStyle style, std::optional<u32> size)
 {
     if (!size.has_value())
         size = defaultSizes[(u8)mode];
@@ -211,7 +235,10 @@ void FontRenderer::addFont(render::FontMode mode, render::FontStyle style, std::
         if (!font)
             continue;
 
-        auto font_it = std::find(fonts.begin(), fonts.end(), font);
+        auto font_it = std::find_if(fonts.begin(), fonts.end(), [font] (const std::pair<render::TTFont *, std::unique_ptr<AtlasPool>> &p)
+        {
+            return font == p.first;
+        });
 
         if (font_it != fonts.end()) {
             delete font;
@@ -219,22 +246,21 @@ void FontRenderer::addFont(render::FontMode mode, render::FontStyle style, std::
         }
         u64 hash = render::TTFont::hash(font);
 
-        fonts[hash] = font;
+        fonts[hash] = std::pair(font, std::make_unique<AtlasPool>(AtlasType::GLYPH, "", cache, 0, false));
         cache->cacheResource<render::TTFont>(ResourceType::FONT, font);
-
-        glyphAtlases[hash] = AtlasPool(AtlasType::GLYPH, "", cache, 0, false);
-        glyphAtlases[hash].buildGlyphAtlas(font);
+        fonts[hash].second->buildGlyphAtlas(font);
     }
 }
 
-void FontRenderer::addFontInSkin(GUISkin *skin, render::FontMode mode, render::FontStyle style,
+void FontManager::addFontInSkin(GUISkin *skin, render::FontMode mode, render::FontStyle style,
     std::optional<u32> size, GUIDefaultFont which)
 {
     addFont(mode, style, size);
-    skin->setFont(fonts[render::TTFont::hash(size.value(), true, style, mode)], which);
+    u64 hash = render::TTFont::hash(size.value(), true, style, mode);
+    skin->setFont(fonts[hash].first, which);
 }
 
-void FontRenderer::readDefaultFontSizes()
+void FontManager::readDefaultFontSizes()
 {
     defaultSizes[0] = std::clamp<u32>((u32)g_settings->getU16("mono_font_size"), 5, 72);
     defaultSizes[1] = std::clamp<u32>((u32)g_settings->getU16("font_size"), 5, 72);
