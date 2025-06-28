@@ -16,7 +16,7 @@
 
 class Client;
 class NodeDefManager;
-class Renderer2D;
+class Renderer;
 class ResourceCache;
 class VoxelManipulator;
 
@@ -97,7 +97,7 @@ private:
 class Minimap : public UISprite
 {
 public:
-    Minimap(Client *_client, Renderer2D *_renderer, ResourceCache *_cache);
+    Minimap(Client *_client, Renderer *_renderer, ResourceCache *_cache);
 	~Minimap();
 
 	void addBlock(v3s16 pos, MinimapMapblock *data);

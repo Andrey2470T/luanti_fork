@@ -1,10 +1,10 @@
 #include "camera.h"
 #include "client.h"
 
-Camera::Camera(Client *client, const v2u &viewportSize,
+Camera::Camera(const v2u &viewportSize,
 		   const v3f &position, const v3f &direction,
            bool isOrthogonal)
-	: m_client(client), m_position(position), m_direction(direction),
+	: m_position(position), m_direction(direction),
 	  m_frustum(viewportSize, isOrthogonal)
 {}
 

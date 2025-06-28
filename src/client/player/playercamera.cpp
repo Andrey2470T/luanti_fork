@@ -31,7 +31,7 @@
 #define WIELDMESH_AMPLITUDE_Y 10.0f
 
 PlayerCamera::PlayerCamera(MapDrawControl &draw_control, Client *client, RenderingEngine *rendering_engine):
-	Camera(client), m_draw_control(draw_control),
+	Camera(), m_draw_control(draw_control),
     m_client(client), m_player_light_color(img::colorU32NumberToObject(0xFFFFFFFF))
 {
     //auto smgr = rendering_engine->get_scene_manager();

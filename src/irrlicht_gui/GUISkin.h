@@ -14,7 +14,7 @@
 class IGUIFont;
 class UIAnimatedSprite;
 class IGUIElement;
-class Renderer2D;
+class Renderer;
 
 //! Enumeration of available default skins.
 /** To set one of the skins, use the following code, for example to set
@@ -252,7 +252,7 @@ enum class GUIDefaultFont : u8
 class GUISkin
 {
 public:
-    GUISkin(GUISkinType type, Renderer2D *_renderer);
+    GUISkin(GUISkinType type, Renderer *_renderer);
 
     //! destructor
     ~GUISkin();
@@ -507,7 +507,7 @@ public:
     void getColors(img::color8* colors); // ::PATCH:
 
 private:
-    Renderer2D *renderer;
+    Renderer *renderer;
 
     f32 Scale = 1.0f;
     std::array<img::color8, (u8)GUIDefaultColor::Count>     Colors;

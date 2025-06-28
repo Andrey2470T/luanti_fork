@@ -17,44 +17,28 @@ class LoadScreen;
 class MyEventReceiver;
 class AtlasPool;
 class FontManager;
-class Renderer2D;
-
-enum class FogType : u8
-{
-	Exp,
-	Linear,
-	Exp2
-};
-
-enum class TMatrix : u8
-{
-    World,
-    View,
-    Projection,
-    Texture0
-};
+class Renderer;
+class Camera;
+class PipelineFactory;
+class CameraManager;
 	
 class RenderSystem
 {
 	static const img::color8 menu_sky_color;
 
 	Client *client;
-    RenderPipeline *active_pipeline = nullptr;
 	ResourceCache *cache;
 
-    std::unique_ptr<render::DrawContext> context;
-    std::unique_ptr<Renderer2D> renderer2D;
+    std::unique_ptr<Renderer> renderer;
 
     std::unique_ptr<LoadScreen> load_screen;
-	std::vector<std::unique_ptr<RenderPipeline>> pipelines;
+    std::unique_ptr<PipelineFactory> pp_factory;
+    std::unique_ptr<CameraManager> cam_mgr;
 	std::unique_ptr<main::MainWindow> window;
 	
 	std::unique_ptr<GUIEnvironment> guienv;
 	std::unique_ptr<Hud> hud;
 	std::unique_ptr<ShadowRenderer> shadow_renderer;
-
-    std::unique_ptr<render::UniformBuffer> fog_buffer;
-    std::unique_ptr<render::UniformBuffer> matrix_buffer;
 
     std::unique_ptr<AtlasPool> basePool;
     std::unique_ptr<AtlasPool> guiPool;
@@ -80,6 +64,10 @@ public:
     }
     f32 getGUIScaling() const
     {
+    	return gui_scaling;
+    }
+    f32 getScaleFactor() const
+    {
         return gui_scaling * display_density;
     }
 
@@ -90,17 +78,7 @@ public:
     void setWindowIcon();
 
     void setActivePipeline(RenderPipeline *pipeline);
-    
-    // Fog UBO settings
-    bool fogEnabled() const;
-    void getFogParams(FogType &type, img::color8 &color, f32 &start, f32 &end, f32 &density) const;
-    void enableFog(bool enable);
-    void setFogParams(FogType type, img::color8 color, f32 start, f32 end, f32 density);
-
-
-    // Transformation matrices UBO settings
-    matrix4 getTransformMatrix(TMatrix type);
-    void setTransformMatrix(TMatrix type, const matrix4 &mat);
+    void setActiveCamera(Camera *camera);
 
     // If "indef_pos" is given, the value of "percent" is ignored and an indefinite
 	// progress bar is drawn.

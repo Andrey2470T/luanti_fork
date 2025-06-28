@@ -5,10 +5,10 @@
 //#include "client/render/clouds.h"
 #include "client/ui/extra_images.h"
 #include "client/ui/sprite.h"
-#include "client/ui/renderer2d.h"
+#include "renderer.h"
 #include "client/ui/text_sprite.h"
 
-LoadScreen::LoadScreen(ResourceCache *_cache, Renderer2D *_renderer, FontManager *_mgr)
+LoadScreen::LoadScreen(ResourceCache *_cache, Renderer *_renderer, FontManager *_mgr)
     : cache(_cache), renderer(_renderer)
 {
     guitext = std::make_unique<UITextSprite>(_mgr, EnrichedString(L""), renderer, cache, recti());

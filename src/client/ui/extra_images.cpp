@@ -2,9 +2,9 @@
 #include "Render/Texture2D.h"
 #include "batcher2d.h"
 #include "sprite.h"
-#include "renderer2d.h"
+#include "client/render/renderer.h"
 
-Image2D9Slice::Image2D9Slice(ResourceCache *resCache, Renderer2D *renderer,
+Image2D9Slice::Image2D9Slice(ResourceCache *resCache, Renderer *renderer,
                              const rectf &src_rect, const rectf &dest_rect,
                              const rectf &middle_rect, render::Texture2D *base_tex,
                              const std::array<img::color8, 4> &colors)
@@ -74,13 +74,4 @@ void Image2D9Slice::createSlices()
             createSlice(x, y);
 
     flush();
-}
-
-void Image2D9Slice::draw()
-{
-    renderer->setRenderState(true, true);
-    renderer->setUniforms(1.0f, true);
-    renderer->setTexture(texture);
-
-    renderer->drawPrimitives(shape.get(), mesh.get(), 0, 9);
 }

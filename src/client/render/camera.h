@@ -2,14 +2,11 @@
 
 #include "frustum.h"
 
-class Client;
-
 // General camera class used for the player, wieldmesh and guiscene.
 // Supports the perspective and orthogonal projection.
 
 class Camera
 {
-	Client *m_client;
 protected:
 	// Absolute camera position
 	v3f m_position;
@@ -24,7 +21,7 @@ protected:
     matrix4 m_projection_matrix;
     matrix4 m_view_matrix;
 public:
-	Camera(Client *client, const v2u &viewportSize=v2u(),
+	Camera(const v2u &viewportSize=v2u(),
 		   const v3f &position=v3f(), const v3f &direction=v3f(0,0,1),
 		   bool isOrthogonal=false);
 

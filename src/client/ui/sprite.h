@@ -4,8 +4,9 @@
 #include <Utils/Rect.h>
 #include <Render/Texture2D.h>
 #include "client/render/meshbuffer.h"
+#include <Render/DrawContext.h>
 
-class Renderer2D;
+class Renderer;
 class MeshBuffer;
 class ResourceCache;
 
@@ -133,7 +134,7 @@ public:
 class UISprite
 {
 protected:
-	Renderer2D *renderer;
+    Renderer *renderer;
     ResourceCache *cache;
     std::unique_ptr<MeshBuffer> mesh;
     std::unique_ptr<UIShape> shape;
@@ -144,16 +145,16 @@ protected:
     bool visible = false;
 public:
     // Creates an empty sprite
-    UISprite(render::Texture2D *tex, Renderer2D *_renderer, ResourceCache *_cache,
+    UISprite(render::Texture2D *tex, Renderer *_renderer, ResourceCache *_cache,
         bool streamTexture=false, bool staticUsage=true);
 
     // Creates a single rectangle mesh
-    UISprite(render::Texture2D *tex, Renderer2D *_renderer,
+    UISprite(render::Texture2D *tex, Renderer *_renderer,
         ResourceCache *_cache, const rectf &srcRect, const rectf &destRect,
         const std::array<img::color8, 4> &colors, bool streamTexture=false, bool staticUsage=true);
 
     // Creates (without buffer filling) multiple-primitive mesh
-    UISprite(render::Texture2D *tex, Renderer2D *_renderer, ResourceCache *_cache,
+    UISprite(render::Texture2D *tex, Renderer *_renderer, ResourceCache *_cache,
         const std::vector<UIPrimitiveType> &primitives, bool streamTexture=false, bool staticUsage=true);
 
     v2u getSize() const
@@ -190,6 +191,8 @@ public:
         mesh->uploadVertexData();
     }
     virtual void draw();
+
+    void drawPart(u32 pOffset=0, u32 pCount=1);
 };
 
 
@@ -202,7 +205,7 @@ class UIAnimatedSprite : public UISprite
     u32 curFrameNum = 0;
     u32 frameLength = 0;
 public:
-    UIAnimatedSprite(render::Texture2D *tex, u32 _frameLength, Renderer2D *_renderer,
+    UIAnimatedSprite(render::Texture2D *tex, u32 _frameLength, Renderer *_renderer,
         ResourceCache *cache, const std::array<img::color8, 4> &colors);
 
     u32 addImage(img::Image *img);

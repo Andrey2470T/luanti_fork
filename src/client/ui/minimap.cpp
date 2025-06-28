@@ -10,12 +10,13 @@
 #include "settings.h"
 #include "mapblock.h"
 #include "gettext.h"
-#include "renderer2d.h"
+#include "client/render/renderer.h"
 #include "client/media/resource.h"
 #include "batcher2d.h"
 #include "voxel.h"
 #include <Render/DrawContext.h>
 #include "client/player/playercamera.h"
+#include "client/render/rendersystem.h"
 
 
 ////
@@ -166,7 +167,7 @@ void MinimapUpdateThread::getMap(v3s16 pos, s16 size, s16 height)
 //// Mapper
 ////
 
-Minimap::Minimap(Client *_client, Renderer2D *_renderer, ResourceCache *_cache)
+Minimap::Minimap(Client *_client, Renderer *_renderer, ResourceCache *_cache)
     : UISprite(nullptr, _renderer, _cache, {UIPrimitiveType::RECTANGLE}, true),
       client(_client), data(new MinimapData()), m_ndef(_client->getNodeDefManager())
 {
@@ -535,44 +536,49 @@ void Minimap::drawMinimap(recti rect)
 
     auto ctxt = renderer->getContext();
     recti oldViewPort = ctxt->getViewportSize();
-    //core::matrix4 oldProjMat = driver->getTransform(video::ETS_PROJECTION);
-    //core::matrix4 oldViewMat = driver->getTransform(video::ETS_VIEW);
+
+    matrix4 oldProjMat = renderer->getTransformMatrix(TMatrix::Projection);
+    matrix4 oldViewMat = renderer->getTransformMatrix(TMatrix::View);
 
     ctxt->setViewportSize(rect);
-    //driver->setTransform(video::ETS_PROJECTION, core::matrix4());
-    //driver->setTransform(video::ETS_VIEW, core::matrix4());
+    renderer->setTransformMatrix(TMatrix::Projection, matrix4());
+    renderer->setTransformMatrix(TMatrix::View, matrix4());
 
-    matrix4 matrix;
-	matrix.makeIdentity();
-
-    renderer->setBasicRenderState(true);
+    renderer->setRenderState(false);
 
     ctxt->setActiveUnit(0, minimap_texture);
     ctxt->setActiveUnit(1, data->heightmap_texture);
 
-    render::Shader *targetShader;
+    matrix4 matrix;
+    matrix.makeIdentity();
+
     if (data->mode.type == MINIMAP_TYPE_SURFACE) {
-        targetShader = m_minimap_shader;
         ctxt->setShader(m_minimap_shader);
-        m_minimap_shader->setUniform3Float("yawVec", getYawVec());
+        m_minimap_shader->setUniform3Float("mYawVec", getYawVec());
+        m_minimap_shader->setUniformInt("mBaseTexture", 0);
+        m_minimap_shader->setUniformInt("mHeightmap", 1);
 	} else {
-        //material.MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL;
+        renderer->setDefaultShader(true, false);
+        renderer->setDefaultUniforms(1.0f, 1, 0.5f, img::BM_COUNT);
 	}
 
 	if (data->minimap_shape_round)
         matrix.setRotationDegrees(v3f(0, 0, 360 - m_angle));
 
 	// Draw minimap
-    targetShader->setUniform4x4Matrix("mWorld", matrix);
-    renderer->drawPrimitives(shape.get(), mesh.get());
+    if (data->mode.type == MINIMAP_TYPE_SURFACE)
+        m_minimap_shader->setUniform4x4Matrix("mWorld", matrix);
+    else
+        renderer->setTransformMatrix(TMatrix::World, matrix);
+    drawPart();
 
 	// Draw overlay
     render::Texture2D *minimap_overlay = data->minimap_shape_round ?
 		data->minimap_overlay_round : data->minimap_overlay_square;
     ctxt->setActiveUnit(0, minimap_overlay);
-    //material.MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL;
-    //driver->setMaterial(material);
-    renderer->drawPrimitives(shape.get(), mesh.get());
+    renderer->setDefaultShader(true, false);
+    renderer->setDefaultUniforms(1.0f, 1, 0.5f, img::BM_COUNT);
+    drawPart();
 
 	// Draw player marker on minimap
 	if (data->minimap_shape_round) {
@@ -582,17 +588,16 @@ void Minimap::drawMinimap(recti rect)
 	}
 
     ctxt->setActiveUnit(0, data->player_marker);
-    //driver->setTransform(video::ETS_WORLD, matrix);
-    //driver->setMaterial(material);
-    renderer->drawPrimitives(shape.get(), mesh.get());
+    renderer->setTransformMatrix(TMatrix::World, matrix);
+    drawPart();
 
 	// Reset transformations
-    //driver->setTransform(video::ETS_VIEW, oldViewMat);
-    //driver->setTransform(video::ETS_PROJECTION, oldProjMat);
+    renderer->setTransformMatrix(TMatrix::Projection, oldProjMat);
+    renderer->setTransformMatrix(TMatrix::View, oldViewMat);
     ctxt->setViewportSize(oldViewPort);
 
 	// Draw player markers
-    renderer->drawPrimitives(shape.get(), mesh.get(), 1, m_active_markers.size());
+    drawPart();
 }
 
 void Minimap::addMarker(v3f pos)

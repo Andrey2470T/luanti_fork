@@ -1,7 +1,7 @@
 #include "sprite.h"
 #include "batcher2d.h"
 #include "client/render/defaultVertexTypes.h"
-#include "renderer2d.h"
+#include "client/render/renderer.h"
 #include <Render/StreamTexture2D.h>
 
 std::array<u8, 4> primVCounts = {2, 3, 4, 9};
@@ -219,7 +219,7 @@ void UIShape::updateMaxArea(const v2f &ulc, const v2f &lrc)
     maxAreaInit = true;
 }
 
-UISprite::UISprite(render::Texture2D *tex, Renderer2D *_renderer, ResourceCache *_cache,
+UISprite::UISprite(render::Texture2D *tex, Renderer *_renderer, ResourceCache *_cache,
     bool streamTexture, bool staticUsage)
     : renderer(_renderer), cache(_cache), mesh(std::make_unique<MeshBuffer>(true, VType2D,
         staticUsage ? render::MeshUsage::STATIC : render::MeshUsage::DYNAMIC)),
@@ -227,7 +227,7 @@ UISprite::UISprite(render::Texture2D *tex, Renderer2D *_renderer, ResourceCache 
 {}
 
 // Creates a single rectangle mesh
-UISprite::UISprite(render::Texture2D *tex, Renderer2D *_renderer,
+UISprite::UISprite(render::Texture2D *tex, Renderer *_renderer,
     ResourceCache *_cache, const rectf &uvRect, const rectf &posRect,
     const std::array<img::color8, 4> &colors, bool streamTexture, bool staticUsage)
     : renderer(_renderer), cache(_cache),
@@ -240,7 +240,7 @@ UISprite::UISprite(render::Texture2D *tex, Renderer2D *_renderer,
 }
 
 // Creates (without buffer filling) multiple-primitive mesh
-UISprite::UISprite(render::Texture2D *tex, Renderer2D *_renderer, ResourceCache *_cache,
+UISprite::UISprite(render::Texture2D *tex, Renderer *_renderer, ResourceCache *_cache,
     const std::vector<UIPrimitiveType> &primitives, bool streamTexture, bool staticUsage)
     : renderer(_renderer), cache(_cache),
     mesh(std::make_unique<MeshBuffer>(UIShape::countRequiredVCount(primitives),
@@ -270,8 +270,8 @@ void UISprite::draw()
     if (shape->getPrimitiveCount() == 0 || !visible)
         return;
 
-    renderer->setRenderState(true, texture != nullptr);
-    renderer->setUniforms(1.0f, texture != nullptr);
+    renderer->setDefaultShader(true, true);
+    renderer->setDefaultUniforms(1.0f, 1, 0.5f, img::BM_COUNT);
 
     if (texture)
         renderer->setTexture(texture);
@@ -285,7 +285,7 @@ void UISprite::draw()
         if (curType == prevType)
             ++pCount;
         else {
-            renderer->drawPrimitives(shape.get(), mesh.get(), pOffset, pCount);
+            drawPart(pOffset, pCount);
 
             pCount = 0;
             pOffset = i;
@@ -294,7 +294,34 @@ void UISprite::draw()
     }
 }
 
-UIAnimatedSprite::UIAnimatedSprite(render::Texture2D *texture, u32 _frameLength, Renderer2D *_renderer,
+void UISprite::drawPart(u32 pOffset, u32 pCount)
+{
+    auto vao = mesh->getVAO();
+
+    u32 startVCount = 0;
+
+    for (u32 i = 0; i < pOffset; i++)
+        startVCount += primVCounts[(u8)shape->getPrimitiveType(i)];
+
+    auto pType = shape->getPrimitiveType(pOffset);
+    u8 vcount = primVCounts[(u8)pType] * pCount;
+    switch(pType) {
+    case UIPrimitiveType::LINE:
+        vao->draw(render::PT_LINES, vcount, startVCount);
+        break;
+    case UIPrimitiveType::TRIANGLE:
+        vao->draw(render::PT_TRIANGLES, vcount, startVCount);
+        break;
+    case UIPrimitiveType::RECTANGLE:
+        vao->draw(render::PT_TRIANGLE_FAN, vcount, startVCount);
+        break;
+    case UIPrimitiveType::ELLIPSE:
+        vao->draw(render::PT_TRIANGLE_FAN, vcount, startVCount);
+        break;
+    }
+}
+
+UIAnimatedSprite::UIAnimatedSprite(render::Texture2D *texture, u32 _frameLength, Renderer *_renderer,
     ResourceCache *cache, const std::array<img::color8, 4> &colors)
     : UISprite(texture, _renderer, cache, rectf(v2f(texture->getSize().X, texture->getSize().Y)),
         rectf(v2f(texture->getSize().X, texture->getSize().Y)), colors, true), frameLength(_frameLength)

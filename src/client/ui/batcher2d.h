@@ -7,7 +7,6 @@
 
 class ResourceCache;
 struct Image2D9Slice;
-class Renderer2D;
 
 class Batcher2D
 {

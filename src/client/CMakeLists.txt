@@ -59,6 +59,7 @@ set(render_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/render/meshoperations.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/particles.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/rectpack2d_atlas.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/render/renderer.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/rendersystem.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/sky.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/tile.cpp
@@ -105,7 +106,6 @@ set(ui_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/glyph_atlas.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/hud.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/minimap.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ui/renderer2d.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/sprite.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/text_sprite.cpp
 )

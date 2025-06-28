@@ -4,6 +4,7 @@
 #include "client/ui/renderer2d.h"
 #include <Utils/String.h>
 #include "client/ui/glyph_atlas.h"
+#include "client/render/renderer.h"
 
 inline std::vector<UIPrimitiveType> getGlyphs(u32 count, bool background, bool border)
 {
@@ -16,7 +17,7 @@ inline std::vector<UIPrimitiveType> getGlyphs(u32 count, bool background, bool b
 }
 
 UITextSprite::UITextSprite(FontManager *font_manager, const EnrichedString &text,
-    Renderer2D *renderer, ResourceCache *resCache, const recti &clip, bool border, bool wordWrap, bool fillBackground)
+    Renderer *renderer, ResourceCache *resCache, const recti &clip, bool border, bool wordWrap, bool fillBackground)
     : UISprite(getGlyphAtlasTexture(), renderer, resCache, false, false), drawBorder(border),
     drawBackground(fillBackground),  wordWrap(wordWrap), clipRect(clip), mgr(font_manager)
 {
@@ -95,26 +96,24 @@ void UITextSprite::setClipRect(const recti &r)
 
 void UITextSprite::draw()
 {
+    renderer->setRenderState(false);
+    renderer->setDefaultShader(true, true);
+    renderer->setDefaultUniforms(1.0f, 1, 0.5f, img::BM_COUNT);
+
     u32 rectN = 0;
     if (drawBackground || drawBorder) {
-        renderer->setRenderState(true, false);
-        renderer->setUniforms(1.0f, false);
-
         UISprite::setClipRect(clipRect);
 
         u32 count = drawBackground && drawBorder ? 2 : 1;
-        renderer->drawPrimitives(shape.get(), mesh.get(), rectN, count);
+        drawPart(rectN, count);
         rectN += count;
     }
 
     if (visible) {
-        renderer->setRenderState(true, true);
-        renderer->setUniforms(1.0f, true);
         renderer->setTexture(texture);
-
+        renderer->setDefaultUniforms(1.0f, 1, 0.5f, img::BM_COUNT);
         setClipRect(clipRect);
-
-        renderer->drawPrimitives(shape.get(), mesh.get(), rectN, text.size());
+        drawPart(rectN, text.size());
     }
 }
 

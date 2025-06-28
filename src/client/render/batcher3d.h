@@ -44,4 +44,5 @@ public:
     {
         appendBox(buf, {v3f(-1.0f, -1.0f, -1.0f), v3f(1.0f, 1.0f, 1.0f)}, colors);
     }
+    static void appendLineBox();
 };

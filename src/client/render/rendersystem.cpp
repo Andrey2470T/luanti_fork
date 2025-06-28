@@ -2,7 +2,7 @@
 #include "settings.h"
 #include "client/ui/glyph_atlas.h"
 #include "loadscreen.h"
-#include "client/ui/renderer2d.h"
+#include "renderer.h"
 #include "log.h"
 #include <Utils/TypeSize.h>
 #include <Image/Image.h>
@@ -17,20 +17,8 @@ RenderSystem::RenderSystem(Client *_client, ResourceCache *_cache, MyEventReceiv
 
     v2u viewport = window->getViewportSize();
     auto glParams = window->getGLParams();
-    context = std::make_unique<render::DrawContext>(recti(0, 0, viewport.X, viewport.Y), glParams.maxTextureUnits);
-    renderer2D = std::make_unique<Renderer2D>(context.get(), cache);
-    load_screen = std::make_unique<LoadScreen>(cache, renderer2D.get(), fmgr);
-
-    ByteArray fogBA(8, sizeof(u8)+img::pixelFormatInfo[img::PF_RGBA8].size+sizeof(f32)*3);
-    fogBA.setUInt8((u8)FogType::Linear, 0);
-    img::setColor8(&fogBA, img::color8(img::PF_RGBA8), 1);
-    fogBA.setFloat(0.0f, 5);
-    fogBA.setFloat(0.0f, 6);
-    fogBA.setFloat(0.0f, 7);
-
-    fog_buffer = std::make_unique<render::UniformBuffer>(0, fogBA);
-
-    ByteArray tmatrixBA(16*4, sizeof(f32)*16*4);
+    renderer = std::make_unique<Renderer>(cache, recti(0, 0, viewport.X, viewport.Y), glParams.maxTextureUnits);
+    load_screen = std::make_unique<LoadScreen>(cache, renderer.get(), fmgr);
 }
 
 void RenderSystem::initWindow()

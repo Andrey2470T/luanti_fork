@@ -29,7 +29,7 @@ class UITextSprite : public UISprite
 
     FontManager *mgr;
 public:
-    UITextSprite(FontManager *font_manager, const EnrichedString &text, Renderer2D *renderer,
+    UITextSprite(FontManager *font_manager, const EnrichedString &text, Renderer *renderer,
         ResourceCache *resCache, const recti &clip, bool border = false, bool wordWrap = true, bool fillBackground = false);
     ~UITextSprite();
 

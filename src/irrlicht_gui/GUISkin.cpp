@@ -10,10 +10,10 @@
 #include <Image/Converting.h>
 #include <Render/TTFont.h>
 #include "client/ui/sprite.h"
-#include "client/ui/renderer2d.h"
+#include "client/render/renderer.h"
 #include <Render/DrawContext.h>
 
-GUISkin::GUISkin(GUISkinType type, Renderer2D *_renderer)
+GUISkin::GUISkin(GUISkinType type, Renderer *_renderer)
     : renderer(_renderer), Type(type)
 {
     if ((Type == GUISkinType::WindowsClassic) || (Type == GUISkinType::WindowsMetallic))

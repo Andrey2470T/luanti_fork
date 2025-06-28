@@ -16,8 +16,8 @@
 
 uniform int mBlendMode;
 uniform int mTextureUsage0;
-uniform sampler2D mFramebuffer;
 uniform sampler2D mTexture0;
+uniform sampler2D mFramebuffer;
 
 layout (std140) uniform mFogParams {
     int enable;
