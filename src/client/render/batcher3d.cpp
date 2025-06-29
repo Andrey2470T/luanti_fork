@@ -119,7 +119,8 @@ void Batcher3D::appendFace(MeshBuffer *buf, const rectf &positions, const v3f &r
     appendFace(buf, positions3d, colors, uvs);
 }
 
-void Batcher3D::appendBox(MeshBuffer *buf, const aabbf &box, const std::array<img::color8, 8> &colors)
+void Batcher3D::appendBox(MeshBuffer *buf, const aabbf &box, const std::array<img::color8, 8> &colors,
+    const std::array<rectf, 6> *uvs)
 {
     // Up
     appendFace(
@@ -175,4 +176,20 @@ void Batcher3D::appendBox(MeshBuffer *buf, const aabbf &box, const std::array<im
         },
         {colors[4], colors[7], colors[3], colors[0]}
     );
+}
+
+void Batcher3D::appendLineBox(MeshBuffer *buf, const aabbf &box, const img::color8 &color)
+{
+    std::array<v3f, 8> edges;
+    box.getEdges(edges.data());
+
+    for (auto edge : edges)
+        appendVertex(buf, edge, color);
+
+    std::array<u32, 24> indices = {
+        5, 1, 1, 3, 3, 7, 7, 5, 0, 2, 2, 6, 6, 4, 4, 0, 1, 0, 3, 2, 7, 6, 5, 4
+    };
+
+    for (u32 i : indices)
+        appendIndex(buf, i);
 }

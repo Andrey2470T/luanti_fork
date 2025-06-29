@@ -39,10 +39,11 @@ public:
         appendFace(buf, {v3f(-1.0f, 1.0f, 0.0f), v3f(1.0f, 1.0f, 0.0f), v3f(1.0f, -1.0f, 0.0f), v3f(-1.0f, -1.0f, 0.0f)}, colors);
     }
 
-    static void appendBox(MeshBuffer *buf, const aabbf &box, const std::array<img::color8, 8> &colors);
+    static void appendBox(MeshBuffer *buf, const aabbf &box, const std::array<img::color8, 8> &colors,
+        const std::array<rectf, 6> *uvs=nullptr);
     static void appendUnitBox(MeshBuffer *buf, const std::array<img::color8, 8> &colors)
     {
         appendBox(buf, {v3f(-1.0f, -1.0f, -1.0f), v3f(1.0f, 1.0f, 1.0f)}, colors);
     }
-    static void appendLineBox();
+    static void appendLineBox(MeshBuffer *buf, const aabbf &box, const img::color8 &color=img::color8());
 };

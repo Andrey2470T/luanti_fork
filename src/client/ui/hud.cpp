@@ -4,18 +4,18 @@
 // Copyright (C) 2010-2013 blue42u, Jonathon Anderson <anderjon@umail.iu.edu>
 // Copyright (C) 2010-2013 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
 
-#include "client/hud.h"
+#include "hud.h"
 #include <string>
 #include <iostream>
 #include <cmath>
 #include "settings.h"
 #include "util/numeric.h"
 #include "log.h"
-#include "client.h"
+#include "client/client.h"
 #include "inventory.h"
 #include "shader.h"
 #include "client/tile.h"
-#include "localplayer.h"
+#include "client/player/localplayer.h"
 #include "camera.h"
 #include "porting.h"
 #include "fontengine.h"
@@ -62,16 +62,16 @@ Hud::Hud(Client *client, LocalPlayer *player,
 	u32 cross_a = rangelim(g_settings->getS32("crosshair_alpha"), 0, 255);
 	crosshair_argb = video::SColor(cross_a, cross_r, cross_g, cross_b);
 
-	v3f selectionbox_color = g_settings->getV3F("selectionbox_color").value_or(v3f());
+    /*v3f selectionbox_color = g_settings->getV3F("selectionbox_color").value_or(v3f());
 	u32 sbox_r = rangelim(myround(selectionbox_color.X), 0, 255);
 	u32 sbox_g = rangelim(myround(selectionbox_color.Y), 0, 255);
 	u32 sbox_b = rangelim(myround(selectionbox_color.Z), 0, 255);
-	selectionbox_argb = video::SColor(255, sbox_r, sbox_g, sbox_b);
+    selectionbox_argb = video::SColor(255, sbox_r, sbox_g, sbox_b);*/
 
 	use_crosshair_image = tsrc->isKnownSourceImage("crosshair.png");
 	use_object_crosshair_image = tsrc->isKnownSourceImage("object_crosshair.png");
 
-	m_selection_boxes.clear();
+    /*m_selection_boxes.clear();
 	m_halo_boxes.clear();
 
 	std::string mode_setting = g_settings->get("node_highlighting");
@@ -106,7 +106,7 @@ Hud::Hud(Client *client, LocalPlayer *player,
 	// Initialize m_block_bounds_material
 	m_block_bounds_material.MaterialType = video::EMT_SOLID;
 	m_block_bounds_material.Thickness =
-			rangelim(g_settings->getS16("selectionbox_width"), 1, 5);
+            rangelim(g_settings->getS16("selectionbox_width"), 1, 5);*/
 
 	// Prepare mesh for compass drawing
 	m_rotation_mesh_buffer.reset(new scene::SMeshBuffer());
@@ -149,8 +149,8 @@ Hud::~Hud()
 {
 	g_settings->deregisterAllChangedCallbacks(this);
 
-	if (m_selection_mesh)
-		m_selection_mesh->drop();
+    //if (m_selection_mesh)
+    //	m_selection_mesh->drop();
 }
 
 void Hud::drawItem(const ItemStack &item, const core::rect<s32>& rect,
@@ -863,7 +863,7 @@ void Hud::drawCrosshair()
 	}
 }
 
-void Hud::setSelectionPos(const v3f &pos, const v3s16 &camera_offset)
+/*void Hud::setSelectionPos(const v3f &pos, const v3s16 &camera_offset)
 {
 	m_camera_offset = camera_offset;
 	m_selection_pos = pos;
@@ -1025,7 +1025,7 @@ void Hud::updateSelectionMesh(const v3s16 &camera_offset)
 	m_halo_boxes.push_back(halo_box);
 	m_selection_mesh = convertNodeboxesToMesh(
 		m_halo_boxes, texture_uv, 0.5);
-}
+}*/
 
 void Hud::resizeHotbar() {
 	const v2u32 &window_size = RenderingEngine::getWindowSize();

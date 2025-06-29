@@ -45,6 +45,7 @@ set(pipeline_SRCS
 set(player_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/player/playercamera.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/player/localplayer.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/player/selection.cpp
 )
 
 set(render_SRCS

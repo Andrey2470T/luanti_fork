@@ -199,13 +199,10 @@ bool MeshOperations::checkMeshNormals(MeshBuffer *mesh)
 	return true;
 }
 
-MeshStorage MeshOperations::convertNodeboxesToMesh(const std::vector<aabbf> &boxes,
-		const f32 *uv_coords, float expand)
+MeshBuffer *MeshOperations::convertNodeboxesToMesh(const std::vector<aabbf> &boxes,
+    const f32 *uv_coords, float expand)
 {
-	MeshStorage dst_mesh;
-
-	for (u16 j = 0; j < 6; j++)
-		dst_mesh[j] = new MeshBuffer();
+    MeshBuffer *mesh = new MeshBuffer(6 * 4 * boxes.size(), 6 * 6 * boxes.size());
 
 	img::color8 c(img::PF_RGBA8, 255,255,255,255);
 

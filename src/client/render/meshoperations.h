@@ -77,8 +77,8 @@ class MeshOperations
 		uv_coords[24] - table of texture uv coords for each cuboid face
 		expand - factor by which cuboids will be resized
 	*/
-	static MeshStorage convertNodeboxesToMesh(const std::vector<aabbf> &boxes,
-		const f32 *uv_coords = NULL, float expand = 0);
+    static MeshBuffer *convertNodeboxesToMesh(const std::vector<aabbf> &boxes,
+        const f32 *uv_coords, float expand = 0);
 
 
 	//! Recalculates all normals of the mesh.
