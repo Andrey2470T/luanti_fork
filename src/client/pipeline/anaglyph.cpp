@@ -4,8 +4,8 @@
 // Copyright (C) 2017 numzero, Lobachevskiy Vitaliy <numzer0@yandex.ru>
 
 #include "anaglyph.h"
-#include "client/camera.h"
-#include <IrrlichtDevice.h>
+#include "client/render/camera.h"
+#include <Render/DrawContext.h>
 
 
 /// SetColorMaskStep step
@@ -16,12 +16,12 @@ SetColorMaskStep::SetColorMaskStep(int _color_mask)
 
 void SetColorMaskStep::run(PipelineContext &context)
 {
-	video::SOverrideMaterial &mat = context.device->getVideoDriver()->getOverrideMaterial();
-	mat.reset();
-	mat.Material.ColorMask = static_cast<video::E_COLOR_PLANE>(color_mask);
-	mat.EnableProps = video::EMP_COLOR_MASK;
-	mat.EnablePasses = scene::ESNRP_SKY_BOX | scene::ESNRP_SOLID |
-			   scene::ESNRP_TRANSPARENT | scene::ESNRP_TRANSPARENT_EFFECT;
+    auto ctxt = context.client->getRenderSystem()->getRenderer()->getContext();
+    ctxt->setColorMask(color_mask);
+
+    //mat.EnableProps = video::EMP_COLOR_MASK;
+    //mat.EnablePasses = scene::ESNRP_SKY_BOX | scene::ESNRP_SOLID |
+    //		   scene::ESNRP_TRANSPARENT | scene::ESNRP_TRANSPARENT_EFFECT;
 }
 
 /// ClearDepthBufferTarget
@@ -33,7 +33,9 @@ ClearDepthBufferTarget::ClearDepthBufferTarget(RenderTarget *_target) :
 void ClearDepthBufferTarget::activate(PipelineContext &context)
 {
 	target->activate(context);
-	context.device->getVideoDriver()->clearBuffers(video::ECBF_DEPTH);
+
+    auto ctxt = context.client->getRenderSystem()->getRenderer()->getContext();
+    ctxt->clearBuffers(render::CBF_DEPTH);
 }
 
 ConfigureOverrideMaterialTarget::ConfigureOverrideMaterialTarget(RenderTarget *_upstream, bool _enable) :
@@ -44,7 +46,7 @@ ConfigureOverrideMaterialTarget::ConfigureOverrideMaterialTarget(RenderTarget *_
 void ConfigureOverrideMaterialTarget::activate(PipelineContext &context)
 {
 	upstream->activate(context);
-	context.device->getVideoDriver()->getOverrideMaterial().Enabled = enable;
+    //context.device->getVideoDriver()->getOverrideMaterial().Enabled = enable;
 }
 
 
@@ -59,17 +61,17 @@ void populateAnaglyphPipeline(RenderPipeline *pipeline, Client *client)
 
 	// left eye
 	pipeline->addStep<OffsetCameraStep>(false);
-	pipeline->addStep<SetColorMaskStep>(video::ECP_RED);
+    pipeline->addStep<SetColorMaskStep>(render::CP_RED);
 	pipeline->addStep(step3D);
 
 	// right eye
 	pipeline->addStep<OffsetCameraStep>(true);
-	pipeline->addStep<SetColorMaskStep>(video::ECP_GREEN | video::ECP_BLUE);
+    pipeline->addStep<SetColorMaskStep>(render::CP_GREEN | render::CP_BLUE);
 	pipeline->addStep(step3D);
 
 	// reset
 	pipeline->addStep<OffsetCameraStep>(0.0f);
-	pipeline->addStep<SetColorMaskStep>(video::ECP_ALL);
+    pipeline->addStep<SetColorMaskStep>(render::CP_ALL);
 
 	pipeline->addStep<DrawWield>();
 	pipeline->addStep<MapPostFxStep>();

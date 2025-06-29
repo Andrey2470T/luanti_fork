@@ -5,7 +5,6 @@
 
 #pragma once
 #include "stereo.h"
-#include "pipeline.h"
 
 /**
  * Set color mask when rendering the next steps
@@ -51,4 +50,4 @@ private:
 	bool enable;
 };
 
-void populateAnaglyphPipeline(RenderPipeline *pipeline, Client *client);
+void populateAnaglyphPipeline(Pipeline *pipeline, Client *client);

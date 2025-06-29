@@ -8,6 +8,7 @@
 #include "client/client.h"
 #include "client/shader.h"
 #include "client/camera.h"
+#include "client/render/renderer.h"
 
 InitInterlacedMaskStep::InitInterlacedMaskStep(TextureBuffer *_buffer, u8 _index)	:
 	buffer(_buffer), index(_index)
@@ -16,7 +17,7 @@ InitInterlacedMaskStep::InitInterlacedMaskStep(TextureBuffer *_buffer, u8 _index
 
 void InitInterlacedMaskStep::run(PipelineContext &context)
 {
-	video::ITexture *mask = buffer->getTexture(index);
+    auto mask = dynamic_cast<render::Texture2D *>(buffer->getTexture(index));
 	if (!mask)
 		return;
 	if (mask == last_mask)
@@ -24,16 +25,15 @@ void InitInterlacedMaskStep::run(PipelineContext &context)
 	last_mask = mask;
 
 	auto size = mask->getSize();
-	u8 *data = reinterpret_cast<u8 *>(mask->lock(video::ETLM_WRITE_ONLY));
-	for (u32 j = 0; j < size.Height; j++) {
-		u8 val = j % 2 ? 0xff : 0x00;
-		memset(data, val, 4 * size.Width);
-		data += 4 * size.Width;
+    u8 *data = mask->downloadData().at(0)->getData();
+    for (u32 j = 0; j < size.Y; j++) {
+        u8 val = j % 2 ? 0xff : 0x00;
+        memset(data, val, 4 * size.X);
+        data += 4 * size.X;
 	}
-	mask->unlock();
 }
 
-void populateInterlacedPipeline(RenderPipeline *pipeline, Client *client)
+void populateInterlacedPipeline(Pipeline *pipeline, Client *client)
 {
 	// FIXME: "3d_mode = interlaced" is currently broken. Two options:
 	// 1. Remove it
@@ -47,9 +47,9 @@ void populateInterlacedPipeline(RenderPipeline *pipeline, Client *client)
 	static const u8 TEXTURE_MASK = 2;
 
 	TextureBuffer *buffer = pipeline->createOwned<TextureBuffer>();
-	buffer->setTexture(TEXTURE_LEFT, v2f(1.0f, 0.5f), "3d_render_left", video::ECF_A8R8G8B8);
-	buffer->setTexture(TEXTURE_RIGHT, v2f(1.0f, 0.5f), "3d_render_right", video::ECF_A8R8G8B8);
-	buffer->setTexture(TEXTURE_MASK, v2f(1.0f, 1.0f), "3d_render_mask", video::ECF_A8R8G8B8);
+    buffer->setTexture(TEXTURE_LEFT, v2f(1.0f, 0.5f), "3d_render_left", img::PF_RGBA8);
+    buffer->setTexture(TEXTURE_RIGHT, v2f(1.0f, 0.5f), "3d_render_right", img::PF_RGBA8);
+    buffer->setTexture(TEXTURE_MASK, v2f(1.0f, 1.0f), "3d_render_mask", img::PF_RGBA8);
 
 	pipeline->addStep<InitInterlacedMaskStep>(buffer, TEXTURE_MASK);
 
@@ -67,7 +67,7 @@ void populateInterlacedPipeline(RenderPipeline *pipeline, Client *client)
 
 	pipeline->addStep<OffsetCameraStep>(0.0f);
 
-	IShaderSource *s = client->getShaderSource();
+    /*IShaderSource *s = client->getShaderSource();
 	auto shader = s->getShaderRaw("3d_interlaced_merge");
 	video::E_MATERIAL_TYPE material = s->getShaderInfo(shader).material;
 	auto texture_map = { TEXTURE_LEFT, TEXTURE_RIGHT, TEXTURE_MASK };
@@ -75,5 +75,5 @@ void populateInterlacedPipeline(RenderPipeline *pipeline, Client *client)
 	auto merge = pipeline->addStep<PostProcessingStep>(material, texture_map);
 	merge->setRenderSource(buffer);
 	merge->setRenderTarget(pipeline->createOwned<ScreenTarget>());
-	pipeline->addStep<DrawHUD>();
+    pipeline->addStep<DrawHUD>();*/
 }

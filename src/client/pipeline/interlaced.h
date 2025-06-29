@@ -5,6 +5,7 @@
 
 #pragma once
 #include "stereo.h"
+#include <Render/Texture2D.h>
 
 class InitInterlacedMaskStep : public TrivialRenderStep
 {
@@ -13,8 +14,8 @@ public:
 	void run(PipelineContext &context);
 private:
 	TextureBuffer *buffer;
-	video::ITexture *last_mask { nullptr };
+    render::Texture2D *last_mask { nullptr };
 	u8 index;
 };
 
-void populateInterlacedPipeline(RenderPipeline *pipeline, Client *client);
+void populateInterlacedPipeline(Pipeline *pipeline, Client *client);

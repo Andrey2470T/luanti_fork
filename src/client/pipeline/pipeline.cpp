@@ -5,29 +5,27 @@
 #include "pipeline.h"
 #include "client/client.h"
 #include "client/hud.h"
-#include "IRenderTarget.h"
-#include "SColor.h"
-
-#include <vector>
-#include <memory>
-
+#include <Render/Texture2D.h>
+#include <Render/TextureCubeMap.h>
+#include <Render/FrameBuffer.h>
+#include "log.h"
+#include <Main/MainWindow.h>
 
 TextureBuffer::~TextureBuffer()
 {
 	for (u32 index = 0; index < m_textures.size(); index++)
-		m_driver->removeTexture(m_textures[index]);
+        delete m_textures[index];
 	m_textures.clear();
 }
 
-video::ITexture *TextureBuffer::getTexture(u8 index)
+render::Texture *TextureBuffer::getTexture(u8 index)
 {
-	if (index >= m_textures.size())
-		return nullptr;
-	return m_textures[index];
+    return index >= m_textures.size() ? nullptr : m_textures[index];
 }
 
 
-void TextureBuffer::setTexture(u8 index, core::dimension2du size, const std::string &name, video::ECOLOR_FORMAT format, bool clear, u8 msaa)
+void TextureBuffer::setTexture(u8 index, v2u size, const std::string &name, img::PixelFormat format,
+    bool clear, u8 msaa, bool cubemap)
 {
 	assert(index != NO_DEPTH_TEXTURE);
 
@@ -43,9 +41,11 @@ void TextureBuffer::setTexture(u8 index, core::dimension2du size, const std::str
 	definition.format = format;
 	definition.clear = clear;
 	definition.msaa = msaa;
+    definition.cubemap = cubemap;
 }
 
-void TextureBuffer::setTexture(u8 index, v2f scale_factor, const std::string &name, video::ECOLOR_FORMAT format, bool clear, u8 msaa)
+void TextureBuffer::setTexture(u8 index, v2f scale_factor, const std::string &name, img::PixelFormat format,
+    bool clear, u8 msaa, bool cubemap)
 {
 	assert(index != NO_DEPTH_TEXTURE);
 
@@ -61,20 +61,18 @@ void TextureBuffer::setTexture(u8 index, v2f scale_factor, const std::string &na
 	definition.format = format;
 	definition.clear = clear;
 	definition.msaa = msaa;
+    definition.cubemap = cubemap;
 }
 
 void TextureBuffer::reset(PipelineContext &context)
 {
-	if (!m_driver)
-		m_driver = context.device->getVideoDriver();
-
 	// remove extra textures
 	if (m_textures.size() > m_definitions.size()) {
 		for (unsigned i = m_definitions.size(); i < m_textures.size(); i++)
 			if (m_textures[i])
-				m_driver->removeTexture(m_textures[i]);
+                delete m_textures[i];
 
-		m_textures.set_used(m_definitions.size());
+        m_textures.resize(m_definitions.size());
 	}
 
 	// add placeholders for new definitions
@@ -83,7 +81,7 @@ void TextureBuffer::reset(PipelineContext &context)
 
 	// change textures to match definitions
 	for (u32 i = 0; i < m_definitions.size(); i++) {
-		video::ITexture **ptr = &m_textures[i];
+        render::Texture **ptr = &m_textures[i];
 
 		ensureTexture(ptr, m_definitions[i], context);
 		m_definitions[i].dirty = false;
@@ -96,21 +94,21 @@ void TextureBuffer::swapTextures(u8 texture_a, u8 texture_b)
 {
 	assert(m_definitions[texture_a].valid && m_definitions[texture_b].valid);
 
-	video::ITexture *temp = m_textures[texture_a];
+    render::Texture *temp = m_textures[texture_a];
 	m_textures[texture_a] = m_textures[texture_b];
 	m_textures[texture_b] = temp;
 }
 
 
-bool TextureBuffer::ensureTexture(video::ITexture **texture, const TextureDefinition& definition, PipelineContext &context)
+bool TextureBuffer::ensureTexture(render::Texture **texture, const TextureDefinition& definition, PipelineContext &context)
 {
 	bool modify;
-	core::dimension2du size;
+    v2u size;
 	if (definition.valid) {
 		if (definition.fixed_size)
 			size = definition.size;
 		else
-			size = core::dimension2du(
+            size = v2u(
 					(u32)(context.target_size.X * definition.scale_factor.X),
 					(u32)(context.target_size.Y * definition.scale_factor.Y));
 
@@ -124,34 +122,31 @@ bool TextureBuffer::ensureTexture(video::ITexture **texture, const TextureDefini
 		return false;
 
 	if (*texture) {
-		m_driver->removeTexture(*texture);
+        delete *texture;
 		*texture = nullptr;
 	}
 
 	if (definition.valid) {
-		if (!m_driver->queryTextureFormat(definition.format)) {
-			errorstream << "Failed to create texture \"" << definition.name
-				<< "\": unsupported format " << video::ColorFormatNames[definition.format]
-				<< std::endl;
-			return false;
-		}
+        if (!definition.cubemap) {
+            if (!definition.clear)
+                *texture = (render::Texture *)new render::Texture2D(definition.name, size.X, size.Y, definition.format, definition.msaa);
+            {
+                img::Image *img = new img::Image(definition.format, size.X, size.Y);
+                *texture = (render::Texture *)new render::Texture2D(definition.name, std::unique_ptr<img::Image>(img));
+            }
+        }
+        else {
+            if (!definition.clear)
+                *texture = (render::Texture *)new render::TextureCubeMap(definition.name, size.X, size.Y, definition.format);
+            else {
+                std::array<img::Image *, render::CMF_COUNT> imgs;
 
-		if (definition.clear) {
-			// We're not able to clear a render target texture
-			// We're not able to create a normal texture with MSAA
-			// (could be solved by more refactoring in Irrlicht, but not needed for now)
-			sanity_check(definition.msaa < 1);
+                for (u8 i = 0; i < render::CMF_COUNT; i++)
+                    imgs[i] = new img::Image(definition.format, size.X, size.Y);
 
-			video::IImage *image = m_driver->createImage(definition.format, size);
-			// Cannot use image->fill because it's not implemented for all formats.
-			std::memset(image->getData(), 0, image->getDataSizeFromFormat(definition.format, size.Width, size.Height));
-			*texture = m_driver->addTexture(definition.name.c_str(), image);
-			image->drop();
-		} else if (definition.msaa > 0) {
-			*texture = m_driver->addRenderTargetTextureMs(size, definition.msaa, definition.name.c_str(), definition.format);
-		} else {
-			*texture = m_driver->addRenderTargetTexture(size, definition.name.c_str(), definition.format);
-		}
+                *texture = (render::Texture *)new render::TextureCubeMap(definition.name, imgs);
+            }
+        }
 
 		if (!*texture) {
 			errorstream << "Failed to create texture \"" << definition.name
@@ -164,56 +159,59 @@ bool TextureBuffer::ensureTexture(video::ITexture **texture, const TextureDefini
 }
 
 TextureBufferOutput::TextureBufferOutput(TextureBuffer *_buffer, u8 _texture_index)
-	: buffer(_buffer), texture_map({_texture_index})
+    : buffer(_buffer), texture_map({{_texture_index, 0}})
 {}
 
-TextureBufferOutput::TextureBufferOutput(TextureBuffer *_buffer, const std::vector<u8> &_texture_map)
+TextureBufferOutput::TextureBufferOutput(TextureBuffer *_buffer, const std::unordered_map<u8, u8> &_texture_map)
 	: buffer(_buffer), texture_map(_texture_map)
 {}
 
-TextureBufferOutput::TextureBufferOutput(TextureBuffer *_buffer, const std::vector<u8> &_texture_map, u8 _depth_stencil)
+TextureBufferOutput::TextureBufferOutput(TextureBuffer *_buffer, const std::unordered_map<u8, u8> &_texture_map, std::pair<u8, u8> _depth_stencil)
 	: buffer(_buffer), texture_map(_texture_map), depth_stencil(_depth_stencil)
 {}
 
-TextureBufferOutput::~TextureBufferOutput()
-{
-	if (render_target && driver)
-		driver->removeRenderTarget(render_target);
-}
-
 void TextureBufferOutput::activate(PipelineContext &context)
 {
-	if (!driver)
-		driver = context.device->getVideoDriver();
+    if (!render_target) {
+        auto window = context.client->getRenderSystem()->getWindow();
+        auto glParams = window->getGLParams();
+        render_target = std::make_unique<render::FrameBuffer>(glParams.maxColorAttachments);
+    }
 
-	if (!render_target)
-		render_target = driver->addRenderTarget();
-
-	core::array<video::ITexture *> textures;
-	core::dimension2du size(0, 0);
-	for (size_t i = 0; i < texture_map.size(); i++) {
-		video::ITexture *texture = buffer->getTexture(texture_map[i]);
+    std::vector<render::Texture *> textures;
+    std::vector<render::CubeMapFace> faces;
+    v2u size(0, 0);
+    for (auto p : texture_map) {
+        auto texture = buffer->getTexture(p.first);
 		textures.push_back(texture);
-		if (texture && size.Width == 0)
+        faces.push_back((render::CubeMapFace)p.second);
+        if (texture && size.X == 0)
 			size = texture->getSize();
 	}
 
-	video::ITexture *depth_texture = nullptr;
-	if (depth_stencil != NO_DEPTH_TEXTURE)
-		depth_texture = buffer->getTexture(depth_stencil);
+    render::Texture *depth_texture = nullptr;
+    render::CubeMapFace depth_face;
+    if (depth_stencil.first != NO_DEPTH_TEXTURE) {
+        depth_texture = buffer->getTexture(depth_stencil.first);
+        depth_face = (render::CubeMapFace)depth_stencil.second;
+    }
 
-	render_target->setTexture(textures, depth_texture);
+    render_target->setColorTextures(textures, faces);
+    render_target->setDepthStencilTexture(depth_texture, depth_face);
 
-	driver->setRenderTargetEx(render_target, m_clear ? video::ECBF_ALL : video::ECBF_NONE, context.clear_color);
-	driver->OnResize(size);
+    auto ctxt = context.client->getRenderSystem()->getRenderer()->getContext();
+    u16 clear = m_clear ? render::CBF_COLOR | render::CBF_DEPTH | render::CBF_STENCIL : render::CBF_NONE;
+    ctxt->clearBuffers(clear, context.clear_color);
+    ctxt->setFrameBuffer(render_target);
+    ctxt->setViewPort(recti(0, 0, size.X, size.Y));
 
 	RenderTarget::activate(context);
 }
 
-video::IRenderTarget *TextureBufferOutput::getIrrRenderTarget(PipelineContext &context)
+render::FrameBuffer *TextureBufferOutput::getRenderTarget(PipelineContext &context)
 {
 	activate(context); // Needed to make sure that render_target is set up.
-	return render_target;
+    return render_target.get();
 }
 
 u8 DynamicSource::getTextureCount()
@@ -222,7 +220,7 @@ u8 DynamicSource::getTextureCount()
 	return upstream->getTextureCount();
 }
 
-video::ITexture *DynamicSource::getTexture(u8 index)
+render::Texture *DynamicSource::getTexture(u8 index)
 {
 	assert(isConfigured());
 	return upstream->getTexture(index);
@@ -230,9 +228,11 @@ video::ITexture *DynamicSource::getTexture(u8 index)
 
 void ScreenTarget::activate(PipelineContext &context)
 {
-	auto driver = context.device->getVideoDriver();
-	driver->setRenderTargetEx(nullptr, m_clear ? video::ECBF_ALL : video::ECBF_NONE, context.clear_color);
-	driver->OnResize(size);
+    auto ctxt = context.client->getRenderSystem()->getRenderer()->getContext();
+    u16 clear = m_clear ? render::CBF_COLOR | render::CBF_DEPTH | render::CBF_STENCIL : render::CBF_NONE;
+    ctxt->clearBuffers(clear, context.clear_color);
+    ctxt->setViewPort(recti(0, 0, size.X, size.Y));
+
 	RenderTarget::activate(context);
 }
 
@@ -246,7 +246,7 @@ void DynamicTarget::activate(PipelineContext &context)
 void ScreenTarget::reset(PipelineContext &context)
 {
 	RenderTarget::reset(context);
-	size = context.device->getVideoDriver()->getScreenSize();
+    size = context.client->getRenderSystem()->getWindowSize();
 }
 
 SetRenderTargetStep::SetRenderTargetStep(RenderStep *_step, RenderTarget *_target)
@@ -269,20 +269,20 @@ void SwapTexturesStep::run(PipelineContext &context)
 	buffer->swapTextures(texture_a, texture_b);
 }
 
-RenderSource *RenderPipeline::getInput()
+RenderSource *Pipeline::getInput()
 {
 	return &m_input;
 }
 
-RenderTarget *RenderPipeline::getOutput()
+RenderTarget *Pipeline::getOutput()
 {
 	return &m_output;
 }
 
-void RenderPipeline::run(PipelineContext &context)
+void Pipeline::run(PipelineContext &context)
 {
-	v2u32 original_size = context.target_size;
-	context.target_size = v2u32(original_size.X * scale.X, original_size.Y * scale.Y);
+    v2u original_size = context.target_size;
+    context.target_size = v2u(original_size.X * scale.X, original_size.Y * scale.Y);
 
 	for (auto &object : m_objects)
 		object->reset(context);
@@ -293,12 +293,12 @@ void RenderPipeline::run(PipelineContext &context)
 	context.target_size = original_size;
 }
 
-void RenderPipeline::setRenderSource(RenderSource *source)
+void Pipeline::setRenderSource(RenderSource *source)
 {
 	m_input.setRenderSource(source);
 }
 
-void RenderPipeline::setRenderTarget(RenderTarget *target)
+void Pipeline::setRenderTarget(RenderTarget *target)
 {
 	m_output.setRenderTarget(target);
 }

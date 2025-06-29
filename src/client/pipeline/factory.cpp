@@ -36,7 +36,7 @@ PipelineFactory::PipelineFactory(RenderSystem *rnd_system, bool enable_shadows)
 void PipelineFactory::run(img::color8 skycolor, bool show_hud,
          bool draw_wield_tool, bool draw_crosshair)
 {
-    /*PipelineContext context(device, client, hud, shadow_renderer, _skycolor, screensize);
+    /*PipelineContext context(client, hud, shadow_renderer, _skycolor, screensize);
     context.draw_crosshair = _draw_crosshair;
     context.draw_wield_tool = _draw_wield_tool;
     context.show_hud = _show_hud;

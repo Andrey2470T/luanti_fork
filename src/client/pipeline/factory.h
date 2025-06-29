@@ -1,8 +1,6 @@
 #pragma once
 
 #include "client/render/rendersystem.h"
-#include "client/render/renderer.h"
-
 
 class Pipeline;
 

@@ -4,10 +4,7 @@
 // Copyright (C) 2017 numzero, Lobachevskiy Vitaliy <numzer0@yandex.ru>
 
 #pragma once
-#include "core.h"
-#include "plain.h"
 #include "pipeline.h"
-
 
 /**
  * Offset camera for a specific eye in stereo rendering mode
@@ -21,6 +18,6 @@ public:
 	void run(PipelineContext &context) override;
 	void reset(PipelineContext &context) override;
 private:
-	core::matrix4 base_transform;
-	core::matrix4 move;
+    matrix4 base_transform;
+    matrix4 move;
 };
