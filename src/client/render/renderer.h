@@ -1,6 +1,5 @@
 #pragma once
 
-#include "FilesystemVersions.h"
 #include <Utils/Rect.h>
 #include <Render/DrawContext.h>
 
@@ -56,8 +55,8 @@ class Renderer
     bool transparentPass = false;
     bool useGLBlend = true;
 
-    static const u32 matrix_buffer_size = sizeof(f32) * 16 * 4;
-    static const u32 fog_buffer_size = sizeof(s32)+sizeof(s32)+(u32)img::pixelFormatInfo[img::PF_RGBA8].size+sizeof(f32)*3;
+    const u32 matrix_buffer_size = sizeof(f32) * 16 * 4;
+    const u32 fog_buffer_size = sizeof(s32)+sizeof(s32)+(u32)img::pixelFormatInfo[img::PF_RGBA8].size+sizeof(f32)*3;
 public:
     Renderer(ResourceCache *res_cache, const recti &viewportSize, u32 maxTexUnits)
         : context(std::make_unique<DrawContext>(viewportSize, maxTexUnits)), resCache(res_cache)

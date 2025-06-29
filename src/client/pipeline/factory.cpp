@@ -1,10 +1,50 @@
-// Luanti
-// SPDX-License-Identifier: LGPL-2.1-or-later
-// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-// Copyright (C) 2017 numzero, Lobachevskiy Vitaliy <numzer0@yandex.ru>
-
 #include "factory.h"
+#include "settings.h"
+#include "pipeline.h"
+#include "client/shadows/dynamicShadowsRender.h"
 #include "log.h"
+
+PipelineFactory::PipelineFactory(RenderSystem *rnd_system, bool enable_shadows)
+    : rndSystem(rnd_system), activePipeline(new Pipeline())
+{
+    std::string stereoMode = g_settings->get("3d_mode");
+
+    if (enable_shadows)
+        activePipeline->addStep<RenderShadowMapStep>();
+
+    if (stereoMode == "none")
+        createPlainPipeline();
+    else if (stereoMode == "anaglyph")
+        createAnaglyphPipeline();
+    else if (stereoMode == "interlaced")
+        createInterlacedPipeline();
+    else if (stereoMode == "sidebyside")
+        createSideBySidePipeline();
+    else if (stereoMode == "topbottom")
+        createSideBySidePipeline();
+    else if (stereoMode == "crossview")
+        createSideBySidePipeline();
+    else {
+        errorstream << "Invalid rendering mode: " << stereoMode << std::endl;
+        createPlainPipeline();
+    }
+
+    v2u wndsize = rndSystem->getWindowSize();
+    virtual_size = v2u(wndsize.X * virtual_size_scale.X, wndsize.Y * virtual_size_scale.Y);
+}
+
+void PipelineFactory::run(img::color8 skycolor, bool show_hud,
+         bool draw_wield_tool, bool draw_crosshair)
+{
+    /*PipelineContext context(device, client, hud, shadow_renderer, _skycolor, screensize);
+    context.draw_crosshair = _draw_crosshair;
+    context.draw_wield_tool = _draw_wield_tool;
+    context.show_hud = _show_hud;
+
+    pipeline->reset(context);
+    pipeline->run(context);*/
+}
+/*#include "log.h"
 #include "plain.h"
 #include "anaglyph.h"
 #include "interlaced.h"
@@ -67,4 +107,4 @@ void createPipeline(const std::string &stereo_mode, IrrlichtDevice *device, Clie
 	// fallback to plain renderer
 	errorstream << "Invalid rendering mode: " << stereo_mode << std::endl;
 	populatePlainPipeline(result.pipeline, client);
-}
+}*/

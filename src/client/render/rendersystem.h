@@ -46,14 +46,45 @@ class RenderSystem
 	
     MyEventReceiver *receiver;
 
-	v2f virtual_size_scale;
-    v2u virtual_size{0, 0};
-
     f32 display_density;
     f32 gui_scaling;
+    bool menu_clouds;
 public:
     RenderSystem(Client *_client, ResourceCache *_cache, MyEventReceiver *_receiver);
+    ~RenderSystem();
 
+    main::MainWindow *getWindow() const
+    {
+        return window.get();
+    }
+    Renderer *getRenderer() const
+    {
+        return renderer.get();
+    }
+    LoadScreen *getLoadScreen() const
+    {
+        return load_screen.get();
+    }
+    PipelineFactory *getPipelineFactory() const
+    {
+        return pp_factory.get();
+    }
+    CameraManager *getCameraManager() const
+    {
+        return cam_mgr.get();
+    }
+    GUIEnvironment *getGUIEnvironment() const
+    {
+        return guienv.get();
+    }
+    Hud *getHUD() const
+    {
+        return hud.get();
+    }
+    ShadowRenderer *getShadowRenderer() const
+    {
+        return shadow_renderer.get();
+    }
     v2u getWindowSize() const
     {
         return window->getWindowSize();
@@ -71,6 +102,18 @@ public:
         return gui_scaling * display_density;
     }
 
+    void setGUIScaling(f32 scaling)
+    {
+        gui_scaling = scaling;
+    }
+    void setDisplyDensity(f32 density)
+    {
+        display_density = density;
+    }
+    void enableMenuClouds(bool enable)
+    {
+        menu_clouds = enable;
+    }
     void setResizable(bool resize)
     {
         window->setResizable(resize);
@@ -80,15 +123,10 @@ public:
     void setActivePipeline(RenderPipeline *pipeline);
     void setActiveCamera(Camera *camera);
 
-    // If "indef_pos" is given, the value of "percent" is ignored and an indefinite
-	// progress bar is drawn.
-	void drawLoadScreen(const std::wstring &text,
-        f32 dtime = 0, s32 percent = 0, f32 *indef_pos = nullptr);
-
 	void drawScene(bool show_hud,
         bool draw_wield_tool, bool draw_crosshair);
 private:
     void initWindow();
 
-    void settingChangedCallback(const std::string &name, void *data);
+    static void settingChangedCallback(const std::string &name, void *data);
 };
