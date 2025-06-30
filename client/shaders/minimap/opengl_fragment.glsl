@@ -1,5 +1,3 @@
-#version 320 core
-
 uniform sampler2D mBaseTexture;
 uniform sampler2D mHeightmap;
 uniform vec3 mYawVec;

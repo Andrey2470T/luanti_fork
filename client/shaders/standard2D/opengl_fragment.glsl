@@ -1,5 +1,3 @@
-#version 320 core
-
 precision mediump float;
 
 uniform int mTextureUsage0;

@@ -1,4 +1,4 @@
-#version 320 core
+precision mediump float;
 
 uniform int mAlphaDiscard;
 uniform float mAlphaRef;

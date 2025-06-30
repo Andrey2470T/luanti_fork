@@ -1,6 +1,7 @@
 #pragma once
 
 #include "BasicIncludes.h"
+#include <Main/GLVersionSpecific.h>
 
 namespace img
 {
@@ -19,10 +20,10 @@ class MeshBuffer;
 
 class ResourceLoader
 {
-	img::ImageModifier *mdf;
     bool enableGUIFiltering = false;
+	main::OpenGLVersion gl_version;
 
-	bool enable_waving_water;
+	/*bool enable_waving_water;
 	f32 water_wave_height;
 	f32 water_wave_length;
 	f32 water_wave_speed;
@@ -43,9 +44,9 @@ class ResourceLoader
 	std::string antialiasing;
 	u16 fsaa;
 	bool debanding;
-	bool enable_volumetric_lighting;
+	bool enable_volumetric_lighting;*/
 public:
-	ResourceLoader(img::ImageModifier *_mdf);
+	ResourceLoader(main::OpenGLVersion version);
 
 	img::Image *loadImage(const std::string &path);
 	render::Texture2D *loadTexture(const std::string &path);

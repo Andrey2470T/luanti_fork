@@ -1,4 +1,4 @@
-#version 320 core
+precision mediump float;
 
 #define BM_ALPHA 0
 #define BM_ADD 1

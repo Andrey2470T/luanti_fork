@@ -1,17 +1,18 @@
 #include "resource_loader.h"
-#include "Image/ImageLoader.h"
-#include "Render/Texture2D.h"
-#include "Render/Shader.h"
+#include <Image/ImageLoader.h>
+#include <Render/Texture2D.h>
+#include <Render/Shader.h>
+#include "client/render/renderer.h"
 #include "settings.h"
 #include "file.h"
 #include "log.h"
 
-ResourceLoader::ResourceLoader(img::ImageModifier *_mdf)
-	: mdf(_mdf)
+ResourceLoader::ResourceLoader(main::OpenGLVersion version)
+	: gl_version(version)
 {
     enableGUIFiltering = g_settings->getBool("gui_scaling_filter");
 
-	enable_waving_water = g_settings->getBool("enable_waving_water");
+	/*enable_waving_water = g_settings->getBool("enable_waving_water");
 	water_wave_height = g_settings->getFloat("water_wave_height");
 	water_wave_length = g_settings->getFloat("water_wave_length");
 	water_wave_speed = g_settings->getFloat("water_wave_speed");
@@ -32,7 +33,7 @@ ResourceLoader::ResourceLoader(img::ImageModifier *_mdf)
 	antialiasing = g_settings->get("antialiasing");
     fsaa = std::max((u16)2, g_settings->getU16("fsaa"));
 	debanding = g_settings->getBool("debanding");
-	enable_volumetric_lighting = g_settings->getBool("enable_volumetric_lighting");
+	enable_volumetric_lighting = g_settings->getBool("enable_volumetric_lighting");*/
 }
 
 img::Image *ResourceLoader::loadImage(const std::string &path)
@@ -45,7 +46,7 @@ img::Image *ResourceLoader::loadImage(const std::string &path)
 	}
 
     if (enableGUIFiltering) {
-        auto newImg = mdf->copyWith2NPot2Scaling(img);
+        auto newImg = g_imgmodifier->copyWith2NPot2Scaling(img);
         delete img;
         img = newImg;
     }
@@ -69,9 +70,11 @@ render::Shader *ResourceLoader::loadShader(const std::string &path)
 	std::ostringstream header;
 
 	header << std::noboolalpha << std::showpoint;
-	header << "#version 320\n";
 
-	header << "#define ENABLE_WAVING_WATER " << (u8)enable_waving_water << "\n";
+	header << "#version ";
+	header << gl_version.Major << gl_version.Minor << "0 core\n";
+
+	/*header << "#define ENABLE_WAVING_WATER " << (u8)enable_waving_water << "\n";
 	if (enable_waving_water) {
 		header << "#define WATER_WAVE_HEIGHT " << water_wave_height << "\n";
 		header << "#define WATER_WAVE_LENGTH " << water_wave_length << "\n";
@@ -108,7 +111,7 @@ render::Shader *ResourceLoader::loadShader(const std::string &path)
 
 	header << "#define ENABLE_DITHERING " << (u8)debanding << "\n";
 
-	header << "#define VOLUMETRIC_LIGHT " << (u8)enable_volumetric_lighting << "\n";
+	header << "#define VOLUMETRIC_LIGHT " << (u8)enable_volumetric_lighting << "\n";*/
 	
 	std::string final_header = "#line 0\n"; // reset the line counter for meaningful diagnostics
 
@@ -160,7 +163,7 @@ img::Palette *ResourceLoader::loadPalette(const std::string &path)
     u32 step = 256 / area;
     // For each pixel in the image
     for (u32 i = 0; i < area; i++) {
-        img::color8 c = mdf->getPixel(img, i % size.X, i / size.X);
+        img::color8 c = g_imgmodifier->getPixel(img, i % size.X, i / size.X);
         // Fill in palette with 'step' colors
         for (u32 j = 0; j < step; j++) {
             *colors_iter = c;
