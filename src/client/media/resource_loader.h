@@ -23,7 +23,7 @@ class ResourceLoader
     bool enableGUIFiltering = false;
 	main::OpenGLVersion gl_version;
 
-	/*bool enable_waving_water;
+    bool enable_waving_water;
 	f32 water_wave_height;
 	f32 water_wave_length;
 	f32 water_wave_speed;
@@ -44,7 +44,7 @@ class ResourceLoader
 	std::string antialiasing;
 	u16 fsaa;
 	bool debanding;
-	bool enable_volumetric_lighting;*/
+    bool enable_volumetric_lighting;
 public:
 	ResourceLoader(main::OpenGLVersion version);
 

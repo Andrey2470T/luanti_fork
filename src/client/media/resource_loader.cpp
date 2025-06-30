@@ -12,7 +12,7 @@ ResourceLoader::ResourceLoader(main::OpenGLVersion version)
 {
     enableGUIFiltering = g_settings->getBool("gui_scaling_filter");
 
-	/*enable_waving_water = g_settings->getBool("enable_waving_water");
+	enable_waving_water = g_settings->getBool("enable_waving_water");
 	water_wave_height = g_settings->getFloat("water_wave_height");
 	water_wave_length = g_settings->getFloat("water_wave_length");
 	water_wave_speed = g_settings->getFloat("water_wave_speed");
@@ -33,7 +33,7 @@ ResourceLoader::ResourceLoader(main::OpenGLVersion version)
 	antialiasing = g_settings->get("antialiasing");
     fsaa = std::max((u16)2, g_settings->getU16("fsaa"));
 	debanding = g_settings->getBool("debanding");
-	enable_volumetric_lighting = g_settings->getBool("enable_volumetric_lighting");*/
+	enable_volumetric_lighting = g_settings->getBool("enable_volumetric_lighting");
 }
 
 img::Image *ResourceLoader::loadImage(const std::string &path)
@@ -74,7 +74,7 @@ render::Shader *ResourceLoader::loadShader(const std::string &path)
 	header << "#version ";
 	header << gl_version.Major << gl_version.Minor << "0 core\n";
 
-	/*header << "#define ENABLE_WAVING_WATER " << (u8)enable_waving_water << "\n";
+	header << "#define ENABLE_WAVING_WATER " << (u8)enable_waving_water << "\n";
 	if (enable_waving_water) {
 		header << "#define WATER_WAVE_HEIGHT " << water_wave_height << "\n";
 		header << "#define WATER_WAVE_LENGTH " << water_wave_length << "\n";
@@ -111,7 +111,21 @@ render::Shader *ResourceLoader::loadShader(const std::string &path)
 
 	header << "#define ENABLE_DITHERING " << (u8)debanding << "\n";
 
-	header << "#define VOLUMETRIC_LIGHT " << (u8)enable_volumetric_lighting << "\n";*/
+	header << "#define VOLUMETRIC_LIGHT " << (u8)enable_volumetric_lighting << "\n";
+
+    header << "#define TILE_MATERIAL_BASIC 0\n";
+    header << "#define TILE_MATERIAL_ALPHA 1\n";
+    header << "#define TILE_MATERIAL_LIQUID_TRANSPARENT 2\n",
+    header << "#define TILE_MATERIAL_LIQUID_OPAQUE 3\n";
+    header << "#define TILE_MATERIAL_WAVING_LEAVES 4\n";
+    header << "#define TILE_MATERIAL_WAVING_PLANTS 5\n";
+    header << "#define TILE_MATERIAL_OPAQUE 6\n";
+    header << "#define TILE_MATERIAL_WAVING_LIQUID_BASIC 7\n";
+    header << "#define TILE_MATERIAL_WAVING_LIQUID_TRANSPARENT 8\n";
+    header << "#define TILE_MATERIAL_WAVING_LIQUID_OPAQUE 9\n";
+    // Note: PLAIN isn't a material actually used by tiles, rather just entities.
+    header << "#define TILE_MATERIAL_PLAIN 10\n";
+    header << "#define TILE_MATERIAL_PLAIN_ALPHA 11\n";
 	
 	std::string final_header = "#line 0\n"; // reset the line counter for meaningful diagnostics
 

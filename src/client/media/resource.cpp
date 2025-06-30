@@ -72,8 +72,8 @@ static std::string fallbackPathFinder(const std::string &name)
     return "";
 }
 
-ResourceCache::ResourceCache(img::ImageModifier *mdf)
-    : loader(std::make_unique<ResourceLoader>(mdf))
+ResourceCache::ResourceCache(main::OpenGLVersion version)
+    : loader(std::make_unique<ResourceLoader>(version))
 {
     auto texDefPaths = getTexturesDefaultPaths();
     auto shaderDefPaths = getShaderDefaultPaths();

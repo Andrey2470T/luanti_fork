@@ -71,7 +71,7 @@ class ResourceCache
 
     std::mutex resource_mutex;
 public:
-    ResourceCache(img::ImageModifier *mdf);
+    ResourceCache(main::OpenGLVersion version);
 
     template <class T>
     ResourceInfo<T> *get(ResourceType _type, const std::string &_name);

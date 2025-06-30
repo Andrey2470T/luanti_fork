@@ -1,32 +1,39 @@
-uniform sampler2D baseTexture;
+uniform sampler2D mTexture0;
 
-uniform vec3 dayLight;
-uniform lowp vec4 fogColor;
-uniform float fogDistance;
-uniform float fogShadingParameter;
+uniform vec3 mDayLight;
+uniform int mAlphaDiscard;
+
+layout (std140) uniform mFogParams {
+    int enable;
+    int type;
+    vec4 color;
+    float start;
+    float end;
+    float density;
+};
 
 // The cameraOffset is the current center of the visible world.
-uniform highp vec3 cameraOffset;
-uniform float animationTimer;
+uniform highp vec3 mCameraOffset;
+uniform float mAnimationTimer;
 #ifdef ENABLE_DYNAMIC_SHADOWS
 	// shadow texture
-	uniform sampler2D ShadowMapSampler;
+	uniform sampler2D mShadowMapSampler;
 	// shadow uniforms
-	uniform vec3 v_LightDirection;
-	uniform float f_textureresolution;
-	uniform mat4 m_ShadowViewProj;
-	uniform float f_shadowfar;
-	uniform float f_shadow_strength;
-	uniform vec4 CameraPos;
-	uniform float xyPerspectiveBias0;
-	uniform float xyPerspectiveBias1;
-	uniform vec3 shadow_tint;
+	uniform vec3 mLightDirection;
+	uniform float mTextureResolution;
+	uniform mat4 mShadowViewProj;
+	uniform float mShadowFar;
+	uniform float mShadowStrength;
+	uniform vec4 mCameraPos;
+	uniform float mXYPerspectiveBias0;
+	uniform float mXYPerspectiveBias1;
+	uniform vec3 mShadowTint;
 
-	varying float adj_shadow_strength;
-	varying float cosLight;
-	varying float f_normal_length;
-	varying vec3 shadow_position;
-	varying float perspective_factor;
+	varying float vAdjShadowStrength;
+	varying float vvCosLight;
+	varying float vNormalLength;
+	varying vec3 vShadowPosition;
+	varying float vPerspectiveFactor;
 #endif
 
 
@@ -37,15 +44,15 @@ varying vec3 vPosition;
 // If the absolute position is required it can be calculated with
 // cameraOffset + worldPosition (for large coordinates the limits of float
 // precision must be considered).
-varying vec3 worldPosition;
-varying lowp vec4 varColor;
+varying vec3 vWorldPosition;
+varying lowp vec4 vColor;
 #ifdef GL_ES
-varying mediump vec2 varTexCoord;
+varying mediump vec2 vUV0;
 #else
-centroid varying vec2 varTexCoord;
+centroid varying vec2 vUV0;
 #endif
-varying highp vec3 eyeVec;
-varying float nightRatio;
+varying highp vec3 vEyeVec;
+varying float vNightRatio;
 
 varying float vIDiff;
 
@@ -54,12 +61,12 @@ varying float vIDiff;
 // assuming near is always 1.0
 float getLinearDepth()
 {
-	return 2.0 * f_shadowfar / (f_shadowfar + 1.0 - (2.0 * gl_FragCoord.z - 1.0) * (f_shadowfar - 1.0));
+	return 2.0 * mShadowFar / (mShadowFar + 1.0 - (2.0 * gl_FragCoord.z - 1.0) * (mShadowFar - 1.0));
 }
 
 vec3 getLightSpacePosition()
 {
-	return shadow_position * 0.5 + 0.5;
+	return vShadowPosition * 0.5 + 0.5;
 }
 // custom smoothstep implementation because it's not defined in glsl1.2
 // https://docs.gl/sl4/smoothstep
@@ -157,17 +164,17 @@ float getPenumbraRadius(sampler2D shadowsampler, vec2 smTexCoord, float realDist
 	// A factor from 0 to 1 to reduce blurring of short shadows
 	float sharpness_factor = 1.0;
 	// conversion factor from shadow depth to blur radius
-	float depth_to_blur = f_shadowfar / SOFTSHADOWRADIUS / xyPerspectiveBias0;
-	if (depth > 0.0 && f_normal_length > 0.0)
+	float depth_to_blur = mShadowFar / SOFTSHADOWRADIUS / mXYPerspectiveBias0;
+	if (depth > 0.0 && vNormalLength > 0.0)
 		// 5 is empirical factor that controls how fast shadow loses sharpness
 		sharpness_factor = clamp(5 * depth * depth_to_blur, 0.0, 1.0);
 	depth = 0.0;
 
-	float world_to_texture = xyPerspectiveBias1 / perspective_factor / perspective_factor
-			* f_textureresolution / 2.0 / f_shadowfar;
+	float world_to_texture = mXYPerspectiveBias1 / vPerspectiveFactor / vPerspectiveFactor
+			* mTextureResolution / 2.0 / mShadowFar;
 	float world_radius = 0.2; // shadow blur radius in world float coordinates, e.g. 0.2 = 0.02 of one node
 
-	return max(BASEFILTERRADIUS * f_textureresolution / 4096.0,  sharpness_factor * world_radius * world_to_texture * SOFTSHADOWRADIUS);
+	return max(BASEFILTERRADIUS * mTextureResolution / 4096.0,  sharpness_factor * world_radius * world_to_texture * SOFTSHADOWRADIUS);
 }
 
 #ifdef POISSON_FILTER
@@ -250,7 +257,7 @@ vec4 getShadowColor(sampler2D shadowsampler, vec2 smTexCoord, float realDistance
 
 	vec2 clampedpos;
 	vec4 visibility = vec4(0.0);
-	float scale_factor = radius / f_textureresolution;
+	float scale_factor = radius / mTextureResolution;
 
 	int samples = (1 + 1 * int(SOFTSHADOWRADIUS > 1.0)) * PCFSAMPLES; // scale max samples for the soft shadows
 	samples = int(clamp(pow(4.0 * radius + 1.0, 2.0), 1.0, float(samples)));
@@ -277,7 +284,7 @@ float getShadow(sampler2D shadowsampler, vec2 smTexCoord, float realDistance)
 
 	vec2 clampedpos;
 	float visibility = 0.0;
-	float scale_factor = radius / f_textureresolution;
+	float scale_factor = radius / mTextureResolution;
 
 	int samples = (1 + 1 * int(SOFTSHADOWRADIUS > 1.0)) * PCFSAMPLES; // scale max samples for the soft shadows
 	samples = int(clamp(pow(4.0 * radius + 1.0, 2.0), 1.0, float(samples)));
@@ -312,7 +319,7 @@ vec4 getShadowColor(sampler2D shadowsampler, vec2 smTexCoord, float realDistance
 	float x, y;
 	float bound = (1 + 0.5 * int(SOFTSHADOWRADIUS > 1.0)) * PCFBOUND; // scale max bound for soft shadows
 	bound = clamp(0.5 * (4.0 * radius - 1.0), 0.5, bound);
-	float scale_factor = radius / bound / f_textureresolution;
+	float scale_factor = radius / bound / mTextureResolution;
 	float n = 0.0;
 
 	// basic PCF filter
@@ -340,7 +347,7 @@ float getShadow(sampler2D shadowsampler, vec2 smTexCoord, float realDistance)
 	float x, y;
 	float bound = (1 + 0.5 * int(SOFTSHADOWRADIUS > 1.0)) * PCFBOUND; // scale max bound for soft shadows
 	bound = clamp(0.5 * (4.0 * radius - 1.0), 0.5, bound);
-	float scale_factor = radius / bound / f_textureresolution;
+	float scale_factor = radius / bound / mTextureResolution;
 	float n = 0.0;
 
 	// basic PCF filter
@@ -359,31 +366,51 @@ float getShadow(sampler2D shadowsampler, vec2 smTexCoord, float realDistance)
 #endif
 #endif
 
+float computeFog()
+{
+	const float LOG2 = 1.442695;
+	float FogFactor = 0.0;
+
+	if (mFogParams.type == 0) // Exp
+	{
+		FogFactor = exp2(-mFogParams.density * vFogCoord * LOG2);
+	}
+	else if (mFogParams.type == 1) // Linear
+	{
+		float Scale = 1.0 / (mFogParams.end - mFogParams.start);
+		FogFactor = (mFogParams.end - vFogCoord) * Scale;
+	}
+	else if (mFogParams.type == 2) // Exp2
+	{
+		FogFactor = exp2(-mFogParams.density * mFogParams.density * vFogCoord * vFogCoord * LOG2);
+	}
+
+	FogFactor = clamp(FogFactor, 0.0, 1.0);
+
+	return FogFactor;
+}
+
+out vec4 outColor;
 
 void main(void)
 {
 	vec3 color;
-	vec2 uv = varTexCoord.st;
 
-	vec4 base = texture2D(baseTexture, uv).rgba;
+	vec4 base = texture2D(mTexture0, vUV0).rgba;
 	// If alpha is zero, we can just discard the pixel. This fixes transparency
 	// on GPUs like GC7000L, where GL_ALPHA_TEST is not implemented in mesa,
 	// and also on GLES 2, where GL_ALPHA_TEST is missing entirely.
-#ifdef USE_DISCARD
-	if (base.a == 0.0)
+	if (mAlphaDiscard == 0 && base.a == 0.0)
 		discard;
-#endif
-#ifdef USE_DISCARD_REF
-	if (base.a < 0.5)
+	else if (mAlphaDiscard == 1 && base.a < 0.5)
 		discard;
-#endif
 
 	color = base.rgb;
-	vec4 col = vec4(color.rgb * varColor.rgb, 1.0);
+	vec4 col = vec4(color.rgb * vColor.rgb, 1.0);
 	col.rgb *= vIDiff;
 
 #ifdef ENABLE_DYNAMIC_SHADOWS
-	if (f_shadow_strength > 0.0) {
+	if (mShadowStrength > 0.0) {
 		float shadow_int = 0.0;
 		vec3 shadow_color = vec3(0.0, 0.0, 0.0);
 		vec3 posLightSpace = getLightSpacePosition();
@@ -391,21 +418,21 @@ void main(void)
 		float distance_rate = (1.0 - pow(clamp(2.0 * length(posLightSpace.xy - 0.5),0.0,1.0), 10.0));
 		if (max(abs(posLightSpace.x - 0.5), abs(posLightSpace.y - 0.5)) > 0.5)
 			distance_rate = 0.0;
-		float f_adj_shadow_strength = max(adj_shadow_strength - mtsmoothstep(0.9, 1.1, posLightSpace.z),0.0);
+		float f_vAdjShadowStrength = max(vAdjShadowStrength - mtsmoothstep(0.9, 1.1, posLightSpace.z),0.0);
 
 		if (distance_rate > 1e-7) {
 
 #ifdef COLORED_SHADOWS
 			vec4 visibility;
-			if (cosLight > 0.0 || f_normal_length < 1e-3)
-				visibility = getShadowColor(ShadowMapSampler, posLightSpace.xy, posLightSpace.z);
+			if (vCosLight > 0.0 || vNormalLength < 1e-3)
+				visibility = getShadowColor(mShadowMapSampler, posLightSpace.xy, posLightSpace.z);
 			else
 				visibility = vec4(1.0, 0.0, 0.0, 0.0);
 			shadow_int = visibility.r;
 			shadow_color = visibility.gba;
 #else
-			if (cosLight > 0.0 || f_normal_length < 1e-3)
-				shadow_int = getShadow(ShadowMapSampler, posLightSpace.xy, posLightSpace.z);
+			if (vCosLight > 0.0 || vNormalLength < 1e-3)
+				shadow_int = getShadow(mShadowMapSampler, posLightSpace.xy, posLightSpace.z);
 			else
 				shadow_int = 1.0;
 #endif
@@ -414,30 +441,40 @@ void main(void)
 
 		}
 
-		// turns out that nightRatio falls off much faster than
+		// turns out that vNightRatio falls off much faster than
 		// actual brightness of artificial light in relation to natual light.
 		// Power ratio was measured on torches in MTG (brightness = 14).
-		float adjusted_night_ratio = pow(max(0.0, nightRatio), 0.6);
+		float adjusted_night_ratio = pow(max(0.0, vNightRatio), 0.6);
 
 		// Apply self-shadowing when light falls at a narrow angle to the surface
 		// Cosine of the cut-off angle.
 		const float self_shadow_cutoff_cosine = 0.14;
-		if (f_normal_length != 0 && cosLight < self_shadow_cutoff_cosine) {
-			shadow_int = max(shadow_int, 1 - clamp(cosLight, 0.0, self_shadow_cutoff_cosine)/self_shadow_cutoff_cosine);
-			shadow_color = mix(vec3(0.0), shadow_color, min(cosLight, self_shadow_cutoff_cosine)/self_shadow_cutoff_cosine);
+		if (vNormalLength != 0 && vCosLight < self_shadow_cutoff_cosine) {
+			shadow_int = max(shadow_int, 1 - clamp(vCosLight, 0.0, self_shadow_cutoff_cosine)/self_shadow_cutoff_cosine);
+			shadow_color = mix(vec3(0.0), shadow_color, min(vCosLight, self_shadow_cutoff_cosine)/self_shadow_cutoff_cosine);
 		}
 
-		shadow_int *= f_adj_shadow_strength;
+		shadow_int *= f_vAdjShadowStrength;
 
 		// calculate fragment color from components:
 		col.rgb =
 				adjusted_night_ratio * col.rgb + // artificial light
 				(1.0 - adjusted_night_ratio) * ( // natural light
 						col.rgb * (1.0 - shadow_int * (1.0 - shadow_color) * (1.0 - shadow_tint)) +  // filtered texture color
-						dayLight * shadow_color * shadow_int);                 // reflected filtered sunlight/moonlight
+						mDayLight * shadow_color * shadow_int);                 // reflected filtered sunlight/moonlight
 	}
 #endif
 
+	// Applying fog
+	if (bool(mFogParams.enable))
+	{
+		float FogFactor = computeFog();
+		vec4 FogColor = mFogParams.color;
+		FogColor.a = 1.0;
+		col = mix(FogColor, col, FogFactor);
+	}
+
+	outColor = col;
 	// Due to a bug in some (older ?) graphics stacks (possibly in the glsl compiler ?),
 	// the fog will only be rendered correctly if the last operation before the
 	// clamp() is an addition. Else, the clamp() seems to be ignored.
@@ -447,16 +484,16 @@ void main(void)
 	// As additions usually come for free following a multiplication, the new formula
 	// should be more efficient as well.
 	// Note: clarity = (1 - fogginess)
-	float clarity = clamp(fogShadingParameter
-		- fogShadingParameter * length(eyeVec) / fogDistance, 0.0, 1.0);
-	float fogColorMax = max(max(fogColor.r, fogColor.g), fogColor.b);
+	//float clarity = clamp(fogShadingParameter
+	//	- fogShadingParameter * length(eyeVec) / fogDistance, 0.0, 1.0);
+	//float fogColorMax = max(max(fogColor.r, fogColor.g), fogColor.b);
 	// Prevent zero division.
-	if (fogColorMax < 0.0000001) fogColorMax = 1.0;
+	//if (fogColorMax < 0.0000001) fogColorMax = 1.0;
 	// For high clarity (light fog) we tint the fog color.
 	// For this to not make the fog color artificially dark we need to normalize using the
 	// fog color's brightest value. We then blend our base color with this to make the fog.
-	col = mix(fogColor * pow(fogColor / fogColorMax, vec4(2.0 * clarity)), col, clarity);
-	col = vec4(col.rgb, base.a);
+	//col = mix(fogColor * pow(fogColor / fogColorMax, vec4(2.0 * clarity)), col, clarity);
+	//col = vec4(col.rgb, base.a);
 
-	gl_FragData[0] = col;
+	//gl_FragData[0] = col;
 }
