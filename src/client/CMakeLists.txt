@@ -1,7 +1,9 @@
 set(ao_SRCS
+	${CMAKE_CURRENT_SOURCE_DIR}/ao/animation.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ao/clientActiveObject.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ao/clientActiveObjectMgr.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ao/genericCAO.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ao/skeleton.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ao/smokePuffCSO.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ao/testCAO.cpp
 )
