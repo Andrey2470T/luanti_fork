@@ -78,7 +78,7 @@ class MeshOperations
 		expand - factor by which cuboids will be resized
 	*/
     static MeshBuffer *convertNodeboxesToMesh(const std::vector<aabbf> &boxes,
-        const f32 *uv_coords, float expand = 0);
+        const std::array<rectf, 6> *uv_coords, float expand = 0);
 
 
 	//! Recalculates all normals of the mesh.

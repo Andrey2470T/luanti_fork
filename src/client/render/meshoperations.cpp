@@ -4,8 +4,8 @@
 
 #include "meshoperations.h"
 #include "defaultVertexTypes.h"
-#include "constants.h"
 #include <cmath>
+#include "batcher3d.h"
 
 inline static void applyShadeFactor(img::color8& color, float factor)
 {
@@ -200,11 +200,12 @@ bool MeshOperations::checkMeshNormals(MeshBuffer *mesh)
 }
 
 MeshBuffer *MeshOperations::convertNodeboxesToMesh(const std::vector<aabbf> &boxes,
-    const f32 *uv_coords, float expand)
+    const std::array<rectf, 6> *uv_coords, float expand)
 {
     MeshBuffer *mesh = new MeshBuffer(6 * 4 * boxes.size(), 6 * 6 * boxes.size());
 
 	img::color8 c(img::PF_RGBA8, 255,255,255,255);
+    std::array<img::color8, 8> colors = {c, c, c, c, c, c, c, c};
 
 	for (aabbf box : boxes) {
 		box.repair();
@@ -216,71 +217,10 @@ MeshBuffer *MeshOperations::convertNodeboxesToMesh(const std::vector<aabbf> &box
 		box.MaxEdge.Y += expand;
 		box.MaxEdge.Z += expand;
 
-		// Compute texture UV coords
-		f32 tx1 = (box.MinEdge.X / BS) + 0.5;
-		f32 ty1 = (box.MinEdge.Y / BS) + 0.5;
-		f32 tz1 = (box.MinEdge.Z / BS) + 0.5;
-		f32 tx2 = (box.MaxEdge.X / BS) + 0.5;
-		f32 ty2 = (box.MaxEdge.Y / BS) + 0.5;
-		f32 tz2 = (box.MaxEdge.Z / BS) + 0.5;
+        Batcher3D::appendBox(mesh, box, colors, uv_coords);
+    }
 
-		f32 txc_default[24] = {
-			// up
-			tx1, 1 - tz2, tx2, 1 - tz1,
-			// down
-			tx1, tz1, tx2, tz2,
-			// right
-			tz1, 1 - ty2, tz2, 1 - ty1,
-			// left
-			1 - tz2, 1 - ty2, 1 - tz1, 1 - ty1,
-			// back
-			1 - tx2, 1 - ty2, 1 - tx1, 1 - ty1,
-			// front
-			tx1, 1 - ty2, tx2, 1 - ty1,
-		};
-
-		// use default texture UV mapping if not provided
-		const f32 *txc = uv_coords ? uv_coords : txc_default;
-
-		v3f min = box.MinEdge;
-		v3f max = box.MaxEdge;
-
-		std::array<v3f, 24> positions = {
-			v3f(min.X,max.Y,max.Z), v3f(max.X,max.Y,max.Z), v3f(max.X,max.Y,min.Z), v3f(min.X,max.Y,min.Z), // up
-			v3f(min.X,min.Y,min.Z), v3f(max.X,min.Y,min.Z), v3f(max.X,min.Y,max.Z), v3f(min.X,min.Y,max.Z), // down
-			v3f(max.X,max.Y,min.Z), v3f(max.X,max.Y,max.Z), v3f(max.X,min.Y,max.Z), v3f(max.X,min.Y,min.Z), // right
-			v3f(min.X,max.Y,max.Z), v3f(min.X,max.Y,min.Z), v3f(min.X,min.Y,min.Z), v3f(min.X,min.Y,max.Z), // left
-			v3f(max.X,max.Y,max.Z), v3f(min.X,max.Y,max.Z), v3f(min.X,min.Y,max.Z), v3f(max.X,min.Y,max.Z), // back
-			v3f(min.X,max.Y,min.Z), v3f(max.X,max.Y,min.Z), v3f(max.X,min.Y,min.Z), v3f(min.X,min.Y,min.Z)  // front
-		};
-
-		std::array<v3f, 6> normals = {
-			v3f(0,1,0), v3f(0,-1,0), v3f(1,0,0), v3f(-1,0,0), v3f(0,0,1), v3f(0,0,-1)
-		};
-
-		std::array<v2f, 24> uvs = {
-			v2f(txc[0],txc[1]), v2f(txc[2],txc[1]), v2f(txc[2],txc[3]), v2f(txc[0],txc[3]),
-			v2f(txc[4],txc[5]), v2f(txc[6],txc[5]), v2f(txc[6],txc[7]), v2f(txc[4],txc[7]),
-			v2f(txc[ 8],txc[9]), v2f(txc[10],txc[9]), v2f(txc[10],txc[11]), v2f(txc[ 8],txc[11]),
-			v2f(txc[12],txc[13]), v2f(txc[14],txc[13]), v2f(txc[14],txc[15]), v2f(txc[12],txc[15]),
-			v2f(txc[16],txc[17]), v2f(txc[18],txc[17]), v2f(txc[18],txc[19]), v2f(txc[16],txc[19]),
-			v2f(txc[20],txc[21]), v2f(txc[22],txc[21]), v2f(txc[22],txc[23]), v2f(txc[20],txc[23])
-		};
-
-		u16 indices[] = {0,1,2,2,3,0};
-
-		for (u8 i=0; i<6; ++i)
-		{
-			MeshBuffer *buf = dst_mesh[i];
-
-			for (u8 j = 0; j < 4; j++)
-				appendSVT(buf, positions[4*i+j], c, normals[i], uvs[4*i+j]);
-
-			for (u8 k = 0; k < 6; k++)
-                appendIndex(buf, indices[k]);
-		}
-	}
-	return dst_mesh;
+    return mesh;
 }
 
 /*void setMaterialFilters(video::SMaterialLayer &tex, bool bilinear, bool trilinear, bool anisotropic)
