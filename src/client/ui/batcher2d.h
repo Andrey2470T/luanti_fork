@@ -1,6 +1,6 @@
 #pragma once
 
-#include "client/render/meshbuffer.h"
+#include "client/mesh/meshbuffer.h"
 #include "Utils/Line2D.h"
 #include "Utils/Rect.h"
 #include "Render/Texture2D.h"

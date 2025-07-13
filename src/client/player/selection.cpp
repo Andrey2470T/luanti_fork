@@ -2,7 +2,7 @@
 #include "client/render/renderer.h"
 #include "client/media/resource.h"
 #include "settings.h"
-#include "client/render//meshoperations.h"
+#include "client/mesh/meshoperations.h"
 
 SelectionMesh::SelectionMesh(Renderer *_rnd, ResourceCache *_cache)
     : rnd(_rnd), cache(_cache), mesh(std::make_unique<MeshBuffer>(true))

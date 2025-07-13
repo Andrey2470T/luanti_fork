@@ -1,5 +1,5 @@
 #include "batcher3d.h"
-#include "defaultVertexTypes.h"
+#include "client/mesh/defaultVertexTypes.h"
 #include "Utils/Plane3D.h"
 
 void Batcher3D::appendVertex(MeshBuffer *buf, v3f pos,

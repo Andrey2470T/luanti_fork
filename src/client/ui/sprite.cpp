@@ -1,6 +1,6 @@
 #include "sprite.h"
 #include "batcher2d.h"
-#include "client/render/defaultVertexTypes.h"
+#include "client/mesh/defaultVertexTypes.h"
 #include "client/render/renderer.h"
 #include <Render/StreamTexture2D.h>
 

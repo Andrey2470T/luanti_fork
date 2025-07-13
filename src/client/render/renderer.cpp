@@ -1,7 +1,7 @@
 #include "renderer.h"
 #include <Render/Texture2D.h>
 #include <Image/ImageModifier.h>
-#include "meshbuffer.h"
+#include "client/mesh/meshbuffer.h"
 #include "client/media/resource.h"
 
 img::ImageModifier *g_imgmodifier = new img::ImageModifier();

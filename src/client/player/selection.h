@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Utils/AABB.h>
-#include "client/render/meshbuffer.h"
+#include "client/mesh/meshbuffer.h"
 #include <Render/Texture2D.h>
 
 class Renderer;

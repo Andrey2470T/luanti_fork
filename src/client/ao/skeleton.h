@@ -4,7 +4,7 @@
 #include <Utils/Matrix4.h>
 #include <Utils/Quaternion.h>
 #include <Render/Shader.h>
-#include "client/render/meshbuffer.h"
+#include "client/mesh/meshbuffer.h"
 #include <list>
 
 #define BONES_MAX 128

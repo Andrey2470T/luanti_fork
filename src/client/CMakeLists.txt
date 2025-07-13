@@ -24,6 +24,12 @@ set(map_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/map/meshgeneratorthread.cpp
 )
 
+set(mesh_SRCS
+	${CMAKE_CURRENT_SOURCE_DIR}/mesh/defaultVertexTypes.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/mesh/meshbuffer.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/mesh/meshoperations.cpp
+)
+
 set(media_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/media/clientmedia.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/media/filecache.cpp
@@ -51,14 +57,11 @@ set(player_SRCS
 )
 
 set(render_SRCS
-        ${CMAKE_CURRENT_SOURCE_DIR}/render/atlas.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/render/atlas.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/batcher3d.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/camera.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/clouds.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/render/defaultVertexTypes.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/loadscreen.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/render/meshbuffer.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/render/meshoperations.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/particles.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/rectpack2d_atlas.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/renderer.cpp
@@ -116,6 +119,7 @@ set(client_SRCS
 	${ao_SRCS}
 	${event_SRCS}
 	${map_SRCS}
+	${mesh_SRCS}
 	${media_SRCS}
 	${pipeline_SRCS}
 	${player_SRCS}

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "meshbuffer.h"
+#include "client/mesh/meshbuffer.h"
 #include "Utils/Matrix4.h"
 
 // Class creating meshbuffers of various 3D shapes (point, line, quad, cube and etc)

@@ -1,6 +1,6 @@
 #include "batcher2d.h"
 #include "extra_images.h"
-#include "client/render/defaultVertexTypes.h"
+#include "client/mesh/defaultVertexTypes.h"
 
 void Batcher2D::appendVertex(MeshBuffer *buf, const v2f &pos, const img::color8 &color, const v2f &uv)
 {

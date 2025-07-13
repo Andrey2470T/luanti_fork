@@ -3,7 +3,7 @@
 #include <memory>
 #include <Utils/Rect.h>
 #include <Render/Texture2D.h>
-#include "client/render/meshbuffer.h"
+#include "client/mesh/meshbuffer.h"
 #include <Render/DrawContext.h>
 
 class Renderer;
