@@ -20,6 +20,15 @@ const render::VertexTypeDescriptor VType2D{
     true,
     2
 };
+// Bone animated object vertex type (position, color, normal, uv, materialType, bones, weights)
+const render::VertexTypeDescriptor AOVType{
+    "AnimatedObject3D",
+    {
+        {"MaterialType", 1, BasicType::UINT8},
+        {"Bones", 2, BasicType::UINT32},
+        {"Weights", 2, BasicType::UINT32}
+    }
+};
 
 // Getters used for DefaultVType and TwoColorVType
 inline v3f svtGetPos(MeshBuffer *buf, u32 num)

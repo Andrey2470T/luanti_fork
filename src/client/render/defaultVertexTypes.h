@@ -6,6 +6,8 @@
 extern const render::VertexTypeDescriptor TwoColorVType;
 // 2D Vertex type (xy position, rgba color, uv)
 extern const render::VertexTypeDescriptor VType2D;
+// Bone animated object vertex type (position, color, normal, uv, materialType, bones, weights)
+extern const render::VertexTypeDescriptor AOVType;
 
 // Getters used for DefaultVType and TwoColorVType
 v3f svtGetPos(MeshBuffer *buf, u32 num);
@@ -40,5 +42,9 @@ void appendTCVT(
 // Note: 'buf' already must have a preallocated storage for this new vertex!
 void appendVT2D(
     MeshBuffer *buf, const v2f &pos, const img::color8 &c, const v2f &uv=v2f());
+void appendAOVT(
+    MeshBuffer *buf, const v3f &pos, const img::color8 &c,
+    const v3f &normal=v3f(), const v2f &uv=v2f(), u8 matType=0, u64 bones=0, u64 weights=0
+);
 
 void appendIndex(MeshBuffer *buf, u32 index);

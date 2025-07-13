@@ -16,11 +16,13 @@ layout (std140) uniform mMatrices {
 	mat4 texture0;
 };
 
+// Absolute bones transformations
 // Objects skeletons support max up to 128 bones
 // memory: 128 bones * 16 * 4 = 8 192 bytes
-layout (std140) uniform mBonesTransforms {
-	mat4 transforms[BONES_MAX];	// absolute bones transformations
-};
+uniform mat4 mBonesTransforms[BONES_MAX];
+
+// Whether animate the normals
+uniform int mAnimateNormals;
 
 uniform vec3 mDayLight;
 uniform float mAnimationTimer;
@@ -152,6 +154,7 @@ void main(void)
 
 	// Calculate weighted transformations from each affected bone for the current frame
 	vec3 skinnedPos = vec3(0.0);
+	vec3 skinnedNormal = normal;
 
 	for (int i = 0; i < BONES_IDS_MAX; i++) {
 		int shift_n = i - (i % 4) * 4;
@@ -165,12 +168,15 @@ void main(void)
 		float weight = float(bitwiseAND(bitwiseShiftRight(weight_n, shift_n * 8), 0xffffffff)) / 127.0;
 
 		skinnedPos += weight * mBonesTransforms[bone_id] * vec4(skinnedPos, 1.0);
+
+		if (mAnimateNormals)
+			skinnedNormal += weight * mBonesTransforms[bone_id] * vec4(skinnedNormal. 0.0);
 	}
 	gl_Position = mMatrices.worldViewProj * vec4(skinnedPos, 1.0);
 
 	vPosition = gl_Position.xyz;
-	vNormal = (mMatrices.world * vec4(normal, 0.0)).xyz;
-	vWorldPosition = skinnedPos;
+	vNormal = (mMatrices.world * vec4(skinnedNormal, 0.0)).xyz;
+	vWorldPosition = (mMatrices.world * vec4(skinnedPos, 1.0)).xyz;
 	vEyeVec = -(mMatrices.worldView * vec4(skinnedPos, 1.0)).xyz;
 
 	if (materialType == TILE_MATERIAL_PLAIN) || (materialType == TILE_MATERIAL_PLAIN_ALPHA)
@@ -178,9 +184,9 @@ void main(void)
 	else {
 		// This is intentional comparison with zero without any margin.
 		// If normal is not equal to zero exactly, then we assume it's a valid, just not normalized vector
-		vIDiff = length(normal) == 0.0
+		vIDiff = length(skinnedNormal) == 0.0
 			? 1.0
-			: directional_ambient(normalize(normal));
+			: directional_ambient(normalize(skinnedNormal));
 	}
 
 	vColor = color;
