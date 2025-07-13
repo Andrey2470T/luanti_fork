@@ -3,8 +3,8 @@ layout (location = 1) in vec4 color;
 layout (location = 2) in vec3 normal;
 layout (location = 3) in vec2 uv;
 layout (location = 4) in int materialType;
-layout (location = 5) in int bones[2];	// packed bones IDs (8 u8 numbers)
-layout (location = 6) in int weights[2]; // packed weights (8 u8 numbers)
+layout (location = 5) in vec2i bones;	// packed bones IDs (8 u8 numbers)
+layout (location = 6) in vec2i weights; // packed weights (8 u8 numbers)
 
 #define BONES_MAX 128
 #define BONES_IDS_MAX 8 // per a vertex

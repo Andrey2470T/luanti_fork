@@ -20,16 +20,25 @@ void BoneTransform::buildTransform(const BoneTransform *parentTransform)
     }
 }
 
-void Bone::addWeights(const std::vector<std::pair<u32, f32>> &weights)
+void Bone::addWeights(std::vector<std::pair<u32, f32> > weights)
 {
-    assert(UsedWeightsCount + weights.size() <= BONE_MAX_WEIGHTS);
+    u8 accepedWCount = std::min<u8>(weights.size(), BONE_MAX_WEIGHTS-UsedWeightsCount);
 
-    for (u8 i = 0; i < weights.size(); i++) {
+    if (accepedWCount == 0)
+        return;
+
+    // At first adds the most affecting weights
+    std::sort(weights.begin(), weights.end(), [] (const std::pair<u32, f32> &w1, const std::pair<u32, f32> &w2)
+    {
+        return w1.second > w2.second;
+    });
+
+    for (u8 i = 0; i < accepedWCount; i++) {
         Weights[UsedWeightsCount+i].vertex_n = weights.at(i).first;
         Weights[UsedWeightsCount+i].strength = weights.at(i).second;
     }
 
-    UsedWeightsCount += weights.size();
+    UsedWeightsCount += accepedWCount;
 }
 
 void Bone::updateBone()
@@ -124,6 +133,7 @@ void Skeleton::fillMeshAttribs(MeshBuffer *mesh)
                 break;
         }
 
-        mesh->setAttrAt(bones_ids);
+        mesh->setAttrAt<v2i>(v2i(bones_ids[0], bones_ids[1]), 5, i);
+        mesh->setAttrAt<v2i>(v2i(weights[0], weights[1]), 6, i);
     }
 }

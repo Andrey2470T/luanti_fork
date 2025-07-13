@@ -47,7 +47,7 @@ struct Bone
         return !Parent;
     }
     // As the weights count per a bone has the limit, select out the most "affecting" weights from the vector
-    void addWeights(const std::vector<std::pair<u32, f32>> &weights);
+    void addWeights(std::vector<std::pair<u32, f32>> weights);
 
     void updateBone();
 };
