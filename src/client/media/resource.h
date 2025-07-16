@@ -14,7 +14,7 @@ enum class ResourceType
     TEXTURE,
     IMAGE,
     SHADER,
-    MESH,
+    MODEL,
     PALETTE,
     ATLAS,
     FONT
@@ -62,7 +62,7 @@ class ResourceCache
     std::unique_ptr<ResourceSubCache<img::Image>> images;
     std::unique_ptr<ResourceSubCache<render::Texture2D>> textures;
     std::unique_ptr<ResourceSubCache<render::Shader>> shaders;
-    std::unique_ptr<ResourceSubCache<MeshBuffer>> meshes;
+    std::unique_ptr<ResourceSubCache<Model>> models;
     std::unique_ptr<ResourceSubCache<img::Palette>> palettes;
     std::unique_ptr<ResourceSubCache<Atlas>> atlases;
     std::unique_ptr<ResourceSubCache<render::TTFont>> fonts;
@@ -210,8 +210,8 @@ ResourceInfo<T> *ResourceCache::get(ResourceType _type, const std::string &_name
         return textures->get(_name);
     case ResourceType::SHADER:
         return shaders->get(_name);
-    case ResourceType::MESH:
-        return meshes->get(_name);
+    case ResourceType::MODEL:
+        return models->get(_name);
     case ResourceType::PALETTE:
         return palettes->get(_name);
     case ResourceType::ATLAS:
@@ -232,8 +232,8 @@ ResourceInfo<T> *ResourceCache::getByID(ResourceType _type, u32 _id)
         return textures->getByID(_id);
     case ResourceType::SHADER:
         return shaders->getByID(_id);
-    case ResourceType::MESH:
-        return meshes->getByID(_id);
+    case ResourceType::MODEL:
+        return models->getByID(_id);
     case ResourceType::PALETTE:
         return palettes->getByID(_id);
     case ResourceType::ATLAS:
@@ -254,8 +254,8 @@ ResourceInfo<T> *ResourceCache::getOrLoad(ResourceType _type, const std::string 
         return textures->getOrLoad(_name);
     case ResourceType::SHADER:
         return shaders->getOrLoad(_name);
-    case ResourceType::MESH:
-        return meshes->getOrLoad(_name);
+    case ResourceType::MODEL:
+        return models->getOrLoad(_name);
     case ResourceType::PALETTE:
         return palettes->getOrLoad(_name);
     case ResourceType::ATLAS:
@@ -276,8 +276,8 @@ u32 ResourceCache::cacheResource(ResourceType _type, T *res, const std::string &
         return textures->cacheResource(res, name);
     case ResourceType::SHADER:
         return shaders->cacheResource(res, name);
-    case ResourceType::MESH:
-        return meshes->cacheResource(res, name);
+    case ResourceType::MODEL:
+        return models->cacheResource(res, name);
     case ResourceType::PALETTE:
         return palettes->cacheResource(res, name);
     case ResourceType::ATLAS:
@@ -298,8 +298,8 @@ void ResourceCache::clearResource(ResourceType _type, u32 id)
         return textures->clearResource(id);
     case ResourceType::SHADER:
         return shaders->clearResource(id);
-    case ResourceType::MESH:
-        return meshes->clearResource(id);
+    case ResourceType::MODEL:
+        return models->clearResource(id);
     case ResourceType::PALETTE:
         return palettes->clearResource(id);
     case ResourceType::ATLAS:
@@ -320,8 +320,8 @@ void ResourceCache::clearResource(ResourceType _type, T *res)
         return textures->clearResource(res);
     case ResourceType::SHADER:
         return shaders->clearResource(res);
-    case ResourceType::MESH:
-        return meshes->clearResource(res);
+    case ResourceType::MODEL:
+        return models->clearResource(res);
     case ResourceType::PALETTE:
         return palettes->clearResource(res);
     case ResourceType::ATLAS:

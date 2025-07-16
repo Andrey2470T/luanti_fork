@@ -16,7 +16,7 @@ namespace render
     class Shader;
 };
 
-class MeshBuffer;
+class Model;
 
 class ResourceLoader
 {
@@ -51,6 +51,6 @@ public:
 	img::Image *loadImage(const std::string &path);
 	render::Texture2D *loadTexture(const std::string &path);
 	render::Shader *loadShader(const std::string &path);
-    MeshBuffer *loadMesh(const std::string &path);
+    Model *loadModel(const std::string &path);
 	img::Palette *loadPalette(const std::string &path);
 };

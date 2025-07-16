@@ -135,6 +135,21 @@ endif()
 
 if(BUILD_CLIENT)
 	find_package(Freetype REQUIRED)
+	find_package(assimp REQUIRED)
+
+	set(ASSIMP_FOUND TRUE)
+	if (NOT Win32 AND NOT assimp_FOUND)
+		set(ASSIMP_FOUND FALSE)
+	endif()
+
+	if (ASSIMP_FOUND)
+		if (Win32)
+			set(ASSIMP_INCLUDE_DIRS ASSIMP_INCLUDE_DIR)
+		else()
+			set(ASSIMP_INCLUDE_DIRS assimp_INCLUDE_DIRS)
+			set(ASSIMP_LIBRARIES assimp_LIBRARIES)
+		endif()
+	endif()
 endif()
 
 option(ENABLE_CURSES "Enable ncurses console" TRUE)
@@ -584,6 +599,7 @@ if(BUILD_CLIENT)
 	include_directories(SYSTEM
 		${FREETYPE_INCLUDE_DIRS}
 		${SOUND_INCLUDE_DIRS}
+		${ASSIMP_INCLUDE_DIRS}
 	)
 endif()
 
@@ -692,6 +708,7 @@ if(BUILD_CLIENT)
 		${LUA_BIT_LIBRARY}
 		sha256
 		${FREETYPE_LIBRARY}
+		${ASSIMP_LIBRARIES}
 		${PLATFORM_LIBS}
 		# on Android, Luanti depends on SDL2 directly
 		# on other platforms, only IrrlichtRedo depends on SDL2

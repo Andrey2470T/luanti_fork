@@ -3,6 +3,7 @@
 #include <Render/Texture2D.h>
 #include <Render/Shader.h>
 #include "client/render/renderer.h"
+#include "client/mesh/model.h"
 #include "settings.h"
 #include "file.h"
 #include "log.h"
@@ -144,8 +145,10 @@ render::Shader *ResourceLoader::loadShader(const std::string &path)
     return new render::Shader(vertex_code, fragment_code, geometry_code);
 }
 
-MeshBuffer *ResourceLoader::loadMesh(const std::string &path)
-{}
+Model *ResourceLoader::loadModel(const std::string &path)
+{
+    return Model::load(path);
+}
 
 img::Palette *ResourceLoader::loadPalette(const std::string &path)
 {

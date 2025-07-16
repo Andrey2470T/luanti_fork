@@ -28,6 +28,7 @@ set(mesh_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/mesh/defaultVertexTypes.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/mesh/meshbuffer.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/mesh/meshoperations.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/mesh/model.cpp
 )
 
 set(media_SRCS
