@@ -4,6 +4,7 @@
 #include <set>
 #include <Utils/Quaternion.h>
 #include <optional>
+#include <map>
 
 enum class KeyChannelInterpMode
 {
@@ -17,7 +18,7 @@ template <class T>
 struct KeyChannel {
     struct Frame {
         f32 time;
-        std::vector<std::pair<u8, T>> values;
+        std::map<u8, T> values;
 
         bool operator<(const Frame &other) const
         {
@@ -36,7 +37,7 @@ struct KeyChannel {
         return Frames.empty() ? 0.0f : std::prev(Frames.end())->time;
     }
 
-    void append(f32 time, const std::vector<std::pair<u8, T>> &values) {
+    void append(f32 time, const std::map<u8, T> &values) {
         Frames.emplace(time, values);
         sortFrameBonesValues(time);
     }
@@ -75,7 +76,7 @@ struct KeyChannel {
         return to.linInterp(from, time);
     }
 
-    std::optional<std::vector<std::pair<u8, T>>> get(f32 time) const {
+    std::optional<std::map<u8, T>> get(f32 time) const {
         if (Frames.empty())
             return std::nullopt;
 
@@ -93,7 +94,7 @@ struct KeyChannel {
         case KeyChannelInterpMode::CONSTANT:
             return prev->values;
         case KeyChannelInterpMode::LINEAR: {
-            std::vector<std::pair<u8, T>> vals;
+            std::map<u8, T> vals;
 
             for (u8 i = 0; i < std::min(prev->values.size(), next->values.size()); i++) {
                 vals.emplace_back(i, interpolateValue(
@@ -196,19 +197,25 @@ public:
         AnimationKeys.Scales.append(other.Scales);
     }
 
-    void appendPositionKey(f32 time, const std::vector<std::pair<u8, v3f>> &values)
+    void appendPositionKey(f32 time, const std::map<u8, v3f> &values)
     {
         AnimationKeys.Positions.append(time, values);
     }
-    void appendRotationKey(f32 time, const std::vector<std::pair<u8, Quaternion>> &values)
+    void appendRotationKey(f32 time, const std::map<u8, Quaternion> &values)
     {
         AnimationKeys.Rotations.append(time, values);
     }
-    void appendScaleKey(f32 time, const std::vector<std::pair<u8, v3f>> &values)
+    void appendScaleKey(f32 time, const std::map<u8, v3f> &values)
     {
         AnimationKeys.Scales.append(time, values);
     }
 
+    void setInterpModes(KeyChannelInterpMode posInterp, KeyChannelInterpMode rotInterp, KeyChannelInterpMode scaleInterp)
+    {
+        AnimationKeys.Positions.InterpMode = posInterp;
+        AnimationKeys.Rotations.InterpMode = rotInterp;
+        AnimationKeys.Scales.InterpMode = scaleInterp;
+    }
     // 'time' is the global time
     void setStartTime(f32 time)
     {

@@ -21,6 +21,8 @@ class Model
 
     std::unique_ptr<Skeleton> skeleton;
     std::vector<std::unique_ptr<BoneAnimation>> animations;
+    
+    std::vector<std::pair<aiNode *, Bone *>> bone_mappings;
 public:
     Model() = default;
     Model(const aiScene *scene);
@@ -38,9 +40,10 @@ public:
         return mesh.get();
     }
 private:
-    static void processNode(aiNode *node, aiScene *scene);
-    void processMesh(aiMesh *mesh, aiScene *scene);
+    void processMesh(aiMesh *m);
 
     void setBoneRelations(std::vector<Bone *> &bones, u8 &boneID, aiNode *curNode, Bone *parent = nullptr);
-    Bone *processBone(std::vector<Bone *> &bones, aiSkeletonBone *bone, const aiScene *scene, Bone *parent = nullptr);
+    void setBoneWeights(aiSkeleton *skeleton, aiNode *node, Bone *bone);
+
+    void processAnimations(std::vector<Bone *> &bones, const aiScene *scene);
 };
