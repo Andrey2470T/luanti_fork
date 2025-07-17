@@ -21,15 +21,7 @@ struct ItemStack;
 class Hud
 {
 public:
-	/*enum BlockBoundsMode
-	{
-		BLOCK_BOUNDS_OFF,
-		BLOCK_BOUNDS_CURRENT,
-		BLOCK_BOUNDS_NEAR,
-	} m_block_bounds_mode = BLOCK_BOUNDS_OFF;*/
-
 	img::color8 crosshair_argb;
-	//img::color8 selectionbox_argb;
 
 	bool use_crosshair_image = false;
 	bool use_object_crosshair_image = false;
@@ -38,42 +30,14 @@ public:
 	std::string hotbar_selected_image = "";
 	bool use_hotbar_selected_image = false;
 
-	//bool pointing_at_object = false;
-
 	Hud(Client *client, LocalPlayer *player, Inventory *inventory);
 
 	void readScalingSetting();
 	~Hud();
 
-	//enum BlockBoundsMode toggleBlockBounds();
-	//void disableBlockBounds();
-	//void drawBlockBounds();
-
 	void drawHotbar(const v2i &pos, const v2f &offset, u16 direction, const v2f &align);
 	void resizeHotbar();
 	void drawCrosshair();
-	//void drawSelectionMesh();
-	//void updateSelectionMesh(const v3s16 &camera_offset);
-
-	//std::vector<aabb3f> *getSelectionBoxes() { return &m_selection_boxes; }
-
-	//void setSelectionPos(const v3f &pos, const v3s16 &camera_offset);
-
-	//v3f getSelectionPos() const { return m_selection_pos; }
-
-	//void setSelectionRotation(v3f rotation) { m_selection_rotation = rotation; }
-
-	//v3f getSelectionRotation() const { return m_selection_rotation; }
-
-	//void setSelectionMeshColor(const video::SColor &color)
-	/*{
-		m_selection_mesh_color = color;
-	}*/
-
-	//void setSelectedFaceNormal(const v3f &face_normal)
-	/*{
-		m_selected_face_normal = face_normal;
-	}*/
 
 	bool hasElementOfType(HudElementType type);
 
@@ -112,27 +76,7 @@ private:
 	s32 m_padding; // Takes hud_scaling into account, updated by resizeHotbar()
 	std::array<img::color8, 4> hbar_colors;
 
-	//std::vector<aabb3f> m_selection_boxes;
-	//std::vector<aabb3f> m_halo_boxes;
-	/*v3f m_selection_pos;
-	v3f m_selection_pos_with_offset;
-	v3f m_selection_rotation;*/
-
-	//scene::IMesh *m_selection_mesh = nullptr;
-	//video::SColor m_selection_mesh_color;
-	//v3f m_selected_face_normal;
-
-	//video::SMaterial m_selection_material;
-	//video::SMaterial m_block_bounds_material;
-
 	std::unique_ptr<MeshBuffer> m_rotation_mesh_buffer;
-
-	/*enum
-	{
-		HIGHLIGHT_BOX,
-		HIGHLIGHT_HALO,
-		HIGHLIGHT_NONE
-	} m_mode;*/
 };
 
 enum ItemRotationKind

@@ -5,7 +5,7 @@
 #include "meshoperations.h"
 #include "defaultVertexTypes.h"
 #include <cmath>
-#include "batcher3d.h"
+#include "client/render/batcher3d.h"
 
 inline static void applyShadeFactor(img::color8& color, float factor)
 {

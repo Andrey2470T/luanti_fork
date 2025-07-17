@@ -22,12 +22,13 @@ class SelectionMesh
     std::unique_ptr<MeshBuffer> mesh;
 
     std::vector<aabbf> boxes;
-    std::vector<aabbf> halos;
+    aabbf default_halo_box = aabbf(v3f(100.0f), v3f(-100.0f));
 
-    img::color8 color;
+    img::color8 base_color;
+    img::color8 light_color;
 
     v3f pos;
-    v3s16 camera_offset;
+    v3f pos_with_offset;
     v3f rotation;
 
     v3f face_normal;
@@ -38,26 +39,53 @@ class SelectionMesh
 public:
     SelectionMesh(Renderer *_rnd, ResourceCache *_cache);
 
-    void draw();
-    void updateSelectionMesh(const v3s16 &camera_offset);
+    void draw() const;
+    void updateMesh();
 
     std::vector<aabbf> *getSelectionBoxes() { return &boxes; }
 
-    void setSelectionPos(const v3f &pos, const v3s16 &camera_offset);
+    void setPos(const v3f &position, const v3s16 &camera_offset);
+    v3f getPos() const { return pos; }
 
-    v3f getSelectionPos() const { return pos; }
+    void setRotation(v3f rot) { rotation = rot; }
+    v3f getRotation() const { return rotation; }
 
-    void setSelectionRotation(v3f rot) { rotation = rot; }
-
-    v3f getSelectionRotation() const { return rotation; }
-
-    void setSelectionMeshColor(const img::color8 &c)
+    void setLightColor(const img::color8 &c)
     {
-        color = c;
+        light_color = c;
     }
 
     void setSelectedFaceNormal(const v3f &normal)
     {
         face_normal = normal;
     }
+};
+
+class Client;
+
+class BlockBounds
+{
+    Renderer *rnd;
+
+    std::unique_ptr<MeshBuffer> mesh;
+
+    f32 thickness;
+public:
+    enum Mode
+    {
+        BLOCK_BOUNDS_OFF,
+        BLOCK_BOUNDS_CURRENT,
+        BLOCK_BOUNDS_NEAR,
+    } mode = BLOCK_BOUNDS_OFF;
+
+    BlockBounds(Renderer *_rnd);
+
+    Mode toggle(Client *client);
+    void disable()
+    {
+        mode = BLOCK_BOUNDS_OFF;
+    }
+    void draw() const;
+private:
+    void updateMesh(Client *client);
 };

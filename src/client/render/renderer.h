@@ -90,7 +90,7 @@ public:
     void setTransformMatrix(TMatrix type, const matrix4 &mat);
 
     void draw(MeshBuffer *buffer, PrimitiveType type=PT_TRIANGLES,
-        u32 offset=0, u32 count=1);
+        u32 offset=0, std::optional<u32> count=std::nullopt);
 private:
     void createDefaultShaders();
     void createUBOs();

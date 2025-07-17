@@ -10,7 +10,7 @@
 typedef std::array<MeshBuffer*, 6> MeshStorage;
 class MeshOperations
 {
-
+public:
 	/*!
 	* Applies shading to a color based on the surface's
 	* normal vector.

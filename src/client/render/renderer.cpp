@@ -214,10 +214,29 @@ void Renderer::setTransformMatrix(TMatrix type, const matrix4 &mat)
 }
 
 void Renderer::draw(MeshBuffer *buffer, PrimitiveType type,
-    u32 offset, u32 count)
+    u32 offset, std::optional<u32> count)
 {
     auto vao = buffer->getVAO();
-    vao->draw(type, count, offset);
+
+    if (!count.has_value()) {
+        switch (type) {
+        case render::PT_POINTS:
+        case render::PT_POINT_SPRITES:
+            count = buffer->getVertexCount();
+            break;
+        case render::PT_LINE_STRIP:
+        case render::PT_LINE_LOOP:
+        case render::PT_LINES:
+        case render::PT_TRIANGLE_STRIP:
+        case render::PT_TRIANGLE_FAN:
+        case render::PT_TRIANGLES:
+            count = buffer->getIndexCount();
+            break;
+        default:
+            break;
+        }
+    }
+    vao->draw(type, count.value(), offset);
 }
 
 void Renderer::createDefaultShaders()
