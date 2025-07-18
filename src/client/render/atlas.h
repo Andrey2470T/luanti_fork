@@ -95,6 +95,10 @@ public:
 class ResourceCache;
 
 
+// Interface saving and handling sets of atlases of some type
+// Note: 'addTile' and 'addAnimatedTile' calls and atlases building
+// must be done *before* the atlases tiles get used in GUI, HUD, map, entities, particles and etc.
+// Otherwise those objects' meshes will get invalid atlases tiles UVs!
 class AtlasPool
 {
     AtlasType type;
@@ -105,6 +109,8 @@ class AtlasPool
     bool hasMips;
 
     std::vector<Atlas *> atlases;
+    std::vector<img::Image *> images;
+    std::unordered_map<u32, std::pair<u32, u32>> animatedImages;
 public:
     AtlasPool(AtlasType _type, const std::string &_name, ResourceCache *_cache, u32 _maxTextureSize, bool _hasMips)
         : type(_type), prefixName(_name), cache(_cache), maxTextureSize(_maxTextureSize), hasMips(_hasMips)
@@ -112,21 +118,21 @@ public:
 
     ~AtlasPool();
 
-    Atlas *getAtlas(u32 i) const
-    {
-        if (i > atlases.size()-1)
-            return nullptr;
-
-        return atlases.at(i);
-    }
+    Atlas *getAtlas(u32 i) const;
+    Atlas *getAtlas(const img::Image *tile) const;
 
     u32 getAtlasCount() const
     {
         return atlases.size();
     }
 
+    img::Image *addTile(const std::string &name);
+    img::Image *addAnimatedTile(const std::string &name, u32 length, u32 count);
+
+    rectf getTileUV(const img::Image *tile) const;
+
     // Recursively create and fill new atlases with tiles while the internal image counter doesn't reach some limit
-    void buildRectpack2DAtlas(const std::vector<img::Image *> &images, const std::unordered_map<u32, std::pair<u32, u32>> &animatedImages);
+    void buildRectpack2DAtlas();
     void buildGlyphAtlas(render::TTFont *ttfont);
 
     void updateAnimatedTiles(f32 time);

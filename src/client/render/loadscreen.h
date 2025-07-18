@@ -7,12 +7,18 @@ namespace render
 	class DrawContext;
 };
 
+namespace img
+{
+    class Image;
+}
+
 namespace main
 {
 	class MainWindow;
 };
 
 class ResourceCache;
+class RenderSystem;
 class Renderer;
 class UISprite;
 class UITextSprite;
@@ -24,13 +30,15 @@ class LoadScreen
     Renderer *renderer;
 
 	std::unique_ptr<UITextSprite> guitext;
-    std::unique_ptr<UISprite> progress_bg_rect;
     std::unique_ptr<UISprite> progress_rect;
+
+    img::Image *progress_bg_img;
+    img::Image *progress_img;
 
     bool draw_clouds;
     s32 last_percent = 0;
 public:
-    LoadScreen(ResourceCache *_cache, Renderer *_renderer, FontManager *_mgr);
+    LoadScreen(ResourceCache *_cache, RenderSystem *_system, FontManager *_mgr);
 
     ~LoadScreen();
 

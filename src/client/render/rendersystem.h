@@ -85,6 +85,8 @@ public:
     {
         return shadow_renderer.get();
     }
+    AtlasPool *getPool(bool basic) const;
+
     v2u getWindowSize() const
     {
         return window->getWindowSize();

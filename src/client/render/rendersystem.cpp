@@ -39,6 +39,14 @@ RenderSystem::~RenderSystem()
     g_settings->deregisterAllChangedCallbacks(this);
 }
 
+AtlasPool *RenderSystem::getPool(bool basic) const
+{
+    if (basic)
+        return basePool.get();
+    else
+        return guiPool.get();
+}
+
 void RenderSystem::setWindowIcon()
 {
     fs::path icon_path = porting::path_share + "/textures/base/pack/logo.png";

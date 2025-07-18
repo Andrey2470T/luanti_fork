@@ -5,17 +5,20 @@
 //#include "client/render/clouds.h"
 #include "client/ui/extra_images.h"
 #include "client/ui/sprite.h"
-#include "renderer.h"
+#include "rendersystem.h"
 #include "client/ui/text_sprite.h"
+#include "client/render/atlas.h"
+#include "client/ui/batcher2d.h"
+#include "client/render/renderer.h"
 
-LoadScreen::LoadScreen(ResourceCache *_cache, Renderer *_renderer, FontManager *_mgr)
-    : cache(_cache), renderer(_renderer)
+LoadScreen::LoadScreen(ResourceCache *_cache, RenderSystem *_system, FontManager *_mgr)
+    : cache(_cache), renderer(_system->getRenderer())
 {
     guitext = std::make_unique<UITextSprite>(_mgr, EnrichedString(L""), renderer, cache, recti());
     guitext->setAlignment(GUIAlignment::Center, GUIAlignment::UpperLeft);
 
-    auto progress_img = cache->getOrLoad<render::Texture2D>(ResourceType::TEXTURE, "progress_bar.png")->data.get();
-    auto progress_bg_img = cache->getOrLoad<render::Texture2D>(ResourceType::TEXTURE, "progress_bar_bg.png")->data.get();
+    progress_img = cache->getOrLoad<img::Image>(ResourceType::IMAGE, "progress_bar.png")->data.get();
+    progress_bg_img = cache->getOrLoad<img::Image>(ResourceType::IMAGE, "progress_bar_bg.png")->data.get();
 
     auto progress_img_size = progress_img->getSize();
     auto progress_bg_img_size = progress_bg_img->getSize();
@@ -23,10 +26,19 @@ LoadScreen::LoadScreen(ResourceCache *_cache, Renderer *_renderer, FontManager *
     rectf progress_img_size_f(v2f(progress_img_size.X, progress_img_size.Y));
     rectf progress_bg_img_size_f(v2f(progress_bg_img_size.X, progress_bg_img_size.Y));
 
+    auto basicPool = _system->getPool(true);
+    render::Texture2D *tex = basicPool->getAtlas(progress_img)->getTexture();
     progress_rect = std::make_unique<UISprite>(
-        progress_img, _renderer, _cache, progress_img_size_f, progress_img_size_f, std::array<img::color8, 4>(), true);
-    progress_bg_rect = std::make_unique<UISprite>(
-        progress_bg_img, _renderer, _cache, progress_bg_img_size_f, progress_bg_img_size_f, std::array<img::color8, 4>(), true);
+        tex, renderer, cache, std::vector{UIPrimitiveType::RECTANGLE, UIPrimitiveType::RECTANGLE}, true);
+
+    auto shape = progress_rect->getShape();
+    shape->addRectangle(progress_img_size_f, {});
+    shape->addRectangle(progress_bg_img_size_f, {});
+
+    Batcher2D::appendImageRectangle(progress_rect->getBuffer(),
+        tex->getSize(), basicPool->getTileUV(progress_img), progress_img_size_f, {}, false);
+    Batcher2D::appendImageRectangle(progress_rect->getBuffer(),
+        tex->getSize(), basicPool->getTileUV(progress_bg_img), progress_bg_img_size_f, {}, false);
 }
 
 void LoadScreen::updateText(v2u screensize, const std::wstring &text, f32 dtime, bool menu_clouds,
@@ -59,7 +71,7 @@ void LoadScreen::updateText(v2u screensize, const std::wstring &text, f32 dtime,
     // draw progress bar
     if ((percent_min >= 0) && (percent_max <= 100)) {
 #ifndef __ANDROID__
-        auto img_size = progress_bg_rect->getSize();
+        auto img_size = progress_bg_img->getSize();
         u32 imgW = std::clamp(img_size.X, 200u, 600u) * scale_f;
         u32 imgH = std::clamp(img_size.Y, 24u, 72u) * scale_f;
 #else
@@ -75,9 +87,8 @@ void LoadScreen::updateText(v2u screensize, const std::wstring &text, f32 dtime,
             v2f(img_pos.X + (percent_min * imgW) / 100, img_pos.Y),
             v2f(img_pos.X + (percent_max * imgW) / 100, img_pos.Y + imgH));
 
-        progress_bg_rect->getShape()->updateRectangle(0, new_progress_bg_size, {});
-        progress_bg_rect->flush();
         progress_rect->getShape()->updateRectangle(0, new_progress_size, {});
+        progress_rect->getShape()->updateRectangle(1, new_progress_bg_size, {});
         progress_rect->flush();
 
         renderer->setClipRect(
@@ -93,7 +104,6 @@ void LoadScreen::draw() const
     if (draw_clouds)
         g_menucloudsmgr->drawAll();
 
-    progress_bg_rect->draw();
     progress_rect->draw();
 
     guitext->draw();

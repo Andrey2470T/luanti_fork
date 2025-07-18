@@ -108,9 +108,87 @@ AtlasPool::~AtlasPool()
 {
     for (auto &atlas : atlases)
         cache->clearResource<Atlas>(ResourceType::ATLAS, atlas);
+
+    for (auto &tile : images)
+        cache->clearResource<img::Image>(ResourceType::IMAGE, tile);
 }
 
-void AtlasPool::buildRectpack2DAtlas(const std::vector<img::Image *> &images, const std::unordered_map<u32, std::pair<u32, u32>> &animatedImages)
+Atlas *AtlasPool::getAtlas(u32 i) const
+{
+    if (i > atlases.size()-1)
+        return nullptr;
+
+    return atlases.at(i);
+}
+
+Atlas *AtlasPool::getAtlas(const img::Image *tile) const
+{
+    for (u32 i = 0; i < atlases.size(); i++) {
+        auto atlas = atlases.at(i);
+        for (u32 j = 0; j < atlas->getTilesCount(); j++) {
+            auto atlasTile = atlas->getTile(j);
+
+            if (atlasTile->image == tile)
+                return atlas;
+        }
+    }
+
+    return nullptr;
+}
+
+img::Image *AtlasPool::addTile(const std::string &name)
+{
+    if (type != AtlasType::RECTPACK2D)
+        return nullptr;
+    auto img = cache->getOrLoad<img::Image>(ResourceType::IMAGE, name)->data.get();
+    auto imgIt = std::find(images.begin(), images.end(), img);
+
+    // Add only unique tiles
+    if (imgIt != images.end())
+        return *imgIt;
+
+    // Don't allow to add new tiles if the atlas building was before
+    if (!atlases.empty())
+        return nullptr;
+
+    images.emplace_back(img);
+
+    return img;
+}
+
+img::Image *AtlasPool::addAnimatedTile(const std::string &name, u32 length, u32 count)
+{
+    if (type != AtlasType::RECTPACK2D)
+        return nullptr;
+    auto img = addTile(name);
+
+    if (!img)
+        return nullptr;
+
+    animatedImages[images.size()-1] = std::make_pair(length, count);
+
+    return img;
+}
+
+rectf AtlasPool::getTileUV(const img::Image *tile) const
+{
+    if (type != AtlasType::RECTPACK2D)
+        return rectf();
+
+    for (u32 i = 0; i < atlases.size(); i++) {
+        auto atlas = atlases.at(i);
+        for (u32 j = 0; j < atlas->getTilesCount(); j++) {
+            auto atlasTile = atlas->getTile(j);
+
+            if (atlasTile->image != tile)
+                continue;
+
+            return atlasTile->toUV(atlas->getTextureSize());
+        }
+    }
+}
+
+void AtlasPool::buildRectpack2DAtlas()
 {
     if (type != AtlasType::RECTPACK2D)
         return;
@@ -125,7 +203,7 @@ void AtlasPool::buildRectpack2DAtlas(const std::vector<img::Image *> &images, co
 
     if (startImg <= images.size()-1) {
         ++atlasNum;
-        buildRectpack2DAtlas(images, animatedImages);
+        buildRectpack2DAtlas();
     }
 }
 
