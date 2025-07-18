@@ -1,7 +1,7 @@
 #include "text_sprite.h"
 #include "client/media/resource.h"
 #include "client/ui/batcher2d.h"
-#include "client/ui/renderer2d.h"
+#include "client/render/renderer.h"
 #include <Utils/String.h>
 #include "client/ui/glyph_atlas.h"
 #include "client/render/renderer.h"

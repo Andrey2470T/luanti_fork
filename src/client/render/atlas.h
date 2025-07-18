@@ -119,7 +119,7 @@ public:
     ~AtlasPool();
 
     Atlas *getAtlas(u32 i) const;
-    Atlas *getAtlas(const img::Image *tile) const;
+    Atlas *getAtlasByTile(const img::Image *tile) const;
 
     u32 getAtlasCount() const
     {

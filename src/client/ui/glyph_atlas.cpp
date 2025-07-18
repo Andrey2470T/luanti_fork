@@ -260,6 +260,14 @@ void FontManager::addFontInSkin(GUISkin *skin, render::FontMode mode, render::Fo
     skin->setFont(fonts[hash].first, which);
 }
 
+img::Image *FontManager::drawTextToImage(const std::wstring &text,
+    render::FontMode mode, render::FontStyle style, std::optional<u32> size, const img::color8 &color)
+{
+    auto font = getFontOrCreate(mode, style, size);
+
+    return font->drawText(text, color);
+}
+
 void FontManager::readDefaultFontSizes()
 {
     defaultSizes[0] = std::clamp<u32>((u32)g_settings->getU16("mono_font_size"), 5, 72);

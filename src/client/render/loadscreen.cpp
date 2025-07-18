@@ -27,7 +27,7 @@ LoadScreen::LoadScreen(ResourceCache *_cache, RenderSystem *_system, FontManager
     rectf progress_bg_img_size_f(v2f(progress_bg_img_size.X, progress_bg_img_size.Y));
 
     auto basicPool = _system->getPool(true);
-    render::Texture2D *tex = basicPool->getAtlas(progress_img)->getTexture();
+    render::Texture2D *tex = basicPool->getAtlasByTile(progress_img)->getTexture();
     progress_rect = std::make_unique<UISprite>(
         tex, renderer, cache, std::vector{UIPrimitiveType::RECTANGLE, UIPrimitiveType::RECTANGLE}, true);
 

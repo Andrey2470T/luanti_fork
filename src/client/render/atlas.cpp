@@ -121,7 +121,7 @@ Atlas *AtlasPool::getAtlas(u32 i) const
     return atlases.at(i);
 }
 
-Atlas *AtlasPool::getAtlas(const img::Image *tile) const
+Atlas *AtlasPool::getAtlasByTile(const img::Image *tile) const
 {
     for (u32 i = 0; i < atlases.size(); i++) {
         auto atlas = atlases.at(i);

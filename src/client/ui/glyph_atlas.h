@@ -55,6 +55,9 @@ public:
     void addFont(render::FontMode mode, render::FontStyle style, std::optional<u32> size);
     void addFontInSkin(GUISkin *skin, render::FontMode mode, render::FontStyle style,
         std::optional<u32> size, GUIDefaultFont which=GUIDefaultFont::Default);
+
+    img::Image *drawTextToImage(const std::wstring &text,
+        render::FontMode mode, render::FontStyle style, std::optional<u32> size, const img::color8 &color=img::color8(img::PF_RGBA8, 0, 0, 0, 255));
 private:
     void readDefaultFontSizes();
     static void font_sizes_changed(const std::string &name, void *userdata)
