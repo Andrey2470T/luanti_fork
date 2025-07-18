@@ -111,6 +111,7 @@ set(ui_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/gameui.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/glyph_atlas.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/hud.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/hud_elements.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/minimap.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/sprite.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ui/text_sprite.cpp

@@ -130,7 +130,7 @@ public:
 };
 
 // 2D mesh consisting from some count of rectangles
-// with some mapped texture on them
+// with some mapped texture on them (or without it)
 class UISprite
 {
 protected:
@@ -156,6 +156,8 @@ public:
     // Creates (without buffer filling) multiple-primitive mesh
     UISprite(render::Texture2D *tex, Renderer *_renderer, ResourceCache *_cache,
         const std::vector<UIPrimitiveType> &primitives, bool streamTexture=false, bool staticUsage=true);
+
+    virtual ~UISprite() = default;
 
     v2u getSize() const
     {
@@ -195,28 +197,39 @@ public:
     void drawPart(u32 pOffset=0, u32 pCount=1);
 };
 
-
-// 2D animated mesh consisting from one rectangle and frames images
-class UIAnimatedSprite : public UISprite
+class UISpriteBank
 {
-    std::vector<img::Image *> framesImages;
-    std::vector<u32> frames;
-
-    u32 curFrameNum = 0;
-    u32 frameLength = 0;
+    std::vector<std::unique_ptr<UISprite>> sprites;
 public:
-    UIAnimatedSprite(render::Texture2D *tex, u32 _frameLength, Renderer *_renderer,
-        ResourceCache *cache, const std::array<img::color8, 4> &colors);
+    UISpriteBank() = default;
 
-    u32 addImage(img::Image *img);
-    void addFrame(u32 i)
+    template<typename T, typename... Args>
+    void addSprite(Args&&... args)
     {
-        frames.push_back(i);
+        T *newSprite = new T(std::forward<Args>(args)...);
+        sprites.emplace_back(dynamic_cast<UISprite *>(newSprite));
     }
 
-    void draw() override
+    void addSprite(const UISprite *sprite)
     {
-        drawFrame(0);
+        sprites.emplace_back(sprite);
     }
-    void drawFrame(u32 time, bool loop=false);
+
+    UISprite *getSprite(u32 n) const
+    {
+        assert(n < sprites.size());
+        return sprites.at(n).get();
+    }
+
+    void drawSprite(u32 n)
+    {
+        assert(n < sprites.size());
+        sprites.at(n)->draw();
+    }
+
+    void drawBank()
+    {
+        for (auto &sprite : sprites)
+            sprite->draw();
+    }
 };

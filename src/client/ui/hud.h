@@ -12,14 +12,47 @@
 #include "../hud.h"
 
 class Client;
+class RenderSystem;
 class ResourceCache;
 class Inventory;
 class InventoryList;
 class LocalPlayer;
 struct ItemStack;
+class UISprite;
+class UITextSprite;
+class UIInvList;
+class Waypoint;
+class Minimap;
+class UIHotbar;
 
 class Hud
 {
+#define UP std::unique_ptr
+
+	Client *client = nullptr;
+	RenderSystem *rnd_system;
+	LocalPlayer *player = nullptr;
+	Inventory *inventory = nullptr;
+	ResourceCache *cache = nullptr;
+	
+    UP<UISprite> crosshair;
+	std::map<u32, UP<UISprite>> images;
+	std::map<u32, UP<UITextSprite>> texts;
+	std::map<u32, UP<UISprite>> statbars;
+	std::map<u32, UP<UIInvList>> inventories;
+    std::map<u32, UP<Waypoint>> waypoints;
+    std::map<u32, UP<Waypoint>> image_waypoints;
+    std::map<u32, UP<UISprite>> compasses;
+	std::map<u32, UP<Minimap>> minimaps;
+	std::map<u32, UP<UIHotbar>> hotbars;
+	
+	v3s16 camera_offset;
+	s32 hotbar_imagesize; // Takes hud_scaling into account, updated by resizeHotbar()
+	s32 padding; // Takes hud_scaling into account, updated by resizeHotbar()
+	std::array<img::color8, 4> hbar_colors;
+
+	std::unique_ptr<MeshBuffer> rotation_mesh_buffer;
+	
 public:
 	img::color8 crosshair_argb;
 
@@ -60,23 +93,6 @@ private:
 
 	void drawCompassRotate(HudElement *e, render::Texture2D *texture,
 			const recti &rect, s32 way);
-
-	Client *client = nullptr;
-	video::IVideoDriver *driver = nullptr;
-	LocalPlayer *player = nullptr;
-	Inventory *inventory = nullptr;
-	ITextureSource *tsrc = nullptr;
-
-	float m_hud_scaling; // cached minetest setting
-	float m_scale_factor;
-	v3s16 m_camera_offset;
-	v2u m_screensize;
-	v2i m_displaycenter;
-	s32 m_hotbar_imagesize; // Takes hud_scaling into account, updated by resizeHotbar()
-	s32 m_padding; // Takes hud_scaling into account, updated by resizeHotbar()
-	std::array<img::color8, 4> hbar_colors;
-
-	std::unique_ptr<MeshBuffer> m_rotation_mesh_buffer;
 };
 
 enum ItemRotationKind
