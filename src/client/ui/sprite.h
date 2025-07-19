@@ -227,6 +227,8 @@ class UISpriteBank
     rectf maxArea;
     bool maxAreaInit = false;
 
+    std::vector<std::vector<u32>> sprites_grid;
+
     v2f center;
 public:
     UISpriteBank(Renderer *_rnd, ResourceCache *_cache)
@@ -237,7 +239,8 @@ public:
     {
         center = c;
     }
-    // 'shift': '0' - shift to right, '1' - shift down by center
+    // 'shift': '0' - shift to right, '1' - shift down
+    // the sprites on each line are centered
     template<typename T, typename... Args>
     void addSprite(Args&&... args, u8 shift)
     {

@@ -390,20 +390,21 @@ void UISpriteBank::addTextSprite(FontManager *mgr, const std::wstring &text, u8 
 void UISpriteBank::shiftRectByLastSprite(rectf &r, u8 shift)
 {
     if (!sprites.empty()) {
-        auto lastSpriteShape = sprites.back()->getShape();
-
         v2f rSize = r.getSize();
-        auto primArea = lastSpriteShape->getMaxArea();
-        r.ULC = primArea.ULC;
-        r.LRC = r.ULC + rSize;
 
         if (shift == 0) {
-            r.ULC.X += primArea.getWidth();
-            r.LRC.X += primArea.getWidth();
+            auto lastRow = sprites_grid.at(sprites_grid.size()-1);
+            auto lastSpriteArea = sprites.at(lastRow.at(lastRow.size()-1)).get()->getShape()->getMaxArea();
+            r.ULC.X = lastSpriteArea.LRC.X;
+            r.ULC.Y = lastSpriteArea.ULC.Y;
+            r.LRC = r.ULC + rSize;
+            lastRow.emplace_back(sprites.size());
         }
         else if (shift == 1) {
-            r.ULC.Y += primArea.getHeight();
-            r.LRC.Y += primArea.getHeight();
+            r.ULC.X = maxArea.getCenter().X-rSize.X/2.0f;
+            r.ULC.Y = maxArea.LRC.Y;
+            r.LRC = r.ULC + rSize;
+            sprites_grid.emplace_back(std::vector{sprites.size()});
         }
     }
     else {
@@ -411,16 +412,15 @@ void UISpriteBank::shiftRectByLastSprite(rectf &r, u8 shift)
         r.ULC = center - size/2.0f;
         r.LRC = center + size/2.0f;
     }
-}
 
-void UISpriteBank::alignSpritesByCenter()
-{
     for (auto &sprite : sprites) {
         auto spriteMaxArea = sprite->getShape()->getMaxArea();
         updateMaxArea(maxArea, spriteMaxArea.ULC, spriteMaxArea.LRC, maxAreaInit);
     }
+}
 
+void UISpriteBank::alignSpritesByCenter()
+{
     v2f center_shift = -(maxArea.getCenter() - center);
-
     move(center_shift);
 }
