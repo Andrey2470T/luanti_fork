@@ -20,6 +20,8 @@ enum class UIPrimitiveType : u8
 
 extern std::array<u8, 4> primVCounts;
 
+void updateMaxArea(rectf &curMaxArea, const v2f &primULC, const v2f &primLRC, bool &init);
+
 class UIShape
 {
 	struct Primitive {
@@ -75,25 +77,28 @@ public:
         auto p = primitives.at(n).get();
         return p->type;
     }
+
+    rectf getPrimitiveArea(u32 n) const;
+
     u32 getPrimitiveCount() const
     {
         return primitives.size();
     }
 	void addLine(const v2f &start_p, const v2f &end_p, const img::color8 &start_c, const img::color8 &end_c) {
         primitives.emplace_back((Primitive *)(new Line(start_p, end_p, start_c, end_c)));
-        updateMaxArea(start_p, end_p);
+        updateMaxArea(maxArea, start_p, end_p, maxAreaInit);
     }
     void addTriangle(const v2f &p1, const v2f &p2, const v2f &p3, const img::color8 &c1, const img::color8 &c2, const img::color8 &c3) {
         primitives.emplace_back((Primitive *)(new Triangle(p1, p2, p3, c1, c2, c3)));
-        updateMaxArea(v2f(p1.X, p3.Y), p2);
+        updateMaxArea(maxArea, v2f(p1.X, p3.Y), p2, maxAreaInit);
     }
     void addRectangle(const rectf &r, const std::array<img::color8, 4> &colors) {
         primitives.emplace_back((Primitive *)(new Rectangle(r, colors)));
-        updateMaxArea(r.ULC, r.LRC);
+        updateMaxArea(maxArea, r.ULC, r.LRC, maxAreaInit);
     }
     void addEllipse(f32 a, f32 b, const v2f &center, const img::color8 &c) {
         primitives.emplace_back((Primitive *)(new Ellipse(a, b, center, c)));
-        updateMaxArea(center - v2f(a/2, b/2), center+v2f(a/2, b/2));
+        updateMaxArea(maxArea, center - v2f(a/2, b/2), center+v2f(a/2, b/2), maxAreaInit);
     }
 
     void updateLine(u32 n, const v2f &start_p, const v2f &end_p, const img::color8 &start_c, const img::color8 &end_c);
@@ -102,7 +107,7 @@ public:
     void updateEllipse(u32 n, f32 a, f32 b, const v2f &center, const img::color8 &c);
 
     void movePrimitive(u32 n, const v2f &shift);
-    void scalePrimitive(u32 n, const v2f &scale);
+    void scalePrimitive(u32 n, const v2f &scale, std::optional<v2f> center);
 
     rectf getMaxArea() const
     {
@@ -112,7 +117,6 @@ public:
     static u32 countRequiredVCount(const std::vector<UIPrimitiveType> &primitives);
     static u32 countRequiredICount(const std::vector<UIPrimitiveType> &primitives);
     void updateBuffer(MeshBuffer *buf, u32 primitiveNum, bool pos_or_colors=true);
-    void updateMaxArea(const v2f &ulc, const v2f &lrc);
 
     void removePrimitive(u32 i)
     {
@@ -126,6 +130,20 @@ public:
         primitives.clear();
         maxArea = rectf();
         maxAreaInit = false;
+    }
+
+    void move(const v2f &shift)
+    {
+        for (u32 i = 0; i < primitives.size(); i++)
+            movePrimitive(i, shift);
+    }
+
+    void scale(const v2f &scale, std::optional<v2f> c)
+    {
+        v2f center = c.has_value() ? c.value() : maxArea.getCenter();
+
+        for (u32 i = 0; i < primitives.size(); i++)
+            scalePrimitive(i, scale, center);
     }
 };
 
@@ -197,28 +215,74 @@ public:
     void drawPart(u32 pOffset=0, u32 pCount=1);
 };
 
+class UITextSprite;
+class FontManager;
+
 class UISpriteBank
 {
+    Renderer *rnd;
+    ResourceCache *cache;
     std::vector<std::unique_ptr<UISprite>> sprites;
-public:
-    UISpriteBank() = default;
 
+    rectf maxArea;
+    bool maxAreaInit = false;
+
+    v2f center;
+public:
+    UISpriteBank(Renderer *_rnd, ResourceCache *_cache)
+        : rnd(_rnd), cache(_cache)
+    {}
+
+    void setCenter(const v2f &c)
+    {
+        center = c;
+    }
+    // 'shift': '0' - shift to right, '1' - shift down by center
     template<typename T, typename... Args>
-    void addSprite(Args&&... args)
+    void addSprite(Args&&... args, u8 shift)
     {
         T *newSprite = new T(std::forward<Args>(args)...);
         sprites.emplace_back(dynamic_cast<UISprite *>(newSprite));
     }
 
-    void addSprite(const UISprite *sprite)
-    {
-        sprites.emplace_back(sprite);
-    }
+    void addSprite(const rectf &r, u8 shift, const std::array<img::color8, 4> &colors={img::black, img::black, img::black, img::black});
+    void addImageSprite(render::Texture2D *tex, const rectf &texPart, u8 shift);
+    void addTextSprite(FontManager *mgr, const std::wstring &text, u8 shift);
 
     UISprite *getSprite(u32 n) const
     {
         assert(n < sprites.size());
         return sprites.at(n).get();
+    }
+
+    void move(const v2f &shift)
+    {
+        for (auto &sprite : sprites) {
+            sprite->getShape()->move(shift);
+            auto primArea = sprite->getShape()->getMaxArea();
+            updateMaxArea(maxArea, primArea.ULC, primArea.LRC, maxAreaInit);
+        }
+    }
+
+    void scale(const v2f &scale)
+    {
+        v2f center = maxArea.getCenter();
+
+        for (auto &sprite : sprites) {
+            sprite->getShape()->scale(scale, center);
+            auto primArea = sprite->getShape()->getMaxArea();
+            updateMaxArea(maxArea, primArea.ULC, primArea.LRC, maxAreaInit);
+        }
+    }
+
+    void update()
+    {
+        for (auto &sprite : sprites) {
+            for (u32 i = 0; i < sprite->getShape()->getPrimitiveCount(); i++)
+                sprite->getShape()->updateBuffer(sprite->getBuffer(), i, true);
+
+            sprite->flush();
+        }
     }
 
     void drawSprite(u32 n)
@@ -232,4 +296,7 @@ public:
         for (auto &sprite : sprites)
             sprite->draw();
     }
+private:
+    void shiftRectByLastSprite(rectf &r, u8 shift);
+    void alignSpritesByCenter();
 };

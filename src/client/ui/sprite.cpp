@@ -3,8 +3,57 @@
 #include "client/mesh/defaultVertexTypes.h"
 #include "client/render/renderer.h"
 #include <Render/StreamTexture2D.h>
+#include "text_sprite.h"
+#include "glyph_atlas.h"
 
 std::array<u8, 4> primVCounts = {2, 3, 4, 9};
+
+void updateMaxArea(rectf &curMaxArea, const v2f &primULC, const v2f &primLRC, bool &init)
+{
+    curMaxArea.ULC.X = init ? std::min<f32>(curMaxArea.ULC.X, primULC.X) : primULC.X;
+    curMaxArea.ULC.Y = init ? std::min<f32>(curMaxArea.ULC.Y, primULC.Y) : primULC.Y;
+    curMaxArea.LRC.X = init ? std::max<f32>(curMaxArea.LRC.X, primLRC.X) : primLRC.X;
+    curMaxArea.LRC.Y = init ? std::max<f32>(curMaxArea.LRC.Y, primLRC.Y) : primLRC.Y;
+
+    init = true;
+}
+
+rectf UIShape::getPrimitiveArea(u32 n) const
+{
+    UIPrimitiveType type = getPrimitiveType(n);
+    auto prim = primitives.at(n).get();
+
+    switch(type) {
+    case UIPrimitiveType::LINE: {
+        auto line = dynamic_cast<Line *>(prim);
+        return rectf(line->start_p, line->end_p);
+    }
+    case UIPrimitiveType::TRIANGLE: {
+        auto trig = dynamic_cast<Triangle *>(prim);
+
+        v2f c = (trig->p1 + trig->p2 + trig->p3) / 3.0f;
+
+        std::array<v2f, 3> p = {trig->p1 - c, trig->p2 -c, trig->p3 - c};
+        std::sort(p.begin(), p.end(), [] (const v2f &p1, const v2f &p2)
+        {
+            return p1.getLengthSQ() < p2.getLengthSQ();
+        });
+        v2f areaCorner = v2f(-p.at(2).getLength(), 0.0f).rotateBy(45);
+        v2f areaCorner2 = areaCorner.rotateBy(180);
+
+        return rectf(c + areaCorner, c + areaCorner2);
+    }
+    case UIPrimitiveType::RECTANGLE: {
+        auto rect = dynamic_cast<Rectangle *>(prim);
+        return rect->r;
+    }
+    case UIPrimitiveType::ELLIPSE: {
+        auto ellipse = dynamic_cast<Ellipse *>(prim);
+        v2f areaCorner = v2f(ellipse->a, ellipse->b);
+        return rectf(ellipse->center - areaCorner, ellipse->center + areaCorner);
+    }
+    }
+}
 
 void UIShape::updateLine(u32 n, const v2f &start_p, const v2f &end_p, const img::color8 &start_c, const img::color8 &end_c)
 {
@@ -13,7 +62,7 @@ void UIShape::updateLine(u32 n, const v2f &start_p, const v2f &end_p, const img:
     line->end_p = end_p;
     line->start_c = start_c;
     line->end_c = end_c;
-    updateMaxArea(start_p, end_p);
+    updateMaxArea(maxArea, start_p, end_p, maxAreaInit);
 }
 void UIShape::updateTriangle(u32 n, const v2f &p1, const v2f &p2, const v2f &p3, const img::color8 &c1, const img::color8 &c2, const img::color8 &c3)
 {
@@ -24,14 +73,14 @@ void UIShape::updateTriangle(u32 n, const v2f &p1, const v2f &p2, const v2f &p3,
     trig->c1 = c1;
     trig->c2 = c2;
     trig->c3 = c3;
-    updateMaxArea(v2f(p1.X, p3.Y), p2);
+    updateMaxArea(maxArea, v2f(p1.X, p3.Y), p2, maxAreaInit);
 }
 void UIShape::updateRectangle(u32 n, const rectf &r, const std::array<img::color8, 4> &colors)
 {
     auto rect = dynamic_cast<Rectangle *>(primitives.at(n).get());
     rect->r = r;
     rect->colors = colors;
-    updateMaxArea(r.ULC, r.LRC);
+    updateMaxArea(maxArea, r.ULC, r.LRC, maxAreaInit);
 }
 void UIShape::updateEllipse(u32 n, f32 a, f32 b, const v2f &center, const img::color8 &c)
 {
@@ -40,7 +89,7 @@ void UIShape::updateEllipse(u32 n, f32 a, f32 b, const v2f &center, const img::c
     ellipse->b = b;
     ellipse->center = center;
     ellipse->c = c;
-    updateMaxArea(center - v2f(a/2, b/2), center+v2f(a/2, b/2));
+    updateMaxArea(maxArea, center - v2f(a/2, b/2), center+v2f(a/2, b/2), maxAreaInit);
 }
 
 void UIShape::movePrimitive(u32 n, const v2f &shift)
@@ -52,65 +101,66 @@ void UIShape::movePrimitive(u32 n, const v2f &shift)
         auto line = dynamic_cast<Line *>(prim);
         line->start_p += shift;
         line->end_p += shift;
-        updateMaxArea(line->start_p, line->end_p);
+        updateMaxArea(maxArea, line->start_p, line->end_p, maxAreaInit);
     }
     case UIPrimitiveType::TRIANGLE: {
         auto trig = dynamic_cast<Triangle *>(prim);
         trig->p1 += shift;
         trig->p2 += shift;
         trig->p3 += shift;
-        updateMaxArea(v2f(trig->p1.X, trig->p3.Y), trig->p2);
+        updateMaxArea(maxArea, v2f(trig->p1.X, trig->p3.Y), trig->p2, maxAreaInit);
     }
     case UIPrimitiveType::RECTANGLE: {
         auto rect = dynamic_cast<Rectangle *>(prim);
         rect->r.ULC += shift;
         rect->r.LRC += shift;
-        updateMaxArea(rect->r.ULC, rect->r.LRC);
+        updateMaxArea(maxArea, rect->r.ULC, rect->r.LRC, maxAreaInit);
     }
     case UIPrimitiveType::ELLIPSE: {
         auto ellipse = dynamic_cast<Ellipse *>(prim);
         ellipse->center += shift;
-        updateMaxArea(ellipse->center - v2f(ellipse->a/2,
-            ellipse->b/2), ellipse->center+v2f(ellipse->a/2, ellipse->b/2));
+        updateMaxArea(maxArea, ellipse->center - v2f(ellipse->a/2,
+            ellipse->b/2), ellipse->center+v2f(ellipse->a/2, ellipse->b/2), maxAreaInit);
     }
     }
 }
-void UIShape::scalePrimitive(u32 n, const v2f &scale)
+void UIShape::scalePrimitive(u32 n, const v2f &scale, std::optional<v2f> center)
 {
     auto prim = primitives.at(n).get();
 
     switch(prim->type) {
     case UIPrimitiveType::LINE: {
         auto line = dynamic_cast<Line *>(prim);
-        v2f c = (line->start_p + line->end_p) / 2;
+        v2f c = center.has_value() ? center.value() : (line->start_p + line->end_p) / 2;
 
         line->start_p = c + (line->start_p - c) * scale;
         line->end_p = c + (line->end_p - c) * scale;
-        updateMaxArea(line->start_p, line->end_p);
+        updateMaxArea(maxArea, line->start_p, line->end_p, maxAreaInit);
     }
     case UIPrimitiveType::TRIANGLE: {
         auto trig = dynamic_cast<Triangle *>(prim);
-        v2f c = (trig->p1 + trig->p2 + trig->p3) / 3;
+        v2f c = center.has_value() ? center.value() : (trig->p1 + trig->p2 + trig->p3) / 3;
 
         trig->p1 = c + (trig->p1 - c) * scale;
         trig->p2 = c + (trig->p2 - c) * scale;
         trig->p3 = c + (trig->p3 - c) * scale;
-        updateMaxArea(v2f(trig->p1.X, trig->p3.Y), trig->p2);
+        updateMaxArea(maxArea, v2f(trig->p1.X, trig->p3.Y), trig->p2, maxAreaInit);
     }
     case UIPrimitiveType::RECTANGLE: {
         auto rect = dynamic_cast<Rectangle *>(prim);
-        v2f c = rect->r.getCenter();
+        v2f c = center.has_value() ? center.value() : rect->r.getCenter();
 
         rect->r.ULC = c + (rect->r.ULC - c) * scale;
         rect->r.LRC = c + (rect->r.LRC - c) * scale;
-        updateMaxArea(rect->r.ULC, rect->r.LRC);
+        updateMaxArea(maxArea, rect->r.ULC, rect->r.LRC, maxAreaInit);
     }
     case UIPrimitiveType::ELLIPSE: {
         auto ellipse = dynamic_cast<Ellipse *>(prim);
+
         ellipse->a *= scale.X;
         ellipse->b *= scale.Y;
-        updateMaxArea(ellipse->center - v2f(ellipse->a/2,
-            ellipse->b/2), ellipse->center+v2f(ellipse->a/2, ellipse->b/2));
+        updateMaxArea(maxArea, ellipse->center - v2f(ellipse->a/2,
+            ellipse->b/2), ellipse->center+v2f(ellipse->a/2, ellipse->b/2), maxAreaInit);
     }
     }
 }
@@ -207,16 +257,6 @@ void UIShape::updateBuffer(MeshBuffer *buf, u32 primitiveNum, bool pos_or_colors
         }
     }
     }
-}
-
-void UIShape::updateMaxArea(const v2f &ulc, const v2f &lrc)
-{
-    maxArea.ULC.X = maxAreaInit ? std::min<f32>(maxArea.ULC.X, ulc.X) : ulc.X;
-    maxArea.ULC.Y = maxAreaInit ? std::min<f32>(maxArea.ULC.Y, ulc.Y) : ulc.Y;
-    maxArea.LRC.X = maxAreaInit ? std::max<f32>(maxArea.LRC.X, lrc.X) : lrc.X;
-    maxArea.LRC.Y = maxAreaInit ? std::max<f32>(maxArea.LRC.Y, lrc.Y) : lrc.Y;
-
-    maxAreaInit = true;
 }
 
 UISprite::UISprite(render::Texture2D *tex, Renderer *_renderer, ResourceCache *_cache,
@@ -319,4 +359,68 @@ void UISprite::drawPart(u32 pOffset, u32 pCount)
         vao->draw(render::PT_TRIANGLE_FAN, vcount, startVCount);
         break;
     }
+}
+
+void UISpriteBank::addSprite(const rectf &r, u8 shift, const std::array<img::color8, 4> &colors)
+{
+    rectf resRect = r;
+    shiftRectByLastSprite(resRect, shift);
+    sprites.emplace_back(nullptr, rnd, cache, rectf(), resRect, colors, true);
+}
+
+void UISpriteBank::addImageSprite(render::Texture2D *tex, const rectf &texPart, u8 shift)
+{
+    rectf resRect(0, 0, texPart.getWidth(), texPart.getHeight());
+    shiftRectByLastSprite(resRect, shift);
+    std::array<img::color8, 4> colors = {img::white, img::white, img::white, img::white};
+    sprites.emplace_back(tex, rnd, cache, texPart, resRect, colors, true);
+}
+
+void UISpriteBank::addTextSprite(FontManager *mgr, const std::wstring &text, u8 shift)
+{
+    UITextSprite *textSprite = new UITextSprite(mgr, EnrichedString(text), rnd, cache, {});
+
+    auto font = textSprite->getActiveFont();
+    rectf resRect(0, 0, font->getTextWidth(text), font->getTextHeight(text));
+    shiftRectByLastSprite(resRect, shift);
+    textSprite->updateBuffer(rectf(resRect));
+    sprites.emplace_back(std::unique_ptr<UISprite>(textSprite));
+}
+
+void UISpriteBank::shiftRectByLastSprite(rectf &r, u8 shift)
+{
+    if (!sprites.empty()) {
+        auto lastSpriteShape = sprites.back()->getShape();
+
+        v2f rSize = r.getSize();
+        auto primArea = lastSpriteShape->getMaxArea();
+        r.ULC = primArea.ULC;
+        r.LRC = r.ULC + rSize;
+
+        if (shift == 0) {
+            r.ULC.X += primArea.getWidth();
+            r.LRC.X += primArea.getWidth();
+        }
+        else if (shift == 1) {
+            r.ULC.Y += primArea.getHeight();
+            r.LRC.Y += primArea.getHeight();
+        }
+    }
+    else {
+        auto size = r.getSize();
+        r.ULC = center - size/2.0f;
+        r.LRC = center + size/2.0f;
+    }
+}
+
+void UISpriteBank::alignSpritesByCenter()
+{
+    for (auto &sprite : sprites) {
+        auto spriteMaxArea = sprite->getShape()->getMaxArea();
+        updateMaxArea(maxArea, spriteMaxArea.ULC, spriteMaxArea.LRC, maxAreaInit);
+    }
+
+    v2f center_shift = -(maxArea.getCenter() - center);
+
+    move(center_shift);
 }
