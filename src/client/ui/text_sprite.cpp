@@ -113,25 +113,19 @@ void UITextSprite::draw()
 
 void UITextSprite::updateBuffer(rectf &&r)
 {
-    shape->clear();
-    mesh->clear();
+    clear();
 
     u32 rectN = 0;
     if (drawBackground) {
         ++rectN;
         auto bg_color = getBackgroundColor();
         shape->addRectangle(r, {bg_color, bg_color, bg_color, bg_color});
-        reallocateBuffer();
-        Batcher2D::appendRectangle(mesh.get(), r, {bg_color, bg_color, bg_color, bg_color}, {v2f(), v2f()});
     }
 
     if (drawBorder) {
         std::array<img::color8, 4> colors;
-        for (u32 i = 0; i < 4; i++) {
+        for (u32 i = 0; i < 4; i++)
             shape->addRectangle(r, colors);
-            reallocateBuffer();
-            Batcher2D::appendRectangle(mesh.get(), r, colors, {v2f(), v2f()});
-        }
 
         skin->update3DSunkenPane(this, img::color8(), true, false, r, rectN);
     }
@@ -166,8 +160,6 @@ void UITextSprite::updateBuffer(rectf &&r)
 
     if (!atlas)
         return;
-
-    u32 atlasSize = atlas->getTextureSize();
 
     for (const auto &str : brokenText) {
         if (hAlign == GUIAlignment::LowerRight)
@@ -231,8 +223,9 @@ void UITextSprite::updateBuffer(rectf &&r)
             if (!glyph)
                 continue;
 
-            rectf glyphUV = glyph->toUV(atlasSize);
+            rectf glyphUV(v2f(glyph->pos.X, glyph->pos.Y), v2f(glyph->size.X, glyph->size.Y));
             rectf glyphPos(offset, v2f(glyph->size.X, glyph->size.Y));
+
 
             u32 shadowOffset, shadowAlpha;
             font->getShadowParameters(&shadowOffset, &shadowAlpha);
@@ -246,16 +239,13 @@ void UITextSprite::updateBuffer(rectf &&r)
                 shadowColors[2].A(shadowAlpha);
                 shadowColors[3].A(shadowAlpha);
 
-                shape->addRectangle(glyphShadowPos, shadowColors);
-                reallocateBuffer();
-                Batcher2D::appendImageRectangle(mesh.get(), v2u(atlasSize), glyphUV, glyphShadowPos, shadowColors, false);
+
+                shape->addRectangle(glyphShadowPos, shadowColors, glyphUV);
             }
 
             std::array<img::color8, 4> arrColors = {colors[0], colors[1], colors[2], colors[3]};
 
-            shape->addRectangle(glyphPos, arrColors);
-            reallocateBuffer();
-            Batcher2D::appendImageRectangle(mesh.get(), v2u(atlasSize), glyphUV, glyphPos, arrColors, false);
+            shape->addRectangle(glyphPos, arrColors, glyphUV);
 
             offset.X += advance;
             prevCh = ch;
@@ -320,7 +310,7 @@ void UITextSprite::updateBuffer(rectf &&r)
         rc.ULC.Y += height_line;
     }
 
-    mesh->uploadData();
+    rebuildMesh();
 }
 void UITextSprite::updateWrappedText()
 {

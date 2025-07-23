@@ -257,11 +257,11 @@ public:
 			return;
 		}
 
-        VBuffer.DataCount = vertexN+1;
+        VBuffer.DataCount = std::max(VBuffer.DataCount, vertexN);
         VBuffer.StartChange = VBuffer.StartChange != std::nullopt ?
-            std::min<u32>(VBuffer.StartChange.value(), vertexN) : vertexN;
+            std::min(VBuffer.StartChange.value(), vertexN) : vertexN;
         VBuffer.EndChange = VBuffer.EndChange != std::nullopt ?
-            std::max<u32>(VBuffer.EndChange.value(), vertexN) : vertexN;
+            std::max(VBuffer.EndChange.value(), vertexN) : vertexN;
         VBuffer.Dirty = true;
     }
 

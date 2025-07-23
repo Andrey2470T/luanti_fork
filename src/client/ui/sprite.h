@@ -50,10 +50,11 @@ class UIShape
 	};
 	struct Rectangle : public Primitive {
 		rectf r;
+        rectf texr;
 		std::array<img::color8, 4> colors;
 
-        Rectangle(const rectf &_r, const std::array<img::color8, 4> &_colors)
-            : Primitive(UIPrimitiveType::RECTANGLE), r(_r), colors(_colors)
+        Rectangle(const rectf &_r, const std::array<img::color8, 4> &_colors, const rectf &_texr=rectf())
+            : Primitive(UIPrimitiveType::RECTANGLE), r(_r), texr(_texr), colors(_colors)
         {}
 	};
 	struct Ellipse : public Primitive {
@@ -92,8 +93,8 @@ public:
         primitives.emplace_back((Primitive *)(new Triangle(p1, p2, p3, c1, c2, c3)));
         updateMaxArea(maxArea, v2f(p1.X, p3.Y), p2, maxAreaInit);
     }
-    void addRectangle(const rectf &r, const std::array<img::color8, 4> &colors) {
-        primitives.emplace_back((Primitive *)(new Rectangle(r, colors)));
+    void addRectangle(const rectf &r, const std::array<img::color8, 4> &colors, const rectf &texr=rectf()) {
+        primitives.emplace_back((Primitive *)(new Rectangle(r, colors, texr)));
         updateMaxArea(maxArea, r.ULC, r.LRC, maxAreaInit);
     }
     void addEllipse(f32 a, f32 b, const v2f &center, const img::color8 &c) {
@@ -116,7 +117,6 @@ public:
 
     static u32 countRequiredVCount(const std::vector<UIPrimitiveType> &primitives);
     static u32 countRequiredICount(const std::vector<UIPrimitiveType> &primitives);
-    void updateBuffer(MeshBuffer *buf, u32 primitiveNum, bool pos_or_colors=true);
 
     void removePrimitive(u32 i)
     {
@@ -150,6 +150,12 @@ public:
         for (u32 i = 0; i < primitives.size(); i++)
             scalePrimitive(i, scale, center);
     }
+
+    friend class UISprite;
+private:
+    void appendToBuffer(MeshBuffer *buf, v2u imgSize=v2u());
+    void updateBuffer(MeshBuffer *buf, u32 primitiveNum, bool pos_or_colors=true);
+    void appendToBuffer(MeshBuffer *buf, u32 primitiveNum, v2u imgSize=v2u());
 };
 
 // 2D mesh consisting from some count of rectangles
@@ -209,17 +215,21 @@ public:
         visible = yes;
     }
 
-    void reallocateBuffer();
+    void rebuildMesh();
+    void updateMesh(const std::vector<u32> &dirtyPrimitives, bool pos_or_colors=true);
+    void updateMesh(bool pos_or_colors=true);
 
     void setClipRect(const recti &r)
     {
         clipRect = r;
     }
-    
-    void flush()
+
+    void clear()
     {
-        mesh->uploadVertexData();
+        shape->clear();
+        mesh->clear();
     }
+    
     virtual void draw();
 
     void drawPart(u32 pOffset=0, u32 pCount=1);
@@ -292,12 +302,8 @@ public:
     void update()
     {
     	alignSpritesByCenter();
-        for (auto &sprite : sprites) {
-            for (u32 i = 0; i < sprite->getShape()->getPrimitiveCount(); i++)
-                sprite->getShape()->updateBuffer(sprite->getBuffer(), i, true);
-
-            sprite->flush();
-        }
+        for (auto &sprite : sprites)
+            sprite->updateMesh();
     }
 
     void drawSprite(u32 n)

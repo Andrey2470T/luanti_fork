@@ -26,11 +26,11 @@ void MeshBuffer::setIndexAt(u32 index, u32 pos)
 
     IBuffer.Data->setUInt32(index, pos);
 
-    IBuffer.DataCount = pos+1;
+    IBuffer.DataCount = std::max(IBuffer.DataCount, pos);
     IBuffer.StartChange = IBuffer.StartChange != std::nullopt ?
-        std::min<u32>(VBuffer.StartChange.value(), pos) : pos;
+        std::min(VBuffer.StartChange.value(), pos) : pos;
     IBuffer.EndChange = IBuffer.EndChange != std::nullopt ?
-        std::max<u32>(IBuffer.EndChange.value(), pos) : pos;
+        std::max(IBuffer.EndChange.value(), pos) : pos;
     IBuffer.Dirty = true;
 }
 

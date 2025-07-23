@@ -525,9 +525,6 @@ private:
     {
         auto shape = sprite->getShape();
         sprite->getShape()->updateRectangle(rectN, newRect, newColors);
-        auto buf = sprite->getBuffer();
-        shape->updateBuffer(buf, rectN, true);
-        shape->updateBuffer(buf, rectN, false);
         rectN++;
     }
     inline void updateRect(UISprite *sprite, const img::color8 &newColor, const rectf &newRect, u32 &rectN)

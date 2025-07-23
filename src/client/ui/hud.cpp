@@ -269,7 +269,7 @@ void Hud::updateTextElement(const HudElement *elem, std::optional<u32> n)
     EnrichedString wtext = getWText(elem);
     if (!n.has_value()) {
         texts[texts.size()] = std::make_unique<UITextSprite>(rnd_system->getFontManager(), wtext,
-            rnd_system->getRenderer(), cache, recti());
+            rnd_system->getRenderer(), cache);
         return;
     }
 
@@ -285,6 +285,7 @@ void Hud::updateStatbarElement(const HudElement *elem, std::optional<u32> n)
 {
     assert(n < statbars.size());
     UISprite *sprite = statbars.at(n.value()).get();
+    sprite->clear();
 
     const img::color8 color = img::white;
     const std::array<img::color8, 4> colors = {color, color, color, color};
@@ -361,24 +362,24 @@ void Hud::updateStatbarElement(const HudElement *elem, std::optional<u32> n)
     steppos.Y *= dstd.Y;
 
     // Draw full textures
-    std::vector<std::pair<rectf, rectf>> pos_uvs;
+    auto shape = sprite->getShape();
 
     for (u32 i = 0; i < elem->number / 2; i++) {
         rectf srcrect = stat_img_uvs;
         rectf dstrect(0, 0, dstd.X, dstd.Y);
 
         dstrect += pos;
-        pos_uvs.emplace_back(dstrect, srcrect);
+        shape->addRectangle(dstrect, colors, srcrect);
 
         pos += steppos;
     }
 
     if (elem->number % 2 == 1) {
         // Draw half a texture
-        pos_uvs.emplace_back(dsthalfrect + pos, srchalfrect + stat_img_uvs.ULC);
+        shape->addRectangle(dsthalfrect + pos, colors, srchalfrect + stat_img_uvs.ULC);
 
         if (stat_img_bg && elem->item > elem->number) {
-            pos_uvs.emplace_back(dsthalfrect2 + pos, srchalfrect2 + stat_img_bg_uvs.ULC);
+            shape->addRectangle(dsthalfrect2 + pos, colors, srchalfrect2 + stat_img_bg_uvs.ULC);
             pos += steppos;
         }
     }
@@ -395,28 +396,18 @@ void Hud::updateStatbarElement(const HudElement *elem, std::optional<u32> n)
             rectf dstrect(0, 0, dstd.X, dstd.Y);
 
             dstrect += pos;
-            pos_uvs.emplace_back(dstrect, srcrect);
+            shape->addRectangle(dstrect, colors, srcrect);
             pos += steppos;
         }
 
         if (elem->item % 2 == 1)
-            pos_uvs.emplace_back(dsthalfrect + pos, srchalfrect + stat_img_bg_uvs.ULC);
+            shape->addRectangle(dsthalfrect + pos, colors, srchalfrect + stat_img_bg_uvs.ULC);
     }
 
-    auto shape = sprite->getShape();
-    auto mesh = sprite->getBuffer();
-    shape->clear();
-    mesh->clear();
-
-    for (auto p_u : pos_uvs) {
-        shape->addRectangle(p_u.first, colors);
-        Batcher2D::appendRectangle(mesh, p_u.first, colors, p_u.second);
-    }
-
-    sprite->reallocateBuffer();
+    sprite->rebuildMesh();
 }
 
-void Hud::updateHUDElement(u32 n, const HudElement *elem)
+void Hud::updateHUDElements(const v3s16 &camera_offset)
 {
     switch(elem->type) {
     case HUD_ELEM_TEXT: {

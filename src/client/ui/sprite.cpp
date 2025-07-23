@@ -187,6 +187,12 @@ u32 UIShape::countRequiredICount(const std::vector<UIPrimitiveType> &primitives)
     return count;
 }
 
+void UIShape::appendToBuffer(MeshBuffer *buf, v2u imgSize)
+{
+    for (u32 i = 0; i < primitives.size(); i++)
+        appendToBuffer(buf, i, imgSize);
+}
+
 void UIShape::updateBuffer(MeshBuffer *buf, u32 primitiveNum, bool pos_or_colors)
 {
     if (primitiveNum > primitives.size()-1)
@@ -210,6 +216,7 @@ void UIShape::updateBuffer(MeshBuffer *buf, u32 primitiveNum, bool pos_or_colors
             svtSetColor(buf, line->start_c, startV);
             svtSetColor(buf, line->end_c, startV+1);
         }
+        break;
     }
     case UIPrimitiveType::TRIANGLE: {
         auto trig = dynamic_cast<Triangle *>(p);
@@ -223,6 +230,7 @@ void UIShape::updateBuffer(MeshBuffer *buf, u32 primitiveNum, bool pos_or_colors
             svtSetColor(buf, trig->c2, startV+1);
             svtSetColor(buf, trig->c3, startV+2);
         }
+        break;
     }
     case UIPrimitiveType::RECTANGLE: {
         auto rect = dynamic_cast<Rectangle *>(p);
@@ -238,6 +246,7 @@ void UIShape::updateBuffer(MeshBuffer *buf, u32 primitiveNum, bool pos_or_colors
             svtSetColor(buf, rect->colors[2], startV+2);
             svtSetColor(buf, rect->colors[3], startV+3);
         }
+        break;
     }
     case UIPrimitiveType::ELLIPSE: {
         auto ellipse = dynamic_cast<Ellipse *>(p);
@@ -255,6 +264,41 @@ void UIShape::updateBuffer(MeshBuffer *buf, u32 primitiveNum, bool pos_or_colors
             else
                 svtSetColor(buf, ellipse->c, startV+i+1);
         }
+        break;
+    }
+    }
+}
+
+void UIShape::appendToBuffer(MeshBuffer *buf, u32 primitiveNum, v2u imgSize)
+{
+    if (primitiveNum > primitives.size()-1)
+        return;
+
+    Primitive *p = primitives.at(primitiveNum).get();
+
+    switch (p->type) {
+    case UIPrimitiveType::LINE: {
+        auto line = dynamic_cast<Line *>(p);
+        Batcher2D::appendLine(buf, line->start_p, line->end_p, line->start_c);
+        break;
+    }
+    case UIPrimitiveType::TRIANGLE: {
+        auto trig = dynamic_cast<Triangle *>(p);
+        Batcher2D::appendTriangle(buf, {trig->p1, trig->p2, trig->p3}, trig->c1);
+        break;
+    }
+    case UIPrimitiveType::RECTANGLE: {
+        auto rect = dynamic_cast<Rectangle *>(p);
+        if (rect->texr != rectf())
+            Batcher2D::appendImageRectangle(buf, imgSize, rect->texr, rect->r, rect->colors, false);
+        else
+            Batcher2D::appendRectangle(buf, rect->r, rect->colors);
+        break;
+    }
+    case UIPrimitiveType::ELLIPSE: {
+        auto ellipse = dynamic_cast<Ellipse *>(p);
+        Batcher2D::appendEllipse(buf, ellipse->a, ellipse->b, imgSize, ellipse->center, ellipse->c);
+        break;
     }
     }
 }
@@ -275,7 +319,7 @@ UISprite::UISprite(render::Texture2D *tex, Renderer *_renderer,
         UIShape::countRequiredICount({UIPrimitiveType::RECTANGLE}), true, VType2D, staticUsage ? render::MeshUsage::STATIC : render::MeshUsage::DYNAMIC)),
     shape(std::make_unique<UIShape>()), texture(tex), streamTex(streamTexture)
 {
-    shape->addRectangle(posRect, colors);
+    shape->addRectangle(posRect, colors, uvRect);
     Batcher2D::appendImageRectangle(mesh.get(), tex->getSize(), uvRect, posRect, colors, false);
 }
 
@@ -286,9 +330,26 @@ UISprite::UISprite(render::Texture2D *tex, Renderer *_renderer, ResourceCache *_
     mesh(std::make_unique<MeshBuffer>(UIShape::countRequiredVCount(primitives),
         UIShape::countRequiredICount(primitives), true, VType2D, staticUsage ? render::MeshUsage::STATIC : render::MeshUsage::DYNAMIC)),
     shape(std::make_unique<UIShape>()), texture(tex), streamTex(streamTexture)
-{}
+{
+    for (auto primType : primitives) {
+        switch(primType) {
+        case UIPrimitiveType::LINE:
+            shape->addLine(v2f(), v2f(), img::black, img::black);
+            break;
+        case UIPrimitiveType::TRIANGLE:
+            shape->addTriangle(v2f(), v2f(), v2f(), img::black, img::black, img::black);
+            break;
+        case UIPrimitiveType::RECTANGLE:
+            shape->addRectangle(rectf(), {});
+            break;
+        case UIPrimitiveType::ELLIPSE:
+            shape->addEllipse(0.0f, 0.0f, v2f(), img::black);
+            break;
+        }
+    }
+}
 
-void UISprite::reallocateBuffer()
+void UISprite::rebuildMesh()
 {
     std::vector<UIPrimitiveType> prims(shape->getPrimitiveCount());
 
@@ -298,6 +359,23 @@ void UISprite::reallocateBuffer()
         UIShape::countRequiredVCount(prims),
         UIShape::countRequiredICount(prims)
     );
+
+    shape->appendToBuffer(mesh.get(), texture->getSize());
+    mesh->uploadData();
+}
+
+void UISprite::updateMesh(const std::vector<u32> &dirtyPrimitives, bool pos_or_colors)
+{
+    for (auto n : dirtyPrimitives)
+        shape->updateBuffer(mesh.get(), n, pos_or_colors);
+    mesh->uploadVertexData();
+}
+
+void UISprite::updateMesh(bool pos_or_colors)
+{
+    for (u32 i = 0; i < shape->getPrimitiveCount(); i++)
+        shape->updateBuffer(mesh.get(), i, pos_or_colors);
+    mesh->uploadVertexData();
 }
 
 void UISprite::draw()

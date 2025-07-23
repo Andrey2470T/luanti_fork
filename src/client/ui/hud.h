@@ -78,7 +78,7 @@ public:
 
     void updateTextElement(const HudElement *elem, std::optional<u32> n=std::nullopt);
     void updateStatbarElement(const HudElement *elem, std::optional<u32> n=std::nullopt);
-    void updateHUDElement(u32 n, const HudElement *elem);
+    void updateHUDElements(const v3s16 &camera_offset);
 	void drawLuaElements(const v3s16 &camera_offset);
 
 private:
