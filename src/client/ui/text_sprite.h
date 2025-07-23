@@ -25,12 +25,11 @@ class UITextSprite : public UISprite
     bool rightToLeft = false;
 	
 	render::TTFont *overrideFont;
-    recti clipRect;
 
     FontManager *mgr;
 public:
     UITextSprite(FontManager *font_manager, const EnrichedString &text, Renderer *renderer,
-        ResourceCache *resCache, const recti &clip, bool border = false, bool wordWrap = true, bool fillBackground = false);
+        ResourceCache *resCache, bool border = false, bool wordWrap = true, bool fillBackground = false);
     ~UITextSprite();
 
     void setOverrideFont(render::TTFont *font);
@@ -98,8 +97,6 @@ public:
     {
         setText(EnrichedString(text, getColor()));
     }
-
-    void setClipRect(const recti &r) override;
 
     void draw() override;
 

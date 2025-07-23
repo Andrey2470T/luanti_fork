@@ -29,7 +29,9 @@ class EnrichedString {
 public:
 	EnrichedString();
 	EnrichedString(std::wstring_view s,
-        const img::color8 &color = img::color8(img::PF_RGBA8, 255, 255, 255, 255));
+        const img::color8 &color = img::color8(img::white));
+    EnrichedString(std::string s, const img::color8 &color = img::color8(img::white));
+
 	EnrichedString(std::wstring_view string,
         const std::vector<img::color8> &colors);
 	EnrichedString &operator=(std::wstring_view s);

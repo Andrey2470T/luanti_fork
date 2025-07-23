@@ -87,6 +87,11 @@ public:
     }
     AtlasPool *getPool(bool basic) const;
 
+    FontManager *getFontManager() const
+    {
+        return fontManager.get();
+    }
+
     v2u getWindowSize() const
     {
         return window->getWindowSize();

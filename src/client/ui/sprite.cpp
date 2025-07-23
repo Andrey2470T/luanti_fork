@@ -300,11 +300,6 @@ void UISprite::reallocateBuffer()
     );
 }
 
-void UISprite::setClipRect(const recti &r)
-{
-    renderer->setClipRect(r);
-}
-
 void UISprite::draw()
 {
     if (shape->getPrimitiveCount() == 0 || !visible)
@@ -315,6 +310,8 @@ void UISprite::draw()
 
     if (texture)
         renderer->setTexture(texture);
+
+    renderer->setClipRect(clipRect);
 
     auto prevType = shape->getPrimitiveType(0);
     u32 pOffset = 0;
@@ -366,6 +363,7 @@ void UISpriteBank::addSprite(const rectf &r, u8 shift, const std::array<img::col
     rectf resRect = r;
     shiftRectByLastSprite(resRect, shift);
     sprites.emplace_back(nullptr, rnd, cache, rectf(), resRect, colors, true);
+    updateMaxArea(maxArea, resRect.ULC, resRect.LRC, maxAreaInit);
 }
 
 void UISpriteBank::addImageSprite(render::Texture2D *tex, const rectf &texPart, u8 shift)
@@ -374,17 +372,20 @@ void UISpriteBank::addImageSprite(render::Texture2D *tex, const rectf &texPart, 
     shiftRectByLastSprite(resRect, shift);
     std::array<img::color8, 4> colors = {img::white, img::white, img::white, img::white};
     sprites.emplace_back(tex, rnd, cache, texPart, resRect, colors, true);
+    updateMaxArea(maxArea, resRect.ULC, resRect.LRC, maxAreaInit);
 }
 
-void UISpriteBank::addTextSprite(FontManager *mgr, const std::wstring &text, u8 shift)
+void UISpriteBank::addTextSprite(FontManager *mgr, const EnrichedString &text, u8 shift)
 {
-    UITextSprite *textSprite = new UITextSprite(mgr, EnrichedString(text), rnd, cache, {});
+    UITextSprite *textSprite = new UITextSprite(mgr, text, rnd, cache, {});
+    textSprite->setAlignment(GUIAlignment::Center, GUIAlignment::Center);
 
     auto font = textSprite->getActiveFont();
-    rectf resRect(0, 0, font->getTextWidth(text), font->getTextHeight(text));
+    rectf resRect(0, 0, font->getTextWidth(text.getString()), font->getTextHeight(text.getString()));
     shiftRectByLastSprite(resRect, shift);
     textSprite->updateBuffer(rectf(resRect));
     sprites.emplace_back(std::unique_ptr<UISprite>(textSprite));
+    updateMaxArea(maxArea, resRect.ULC, resRect.LRC, maxAreaInit);
 }
 
 void UISpriteBank::shiftRectByLastSprite(rectf &r, u8 shift)
@@ -393,8 +394,8 @@ void UISpriteBank::shiftRectByLastSprite(rectf &r, u8 shift)
         v2f rSize = r.getSize();
 
         if (shift == 0) {
-            auto lastRow = sprites_grid.at(sprites_grid.size()-1);
-            auto lastSpriteArea = sprites.at(lastRow.at(lastRow.size()-1)).get()->getShape()->getMaxArea();
+            auto lastRow = sprites_grid.back();
+            auto lastSpriteArea = sprites.at(lastRow.back()).get()->getShape()->getMaxArea();
             r.ULC.X = lastSpriteArea.LRC.X;
             r.ULC.Y = lastSpriteArea.ULC.Y;
             r.LRC = r.ULC + rSize;
@@ -411,11 +412,7 @@ void UISpriteBank::shiftRectByLastSprite(rectf &r, u8 shift)
         auto size = r.getSize();
         r.ULC = center - size/2.0f;
         r.LRC = center + size/2.0f;
-    }
-
-    for (auto &sprite : sprites) {
-        auto spriteMaxArea = sprite->getShape()->getMaxArea();
-        updateMaxArea(maxArea, spriteMaxArea.ULC, spriteMaxArea.LRC, maxAreaInit);
+        sprites_grid.emplace_back(std::vector{0});
     }
 }
 

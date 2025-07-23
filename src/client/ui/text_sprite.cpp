@@ -17,9 +17,9 @@ inline std::vector<UIPrimitiveType> getGlyphs(u32 count, bool background, bool b
 }
 
 UITextSprite::UITextSprite(FontManager *font_manager, const EnrichedString &text,
-    Renderer *renderer, ResourceCache *resCache, const recti &clip, bool border, bool wordWrap, bool fillBackground)
+    Renderer *renderer, ResourceCache *resCache, bool border, bool wordWrap, bool fillBackground)
     : UISprite(getGlyphAtlasTexture(), renderer, resCache, false, false), drawBorder(border),
-    drawBackground(fillBackground),  wordWrap(wordWrap), clipRect(clip), mgr(font_manager)
+    drawBackground(fillBackground),  wordWrap(wordWrap), mgr(font_manager)
 {
     setText(text);
 }
@@ -86,14 +86,6 @@ void UITextSprite::setText(const EnrichedString &_text)
     updateWrappedText();
 }
 
-void UITextSprite::setClipRect(const recti &r)
-{
-    if (clipText)
-        renderer->setClipRect(r);
-    else
-        renderer->setClipRect(recti());
-}
-
 void UITextSprite::draw()
 {
     renderer->setRenderState(false);
@@ -102,7 +94,7 @@ void UITextSprite::draw()
 
     u32 rectN = 0;
     if (drawBackground || drawBorder) {
-        UISprite::setClipRect(clipRect);
+        setClipRect(clipRect);
 
         u32 count = drawBackground && drawBorder ? 2 : 1;
         drawPart(rectN, count);
@@ -112,7 +104,9 @@ void UITextSprite::draw()
     if (visible) {
         renderer->setTexture(texture);
         renderer->setDefaultUniforms(1.0f, 1, 0.5f, img::BM_COUNT);
-        setClipRect(clipRect);
+
+        if (clipText)
+            setClipRect(clipRect);
         drawPart(rectN, text.size());
     }
 }

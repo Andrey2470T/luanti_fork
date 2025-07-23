@@ -40,6 +40,14 @@ EnrichedString::EnrichedString(std::wstring_view s, const img::color8 &color)
 	addAtEnd(translate_string(s), color);
 }
 
+EnrichedString::EnrichedString(std::string s, const img::color8 &color)
+{
+    clear();
+
+    std::wstring wstr(unescape_string(utf8_to_wide(s)));
+    addAtEnd(translate_string(wstr), color);
+}
+
 void EnrichedString::clear()
 {
 	m_string.clear();

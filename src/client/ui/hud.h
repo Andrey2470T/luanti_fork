@@ -24,6 +24,8 @@ class UIInvList;
 class Waypoint;
 class Minimap;
 class UIHotbar;
+class EnrichedString;
+class AtlasPool;
 
 class Hud
 {
@@ -41,11 +43,11 @@ class Hud
 	std::map<u32, UP<UISprite>> statbars;
 	std::map<u32, UP<UIInvList>> inventories;
     std::map<u32, UP<Waypoint>> waypoints;
-    std::map<u32, UP<Waypoint>> image_waypoints;
     std::map<u32, UP<UISprite>> compasses;
 	std::map<u32, UP<Minimap>> minimaps;
 	std::map<u32, UP<UIHotbar>> hotbars;
-	
+
+    AtlasPool *guiPool;
 	v3s16 camera_offset;
 	s32 hotbar_imagesize; // Takes hud_scaling into account, updated by resizeHotbar()
 	s32 padding; // Takes hud_scaling into account, updated by resizeHotbar()
@@ -74,10 +76,21 @@ public:
 
 	bool hasElementOfType(HudElementType type);
 
+    void updateTextElement(const HudElement *elem, std::optional<u32> n=std::nullopt);
+    void updateStatbarElement(const HudElement *elem, std::optional<u32> n=std::nullopt);
+    void updateHUDElement(u32 n, const HudElement *elem);
 	void drawLuaElements(const v3s16 &camera_offset);
 
 private:
-	bool calculateScreenPos(const v3s16 &camera_offset, HudElement *e, v2i *pos);
+    void applyHUDElemParams(rectf &r, const HudElement *elem,
+        bool scale_factor, std::optional<v2f> override_pos=std::nullopt) const;
+
+    EnrichedString getWText(const HudElement *elem) const;
+    render::TTFont *getTextFont(const HudElement *elem, bool use_style) const;
+
+    rectf getTextRect(const std::string &text, const HudElement *elem, bool use_style,
+        bool scale_factor, std::optional<v2f> override_pos=std::nullopt) const;
+
 	void drawStatbar(v2i pos, u16 corner, u16 drawdir,
 			const std::string &texture, const std::string& bgtexture,
 			s32 count, s32 maxcount, v2i offset, v2i size = v2i());

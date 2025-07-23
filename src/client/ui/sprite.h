@@ -124,6 +124,11 @@ public:
             return;
 
         primitives.erase(primitives.begin()+i);
+        
+        for (u32 i = 0; i < primitives.size(); i++) {
+        	rectf primArea = getPrimitiveArea(i);
+            updateMaxArea(maxArea, primArea.ULC, primArea.LRC, maxAreaInit);
+        }
     }
     void clear()
     {
@@ -161,6 +166,8 @@ protected:
 
     bool streamTex = false;
     bool visible = false;
+
+    recti clipRect;
 public:
     // Creates an empty sprite
     UISprite(render::Texture2D *tex, Renderer *_renderer, ResourceCache *_cache,
@@ -204,7 +211,10 @@ public:
 
     void reallocateBuffer();
 
-    virtual void setClipRect(const recti &r);
+    void setClipRect(const recti &r)
+    {
+        clipRect = r;
+    }
     
     void flush()
     {
@@ -217,6 +227,7 @@ public:
 
 class UITextSprite;
 class FontManager;
+class EnrichedString;
 
 class UISpriteBank
 {
@@ -250,7 +261,7 @@ public:
 
     void addSprite(const rectf &r, u8 shift, const std::array<img::color8, 4> &colors={img::black, img::black, img::black, img::black});
     void addImageSprite(render::Texture2D *tex, const rectf &texPart, u8 shift);
-    void addTextSprite(FontManager *mgr, const std::wstring &text, u8 shift);
+    void addTextSprite(FontManager *mgr, const EnrichedString &text, u8 shift);
 
     UISprite *getSprite(u32 n) const
     {
@@ -280,6 +291,7 @@ public:
 
     void update()
     {
+    	alignSpritesByCenter();
         for (auto &sprite : sprites) {
             for (u32 i = 0; i < sprite->getShape()->getPrimitiveCount(); i++)
                 sprite->getShape()->updateBuffer(sprite->getBuffer(), i, true);
