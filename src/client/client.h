@@ -5,7 +5,7 @@
 #pragma once
 
 #include "clientenvironment.h"
-#include "irrlichttypes.h"
+//#include "irrlichttypes.h"
 #include <ostream>
 #include <map>
 #include <memory>
@@ -55,6 +55,8 @@ struct MeshMakeData;
 struct MinimapMapblock;
 struct PlayerControl;
 struct PointedThing;
+class RenderSystem;
+class ResourceCache;
 
 namespace con {
 class IConnection;
@@ -430,6 +432,16 @@ public:
 		return m_mesh_grid;
 	}
 
+    RenderSystem *getRenderSystem() const
+    {
+        return m_render_system.get();
+    }
+
+    ResourceCache *getResourceCache() const
+    {
+        return m_resource_cache.get();
+    }
+
 	bool inhibit_inventory_revert = false;
 
 private:
@@ -472,6 +484,8 @@ private:
 	ISoundManager *m_sound;
 	MtEventManager *m_event;
 	RenderingEngine *m_rendering_engine;
+    std::unique_ptr<RenderSystem> m_render_system;
+    std::unique_ptr<ResourceCache> m_resource_cache;
 
 
 	std::unique_ptr<MeshUpdateManager> m_mesh_update_manager;

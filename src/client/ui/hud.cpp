@@ -48,17 +48,10 @@ Hud::Hud(Client *client, LocalPlayer *player,
 	for (auto &hbar_color : hbar_colors)
 		hbar_color = video::SColor(255, 255, 255, 255);
 
-	tsrc = client->getTextureSource();
-
-	v3f crosshair_color = g_settings->getV3F("crosshair_color").value_or(v3f());
-	u32 cross_r = rangelim(myround(crosshair_color.X), 0, 255);
-	u32 cross_g = rangelim(myround(crosshair_color.Y), 0, 255);
-	u32 cross_b = rangelim(myround(crosshair_color.Z), 0, 255);
-	u32 cross_a = rangelim(g_settings->getS32("crosshair_alpha"), 0, 255);
-	crosshair_argb = video::SColor(cross_a, cross_r, cross_g, cross_b);
-
-	use_crosshair_image = tsrc->isKnownSourceImage("crosshair.png");
-	use_object_crosshair_image = tsrc->isKnownSourceImage("object_crosshair.png");
+    v3f cross_color = g_settings->getV3F("crosshair_color").value_or(v3f());
+    crosshair_color = img::color8(img::PF_RGBA8,
+        myround(cross_color.X), myround(cross_color.Y), myround(cross_color.Z),
+        g_settings->getS32("crosshair_alpha"));
 
 	// Prepare mesh for compass drawing
 	m_rotation_mesh_buffer.reset(new scene::SMeshBuffer());
@@ -97,6 +90,18 @@ void Hud::readScalingSetting()
 Hud::~Hud()
 {
 	g_settings->deregisterAllChangedCallbacks(this);
+}
+
+void Hud::clearAll()
+{
+    images.clear();
+    texts.clear();
+    statbars.clear();
+    inventories.clear();
+    waypoints.clear();
+    compasses.clear();
+    minimaps.clear();
+    hotbars.clear();
 }
 
 void Hud::drawItem(const ItemStack &item, const core::rect<s32>& rect,
@@ -264,164 +269,59 @@ bool Hud::hasElementOfType(HudElementType type)
 	return false;
 }
 
-void Hud::updateTextElement(const HudElement *elem, std::optional<u32> n)
+void Hud::updateCrosshair()
 {
-    EnrichedString wtext = getWText(elem);
-    if (!n.has_value()) {
-        texts[texts.size()] = std::make_unique<UITextSprite>(rnd_system->getFontManager(), wtext,
-            rnd_system->getRenderer(), cache);
-        return;
-    }
+    auto update = [this] (img::Image *img) {
+        v2u size = img->getSize();
+        v2u scaled_size = size * std::max(std::floor(rnd_system->getScaleFactor()), 1.0f);
 
-    assert(n < texts.size());
-    UITextSprite *sprite = texts.at(n.value()).get();
+        v2u wnd_size = rnd_system->getWindowSize();
+        rectf r;
+        r.ULC = v2f(wnd_size.X/2.0f - scaled_size.X/2.0f, wnd_size.Y/2.0f - scaled_size.Y/2.0f);
+        r.LRC = r.ULC + v2f(scaled_size.X, scaled_size.Y);
 
-    sprite->setOverrideFont(getTextFont(elem, true));
-    sprite->setText(getWText(elem));
-    sprite->updateBuffer(getTextRect(elem->text, elem, true, true));
-}
-
-void Hud::updateStatbarElement(const HudElement *elem, std::optional<u32> n)
-{
-    assert(n < statbars.size());
-    UISprite *sprite = statbars.at(n.value()).get();
-    sprite->clear();
-
-    const img::color8 color = img::white;
-    const std::array<img::color8, 4> colors = {color, color, color, color};
-
-    auto stat_img = cache->get<img::Image>(ResourceType::IMAGE, elem->text)->data.get();
-    if (!stat_img)
-        return;
-
-    img::Image *stat_img_bg = nullptr;
-    if (!elem->text2.empty())
-        stat_img_bg = cache->get<img::Image>(ResourceType::IMAGE, elem->text2)->data.get();
-
-    rectf stat_img_uvs = guiPool->getTileUV(stat_img);
-    rectf stat_img_bg_uvs = guiPool->getTileUV(stat_img_bg);
-
-    f32 scale_f = rnd_system->getScaleFactor();
-    v2f srcd(stat_img->getSize().X, stat_img->getSize().Y);
-    v2f dstd;
-    if (elem->size.isNull())
-        dstd = srcd * scale_f;
-    else
-        dstd = v2f(elem->size.X, elem->size.Y) * scale_f;
-
-    v2f offset = v2f(elem->offset.X, elem->offset.Y) * scale_f;
-
-    v2u screensize = rnd_system->getWindowSize();
-    v2f pos = v2f(floor(elem->pos.X * (f32)screensize.X + 0.5), floor(elem->pos.Y * (f32)screensize.Y + 0.5));
-    pos += offset;
-
-    v2f steppos;
-    switch (elem->dir) {
-    case HUD_DIR_RIGHT_LEFT:
-        steppos = v2f(-1.0f, 0.0f);
-        break;
-    case HUD_DIR_TOP_BOTTOM:
-        steppos = v2f(0.0f, 1.0f);
-        break;
-    case HUD_DIR_BOTTOM_TOP:
-        steppos = v2f(0.0f, -1.0f);
-        break;
-    default:
-        // From left to right
-        steppos = v2f(1.0f, 0.0f);
-        break;
-    }
-
-    auto calculate_clipping_rect = [] (v2f src, v2f steppos) -> rectf {
-        // Create basic rectangle
-        rectf rect(0, 0,
-            src.X  - std::abs(steppos.X) * src.X / 2,
-            src.Y - std::abs(steppos.Y) * src.Y / 2
-        );
-        // Move rectangle left or down
-        if (steppos.X == -1)
-            rect += v2f(src.X / 2, 0);
-        if (steppos.Y == -1)
-            rect += v2f(0, src.Y / 2);
-        return rect;
+        crosshair->getShape()->updateRectangle(0, r,
+            {crosshair_color, crosshair_color, crosshair_color, crosshair_color});
+        crosshair->updateMesh(true);
+        crosshair->updateMesh(false);
     };
-    // Rectangles for 1/2 the actual value to display
-    rectf srchalfrect, dsthalfrect;
-    // Rectangles for 1/2 the "off state" texture
-    rectf srchalfrect2, dsthalfrect2;
 
-    if (elem->number % 2 == 1 || elem->item % 2 == 1) {
-        // Need to draw halves: Calculate rectangles
-        srchalfrect  = calculate_clipping_rect(srcd, steppos);
-        dsthalfrect  = calculate_clipping_rect(dstd, steppos);
-        srchalfrect2 = calculate_clipping_rect(srcd, steppos * -1);
-        dsthalfrect2 = calculate_clipping_rect(dstd, steppos * -1);
-    }
+    std::string imgname;
+    if (pointing_at_object)
+        imgname = object_crosshair_img;
+    else
+        imgname = crosshair_img;
 
-    steppos.X *= dstd.X;
-    steppos.Y *= dstd.Y;
-
-    // Draw full textures
-    auto shape = sprite->getShape();
-
-    for (u32 i = 0; i < elem->number / 2; i++) {
-        rectf srcrect = stat_img_uvs;
-        rectf dstrect(0, 0, dstd.X, dstd.Y);
-
-        dstrect += pos;
-        shape->addRectangle(dstrect, colors, srcrect);
-
-        pos += steppos;
-    }
-
-    if (elem->number % 2 == 1) {
-        // Draw half a texture
-        shape->addRectangle(dsthalfrect + pos, colors, srchalfrect + stat_img_uvs.ULC);
-
-        if (stat_img_bg && elem->item > elem->number) {
-            shape->addRectangle(dsthalfrect2 + pos, colors, srchalfrect2 + stat_img_bg_uvs.ULC);
-            pos += steppos;
-        }
-    }
-
-    if (stat_img_bg && elem->item > elem->number) {
-        // Draw "off state" textures
-        s32 start_offset;
-        if (elem->number % 2 == 1)
-            start_offset = elem->number / 2 + 1;
-        else
-            start_offset = elem->number / 2;
-        for (u32 i = start_offset; i < elem->item / 2; i++) {
-            rectf srcrect = stat_img_uvs;
-            rectf dstrect(0, 0, dstd.X, dstd.Y);
-
-            dstrect += pos;
-            shape->addRectangle(dstrect, colors, srcrect);
-            pos += steppos;
-        }
-
-        if (elem->item % 2 == 1)
-            shape->addRectangle(dsthalfrect + pos, colors, srchalfrect + stat_img_bg_uvs.ULC);
-    }
-
-    sprite->rebuildMesh();
+    auto img = cache->getOrLoad<img::Image>(ResourceType::IMAGE, imgname)->data.get();
+    update(img);
 }
 
 void Hud::updateHUDElements(const v3s16 &camera_offset)
 {
-    switch(elem->type) {
-    case HUD_ELEM_TEXT: {
-        assert(n < texts.size());
-        UITextSprite *sprite = texts.at(n).get();
+    std::vector<HudElement *> elems(player->maxHudId());
 
-        sprite->setOverrideFont(getTextFont(elem, true));
-        sprite->setText(getWText(elem));
-        sprite->updateBuffer(getTextRect(elem->text, elem, true, true));
+    // Add builtin elements if the server doesn't send them.
+    // Declared here such that they have the same lifetime as the elems vector
+    HudElement minimap;
+     HudElement hotbar;
+    if (client->getProtoVersion() < 44 && (player->hud_flags & HUD_FLAG_MINIMAP_VISIBLE)) {
+        minimap = {HUD_ELEM_MINIMAP, v2f(1, 0), "", v2f(), "", 0 , 0, 0, v2f(-1, 1),
+                v2f(-10, 10), v3f(), v2i(256, 256), 0, "", 0};
+        elems.push_back(&minimap);
     }
-    case HUD_ELEM_STATBAR : {
-
+    if (client->getProtoVersion() < 46 && player->hud_flags & HUD_FLAG_HOTBAR_VISIBLE) {
+        hotbar = {HUD_ELEM_HOTBAR, v2f(0.5, 1), "", v2f(), "", 0 , 0, 0, v2f(0, -1),
+                v2f(0, -4), v3f(), v2i(), 0, "", 0};
+        elems.push_back(&hotbar);
     }
 
+    for (u32 i = 0; i < player->maxHudId(); i++)
+        elems[i] = player->getHud(i);
+
+    std::sort(elems.begin(), elems.end(), [] (const HudElement *elem1, const HudElement *elem2)
+    {
+        return elem1->z_index < elem2->z_index;
+    })
     }
 }
 void Hud::drawLuaElements(const v3s16 &camera_offset)
@@ -663,92 +563,6 @@ void Hud::drawLuaElements(const v3s16 &camera_offset)
 	}
 }
 
-void Hud::applyHUDElemParams(rectf &r, const HudElement *elem,
-    bool scale_factor, std::optional<v2f> override_pos) const
-{
-    v2u screensize = rnd_system->getWindowSize();
-    v2f pos = override_pos.has_value() ? override_pos.value() :
-        v2f(floor(elem->pos.X * (f32)screensize.X + 0.5), floor(elem->pos.Y * (f32)screensize.Y + 0.5));
-
-    f32 scale_f = scale_factor ? rnd_system->getScaleFactor() : 1.0f;
-
-    v2f rSize = r.getSize();
-
-    if (elem->type == HUD_ELEM_TEXT || elem->type == HUD_ELEM_IMAGE) {
-        rSize *= v2f(elem->scale.X * scale_f, elem->scale.Y * scale_f);
-
-        if (elem->type == HUD_ELEM_IMAGE) {
-            if (elem->scale.X < 0)
-                rSize.X = screensize.X * (elem->scale.X * -0.01);
-            if (elem->scale.Y < 0)
-                rSize.Y = screensize.Y * (elem->scale.Y * -0.01);
-        }
-    }
-
-    if (elem->type == HUD_ELEM_COMPASS || elem->type == HUD_ELEM_MINIMAP) {
-        rSize *= v2f(elem->size.X * scale_f, elem->size.Y * scale_f);
-        if (elem->size.X < 0)
-            rSize.X = screensize.X * (elem->size.X * -0.01);
-        if (elem->size.Y < 0)
-            rSize.Y = screensize.Y * (elem->size.Y * -0.01);
-
-        if (rSize.X <= 0 || rSize.Y <= 0)
-            return; // Avoid zero divides
-    }
-
-    v2f offset(elem->offset.X * scale_f, elem->offset.Y * scale_f);
-    v2f alignment((elem->align.X - 1.0f) * (rSize.X / 2.0f), (elem->align.Y - 1.0f) * (rSize.Y / 2.0f));
-
-    r += pos + offset + alignment;
-}
-
-EnrichedString Hud::getWText(const HudElement *elem) const
-{
-    img::color8 color(img::PF_RGBA8, (elem->number >> 16) & 0xFF,
-        (elem->number >> 8)  & 0xFF, (elem->number >> 0)  & 0xFF, 255);
-    return EnrichedString(elem->text, color);
-}
-
-render::TTFont *Hud::getTextFont(const HudElement *elem, bool use_style) const
-{
-    auto font_mgr = rnd_system->getFontManager();
-
-    u32 font_size = font_mgr->getDefaultFontSize(render::FontMode::GRAY);
-
-    if (elem->size.X > 0)
-        font_size *= elem->size.X;
-
-#ifdef __ANDROID__
-    // The text size on Android is not proportional with the actual scaling
-    // FIXME: why do we have such a weird unportable hack??
-    if (font_size > 3 && elem->offset.X < -20)
-        font_size -= 3;
-#endif
-    render::FontStyle style = render::FontStyle::NORMAL;
-
-    if (use_style) {
-        if (elem->style & HUD_STYLE_BOLD)
-            style = render::FontStyle::BOLD;
-        else if (elem->style & HUD_STYLE_ITALIC)
-            style = render::FontStyle::ITALIC;
-    }
-    return font_mgr->getFont(render::FontMode::GRAY, style, font_size);
-}
-
-rectf Hud::getTextRect(const std::string &text, const HudElement *elem, bool use_style,
-    bool scale_factor, std::optional<v2f> override_pos) const
-{
-    auto textfont = getTextFont(elem, use_style);
-    EnrichedString wtext = getWText(elem);
-
-    v2u text_size = textfont->getTextSize(wtext.getString());
-    rectf text_r(0.0f, 0.0f, text_size.X, text_size.Y);
-
-    applyHUDElemParams(text_r, elem, scale_factor, override_pos);
-
-    return text_r;
-}
-
 void Hud::drawCompassTranslate(HudElement *e, video::ITexture *texture,
 		const core::rect<s32> &rect, int angle)
 {
@@ -818,139 +632,6 @@ void Hud::drawCompassRotate(HudElement *e, video::ITexture *texture,
 	driver->setViewPort(oldViewPort);
 }
 
-void Hud::drawStatbar(v2s32 pos, u16 corner, u16 drawdir,
-		const std::string &texture, const std::string &bgtexture,
-		s32 count, s32 maxcount, v2s32 offset, v2s32 size)
-{
-	const video::SColor color(255, 255, 255, 255);
-	const video::SColor colors[] = {color, color, color, color};
-
-	video::ITexture *stat_texture = tsrc->getTexture(texture);
-	if (!stat_texture)
-		return;
-
-	video::ITexture *stat_texture_bg = nullptr;
-	if (!bgtexture.empty()) {
-		stat_texture_bg = tsrc->getTexture(bgtexture);
-	}
-
-	core::dimension2di srcd(stat_texture->getOriginalSize());
-	core::dimension2di dstd;
-	if (size == v2s32()) {
-		dstd = srcd;
-		dstd.Height *= m_scale_factor;
-		dstd.Width  *= m_scale_factor;
-		offset.X *= m_scale_factor;
-		offset.Y *= m_scale_factor;
-	} else {
-		dstd.Height = size.Y * m_scale_factor;
-		dstd.Width  = size.X * m_scale_factor;
-		offset.X *= m_scale_factor;
-		offset.Y *= m_scale_factor;
-	}
-
-	v2s32 p = pos;
-	if (corner & HUD_CORNER_LOWER)
-		p -= dstd.Height;
-
-	p += offset;
-
-	v2s32 steppos;
-	switch (drawdir) {
-		case HUD_DIR_RIGHT_LEFT:
-			steppos = v2s32(-1, 0);
-			break;
-		case HUD_DIR_TOP_BOTTOM:
-			steppos = v2s32(0, 1);
-			break;
-		case HUD_DIR_BOTTOM_TOP:
-			steppos = v2s32(0, -1);
-			break;
-		default:
-			// From left to right
-			steppos = v2s32(1, 0);
-			break;
-	}
-
-	auto calculate_clipping_rect = [] (core::dimension2di src,
-			v2s32 steppos) -> core::rect<s32> {
-
-		// Create basic rectangle
-		core::rect<s32> rect(0, 0,
-			src.Width  - std::abs(steppos.X) * src.Width / 2,
-			src.Height - std::abs(steppos.Y) * src.Height / 2
-		);
-		// Move rectangle left or down
-		if (steppos.X == -1)
-			rect += v2s32(src.Width / 2, 0);
-		if (steppos.Y == -1)
-			rect += v2s32(0, src.Height / 2);
-		return rect;
-	};
-	// Rectangles for 1/2 the actual value to display
-	core::rect<s32> srchalfrect, dsthalfrect;
-	// Rectangles for 1/2 the "off state" texture
-	core::rect<s32> srchalfrect2, dsthalfrect2;
-
-	if (count % 2 == 1 || maxcount % 2 == 1) {
-		// Need to draw halves: Calculate rectangles
-		srchalfrect  = calculate_clipping_rect(srcd, steppos);
-		dsthalfrect  = calculate_clipping_rect(dstd, steppos);
-		srchalfrect2 = calculate_clipping_rect(srcd, steppos * -1);
-		dsthalfrect2 = calculate_clipping_rect(dstd, steppos * -1);
-	}
-
-	steppos.X *= dstd.Width;
-	steppos.Y *= dstd.Height;
-
-	// Draw full textures
-	for (s32 i = 0; i < count / 2; i++) {
-		core::rect<s32> srcrect(0, 0, srcd.Width, srcd.Height);
-		core::rect<s32> dstrect(0, 0, dstd.Width, dstd.Height);
-
-		dstrect += p;
-		draw2DImageFilterScaled(driver, stat_texture,
-			dstrect, srcrect, NULL, colors, true);
-		p += steppos;
-	}
-
-	if (count % 2 == 1) {
-		// Draw half a texture
-		draw2DImageFilterScaled(driver, stat_texture,
-			dsthalfrect + p, srchalfrect, NULL, colors, true);
-
-		if (stat_texture_bg && maxcount > count) {
-			draw2DImageFilterScaled(driver, stat_texture_bg,
-					dsthalfrect2 + p, srchalfrect2,
-					NULL, colors, true);
-			p += steppos;
-		}
-	}
-
-	if (stat_texture_bg && maxcount > count) {
-		// Draw "off state" textures
-		s32 start_offset;
-		if (count % 2 == 1)
-			start_offset = count / 2 + 1;
-		else
-			start_offset = count / 2;
-		for (s32 i = start_offset; i < maxcount / 2; i++) {
-			core::rect<s32> srcrect(0, 0, srcd.Width, srcd.Height);
-			core::rect<s32> dstrect(0, 0, dstd.Width, dstd.Height);
-
-			dstrect += p;
-			draw2DImageFilterScaled(driver, stat_texture_bg,
-					dstrect, srcrect,
-					NULL, colors, true);
-			p += steppos;
-		}
-
-		if (maxcount % 2 == 1) {
-			draw2DImageFilterScaled(driver, stat_texture_bg,
-				dsthalfrect + p, srchalfrect, NULL, colors, true);
-		}
-	}
-}
 void Hud::drawHotbar(const v2s32 &pos, const v2f &offset, u16 dir, const v2f &align)
 {
 	if (g_touchcontrols)

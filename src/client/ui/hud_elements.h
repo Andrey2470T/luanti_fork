@@ -1,35 +1,108 @@
 #pragma once
 
-#include "sprite.h"
+#include "text_sprite.h"
 #include "client/player/localplayer.h"
+#include "../hud.h"
+#include <Render/TTFont.h>
 
-class LocalPlayer;
-class HudElement;
+struct HudElement;
+class UITextSprite;
 class RenderSystem;
+class FontManager;
+
+void calcHudRect(RenderSystem *rnd_system, rectf &r, const HudElement *elem,
+    bool scale_factor, std::optional<v2f> override_pos=std::nullopt);
+
+EnrichedString getHudWText(const HudElement *elem);
+render::TTFont *getHudTextFont(FontManager *font_mgr, const HudElement *elem, bool use_style);
+
+rectf getHudTextRect(RenderSystem *rnd_system, const std::string &text, const HudElement *elem, bool use_style,
+    bool scale_factor, std::optional<v2f> override_pos=std::nullopt);
+rectf getHudImageRect(ResourceCache *cache, RenderSystem *rnd_system, const std::string &imgname, const HudElement *elem,
+    bool scale_factor, std::optional<v2f> override_pos=std::nullopt);
+
+class HudSprite
+{
+protected:
+    ResourceCache *cache;
+    RenderSystem *rnd_system;
+
+    const HudElement *elem;
+public:
+    HudSprite(ResourceCache *_cache, RenderSystem *_rnd_system, const HudElement *_elem)
+        : cache(_cache), rnd_system(_rnd_system), elem(_elem)
+    {}
+    virtual ~HudSprite() = default;
+
+    HudElementType getType() const
+    {
+        return elem->type;
+    }
+
+    s16 getZIndex() const
+    {
+        return elem->z_index;
+    }
+
+    virtual void update() = 0;
+    virtual void draw() = 0;
+};
+
+class HudText : public HudSprite
+{
+    std::unique_ptr<UITextSprite> text;
+public:
+    HudText(Client *client, const HudElement *elem);
+
+    void update() override;
+    void draw() override
+    {
+        text->draw();
+    }
+};
+
+class HudStatbar : public HudSprite
+{
+    std::unique_ptr<UISprite> bar;
+public:
+    HudStatbar(Client *client, const HudElement *elem);
+
+    void update() override;
+    void draw() override
+    {
+        bar->draw();
+    }
+};
 
 // Renders an arbitrary sprite projecting it onto the screen
 // If this sprite is a distance text, then displaying the current distance from the local player before it (but not mandatorily)
-class Waypoint
+class HudWaypoint : public HudSprite
 {
-    LocalPlayer *player;
+    Client *client;
+    std::unique_ptr<UISpriteBank> faceBank;
 
-    HudElement *hudelem;
-
-    std::unique_ptr<UISprite> sprite;
-    std::optional<u8> distance_text_i;
-
-    bool image_waypoint;
+    bool image;
 public:
-    Waypoint(LocalPlayer *_player, UISprite *_sprite, bool _image_waypoint, std::optional<u8> _distance_text_i)
-        : player(_player), sprite(std::unique_ptr<UISprite>(_sprite)),
-        distance_text_i(_distance_text_i), image_waypoint(_image_waypoint)
-    {}
+    HudWaypoint(Client *_client, const HudElement *elem, UISpriteBank *bank);
 
-    void update(Client *client, const v3s16 &camera_offset);
-    void draw()
+    void update() override;
+    void draw() override
     {
-        sprite->draw();
+        faceBank->drawBank();
     }
 private:
-    bool calculateScreenPos(RenderSystem *system, const v3s16 &camera_offset, v2i *pos);
+    bool calculateScreenPos(v2f *pos);
+};
+
+class HudImage : public HudSprite
+{
+    std::unique_ptr<UISprite> image;
+public:
+    HudImage(Client *client, const HudElement *elem);
+
+    void update() override;
+    void draw() override
+    {
+        image->draw();
+    }
 };

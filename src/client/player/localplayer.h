@@ -100,7 +100,7 @@ public:
 	std::string hotbar_image = "";
 	std::string hotbar_selected_image = "";
 
-    img::color8 light_color = img::color8(img::PF_RGBA8, 255, 255, 255, 255);
+    img::color8 light_color = img::white;
 
 	float hurt_tilt_timer = 0.0f;
 	float hurt_tilt_strength = 0.0f;

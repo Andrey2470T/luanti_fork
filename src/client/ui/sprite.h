@@ -317,7 +317,7 @@ public:
         for (auto &sprite : sprites)
             sprite->draw();
     }
+    void alignSpritesByCenter();
 private:
     void shiftRectByLastSprite(rectf &r, u8 shift);
-    void alignSpritesByCenter();
 };

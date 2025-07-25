@@ -10,6 +10,7 @@
 #include <Render/Texture2D.h>
 #include <Utils/AABB.h>
 #include "../hud.h"
+#include "hud_elements.h"
 
 class Client;
 class RenderSystem;
@@ -19,35 +20,43 @@ class InventoryList;
 class LocalPlayer;
 struct ItemStack;
 class UISprite;
-class UITextSprite;
-class UIInvList;
-class Waypoint;
-class Minimap;
-class UIHotbar;
 class EnrichedString;
 class AtlasPool;
 
+class HudSprite;
+
 class Hud
 {
-#define UP std::unique_ptr
-
 	Client *client = nullptr;
 	RenderSystem *rnd_system;
 	LocalPlayer *player = nullptr;
 	Inventory *inventory = nullptr;
 	ResourceCache *cache = nullptr;
-	
-    UP<UISprite> crosshair;
-	std::map<u32, UP<UISprite>> images;
+
+    // Crosshair is not controlled by mods yet
+    std::unique_ptr<UISprite> crosshair;
+
+    class HudSpriteSorter
+    {
+    public:
+        HudSpriteSorter() = default;
+
+        bool operator()(const std::unique_ptr<HudSprite> &s1, const std::unique_ptr<HudSprite> &s2)
+        {
+            return s1->getZIndex() < s2->getZIndex();
+        }
+    };
+
+    std::map<u32, std::unique_ptr<HudSprite>, HudSpriteSorter> hudsprites;
+    /*std::map<u32, UP<UISprite>> images;
 	std::map<u32, UP<UITextSprite>> texts;
 	std::map<u32, UP<UISprite>> statbars;
 	std::map<u32, UP<UIInvList>> inventories;
     std::map<u32, UP<Waypoint>> waypoints;
     std::map<u32, UP<UISprite>> compasses;
 	std::map<u32, UP<Minimap>> minimaps;
-	std::map<u32, UP<UIHotbar>> hotbars;
+    std::map<u32, UP<UIHotbar>> hotbars;*/
 
-    AtlasPool *guiPool;
 	v3s16 camera_offset;
 	s32 hotbar_imagesize; // Takes hud_scaling into account, updated by resizeHotbar()
 	s32 padding; // Takes hud_scaling into account, updated by resizeHotbar()
@@ -56,10 +65,12 @@ class Hud
 	std::unique_ptr<MeshBuffer> rotation_mesh_buffer;
 	
 public:
-	img::color8 crosshair_argb;
+    // Crosshair
+    img::color8 crosshair_color;
+    const std::string crosshair_img = "crosshair.png";
+    const std::string object_crosshair_img = "object_crosshair.png";
+    bool pointing_at_object;
 
-	bool use_crosshair_image = false;
-	bool use_object_crosshair_image = false;
 	std::string hotbar_image = "";
 	bool use_hotbar_image = false;
 	std::string hotbar_selected_image = "";
@@ -70,31 +81,22 @@ public:
 	void readScalingSetting();
 	~Hud();
 
+    void clearAll();
+
 	void drawHotbar(const v2i &pos, const v2f &offset, u16 direction, const v2f &align);
 	void resizeHotbar();
 	void drawCrosshair();
 
 	bool hasElementOfType(HudElementType type);
 
-    void updateTextElement(const HudElement *elem, std::optional<u32> n=std::nullopt);
-    void updateStatbarElement(const HudElement *elem, std::optional<u32> n=std::nullopt);
-    void updateHUDElements(const v3s16 &camera_offset);
-	void drawLuaElements(const v3s16 &camera_offset);
+    void updateCrosshair();
+
+    void addHUDElement(const HudElement *elem, const v3s16 &camera_offset);
+    void removeHUDElement(const HudElement *elem);
+    void updateHUDElement(const HudElement *elem, const v3s16 &camera_offset);
+    //void drawLuaElements(const v3s16 &camera_offset);
 
 private:
-    void applyHUDElemParams(rectf &r, const HudElement *elem,
-        bool scale_factor, std::optional<v2f> override_pos=std::nullopt) const;
-
-    EnrichedString getWText(const HudElement *elem) const;
-    render::TTFont *getTextFont(const HudElement *elem, bool use_style) const;
-
-    rectf getTextRect(const std::string &text, const HudElement *elem, bool use_style,
-        bool scale_factor, std::optional<v2f> override_pos=std::nullopt) const;
-
-	void drawStatbar(v2i pos, u16 corner, u16 drawdir,
-			const std::string &texture, const std::string& bgtexture,
-			s32 count, s32 maxcount, v2i offset, v2i size = v2i());
-
 	void drawItems(v2i screen_pos, v2i screen_offset, s32 itemcount, v2f alignment,
 			s32 inv_offset, InventoryList *mainlist, u16 selectitem,
 			u16 direction, bool is_hotbar);
