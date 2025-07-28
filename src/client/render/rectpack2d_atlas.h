@@ -29,10 +29,16 @@ class Rectpack2DAtlas : public Atlas
     u32 maxSize;
     u32 actualSize;
 
+    ResourceCache *cache;
+    u32 frameThickness;
+
+    bool mipMaps;
+    bool filtering;
+
     std::vector<rectu> freeSpaces; // used for the manual per-a-tile packing
 public:
-    Rectpack2DAtlas(const std::string &name, u32 num, u32 maxTextureSize, img::Image *img, bool hasMips);
-    Rectpack2DAtlas(const std::string &name, u32 num, u32 maxTextureSize, bool hasMips,
+    Rectpack2DAtlas(ResourceCache *_cache, const std::string &name, u32 num, u32 maxTextureSize, img::Image *img, bool hasMips);
+    Rectpack2DAtlas(ResourceCache *_cache,const std::string &name, u32 num, u32 maxTextureSize, bool hasMips,
         const std::vector<img::Image *> &images, const std::unordered_map<u32, std::pair<u32, u32>> &animatedImages, u32 &start_i);
 
     void packTiles() override;
@@ -41,4 +47,6 @@ public:
     void updateAnimatedTiles(f32 time);
 private:
     void splitToTwoSubAreas(rectu area, rectu r, std::vector<rectu> &newFreeSpaces);
+
+    void recreateImageWithFrame(img::Image **img);
 };

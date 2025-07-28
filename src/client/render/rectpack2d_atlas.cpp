@@ -1,5 +1,7 @@
 #include "rectpack2d_atlas.h"
 #include "renderer.h"
+#include "settings.h"
+#include "client/media/resource.h"
 
 using empty_rects = empty_spaces<false>;
 
@@ -21,9 +23,18 @@ void AnimatedAtlasTile::updateFrame(f32 time)
     cur_frame = (u32)(time * 1000 / frame_length_ms) % frame_count;
 }
 
-Rectpack2DAtlas::Rectpack2DAtlas(const std::string &name, u32 num, u32 maxTextureSize, img::Image *img, bool hasMips)
-    : Atlas(), maxSize(std::max(img->getClipSize().X, img->getClipSize().Y))
+Rectpack2DAtlas::Rectpack2DAtlas(ResourceCache *_cache, const std::string &name, u32 num, u32 maxTextureSize, img::Image *img, bool hasMips)
+    : Atlas(), maxSize(std::max(img->getClipSize().X, img->getClipSize().Y)), cache(_cache)
 {
+    mipMaps = hasMips && g_settings->getBool("mip_map");
+    filtering = hasMips && (g_settings->getBool("bilinear_filter") ||
+        g_settings->getBool("trilinear_filter") || g_settings->getBool("anisotropic_filter"));
+
+    u8 maxMipLevel = mipMaps ? (u8)std::ceil(std::log2((f32)std::max(img->getWidth(), img->getHeight()))) : 0;
+    frameThickness = maxMipLevel + 4;
+
+    if (filtering)
+        recreateImageWithFrame(&img);
     AtlasTile *tile = new AtlasTile(img, num);
     bool added = addTile(tile);
 
@@ -35,19 +46,34 @@ Rectpack2DAtlas::Rectpack2DAtlas(const std::string &name, u32 num, u32 maxTextur
 
     splitToTwoSubAreas(rectu(0, 0, actualSize, actualSize), rectu(v2u(), tile->size), freeSpaces);
 
-    u8 maxMipLevel = hasMips ? (u8)std::ceil(std::log2((f32)actualSize)) : 0;
     createTexture(name, num, actualSize, maxMipLevel);
 }
 
-Rectpack2DAtlas::Rectpack2DAtlas(const std::string &name, u32 num, u32 maxTextureSize, bool hasMips,
+Rectpack2DAtlas::Rectpack2DAtlas(ResourceCache *_cache, const std::string &name, u32 num, u32 maxTextureSize, bool hasMips,
         const std::vector<img::Image *> &images, const std::unordered_map<u32, std::pair<u32, u32> > &animatedImages, u32 &start_i)
-    : Atlas(), maxSize(maxTextureSize)
+    : Atlas(), maxSize(maxTextureSize), cache(_cache)
 {
+    mipMaps = hasMips && g_settings->getBool("mip_map");
+    filtering = hasMips && (g_settings->getBool("bilinear_filter") ||
+                            g_settings->getBool("trilinear_filter") || g_settings->getBool("anisotropic_filter"));
+
+    u32 minImgSize = std::max(images.at(0)->getWidth(), images.at(0)->getHeight());
+    for (u32 i = start_i; i < images.size(); i++) {
+        u32 curImgSize = std::max(images.at(i)->getWidth(), images.at(i)->getHeight());
+        minImgSize = std::min(minImgSize, curImgSize);
+    }
+
+    u8 maxMipLevel = mipMaps ? (u8)std::ceil(std::log2((f32)minImgSize)) : 0;
+    frameThickness = maxMipLevel + 4;
+
     u32 atlasArea = 0;
     u32 maxArea = maxSize * maxSize;
 
     for (; start_i < images.size(); start_i++) {
         auto tileImg = images.at(start_i);
+
+        if (filtering)
+            recreateImageWithFrame(&tileImg);
         v2u size = tileImg->getClipSize();
         u32 tileArea = size.X * size.Y;
 
@@ -74,7 +100,6 @@ Rectpack2DAtlas::Rectpack2DAtlas(const std::string &name, u32 num, u32 maxTextur
     actualSize = std::pow(2u, (u32)std::ceil(std::log2(std::sqrt((f32)atlasArea))));
     packTiles();
 
-    u8 maxMipLevel = hasMips ? (u8)std::ceil(std::log2((f32)actualSize)) : 0;
     createTexture(name, num, actualSize, maxMipLevel);
     drawTiles();
 }
@@ -205,4 +230,56 @@ void Rectpack2DAtlas::splitToTwoSubAreas(rectu area, rectu r, std::vector<rectu>
 
     newFreeSpaces.emplace_back(area.ULC.X, area.ULC.Y-r_h, area.LRC.X, area.LRC.Y);
     newFreeSpaces.emplace_back(area.ULC.X+r_w, area.ULC.Y, area.LRC.X, area.ULC.Y-r_h);
+}
+
+void Rectpack2DAtlas::recreateImageWithFrame(img::Image **img)
+{
+    // Download the pixel data of the tile from GPU into IImage
+    v2u old_size = (*img)->getSize();
+    img::PixelFormat format = (*img)->getFormat();
+
+    v2u new_size(
+        old_size.X + 2 * frameThickness,
+        old_size.Y + 2 * frameThickness
+    );
+
+    // Create the increased image from the previous IImage with a pixel frame of the certain thickness
+    img::Image *ext_img = new img::Image(format, new_size.X, new_size.Y);
+
+    v2i img_offset(frameThickness, frameThickness);
+    rectu ext_img_rect(
+        img_offset.X, img_offset.Y,
+        img_offset.X + old_size.X, img_offset.Y + old_size.Y);
+    g_imgmodifier->copyTo(*img, ext_img, nullptr, &ext_img_rect);
+
+    std::array<v2i, 4> offset_dirs = {
+        v2i(-1, 0),
+        v2i(0, 1),
+        v2i(1, 0),
+        v2i(0, -1)
+    };
+
+    std::array<v2i, 4> start_offsets = {
+        img_offset,
+        img_offset + v2i(0, old_size.Y-1),
+        img_offset + v2i(old_size.X-1, 0),
+        img_offset
+    };
+
+    std::array<rectu, 4> pixel_sides = {
+        rectu(v2u(0, 0), v2u(1, old_size.Y)),	// Left
+        rectu(v2u(0, old_size.Y-1), v2u(old_size.X, old_size.Y)),	// Top
+        rectu(v2u(old_size.X-1, 0), v2u(old_size.X, old_size.Y)),	// Right
+        rectu(v2u(0, 0), v2u(old_size.X, 1))		// Bottom
+    };
+    // Draw the pixel stripes at each side with 'offset' thickness
+    //img->copyTo(ext_img, v2s32(10, 6), core::recti(v2s32(0, 0), v2s32(0, old_size.Height)));
+    for (u8 side = 0; side < 4; side++)
+        for (u32 offset = 1; offset <= frameThickness; offset++) {
+            rectu offset_r(start_offsets[side] + offset_dirs[side] * offset, pixel_sides[side].getSize());
+            g_imgmodifier->copyTo(*img, ext_img, pixel_sides[side], offset_r);
+        }
+
+    cache->cacheResource<img::Image>(ResourceType::IMAGE, ext_img);
+    *img = ext_img;
 }
