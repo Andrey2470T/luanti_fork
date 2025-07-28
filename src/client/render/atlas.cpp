@@ -121,7 +121,7 @@ Atlas *AtlasPool::getAtlas(u32 i) const
     return atlases.at(i);
 }
 
-Atlas *AtlasPool::getAtlasByTile(const img::Image *tile) const
+Atlas *AtlasPool::getAtlasByTile(img::Image *tile, bool force_add)
 {
     for (u32 i = 0; i < atlases.size(); i++) {
         auto atlas = atlases.at(i);
@@ -133,6 +133,10 @@ Atlas *AtlasPool::getAtlasByTile(const img::Image *tile) const
         }
     }
 
+    if (force_add) {
+        forceAddTile(tile);
+        return atlases.back();
+    }
     return nullptr;
 }
 
@@ -170,7 +174,7 @@ img::Image *AtlasPool::addAnimatedTile(const std::string &name, u32 length, u32 
     return img;
 }
 
-rectf AtlasPool::getTileUV(const img::Image *tile) const
+rectf AtlasPool::getTileUV(img::Image *tile, bool force_add)
 {
     if (type != AtlasType::RECTPACK2D)
         return rectf();
@@ -186,11 +190,18 @@ rectf AtlasPool::getTileUV(const img::Image *tile) const
             return atlasTile->toUV(atlas->getTextureSize());
         }
     }
+
+    if (force_add) {
+        forceAddTile(tile);
+        auto lastAtlas = atlases.back();
+        return lastAtlas->getTile(lastAtlas->getTilesCount()-1)->toUV(lastAtlas->getTextureSize());
+    }
+    return rectf();
 }
 
 void AtlasPool::buildRectpack2DAtlas()
 {
-    if (type != AtlasType::RECTPACK2D)
+    if (type != AtlasType::RECTPACK2D || images.empty())
         return;
 
     static u32 atlasNum = 0;
@@ -234,5 +245,21 @@ void AtlasPool::updateAnimatedTiles(f32 time)
     for (u32 i = 0; i < atlases.size(); i++) {
         auto atlas = dynamic_cast<Rectpack2DAtlas*>(atlases.at(i));
         atlas->updateAnimatedTiles(time);
+    }
+}
+
+void AtlasPool::forceAddTile(img::Image *img)
+{
+    if (type == AtlasType::RECTPACK2D) {
+        auto rectpackAtlas = dynamic_cast<Rectpack2DAtlas *>(atlases.back());
+        u32 lastAtlasN = atlases.size()-1;
+
+        if (!rectpackAtlas->packSingleTile(img, lastAtlasN)) {
+            Rectpack2DAtlas *atlas = new Rectpack2DAtlas(prefixName, lastAtlasN+1, maxTextureSize, img, hasMips);
+            cache->cacheResource<Atlas>(ResourceType::ATLAS, atlas);
+
+            atlases.push_back(atlas);
+        }
+
     }
 }

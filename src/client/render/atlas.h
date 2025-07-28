@@ -119,7 +119,7 @@ public:
     ~AtlasPool();
 
     Atlas *getAtlas(u32 i) const;
-    Atlas *getAtlasByTile(const img::Image *tile) const;
+    Atlas *getAtlasByTile(img::Image *tile, bool force_add=false);
 
     u32 getAtlasCount() const
     {
@@ -129,11 +129,13 @@ public:
     img::Image *addTile(const std::string &name);
     img::Image *addAnimatedTile(const std::string &name, u32 length, u32 count);
 
-    rectf getTileUV(const img::Image *tile) const;
+    rectf getTileUV(img::Image *tile, bool force_add=false);
 
     // Recursively create and fill new atlases with tiles while the internal image counter doesn't reach some limit
     void buildRectpack2DAtlas();
     void buildGlyphAtlas(render::TTFont *ttfont);
 
     void updateAnimatedTiles(f32 time);
+private:
+    void forceAddTile(img::Image *img);
 };

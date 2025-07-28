@@ -1,4 +1,5 @@
 #include "rectpack2d_atlas.h"
+#include "renderer.h"
 
 using empty_rects = empty_spaces<false>;
 
@@ -18,6 +19,24 @@ rectu AnimatedAtlasTile::getFrameCoords(u32 frame_num) const
 void AnimatedAtlasTile::updateFrame(f32 time)
 {
     cur_frame = (u32)(time * 1000 / frame_length_ms) % frame_count;
+}
+
+Rectpack2DAtlas::Rectpack2DAtlas(const std::string &name, u32 num, u32 maxTextureSize, img::Image *img, bool hasMips)
+    : Atlas(), maxSize(std::max(img->getClipSize().X, img->getClipSize().Y))
+{
+    AtlasTile *tile = new AtlasTile(img, num);
+    bool added = addTile(tile);
+
+    if (!added)
+        return;
+
+    tile->pos = v2u();
+    actualSize = std::max(tile->size.X, tile->size.Y);
+
+    splitToTwoSubAreas(rectu(0, 0, actualSize, actualSize), rectu(v2u(), tile->size), freeSpaces);
+
+    u8 maxMipLevel = hasMips ? (u8)std::ceil(std::log2((f32)actualSize)) : 0;
+    createTexture(name, num, actualSize, maxMipLevel);
 }
 
 Rectpack2DAtlas::Rectpack2DAtlas(const std::string &name, u32 num, u32 maxTextureSize, bool hasMips,
@@ -83,6 +102,53 @@ void Rectpack2DAtlas::packTiles()
     rects.clear();
 }
 
+bool Rectpack2DAtlas::packSingleTile(img::Image *img, u32 num)
+{
+    AtlasTile *newTile = new AtlasTile(img, num);
+
+    // At first try to place the tile in one of the free spaces
+    bool packed = false;
+
+    rectu tileRect(0, 0, newTile->size.X, newTile->size.Y);
+    std::vector<rectu> newFreeSpaces;
+    for (auto &space : freeSpaces) {
+        tileRect.ULC = space.ULC;
+        if (canFit(space, tileRect)) {
+            newTile->pos = space.ULC;
+            splitToTwoSubAreas(space, tileRect, newFreeSpaces);
+            packed = true;
+        }
+        else
+            newFreeSpaces.emplace_back(space);
+    }
+
+    freeSpaces = newFreeSpaces;
+
+    // If couldn't pack, try to increase the atlas size
+    if (!packed) {
+        u32 newAtlasSize = std::pow(2u, (u32)std::ceil(std::log2(std::sqrt((f32)(getTextureSize() + newTile->size.Y)))));
+
+        if (newAtlasSize > maxSize)
+            return false;
+
+        getTexture()->resize(newAtlasSize, newAtlasSize, g_imgmodifier);
+
+        newTile->pos = v2u(0, newAtlasSize);
+        rectu upper_space(0, newAtlasSize, newAtlasSize, newAtlasSize-newTile->size.Y);
+        rectu right_space(actualSize, newAtlasSize-newTile->size.Y, newAtlasSize, 0);
+        freeSpaces.push_back(upper_space);
+        freeSpaces.push_back(right_space);
+
+        actualSize = newAtlasSize;
+    }
+
+    bool added = addTile(newTile);
+    if (!added)
+        return false;
+
+    return true;
+}
+
 void Rectpack2DAtlas::updateAnimatedTiles(f32 time)
 {
     if (animatedTiles.empty())
@@ -115,4 +181,28 @@ void Rectpack2DAtlas::updateAnimatedTiles(f32 time)
 
     if (animationsUpdated)
         drawTiles();
+}
+
+void Rectpack2DAtlas::splitToTwoSubAreas(rectu area, rectu r, std::vector<rectu> &newFreeSpaces)
+{
+    if (area.getSize() == r.getSize())
+        return;
+
+    u32 area_w = area.getWidth();
+    u32 area_h = area.getHeight();
+    u32 r_w = r.getWidth();
+    u32 r_h = r.getHeight();
+
+    if (area_w == r_w) {
+        newFreeSpaces.emplace_back(area.ULC.X, area.ULC.Y-r_h, area.LRC.X, area.LRC.Y);
+        return;
+    }
+
+    if (area_h == r_h) {
+        newFreeSpaces.emplace_back(area.ULC.X+r_w, area.ULC.Y, area.LRC.X, area.LRC.Y);
+        return;
+    }
+
+    newFreeSpaces.emplace_back(area.ULC.X, area.ULC.Y-r_h, area.LRC.X, area.LRC.Y);
+    newFreeSpaces.emplace_back(area.ULC.X+r_w, area.ULC.Y, area.LRC.X, area.ULC.Y-r_h);
 }
