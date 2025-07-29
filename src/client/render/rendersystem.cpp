@@ -22,7 +22,7 @@ RenderSystem::RenderSystem(Client *_client, ResourceCache *_cache, MyEventReceiv
     v2u viewport = window->getViewportSize();
     auto glParams = window->getGLParams();
     renderer = std::make_unique<Renderer>(cache, recti(0, 0, viewport.X, viewport.Y), glParams.maxTextureUnits);
-    load_screen = std::make_unique<LoadScreen>(cache, renderer.get(), fmgr);
+    load_screen = std::make_unique<LoadScreen>(cache, this, fmgr);
     pp_factory = std::make_unique<PipelineFactory>(this, g_settings->getBool("enable_dynamic_shadows"));
 
     basePool = std::make_unique<AtlasPool>(AtlasType::RECTPACK2D, "Basic", cache, glParams.maxTextureSize, true);
@@ -50,7 +50,7 @@ AtlasPool *RenderSystem::getPool(bool basic) const
 void RenderSystem::setWindowIcon()
 {
     fs::path icon_path = porting::path_share + "/textures/base/pack/logo.png";
-    img::Image *icon = cache->getOrLoad<img::Image>(ResourceType::IMAGE, icon_path.string())->data.get();
+    img::Image *icon = cache->get<img::Image>(ResourceType::IMAGE, icon_path.string());
 
     if (!icon) {
         warningstream << "RenderSystem::setWindowIcon(): Could not load the window icon:" << icon_path << std::endl;

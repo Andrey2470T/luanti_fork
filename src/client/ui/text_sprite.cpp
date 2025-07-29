@@ -288,7 +288,7 @@ void UITextSprite::updateBuffer(rectf &&r)
 
                     const u32 current_color = iter - utext.begin();
                     fallback->draw(std::wstring(l1),
-                                   recti({offset.X-1, offset.Y-1}, position.LowerRightCorner), // ???
+                                   recti({offset.X-1, offset.Y-1}, position.LRC), // ???
                                    current_color < colors.size() ? colors[current_color] : img::color8(255, 255, 255, 255),
                                    false, false, clip);
                 }

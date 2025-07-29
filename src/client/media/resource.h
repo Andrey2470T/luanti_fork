@@ -42,9 +42,9 @@ public:
     ResourceSubCache(const std::vector<std::string> &_defpaths, const std::function<std::string(std::string)> &_findPathCallback,
         const std::function<T*(const std::string &)> &_loadCallback);
 
-    ResourceInfo<T> *get(const std::string &name);
-    ResourceInfo<T> *getByID(u32 id);
-    ResourceInfo<T> *getOrLoad(const std::string &name);
+    T *get(const std::string &name);
+    T *getByID(u32 id);
+    T *getOrLoad(const std::string &name);
     u32 cacheResource(T *res, const std::string &name="");
     void clearResource(u32 id);
     void clearResource(T *res);
@@ -74,11 +74,11 @@ public:
     ResourceCache(main::OpenGLVersion version);
 
     template <class T>
-    ResourceInfo<T> *get(ResourceType _type, const std::string &_name);
+    T *get(ResourceType _type, const std::string &_name);
     template <class T>
-    ResourceInfo<T> *getByID(ResourceType _type, u32 _id);
+    T *getByID(ResourceType _type, u32 _id);
     template<class T>
-    ResourceInfo<T> *getOrLoad(ResourceType _type, const std::string &_name);
+    T *getOrLoad(ResourceType _type, const std::string &_name);
 
     template<class T>
     u32 cacheResource(ResourceType _type, T *res, const std::string &name="");
@@ -99,7 +99,7 @@ ResourceSubCache<T>::ResourceSubCache(
 {}
 
 template<class T>
-ResourceInfo<T> *ResourceSubCache<T>::get(const std::string &name)
+T *ResourceSubCache<T>::get(const std::string &name)
 {
     auto it = std::find(cache.begin(), cache.end(), [name] (const std::unique_ptr<ResourceInfo<T>> &elem)
     {
@@ -109,22 +109,22 @@ ResourceInfo<T> *ResourceSubCache<T>::get(const std::string &name)
     if (it == cache.end())
         return nullptr;
 
-    return it->get();
+    return it->get()->data.get();
 }
 
 template<class T>
-ResourceInfo<T> *ResourceSubCache<T>::getByID(u32 _id)
+T *ResourceSubCache<T>::getByID(u32 _id)
 {
     if (_id > cache.size()-1) {
         infostream << "ResourceSubCache<T>::getByID(): Resource ID " << _id << " is out of range" << std::endl;
         return nullptr;
     }
 
-    return cache.at(_id).get();
+    return cache.at(_id).get()->data.get();
 }
 
 template<class T>
-ResourceInfo<T> *ResourceSubCache<T>::getOrLoad(const std::string &name)
+T *ResourceSubCache<T>::getOrLoad(const std::string &name)
 {
     auto *cachedRes = get(name);
 
@@ -133,7 +133,7 @@ ResourceInfo<T> *ResourceSubCache<T>::getOrLoad(const std::string &name)
 
     if (!findPathCallback) {
     	infostream << "ResourceSubCache<T>::getOrLoad(): No finding path callback provided" << std::endl;
-        return;
+        return nullptr;
     }
     std::string target_path = findPathCallback(name);
 
@@ -150,7 +150,7 @@ ResourceInfo<T> *ResourceSubCache<T>::getOrLoad(const std::string &name)
 
     if (!loadCallback) {
     	infostream << "ResourceSubCache<T>::getOrLoad(): No loading callback provided" << std::endl;
-        return;
+        return nullptr;
     }
     T *res = loadCallback(name);
 
@@ -160,7 +160,7 @@ ResourceInfo<T> *ResourceSubCache<T>::getOrLoad(const std::string &name)
     }
 
     cache.emplace_back(name, target_path, res);
-    return cache.back().get();
+    return res;
 }
 
 template<class T>
@@ -200,7 +200,7 @@ void ResourceSubCache<T>::clearResource(T *res)
 }
 
 template <class T>
-ResourceInfo<T> *ResourceCache::get(ResourceType _type, const std::string &_name)
+T *ResourceCache::get(ResourceType _type, const std::string &_name)
 {
     MutexAutoLock lock(resource_mutex);
     switch (_type) {
@@ -222,7 +222,7 @@ ResourceInfo<T> *ResourceCache::get(ResourceType _type, const std::string &_name
 }
 
 template <class T>
-ResourceInfo<T> *ResourceCache::getByID(ResourceType _type, u32 _id)
+T *ResourceCache::getByID(ResourceType _type, u32 _id)
 {
     MutexAutoLock lock(resource_mutex);
     switch (_type) {
@@ -244,7 +244,7 @@ ResourceInfo<T> *ResourceCache::getByID(ResourceType _type, u32 _id)
 }
 
 template <class T>
-ResourceInfo<T> *ResourceCache::getOrLoad(ResourceType _type, const std::string &_name)
+T *ResourceCache::getOrLoad(ResourceType _type, const std::string &_name)
 {
     MutexAutoLock lock(resource_mutex);
     switch (_type) {

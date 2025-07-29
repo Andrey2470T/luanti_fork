@@ -197,10 +197,9 @@ bool TextureGenerator::generatePart(const std::string &texmod_str_part, img::Ima
 
     // This is either an image or invalid name
     if (texmod_str_part[0] != '[') {
-        img::Image *img = nullptr;
-        ResourceInfo<img::Image> *img_cache = resCache->getOrLoad<img::Image>(ResourceType::IMAGE, texmod_str_part);
+        img::Image *img = resCache->getOrLoad<img::Image>(ResourceType::IMAGE, texmod_str_part);
 
-        if (!img_cache) {
+        if (!img) {
             if (texmod_str_part.empty())
                 return true;
 
@@ -210,8 +209,6 @@ bool TextureGenerator::generatePart(const std::string &texmod_str_part, img::Ima
 
             img = createDummyImage();
         }
-        else
-            img = img_cache->data.get();
 
         if (!base_img) {
             auto size = img->getSize();

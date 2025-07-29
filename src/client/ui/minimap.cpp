@@ -192,13 +192,13 @@ Minimap::Minimap(Client *_client, Renderer *_renderer, ResourceCache *_cache)
     reallocateBuffer();
     Batcher2D::appendImageUnitRectangle(mesh.get(), false);
 
-    data->minimap_overlay_round = cache->getOrLoad<render::Texture2D>(ResourceType::TEXTURE, "minimap_overlay_round.png")->data.get();
-    data->minimap_overlay_square = cache->getOrLoad<render::Texture2D>(ResourceType::TEXTURE, "minimap_overlay_square.png")->data.get();
-    data->player_marker =cache->getOrLoad<render::Texture2D>(ResourceType::TEXTURE, "player_marker.png")->data.get();
-    data->object_marker_red = cache->getOrLoad<render::Texture2D>(ResourceType::TEXTURE, "object_marker_red.png")->data.get();
+    data->minimap_overlay_round = cache->get<render::Texture2D>(ResourceType::TEXTURE, "minimap_overlay_round.png");
+    data->minimap_overlay_square = cache->get<render::Texture2D>(ResourceType::TEXTURE, "minimap_overlay_square.png");
+    data->player_marker =cache->get<render::Texture2D>(ResourceType::TEXTURE, "player_marker.png");
+    data->object_marker_red = cache->get<render::Texture2D>(ResourceType::TEXTURE, "object_marker_red.png");
     data->textures_initialised = true;
 
-    m_minimap_shader = cache->getOrLoad<render::Shader>(ResourceType::SHADER, "minimap")->data.get();
+    m_minimap_shader = cache->getOrLoad<render::Shader>(ResourceType::SHADER, "minimap");
 
 	// Initialize and start thread
 	m_minimap_update_thread = std::make_unique<MinimapUpdateThread>();
@@ -430,14 +430,14 @@ img::Image *Minimap::getMinimapMask()
 	if (data->minimap_shape_round) {
 		if (!data->minimap_mask_round) {
 			// Get round minimap textures
-            data->minimap_mask_round = cache->getOrLoad<img::Image>(ResourceType::IMAGE, "minimap_mask_round.png")->data.get();
+            data->minimap_mask_round = cache->get<img::Image>(ResourceType::IMAGE, "minimap_mask_round.png");
 		}
 		return data->minimap_mask_round;
 	}
 
 	if (!data->minimap_mask_square) {
 		// Get square minimap textures
-        data->minimap_mask_square = cache->getOrLoad<img::Image>(ResourceType::IMAGE, "minimap_mask_square.png")->data.get();
+        data->minimap_mask_square = cache->get<img::Image>(ResourceType::IMAGE, "minimap_mask_square.png");
 	}
 	return data->minimap_mask_square;
 }
@@ -466,7 +466,7 @@ render::Texture2D *Minimap::getMinimapTexture()
 		break;
 	case MINIMAP_TYPE_TEXTURE:
 		// FIXME: this is a pointless roundtrip through the gpu
-        img::Image* image = cache->getOrLoad<img::Image>(ResourceType::IMAGE, data->mode.texture)->data.get();
+        img::Image* image = cache->getOrLoad<img::Image>(ResourceType::IMAGE, data->mode.texture);
 
         v2u size = image->getSize();
         rectu destRect(

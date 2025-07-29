@@ -55,7 +55,7 @@ bool TexModParser::parseCrack(TextureGenerator *texgen, img::Image *dest, const 
             horizontally tiled.
         */
         img::Image *img_crack = texgen->resCache->getOrLoad<img::Image>(
-            ResourceType::IMAGE, "crack_anylength.png")->data.get();
+            ResourceType::IMAGE, "crack_anylength.png");
 
         if (!img_crack)
             return false;

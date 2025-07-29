@@ -29,7 +29,7 @@ SelectionMesh::SelectionMesh(Renderer *_rnd, ResourceCache *_cache)
     }
 
     if (mode == HIGHLIGHT_HALO)
-        halo_tex = cache->getOrLoad<render::Texture2D>(ResourceType::TEXTURE, "halo.png")->data.get();
+        halo_tex = cache->get<render::Texture2D>(ResourceType::TEXTURE, "halo.png");
     else if (mode == HIGHLIGHT_BOX)
         thickness = std::clamp<f32>((f32)g_settings->getS16("selectionbox_width"), 1.0f, 5.0f);
 }

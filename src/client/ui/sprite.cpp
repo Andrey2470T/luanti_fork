@@ -321,6 +321,7 @@ UISprite::UISprite(render::Texture2D *tex, Renderer *_renderer,
 {
     shape->addRectangle(posRect, colors, uvRect);
     Batcher2D::appendImageRectangle(mesh.get(), tex->getSize(), uvRect, posRect, colors, false);
+    rebuildMesh();
 }
 
 // Creates (without buffer filling) multiple-primitive mesh
@@ -347,6 +348,7 @@ UISprite::UISprite(render::Texture2D *tex, Renderer *_renderer, ResourceCache *_
             break;
         }
     }
+    rebuildMesh();
 }
 
 void UISprite::rebuildMesh()

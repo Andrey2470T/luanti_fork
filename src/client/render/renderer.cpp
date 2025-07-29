@@ -241,10 +241,10 @@ void Renderer::draw(MeshBuffer *buffer, PrimitiveType type,
 
 void Renderer::createDefaultShaders()
 {
-    defaultShaders["standard2D"] = resCache->getOrLoad<render::Shader>(ResourceType::SHADER, "standard2D")->data.get();
-    defaultShaders["solid3D"] = resCache->getOrLoad<render::Shader>(ResourceType::SHADER, "solid3D")->data.get();
-    defaultShaders["transparent3D"] = resCache->getOrLoad<render::Shader>(ResourceType::SHADER, "transparent3D")->data.get();
-    defaultShaders["textureBlend3D"] = resCache->getOrLoad<render::Shader>(ResourceType::SHADER, "textureBlend3D")->data.get();
+    defaultShaders["standard2D"] = resCache->getOrLoad<render::Shader>(ResourceType::SHADER, "standard2D");
+    defaultShaders["solid3D"] = resCache->getOrLoad<render::Shader>(ResourceType::SHADER, "solid3D");
+    defaultShaders["transparent3D"] = resCache->getOrLoad<render::Shader>(ResourceType::SHADER, "transparent3D");
+    defaultShaders["textureBlend3D"] = resCache->getOrLoad<render::Shader>(ResourceType::SHADER, "textureBlend3D");
 }
 
 void Renderer::createUBOs()
