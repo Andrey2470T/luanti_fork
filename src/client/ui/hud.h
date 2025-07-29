@@ -22,7 +22,6 @@ struct ItemStack;
 class UISprite;
 class EnrichedString;
 class AtlasPool;
-
 class HudSprite;
 
 class Hud
@@ -60,10 +59,7 @@ class Hud
 	v3s16 camera_offset;
 	s32 hotbar_imagesize; // Takes hud_scaling into account, updated by resizeHotbar()
 	s32 padding; // Takes hud_scaling into account, updated by resizeHotbar()
-	std::array<img::color8, 4> hbar_colors;
-
-	std::unique_ptr<MeshBuffer> rotation_mesh_buffer;
-	
+	std::array<img::color8, 4> hbar_colors;	
 public:
     // Crosshair
     img::color8 crosshair_color;
@@ -76,16 +72,13 @@ public:
 	std::string hotbar_selected_image = "";
 	bool use_hotbar_selected_image = false;
 
-	Hud(Client *client, LocalPlayer *player, Inventory *inventory);
+    Hud(Client *_client, Inventory *_inventory);
 
 	void readScalingSetting();
 	~Hud();
 
-    void clearAll();
-
 	void drawHotbar(const v2i &pos, const v2f &offset, u16 direction, const v2f &align);
 	void resizeHotbar();
-	void drawCrosshair();
 
 	bool hasElementOfType(HudElementType type);
 
@@ -102,12 +95,6 @@ private:
 			u16 direction, bool is_hotbar);
 
 	void drawItem(const ItemStack &item, const recti &rect, bool selected);
-
-	void drawCompassTranslate(HudElement *e, render::Texture2D *texture,
-			const recti &rect, s32 way);
-
-	void drawCompassRotate(HudElement *e, render::Texture2D *texture,
-			const recti &rect, s32 way);
 };
 
 enum ItemRotationKind

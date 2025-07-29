@@ -129,7 +129,7 @@ public:
     img::Image *addTile(const std::string &name);
     img::Image *addAnimatedTile(const std::string &name, u32 length, u32 count);
 
-    rectf getTileUV(img::Image *tile, bool force_add=false);
+    rectf getTileRect(img::Image *tile, bool toUV=false, bool force_add=false);
 
     // Recursively create and fill new atlases with tiles while the internal image counter doesn't reach some limit
     void buildRectpack2DAtlas();

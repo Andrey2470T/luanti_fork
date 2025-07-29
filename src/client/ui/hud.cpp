@@ -21,25 +21,17 @@
 #include "util/enriched_string.h"
 #include "client/render/rendersystem.h"
 #include "glyph_atlas.h"
-#include "text_sprite.h"
 #include "client/media/resource.h"
 #include "batcher2d.h"
-
-#define OBJECT_CROSSHAIR_LINE_SIZE 8
-#define CROSSHAIR_LINE_SIZE 10
 
 static void setting_changed_callback(const std::string &name, void *data)
 {
 	static_cast<Hud*>(data)->readScalingSetting();
 }
 
-Hud::Hud(Client *client, LocalPlayer *player,
-		Inventory *inventory)
+Hud::Hud(Client *_client, Inventory *_inventory)
+    : client(_client), player(client->getEnv().getLocalPlayer()), inventory(_inventory)
 {
-	this->client      = client;
-	this->player      = player;
-	this->inventory   = inventory;
-
 	readScalingSetting();
 	g_settings->registerChangedCallback("dpi_change_notifier", setting_changed_callback, this);
 	g_settings->registerChangedCallback("display_density_factor", setting_changed_callback, this);
@@ -53,31 +45,10 @@ Hud::Hud(Client *client, LocalPlayer *player,
         myround(cross_color.X), myround(cross_color.Y), myround(cross_color.Z),
         g_settings->getS32("crosshair_alpha"));
 
-	// Prepare mesh for compass drawing
-	m_rotation_mesh_buffer.reset(new scene::SMeshBuffer());
-	auto *b = m_rotation_mesh_buffer.get();
-	auto &vertices = b->Vertices->Data;
-	auto &indices = b->Indices->Data;
-	vertices.resize(4);
-	indices.resize(6);
-
-	video::SColor white(255, 255, 255, 255);
-	v3f normal(0.f, 0.f, 1.f);
-
-	vertices[0] = video::S3DVertex(v3f(-1.f, -1.f, 0.f), normal, white, v2f(0.f, 1.f));
-	vertices[1] = video::S3DVertex(v3f(-1.f,  1.f, 0.f), normal, white, v2f(0.f, 0.f));
-	vertices[2] = video::S3DVertex(v3f( 1.f,  1.f, 0.f), normal, white, v2f(1.f, 0.f));
-	vertices[3] = video::S3DVertex(v3f( 1.f, -1.f, 0.f), normal, white, v2f(1.f, 1.f));
-
-	indices[0] = 0;
-	indices[1] = 1;
-	indices[2] = 2;
-	indices[3] = 2;
-	indices[4] = 3;
-	indices[5] = 0;
-
-	b->getMaterial().MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL;
-	b->setHardwareMappingHint(scene::EHM_STATIC);
+    auto crosshair_image = cache->get<img::Image>(ResourceType::IMAGE, crosshair_img);
+    auto guiPool = rnd_system->getPool(false);
+    crosshair = std::make_unique<UISprite>(guiPool->getAtlasByTile(crosshair_image)->getTexture(),
+        rnd_system->getRenderer(), cache, guiPool->getTileRect(crosshair_image), rectf(), std::array<img::color8, 4>{}, true);
 }
 
 void Hud::readScalingSetting()
@@ -92,18 +63,6 @@ Hud::~Hud()
 	g_settings->deregisterAllChangedCallbacks(this);
 }
 
-void Hud::clearAll()
-{
-    images.clear();
-    texts.clear();
-    statbars.clear();
-    inventories.clear();
-    waypoints.clear();
-    compasses.clear();
-    minimaps.clear();
-    hotbars.clear();
-}
-
 void Hud::drawItem(const ItemStack &item, const core::rect<s32>& rect,
 		bool selected)
 {
@@ -111,10 +70,10 @@ void Hud::drawItem(const ItemStack &item, const core::rect<s32>& rect,
 		/* draw highlighting around selected item */
 		if (use_hotbar_selected_image) {
 			core::rect<s32> imgrect2 = rect;
-			imgrect2.UpperLeftCorner.X  -= (m_padding*2);
-			imgrect2.UpperLeftCorner.Y  -= (m_padding*2);
-			imgrect2.LowerRightCorner.X += (m_padding*2);
-			imgrect2.LowerRightCorner.Y += (m_padding*2);
+			imgrect2.ULC.X  -= (m_padding*2);
+			imgrect2.ULC.Y  -= (m_padding*2);
+			imgrect2.LRC.X += (m_padding*2);
+			imgrect2.LRC.Y += (m_padding*2);
 				video::ITexture *texture = tsrc->getTexture(hotbar_selected_image);
 				core::dimension2di imgsize(texture->getOriginalSize());
 			draw2DImageFilterScaled(driver, texture, imgrect2,
@@ -124,10 +83,10 @@ void Hud::drawItem(const ItemStack &item, const core::rect<s32>& rect,
 			video::SColor c_outside(255,255,0,0);
 			//video::SColor c_outside(255,0,0,0);
 			//video::SColor c_inside(255,192,192,192);
-			s32 x1 = rect.UpperLeftCorner.X;
-			s32 y1 = rect.UpperLeftCorner.Y;
-			s32 x2 = rect.LowerRightCorner.X;
-			s32 y2 = rect.LowerRightCorner.Y;
+			s32 x1 = rect.ULC.X;
+			s32 y1 = rect.ULC.Y;
+			s32 x2 = rect.LRC.X;
+			s32 y2 = rect.LRC.Y;
 			// Black base borders
 			driver->draw2DRectangle(c_outside,
 				core::rect<s32>(
@@ -292,11 +251,11 @@ void Hud::updateCrosshair()
     else
         imgname = crosshair_img;
 
-    auto img = cache->getOrLoad<img::Image>(ResourceType::IMAGE, imgname)->data.get();
+    auto img = cache->get<img::Image>(ResourceType::IMAGE, imgname);
     update(img);
 }
 
-void Hud::updateHUDElements(const v3s16 &camera_offset)
+void Hud::updateHUDElement(const HudElement *elem, const v3s16 &camera_offset)
 {
     std::vector<HudElement *> elems(player->maxHudId());
 
@@ -451,7 +410,7 @@ void Hud::drawLuaElements(const v3s16 &camera_offset)
 					float distance = std::floor(precision * p_pos.getDistanceFrom(e->world_pos)) / precision;
 					os << distance << unit;
 					text = unescape_translate(utf8_to_wide(os.str()));
-					bounds.LowerRightCorner.X = bounds.UpperLeftCorner.X + font->getDimension(text.c_str()).Width;
+					bounds.LRC.X = bounds.ULC.X + font->getDimension(text.c_str()).Width;
 					font->draw(text.c_str(), bounds + v2s32((e->align.X - 1.0f) * bounds.getWidth() / 2, text_height), color);
 				}
 				break; }
@@ -563,75 +522,6 @@ void Hud::drawLuaElements(const v3s16 &camera_offset)
 	}
 }
 
-void Hud::drawCompassTranslate(HudElement *e, video::ITexture *texture,
-		const core::rect<s32> &rect, int angle)
-{
-	const video::SColor color(255, 255, 255, 255);
-	const video::SColor colors[] = {color, color, color, color};
-
-	// Compute source image scaling
-	core::dimension2di imgsize(texture->getOriginalSize());
-	core::rect<s32> srcrect(0, 0, imgsize.Width, imgsize.Height);
-
-	v2s32 dstsize(rect.getHeight() * e->scale.X * imgsize.Width / imgsize.Height,
-			rect.getHeight() * e->scale.Y);
-
-	// Avoid infinite loop
-	if (dstsize.X <= 0 || dstsize.Y <= 0)
-		return;
-
-	core::rect<s32> tgtrect(0, 0, dstsize.X, dstsize.Y);
-	tgtrect +=  v2s32(
-				(rect.getWidth() - dstsize.X) / 2,
-				(rect.getHeight() - dstsize.Y) / 2) +
-			rect.UpperLeftCorner;
-
-	int offset = angle * dstsize.X / 360;
-
-	tgtrect += v2s32(offset, 0);
-
-	// Repeat image as much as needed
-	while (tgtrect.UpperLeftCorner.X > rect.UpperLeftCorner.X)
-		tgtrect -= v2s32(dstsize.X, 0);
-
-	draw2DImageFilterScaled(driver, texture, tgtrect, srcrect, &rect, colors, true);
-	tgtrect += v2s32(dstsize.X, 0);
-
-	while (tgtrect.UpperLeftCorner.X < rect.LowerRightCorner.X) {
-		draw2DImageFilterScaled(driver, texture, tgtrect, srcrect, &rect, colors, true);
-		tgtrect += v2s32(dstsize.X, 0);
-	}
-}
-
-void Hud::drawCompassRotate(HudElement *e, video::ITexture *texture,
-		const core::rect<s32> &rect, int angle)
-{
-	core::rect<s32> oldViewPort = driver->getViewPort();
-	core::matrix4 oldProjMat = driver->getTransform(video::ETS_PROJECTION);
-	core::matrix4 oldViewMat = driver->getTransform(video::ETS_VIEW);
-
-	core::matrix4 Matrix;
-	Matrix.makeIdentity();
-	Matrix.setRotationDegrees(v3f(0.f, 0.f, angle));
-
-	driver->setViewPort(rect);
-	driver->setTransform(video::ETS_PROJECTION, core::matrix4());
-	driver->setTransform(video::ETS_VIEW, core::matrix4());
-	driver->setTransform(video::ETS_WORLD, Matrix);
-
-	auto &material = m_rotation_mesh_buffer->getMaterial();
-	material.TextureLayers[0].Texture = texture;
-	driver->setMaterial(material);
-	driver->drawMeshBuffer(m_rotation_mesh_buffer.get());
-
-	driver->setTransform(video::ETS_WORLD, core::matrix4());
-	driver->setTransform(video::ETS_VIEW, oldViewMat);
-	driver->setTransform(video::ETS_PROJECTION, oldProjMat);
-
-	// restore the view area
-	driver->setViewPort(oldViewPort);
-}
-
 void Hud::drawHotbar(const v2s32 &pos, const v2f &offset, u16 dir, const v2f &align)
 {
 	if (g_touchcontrols)
@@ -661,58 +551,6 @@ void Hud::drawHotbar(const v2s32 &pos, const v2f &offset, u16 dir, const v2f &al
 			mainlist, playeritem + 1, dir, true);
 		drawItems(pos, screen_offset, hotbar_itemcount, align,
 			hotbar_itemcount / 2, mainlist, playeritem + 1, dir, true);
-	}
-}
-
-
-void Hud::drawCrosshair()
-{
-	auto draw_image_crosshair = [this] (video::ITexture *tex) {
-		core::dimension2di orig_size(tex->getOriginalSize());
-		// Integer scaling to avoid artifacts, floor instead of round since too
-		// small looks better than too large in this case.
-		core::dimension2di scaled_size = orig_size * std::max(std::floor(m_scale_factor), 1.0f);
-
-		core::rect<s32> src_rect(orig_size);
-		core::position2d pos(m_displaycenter.X - scaled_size.Width / 2,
-				m_displaycenter.Y - scaled_size.Height / 2);
-		core::rect<s32> dest_rect(pos, scaled_size);
-
-		video::SColor colors[] = { crosshair_argb, crosshair_argb,
-				crosshair_argb, crosshair_argb };
-
-		draw2DImageFilterScaled(driver, tex, dest_rect, src_rect,
-				nullptr, colors, true);
-	};
-
-	if (pointing_at_object) {
-		if (use_object_crosshair_image) {
-			draw_image_crosshair(tsrc->getTexture("object_crosshair.png"));
-		} else {
-			s32 line_size = core::round32(OBJECT_CROSSHAIR_LINE_SIZE * m_scale_factor);
-
-			driver->draw2DLine(
-					m_displaycenter - v2s32(line_size, line_size),
-					m_displaycenter + v2s32(line_size, line_size),
-					crosshair_argb);
-			driver->draw2DLine(
-					m_displaycenter + v2s32(line_size, -line_size),
-					m_displaycenter + v2s32(-line_size, line_size),
-					crosshair_argb);
-		}
-
-		return;
-	}
-
-	if (use_crosshair_image) {
-		draw_image_crosshair(tsrc->getTexture("crosshair.png"));
-	} else {
-		s32 line_size = core::round32(CROSSHAIR_LINE_SIZE * m_scale_factor);
-
-		driver->draw2DLine(m_displaycenter - v2s32(line_size, 0),
-				m_displaycenter + v2s32(line_size, 0), crosshair_argb);
-		driver->draw2DLine(m_displaycenter - v2s32(0, line_size),
-				m_displaycenter + v2s32(0, line_size), crosshair_argb);
 	}
 }
 
@@ -803,11 +641,11 @@ void drawItemStack(
 			-1.0f,
 			100.0f);
 		ViewMatrix.setTranslation(core::vector3df(
-			1.0f * (rect.LowerRightCorner.X + rect.UpperLeftCorner.X -
-					viewrect.LowerRightCorner.X - viewrect.UpperLeftCorner.X) /
+			1.0f * (rect.LRC.X + rect.ULC.X -
+					viewrect.LRC.X - viewrect.ULC.X) /
 					viewrect.getWidth(),
-			1.0f * (viewrect.LowerRightCorner.Y + viewrect.UpperLeftCorner.Y -
-					rect.LowerRightCorner.Y - rect.UpperLeftCorner.Y) /
+			1.0f * (viewrect.LRC.Y + viewrect.ULC.Y -
+					rect.LRC.Y - rect.ULC.Y) /
 					viewrect.getHeight(),
 			0.0f));
 
@@ -900,16 +738,16 @@ void drawItemStack(
 		float barpad_y = static_cast<float>(rect.getHeight()) / 16;
 
 		core::rect<s32> progressrect(
-			rect.UpperLeftCorner.X + barpad_x,
-			rect.LowerRightCorner.Y - barpad_y - barheight,
-			rect.LowerRightCorner.X - barpad_x,
-			rect.LowerRightCorner.Y - barpad_y);
+			rect.ULC.X + barpad_x,
+			rect.LRC.Y - barpad_y - barheight,
+			rect.LRC.X - barpad_x,
+			rect.LRC.Y - barpad_y);
 
 		// Shrink progressrect by amount of tool damage
 		float wear = item.wear / 65535.0f;
 		int progressmid =
-			wear * progressrect.UpperLeftCorner.X +
-			(1 - wear) * progressrect.LowerRightCorner.X;
+			wear * progressrect.ULC.X +
+			(1 - wear) * progressrect.LRC.X;
 
 		// Compute progressbar color
 		// default scheme:
@@ -934,12 +772,12 @@ void drawItemStack(
 		}
 
 		core::rect<s32> progressrect2 = progressrect;
-		progressrect2.LowerRightCorner.X = progressmid;
+		progressrect2.LRC.X = progressmid;
 		driver->draw2DRectangle(color, progressrect2, clip);
 
 		color = video::SColor(255, 0, 0, 0);
 		progressrect2 = progressrect;
-		progressrect2.UpperLeftCorner.X = progressmid;
+		progressrect2.ULC.X = progressmid;
 		driver->draw2DRectangle(color, progressrect2, clip);
 	}
 
@@ -951,8 +789,8 @@ void drawItemStack(
 		v2s32 sdim(dim.X, dim.Y);
 
 		core::rect<s32> rect2(
-			rect.LowerRightCorner - sdim,
-			rect.LowerRightCorner
+			rect.LRC - sdim,
+			rect.LRC
 		);
 
 		// get the count alignment
@@ -964,39 +802,39 @@ void drawItemStack(
 			s32 x1, x2, y1, y2;
 			switch (a_x) {
 			case 1: // left
-				x1 = rect.UpperLeftCorner.X;
+				x1 = rect.ULC.X;
 				x2 = x1 + sdim.X;
 				break;
 			case 2: // middle
-				x1 = (rect.UpperLeftCorner.X + rect.LowerRightCorner.X - sdim.X) / 2;
+				x1 = (rect.ULC.X + rect.LRC.X - sdim.X) / 2;
 				x2 = x1 + sdim.X;
 				break;
 			case 3: // right
-				x2 = rect.LowerRightCorner.X;
+				x2 = rect.LRC.X;
 				x1 = x2 - sdim.X;
 				break;
 			default: // 0 = default
-				x1 = rect2.UpperLeftCorner.X;
-				x2 = rect2.LowerRightCorner.X;
+				x1 = rect2.ULC.X;
+				x2 = rect2.LRC.X;
 				break;
 			}
 
 			switch (a_y) {
 			case 1: // up
-				y1 = rect.UpperLeftCorner.Y;
+				y1 = rect.ULC.Y;
 				y2 = y1 + sdim.Y;
 				break;
 			case 2: // middle
-				y1 = (rect.UpperLeftCorner.Y + rect.LowerRightCorner.Y - sdim.Y) / 2;
+				y1 = (rect.ULC.Y + rect.LRC.Y - sdim.Y) / 2;
 				y2 = y1 + sdim.Y;
 				break;
 			case 3: // down
-				y2 = rect.LowerRightCorner.Y;
+				y2 = rect.LRC.Y;
 				y1 = y2 - sdim.Y;
 				break;
 			default: // 0 = default
-				y1 = rect2.UpperLeftCorner.Y;
-				y2 = rect2.LowerRightCorner.Y;
+				y1 = rect2.ULC.Y;
+				y2 = rect2.LRC.Y;
 				break;
 			}
 

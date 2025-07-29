@@ -106,3 +106,19 @@ public:
         image->draw();
     }
 };
+
+class HudCompass : public HudSprite
+{
+    Client *client;
+    std::unique_ptr<UISprite> compass;
+
+    recti viewport;
+public:
+    HudCompass(Client *_client, const HudElement *elem);
+
+    void update() override;
+    void draw() override;
+private:
+    void updateTranslate(const rectf &r, img::Image *img, s32 angle);
+    void updateRotate(const rectf &r, img::Image *img, s32 angle);
+};

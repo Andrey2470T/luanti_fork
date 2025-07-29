@@ -174,7 +174,7 @@ img::Image *AtlasPool::addAnimatedTile(const std::string &name, u32 length, u32 
     return img;
 }
 
-rectf AtlasPool::getTileUV(img::Image *tile, bool force_add)
+rectf AtlasPool::getTileRect(img::Image *tile, bool toUV, bool force_add)
 {
     if (type != AtlasType::RECTPACK2D)
         return rectf();
@@ -187,14 +187,26 @@ rectf AtlasPool::getTileUV(img::Image *tile, bool force_add)
             if (atlasTile->image != tile)
                 continue;
 
-            return atlasTile->toUV(atlas->getTextureSize());
+            if (toUV)
+                return atlasTile->toUV(atlas->getTextureSize());
+            else {
+                v2f pos_f(atlasTile->pos.X, atlasTile->pos.Y);
+                return rectf(pos_f, pos_f + v2f(atlasTile->size.X, atlasTile->size.Y));
+            }
         }
     }
 
     if (force_add) {
         forceAddTile(tile);
         auto lastAtlas = atlases.back();
-        return lastAtlas->getTile(lastAtlas->getTilesCount()-1)->toUV(lastAtlas->getTextureSize());
+
+        auto lastTile = lastAtlas->getTile(lastAtlas->getTilesCount()-1);
+        if (toUV)
+            return lastTile->toUV(lastAtlas->getTextureSize());
+        else {
+            v2f pos_f(lastTile->pos.X, lastTile->pos.Y);
+            return rectf(pos_f, pos_f + v2f(lastTile->size.X, lastTile->size.Y));
+        }
     }
     return rectf();
 }

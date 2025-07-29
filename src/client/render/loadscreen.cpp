@@ -14,11 +14,11 @@
 LoadScreen::LoadScreen(ResourceCache *_cache, RenderSystem *_system, FontManager *_mgr)
     : cache(_cache), renderer(_system->getRenderer())
 {
-    guitext = std::make_unique<UITextSprite>(_mgr, EnrichedString(L""), renderer, cache, recti());
+    guitext = std::make_unique<UITextSprite>(_mgr, EnrichedString(L""), renderer, cache);
     guitext->setAlignment(GUIAlignment::Center, GUIAlignment::UpperLeft);
 
-    progress_img = cache->get<img::Image>(ResourceType::IMAGE, "progress_bar.png")->data.get();
-    progress_bg_img = cache->get<img::Image>(ResourceType::IMAGE, "progress_bar_bg.png")->data.get();
+    progress_img = cache->get<img::Image>(ResourceType::IMAGE, "progress_bar.png");
+    progress_bg_img = cache->get<img::Image>(ResourceType::IMAGE, "progress_bar_bg.png");
 
     auto progress_img_size = progress_img->getSize();
     auto progress_bg_img_size = progress_bg_img->getSize();
@@ -36,9 +36,9 @@ LoadScreen::LoadScreen(ResourceCache *_cache, RenderSystem *_system, FontManager
     shape->addRectangle(progress_bg_img_size_f, {});
 
     Batcher2D::appendImageRectangle(progress_rect->getBuffer(),
-        tex->getSize(), basicPool->getTileUV(progress_img), progress_img_size_f, {}, false);
+        tex->getSize(), basicPool->getTileRect(progress_img), progress_img_size_f, {}, false);
     Batcher2D::appendImageRectangle(progress_rect->getBuffer(),
-        tex->getSize(), basicPool->getTileUV(progress_bg_img), progress_bg_img_size_f, {}, false);
+        tex->getSize(), basicPool->getTileRect(progress_bg_img), progress_bg_img_size_f, {}, false);
 }
 
 void LoadScreen::updateText(v2u screensize, const std::wstring &text, f32 dtime, bool menu_clouds,

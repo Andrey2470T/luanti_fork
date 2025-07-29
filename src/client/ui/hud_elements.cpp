@@ -8,6 +8,8 @@
 #include "client/client.h"
 #include "../hud.h"
 #include "util/numeric.h"
+#include "client/render/camera.h"
+#include <Utils/Quaternion.h>
 
 void calcHUDRect(RenderSystem *rnd_system, rectf &r, const HudElement *elem,
     bool scale_factor, std::optional<v2f> override_pos)
@@ -96,7 +98,7 @@ rectf getHudTextRect(RenderSystem *rnd_system, const std::string &text, const Hu
 rectf getHudImageRect(ResourceCache *cache, RenderSystem *rnd_system, const std::string &imgname, const HudElement *elem,
     bool scale_factor, std::optional<v2f> override_pos)
 {
-    auto img = cache->getOrLoad<img::Image>(ResourceType::IMAGE, imgname)->data.get();
+    auto img = cache->getOrLoad<img::Image>(ResourceType::IMAGE, imgname);
 
     v2u imgSize = img->getSize();
     rectf imgRect(0, 0, imgSize.X, imgSize.Y);
@@ -126,8 +128,8 @@ void HudText::update()
 HudStatbar::HudStatbar(Client *client, const HudElement *elem)
     : HudSprite(client->getResourceCache(), client->getRenderSystem(), elem)
 {
-    auto stat_img = cache->get<img::Image>(ResourceType::IMAGE, elem->text)->data.get();
-    auto guiTex = rnd_system->getPool(false)->getAtlasByTile(stat_img)->getTexture();
+    auto stat_img = cache->getOrLoad<img::Image>(ResourceType::IMAGE, elem->text);
+    auto guiTex = rnd_system->getPool(false)->getAtlasByTile(stat_img, true)->getTexture();
     bar = std::make_unique<UISprite>(guiTex, rnd_system->getRenderer(), cache, true);
 
     update();
@@ -140,17 +142,17 @@ void HudStatbar::update()
     const img::color8 color = img::white;
     const std::array<img::color8, 4> colors = {color, color, color, color};
 
-    auto stat_img = cache->get<img::Image>(ResourceType::IMAGE, elem->text)->data.get();
+    auto stat_img = cache->getOrLoad<img::Image>(ResourceType::IMAGE, elem->text);
     if (!stat_img)
         return;
 
     img::Image *stat_img_bg = nullptr;
     if (!elem->text2.empty())
-        stat_img_bg = cache->get<img::Image>(ResourceType::IMAGE, elem->text2)->data.get();
+        stat_img_bg = cache->getOrLoad<img::Image>(ResourceType::IMAGE, elem->text2);
 
     auto guiPool = rnd_system->getPool(false);
-    rectf stat_img_uvs = guiPool->getTileUV(stat_img);
-    rectf stat_img_bg_uvs = guiPool->getTileUV(stat_img_bg);
+    rectf stat_img_src = guiPool->getTileRect(stat_img, false, true);
+    rectf stat_img_bg_src = guiPool->getTileRect(stat_img_bg, false, true);
 
     f32 scale_f = rnd_system->getScaleFactor();
     v2f srcd(stat_img->getSize().X, stat_img->getSize().Y);
@@ -216,7 +218,7 @@ void HudStatbar::update()
     auto shape = bar->getShape();
 
     for (u32 i = 0; i < elem->number / 2; i++) {
-        rectf srcrect = stat_img_uvs;
+        rectf srcrect = stat_img_src;
         rectf dstrect(0, 0, dstd.X, dstd.Y);
 
         dstrect += pos;
@@ -227,10 +229,10 @@ void HudStatbar::update()
 
     if (elem->number % 2 == 1) {
         // Draw half a texture
-        shape->addRectangle(dsthalfrect + pos, colors, srchalfrect + stat_img_uvs.ULC);
+        shape->addRectangle(dsthalfrect + pos, colors, srchalfrect + stat_img_src.ULC);
 
         if (stat_img_bg && elem->item > elem->number) {
-            shape->addRectangle(dsthalfrect2 + pos, colors, srchalfrect2 + stat_img_bg_uvs.ULC);
+            shape->addRectangle(dsthalfrect2 + pos, colors, srchalfrect2 + stat_img_bg_src.ULC);
             pos += steppos;
         }
     }
@@ -243,7 +245,7 @@ void HudStatbar::update()
         else
             start_offset = elem->number / 2;
         for (u32 i = start_offset; i < elem->item / 2; i++) {
-            rectf srcrect = stat_img_uvs;
+            rectf srcrect = stat_img_src;
             rectf dstrect(0, 0, dstd.X, dstd.Y);
 
             dstrect += pos;
@@ -252,7 +254,7 @@ void HudStatbar::update()
         }
 
         if (elem->item % 2 == 1)
-            shape->addRectangle(dsthalfrect + pos, colors, srchalfrect + stat_img_bg_uvs.ULC);
+            shape->addRectangle(dsthalfrect + pos, colors, srchalfrect + stat_img_bg_src.ULC);
     }
 
     bar->rebuildMesh();
@@ -333,11 +335,14 @@ bool HudWaypoint::calculateScreenPos(v2f *pos)
 HudImage::HudImage(Client *client, const HudElement *elem)
     : HudSprite(client->getResourceCache(), client->getRenderSystem(), elem)
 {
-    auto img = cache->get<img::Image>(ResourceType::IMAGE, elem->text)->data.get();
-    auto guiTex = rnd_system->getPool(false)->getAtlasByTile(img)->getTexture();
-    image = std::make_unique<UISprite>(guiTex, rnd_system->getRenderer(), cache, true);
+    auto img = cache->getOrLoad<img::Image>(ResourceType::IMAGE, elem->text);
+    auto guiPool = rnd_system->getPool(false);
+    auto guiTex = guiPool->getAtlasByTile(img, true)->getTexture();
 
-    update();
+    rectf srcrect = guiPool->getTileRect(img, false, true);
+    rectf destrect = getHudImageRect(cache, rnd_system, elem->text, elem, true);
+    image = std::make_unique<UISprite>(guiTex, rnd_system->getRenderer(), cache,
+        srcrect, destrect, std::array<img::color8, 4>{img::white, img::white, img::white, img::white}, true);
 }
 
 void HudImage::update()
@@ -345,4 +350,127 @@ void HudImage::update()
     rectf img_rect = getHudImageRect(cache, rnd_system, elem->text, elem, true);
     image->getShape()->updateRectangle(0, img_rect, {img::white, img::white, img::white, img::white});
     image->updateMesh(true);
+}
+
+HudCompass::HudCompass(Client *_client, const HudElement *elem)
+    : HudSprite(_client->getResourceCache(), _client->getRenderSystem(), elem), client(_client)
+{
+    auto img = cache->getOrLoad<img::Image>(ResourceType::IMAGE, elem->text);
+    auto guiTex = rnd_system->getPool(false)->getAtlasByTile(img, true)->getTexture();
+    compass = std::make_unique<UISprite>(guiTex, rnd_system->getRenderer(), cache, true);
+
+    update();
+}
+
+void HudCompass::update()
+{
+    compass->clear();
+
+    auto img = cache->getOrLoad<img::Image>(ResourceType::IMAGE, elem->text);
+
+    rectf destrect;
+    calcHUDRect(rnd_system, destrect, elem, false, std::nullopt);
+
+    // Angle according to camera view
+    matrix4 rotation;
+    v3f dir = client->getCamera()->getDirection();
+    Quaternion(dir.X, dir.Y, dir.Z, 1.0f).getMatrix(rotation);
+
+    v3f fore(0.0f, 0.0f, 1.0f);
+    rotation.transformVect(fore);
+    int angle = - fore.getHorizontalAngle().Y;
+
+    // Limit angle and ajust with given offset
+    angle = (angle + (int)elem->number) % 360;
+
+    switch (elem->dir) {
+    case HUD_COMPASS_ROTATE:
+        updateRotate(destrect, img, angle);
+        break;
+    case HUD_COMPASS_ROTATE_REVERSE:
+        updateRotate(destrect, img, -angle);
+        break;
+    case HUD_COMPASS_TRANSLATE:
+        updateTranslate(destrect, img, angle);
+        break;
+    case HUD_COMPASS_TRANSLATE_REVERSE:
+        updateTranslate(destrect, img, -angle);
+        break;
+    default:
+        break;
+    }
+}
+
+void HudCompass::draw()
+{
+    auto context = rnd_system->getRenderer()->getContext();
+    recti prevViewport = context->getViewportSize();
+
+    if (elem->dir == HUD_COMPASS_ROTATE || elem->dir == HUD_COMPASS_ROTATE_REVERSE)
+        context->setViewportSize(viewport);
+
+    compass->draw();
+
+    context->setViewportSize(prevViewport);
+}
+
+void HudCompass::updateTranslate(const rectf &r, img::Image *img, s32 angle)
+{
+    const std::array<img::color8, 4> colors = {img::white, img::white, img::white, img::white};
+
+    // Compute source image scaling
+
+    rectf srcrect = rnd_system->getPool(false)->getTileRect(img, false, true);
+    v2u imgsize = img->getSize();
+    v2f destsize(r.getHeight() * elem->scale.X * imgsize.X / imgsize.Y,
+                  r.getHeight() * elem->scale.Y);
+
+    // Avoid infinite loop
+    if (destsize.X <= 0 || destsize.Y <= 0)
+        return;
+
+    rectf tgtrect(0, 0, destsize.X, destsize.Y);
+    tgtrect +=  v2f(
+        (r.getWidth() - destsize.X) / 2,
+        (r.getHeight() - destsize.Y) / 2) +
+        r.ULC;
+
+    s32 offset = angle * destsize.X / 360;
+
+    tgtrect += v2f(offset, 0);
+
+    // Repeat image as much as needed
+    while (tgtrect.ULC.X > r.ULC.X)
+        tgtrect -= v2f(destsize.X, 0);
+
+    auto shape = compass->getShape();
+    shape->addRectangle(tgtrect, colors, srcrect);
+    tgtrect += v2f(destsize.X, 0);
+
+    while (tgtrect.ULC.X < r.LRC.X) {
+        shape->addRectangle(tgtrect, colors, srcrect);
+        tgtrect += v2f(destsize.X, 0);
+    }
+    compass->setClipRect(recti(r.ULC.X, r.ULC.Y, r.LRC.X, r.LRC.Y));
+    compass->rebuildMesh();
+}
+
+void HudCompass::updateRotate(const rectf &r, img::Image *img, s32 angle)
+{
+    viewport = recti(r.ULC.X, r.ULC.Y, r.LRC.X, r.LRC.Y);
+
+    v3f dest_ulc = v3f(-1.0f, -1.0f, 0.0f);
+    v3f dest_lrc = v3f(1.0f, 1.0f, 0.0f);
+
+    matrix4 rotation;
+    rotation.setRotationDegrees(v3f(0.0f, 0.0f, angle));
+
+    rotation.transformVect(dest_ulc);
+    rotation.transformVect(dest_lrc);
+
+    rectf srcrect = rnd_system->getPool(false)->getTileRect(img, false, true);
+    rectf destrect(dest_ulc.X, dest_ulc.Y, dest_lrc.X, dest_lrc.Y);
+
+    compass->getShape()->addRectangle(destrect, {}, srcrect);
+    compass->rebuildMesh();
 }
