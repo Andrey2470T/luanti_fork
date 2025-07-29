@@ -10,6 +10,7 @@
 #include "util/numeric.h"
 #include "client/render/camera.h"
 #include <Utils/Quaternion.h>
+#include "minimap.h"
 
 void calcHUDRect(RenderSystem *rnd_system, rectf &r, const HudElement *elem,
     bool scale_factor, std::optional<v2f> override_pos)
@@ -473,4 +474,23 @@ void HudCompass::updateRotate(const rectf &r, img::Image *img, s32 angle)
 
     compass->getShape()->addRectangle(destrect, {}, srcrect);
     compass->rebuildMesh();
+}
+
+HudMinimap::HudMinimap(Client *_client, const HudElement *elem)
+    : HudSprite(_client->getResourceCache(), _client->getRenderSystem(), elem),
+    minimap(std::make_unique<Minimap>(_client, _client->getRenderSystem()->getRenderer(), _client->getResourceCache()))
+{}
+
+void HudMinimap::update()
+{
+    rectf destrect;
+    calcHUDRect(rnd_system, destrect, elem, true, std::nullopt);
+
+    viewport = recti(destrect.ULC.X, destrect.ULC.Y, destrect.LRC.X, destrect.LRC.Y);
+    minimap->updateActiveMarkers(viewport);
+}
+
+void HudMinimap::draw()
+{
+    minimap->drawMinimap(viewport);
 }

@@ -16,7 +16,7 @@
 
 class Client;
 class NodeDefManager;
-class Renderer;
+class RenderSystem;
 class ResourceCache;
 class VoxelManipulator;
 

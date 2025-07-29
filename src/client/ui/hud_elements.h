@@ -122,3 +122,23 @@ private:
     void updateTranslate(const rectf &r, img::Image *img, s32 angle);
     void updateRotate(const rectf &r, img::Image *img, s32 angle);
 };
+
+class Minimap;
+
+class HudMinimap : public HudSprite
+{
+    Client *client;
+    std::unique_ptr<Minimap> minimap;
+
+    recti viewport;
+public:
+    HudMinimap(Client *_client, const HudElement *elem);
+
+    Minimap *getUnderlyingMinimap() const
+    {
+        return minimap.get();
+    }
+
+    void update() override;
+    void draw() override;
+};

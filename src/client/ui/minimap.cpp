@@ -168,8 +168,8 @@ void MinimapUpdateThread::getMap(v3s16 pos, s16 size, s16 height)
 ////
 
 Minimap::Minimap(Client *_client, Renderer *_renderer, ResourceCache *_cache)
-    : UISprite(nullptr, _renderer, _cache, {UIPrimitiveType::RECTANGLE}, true),
-      client(_client), data(new MinimapData()), m_ndef(_client->getNodeDefManager())
+    : UISprite(nullptr, _renderer, _cache, rectf(), rectf(v2f(-1.0f, 1.0f), v2f(1.0f, -1.0f)), {}, false),
+    client(_client), data(new MinimapData()), m_ndef(_client->getNodeDefManager())
 {
 	// Initialize static settings
     m_surface_mode_scan_height = g_settings->getBool("minimap_double_scan_height") ? 256 : 128;
@@ -187,15 +187,10 @@ Minimap::Minimap(Client *_client, Renderer *_renderer, ResourceCache *_cache)
 
 	setModeIndex(0);
 
-	// Create mesh buffer for minimap
-    shape->addRectangle(rectf(v2f(-1.0f, 1.0f), v2f(1.0f, -1.0f)), {});
-    reallocateBuffer();
-    Batcher2D::appendImageUnitRectangle(mesh.get(), false);
-
-    data->minimap_overlay_round = cache->get<render::Texture2D>(ResourceType::TEXTURE, "minimap_overlay_round.png");
-    data->minimap_overlay_square = cache->get<render::Texture2D>(ResourceType::TEXTURE, "minimap_overlay_square.png");
-    data->player_marker =cache->get<render::Texture2D>(ResourceType::TEXTURE, "player_marker.png");
-    data->object_marker_red = cache->get<render::Texture2D>(ResourceType::TEXTURE, "object_marker_red.png");
+    data->minimap_overlay_round = cache->getOrLoad<render::Texture2D>(ResourceType::TEXTURE, "minimap_overlay_round.png");
+    data->minimap_overlay_square = cache->getOrLoad<render::Texture2D>(ResourceType::TEXTURE, "minimap_overlay_square.png");
+    data->player_marker =cache->getOrLoad<render::Texture2D>(ResourceType::TEXTURE, "player_marker.png");
+    data->object_marker_red = cache->getOrLoad<render::Texture2D>(ResourceType::TEXTURE, "object_marker_red.png");
     data->textures_initialised = true;
 
     m_minimap_shader = cache->getOrLoad<render::Shader>(ResourceType::SHADER, "minimap");
@@ -450,7 +445,7 @@ render::Texture2D *Minimap::getMinimapTexture()
 
 	// create minimap and heightmap images in memory
     v2u size(data->mode.map_size, data->mode.map_size);
-    img::Image *map_image       = new img::Image(img::PF_RGBA8, size.X, size.Y, img::color8(img::PF_RGBA8, 0, 0, 0, 255));
+    img::Image *map_image       = new img::Image(img::PF_RGBA8, size.X, size.Y, img::black);
     img::Image *heightmap_image = new img::Image(img::PF_R8, size.X, size.Y);
     img::Image *minimap_image   = new img::Image(img::PF_RGBA8, MINIMAP_MAX_SX, MINIMAP_MAX_SY);
 
@@ -531,8 +526,6 @@ void Minimap::drawMinimap(recti rect)
     render::Texture2D *minimap_texture = getMinimapTexture();
 	if (!minimap_texture)
 		return;
-
-    updateActiveMarkers(rect);
 
     auto ctxt = renderer->getContext();
     recti oldViewPort = ctxt->getViewportSize();
@@ -620,7 +613,7 @@ void Minimap::updateActiveMarkers(recti rect)
 	m_active_markers.clear();
 
     // Clear all ealier added markers
-    for (u32 i = 1; i < shape->getPrimitiveCount(); i++) shape->removePrimitive(i);
+    clear();
 
 	v3f cam_offset = intToFloat(client->getCamera()->getOffset(), BS);
 	v3s16 pos_offset = data->pos - v3s16(data->mode.map_size / 2,
@@ -667,12 +660,10 @@ void Minimap::updateActiveMarkers(recti rect)
             s_pos.Y + am.Y - marker_size2,
             s_pos.X + am.X + marker_size2,
             s_pos.Y + am.Y + marker_size2);
-        shape->addRectangle(destRect, c);
-        reallocateBuffer();
-        Batcher2D::appendImageRectangle(mesh.get(), imgsize, img_rect, destRect, c, false);
+        shape->addRectangle(destRect, c, img_rect);
 	}
 
-    mesh->uploadData();
+    rebuildMesh();
 }
 
 ////
