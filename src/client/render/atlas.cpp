@@ -207,7 +207,7 @@ void AtlasPool::buildRectpack2DAtlas()
     static u32 atlasNum = 0;
     static u32 startImg = 0;
 
-    Rectpack2DAtlas *atlas = new Rectpack2DAtlas(prefixName, atlasNum, maxTextureSize, hasMips, images, animatedImages, startImg);
+    Rectpack2DAtlas *atlas = new Rectpack2DAtlas(cache, prefixName, atlasNum, maxTextureSize, filtered, images, animatedImages, startImg);
     cache->cacheResource<Atlas>(ResourceType::ATLAS, atlas);
 
     atlases.push_back(atlas);
@@ -255,7 +255,7 @@ void AtlasPool::forceAddTile(img::Image *img)
         u32 lastAtlasN = atlases.size()-1;
 
         if (!rectpackAtlas->packSingleTile(img, lastAtlasN)) {
-            Rectpack2DAtlas *atlas = new Rectpack2DAtlas(prefixName, lastAtlasN+1, maxTextureSize, img, hasMips);
+            Rectpack2DAtlas *atlas = new Rectpack2DAtlas(cache, prefixName, lastAtlasN+1, maxTextureSize, img, filtered);
             cache->cacheResource<Atlas>(ResourceType::ATLAS, atlas);
 
             atlases.push_back(atlas);

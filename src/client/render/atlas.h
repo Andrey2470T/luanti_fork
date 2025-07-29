@@ -106,14 +106,14 @@ class AtlasPool
 
     ResourceCache *cache;
     u32 maxTextureSize;
-    bool hasMips;
+    bool filtered;
 
     std::vector<Atlas *> atlases;
     std::vector<img::Image *> images;
     std::unordered_map<u32, std::pair<u32, u32>> animatedImages;
 public:
-    AtlasPool(AtlasType _type, const std::string &_name, ResourceCache *_cache, u32 _maxTextureSize, bool _hasMips)
-        : type(_type), prefixName(_name), cache(_cache), maxTextureSize(_maxTextureSize), hasMips(_hasMips)
+    AtlasPool(AtlasType _type, const std::string &_name, ResourceCache *_cache, u32 _maxTextureSize, bool _filtered)
+        : type(_type), prefixName(_name), cache(_cache), maxTextureSize(_maxTextureSize), filtered(_filtered)
     {}
 
     ~AtlasPool();

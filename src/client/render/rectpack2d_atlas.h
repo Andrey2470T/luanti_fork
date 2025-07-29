@@ -6,6 +6,13 @@
 
 using namespace rectpack2D;
 
+#define CALC_MAX_MIP_LEVEL(side) \
+    (u8)std::ceil(std::log2((f32)side))
+
+#define CALC_CLOSEST_POT_SIDE(area) \
+    std::pow(2u, (u32)std::ceil(std::log2(std::sqrt((f32)area))))
+
+
 struct AnimatedAtlasTile : public AtlasTile
 {
     u32 frame_length_ms;
@@ -37,8 +44,8 @@ class Rectpack2DAtlas : public Atlas
 
     std::vector<rectu> freeSpaces; // used for the manual per-a-tile packing
 public:
-    Rectpack2DAtlas(ResourceCache *_cache, const std::string &name, u32 num, u32 maxTextureSize, img::Image *img, bool hasMips);
-    Rectpack2DAtlas(ResourceCache *_cache,const std::string &name, u32 num, u32 maxTextureSize, bool hasMips,
+    Rectpack2DAtlas(ResourceCache *_cache, const std::string &name, u32 num, u32 maxTextureSize, img::Image *img, bool filtered);
+    Rectpack2DAtlas(ResourceCache *_cache,const std::string &name, u32 num, u32 maxTextureSize, bool filtered,
         const std::vector<img::Image *> &images, const std::unordered_map<u32, std::pair<u32, u32>> &animatedImages, u32 &start_i);
 
     void packTiles() override;
