@@ -215,6 +215,11 @@ public:
         visible = yes;
     }
 
+    void setTexture(render::Texture2D *tex)
+    {
+        texture = tex;
+    }
+
     void rebuildMesh();
     void updateMesh(const std::vector<u32> &dirtyPrimitives, bool pos_or_colors=true);
     void updateMesh(bool pos_or_colors=true);
@@ -251,9 +256,10 @@ class UISpriteBank
     std::vector<std::vector<u32>> sprites_grid;
 
     v2f center;
+    bool auto_align;
 public:
-    UISpriteBank(Renderer *_rnd, ResourceCache *_cache)
-        : rnd(_rnd), cache(_cache)
+    UISpriteBank(Renderer *_rnd, ResourceCache *_cache, bool _auto_align=true)
+        : rnd(_rnd), cache(_cache), auto_align(_auto_align)
     {}
 
     void setCenter(const v2f &c)

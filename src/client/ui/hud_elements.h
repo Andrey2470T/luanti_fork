@@ -142,3 +142,38 @@ public:
     void update() override;
     void draw() override;
 };
+
+class HudInventoryList : public HudSprite
+{
+    Client *client;
+    InventoryList *invlist;
+    u32 invlistOffset = 0;
+    u32 invlistItemCount;
+    std::optional<u32> selectedItemIndex;
+
+    u32 padding;
+    u32 slotSize;
+
+    std::string background_img;
+    std::string background_selected_img;
+
+    std::unique_ptr<UISpriteBank> list;
+public:
+    HudInventoryList(Client *_client, const HudElement *elem);
+    ~HudInventoryList();
+
+    void setInventoryList(InventoryList *list, u32 list_offset, u32 list_itemcount)
+    {
+        invlist = list;
+        invlistOffset = list_offset;
+        invlistItemCount = list_itemcount;
+    }
+
+    void updateBackgroundImages();
+    void updateSelectedSlot(std::optional<u32> selected_index);
+
+    void update() override;
+    void draw() override;
+
+    void updateScalingSetting();
+};

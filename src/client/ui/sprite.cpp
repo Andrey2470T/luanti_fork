@@ -470,6 +470,9 @@ void UISpriteBank::addTextSprite(FontManager *mgr, const EnrichedString &text, u
 
 void UISpriteBank::shiftRectByLastSprite(rectf &r, u8 shift)
 {
+    if (!auto_align)
+        return;
+
     if (!sprites.empty()) {
         v2f rSize = r.getSize();
 
@@ -498,6 +501,9 @@ void UISpriteBank::shiftRectByLastSprite(rectf &r, u8 shift)
 
 void UISpriteBank::alignSpritesByCenter()
 {
+    if (!auto_align)
+        return;
+
     v2f center_shift = -(maxArea.getCenter() - center);
     move(center_shift);
 }

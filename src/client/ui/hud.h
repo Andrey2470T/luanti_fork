@@ -47,16 +47,7 @@ class Hud
     };
 
     std::map<u32, std::unique_ptr<HudSprite>, HudSpriteSorter> hudsprites;
-    /*std::map<u32, UP<UISprite>> images;
-	std::map<u32, UP<UITextSprite>> texts;
-	std::map<u32, UP<UISprite>> statbars;
-	std::map<u32, UP<UIInvList>> inventories;
-    std::map<u32, UP<Waypoint>> waypoints;
-    std::map<u32, UP<UISprite>> compasses;
-	std::map<u32, UP<Minimap>> minimaps;
-    std::map<u32, UP<UIHotbar>> hotbars;*/
 
-	v3s16 camera_offset;
 	s32 hotbar_imagesize; // Takes hud_scaling into account, updated by resizeHotbar()
 	s32 padding; // Takes hud_scaling into account, updated by resizeHotbar()
 	std::array<img::color8, 4> hbar_colors;	

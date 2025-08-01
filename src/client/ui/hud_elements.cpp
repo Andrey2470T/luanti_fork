@@ -11,8 +11,9 @@
 #include "client/render/camera.h"
 #include <Utils/Quaternion.h>
 #include "minimap.h"
+#include "settings.h"
 
-void calcHUDRect(RenderSystem *rnd_system, rectf &r, const HudElement *elem,
+v2f calcHUDOffset(RenderSystem *rnd_system, rectf &r, const HudElement *elem,
     bool scale_factor, std::optional<v2f> override_pos)
 {
     v2u screensize = rnd_system->getWindowSize();
@@ -42,13 +43,13 @@ void calcHUDRect(RenderSystem *rnd_system, rectf &r, const HudElement *elem,
             rSize.Y = screensize.Y * (elem->size.Y * -0.01);
 
         if (rSize.X <= 0 || rSize.Y <= 0)
-            return; // Avoid zero divides
+            return v2f(); // Avoid zero divides
     }
 
     v2f offset(elem->offset.X * scale_f, elem->offset.Y * scale_f);
     v2f alignment((elem->align.X - 1.0f) * (rSize.X / 2.0f), (elem->align.Y - 1.0f) * (rSize.Y / 2.0f));
 
-    r += pos + offset + alignment;
+    return pos + offset + alignment;
 }
 
 EnrichedString getHudWText(const HudElement *elem)
@@ -91,7 +92,7 @@ rectf getHudTextRect(RenderSystem *rnd_system, const std::string &text, const Hu
     v2u text_size = textfont->getTextSize(wtext.getString());
     rectf text_r(0.0f, 0.0f, text_size.X, text_size.Y);
 
-    calcHUDRect(rnd_system, text_r, elem, scale_factor, override_pos);
+    text_r += calcHUDOffset(rnd_system, text_r, elem, scale_factor, override_pos);
 
     return text_r;
 }
@@ -104,7 +105,7 @@ rectf getHudImageRect(ResourceCache *cache, RenderSystem *rnd_system, const std:
     v2u imgSize = img->getSize();
     rectf imgRect(0, 0, imgSize.X, imgSize.Y);
 
-    calcHUDRect(rnd_system, imgRect, elem, scale_factor, override_pos);
+    imgRect += calcHUDOffset(rnd_system, imgRect, elem, scale_factor, override_pos);
 
     return imgRect;
 }
@@ -370,7 +371,7 @@ void HudCompass::update()
     auto img = cache->getOrLoad<img::Image>(ResourceType::IMAGE, elem->text);
 
     rectf destrect;
-    calcHUDRect(rnd_system, destrect, elem, false, std::nullopt);
+    destrect += calcHUDOffset(rnd_system, destrect, elem, false, std::nullopt);
 
     // Angle according to camera view
     matrix4 rotation;
@@ -484,7 +485,7 @@ HudMinimap::HudMinimap(Client *_client, const HudElement *elem)
 void HudMinimap::update()
 {
     rectf destrect;
-    calcHUDRect(rnd_system, destrect, elem, true, std::nullopt);
+    destrect += calcHUDOffset(rnd_system, destrect, elem, true, std::nullopt);
 
     viewport = recti(destrect.ULC.X, destrect.ULC.Y, destrect.LRC.X, destrect.LRC.Y);
     minimap->updateActiveMarkers(viewport);
@@ -493,4 +494,191 @@ void HudMinimap::update()
 void HudMinimap::draw()
 {
     minimap->drawMinimap(viewport);
+}
+
+static void setting_changed_callback(const std::string &name, void *data)
+{
+    static_cast<HudInventoryList*>(data)->updateScalingSetting();
+}
+
+HudInventoryList::HudInventoryList(Client *_client, const HudElement *elem)
+    : HudSprite(_client->getResourceCache(), _client->getRenderSystem(), elem)
+{
+    updateScalingSetting();
+    g_settings->registerChangedCallback("dpi_change_notifier", setting_changed_callback, this);
+    g_settings->registerChangedCallback("display_density_factor", setting_changed_callback, this);
+    g_settings->registerChangedCallback("hud_scaling", setting_changed_callback, this);
+
+    list = std::make_unique<UISpriteBank>(rnd_system->getRenderer(), cache, false);
+    list->addSprite(rectf(), 0);
+    list->addSprite(rectf(), 0);
+    list->getSprite(1)->setVisible(false);
+
+    updateBackgroundImages();
+}
+
+HudInventoryList::~HudInventoryList()
+{
+    g_settings->deregisterAllChangedCallbacks(this);
+}
+
+void HudInventoryList::updateBackgroundImages()
+{
+    LocalPlayer *player = client->getEnv().getLocalPlayer();
+    auto guiPool = rnd_system->getPool(false);
+
+    if (background_img != player->hotbar_image) {
+        background_img = player->hotbar_image;
+
+        auto img = cache->getOrLoad<img::Image>(ResourceType::IMAGE, background_img);
+        list->getSprite(0)->setTexture(img ? guiPool->getAtlasByTile(img)->getTexture() : nullptr);
+    }
+
+    if (background_selected_img != player->hotbar_selected_image) {
+        background_selected_img = player->hotbar_selected_image;
+
+        auto selected_img = cache->getOrLoad<img::Image>(ResourceType::IMAGE, background_selected_img);
+        list->getSprite(0)->setTexture(selected_img ? guiPool->getAtlasByTile(selected_img)->getTexture() : nullptr);
+    }
+}
+
+void HudInventoryList::updateSelectedSlot(std::optional<u32> selected_index)
+{
+    if (selected_index.value() == selectedItemIndex.value())
+        return;
+
+    auto selected_sprite = list->getSprite(1);
+
+    if (!selected_index && selectedItemIndex) {
+        selectedItemIndex = std::nullopt;
+        selected_sprite->setVisible(false);
+        return;
+    }
+
+    selected_sprite->clear();
+    selected_sprite->setVisible(true);
+
+    auto shape = list->getSprite(0)->getShape();
+    auto selected_shape = selected_sprite->getShape();
+
+    assert(selected_index <= shape->getPrimitiveCount());
+
+    rectf selected_r = shape->getPrimitiveArea(selected_index.value()-1);
+
+    auto selected_img = cache->getOrLoad<img::Image>(ResourceType::IMAGE, background_selected_img);
+    auto guiPool = rnd_system->getPool(false);
+    rectf srcrect = guiPool->getTileRect(selected_img, false, true);
+
+    if (!background_selected_img.empty()) {
+        selected_r.ULC -= padding*2;
+        selected_r.LRC += padding*2;
+
+        selected_shape->addRectangle(selected_r, {img::white}, srcrect);
+    } else {
+        img::color8 c_outside(img::blue);
+
+        f32 x1 = selected_r.ULC.X;
+        f32 y1 = selected_r.ULC.Y;
+        f32 x2 = selected_r.LRC.X;
+        f32 y2 = selected_r.LRC.Y;
+        // Black base borders
+        selected_shape->addRectangle(
+            rectf(
+                v2f(x1 - padding, y1 - padding),
+                v2f(x2 + padding, y1)
+            ), {c_outside}, rectf());
+        selected_shape->addRectangle(
+            rectf(
+                v2f(x1 - padding, y2),
+                v2f(x2 + padding, y2 + padding)
+            ), {c_outside}, rectf());
+        selected_shape->addRectangle(
+            rectf(
+                v2f(x1 - padding, y1),
+                v2f(x1, y2)
+            ), {c_outside}, rectf());
+        selected_shape->addRectangle(
+            rectf(
+                v2f(x2, y1),
+                v2f(x2 + padding, y2)
+            ), {c_outside}, rectf());
+    }
+
+
+    selected_sprite->rebuildMesh();
+
+    //drawItemStack(driver, g_fontengine->getFont(), item, rect, NULL,
+    //	client, selected ? IT_ROT_SELECTED : IT_ROT_NONE);
+}
+
+void HudInventoryList::update()
+{
+    u32 height  = slotSize + padding * 2;
+    u32 width   = (invlistItemCount - invlistOffset) * (slotSize + padding * 2);
+
+    if (elem->dir == HUD_DIR_TOP_BOTTOM || elem->dir == HUD_DIR_BOTTOM_TOP)
+        std::swap(width, height);
+
+    rectf listrect(0, 0, width, height);
+    v2f list_offset = calcHUDOffset(rnd_system, listrect, elem, true, std::nullopt);
+
+    auto sprite = list->getSprite(0);
+    sprite->clear();
+
+    auto img = cache->getOrLoad<img::Image>(ResourceType::IMAGE, background_img);
+    auto guiPool = rnd_system->getPool(false);
+    rectf srcrect = guiPool->getTileRect(img, false, true);
+
+    std::array<img::color8, 4> colors = {img::white, img::white, img::white, img::white};
+
+    if (!background_img.empty()) {
+        rectf destrect(-padding/2, -padding/2, width+padding/2, height+padding/2);
+        destrect += list_offset;
+
+        sprite->getShape()->addRectangle(destrect, colors, srcrect);
+    }
+    else {
+        rectf slotrect(0, 0, slotSize, slotSize);
+        const u32 list_max = std::min(invlistItemCount, invlist->getSize());
+
+        for (u32 i = invlistOffset; i < invlistItemCount; i++) {
+            s32 fullimglen = slotSize + padding * 2;
+
+            v2f steppos;
+            switch (elem->dir) {
+            case HUD_DIR_RIGHT_LEFT:
+                steppos = v2f(padding + ((f32)list_max - 1 - i - (f32)invlistOffset) * fullimglen, padding);
+                break;
+            case HUD_DIR_TOP_BOTTOM:
+                steppos = v2f(padding, padding + (i - (f32)invlistOffset) * fullimglen);
+                break;
+            case HUD_DIR_BOTTOM_TOP:
+                steppos = v2f(padding, padding + ((f32)list_max - 1 - i - (f32)invlistOffset) * fullimglen);
+                break;
+            default:
+                steppos = v2f(padding + (i - (f32)invlistOffset) * fullimglen, padding);
+                break;
+            }
+
+            slotrect += steppos;
+
+            rectf destrect = slotrect;
+            destrect += list_offset;
+
+            sprite->getShape()->addRectangle(destrect, {img::color8(img::PF_RGBA8, 0, 0, 0, 128)}, srcrect);
+        }
+    }
+
+   sprite->rebuildMesh();
+}
+
+void HudInventoryList::draw()
+{
+    list->drawBank();
+}
+
+void HudInventoryList::updateScalingSetting()
+{
+    slotSize = floor(HOTBAR_IMAGE_SIZE * rnd_system->getScaleFactor() + 0.5);
+    padding = slotSize / 12;
 }
