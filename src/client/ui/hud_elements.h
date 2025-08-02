@@ -10,17 +10,6 @@ class UITextSprite;
 class RenderSystem;
 class FontManager;
 
-void calcHudRect(RenderSystem *rnd_system, rectf &r, const HudElement *elem,
-    bool scale_factor, std::optional<v2f> override_pos=std::nullopt);
-
-EnrichedString getHudWText(const HudElement *elem);
-render::TTFont *getHudTextFont(FontManager *font_mgr, const HudElement *elem, bool use_style);
-
-rectf getHudTextRect(RenderSystem *rnd_system, const std::string &text, const HudElement *elem, bool use_style,
-    bool scale_factor, std::optional<v2f> override_pos=std::nullopt);
-rectf getHudImageRect(ResourceCache *cache, RenderSystem *rnd_system, const std::string &imgname, const HudElement *elem,
-    bool scale_factor, std::optional<v2f> override_pos=std::nullopt);
-
 class HudSprite
 {
 protected:
@@ -145,35 +134,53 @@ public:
 
 class HudInventoryList : public HudSprite
 {
-    Client *client;
     InventoryList *invlist;
     u32 invlistOffset = 0;
-    u32 invlistItemCount;
     std::optional<u32> selectedItemIndex;
 
     u32 padding;
     u32 slotSize;
+    
+    bool list_bisected = false;
 
-    std::string background_img;
     std::string background_selected_img;
-
+protected:
+    Client *client;
+    u32 invlistItemCount;
+    std::string background_img;
     std::unique_ptr<UISpriteBank> list;
 public:
     HudInventoryList(Client *_client, const HudElement *elem);
     ~HudInventoryList();
 
-    void setInventoryList(InventoryList *list, u32 list_offset, u32 list_itemcount)
+    void setInventoryList(InventoryList *_list, u32 list_offset, u32 list_itemcount)
     {
-        invlist = list;
+        invlist = _list;
         invlistOffset = list_offset;
-        invlistItemCount = list_itemcount;
+        invlistItemCount = std::min(list_itemcount, invlist->getSize());
     }
 
     void updateBackgroundImages();
     void updateSelectedSlot(std::optional<u32> selected_index);
 
     void update() override;
-    void draw() override;
+    void draw() override
+    {
+    	list->drawBank();
+    }
 
     void updateScalingSetting();
+private:
+    rectf getSlotRect(u32 n) const;
+};
+
+class HudHotbar : public HudInventoryList
+{
+public:
+    HudHotbar(Client *client, const HudElement *elem, Inventory *inv);
+    
+    void updateSelectedSlot();
+    void update() override;
+
+    void updateMaxHotbarItemCount();
 };

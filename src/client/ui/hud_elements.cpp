@@ -12,6 +12,7 @@
 #include <Utils/Quaternion.h>
 #include "minimap.h"
 #include "settings.h"
+#include "gui/touchcontrols.h"
 
 v2f calcHUDOffset(RenderSystem *rnd_system, rectf &r, const HudElement *elem,
     bool scale_factor, std::optional<v2f> override_pos)
@@ -84,7 +85,7 @@ render::TTFont *getHudTextFont(FontManager *font_mgr, const HudElement *elem, bo
 }
 
 rectf getHudTextRect(RenderSystem *rnd_system, const std::string &text, const HudElement *elem, bool use_style,
-    bool scale_factor, std::optional<v2f> override_pos)
+    bool scale_factor, std::optional<v2f> override_pos=std::nullopt)
 {
     auto textfont = getHudTextFont(rnd_system->getFontManager(), elem, use_style);
     EnrichedString wtext = getHudWText(elem);
@@ -98,7 +99,7 @@ rectf getHudTextRect(RenderSystem *rnd_system, const std::string &text, const Hu
 }
 
 rectf getHudImageRect(ResourceCache *cache, RenderSystem *rnd_system, const std::string &imgname, const HudElement *elem,
-    bool scale_factor, std::optional<v2f> override_pos)
+    bool scale_factor, std::optional<v2f> override_pos=std::nullopt)
 {
     auto img = cache->getOrLoad<img::Image>(ResourceType::IMAGE, imgname);
 
@@ -538,7 +539,7 @@ void HudInventoryList::updateBackgroundImages()
         background_selected_img = player->hotbar_selected_image;
 
         auto selected_img = cache->getOrLoad<img::Image>(ResourceType::IMAGE, background_selected_img);
-        list->getSprite(0)->setTexture(selected_img ? guiPool->getAtlasByTile(selected_img)->getTexture() : nullptr);
+        list->getSprite(1)->setTexture(selected_img ? guiPool->getAtlasByTile(selected_img)->getTexture() : nullptr);
     }
 }
 
@@ -558,18 +559,18 @@ void HudInventoryList::updateSelectedSlot(std::optional<u32> selected_index)
     selected_sprite->clear();
     selected_sprite->setVisible(true);
 
-    auto shape = list->getSprite(0)->getShape();
     auto selected_shape = selected_sprite->getShape();
 
-    assert(selected_index <= shape->getPrimitiveCount());
-
-    rectf selected_r = shape->getPrimitiveArea(selected_index.value()-1);
-
-    auto selected_img = cache->getOrLoad<img::Image>(ResourceType::IMAGE, background_selected_img);
-    auto guiPool = rnd_system->getPool(false);
-    rectf srcrect = guiPool->getTileRect(selected_img, false, true);
+    rectf selected_r = getSlotRect(selected_index.value());
+    
+    if (list_bisected && selected_index.value() <= invlistItemCount / 2)
+        selected_r -= v2f(0, slotSize + padding);
 
     if (!background_selected_img.empty()) {
+    	auto selected_img = cache->getOrLoad<img::Image>(ResourceType::IMAGE, background_selected_img);
+        auto guiPool = rnd_system->getPool(false);
+        rectf srcrect = guiPool->getTileRect(selected_img, false, true);
+    
         selected_r.ULC -= padding*2;
         selected_r.LRC += padding*2;
 
@@ -625,56 +626,58 @@ void HudInventoryList::update()
     auto sprite = list->getSprite(0);
     sprite->clear();
 
-    auto img = cache->getOrLoad<img::Image>(ResourceType::IMAGE, background_img);
-    auto guiPool = rnd_system->getPool(false);
-    rectf srcrect = guiPool->getTileRect(img, false, true);
-
     std::array<img::color8, 4> colors = {img::white, img::white, img::white, img::white};
+    
+    v2u wnd_size = rnd_system->getWindowSize();
+	list_bisected = width / wnd_size.X <= g_settings->getFloat("hud_hotbar_max_width");
 
+    v2f shift_up(0, slotSize + padding);
     if (!background_img.empty()) {
+    	auto img = cache->getOrLoad<img::Image>(ResourceType::IMAGE, background_img);
+        auto guiPool = rnd_system->getPool(false);
+        rectf srcrect = guiPool->getTileRect(img, false, true);
+    
         rectf destrect(-padding/2, -padding/2, width+padding/2, height+padding/2);
         destrect += list_offset;
 
-        sprite->getShape()->addRectangle(destrect, colors, srcrect);
+        if (!list_bisected)
+            sprite->getShape()->addRectangle(destrect, colors, srcrect);
+        else {
+            rectf shifted_destrect = destrect - shift_up;
+            shifted_destrect.LRC.X -= shifted_destrect.getWidth()/2;
+            destrect.ULC.X += destrect.getWidth()/2;
+            
+            sprite->getShape()->addRectangle(shifted_destrect, colors, srcrect);
+            sprite->getShape()->addRectangle(destrect, colors, srcrect);
+        }
     }
     else {
-        rectf slotrect(0, 0, slotSize, slotSize);
-        const u32 list_max = std::min(invlistItemCount, invlist->getSize());
+    	if (!list_bisected) {
+            for (u32 i = invlistOffset; i < invlistItemCount; i++) {
+                rectf destrect = getSlotRect(i);
+                destrect += list_offset;
 
-        for (u32 i = invlistOffset; i < invlistItemCount; i++) {
-            s32 fullimglen = slotSize + padding * 2;
-
-            v2f steppos;
-            switch (elem->dir) {
-            case HUD_DIR_RIGHT_LEFT:
-                steppos = v2f(padding + ((f32)list_max - 1 - i - (f32)invlistOffset) * fullimglen, padding);
-                break;
-            case HUD_DIR_TOP_BOTTOM:
-                steppos = v2f(padding, padding + (i - (f32)invlistOffset) * fullimglen);
-                break;
-            case HUD_DIR_BOTTOM_TOP:
-                steppos = v2f(padding, padding + ((f32)list_max - 1 - i - (f32)invlistOffset) * fullimglen);
-                break;
-            default:
-                steppos = v2f(padding + (i - (f32)invlistOffset) * fullimglen, padding);
-                break;
+                sprite->getShape()->addRectangle(destrect, {img::color8(img::PF_RGBA8, 0, 0, 0, 128)}, rectf());
             }
+        }
+        else {
+            for (u32 i = invlistOffset; i < invlistItemCount / 2; i++) {
+                rectf destrect = getSlotRect(i);
+                destrect += list_offset;
+                destrect -= shift_up;
 
-            slotrect += steppos;
+                sprite->getShape()->addRectangle(destrect, {img::color8(img::PF_RGBA8, 0, 0, 0, 128)}, rectf());
+            }
+            for (u32 i = invlistItemCount / 2; i < invlistItemCount; i++) {
+                rectf destrect = getSlotRect(i);
+                destrect += list_offset;
 
-            rectf destrect = slotrect;
-            destrect += list_offset;
-
-            sprite->getShape()->addRectangle(destrect, {img::color8(img::PF_RGBA8, 0, 0, 0, 128)}, srcrect);
+                sprite->getShape()->addRectangle(destrect, {img::color8(img::PF_RGBA8, 0, 0, 0, 128)}, rectf());
+            }
         }
     }
 
    sprite->rebuildMesh();
-}
-
-void HudInventoryList::draw()
-{
-    list->drawBank();
 }
 
 void HudInventoryList::updateScalingSetting()
@@ -682,3 +685,75 @@ void HudInventoryList::updateScalingSetting()
     slotSize = floor(HOTBAR_IMAGE_SIZE * rnd_system->getScaleFactor() + 0.5);
     padding = slotSize / 12;
 }
+
+rectf HudInventoryList::getSlotRect(u32 n) const
+{
+    assert(invlistOffset <= n && n <= invlistItemCount);
+	
+    u32 list_max = invlistItemCount;
+
+    s32 fullimglen = slotSize + padding * 2;
+
+    v2f steppos;
+    switch (elem->dir) {
+        case HUD_DIR_RIGHT_LEFT:
+            steppos = v2f(padding + ((f32)list_max - 1 - n - (f32)invlistOffset) * fullimglen, padding);
+            break;
+        case HUD_DIR_TOP_BOTTOM:
+            steppos = v2f(padding, padding + (n - (f32)invlistOffset) * fullimglen);
+            break;
+        case HUD_DIR_BOTTOM_TOP:
+            steppos = v2f(padding, padding + ((f32)list_max - 1 - n - (f32)invlistOffset) * fullimglen);
+            break;
+        default:
+            steppos = v2f(padding + (n - (f32)invlistOffset) * fullimglen, padding);
+            break;
+    }
+
+   rectf slotrect(0, 0, slotSize, slotSize);
+   slotrect += steppos;
+
+   return slotrect;
+}
+
+HudHotbar::HudHotbar(Client *client, const HudElement *elem, Inventory *inv)
+    : HudInventoryList(client, elem)
+{
+    InventoryList *mainlist = inv->getList("main");
+    if (!mainlist) {
+        // Silently ignore this. We may not be initialized completely.
+        return;
+    }
+
+    setInventoryList(mainlist, 0, 0);
+    updateMaxHotbarItemCount();
+}
+
+void HudHotbar::updateSelectedSlot()
+{
+    HudInventoryList::updateSelectedSlot(client->getEnv().getLocalPlayer()->getWieldIndex());
+}
+
+void HudHotbar::update()
+{
+    if (g_touchcontrols)
+        g_touchcontrols->resetHotbarRects();
+
+    HudInventoryList::update();
+
+    if (g_touchcontrols && background_img.empty()) {
+        auto shape = list->getSprite(0)->getShape();
+        for (u32 i = 0; i < shape->getPrimitiveCount(); i++) {
+            auto rect = shape->getPrimitiveArea(i);
+
+            g_touchcontrols->registerHotbarRect(i, recti(rect.ULC.X, rect.ULC.Y, rect.LRC.X, rect.LRC.Y));
+        }
+    }
+}
+
+void HudHotbar::updateMaxHotbarItemCount()
+{
+    invlistItemCount = client->getEnv().getLocalPlayer()->getMaxHotbarItemcount();
+}
+
+	
