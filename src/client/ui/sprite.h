@@ -104,7 +104,7 @@ public:
 
     void updateLine(u32 n, const v2f &start_p, const v2f &end_p, const img::color8 &start_c, const img::color8 &end_c);
     void updateTriangle(u32 n, const v2f &p1, const v2f &p2, const v2f &p3, const img::color8 &c1, const img::color8 &c2, const img::color8 &c3);
-    void updateRectangle(u32 n, const rectf &r, const std::array<img::color8, 4> &colors);
+    void updateRectangle(u32 n, const rectf &r, const std::array<img::color8, 4> &colors, const rectf &texr=rectf());
     void updateEllipse(u32 n, f32 a, f32 b, const v2f &center, const img::color8 &c);
 
     void movePrimitive(u32 n, const v2f &shift);
@@ -154,7 +154,7 @@ public:
     friend class UISprite;
 private:
     void appendToBuffer(MeshBuffer *buf, v2u imgSize=v2u());
-    void updateBuffer(MeshBuffer *buf, u32 primitiveNum, bool pos_or_colors=true);
+    void updateBuffer(MeshBuffer *buf, u32 primitiveNum, bool pos_or_colors=true, v2u imgSize=v2u());
     void appendToBuffer(MeshBuffer *buf, u32 primitiveNum, v2u imgSize=v2u());
 };
 
@@ -279,6 +279,10 @@ public:
     void addImageSprite(render::Texture2D *tex, const rectf &texPart, u8 shift);
     void addTextSprite(FontManager *mgr, const EnrichedString &text, u8 shift);
 
+    u32 getSpriteCount() const
+    {
+        return sprites.size();
+    }
     UISprite *getSprite(u32 n) const
     {
         assert(n < sprites.size());

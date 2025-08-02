@@ -302,13 +302,20 @@ void HudWaypoint::update()
         text_sprite->updateBuffer(getHudTextRect(rnd_system, text, elem, true, false, pixelPos));
     }
     else {
-        rectf img_rect = getHudImageRect(cache, rnd_system, elem->text, elem, false, pixelPos);
         auto img_sprite = faceBank->getSprite(0);
+
+        auto img = cache->getOrLoad<img::Image>(ResourceType::IMAGE, elem->text);
+        auto guiPool = rnd_system->getPool(false);
+        img_sprite->setTexture(rnd_system->getPool(false)->getAtlasByTile(img, true)->getTexture());
+
+        rectf img_rect = getHudImageRect(cache, rnd_system, elem->text, elem, false, pixelPos);
 
         img::color8 color(img::PF_RGBA8, (elem->number >> 16) & 0xFF,
                           (elem->number >> 8)  & 0xFF,
                           (elem->number >> 0)  & 0xFF, 255);
-        img_sprite->getShape()->updateRectangle(0, img_rect, {color, color, color, color});
+
+        rectf srcrect = guiPool->getTileRect(img, false, true);
+        img_sprite->getShape()->updateRectangle(0, img_rect, {color, color, color, color}, srcrect);
         img_sprite->updateMesh(true);
         img_sprite->updateMesh(false);
     }
@@ -338,20 +345,21 @@ bool HudWaypoint::calculateScreenPos(v2f *pos)
 HudImage::HudImage(Client *client, const HudElement *elem)
     : HudSprite(client->getResourceCache(), client->getRenderSystem(), elem)
 {
-    auto img = cache->getOrLoad<img::Image>(ResourceType::IMAGE, elem->text);
-    auto guiPool = rnd_system->getPool(false);
-    auto guiTex = guiPool->getAtlasByTile(img, true)->getTexture();
+    image = std::make_unique<UISprite>(nullptr, rnd_system->getRenderer(), cache,
+        rectf(), rectf(), std::array<img::color8, 4>{img::white}, true);
 
-    rectf srcrect = guiPool->getTileRect(img, false, true);
-    rectf destrect = getHudImageRect(cache, rnd_system, elem->text, elem, true);
-    image = std::make_unique<UISprite>(guiTex, rnd_system->getRenderer(), cache,
-        srcrect, destrect, std::array<img::color8, 4>{img::white, img::white, img::white, img::white}, true);
+    update();
 }
 
 void HudImage::update()
 {
+    auto img = cache->getOrLoad<img::Image>(ResourceType::IMAGE, elem->text);
+    auto guiPool = rnd_system->getPool(false);
+    image->setTexture(guiPool->getAtlasByTile(img, true)->getTexture());
+
+    rectf srcrect = guiPool->getTileRect(img, false, true);
     rectf img_rect = getHudImageRect(cache, rnd_system, elem->text, elem, true);
-    image->getShape()->updateRectangle(0, img_rect, {img::white, img::white, img::white, img::white});
+    image->getShape()->updateRectangle(0, img_rect, {img::white}, srcrect);
     image->updateMesh(true);
 }
 

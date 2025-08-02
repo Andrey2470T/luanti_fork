@@ -75,11 +75,12 @@ void UIShape::updateTriangle(u32 n, const v2f &p1, const v2f &p2, const v2f &p3,
     trig->c3 = c3;
     updateMaxArea(maxArea, v2f(p1.X, p3.Y), p2, maxAreaInit);
 }
-void UIShape::updateRectangle(u32 n, const rectf &r, const std::array<img::color8, 4> &colors)
+void UIShape::updateRectangle(u32 n, const rectf &r, const std::array<img::color8, 4> &colors, const rectf &texr)
 {
     auto rect = dynamic_cast<Rectangle *>(primitives.at(n).get());
     rect->r = r;
     rect->colors = colors;
+    rect->texr = texr;
     updateMaxArea(maxArea, r.ULC, r.LRC, maxAreaInit);
 }
 void UIShape::updateEllipse(u32 n, f32 a, f32 b, const v2f &center, const img::color8 &c)
@@ -193,7 +194,7 @@ void UIShape::appendToBuffer(MeshBuffer *buf, v2u imgSize)
         appendToBuffer(buf, i, imgSize);
 }
 
-void UIShape::updateBuffer(MeshBuffer *buf, u32 primitiveNum, bool pos_or_colors)
+void UIShape::updateBuffer(MeshBuffer *buf, u32 primitiveNum, bool pos_or_colors, v2u imgSize)
 {
     if (primitiveNum > primitives.size()-1)
         return;
@@ -246,6 +247,18 @@ void UIShape::updateBuffer(MeshBuffer *buf, u32 primitiveNum, bool pos_or_colors
             svtSetColor(buf, rect->colors[2], startV+2);
             svtSetColor(buf, rect->colors[3], startV+3);
         }
+
+        f32 invW = 1.0f / imgSize.X;
+        f32 invH = 1.0f / imgSize.Y;
+        rectf uv(
+            rect->texr.ULC.X * invW, rect->texr.ULC.Y * invH,
+            rect->texr.LRC.X * invW, rect->texr.LRC.Y * invH
+        );
+        svtSetUV(buf, uv.ULC, startV);
+        svtSetUV(buf, v2f(uv.LRC.X, uv.ULC.Y), startV+1);
+        svtSetUV(buf, uv.LRC, startV+2);
+        svtSetUV(buf, v2f(uv.ULC.X, uv.LRC.Y), startV+3);
+
         break;
     }
     case UIPrimitiveType::ELLIPSE: {
@@ -369,14 +382,14 @@ void UISprite::rebuildMesh()
 void UISprite::updateMesh(const std::vector<u32> &dirtyPrimitives, bool pos_or_colors)
 {
     for (auto n : dirtyPrimitives)
-        shape->updateBuffer(mesh.get(), n, pos_or_colors);
+        shape->updateBuffer(mesh.get(), n, pos_or_colors, texture->getSize());
     mesh->uploadVertexData();
 }
 
 void UISprite::updateMesh(bool pos_or_colors)
 {
     for (u32 i = 0; i < shape->getPrimitiveCount(); i++)
-        shape->updateBuffer(mesh.get(), i, pos_or_colors);
+        shape->updateBuffer(mesh.get(), i, pos_or_colors, texture->getSize());
     mesh->uploadVertexData();
 }
 

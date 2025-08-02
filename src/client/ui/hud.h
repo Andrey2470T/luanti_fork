@@ -26,14 +26,17 @@ class HudSprite;
 
 class Hud
 {
-	Client *client = nullptr;
+    Client *client;
 	RenderSystem *rnd_system;
-	LocalPlayer *player = nullptr;
-	Inventory *inventory = nullptr;
-	ResourceCache *cache = nullptr;
+    Inventory *inventory;
+    LocalPlayer *player;
+    ResourceCache *cache;
 
     // Crosshair is not controlled by mods yet
     std::unique_ptr<UISprite> crosshair;
+
+    u32 builtinMinimapID;
+    u32 builtinHotbarID;
 
     class HudSpriteSorter
     {
@@ -47,10 +50,6 @@ class Hud
     };
 
     std::map<u32, std::unique_ptr<HudSprite>, HudSpriteSorter> hudsprites;
-
-	s32 hotbar_imagesize; // Takes hud_scaling into account, updated by resizeHotbar()
-	s32 padding; // Takes hud_scaling into account, updated by resizeHotbar()
-	std::array<img::color8, 4> hbar_colors;	
 public:
     // Crosshair
     img::color8 crosshair_color;
@@ -58,34 +57,19 @@ public:
     const std::string object_crosshair_img = "object_crosshair.png";
     bool pointing_at_object;
 
-	std::string hotbar_image = "";
-	bool use_hotbar_image = false;
-	std::string hotbar_selected_image = "";
-	bool use_hotbar_selected_image = false;
-
     Hud(Client *_client, Inventory *_inventory);
-
-	void readScalingSetting();
-	~Hud();
-
-	void drawHotbar(const v2i &pos, const v2f &offset, u16 direction, const v2f &align);
-	void resizeHotbar();
 
 	bool hasElementOfType(HudElementType type);
 
     void updateCrosshair();
+    void updateBuiltinElements();
+    void updateInvListSelections(std::optional<u32> slotID);
 
-    void addHUDElement(const HudElement *elem, const v3s16 &camera_offset);
-    void removeHUDElement(const HudElement *elem);
-    void updateHUDElement(const HudElement *elem, const v3s16 &camera_offset);
-    //void drawLuaElements(const v3s16 &camera_offset);
-
+    void addHUDElement(u32 id, const HudElement *elem);
+    void removeHUDElement(u32 id);
+    void updateHUDElement(u32 id);
 private:
-	void drawItems(v2i screen_pos, v2i screen_offset, s32 itemcount, v2f alignment,
-			s32 inv_offset, InventoryList *mainlist, u16 selectitem,
-			u16 direction, bool is_hotbar);
-
-	void drawItem(const ItemStack &item, const recti &rect, bool selected);
+    void initCrosshair();
 };
 
 enum ItemRotationKind
@@ -97,7 +81,7 @@ enum ItemRotationKind
 	IT_ROT_NONE, // Must be last, also serves as number
 };
 
-void drawItemStack(
+/*void drawItemStack(
 		render::TTFont *font,
 		const ItemStack &item,
 		const recti &rect,
@@ -113,5 +97,5 @@ void drawItemStack(
 		Client *client,
 		ItemRotationKind rotation_kind,
 		const v3s16 &angle,
-		const v3s16 &rotation_speed);
+        const v3s16 &rotation_speed);*/
 

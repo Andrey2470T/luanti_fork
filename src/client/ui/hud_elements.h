@@ -4,6 +4,7 @@
 #include "client/player/localplayer.h"
 #include "../hud.h"
 #include <Render/TTFont.h>
+#include "minimap.h"
 
 struct HudElement;
 class UITextSprite;
@@ -33,6 +34,8 @@ public:
         return elem->z_index;
     }
 
+    virtual void setVisible(bool visible) = 0;
+
     virtual void update() = 0;
     virtual void draw() = 0;
 };
@@ -43,6 +46,10 @@ class HudText : public HudSprite
 public:
     HudText(Client *client, const HudElement *elem);
 
+    void setVisible(bool visible) override
+    {
+        text->setVisible(visible);
+    }
     void update() override;
     void draw() override
     {
@@ -56,6 +63,10 @@ class HudStatbar : public HudSprite
 public:
     HudStatbar(Client *client, const HudElement *elem);
 
+    void setVisible(bool visible) override
+    {
+        bar->setVisible(visible);
+    }
     void update() override;
     void draw() override
     {
@@ -74,6 +85,11 @@ class HudWaypoint : public HudSprite
 public:
     HudWaypoint(Client *_client, const HudElement *elem, UISpriteBank *bank);
 
+    void setVisible(bool visible) override
+    {
+        for (u32 i = 0; i < faceBank->getSpriteCount(); i++)
+            faceBank->getSprite(i)->setVisible(visible);
+    }
     void update() override;
     void draw() override
     {
@@ -89,6 +105,10 @@ class HudImage : public HudSprite
 public:
     HudImage(Client *client, const HudElement *elem);
 
+    void setVisible(bool visible) override
+    {
+        image->setVisible(visible);
+    }
     void update() override;
     void draw() override
     {
@@ -105,6 +125,10 @@ class HudCompass : public HudSprite
 public:
     HudCompass(Client *_client, const HudElement *elem);
 
+    void setVisible(bool visible) override
+    {
+        compass->setVisible(visible);
+    }
     void update() override;
     void draw() override;
 private:
@@ -126,6 +150,11 @@ public:
     Minimap *getUnderlyingMinimap() const
     {
         return minimap.get();
+    }
+
+    void setVisible(bool visible) override
+    {
+        minimap->setVisible(visible);
     }
 
     void update() override;
@@ -163,6 +192,11 @@ public:
     void updateBackgroundImages();
     void updateSelectedSlot(std::optional<u32> selected_index);
 
+    void setVisible(bool visible) override
+    {
+        for (u32 i = 0; i < list->getSpriteCount(); i++)
+            list->getSprite(i)->setVisible(visible);
+    }
     void update() override;
     void draw() override
     {
