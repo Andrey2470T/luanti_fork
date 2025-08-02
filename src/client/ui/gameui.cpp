@@ -17,6 +17,7 @@
 #include "nodedef.h"
 #include "profiler.h"
 #include "game.h"
+#include "client/client.h"
 #include "client/render/rendersystem.h"
 #include "client/media/resource.h"
 #include "glyph_atlas.h"
@@ -34,8 +35,8 @@ inline static const char *yawToDirectionString(int yaw)
 	return direction[yaw];
 }
 
-GameUI::GameUI(RenderSystem *_rndsys)
-    : rndsys(_rndsys)
+GameUI::GameUI(Client *client, Inventory *inv)
+    : rndsys(client->getRenderSystem()), hud(std::make_unique<Hud>(client, inv))
 {
 	if (guienv && guienv->getSkin())
         statustext_initial_color = guienv->getSkin()->getColor(GUIDefaultColor::ButtonText);

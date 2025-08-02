@@ -4,11 +4,10 @@
 
 #pragma once
 
-#include <string>
-#include "irr_v3d.h"
+#include <BasicIncludes.h>
 
 class Client;
-class RenderingEngine;
+class RenderSystem;
 class InputHandler;
 class ISoundManager;
 class GUIFormSpecMenu;
@@ -22,11 +21,11 @@ It includes:
  */
 struct GameFormSpec
 {
-	void init(Client *client, RenderingEngine *rendering_engine, InputHandler *input)
+    void init(Client *_client, RenderSystem *_rndsys, InputHandler *_input)
 	{
-		m_client = client;
-		m_rendering_engine = rendering_engine;
-		m_input = input;
+        client = _client;
+        rndsys = _rndsys;
+        input = _input;
 	}
 
 	~GameFormSpec();
@@ -49,14 +48,14 @@ struct GameFormSpec
 #endif
 
 private:
-	Client *m_client;
-	RenderingEngine *m_rendering_engine;
-	InputHandler *m_input;
+    Client *client;
+    RenderSystem *rndsys;
+    InputHandler *input;
 
 	// Default: "". If other than "": Empty show_formspec packets will only
 	// close the formspec when the formname matches
-	std::string m_formname;
-	GUIFormSpecMenu *m_formspec = nullptr;
+    std::string formname;
+    GUIFormSpecMenu *formspec = nullptr;
 
 	void deleteFormspec();
 };
