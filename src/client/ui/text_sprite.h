@@ -54,6 +54,19 @@ public:
         return drawBackground ? text.getBackground() : skin->getColor(GUIDefaultColor::Face3D);
     }
 
+    u32 getLinesCount() const
+    {
+        return wordWrap ? brokenText.size() : 1;
+    }
+
+    std::wstring getText() const
+    {
+        return text.getString();
+    }
+
+    u32 getTextWidth() const;
+    u32 getTextHeight() const;
+
     void enableDrawBackground(bool draw)
     {
         drawBackground = draw;

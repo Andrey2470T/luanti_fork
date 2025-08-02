@@ -66,6 +66,27 @@ void UITextSprite::enableWordWrap(bool wrap)
         updateWrappedText();
     }
 }
+
+u32 UITextSprite::getTextWidth() const
+{
+    auto font = getActiveFont();
+    u32 width;
+
+    if (wordWrap)
+        width = font->getTextWidth(brokenText[0].getString());
+    else
+        width = font->getTextWidth(text.getString());
+
+    return width;
+}
+
+u32 UITextSprite::getTextHeight() const
+{
+    auto font = getActiveFont();
+
+    return font->getLineHeight() * brokenText.size();
+}
+
 void UITextSprite::enableRightToLeft(bool rtl)
 {
     if (rightToLeft != rtl) {
