@@ -3,6 +3,7 @@ layout (location = 1) in vec4 color;
 layout (location = 2) in vec3 normal;
 layout (location = 3) in vec2 uv;
 layout (location = 4) in int materialType;
+layout (location = 5) in vec3 hwcolor;
 
 layout (std140) uniform mMatrices {
 	mat4 worldViewProj;
@@ -43,17 +44,15 @@ out vec3 vPosition;
 // cameraOffset + worldPosition (for large coordinates the limits of float
 // precision must be considered).
 out vec3 vWorldPosition;
+out lowp vec4 vColor;
+out lowp vec3 vHWColor;
 // The centroid keyword ensures that after interpolation the texture coordinates
 // lie within the same bounds when MSAA is en- and disabled.
 // This fixes the stripes problem with nearest-neighbor textures and MSAA.
 #ifdef GL_ES
-centroid out lowp vec4 vColor;
-centroid out mediump vec2 vTexCoord;
-centroid out float vNightRatio;
+out mediump vec2 vTexCoord;
 #else
-centroid out lowp vec4 vColor;
 centroid out vec2 vTexCoord;
-centroid out float vNightRatio;
 #endif
 #ifdef ENABLE_DYNAMIC_SHADOWS
 	out float vCosLight;
@@ -67,6 +66,7 @@ centroid out float vNightRatio;
 out float vAreaEnableParallax;
 
 out highp vec3 vEyeVec;
+out float vNightRatio;
 // Color of the light emitted by the light sources.
 const vec3 artificialLight = vec3(1.04, 1.04, 1.04);
 const float e = 2.718281828459;
@@ -127,8 +127,6 @@ float smoothTriangleWave(float x)
 	return smoothCurve(triangleWave(x)) * 2.0 - 1.0;
 }
 
-if (materialType == MATERIAL_WAVING_LIQUID && ENABLE_WAVING_WATER) {
-
 //
 // Simple, fast noise function.
 // See: https://gist.github.com/patriciogonzalezvivo/670c22f3966e662d2f83
@@ -160,10 +158,6 @@ float snoise(vec3 p)
 
 	return o4.y * d.y + o4.x * (1.0 - d.y);
 }
-
-}
-
-
 
 
 void main(void)
@@ -237,15 +231,20 @@ void main(void)
 
 	vColor = clamp(vColor, 0.0, 1.0);
 
+	vHWColor = hwcolor;
+
 #ifdef ENABLE_DYNAMIC_SHADOWS
 	if (mShadowParams.shadow_strength > 0.0) {
-#if MATERIAL_TYPE == TILE_MATERIAL_WAVING_PLANTS && ENABLE_WAVING_PLANTS
-		// The shadow shaders don't apply waving when creating the shadow-map.
-		// We are using the not waved inVertexPosition to avoid ugly self-shadowing.
-		vec4 shadow_pos = pos;
-#else
-		vec4 shadow_pos = cpos;
-#endif
+		vec4 shadow_pos;
+	
+		if (materialType == TILE_MATERIAL_WAVING_PLANTS && ENABLE_WAVING_PLANTS) {
+			// The shadow shaders don't apply waving when creating the shadow-map.
+			// We are using the not waved inVertexPosition to avoid ugly self-shadowing.
+			shadow_pos = pos;
+		}
+		else
+			shadow_pos = cpos;
+
 		vec3 nNormal;
 		vFNormalLength = length(vNormal);
 
@@ -270,10 +269,10 @@ void main(void)
 		}
 		z_bias *= pFactor * pFactor / mShadowParams.textureresolution / mShadowParams.shadowfar;
 
-		shadow_position = applyPerspectiveDistortion(mShadowParams.shadowViewProj * mMatrices.world * (shadow_pos + vec4(normalOffsetScale * nNormal, 0.0))).xyz;
-#if !defined(ENABLE_TRANSLUCENT_FOLIAGE) || MATERIAL_TYPE != TILE_MATERIAL_WAVING_LEAVES
-		shadow_position.z -= z_bias;
-#endif
+		vShadowPosition = applyPerspectiveDistortion(mShadowParams.shadowViewProj * mMatrices.world * (shadow_pos + vec4(normalOffsetScale * nNormal, 0.0))).xyz;
+		if (!ENABLE_TRANSLUCENT_FOLIAGE || materialType != TILE_MATERIAL_WAVING_LEAVES)
+			vShadowPosition.z -= z_bias;
+
 		perspective_factor = pFactor;
 
 		if (mShadowParams.timeofday < 0.2) {

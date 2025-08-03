@@ -17,10 +17,24 @@ void Renderer::setRenderState(bool mode3d)
     context->setCullMode(CM_BACK);
 }
 
-void Renderer::setDefaultShader(bool transparent, bool glBlend)
+void Renderer::setBlending(bool transparent, bool glBlend)
 {
     transparentPass = transparent;
     useGLBlend = glBlend;
+
+    if (transparentPass) {
+        if (useGLBlend)
+            context->setBlendMode(GLBlendMode::ALPHA);
+        else
+            context->enableBlend(false);
+    }
+    else
+        context->setBlendMode(GLBlendMode::NORMAL);
+}
+
+void Renderer::setDefaultShader(bool transparent, bool glBlend)
+{
+    setBlending(transparent, glBlend);
 
     std::string name;
     if (!use3DMode)
@@ -38,15 +52,6 @@ void Renderer::setDefaultShader(bool transparent, bool glBlend)
 
     context->setShader(defaultShaders[name]);
     curShader = defaultShaders[name];
-
-    if (transparentPass) {
-        if (useGLBlend)
-            context->setBlendMode(GLBlendMode::ALPHA);
-        else
-            context->enableBlend(false);
-    }
-    else
-        context->setBlendMode(GLBlendMode::NORMAL);
 }
 
 void Renderer::setTexture(Texture2D *tex)

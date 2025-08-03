@@ -1,7 +1,6 @@
-uniform sampler2D mTexture0;
-
-uniform vec3 mDayLight;
+uniform sampler2D mBaseTexture;
 uniform int mAlphaDiscard;
+uniform vec3 mDayLight;
 
 layout (std140) uniform mFogParams {
     int enable;
@@ -31,6 +30,7 @@ layout (std140) uniform mShadowParams {
 
 // The cameraOffset is the current center of the visible world.
 uniform highp vec3 mCameraOffset;
+uniform vec3 mCameraPosition;
 uniform float mAnimationTimer;
 
 in vec3 vNormal;
@@ -43,34 +43,77 @@ in vec3 vPosition;
 in vec3 vWorldPosition;
 in lowp vec4 vColor;
 #ifdef GL_ES
-centroid in mediump vec2 vUV0;
+in mediump vec2 vTexCoord;
 #else
-centroid in vec2 vUV0;
+centroid in vec2 vTexCoord;
 #endif
-in highp vec3 vEyeVec;
-in float vNightRatio;
-
-in float vIDiff;
 
 #ifdef ENABLE_DYNAMIC_SHADOWS
 	in float vAdjShadowStrength;
 	in float vCosLight;
-	in float vNormalLength;
+	in float vFNormalLength;
 	in vec3 vShadowPosition;
 	in float vPerspectiveFactor;
 #endif
 
+
+in highp vec3 vEyeVec;
+in float vNightRatio;
+
 #ifdef ENABLE_DYNAMIC_SHADOWS
+#if (defined(ENABLE_WATER_REFLECTIONS) && MATERIAL_WATER_REFLECTIONS && ENABLE_WAVING_WATER)
+vec4 perm(vec4 x)
+{
+	return mod(((x * 34.0) + 1.0) * x, 289.0);
+}
+
+// Corresponding gradient of snoise
+vec3 gnoise(vec3 p){
+    vec3 a = floor(p);
+    vec3 d = p - a;
+    vec3 dd = 6.0 * d * (1.0 - d);
+    d = d * d * (3.0 - 2.0 * d);
+
+    vec4 b = a.xxyy + vec4(0.0, 1.0, 0.0, 1.0);
+    vec4 k1 = perm(b.xyxy);
+    vec4 k2 = perm(k1.xyxy + b.zzww);
+
+    vec4 c = k2 + a.zzzz;
+    vec4 k3 = perm(c);
+    vec4 k4 = perm(c + 1.0);
+
+    vec4 o1 = fract(k3 * (1.0 / 41.0));
+    vec4 o2 = fract(k4 * (1.0 / 41.0));
+
+    vec4 o3 = o2 * d.z + o1 * (1.0 - d.z);
+    vec2 o4 = o3.yw * d.x + o3.xz * (1.0 - d.x);
+
+    vec4 dz1 = (o2 - o1) * dd.z;
+    vec2 dz2 = dz1.yw * d.x + dz1.xz * (1.0 - d.x);
+
+    vec2 dx = (o3.yw - o3.xz) * dd.x;
+
+    return vec3(
+        dx.y * d.y + dx.x * (1. - d.y),
+        (o4.y - o4.x) * dd.y,
+        dz2.y * d.y + dz2.x * (1. - d.y)
+    );
+}
+
+vec2 wave_noise(vec3 p, float off) {
+	return (gnoise(p + vec3(0.0, 0.0, off)) * 0.4 + gnoise(2.0 * p + vec3(0.0, off, off)) * 0.2 + gnoise(3.0 * p + vec3(0.0, off, off)) * 0.225 + gnoise(4.0 * p + vec3(-off, off, 0.0)) * 0.2).xz;
+}
+#endif
 
 // assuming near is always 1.0
 float getLinearDepth()
 {
-	return 2.0 * mShadowFar / (mShadowFar + 1.0 - (2.0 * gl_FragCoord.z - 1.0) * (mShadowFar - 1.0));
+	return 2.0 * mShadowParams.shadowfar / (mShadowParams.shadowfar + 1.0 - (2.0 * gl_FragCoord.z - 1.0) * (mShadowParams.shadowfar - 1.0));
 }
 
 vec3 getLightSpacePosition()
 {
-	return vShadowPosition * 0.5 + 0.5;
+	return shadow_position * 0.5 + 0.5;
 }
 // custom smoothstep implementation because it's not defined in glsl1.2
 // https://docs.gl/sl4/smoothstep
@@ -78,6 +121,13 @@ float mtsmoothstep(in float edge0, in float edge1, in float x)
 {
 	float t = clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0);
 	return t * t * (3.0 - 2.0 * t);
+}
+
+float shadowCutoff(float x) {
+	if (ENABLE_TRANSLUCENT_FOLIAGE && materialType == TILE_MATERIAL_WAVING_LEAVES)
+		return mtsmoothstep(0.0, 0.002, x);
+	else
+		return step(0.0, x);
 }
 
 #ifdef COLORED_SHADOWS
@@ -106,10 +156,10 @@ vec4 getHardShadowColor(sampler2D shadowsampler, vec2 smTexCoord, float realDist
 {
 	vec4 texDepth = texture2D(shadowsampler, smTexCoord.xy).rgba;
 
-	float visibility = step(0.0, realDistance - texDepth.r);
+	float visibility = shadowCutoff(realDistance - texDepth.r);
 	vec4 result = vec4(visibility, vec3(0.0,0.0,0.0));//unpackColor(texDepth.g));
 	if (visibility < 0.1) {
-		visibility = step(0.0, realDistance - texDepth.b);
+		visibility = shadowCutoff(realDistance - texDepth.b);
 		result = vec4(visibility, unpackColor(texDepth.a));
 	}
 	return result;
@@ -120,7 +170,7 @@ vec4 getHardShadowColor(sampler2D shadowsampler, vec2 smTexCoord, float realDist
 float getHardShadow(sampler2D shadowsampler, vec2 smTexCoord, float realDistance)
 {
 	float texDepth = texture2D(shadowsampler, smTexCoord.xy).r;
-	float visibility = step(0.0, realDistance - texDepth);
+	float visibility = shadowCutoff(realDistance - texDepth);
 	return visibility;
 }
 
@@ -168,17 +218,17 @@ float getPenumbraRadius(sampler2D shadowsampler, vec2 smTexCoord, float realDist
 	// A factor from 0 to 1 to reduce blurring of short shadows
 	float sharpness_factor = 1.0;
 	// conversion factor from shadow depth to blur radius
-	float depth_to_blur = mShadowFar / SOFTSHADOWRADIUS / mXYPerspectiveBias0;
-	if (depth > 0.0 && vNormalLength > 0.0)
+	float depth_to_blur = mShadowParams.shadowfar / SOFTSHADOWRADIUS / xyPerspectiveBias0;
+	if (depth > 0.0 && f_normal_length > 0.0)
 		// 5 is empirical factor that controls how fast shadow loses sharpness
-		sharpness_factor = clamp(5 * depth * depth_to_blur, 0.0, 1.0);
+		sharpness_factor = clamp(5.0 * depth * depth_to_blur, 0.0, 1.0);
 	depth = 0.0;
 
-	float world_to_texture = mXYPerspectiveBias1 / vPerspectiveFactor / vPerspectiveFactor
-			* mTextureResolution / 2.0 / mShadowFar;
+	float world_to_texture = mShadowParams.xyPerspectiveBias1 / perspective_factor / perspective_factor
+			* mShadowParams.textureresolution / 2.0 / mShadowParams.shadowfar;
 	float world_radius = 0.2; // shadow blur radius in world float coordinates, e.g. 0.2 = 0.02 of one node
 
-	return max(BASEFILTERRADIUS * mTextureResolution / 4096.0,  sharpness_factor * world_radius * world_to_texture * SOFTSHADOWRADIUS);
+	return max(BASEFILTERRADIUS * mShadowParams.textureresolution / 4096.0,  sharpness_factor * world_radius * world_to_texture * SOFTSHADOWRADIUS);
 }
 
 #ifdef POISSON_FILTER
@@ -261,7 +311,7 @@ vec4 getShadowColor(sampler2D shadowsampler, vec2 smTexCoord, float realDistance
 
 	vec2 clampedpos;
 	vec4 visibility = vec4(0.0);
-	float scale_factor = radius / mTextureResolution;
+	float scale_factor = radius / mShadowParams.textureresolution;
 
 	int samples = (1 + 1 * int(SOFTSHADOWRADIUS > 1.0)) * PCFSAMPLES; // scale max samples for the soft shadows
 	samples = int(clamp(pow(4.0 * radius + 1.0, 2.0), 1.0, float(samples)));
@@ -288,7 +338,7 @@ float getShadow(sampler2D shadowsampler, vec2 smTexCoord, float realDistance)
 
 	vec2 clampedpos;
 	float visibility = 0.0;
-	float scale_factor = radius / mTextureResolution;
+	float scale_factor = radius / mShadowParams.textureresolution;
 
 	int samples = (1 + 1 * int(SOFTSHADOWRADIUS > 1.0)) * PCFSAMPLES; // scale max samples for the soft shadows
 	samples = int(clamp(pow(4.0 * radius + 1.0, 2.0), 1.0, float(samples)));
@@ -323,7 +373,7 @@ vec4 getShadowColor(sampler2D shadowsampler, vec2 smTexCoord, float realDistance
 	float x, y;
 	float bound = (1 + 0.5 * int(SOFTSHADOWRADIUS > 1.0)) * PCFBOUND; // scale max bound for soft shadows
 	bound = clamp(0.5 * (4.0 * radius - 1.0), 0.5, bound);
-	float scale_factor = radius / bound / mTextureResolution;
+	float scale_factor = radius / bound / mShadowParams.textureresolution;
 	float n = 0.0;
 
 	// basic PCF filter
@@ -351,7 +401,7 @@ float getShadow(sampler2D shadowsampler, vec2 smTexCoord, float realDistance)
 	float x, y;
 	float bound = (1 + 0.5 * int(SOFTSHADOWRADIUS > 1.0)) * PCFBOUND; // scale max bound for soft shadows
 	bound = clamp(0.5 * (4.0 * radius - 1.0), 0.5, bound);
-	float scale_factor = radius / bound / mTextureResolution;
+	float scale_factor = radius / bound / mShadowParams.textureresolution;
 	float n = 0.0;
 
 	// basic PCF filter
@@ -398,9 +448,7 @@ out vec4 outColor;
 
 void main(void)
 {
-	vec3 color;
-
-	vec4 base = texture2D(mTexture0, vUV0).rgba;
+	vec4 base = texture2D(mBaseTexture, uv).rgba;
 	// If alpha is zero, we can just discard the pixel. This fixes transparency
 	// on GPUs like GC7000L, where GL_ALPHA_TEST is not implemented in mesa,
 	// and also on GLES 2, where GL_ALPHA_TEST is missing entirely.
@@ -409,12 +457,13 @@ void main(void)
 	else if (mAlphaDiscard == 1 && base.a < 0.5)
 		discard;
 
-	color = base.rgb;
-	vec4 col = vec4(color.rgb * vColor.rgb, 1.0);
-	col.rgb *= vIDiff;
+	vec4 col = vec4(base.rgb * vColor.rgb, 1.0);
 
 #ifdef ENABLE_DYNAMIC_SHADOWS
-	if (mShadowStrength > 0.0) {
+	// Fragment normal, can differ from vNormal which is derived from vertex normals.
+	vec3 fNormal = vNormal;
+
+	if (mShadowParams.shadow_strength > 0.0) {
 		float shadow_int = 0.0;
 		vec3 shadow_color = vec3(0.0, 0.0, 0.0);
 		vec3 posLightSpace = getLightSpacePosition();
@@ -422,21 +471,21 @@ void main(void)
 		float distance_rate = (1.0 - pow(clamp(2.0 * length(posLightSpace.xy - 0.5),0.0,1.0), 10.0));
 		if (max(abs(posLightSpace.x - 0.5), abs(posLightSpace.y - 0.5)) > 0.5)
 			distance_rate = 0.0;
-		float f_vAdjShadowStrength = max(vAdjShadowStrength - mtsmoothstep(0.9, 1.1, posLightSpace.z),0.0);
+		float f_adj_shadow_strength = max(vAdjShadowStrength - mtsmoothstep(0.9, 1.1, posLightSpace.z),0.0);
 
 		if (distance_rate > 1e-7) {
 
 #ifdef COLORED_SHADOWS
 			vec4 visibility;
-			if (vCosLight > 0.0 || vNormalLength < 1e-3)
-				visibility = getShadowColor(mShadowMapSampler, posLightSpace.xy, posLightSpace.z);
+			if (vCosLight > 0.0 || vFNormalLength < 1e-3)
+				visibility = getShadowColor(mShadowParams.shadowMapSampler, posLightSpace.xy, posLightSpace.z);
 			else
 				visibility = vec4(1.0, 0.0, 0.0, 0.0);
 			shadow_int = visibility.r;
 			shadow_color = visibility.gba;
 #else
-			if (vCosLight > 0.0 || vNormalLength < 1e-3)
-				shadow_int = getShadow(mShadowMapSampler, posLightSpace.xy, posLightSpace.z);
+			if (vCosLight > 0.0 || vFNormalLength < 1e-3)
+				shadow_int = getShadow(mShadowParams.shadowMapSampler, posLightSpace.xy, posLightSpace.z);
 			else
 				shadow_int = 1.0;
 #endif
@@ -445,20 +494,27 @@ void main(void)
 
 		}
 
-		// turns out that vNightRatio falls off much faster than
+		// turns out that nightRatio falls off much faster than
 		// actual brightness of artificial light in relation to natual light.
 		// Power ratio was measured on torches in MTG (brightness = 14).
 		float adjusted_night_ratio = pow(max(0.0, vNightRatio), 0.6);
 
+		float shadow_uncorrected = shadow_int;
+
 		// Apply self-shadowing when light falls at a narrow angle to the surface
 		// Cosine of the cut-off angle.
-		const float self_shadow_cutoff_cosine = 0.14;
-		if (vNormalLength != 0 && vCosLight < self_shadow_cutoff_cosine) {
+		const float self_shadow_cutoff_cosine = 0.035;
+		if (vFNormalLength != 0 && vCosLight < self_shadow_cutoff_cosine) {
 			shadow_int = max(shadow_int, 1 - clamp(vCosLight, 0.0, self_shadow_cutoff_cosine)/self_shadow_cutoff_cosine);
 			shadow_color = mix(vec3(0.0), shadow_color, min(vCosLight, self_shadow_cutoff_cosine)/self_shadow_cutoff_cosine);
+
+			if (materialType == TILE_MATERIAL_WAVING_LEAVES || materialType == TILE_MATERIAL_WAVING_PLANTS) {
+				// Prevents foliage from becoming insanely bright outside the shadow map.
+				shadow_uncorrected = mix(shadow_int, shadow_uncorrected, clamp(distance_rate * 4.0 - 3.0, 0.0, 1.0));
+			}
 		}
 
-		shadow_int *= f_vAdjShadowStrength;
+		shadow_int *= f_adj_shadow_strength;
 
 		// calculate fragment color from components:
 		col.rgb =
@@ -466,6 +522,58 @@ void main(void)
 				(1.0 - adjusted_night_ratio) * ( // natural light
 						col.rgb * (1.0 - shadow_int * (1.0 - shadow_color) * (1.0 - shadow_tint)) +  // filtered texture color
 						mDayLight * shadow_color * shadow_int);                 // reflected filtered sunlight/moonlight
+
+
+		vec3 reflect_ray = -normalize(mShadowParams.lightDirection - fNormal * dot(mShadowParams.lightDirection, fNormal) * 2.0);
+
+		vec3 viewVec = normalize(vWorldPosition + mCameraOffset - mCameraPosition);
+
+		// Water reflections
+#if (defined(ENABLE_WATER_REFLECTIONS) && MATERIAL_WATER_REFLECTIONS && ENABLE_WAVING_WATER)
+		vec3 wavePos = vWorldPosition * vec3(2.0, 0.0, 2.0);
+		float off = mAnimationTimer * WATER_WAVE_SPEED * 10.0;
+		wavePos.x /= WATER_WAVE_LENGTH * 3.0;
+		wavePos.z /= WATER_WAVE_LENGTH * 2.0;
+
+		// This is an analogous method to the bumpmap, except we get the gradient information directly from gnoise.
+		vec2 gradient = wave_noise(wavePos, off);
+		fNormal = normalize(normalize(fNormal) + vec3(gradient.x, 0., gradient.y) * WATER_WAVE_HEIGHT * abs(fNormal.y) * 0.25);
+		reflect_ray = -normalize(mShadowParams.lightDirection - fNormal * dot(mShadowParams.lightDirection, fNormal) * 2.0);
+		float fresnel_factor = dot(fNormal, viewVec);
+
+		float brightness_factor = 1.0 - adjusted_night_ratio;
+
+		// A little trig hack. We go from the dot product of viewVec and normal to the dot product of viewVec and tangent to apply a fresnel effect.
+		fresnel_factor = clamp(pow(1.0 - fresnel_factor * fresnel_factor, 8.0), 0.0, 1.0) * 0.8 + 0.2;
+		col.rgb *= 0.5;
+		vec3 reflection_color = mix(vec3(max(mFogParams.color.r, max(mFogParams.color.g, mFogParams.color.b))), mFogParams.color.rgb, mShadowParams.shadow_strength);
+
+		// Sky reflection
+		col.rgb += reflection_color * pow(fresnel_factor, 2.0) * 0.5 * brightness_factor;
+		vec3 water_reflect_color = 12.0 * mDayLight * fresnel_factor * mtsmoothstep(0.85, 0.9, pow(clamp(dot(reflect_ray, viewVec), 0.0, 1.0), 32.0)) * max(1.0 - shadow_uncorrected, 0.0);
+
+		// This line exists to prevent ridiculously bright reflection colors.
+		water_reflect_color /= clamp(max(water_reflect_color.r, max(water_reflect_color.g, water_reflect_color.b)) * 0.375, 1.0, 400.0);
+		col.rgb += water_reflect_color * f_adj_shadow_strength * brightness_factor;
+#endif
+
+#if (defined(ENABLE_NODE_SPECULAR) && !MATERIAL_WATER_REFLECTIONS)
+		// Apply specular to blocks.
+		if (dot(mShadowParams.lightDirection, vNormal) < 0.0) {
+			float intensity = 2.0 * (1.0 - (base.r * vColor.r));
+			const float specular_exponent = 5.0;
+			const float fresnel_exponent =  4.0;
+
+			col.rgb +=
+				intensity * mDayLight * (1.0 - vNightRatio) * (1.0 - shadow_uncorrected) * f_adj_shadow_strength *
+				pow(max(dot(reflect_ray, viewVec), 0.0), fresnel_exponent) * pow(1.0 - abs(dot(viewVec, fNormal)), specular_exponent);
+		}
+#endif
+
+		if (materialType == TILE_MATERIAL_WAVING_PLANTS || materialType == TILE_MATERIAL_WAVING_LEAVES && defined(ENABLE_TRANSLUCENT_FOLIAGE)) {
+			// Simulate translucent foliage.
+			col.rgb += 4.0 * mDayLight * base.rgb * normalize(base.rgb * vColor.rgb * vColor.rgb) * f_adj_shadow_strength * pow(max(-dot(mShadowParams.lightDirection, viewVec), 0.0), 4.0) * max(1.0 - shadow_uncorrected, 0.0);
+		}
 	}
 #endif
 
@@ -488,15 +596,15 @@ void main(void)
 	// As additions usually come for free following a multiplication, the new formula
 	// should be more efficient as well.
 	// Note: clarity = (1 - fogginess)
-	//float clarity = clamp(fogShadingParameter
-	//	- fogShadingParameter * length(eyeVec) / fogDistance, 0.0, 1.0);
-	//float fogColorMax = max(max(fogColor.r, fogColor.g), fogColor.b);
+	//float clarity = clamp(mFogParams.density
+	//	- mFogParams.density * length(vEyeVec) / mFogParams.end, 0.0, 1.0);
+	//float fogColorMax = max(max(mFogParams.color.r, mFogParams.color.g), mFogParams.color.b);
 	// Prevent zero division.
 	//if (fogColorMax < 0.0000001) fogColorMax = 1.0;
 	// For high clarity (light fog) we tint the fog color.
 	// For this to not make the fog color artificially dark we need to normalize using the
 	// fog color's brightest value. We then blend our base color with this to make the fog.
-	//col = mix(fogColor * pow(fogColor / fogColorMax, vec4(2.0 * clarity)), col, clarity);
+	//col = mix(mFogParams.color * pow(mFogParams.color / fogColorMax, vec4(2.0 * clarity)), col, clarity);
 	//col = vec4(col.rgb, base.a);
 
 	//gl_FragData[0] = col;

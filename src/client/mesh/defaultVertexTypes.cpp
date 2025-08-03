@@ -40,7 +40,12 @@ const render::VertexTypeDescriptor AOVType{
         {"MaterialType", 1, BasicType::UINT8},
         {"Bones", 2, BasicType::UINT32},
         {"Weights", 2, BasicType::UINT32}
-    }
+    },
+    3,
+    4,
+    true,
+    true,
+    2
 };
 
 // Getters used for DefaultVType and TwoColorVType
@@ -178,8 +183,10 @@ void fillEmptyCustomAttribs(MeshBuffer *buf, u8 firstCustomAtrribIndex)
                 break;
             case BasicType::INT:
                 buf->setAttrAt<v2i>(v2i(), firstCustomAtrribIndex, lastVNum);
+                break;
             case BasicType::FLOAT:
                 buf->setAttrAt<v2f>(v2f(), firstCustomAtrribIndex, lastVNum);
+                break;
             default:
                 break;
             }
@@ -191,8 +198,10 @@ void fillEmptyCustomAttribs(MeshBuffer *buf, u8 firstCustomAtrribIndex)
                 break;
             case BasicType::INT:
                 buf->setAttrAt<v3i>(v3i(), firstCustomAtrribIndex, lastVNum);
+                break;
             case BasicType::FLOAT:
                 buf->setAttrAt<v3f>(v3f(), firstCustomAtrribIndex, lastVNum);
+                break;
             default:
                 break;
             }

@@ -71,6 +71,7 @@ public:
     }
 
     void setRenderState(bool mode3d);
+    void setBlending(bool transparent=false, bool glBlend=true);
     void setDefaultShader(bool transparent=false, bool glBlend=true);
 
     void setTexture(Texture2D *tex);

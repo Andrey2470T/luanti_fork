@@ -33,15 +33,6 @@ layout (std140) uniform mShadowParams {
 	vec3 shadowTint;
 };
 
-layout (std140) uniform mFogParams {
-    int enable;
-    int type;
-    vec4 color;
-    float start;
-    float end;
-    float density;
-};
-
 // Absolute bones transformations
 uniform mat4 mBonesTransforms[BONES_MAX];
 
@@ -57,7 +48,7 @@ out vec3 vPosition;
 out vec3 vWorldPosition;
 out lowp vec4 vColor;
 #ifdef GL_ES
-centroid out mediump vec2 vUV0;
+out mediump vec2 vUV0;
 #else
 centroid out vec2 vUV0;
 #endif
