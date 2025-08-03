@@ -3,11 +3,19 @@
 #include "client/mesh/meshbuffer.h"
 #include "Utils/Matrix4.h"
 
+enum Batcher3DVertexType
+{
+    B3DVT_SVT = 0,
+    B3DVT_NVT,
+    B3DVT_TCNVT,
+    B3DVT_AOVT
+};
+
 // Class creating meshbuffers of various 3D shapes (point, line, quad, cube and etc)
 class Batcher3D
 {
 public:
-    static bool addTCVT;
+    static Batcher3DVertexType vType;
     static matrix4 curTransform;
 
     static void appendVertex(MeshBuffer *buf, v3f pos,

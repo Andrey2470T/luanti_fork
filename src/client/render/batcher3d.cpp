@@ -7,10 +7,20 @@ void Batcher3D::appendVertex(MeshBuffer *buf, v3f pos,
 {
     curTransform.transformVect(pos);
 
-    if (!addTCVT)
+    switch(vType) {
+    case B3DVT_SVT:
         appendSVT(buf, pos, color, normal, uv);
-    else
-        appendTCVT(buf, pos, color, normal, uv);
+        break;
+    case B3DVT_NVT:
+        appendNVT(buf, pos, color, normal, uv);
+        break;
+    case B3DVT_TCNVT:
+        appendTCNVT(buf, pos, color, normal, uv);
+        break;
+    case B3DVT_AOVT:
+        appendAOVT(buf, pos, color, normal, uv);
+        break;
+    }
 }
 
 void Batcher3D::appendLine(MeshBuffer *buf, const v3f &startPos, const v3f &endPos,

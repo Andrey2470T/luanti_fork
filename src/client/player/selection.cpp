@@ -50,6 +50,7 @@ void SelectionMesh::updateMesh()
         return;
     }
 
+    Batcher3D::vType = B3DVT_SVT;
     // Use single halo box instead of multiple overlapping boxes.
     // Temporary solution - problem can be solved with multiple
     // rendering targets, or some method to remove inner surfaces.
@@ -141,6 +142,7 @@ void BlockBounds::updateMesh(Client *client)
     if (mode == BLOCK_BOUNDS_OFF)
         return;
 
+    Batcher3D::vType = B3DVT_SVT;
     u16 mesh_chunk_size = std::max<u16>(1, g_settings->getU16("client_mesh_chunk"));
 
     v3s16 block_pos = getContainerPos(client->getEnv().getLocalPlayer()->getStandingNodePos(), MAP_BLOCKSIZE);
