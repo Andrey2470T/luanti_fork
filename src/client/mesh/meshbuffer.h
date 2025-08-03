@@ -145,6 +145,8 @@ public:
 				return vdata->getV3I(attrNum);
 			case BasicType::FLOAT:
 				return vdata->getV3F(attrNum);
+            case BasicType::UINT8:
+                return img::getColor8(vdata, attrNum, img::PF_RGB8);
 			default:
 				return T(0, 0, 0);
 			}
@@ -245,6 +247,9 @@ public:
 			case BasicType::FLOAT:
 				vdata->setV3F(value, attrNum);
 				return;
+            case BasicType::UINT8:
+                img::setColor8(vdata, value, attrNum, img::PF_RGB8);
+                return;
 			default:
 				return;
 			}

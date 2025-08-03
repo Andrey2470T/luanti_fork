@@ -12,49 +12,53 @@ layout (std140) uniform mFogParams {
     float density;
 };
 
+layout (std140) uniform mShadowParams {
+	// shadow texture
+	sampler2D shadowMapSampler;
+	// shadow uniforms
+	vec3 lightDirection;
+	float textureresolution;
+	mat4 shadowViewProj;
+	float shadowfar;
+	float shadow_strength;
+	float timeofday;
+	vec4 cameraPos;
+	float xyPerspectiveBias0;
+	float xyPerspectiveBias1;
+	float zPerspectiveBias;
+	vec3 shadowTint;
+};
+
 // The cameraOffset is the current center of the visible world.
 uniform highp vec3 mCameraOffset;
 uniform float mAnimationTimer;
-#ifdef ENABLE_DYNAMIC_SHADOWS
-	// shadow texture
-	uniform sampler2D mShadowMapSampler;
-	// shadow uniforms
-	uniform vec3 mLightDirection;
-	uniform float mTextureResolution;
-	uniform mat4 mShadowViewProj;
-	uniform float mShadowFar;
-	uniform float mShadowStrength;
-	uniform vec4 mCameraPos;
-	uniform float mXYPerspectiveBias0;
-	uniform float mXYPerspectiveBias1;
-	uniform vec3 mShadowTint;
 
-	varying float vAdjShadowStrength;
-	varying float vvCosLight;
-	varying float vNormalLength;
-	varying vec3 vShadowPosition;
-	varying float vPerspectiveFactor;
-#endif
-
-
-varying vec3 vNormal;
-varying vec3 vPosition;
+in vec3 vNormal;
+in vec3 vPosition;
 // World position in the visible world (i.e. relative to the cameraOffset.)
 // This can be used for many shader effects without loss of precision.
 // If the absolute position is required it can be calculated with
 // cameraOffset + worldPosition (for large coordinates the limits of float
 // precision must be considered).
-varying vec3 vWorldPosition;
-varying lowp vec4 vColor;
+in vec3 vWorldPosition;
+in lowp vec4 vColor;
 #ifdef GL_ES
-varying mediump vec2 vUV0;
+centroid in mediump vec2 vUV0;
 #else
-centroid varying vec2 vUV0;
+centroid in vec2 vUV0;
 #endif
-varying highp vec3 vEyeVec;
-varying float vNightRatio;
+in highp vec3 vEyeVec;
+in float vNightRatio;
 
-varying float vIDiff;
+in float vIDiff;
+
+#ifdef ENABLE_DYNAMIC_SHADOWS
+	in float vAdjShadowStrength;
+	in float vCosLight;
+	in float vNormalLength;
+	in vec3 vShadowPosition;
+	in float vPerspectiveFactor;
+#endif
 
 #ifdef ENABLE_DYNAMIC_SHADOWS
 

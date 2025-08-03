@@ -1,67 +1,84 @@
-uniform mat4 mWorld;
+layout (location = 0) in vec3 pos;
+layout (location = 1) in vec4 color;
+layout (location = 2) in vec3 normal;
+layout (location = 3) in vec2 uv;
+layout (location = 4) in int materialType;
+
+layout (std140) uniform mMatrices {
+	mat4 worldViewProj;
+	mat4 worldView;
+	mat4 world;
+	mat4 texture0;
+};
+
+layout (std140) uniform mShadowParams {
+	// shadow texture
+	sampler2D shadowMapSampler;
+	// shadow uniforms
+	vec3 lightDirection;
+	float textureresolution;
+	mat4 shadowViewProj;
+	float shadowfar;
+	float shadow_strength;
+	float timeofday;
+	vec4 cameraPos;
+	float xyPerspectiveBias0;
+	float xyPerspectiveBias1;
+	float zPerspectiveBias;
+	vec3 shadowTint;
+}
+
 // Color of the light emitted by the sun.
-uniform vec3 dayLight;
+uniform vec3 mDayLight;
 
 // The cameraOffset is the current center of the visible world.
-uniform highp vec3 cameraOffset;
-uniform float animationTimer;
+uniform highp vec3 mCameraOffset;
+uniform float mAnimationTimer;
 
-varying vec3 vNormal;
-varying vec3 vPosition;
+out vec3 vNormal;
+out vec3 vPosition;
 // World position in the visible world (i.e. relative to the cameraOffset.)
 // This can be used for many shader effects without loss of precision.
 // If the absolute position is required it can be calculated with
 // cameraOffset + worldPosition (for large coordinates the limits of float
 // precision must be considered).
-varying vec3 worldPosition;
+out vec3 vWorldPosition;
 // The centroid keyword ensures that after interpolation the texture coordinates
 // lie within the same bounds when MSAA is en- and disabled.
 // This fixes the stripes problem with nearest-neighbor textures and MSAA.
 #ifdef GL_ES
-varying lowp vec4 varColor;
-varying mediump vec2 varTexCoord;
-varying float nightRatio;
+centroid out lowp vec4 vColor;
+centroid out mediump vec2 vTexCoord;
+centroid out float vNightRatio;
 #else
-centroid varying lowp vec4 varColor;
-centroid varying vec2 varTexCoord;
-centroid varying float nightRatio;
+centroid out lowp vec4 vColor;
+centroid out vec2 vTexCoord;
+centroid out float vNightRatio;
 #endif
 #ifdef ENABLE_DYNAMIC_SHADOWS
-	// shadow uniforms
-	uniform vec3 v_LightDirection;
-	uniform float f_textureresolution;
-	uniform mat4 m_ShadowViewProj;
-	uniform float f_shadowfar;
-	uniform float f_shadow_strength;
-	uniform float f_timeofday;
-	uniform vec4 CameraPos;
-
-	varying float cosLight;
-	varying float normalOffsetScale;
-	varying float adj_shadow_strength;
-	varying float f_normal_length;
-	varying vec3 shadow_position;
-	varying float perspective_factor;
+	out float vCosLight;
+	out float vNormalOffsetScale;
+	out float vAdjShadowStrength;
+	out float vFNormalLength;
+	out vec3 vShadowPosition;
+	out float vPerspectiveFactor;
 #endif
 
-varying float area_enable_parallax;
+out float vAreaEnableParallax;
 
-varying highp vec3 eyeVec;
+out highp vec3 vEyeVec;
 // Color of the light emitted by the light sources.
 const vec3 artificialLight = vec3(1.04, 1.04, 1.04);
 const float e = 2.718281828459;
 const float BS = 10.0;
-uniform float xyPerspectiveBias0;
-uniform float xyPerspectiveBias1;
-uniform float zPerspectiveBias;
 
 #ifdef ENABLE_DYNAMIC_SHADOWS
 
 vec4 getRelativePosition(in vec4 position)
 {
-	vec2 l = position.xy - CameraPos.xy;
+	vec2 l = position.xy - mShadowParams.cameraPos.xy;
 	vec2 s = l / abs(l);
-	s = (1.0 - s * CameraPos.xy);
+	s = (1.0 - s * mShadowParams.cameraPos.xy);
 	l /= s;
 	return vec4(l, s);
 }
@@ -69,7 +86,7 @@ vec4 getRelativePosition(in vec4 position)
 float getPerspectiveFactor(in vec4 relativePosition)
 {
 	float pDistance = length(relativePosition.xy);
-	float pFactor = pDistance * xyPerspectiveBias0 + xyPerspectiveBias1;
+	float pFactor = pDistance * mShadowParams.xyPerspectiveBias0 + mShadowParams.xyPerspectiveBias1;
 	return pFactor;
 }
 
@@ -78,8 +95,8 @@ vec4 applyPerspectiveDistortion(in vec4 position)
 	vec4 l = getRelativePosition(position);
 	float pFactor = getPerspectiveFactor(l);
 	l.xy /= pFactor;
-	position.xy = l.xy * l.zw + CameraPos.xy;
-	position.z *= zPerspectiveBias;
+	position.xy = l.xy * l.zw + mShadowParams.cameraPos.xy;
+	position.z *= mShadowParams.zPerspectiveBias;
 	return position;
 }
 
@@ -110,7 +127,7 @@ float smoothTriangleWave(float x)
 	return smoothCurve(triangleWave(x)) * 2.0 - 1.0;
 }
 
-#if MATERIAL_WAVING_LIQUID && ENABLE_WAVING_WATER
+if (materialType == MATERIAL_WAVING_LIQUID && ENABLE_WAVING_WATER) {
 
 //
 // Simple, fast noise function.
@@ -144,129 +161,131 @@ float snoise(vec3 p)
 	return o4.y * d.y + o4.x * (1.0 - d.y);
 }
 
-#endif
+}
 
 
 
 
 void main(void)
 {
-	varTexCoord = inTexCoord0.st;
+	vTexCoord = uv;
 
 	float disp_x;
 	float disp_z;
-// OpenGL < 4.3 does not support continued preprocessor lines
-#if (MATERIAL_TYPE == TILE_MATERIAL_WAVING_LEAVES && ENABLE_WAVING_LEAVES) || (MATERIAL_TYPE == TILE_MATERIAL_WAVING_PLANTS && ENABLE_WAVING_PLANTS)
-	vec4 pos2 = mWorld * inVertexPosition;
-	float tOffset = (pos2.x + pos2.y) * 0.001 + pos2.z * 0.002;
-	disp_x = (smoothTriangleWave(animationTimer * 23.0 + tOffset) +
-		smoothTriangleWave(animationTimer * 11.0 + tOffset)) * 0.4;
-	disp_z = (smoothTriangleWave(animationTimer * 31.0 + tOffset) +
-		smoothTriangleWave(animationTimer * 29.0 + tOffset) +
-		smoothTriangleWave(animationTimer * 13.0 + tOffset)) * 0.5;
-#endif
-
-	vec4 pos = inVertexPosition;
-#if MATERIAL_WAVING_LIQUID && ENABLE_WAVING_WATER
-	// Generate waves with Perlin-type noise.
-	// The constants are calibrated such that they roughly
-	// correspond to the old sine waves.
-	vec3 wavePos = (mWorld * pos).xyz + cameraOffset;
-	// The waves are slightly compressed along the z-axis to get
-	// wave-fronts along the x-axis.
-	wavePos.x /= WATER_WAVE_LENGTH * 3.0;
-	wavePos.z /= WATER_WAVE_LENGTH * 2.0;
-	wavePos.z += animationTimer * WATER_WAVE_SPEED * 10.0;
-	pos.y += (snoise(wavePos) - 1.0) * WATER_WAVE_HEIGHT * 5.0;
-#elif MATERIAL_TYPE == TILE_MATERIAL_WAVING_LEAVES && ENABLE_WAVING_LEAVES
-	pos.x += disp_x;
-	pos.y += disp_z * 0.1;
-	pos.z += disp_z;
-#elif MATERIAL_TYPE == TILE_MATERIAL_WAVING_PLANTS && ENABLE_WAVING_PLANTS
-	if (varTexCoord.y < 0.05) {
-		pos.x += disp_x;
-		pos.z += disp_z;
+	// OpenGL < 4.3 does not support continued preprocessor lines
+	if (materialType == TILE_MATERIAL_WAVING_LEAVES && ENABLE_WAVING_LEAVES) || (materialType == TILE_MATERIAL_WAVING_PLANTS && ENABLE_WAVING_PLANTS) {
+		vec4 pos2 = mWorld * pos;
+		float tOffset = (pos2.x + pos2.y) * 0.001 + pos2.z * 0.002;
+		disp_x = (smoothTriangleWave(mAnimationTimer * 23.0 + tOffset) +
+		smoothTriangleWave(mAnimationTimer * 11.0 + tOffset)) * 0.4;
+		disp_z = (smoothTriangleWave(mAnimationTimer * 31.0 + tOffset) +
+		smoothTriangleWave(mAnimationTimer * 29.0 + tOffset) +
+		smoothTriangleWave(mAnimationTimer * 13.0 + tOffset)) * 0.5;
 	}
-#endif
-	worldPosition = (mWorld * pos).xyz;
-	gl_Position = mWorldViewProj * pos;
+
+	vec4 cpos = pos;
+	if (materialType == MATERIAL_WAVING_LIQUID && ENABLE_WAVING_WATER) {
+		// Generate waves with Perlin-type noise.
+		// The constants are calibrated such that they roughly
+		// correspond to the old sine waves.
+		vec3 wavePos = (mWorld * pos).xyz + cameraOffset;
+		// The waves are slightly compressed along the z-axis to get
+		// wave-fronts along the x-axis.
+		wavePos.x /= WATER_WAVE_LENGTH * 3.0;
+		wavePos.z /= WATER_WAVE_LENGTH * 2.0;
+		wavePos.z += animationTimer * WATER_WAVE_SPEED * 10.0;
+		cpos.y += (snoise(wavePos) - 1.0) * WATER_WAVE_HEIGHT * 5.0;
+	}
+	else if (materialType == TILE_MATERIAL_WAVING_LEAVES && ENABLE_WAVING_LEAVES) {
+		cpos.x += disp_x;
+		cpos.y += disp_z * 0.1;
+		cpos.z += disp_z;
+	}
+	else if (materialType == TILE_MATERIAL_WAVING_PLANTS && ENABLE_WAVING_PLANTS) {
+		if (varTexCoord.y < 0.05) {
+			cpos.x += disp_x;
+			cpos.z += disp_z;
+		}
+	}
+	vWorldPosition = (mWorld * cpos).xyz;
+	gl_Position = mWorldViewProj * cpos;
 
 	vPosition = gl_Position.xyz;
-	eyeVec = -(mWorldView * pos).xyz;
+	vEyeVec = -(mWorldView * cpos).xyz;
 #ifdef SECONDSTAGE
-	normalPass = normalize((inVertexNormal+1)/2);
+	normalPass = normalize((normal+1)/2);
 #endif
-	vNormal = inVertexNormal;
+	vNormal = normal;
 
 	// Calculate color.
-	vec4 color = inVertexColor;
+	vColor = color;
 	// Red, green and blue components are pre-multiplied with
 	// the brightness, so now we have to multiply these
 	// colors with the color of the incoming light.
 	// The pre-baked colors are halved to prevent overflow.
 	// The alpha gives the ratio of sunlight in the incoming light.
-	nightRatio = 1.0 - color.a;
-	color.rgb = color.rgb * (color.a * dayLight.rgb +
-		nightRatio * artificialLight.rgb) * 2.0;
-	color.a = 1.0;
+	vNightRatio = 1.0 - vColor.a;
+	vColor.rgb = vColor.rgb * (vColor.a * mDayLight.rgb +
+		vNightRatio * artificialLight.rgb) * 2.0;
+	vColor.a = 1.0;
 
 	// Emphase blue a bit in darker places
 	// See C++ implementation in mapblock_mesh.cpp final_color_blend()
-	float brightness = (color.r + color.g + color.b) / 3.0;
-	color.b += max(0.0, 0.021 - abs(0.2 * brightness - 0.021) +
+	float brightness = (vColor.r + vColor.g + vColor.b) / 3.0;
+	vColor.b += max(0.0, 0.021 - abs(0.2 * brightness - 0.021) +
 		0.07 * brightness);
 
-	varColor = clamp(color, 0.0, 1.0);
+	vColor = clamp(vColor, 0.0, 1.0);
 
 #ifdef ENABLE_DYNAMIC_SHADOWS
-	if (f_shadow_strength > 0.0) {
+	if (mShadowParams.shadow_strength > 0.0) {
 #if MATERIAL_TYPE == TILE_MATERIAL_WAVING_PLANTS && ENABLE_WAVING_PLANTS
 		// The shadow shaders don't apply waving when creating the shadow-map.
 		// We are using the not waved inVertexPosition to avoid ugly self-shadowing.
-		vec4 shadow_pos = inVertexPosition;
-#else
 		vec4 shadow_pos = pos;
+#else
+		vec4 shadow_pos = cpos;
 #endif
 		vec3 nNormal;
-		f_normal_length = length(vNormal);
+		vFNormalLength = length(vNormal);
 
 		/* normalOffsetScale is in world coordinates (1/10th of a meter)
 		   z_bias is in light space coordinates */
 		float normalOffsetScale, z_bias;
-		float pFactor = getPerspectiveFactor(getRelativePosition(m_ShadowViewProj * mWorld * shadow_pos));
-		if (f_normal_length > 0.0) {
+		float pFactor = getPerspectiveFactor(getRelativePosition(mShadowParams.shadowViewProj * mWorld * shadow_pos));
+		if (vFNormalLength > 0.0) {
 			nNormal = normalize(vNormal);
-			cosLight = max(1e-5, dot(nNormal, -v_LightDirection));
-			float sinLight = pow(1.0 - pow(cosLight, 2.0), 0.5);
-			normalOffsetScale = 2.0 * pFactor * pFactor * sinLight * min(f_shadowfar, 500.0) /
-					xyPerspectiveBias1 / f_textureresolution;
-			z_bias = 1.0 * sinLight / cosLight;
+			vCosLight = max(1e-5, dot(nNormal, -mShadowParams.lightDirection));
+			float sinLight = pow(1.0 - pow(vCosLight, 2.0), 0.5);
+			normalOffsetScale = 2.0 * pFactor * pFactor * sinLight * min(mShadowParams.shadowfar, 500.0) /
+					mShadowParams.xyPerspectiveBias1 / mShadowParams.textureresolution;
+			z_bias = 1.0 * sinLight / vCosLight;
 		}
 		else {
 			nNormal = vec3(0.0);
-			cosLight = clamp(dot(v_LightDirection, normalize(vec3(v_LightDirection.x, 0.0, v_LightDirection.z))), 1e-2, 1.0);
-			float sinLight = pow(1.0 - pow(cosLight, 2.0), 0.5);
+			vCosLight = clamp(dot(mShadowParams.lightDirection, normalize(vec3(mShadowParams.lightDirection.x, 0.0, mShadowParams.lightDirection.z))), 1e-2, 1.0);
+			float sinLight = pow(1.0 - pow(vCosLight, 2.0), 0.5);
 			normalOffsetScale = 0.0;
-			z_bias = 3.6e3 * sinLight / cosLight;
+			z_bias = 3.6e3 * sinLight / vCosLight;
 		}
-		z_bias *= pFactor * pFactor / f_textureresolution / f_shadowfar;
+		z_bias *= pFactor * pFactor / mShadowParams.textureresolution / mShadowParams.shadowfar;
 
-		shadow_position = applyPerspectiveDistortion(m_ShadowViewProj * mWorld * (shadow_pos + vec4(normalOffsetScale * nNormal, 0.0))).xyz;
+		shadow_position = applyPerspectiveDistortion(mShadowParams.shadowViewProj * mMatrices.world * (shadow_pos + vec4(normalOffsetScale * nNormal, 0.0))).xyz;
 #if !defined(ENABLE_TRANSLUCENT_FOLIAGE) || MATERIAL_TYPE != TILE_MATERIAL_WAVING_LEAVES
 		shadow_position.z -= z_bias;
 #endif
 		perspective_factor = pFactor;
 
-		if (f_timeofday < 0.2) {
-			adj_shadow_strength = f_shadow_strength * 0.5 *
-				(1.0 - mtsmoothstep(0.18, 0.2, f_timeofday));
-		} else if (f_timeofday >= 0.8) {
-			adj_shadow_strength = f_shadow_strength * 0.5 *
-				mtsmoothstep(0.8, 0.83, f_timeofday);
+		if (mShadowParams.timeofday < 0.2) {
+			vAdjShadowStrength = mShadowParams.shadow_strength * 0.5 *
+				(1.0 - mtsmoothstep(0.18, 0.2, mShadowParams.timeofday));
+		} else if (mShadowParams.timeofday >= 0.8) {
+			vAdjShadowStrength = mShadowParams.shadow_strength * 0.5 *
+				mtsmoothstep(0.8, 0.83, mShadowParams.timeofday);
 		} else {
-			adj_shadow_strength = f_shadow_strength *
-				mtsmoothstep(0.20, 0.25, f_timeofday) *
-				(1.0 - mtsmoothstep(0.7, 0.8, f_timeofday));
+			vAdjShadowStrength = mShadowParams.shadow_strength *
+				mtsmoothstep(0.20, 0.25, mShadowParams.timeofday) *
+				(1.0 - mtsmoothstep(0.7, 0.8, mShadowParams.timeofday));
 		}
 	}
 #endif

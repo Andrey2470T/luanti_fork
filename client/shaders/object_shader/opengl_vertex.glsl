@@ -16,9 +16,33 @@ layout (std140) uniform mMatrices {
 	mat4 texture0;
 };
 
+layout (std140) uniform mShadowParams {
+	// shadow texture
+	sampler2D shadowMapSampler;
+	// shadow uniforms
+	vec3 lightDirection;
+	float textureresolution;
+	mat4 shadowViewProj;
+	float shadowfar;
+	float shadow_strength;
+	float timeofday;
+	vec4 cameraPos;
+	float xyPerspectiveBias0;
+	float xyPerspectiveBias1;
+	float zPerspectiveBias;
+	vec3 shadowTint;
+};
+
+layout (std140) uniform mFogParams {
+    int enable;
+    int type;
+    vec4 color;
+    float start;
+    float end;
+    float density;
+};
+
 // Absolute bones transformations
-// Objects skeletons support max up to 128 bones
-// memory: 128 bones * 16 * 4 = 8 192 bytes
 uniform mat4 mBonesTransforms[BONES_MAX];
 
 // Whether animate the normals
@@ -28,43 +52,31 @@ uniform vec3 mDayLight;
 uniform float mAnimationTimer;
 uniform lowp vec4 mMaterialColor;
 
-varying vec3 vNormal;
-varying vec3 vPosition;
-varying vec3 vWorldPosition;
-varying lowp vec4 vColor;
+out vec3 vNormal;
+out vec3 vPosition;
+out vec3 vWorldPosition;
+out lowp vec4 vColor;
 #ifdef GL_ES
-varying mediump vec2 vUV0;
+centroid out mediump vec2 vUV0;
 #else
-centroid varying vec2 vUV0;
+centroid out vec2 vUV0;
 #endif
 
 #ifdef ENABLE_DYNAMIC_SHADOWS
-	// shadow uniforms
-	uniform vec3 mLightDirection;
-	uniform float mTextureResolution;
-	uniform mat4 mShadowViewProj;
-	uniform float mShadowFar;
-	uniform float mShadowStrength;
-	uniform float mTimeOfDay;
-	uniform vec4 mCameraPos;
-
-	varying float vvCosLight;
-	varying float vAdjShadowStrength;
-	varying float vNormalLength;
-	varying vec3 vShadowPosition;
-	varying float vPerspectiveFactor;
+	out float vCosLight;
+	out float vAdjShadowStrength;
+	out float vNormalLength;
+	out vec3 vShadowPosition;
+	out float vPerspectiveFactor;
 #endif
 
-varying highp vec3 vEyeVec;
-varying float vvNightRatio;
+out highp vec3 vEyeVec;
+out float vNightRatio;
 // Color of the light emitted by the light sources.
 const vec3 artificialLight = vec3(1.04, 1.04, 1.04);
-varying float vIDiff;
+out float vIDiff;
 const float e = 2.718281828459;
 const float BS = 10.0;
-uniform float mMmXYPerspectiveBias0;
-uniform float mmXYPerspectiveBias1;
-uniform float mZPerspectiveBias;
 
 #ifdef ENABLE_DYNAMIC_SHADOWS
 
