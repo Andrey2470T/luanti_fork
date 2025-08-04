@@ -26,13 +26,14 @@ void Batcher2D::appendRectangle(MeshBuffer *buf, const rectf &rect, const std::a
 {
     std::array<u32, 6> indices = {0, 1, 2, 2, 3, 0};
 
+    u32 curVCount = buf->getVertexCount();
     appendVertex(buf, rect.ULC, colors[0], uv.ULC);
     appendVertex(buf, v2f(rect.LRC.X, rect.ULC.Y), colors[1], v2f(uv.LRC.X, uv.ULC.Y));
     appendVertex(buf, rect.LRC, colors[2], uv.LRC);
     appendVertex(buf, v2f(rect.ULC.X, rect.LRC.Y), colors[3], v2f(uv.ULC.X, uv.LRC.Y));
 
     for (u32 i = 0; i < 6; i++)
-        appendIndex(buf, indices[i]);
+        appendIndex(buf, curVCount+indices[i]);
 }
 
 void Batcher2D::appendEllipse(MeshBuffer *buf, f32 a, f32 b, const v2u &img_size, const v2f &center,

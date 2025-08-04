@@ -16,7 +16,7 @@ struct LayeredMeshPart
 	u32 offset = 0;
 	u32 count;
 
-    // for solid layers
+    // After 3d vertex batching, new indices are mandatory to be added also here
     std::vector<u32> indices;
 };
 
@@ -43,18 +43,17 @@ class LayeredMesh
 
     render::VertexTypeDescriptor vType;
 
-    class TransparentVerticesSorter
+    struct TransparentTrianglesSorter
     {
         v3f camera_pos;
-    public:
-        TransparentVerticesSorter(const v3f &_camera_pos, const std::vector<MeshBuffer> &_buffers_ref)
-            : camera_pos(_camera_pos)
-        {}
+        
+        TransparentTrianglesSorter() = default;
 
         bool operator()(const LayeredMeshTriangle &trig1, const LayeredMeshTriangle &trig2);
     };
 
-    std::map<LayeredMeshTriangle, TransparentVerticesSorter> transparent_triangles;
+    TransparentTriangleSorter trig_sorter;
+    std::vector<LayeredMeshTriangle> transparent_triangles;
 
     std::vector<LayeredMeshPart> partial_layers;
 public:
@@ -88,6 +87,11 @@ public:
     {
         return layers.at(buffer_id).at(layer_id);
     }
+    
+    render::VertexTypeDescriptor getVertexType() const
+    {
+    	return vType;
+    }
 
     MeshLayer &findLayer(std::shared_ptr<TileLayer> layer, u32 vertexCount, u32 indexCount);
 
@@ -95,4 +99,6 @@ public:
 
     void splitTransparentLayers();
     void transparentSort(const v3f &cam_pos);
+    
+    void updateIndexBuffers();
 };

@@ -4,6 +4,7 @@
 #include "client/ao/skeleton.h"
 #include "client/ao/animation.h"
 #include <Utils/Matrix4.h>
+#include "layeredmesh.h"
 
 matrix4 convertFromAssimpMatrix(aiMatrix4x4 m)
 {
@@ -31,7 +32,7 @@ KeyChannelInterpMode convertFromAssimpInterp(aiAnimBehaviour b)
     };
 }
 
-Model::Model(const aiScene *scene)
+Model::Model(render::VertexTypeDescriptor vType, const aiScene *scene)
 {
     // aka Material Groups
     // The material groups order defines the meshes groups one
@@ -39,10 +40,9 @@ Model::Model(const aiScene *scene)
 
     bool animated = scene->hasSkeletons() && scene->HasAnimations();
 
-    render::VertexTypeDescriptor vtype = animated ? AOVType : render::DefaultVType;
-    mesh = std::make_unique<MeshBuffer>(true, vtype);
+    mesh = std::make_unique<LayeredMesh>(v3f(), vType);
 
-    if (vtype.Name == "AnimatedObject3D") {
+    if (vType.Name == "AnimatedObject3D") {
         skeleton = std::make_unique<Skeleton>();
         skeleton->setAnimatedMesh(mesh.get());
         animations.resize(scene->mNumAnimations);
@@ -113,12 +113,6 @@ Model *Model::load(const std::string &path)
     return new Model(scene);
 }
 
-MeshPart Model::getMeshPart(u8 n) const
-{
-    assert(n < parts.size());
-    return parts.at(n);
-}
-
 void Model::processMesh(aiMesh *m)
 {
 	u32 vertexCount = mesh->getVertexCount();
@@ -126,15 +120,28 @@ void Model::processMesh(aiMesh *m)
 
     mesh->reallocateData(vertexCount + m->mNumVertices, indexCount + m->mNumFaces * 3);
 
+    auto vType = mesh->getVertexType();
     for (u32 i = 0; i < m->mNumVertices; i++) {
         auto pos = m->mVertices[i];
         auto color = m->mColors[i];
         auto normal = m->mNormals[i];
         auto uv = m->HasTextureCoords(0) ? m->mTextureCoords[0][i] : aiVector3D(0, 0, 0);
 
-        appendSVT(mesh.get(),
-            v3f(pos.x, pos.y, pos.z), img::color8(img::PF_RGBA8, color->r, color->g, color->b, color->a),
-            v3f(normal.x, normal.y, normal.z), v2f(uv.x, uv.y));
+        if (vType.name == "Node3D") {
+            appendNVT(mesh.get(),
+                v3f(pos.x, pos.y, pos.z), img::color8(img::PF_RGBA8, color->r, color->g, color->b, color->a),
+                v3f(normal.x, normal.y, normal.z), v2f(uv.x, uv.y));
+        }
+        else if (vType.name == "TwoColoredNode3D") {
+        	appendTCNVT(mesh.get(),
+                v3f(pos.x, pos.y, pos.z), img::color8(img::PF_RGBA8, color->r, color->g, color->b, color->a),
+                v3f(normal.x, normal.y, normal.z), v2f(uv.x, uv.y));
+        }
+        else {
+        	appendAOVT(mesh.get(),
+                v3f(pos.x, pos.y, pos.z), img::color8(img::PF_RGBA8, color->r, color->g, color->b, color->a),
+                v3f(normal.x, normal.y, normal.z), v2f(uv.x, uv.y));
+        }
     }
 
     for (u32 f = 0; f < m->mNumFaces; f++) {

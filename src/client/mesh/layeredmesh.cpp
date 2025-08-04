@@ -11,7 +11,7 @@ v3f LayeredMeshTriangle::getCenter() const
     return (pos1 + pos2 + pos3) / 3.0f;
 }
 
-bool LayeredMesh::TransparentVerticesSorter::operator()(const LayeredMeshTriangle &trig1, const LayeredMeshTriangle &trig2)
+bool LayeredMesh::TransparentTrianglesSorter::operator()(const LayeredMeshTriangle &trig1, const LayeredMeshTriangle &trig2)
 {
     v3f trig1_c = trig1.getCenter();
     v3f trig2_c = trig2.getCenter();
@@ -45,7 +45,7 @@ MeshLayer &LayeredMesh::findLayer(std::shared_ptr<TileLayer> layer, u32 vertexCo
             else {
                 LayeredMeshPart mesh_p;
                 mesh_p.buffer_id = i;
-                mesh_p.layer_id = std::distance(buf_layers.begin(), layer_found);
+                mesh_p.layer_id = buf_layers.size();
                 buf_layers.emplace_back(std::shared_ptr<TileLayer>(layer), mesh_p);
                 return buf_layers.back();
             }
@@ -76,3 +76,100 @@ void LayeredMesh::recalculateBoundingRadius()
         }
     }
 }
+
+void LayeredMesh::splitTransparentLayers()
+{
+	transparent_triangles.clear();
+	
+	for (u8 buf_i = 0; buf_i < getBuffersCount(); buf_i++) {
+		for (auto &layer : layers.at(buf_i)) {
+			if (!(layer.first->material_flags & MATERIAL_FLAG_TRANSPARENT))
+			    continue;
+			
+			auto &layer_indices = layer.second.indices;
+			transparent_triangles.reserve(transparent_triangles.capacity() + layer_indices.size() / 3);
+			
+			for (u32 index = 0; index < layer_indices.size() / 3; index+=3) {
+			    transparent_triangles.emplace_back(
+                    buffers.at(buf_i).get(), layer.first, index, index+1, index+2);
+            }
+        }
+    }
+}
+
+void LayeredMesh::transparentSort(const v3f &cam_pos)
+{
+	trig_sorter.camera_pos = cam_pos;
+	std::sort(transparent_triangles.begin(), transparent_triangles.end(), trig_sorter);
+}
+
+void LayeredMesh::updateIndexBuffers()
+{
+	std::vector<std::vector<u32>> bufs_indices(buffers.size());
+	
+	// Firstly render solid layers
+	for (u8 buf_i = 0; buf_i < getBuffersCount(); buf_i++) {
+		for (auto &layer : layers.at(buf_i)) {
+			if (!(layer.first->material_flags & MATERIAL_FLAG_TRANSPARENT)) {
+				layer.second.offset = bufs_indices.at(buf_i).size();
+				layer.second.count = layer.second.indices.size();
+				bufs_indices.at(buf_i).insert(layer.second.indices.begin(), layer.second.indices.end());
+		}
+	}
+	
+	// Then transparent ones
+	partial_layers.clear();
+	
+	MeshBuffer *last_buf = nullptr;
+	std::shared_ptr<TileLayer> last_layer;
+	for (auto &trig : transparent_triangles) {
+		bool add_partial_layer = true;
+		if (!last_buf) {
+			last_buf = trig.buf_ref;
+			last_layer = trig.layer;
+		}
+		else if (*last_buf == *trig.buf_ref && *last_layer == *trig.layer) {
+			partial_layers.back().count += 3;
+			add_partial_layer = false;
+	    }
+	    
+	    auto find_buf = std::find(buffers.begin(), begin.end(),
+        [trig] (const std::unique_ptr<MeshBuffer> &buf_ptr)
+        {
+        	return *trig.buf_ref == *buf_ptr;
+        });
+        
+        u8 buf_i = std::distance(buffers.begin(), find_buf);
+	    if (add_partial_layer) {
+		    auto buf_layers = buffers.at(buf_i);
+		
+	        auto find_layer = std::find(buf_layers.begin(), buf_layers.end(),
+	        [trig] (const MeshLayer &cur_l)
+	        {
+		        return *trig.layer == *cur_l.first;
+		    });
+		    u8 layer_i = std::distance(buf_layers.begin(), find_layer);
+		    
+		    partial_layers.emplace_back(
+                buf_i, layer_i, buf_indices.at(buf_i).size(), 3);
+        }
+        
+        buf_indices.at(buf_i).push_back(trig.p1);
+        buf_indices.at(buf_i).push_back(trig.p2);
+        buf_indices.at(buf_i).push_back(trig.p3);
+        
+        last_buf = trig.buf_ref;
+        last_layer = trig.layer;
+    }
+    
+    // upload new indices lists for each buffer
+    for (u8 buf_i = 0; buf_i < getBuffersCount(); buf_i++) {
+    	for (u32 index_i = 0; index_i < buf_indices.at(buf_i); index_i++)
+            buffers.at(buf_i)->setIndexAt(buf_indices.at(buf_i).at(index_i), index_i);
+        
+        buffers.at(buf_i)->uploadIndexData();
+    }
+}
+        
+                
+	

@@ -104,13 +104,14 @@ void Batcher3D::appendFace(MeshBuffer *buf, const std::array<v3f, 4> &positions,
     v3f normal = plane3f(positions[0], positions[1], positions[2]).Normal;
     std::array<u32, 6> indices = {0, 1, 2, 2, 1, 3};
 
+    u32 curVCount = buf->getVertexCount();
     appendVertex(buf, positions[0], colors[0], normal, uvs.ULC);
     appendVertex(buf, positions[1], colors[1], normal, v2f(uvs.LRC.X, uvs.ULC.Y));
     appendVertex(buf, positions[2], colors[2], normal, uvs.LRC);
     appendVertex(buf, positions[3], colors[3], normal, v2f(uvs.ULC.X, uvs.LRC.Y));
 
     for (u32 i = 0; i < 6; i++)
-        appendIndex(buf, indices[i]);
+        appendIndex(buf, curVCount+indices[i]);
 }
 
 void Batcher3D::appendFace(MeshBuffer *buf, const rectf &positions, const v3f &rotation,
@@ -228,6 +229,7 @@ void Batcher3D::appendLineBox(MeshBuffer *buf, const aabbf &box, const img::colo
     std::array<v3f, 8> edges;
     box.getEdges(edges.data());
 
+    u32 curVCount = buf->getVertexCoun();
     for (auto edge : edges)
         appendVertex(buf, edge, color);
 
@@ -236,5 +238,5 @@ void Batcher3D::appendLineBox(MeshBuffer *buf, const aabbf &box, const img::colo
     };
 
     for (u32 i : indices)
-        appendIndex(buf, i);
+        appendIndex(buf, curVCount+i);
 }

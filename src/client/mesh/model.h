@@ -8,16 +8,11 @@
 class Skeleton;
 class BoneAnimation;
 class Bone;
-
-struct MeshPart {
-    u32 offset = 0;
-    u32 count;
-};
+class LayeredMesh;
 
 class Model
 {
-    std::unique_ptr<MeshBuffer> mesh;
-    std::vector<MeshPart> parts;
+    std::unique_ptr<LayeredMesh> mesh;
 
     std::unique_ptr<Skeleton> skeleton;
     std::vector<std::unique_ptr<BoneAnimation>> animations;
@@ -25,17 +20,11 @@ class Model
     std::vector<std::pair<aiNode *, Bone *>> bone_mappings;
 public:
     Model() = default;
-    Model(const aiScene *scene);
+    Model(render::VertexTypeDescriptor vType, const aiScene *scene);
 
     static Model *load(const std::string &path);
 
-    u8 getMeshPartCount() const
-    {
-        return parts.size();
-    }
-    MeshPart getMeshPart(u8 n) const;
-
-    MeshBuffer *getMesh() const
+    LayeredMesh *getMesh() const
     {
         return mesh.get();
     }
