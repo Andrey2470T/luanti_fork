@@ -3,9 +3,13 @@
 #include "Utils/Plane3D.h"
 
 void Batcher3D::appendVertex(MeshBuffer *buf, v3f pos,
-    const img::color8 &color, const v3f &normal, const v2f &uv)
+    const img::color8 &color, const v3f &normal, v2f uv)
 {
-    curTransform.transformVect(pos);
+    curPosTransform.transformVect(pos);
+
+    v3f uv3(uv.X, uv.Y, 0.0f);
+    curUVTransform.transformVect(uv3);
+    uv = v2f(uv3.X, uv3.Y);
 
     switch(vType) {
     case B3DVT_SVT:

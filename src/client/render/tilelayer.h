@@ -87,6 +87,9 @@ struct TileLayer
 	 */
     img::color8 color = img::black;
 
+    /*!
+     * Used if tile.world_aligned = true
+     */
 	u8 scale = 1;
 
 	//! Tile rotation.

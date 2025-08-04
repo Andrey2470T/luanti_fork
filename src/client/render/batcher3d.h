@@ -16,10 +16,11 @@ class Batcher3D
 {
 public:
     static Batcher3DVertexType vType;
-    static matrix4 curTransform;
+    static matrix4 curPosTransform;
+    static matrix4 curUVTransform;
 
     static void appendVertex(MeshBuffer *buf, v3f pos,
-        const img::color8 &color=img::color8(), const v3f &normal=v3f(), const v2f &uv=v2f());
+        const img::color8 &color=img::color8(), const v3f &normal=v3f(), v2f uv=v2f());
 
     static void appendLine(MeshBuffer *buf, const v3f &startPos, const v3f &endPos,
         const img::color8 &color=img::color8());
