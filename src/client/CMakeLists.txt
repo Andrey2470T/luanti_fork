@@ -19,7 +19,6 @@ set(event_SRCS
 set(map_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/map/clientmap.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/map/mapblockmesh.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/map/meshcollector.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/map/meshgenerator.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/map/meshgeneratorthread.cpp
 )
