@@ -121,7 +121,7 @@ Atlas *AtlasPool::getAtlas(u32 i) const
     return atlases.at(i);
 }
 
-Atlas *AtlasPool::getAtlasByTile(img::Image *tile, bool force_add)
+Atlas *AtlasPool::getAtlasByTile(img::Image *tile, bool force_add, std::optional<AtlasTileAnim> anim)
 {
     for (u32 i = 0; i < atlases.size(); i++) {
         auto atlas = atlases.at(i);
@@ -134,7 +134,7 @@ Atlas *AtlasPool::getAtlasByTile(img::Image *tile, bool force_add)
     }
 
     if (force_add) {
-        forceAddTile(tile);
+        forceAddTile(tile, anim);
         return atlases.back();
     }
     return nullptr;
@@ -160,7 +160,7 @@ img::Image *AtlasPool::addTile(const std::string &name)
     return img;
 }
 
-img::Image *AtlasPool::addAnimatedTile(const std::string &name, u32 length, u32 count)
+img::Image *AtlasPool::addAnimatedTile(const std::string &name, AtlasTileAnim anim)
 {
     if (type != AtlasType::RECTPACK2D)
         return nullptr;
@@ -169,12 +169,12 @@ img::Image *AtlasPool::addAnimatedTile(const std::string &name, u32 length, u32 
     if (!img)
         return nullptr;
 
-    animatedImages[images.size()-1] = std::make_pair(length, count);
+    animatedImages[images.size()-1] = anim;
 
     return img;
 }
 
-rectf AtlasPool::getTileRect(img::Image *tile, bool toUV, bool force_add)
+rectf AtlasPool::getTileRect(img::Image *tile, bool toUV, bool force_add, std::optional<AtlasTileAnim> anim)
 {
     if (type != AtlasType::RECTPACK2D)
         return rectf();
@@ -197,7 +197,7 @@ rectf AtlasPool::getTileRect(img::Image *tile, bool toUV, bool force_add)
     }
 
     if (force_add) {
-        forceAddTile(tile);
+        forceAddTile(tile, anim);
         auto lastAtlas = atlases.back();
 
         auto lastTile = lastAtlas->getTile(lastAtlas->getTilesCount()-1);
@@ -260,14 +260,14 @@ void AtlasPool::updateAnimatedTiles(f32 time)
     }
 }
 
-void AtlasPool::forceAddTile(img::Image *img)
+void AtlasPool::forceAddTile(img::Image *img, std::optional<AtlasTileAnim> anim)
 {
     if (type == AtlasType::RECTPACK2D) {
         auto rectpackAtlas = dynamic_cast<Rectpack2DAtlas *>(atlases.back());
         u32 lastAtlasN = atlases.size()-1;
 
-        if (!rectpackAtlas->packSingleTile(img, lastAtlasN)) {
-            Rectpack2DAtlas *atlas = new Rectpack2DAtlas(cache, prefixName, lastAtlasN+1, maxTextureSize, img, filtered);
+        if (!rectpackAtlas->packSingleTile(img, lastAtlasN, anim)) {
+            Rectpack2DAtlas *atlas = new Rectpack2DAtlas(cache, prefixName, lastAtlasN+1, maxTextureSize, img, filtered, anim);
             cache->cacheResource<Atlas>(ResourceType::ATLAS, atlas);
 
             atlases.push_back(atlas);

@@ -23,8 +23,8 @@ void AnimatedAtlasTile::updateFrame(f32 time)
     cur_frame = (u32)(time * 1000 / frame_length_ms) % frame_count;
 }
 
-// Unfortunately the dynamic packing can add only non-animated tiles
-Rectpack2DAtlas::Rectpack2DAtlas(ResourceCache *_cache, const std::string &name, u32 num, u32 maxTextureSize, img::Image *img, bool filtered)
+Rectpack2DAtlas::Rectpack2DAtlas(ResourceCache *_cache, const std::string &name, u32 num, u32 maxTextureSize, img::Image *img, bool filtered,
+    std::optional<AtlasTileAnim> anim)
     : Atlas(), maxSize(maxTextureSize), cache(_cache)
 {
     mipMaps = filtered && g_settings->getBool("mip_map");
@@ -37,11 +37,20 @@ Rectpack2DAtlas::Rectpack2DAtlas(ResourceCache *_cache, const std::string &name,
 
     if (filtering)
         recreateImageWithFrame(&img);
-    AtlasTile *tile = new AtlasTile(img, num);
+    AtlasTile *tile = nullptr;
+
+    if (anim)
+        tile = new AnimatedAtlasTile(img, num, anim.value().first, anim.value().second);
+    else
+        tile = new AtlasTile(img, num);
+
     bool added = addTile(tile);
 
     if (!added)
         return;
+
+    if (anim)
+        animatedTiles.push_back(tiles.size()-1);
 
     actualSize = std::max(tile->size.X, tile->size.Y);
     tile->pos = v2u(0, actualSize);
@@ -52,7 +61,7 @@ Rectpack2DAtlas::Rectpack2DAtlas(ResourceCache *_cache, const std::string &name,
 }
 
 Rectpack2DAtlas::Rectpack2DAtlas(ResourceCache *_cache, const std::string &name, u32 num, u32 maxTextureSize, bool filtered,
-        const std::vector<img::Image *> &images, const std::unordered_map<u32, std::pair<u32, u32> > &animatedImages, u32 &start_i)
+    const std::vector<img::Image *> &images, const std::unordered_map<u32, AtlasTileAnim> &animatedImages, u32 &start_i)
     : Atlas(), maxSize(maxTextureSize), cache(_cache)
 {
     mipMaps = filtered && g_settings->getBool("mip_map");
@@ -62,7 +71,7 @@ Rectpack2DAtlas::Rectpack2DAtlas(ResourceCache *_cache, const std::string &name,
     u8 maxMipLevel = 0;
 
     if (mipMaps) {
-        u32 minImgSize = std::min(images.at(0)->getClipSize().X, images.at(0)->getClipSize().Y);
+        u32 minImgSize = std::min(images.at(start_i)->getClipSize().X, images.at(start_i)->getClipSize().Y);
         for (u32 i = start_i; i < images.size(); i++) {
             u32 curImgSize = std::min(images.at(i)->getClipSize().X, images.at(i)->getClipSize().Y);
             minImgSize = std::min(minImgSize, curImgSize);
@@ -90,17 +99,19 @@ Rectpack2DAtlas::Rectpack2DAtlas(ResourceCache *_cache, const std::string &name,
         auto animationProps = animatedImages.find(start_i);
 
         // Animated images have the clip region restricting within the top frame
-        if (animationProps != animatedImages.end()) {
+        if (animationProps != animatedImages.end())
             newTile = new AnimatedAtlasTile(tileImg, num, animationProps->second.first, animationProps->second.second);
-            animatedTiles.push_back(start_i);
-        }
         else
             newTile = new AtlasTile(tileImg, num);
 
         bool added = addTile(newTile);
 
-        if (added)
+        if (added) {
             atlasArea += tileArea;
+
+            if (animationProps != animatedImages.end())
+                animatedTiles.push_back(start_i);
+        }
     }
 
     actualSize = CALC_CLOSEST_POT_SIDE(atlasArea);
@@ -133,10 +144,14 @@ void Rectpack2DAtlas::packTiles()
     rects.clear();
 }
 
-// Unfortunately the dynamic packing can add only non-animated tiles
-bool Rectpack2DAtlas::packSingleTile(img::Image *img, u32 num)
+bool Rectpack2DAtlas::packSingleTile(img::Image *img, u32 num, std::optional<AtlasTileAnim> anim)
 {
-    AtlasTile *newTile = new AtlasTile(img, num);
+    AtlasTile *newTile;
+
+    if (anim)
+        newTile = new AnimatedAtlasTile(img, num, anim.value().first, anim.value().second);
+    else
+        newTile = new AtlasTile(img, num);
 
     // At first try to place the tile in one of the free spaces
     bool packed = false;
@@ -176,8 +191,12 @@ bool Rectpack2DAtlas::packSingleTile(img::Image *img, u32 num)
     }
 
     bool added = addTile(newTile);
-    if (!added)
+    if (!added) {
+        delete newTile;
         return false;
+    }
+    if (anim)
+        animatedTiles.push_back(tiles.size()-1);
 
     return true;
 }

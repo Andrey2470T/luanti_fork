@@ -33,6 +33,8 @@ struct AtlasTile
     }
 };
 
+typedef std::pair<u32, u32> AtlasTileAnim;
+
 enum class AtlasType : u8
 {
     RECTPACK2D,
@@ -110,7 +112,7 @@ class AtlasPool
 
     std::vector<Atlas *> atlases;
     std::vector<img::Image *> images;
-    std::unordered_map<u32, std::pair<u32, u32>> animatedImages;
+    std::unordered_map<u32, AtlasTileAnim> animatedImages;
 public:
     AtlasPool(AtlasType _type, const std::string &_name, ResourceCache *_cache, u32 _maxTextureSize, bool _filtered)
         : type(_type), prefixName(_name), cache(_cache), maxTextureSize(_maxTextureSize), filtered(_filtered)
@@ -119,7 +121,7 @@ public:
     ~AtlasPool();
 
     Atlas *getAtlas(u32 i) const;
-    Atlas *getAtlasByTile(img::Image *tile, bool force_add=false);
+    Atlas *getAtlasByTile(img::Image *tile, bool force_add=false, std::optional<AtlasTileAnim> anim=std::nullopt);
 
     u32 getAtlasCount() const
     {
@@ -127,9 +129,9 @@ public:
     }
 
     img::Image *addTile(const std::string &name);
-    img::Image *addAnimatedTile(const std::string &name, u32 length, u32 count);
+    img::Image *addAnimatedTile(const std::string &name, AtlasTileAnim anim);
 
-    rectf getTileRect(img::Image *tile, bool toUV=false, bool force_add=false);
+    rectf getTileRect(img::Image *tile, bool toUV=false, bool force_add=false, std::optional<AtlasTileAnim> anim=std::nullopt);
 
     // Recursively create and fill new atlases with tiles while the internal image counter doesn't reach some limit
     void buildRectpack2DAtlas();
@@ -137,5 +139,5 @@ public:
 
     void updateAnimatedTiles(f32 time);
 private:
-    void forceAddTile(img::Image *img);
+    void forceAddTile(img::Image *img, std::optional<AtlasTileAnim> anim=std::nullopt);
 };
