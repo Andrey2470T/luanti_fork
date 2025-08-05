@@ -3,9 +3,7 @@
 // Copyright (C) 2021 x2048, Dmitry Kostenko <codeforsmile@gmail.com>
 
 #pragma once
-#include "SColor.h"
-
-using namespace irr;
+#include "Image/Color.h"
 
 /**
  * Parameters for automatic exposure compensation
@@ -48,7 +46,7 @@ struct Lighting
 	float shadow_intensity {0.0f};
 	float saturation {1.0f};
 	float volumetric_light_strength {0.0f};
-	video::SColor shadow_tint {255, 0, 0, 0};
+    img::color8 shadow_tint {img::PF_RGBA8, 255, 0, 0, 0};
 	float bloom_intensity {0.05f};
 	float bloom_strength_factor {1.0f};
 	float bloom_radius {1.0f};

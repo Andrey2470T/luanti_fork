@@ -32,7 +32,7 @@ struct SkyboxParams
 	float body_orbit_tilt { INVALID_SKYBOX_TILT };
 	s16 fog_distance { -1 };
 	float fog_start { -1.0f };
-	img::color8 fog_color { 0 }; // override, only used if alpha > 0
+    img::color8 fog_color {}; // override, only used if alpha > 0
 };
 
 struct SunParams
