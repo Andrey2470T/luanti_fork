@@ -113,8 +113,9 @@ void LayeredMesh::updateIndexBuffers()
 			if (!(layer.first->material_flags & MATERIAL_FLAG_TRANSPARENT)) {
 				layer.second.offset = bufs_indices.at(buf_i).size();
 				layer.second.count = layer.second.indices.size();
-				bufs_indices.at(buf_i).insert(layer.second.indices.begin(), layer.second.indices.end());
-		}
+                bufs_indices.at(buf_i).insert(bufs_indices.at(buf_i).end(), layer.second.indices.begin(), layer.second.indices.end());
+            }
+        }
 	}
 	
 	// Then transparent ones
@@ -128,20 +129,20 @@ void LayeredMesh::updateIndexBuffers()
 			last_buf = trig.buf_ref;
 			last_layer = trig.layer;
 		}
-		else if (*last_buf == *trig.buf_ref && *last_layer == *trig.layer) {
+        else if (*last_buf == trig.buf_ref && *last_layer == *trig.layer) {
 			partial_layers.back().count += 3;
 			add_partial_layer = false;
 	    }
 	    
-	    auto find_buf = std::find(buffers.begin(), begin.end(),
+        auto find_buf = std::find(buffers.begin(), buffers.end(),
         [trig] (const std::unique_ptr<MeshBuffer> &buf_ptr)
         {
-        	return *trig.buf_ref == *buf_ptr;
+            return *trig.buf_ref == buf_ptr.get();
         });
         
         u8 buf_i = std::distance(buffers.begin(), find_buf);
 	    if (add_partial_layer) {
-		    auto buf_layers = buffers.at(buf_i);
+            auto buf_layers = layers.at(buf_i);
 		
 	        auto find_layer = std::find(buf_layers.begin(), buf_layers.end(),
 	        [trig] (const MeshLayer &cur_l)
@@ -151,12 +152,12 @@ void LayeredMesh::updateIndexBuffers()
 		    u8 layer_i = std::distance(buf_layers.begin(), find_layer);
 		    
 		    partial_layers.emplace_back(
-                buf_i, layer_i, buf_indices.at(buf_i).size(), 3);
+                buf_i, layer_i, bufs_indices.at(buf_i).size(), 3);
         }
         
-        buf_indices.at(buf_i).push_back(trig.p1);
-        buf_indices.at(buf_i).push_back(trig.p2);
-        buf_indices.at(buf_i).push_back(trig.p3);
+        bufs_indices.at(buf_i).push_back(trig.p1);
+        bufs_indices.at(buf_i).push_back(trig.p2);
+        bufs_indices.at(buf_i).push_back(trig.p3);
         
         last_buf = trig.buf_ref;
         last_layer = trig.layer;
@@ -164,8 +165,8 @@ void LayeredMesh::updateIndexBuffers()
     
     // upload new indices lists for each buffer
     for (u8 buf_i = 0; buf_i < getBuffersCount(); buf_i++) {
-    	for (u32 index_i = 0; index_i < buf_indices.at(buf_i); index_i++)
-            buffers.at(buf_i)->setIndexAt(buf_indices.at(buf_i).at(index_i), index_i);
+        for (u32 index_i = 0; index_i < bufs_indices.at(buf_i).size(); index_i++)
+            buffers.at(buf_i)->setIndexAt(bufs_indices.at(buf_i).at(index_i), index_i);
         
         buffers.at(buf_i)->uploadIndexData();
     }

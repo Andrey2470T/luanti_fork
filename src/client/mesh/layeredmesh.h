@@ -3,7 +3,6 @@
 #include <memory>
 #include <BasicIncludes.h>
 #include <Render/VertexTypeDescriptor.h>
-#include <map>
 
 class MeshBuffer;
 struct TileLayer;
@@ -52,7 +51,7 @@ class LayeredMesh
         bool operator()(const LayeredMeshTriangle &trig1, const LayeredMeshTriangle &trig2);
     };
 
-    TransparentTriangleSorter trig_sorter;
+    TransparentTrianglesSorter trig_sorter;
     std::vector<LayeredMeshTriangle> transparent_triangles;
 
     std::vector<LayeredMeshPart> partial_layers;

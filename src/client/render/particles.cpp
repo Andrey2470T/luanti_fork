@@ -3,84 +3,58 @@
 // Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "particles.h"
-#include <cmath>
-#include <array>
-#include "client.h"
 #include "collision.h"
-#include "client/content_cao.h"
+#include "client/ao/genericCAO.h"
 #include "client/clientevent.h"
-#include "client/renderingengine.h"
-#include "client/texturesource.h"
 #include "util/numeric.h"
 #include "light.h"
-#include "localplayer.h"
+#include "client/player/localplayer.h"
 #include "environment.h"
-#include "clientmap.h"
+#include "client/map/clientmap.h"
 #include "mapnode.h"
 #include "nodedef.h"
-#include "client.h"
+#include "client/client.h"
 #include "settings.h"
 #include "profiler.h"
-
-#include "SMeshBuffer.h"
+#include "rendersystem.h"
+#include "client/media/resource.h"
+#include "client/mesh/meshbuffer.h"
+#include "atlas.h"
 
 using BlendMode = ParticleParamTypes::BlendMode;
-
-ClientParticleTexture::ClientParticleTexture(const ServerParticleTexture& p, ITextureSource *tsrc)
-{
-	tex = p;
-	// note: getTextureForMesh not needed here because we don't use texture filtering
-	ref = tsrc->getTexture(p.string);
-}
 
 /*
 	Particle
 */
 
-Particle::Particle(
-		const ParticleParameters &p,
-		const ClientParticleTexRef &texture,
-		v2f texpos,
-		v2f texsize,
-		video::SColor color,
-		ParticleSpawner *parent,
-		std::unique_ptr<ClientParticleTexture> owned_texture
-	) :
+Particle::Particle(RenderSystem *rnd_sys,
+    ResourceCache *cache,
+    u32 num,
+    const ParticleParameters &p, ParticleTexture *pt,
+    const std::string &texture,
+    v2f texpos,
+    v2f texsize,
+    img::color8 color,
+    ParticleSpawner *parent
+    ) :
+        m_rnd_sys(rnd_sys),
+        m_cache(cache),
+        m_particle_num(num),
 		m_expiration(p.expirationtime),
-
 		m_base_color(color),
-
-		m_texture(texture),
+        m_pt(pt),
 		m_texpos(texpos),
 		m_texsize(texsize),
 		m_pos(p.pos),
 		m_velocity(p.vel),
 		m_acceleration(p.acc),
 		m_p(p),
-
-		m_parent(parent),
-		m_owned_texture(std::move(owned_texture))
+        m_parent(parent)
 {
+    calcTileRect(m_parent ? texture : m_p.texture.string);
 }
 
-Particle::~Particle()
-{
-	if (m_buffer)
-		m_buffer->release(m_index);
-}
-
-bool Particle::attachToBuffer(ParticleBuffer *buffer)
-{
-	auto index_opt = buffer->allocate();
-	if (index_opt.has_value()) {
-		m_index = index_opt.value();
-		m_buffer = buffer;
-		return true;
-	}
-	return false;
-}
-
-void Particle::step(float dtime, ClientEnvironment *env)
+void Particle::step(f32 dtime, ClientEnvironment *env)
 {
 	m_time += dtime;
 
@@ -90,7 +64,7 @@ void Particle::step(float dtime, ClientEnvironment *env)
 	m_velocity = av*vecSign(m_velocity) + v3f(m_p.jitter.pickWithin())*dtime;
 
 	if (m_p.collisiondetection) {
-		aabb3f box(v3f(-m_p.size / 2.0f), v3f(m_p.size / 2.0f));
+        aabbf box(v3f(-m_p.size / 2.0f), v3f(m_p.size / 2.0f));
 		v3f p_pos = m_pos * BS;
 		v3f p_velocity = m_velocity * BS;
 		collisionMoveResult r = collisionMoveSimple(env, env->getGameDef(),
@@ -132,33 +106,39 @@ void Particle::step(float dtime, ClientEnvironment *env)
 		m_velocity += m_acceleration * dtime;
 	}
 
-	if (m_p.animation.type != TAT_NONE) {
-		m_animation_time += dtime;
-		int frame_length_i = 0;
-		m_p.animation.determineParams(
-				m_texture.ref->getSize(),
-				NULL, &frame_length_i, NULL);
-		float frame_length = frame_length_i / 1000.0;
-		while (m_animation_time > frame_length) {
-			m_animation_frame++;
-			m_animation_time -= frame_length;
-		}
-	}
-
-	// animate particle alpha in accordance with settings
-	float alpha = 1.f;
-	if (m_texture.tex != nullptr)
-		alpha = m_texture.tex -> alpha.blend(m_time / (m_expiration+0.1f));
-
 	// Update lighting
-	auto col = updateLight(env);
-	col.setAlpha(255 * alpha);
+    updateLight(env);
 
-	// Update model
-	updateVertices(env, col);
+    // Update transform matrix
+    updateTransform(env);
 }
 
-video::SColor Particle::updateLight(ClientEnvironment *env)
+void Particle::calcTileRect(const std::string &newImg)
+{
+    auto img = m_cache->getOrLoad<img::Image>(ResourceType::IMAGE, newImg);
+
+    if (img) {
+        auto basicPool = m_rnd_sys->getPool(true);
+
+        if (!m_parent) {
+            std::optional<AtlasTileAnim> anim = std::nullopt;
+
+            if (m_p.animation.type != TAT_NONE) {
+                v2u imgSize = img->getSize();
+                s32 frame_count;
+                s32 anim_length;
+                m_p.animation.determineParams(imgSize, &frame_count, &anim_length, nullptr);
+                anim->first = anim_length;
+                anim->second = frame_count;
+            }
+            m_particle_data.tile_uv = basicPool->getTileRect(img, true, true, anim);
+        }
+        else
+            m_particle_data.tile_uv = basicPool->getTileRect(img, true, false);
+    }
+}
+
+void Particle::updateLight(ClientEnvironment *env)
 {
 	u8 light = 0;
 	bool pos_ok;
@@ -176,74 +156,55 @@ video::SColor Particle::updateLight(ClientEnvironment *env)
 		light = blend_light(env->getDayNightRatio(), LIGHT_SUN, 0);
 
 	u8 m_light = decode_light(light + m_p.glow);
-	return video::SColor(255,
-		m_light * m_base_color.getRed() / 255,
-		m_light * m_base_color.getGreen() / 255,
-		m_light * m_base_color.getBlue() / 255);
+
+    // animate particle alpha in accordance with settings
+    float alpha = 1.f;
+    auto pt = m_parent ? m_pt : &m_p.texture;
+    alpha = pt->alpha.blend(m_time / (m_expiration+0.1f));
+
+    img::color8 res_c(img::PF_RGBA8,
+        m_light * m_base_color.R() / 255,
+        m_light * m_base_color.G() / 255,
+        m_light * m_base_color.A() / 255, 255 * alpha);
+
+    m_particle_data.light_color = res_c;
 }
 
-void Particle::updateVertices(ClientEnvironment *env, video::SColor color)
+void Particle::updateTransform(ClientEnvironment *env)
 {
-	f32 tx0, tx1, ty0, ty1;
 	v2f scale;
 
-	if (!m_buffer)
-		return;
-
-	video::S3DVertex *vertices = m_buffer->getVertices(m_index);
-
-	if (m_texture.tex != nullptr)
-		scale = m_texture.tex -> scale.blend(m_time / (m_expiration+0.1));
+    if (m_pt)
+        scale = m_pt->scale.blend(m_time / (m_expiration+0.1));
 	else
 		scale = v2f(1.f, 1.f);
 
-	if (m_p.animation.type != TAT_NONE) {
-		const v2u32 texsize = m_texture.ref->getSize();
-		v2f texcoord, framesize_f;
-		v2u32 framesize;
-		texcoord = m_p.animation.getTextureCoords(texsize, m_animation_frame);
-		m_p.animation.determineParams(texsize, NULL, NULL, &framesize);
-		framesize_f = v2f(framesize.X / (float) texsize.X, framesize.Y / (float) texsize.Y);
+    scale *= m_p.size * .5f;
 
-		tx0 = m_texpos.X + texcoord.X;
-		tx1 = m_texpos.X + texcoord.X + framesize_f.X * m_texsize.X;
-		ty0 = m_texpos.Y + texcoord.Y;
-		ty1 = m_texpos.Y + texcoord.Y + framesize_f.Y * m_texsize.Y;
-	} else {
-		tx0 = m_texpos.X;
-		tx1 = m_texpos.X + m_texsize.X;
-		ty0 = m_texpos.Y;
-		ty1 = m_texpos.Y + m_texsize.Y;
-	}
-
-	auto half = m_p.size * .5f,
-	     hx   = half * scale.X,
-	     hy   = half * scale.Y;
-	vertices[0] = video::S3DVertex(-hx, -hy,
-		0, 0, 0, 0, color, tx0, ty1);
-	vertices[1] = video::S3DVertex(hx, -hy,
-		0, 0, 0, 0, color, tx1, ty1);
-	vertices[2] = video::S3DVertex(hx, hy,
-		0, 0, 0, 0, color, tx1, ty0);
-	vertices[3] = video::S3DVertex(-hx, hy,
-		0, 0, 0, 0, color, tx0, ty0);
+    matrix4 scaleM;
+    scaleM.setScale(v3f(scale.X, scale.Y, 0.0f));
 
 	// Update position -- see #10398
 	auto *player = env->getLocalPlayer();
-	v3s16 camera_offset = env->getCameraOffset();
 
-	for (u16 i = 0; i < 4; i++) {
-		video::S3DVertex &vertex = vertices[i];
-		if (m_p.vertical) {
-			v3f ppos = player->getPosition() / BS;
-			vertex.Pos.rotateXZBy(std::atan2(ppos.Z - m_pos.Z, ppos.X - m_pos.X) /
-				core::DEGTORAD + 90);
-		} else {
-			vertex.Pos.rotateYZBy(player->getPitch());
-			vertex.Pos.rotateXZBy(player->getYaw());
-		}
-		vertex.Pos += m_pos * BS - intToFloat(camera_offset, BS);
-	}
+    v3f euler_rot;
+    if (m_p.vertical) {
+        v3f ppos = player->getPosition() / BS;
+        euler_rot.Y = std::atan2(ppos.Z - m_pos.Z, ppos.X - m_pos.X) / DEGTORAD + 90;
+    } else {
+        euler_rot.X = player->getPitch();
+        euler_rot.Y = player->getYaw();
+    }
+
+    matrix4 rotM;
+    rotM.setRotationDegrees(euler_rot);
+
+    v3s16 camera_offset = env->getCameraOffset();
+
+    matrix4 posM;
+    posM.setTranslation(m_pos * BS - intToFloat(camera_offset, BS));
+
+    m_particle_data.transform = posM * rotM * scaleM;
 }
 
 /*
@@ -541,119 +502,6 @@ void ParticleSpawner::step(float dtime, ClientEnvironment *env)
 				spawnParticle(env, radius, attached_absolute_pos_rot_matrix);
 		}
 	}
-}
-
-/*
-	ParticleBuffer
-*/
-
-ParticleBuffer::ParticleBuffer(ClientEnvironment *env, const video::SMaterial &material)
-	: scene::ISceneNode(
-			env->getGameDef()->getSceneManager()->getRootSceneNode(),
-			env->getGameDef()->getSceneManager()),
-	m_mesh_buffer(make_irr<scene::SMeshBuffer>())
-{
-	m_mesh_buffer->getMaterial() = material;
-}
-
-static constexpr u16 quad_indices[] = { 0, 1, 2, 2, 3, 0 };
-
-std::optional<u16> ParticleBuffer::allocate()
-{
-	u16 index;
-
-	m_usage_timer = 0;
-
-	if (!m_free_list.empty()) {
-		index = m_free_list.back();
-		m_free_list.pop_back();
-		auto *vertices = static_cast<video::S3DVertex*>(m_mesh_buffer->getVertices());
-		u16 *indices = m_mesh_buffer->getIndices();
-		// reset vertices, because it is only written in Particle::step()
-		for (u16 i = 0; i < 4; i++)
-			vertices[4 * index + i] = video::S3DVertex();
-		for (u16 i = 0; i < 6; i++)
-			indices[6 * index + i] = 4 * index + quad_indices[i];
-		return index;
-	}
-
-	if (m_count >= MAX_PARTICLES_PER_BUFFER)
-		return std::nullopt;
-
-	// append new vertices
-	// note: Our buffer never gets smaller, but ParticleManager will delete
-	//       us after a while.
-	std::array<video::S3DVertex, 4> vertices {};
-	m_mesh_buffer->append(&vertices.front(), 4, quad_indices, 6);
-	index = m_count++;
-	return index;
-}
-
-void ParticleBuffer::release(u16 index)
-{
-	assert(index < m_count);
-	u16 *indices = m_mesh_buffer->getIndices();
-	for (u16 i = 0; i < 6; i++)
-		indices[6 * index + i] = 0;
-	m_free_list.push_back(index);
-}
-
-video::S3DVertex *ParticleBuffer::getVertices(u16 index)
-{
-	if (index >= m_count)
-		return nullptr;
-	m_bounding_box_dirty = true;
-	return &(static_cast<video::S3DVertex *>(m_mesh_buffer->getVertices())[4 * index]);
-}
-
-void ParticleBuffer::OnRegisterSceneNode()
-{
-	if (IsVisible) {
-		SceneManager->registerNodeForRendering(this,
-				m_mesh_buffer->getMaterial().MaterialType == video::EMT_TRANSPARENT_ALPHA_CHANNEL_REF
-				? scene::ESNRP_SOLID : scene::ESNRP_TRANSPARENT_EFFECT);
-	}
-	scene::ISceneNode::OnRegisterSceneNode();
-}
-
-const core::aabbox3df &ParticleBuffer::getBoundingBox() const
-{
-	if (!m_bounding_box_dirty)
-		return m_mesh_buffer->BoundingBox;
-
-	core::aabbox3df box{{0, 0, 0}};
-	bool first = true;
-	for (u16 i = 0; i < m_count; i++) {
-		// check if this index is used
-		static_assert(quad_indices[1] != 0);
-		if (m_mesh_buffer->getIndices()[6 * i + 1] == 0)
-			continue;
-
-		for (u16 j = 0; j < 4; j++) {
-			const auto pos = m_mesh_buffer->getPosition(i * 4 + j);
-			if (first)
-				box.reset(pos);
-			else
-				box.addInternalPoint(pos);
-			first = false;
-		}
-	}
-
-	m_mesh_buffer->BoundingBox = box;
-	m_bounding_box_dirty = false;
-	return m_mesh_buffer->BoundingBox;
-}
-
-void ParticleBuffer::render()
-{
-	video::IVideoDriver *driver = SceneManager->getVideoDriver();
-
-	if (isEmpty())
-		return;
-
-	driver->setTransform(video::ETS_WORLD, core::matrix4());
-	driver->setMaterial(m_mesh_buffer->getMaterial());
-	driver->drawMeshBuffer(m_mesh_buffer.get());
 }
 
 /*
