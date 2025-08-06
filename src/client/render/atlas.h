@@ -79,6 +79,7 @@ public:
     bool addTile(const AtlasTile *tile);
 
     AtlasTile *getTile(u32 i) const;
+    AtlasTile *getTileByImage(img::Image *img) const;
     
     void markDirty(u32 i);
     

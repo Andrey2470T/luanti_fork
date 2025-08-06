@@ -27,16 +27,11 @@ enum MaterialType{
 // Material flags
 // Should backface culling be enabled?
 #define MATERIAL_FLAG_BACKFACE_CULLING 0x01
-// Should a crack be drawn?
-#define MATERIAL_FLAG_CRACK 0x02
-// Should the crack be drawn on transparent pixels (unset) or not (set)?
-// Ignored if MATERIAL_FLAG_CRACK is not set.
-#define MATERIAL_FLAG_CRACK_OVERLAY 0x04
-#define MATERIAL_FLAG_TRANSPARENT 0x08
-#define MATERIAL_FLAG_HARDWARE_COLORIZED 0x10
+#define MATERIAL_FLAG_TRANSPARENT 0x02
+#define MATERIAL_FLAG_HARDWARE_COLORIZED 0x04
+#define MATERIAL_FLAG_ANIMATION 0x08
+#define MATERIAL_FLAG_OVERLAY_LAYER 0x10
 #define MATERIAL_FLAG_WORLD_ALIGNED 0x20
-//#define MATERIAL_FLAG_TILEABLE_HORIZONTAL 0x20
-//#define MATERIAL_FLAG_TILEABLE_VERTICAL 0x40
 
 enum class TileRotation: u8 {
 	None,
@@ -46,6 +41,7 @@ enum class TileRotation: u8 {
 };
 
 class RenderSystem;
+class Atlas;
 
 //! Defines a layer of a tile.
 struct TileLayer
@@ -70,6 +66,7 @@ struct TileLayer
     // '1' = alpha discard, '2' = alpha discard ref, '3' = no discard (solid)
     s32 alpha_discard = 2;
 
+    Atlas *atlas;
     img::Image *tile_ref;
 
 	render::Shader *shader;
@@ -86,6 +83,9 @@ struct TileLayer
 	 * a color then the color of the node owning this tile.
 	 */
     img::color8 color = img::black;
+
+    u32 animation_frame_length_ms = 0;
+    u32 animation_frame_count = 1;
 
     /*!
      * Used if tile.world_aligned = true

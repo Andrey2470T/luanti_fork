@@ -1,6 +1,7 @@
 #include "layeredmesh.h"
 #include "meshbuffer.h"
 #include "client/render/tilelayer.h"
+#include "defaultVertexTypes.h"
 
 v3f LayeredMeshTriangle::getCenter() const
 {
@@ -22,14 +23,23 @@ bool LayeredMesh::TransparentTrianglesSorter::operator()(const LayeredMeshTriang
     return dist1 > dist2;
 }
 
-LayeredMesh::LayeredMesh(const v3f &center, render::VertexTypeDescriptor vtype)
-    : center_pos(center), vType(vtype)
+LayeredMesh::LayeredMesh(const v3f &center, render::VertexTypeDescriptor basicVType)
+    : center_pos(center), basicVertexType(basicVType)
 {}
 
 MeshLayer &LayeredMesh::findLayer(std::shared_ptr<TileLayer> layer, u32 vertexCount, u32 indexCount)
 {
     for (u8 i = 0; i < getBuffersCount(); i++) {
         auto buffer = getBuffer(i);
+
+        // The buffer is overfilled
+        if ((u64)buffer->getVertexCount() + vertexCount > (u64)T_MAX(u32))
+            continue;
+
+        // The buffer vertex type is different from the layer's one
+        if ((layer->material_flags & MATERIAL_FLAG_HARDWARE_COLORIZED) != isHardwareHolorized(i))
+            continue;
+
         auto &buf_layers = layers.at(i);
 
         auto layer_found = std::find(buf_layers.begin(), buf_layers.end(),
@@ -38,20 +48,20 @@ MeshLayer &LayeredMesh::findLayer(std::shared_ptr<TileLayer> layer, u32 vertexCo
             return *layer == *(mlayer.first);
         });
 
-        if (buffer->getVertexCount() + vertexCount <= T_MAX(u32)) {
-            buffer->reallocateData(buffer->getVertexCount()+vertexCount, buffer->getIndexCount()+indexCount);
-            if (layer_found != buf_layers.end())
-                return *layer_found;
-            else {
-                LayeredMeshPart mesh_p;
-                mesh_p.buffer_id = i;
-                mesh_p.layer_id = buf_layers.size();
-                buf_layers.emplace_back(std::shared_ptr<TileLayer>(layer), mesh_p);
-                return buf_layers.back();
-            }
+        buffer->reallocateData(buffer->getVertexCount()+vertexCount, buffer->getIndexCount()+indexCount);
+        if (layer_found != buf_layers.end())
+            return *layer_found;
+        else {
+            LayeredMeshPart mesh_p;
+            mesh_p.buffer_id = i;
+            mesh_p.layer_id = buf_layers.size();
+            buf_layers.emplace_back(std::shared_ptr<TileLayer>(layer), mesh_p);
+            return buf_layers.back();
         }
     }
 
+    auto vType = layer->material_flags & MATERIAL_FLAG_HARDWARE_COLORIZED ?
+        TwoColorNodeVType : basicVertexType;
     buffers.emplace_back(vertexCount, indexCount, true, vType);
     layers.emplace_back();
 
@@ -171,6 +181,10 @@ void LayeredMesh::updateIndexBuffers()
         buffers.at(buf_i)->uploadIndexData();
     }
 }
-        
+
+bool LayeredMesh::isHardwareHolorized(u8 buf_i) const
+{
+    return buffers.at(buf_i)->getVAO()->getVertexType().Name == "TwoColorNode3D";
+}
                 
 	

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 // Copyright (C) 2013, 2017 celeron55, Perttu Ahola <celeron55@gmail.com>
 
-#include "mesh_generator_thread.h"
+#include "meshgeneratorthread.h"
 #include "settings.h"
 #include "profiler.h"
 #include "client.h"
@@ -333,4 +333,33 @@ bool MeshUpdateManager::isRunning()
 		if (thread->isRunning())
 			return true;
 	return false;
+}
+
+u8 get_solid_sides(MeshMakeData *data)
+{
+    v3s16 blockpos_nodes = data->m_blockpos * MAP_BLOCKSIZE;
+    const NodeDefManager *ndef = data->m_nodedef;
+
+    const u16 side = data->m_side_length;
+    assert(data->m_vmanip.m_area.contains(blockpos_nodes + v3s16(side - 1)));
+
+    u8 result = 0x3F; // all sides solid
+    for (s16 i = 0; i < side && result != 0; i++)
+        for (s16 j = 0; j < side && result != 0; j++) {
+            v3s16 positions[6] = {
+                v3s16(0, i, j),
+                v3s16(side - 1, i, j),
+                v3s16(i, 0, j),
+                v3s16(i, side - 1, j),
+                v3s16(i, j, 0),
+                v3s16(i, j, side - 1)
+            };
+
+            for (u8 k = 0; k < 6; k++) {
+                const MapNode &top = data->m_vmanip.getNodeRefUnsafe(blockpos_nodes + positions[k]);
+                if (ndef->get(top).solidness != 2)
+                    result &= ~(1 << k);
+            }
+        }
+    return result;
 }

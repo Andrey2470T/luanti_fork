@@ -120,6 +120,13 @@ private:
 	void drawLiquidTop();
 	void drawLiquidBottom();
 
+    // Retrieves the TileSpec of a face of a node
+    // Adds MATERIAL_FLAG_CRACK if the node is cracked
+    // TileSpec should be passed as reference due to the underlying TileFrame and its vector
+    // TileFrame vector copy cost very much to client
+    void getNodeTileN(MapNode mn, const v3s16 &p, u8 tileindex, MeshMakeData *data, TileSpec &tile);
+    void getNodeTile(MapNode mn, const v3s16 &p, const v3s16 &dir, MeshMakeData *data, TileSpec &tile);
+
 // raillike-specific
 	// name of the group that enables connecting to raillike nodes of different kind
 	static const std::string raillike_groupname;

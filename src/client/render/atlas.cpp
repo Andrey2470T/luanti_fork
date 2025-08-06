@@ -52,6 +52,19 @@ AtlasTile *Atlas::getTile(u32 i) const
     return tiles.at(i).get();
 }
 
+AtlasTile *Atlas::getTileByImage(img::Image *img) const
+{
+    auto find_tile = std::find(tiles.begin(), tiles.end(), [img] (const std::unique_ptr<AtlasTile> &tile)
+    {
+        return img == tile->image;
+    });
+
+    if (find_tile == tiles.end())
+        return nullptr;
+
+    return find_tile->get();
+}
+
 void Atlas::markDirty(u32 i)
 {
     auto it = std::find(dirty_tiles.begin(), dirty_tiles.end(), i);

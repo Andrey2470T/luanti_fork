@@ -4,6 +4,9 @@
 #include <BasicIncludes.h>
 #include <Render/VertexTypeDescriptor.h>
 
+#define HAS_HW(layer) \
+    layer->material_flags & MATERIAL_FLAG_HARDWARE_COLORIZED
+
 class MeshBuffer;
 struct TileLayer;
 
@@ -39,8 +42,8 @@ class LayeredMesh
 
     f32 radius_sq = 0.0f;
 	v3f center_pos;
-
-    render::VertexTypeDescriptor vType;
+	
+	render::VertexTypeDescriptor basicVertexType;
 
     struct TransparentTrianglesSorter
     {
@@ -56,7 +59,7 @@ class LayeredMesh
 
     std::vector<LayeredMeshPart> partial_layers;
 public:
-    LayeredMesh(const v3f &center, render::VertexTypeDescriptor vtype);
+    LayeredMesh(const v3f &center, render::VertexTypeDescriptor basicVType);
 
     f32 getBoundingSphereRadius() const
     {
@@ -87,9 +90,9 @@ public:
         return layers.at(buffer_id).at(layer_id);
     }
     
-    render::VertexTypeDescriptor getVertexType() const
+    render::VertexTypeDescriptor getBasicVertexType() const
     {
-    	return vType;
+    	return basicVertexType;
     }
 
     MeshLayer &findLayer(std::shared_ptr<TileLayer> layer, u32 vertexCount, u32 indexCount);
@@ -100,4 +103,6 @@ public:
     void transparentSort(const v3f &cam_pos);
     
     void updateIndexBuffers();
+private:
+    bool isHardwareHolorized(u8 buf_i) const;
 };

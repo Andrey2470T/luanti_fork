@@ -26,6 +26,7 @@ set(map_SRCS
 set(mesh_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/mesh/defaultVertexTypes.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/mesh/layeredmesh.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/mesh/lighting.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/mesh/meshbuffer.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/mesh/meshoperations.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/mesh/model.cpp

@@ -139,3 +139,8 @@ private:
 
 	std::vector<std::unique_ptr<MeshUpdateWorkerThread>> m_workers;
 };
+
+/// Return bitset of the sides of the mesh that consist of solid nodes only
+/// Bits:
+/// 0 0 -Z +Z -X +X -Y +Y
+u8 get_solid_sides(MeshMakeData *data);

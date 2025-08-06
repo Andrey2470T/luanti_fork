@@ -3,7 +3,7 @@
 // Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include <cmath>
-#include "content_mapblock.h"
+#include "meshgenerator.h"
 #include "util/basic_macros.h"
 #include "util/numeric.h"
 #include "util/directiontables.h"
@@ -1413,6 +1413,95 @@ void MapblockMeshGenerator::drawFencelikeNode()
 		drawAutoLightedCuboid(bar_z1, tile_nocrack, zrailuv);
 		drawAutoLightedCuboid(bar_z2, tile_nocrack, zrailuv);
 	}
+}
+
+/*
+    Gets nth node tile (0 <= n <= 5).
+*/
+void getNodeTileN(MapNode mn, const v3s16 &p, u8 tileindex, MeshMakeData *data, TileSpec &tile)
+{
+    const NodeDefManager *ndef = data->m_nodedef;
+    const ContentFeatures &f = ndef->get(mn);
+    tile = f.tiles[tileindex];
+    bool has_crack = p == data->m_crack_pos_relative;
+    for (TileLayer &layer : tile.layers) {
+        if (layer.texture_id == 0)
+            continue;
+        if (!layer.has_color)
+            mn.getColor(f, &(layer.color));
+        // Apply temporary crack
+        if (has_crack)
+            layer.material_flags |= MATERIAL_FLAG_CRACK;
+    }
+}
+
+/*
+    Gets node tile given a face direction.
+*/
+void getNodeTile(MapNode mn, const v3s16 &p, const v3s16 &dir, MeshMakeData *data, TileSpec &tile)
+{
+    const NodeDefManager *ndef = data->m_nodedef;
+
+    // Direction must be (1,0,0), (-1,0,0), (0,1,0), (0,-1,0),
+    // (0,0,1), (0,0,-1) or (0,0,0)
+    assert(dir.X * dir.X + dir.Y * dir.Y + dir.Z * dir.Z <= 1);
+
+    // Convert direction to single integer for table lookup
+    //  0 = (0,0,0)
+    //  1 = (1,0,0)
+    //  2 = (0,1,0)
+    //  3 = (0,0,1)
+    //  4 = invalid, treat as (0,0,0)
+    //  5 = (0,0,-1)
+    //  6 = (0,-1,0)
+    //  7 = (-1,0,0)
+    u8 dir_i = (dir.X + 2 * dir.Y + 3 * dir.Z) & 7;
+
+    // Get rotation for things like chests
+    u8 facedir = mn.getFaceDir(ndef, true);
+
+    static constexpr auto
+        R0 = TileRotation::None,
+        R1 = TileRotation::R90,
+        R2 = TileRotation::R180,
+        R3 = TileRotation::R270;
+    static const struct {
+        u8 tile;
+        TileRotation rotation;
+    } dir_to_tile[24][8] = {
+        //  0        +X      +Y      +Z                -Z      -Y      -X      ->   value=tile,rotation
+        {{0,R0},  {2,R0}, {0,R0}, {4,R0},  {0,R0},  {5,R0}, {1,R0}, {3,R0}},  // rotate around y+ 0 - 3
+        {{0,R0},  {4,R0}, {0,R3}, {3,R0},  {0,R0},  {2,R0}, {1,R1}, {5,R0}},
+        {{0,R0},  {3,R0}, {0,R2}, {5,R0},  {0,R0},  {4,R0}, {1,R2}, {2,R0}},
+        {{0,R0},  {5,R0}, {0,R1}, {2,R0},  {0,R0},  {3,R0}, {1,R3}, {4,R0}},
+
+        {{0,R0},  {2,R3}, {5,R0}, {0,R2},  {0,R0},  {1,R0}, {4,R2}, {3,R1}},  // rotate around z+ 4 - 7
+        {{0,R0},  {4,R3}, {2,R0}, {0,R1},  {0,R0},  {1,R1}, {3,R2}, {5,R1}},
+        {{0,R0},  {3,R3}, {4,R0}, {0,R0},  {0,R0},  {1,R2}, {5,R2}, {2,R1}},
+        {{0,R0},  {5,R3}, {3,R0}, {0,R3},  {0,R0},  {1,R3}, {2,R2}, {4,R1}},
+
+        {{0,R0},  {2,R1}, {4,R2}, {1,R2},  {0,R0},  {0,R0}, {5,R0}, {3,R3}},  // rotate around z- 8 - 11
+        {{0,R0},  {4,R1}, {3,R2}, {1,R3},  {0,R0},  {0,R3}, {2,R0}, {5,R3}},
+        {{0,R0},  {3,R1}, {5,R2}, {1,R0},  {0,R0},  {0,R2}, {4,R0}, {2,R3}},
+        {{0,R0},  {5,R1}, {2,R2}, {1,R1},  {0,R0},  {0,R1}, {3,R0}, {4,R3}},
+
+        {{0,R0},  {0,R3}, {3,R3}, {4,R1},  {0,R0},  {5,R3}, {2,R3}, {1,R3}},  // rotate around x+ 12 - 15
+        {{0,R0},  {0,R2}, {5,R3}, {3,R1},  {0,R0},  {2,R3}, {4,R3}, {1,R0}},
+        {{0,R0},  {0,R1}, {2,R3}, {5,R1},  {0,R0},  {4,R3}, {3,R3}, {1,R1}},
+        {{0,R0},  {0,R0}, {4,R3}, {2,R1},  {0,R0},  {3,R3}, {5,R3}, {1,R2}},
+
+        {{0,R0},  {1,R1}, {2,R1}, {4,R3},  {0,R0},  {5,R1}, {3,R1}, {0,R1}},  // rotate around x- 16 - 19
+        {{0,R0},  {1,R2}, {4,R1}, {3,R3},  {0,R0},  {2,R1}, {5,R1}, {0,R0}},
+        {{0,R0},  {1,R3}, {3,R1}, {5,R3},  {0,R0},  {4,R1}, {2,R1}, {0,R3}},
+        {{0,R0},  {1,R0}, {5,R1}, {2,R3},  {0,R0},  {3,R1}, {4,R1}, {0,R2}},
+
+        {{0,R0},  {3,R2}, {1,R2}, {4,R2},  {0,R0},  {5,R2}, {0,R2}, {2,R2}},  // rotate around y- 20 - 23
+        {{0,R0},  {5,R2}, {1,R3}, {3,R2},  {0,R0},  {2,R2}, {0,R1}, {4,R2}},
+        {{0,R0},  {2,R2}, {1,R0}, {5,R2},  {0,R0},  {4,R2}, {0,R0}, {3,R2}},
+        {{0,R0},  {4,R2}, {1,R1}, {2,R2},  {0,R0},  {3,R2}, {0,R3}, {5,R2}}
+    };
+    getNodeTileN(mn, p, dir_to_tile[facedir][dir_i].tile, data, tile);
+    tile.rotation = tile.world_aligned ? TileRotation::None : dir_to_tile[facedir][dir_i].rotation;
 }
 
 bool MapblockMeshGenerator::isSameRail(v3s16 dir)
