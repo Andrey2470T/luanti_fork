@@ -5,11 +5,12 @@
 #include "meshgeneratorthread.h"
 #include "settings.h"
 #include "profiler.h"
-#include "client.h"
+#include "client/client.h"
 #include "mapblock.h"
 #include "map.h"
 #include "util/directiontables.h"
 #include "porting.h"
+#include "nodedef.h"
 
 // Data placeholder used for copying from non-existent blocks
 static struct BlockPlaceholder {
@@ -84,8 +85,6 @@ bool MeshUpdateQueue::addBlock(Map *map, v3s16 p, bool ack_block_to_server, bool
 			//       refcount_from_queue stays the same.
 			if(ack_block_to_server)
 				q->ack_list.push_back(p);
-			q->crack_level = m_client->getCrackLevel();
-			q->crack_pos = m_client->getCrackPos();
 			q->urgent |= urgent;
 			v3s16 pos;
 			int i = 0;
@@ -127,8 +126,6 @@ bool MeshUpdateQueue::addBlock(Map *map, v3s16 p, bool ack_block_to_server, bool
 	q->p = mesh_position;
 	if(ack_block_to_server)
 		q->ack_list.push_back(p);
-	q->crack_level = m_client->getCrackLevel();
-	q->crack_pos = m_client->getCrackPos();
 	q->urgent = urgent;
 	q->map_blocks = std::move(map_blocks);
 	m_queue.push_back(q);
@@ -192,7 +189,6 @@ void MeshUpdateQueue::fillDataFromMapBlocks(QueuedMeshUpdate *q)
 		data->fillBlockData(pos, block ? block->getData() : block_placeholder.data);
 	}
 
-	data->setCrack(q->crack_level, q->crack_pos);
 	data->m_generate_minimap = !!m_client->getMinimap();
 	data->m_smooth_lighting = m_cache_smooth_lighting;
 	data->m_enable_water_reflections = m_cache_enable_water_reflections;
@@ -220,7 +216,7 @@ void MeshUpdateWorkerThread::doUpdate()
 
 		ScopeProfiler sp(g_profiler, "Client: Mesh making (sum)");
 
-		MapBlockMesh *mesh_new = new MapBlockMesh(m_client, q->data, *m_camera_offset);
+        MapBlockMesh *mesh_new = new MapBlockMesh(m_client, q->data);
 
 		MeshUpdateResult r;
 		r.p = q->p;

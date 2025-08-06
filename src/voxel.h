@@ -10,7 +10,7 @@
 #include "mapnode.h"
 #include <set>
 #include <list>
-#include "irrlicht_changes/printing.h"
+#include "irrlicht_gui/printing.h"
 
 class NodeDefManager;
 

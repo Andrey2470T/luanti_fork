@@ -6,21 +6,18 @@
 
 #include <ctime>
 #include <mutex>
-#include <unordered_map>
 #include <unordered_set>
-#include "mapblock_mesh.h"
+#include "mapblockmesh.h"
 #include "threading/mutex_auto_lock.h"
 #include "util/thread.h"
-#include <vector>
 #include <memory>
-#include <unordered_map>
 
 struct QueuedMeshUpdate
 {
 	v3s16 p = v3s16(-1337, -1337, -1337);
 	std::vector<v3s16> ack_list;
-	int crack_level = -1;
-	v3s16 crack_pos;
+    //int crack_level = -1;
+    //v3s16 crack_pos;
 	MeshMakeData *data = nullptr; // This is generated in MeshUpdateQueue::pop()
 	std::vector<MapBlock *> map_blocks;
 	bool urgent = false;
