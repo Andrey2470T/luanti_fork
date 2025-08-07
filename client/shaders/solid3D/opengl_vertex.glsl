@@ -3,12 +3,7 @@ layout (location = 1) in vec4 color;
 layout (location = 2) in vec3 normal;
 layout (location = 3) in vec2 uv;
 
-layout (std140) uniform mMatrices {
-	mat4 worldViewProj;
-	mat4 worldView;
-	mat4 world;
-	mat4 texture0;
-};
+#include <matrices>
 
 uniform float mThickness;
 

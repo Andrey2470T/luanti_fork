@@ -9,12 +9,7 @@ layout (location = 6) in vec2i weights; // packed weights (8 u8 numbers)
 #define BONES_MAX 128
 #define BONES_IDS_MAX 8 // per a vertex
 
-layout (std140) uniform mMatrices {
-	mat4 worldViewProj;
-	mat4 worldView;
-	mat4 world;
-	mat4 texture0;
-};
+#include <matrices>
 
 layout (std140) uniform mShadowParams {
 	// shadow texture

@@ -103,12 +103,12 @@ ResourceCache::ResourceCache(main::OpenGLVersion version)
             return resLoader->loadShader(name);
         }
     ));
-    meshes.reset(new ResourceSubCache<MeshBuffer>(
+    models.reset(new ResourceSubCache<Model>(
         {},
         &fallbackPathFinder,
-        [resLoader] (const std::string &name) -> MeshBuffer*
+        [resLoader] (const std::string &name) -> Model*
         {
-            return resLoader->loadMesh(name);
+            return resLoader->loadModel(name);
         }
     ));
     palettes.reset(new ResourceSubCache<img::Palette>(

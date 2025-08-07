@@ -7,6 +7,7 @@
 #include "settings.h"
 #include "file.h"
 #include "log.h"
+#include "porting.h"
 
 ResourceLoader::ResourceLoader(main::OpenGLVersion version)
 	: gl_version(version)
@@ -64,6 +65,28 @@ render::Texture2D *ResourceLoader::loadTexture(const std::string &path)
 	fs::path name = fs::path(path).stem();
 
     return new render::Texture2D(name.string(), std::unique_ptr<img::Image>(img), render::TextureSettings());
+}
+
+std::string getIncludePath(const std::string &name)
+{
+    std::vector<std::string> paths;
+    paths.push_back(g_settings->get("shader_path"));
+
+    fs::path basePath = porting::path_share;
+    basePath /= "client";
+    basePath /= "shaders";
+
+    paths.push_back(basePath.string());
+
+    for (auto &p : paths) {
+        std::string fullname = name + ".glsl";
+        fs::path fullpath(fs::path(p) / "includes" / fullname);
+
+        if (fs::exists(fullpath))
+            return fullpath.string();
+    }
+
+    return "";
 }
 
 render::Shader *ResourceLoader::loadShader(const std::string &path)
@@ -131,9 +154,9 @@ render::Shader *ResourceLoader::loadShader(const std::string &path)
 	std::string final_header = "#line 0\n"; // reset the line counter for meaningful diagnostics
 
     std::string vs_code, fs_code, gs_code;
-    File::read(fs::path(path) / "opengl_vertex.glsl", vs_code);
-    File::read(fs::path(path) / "opengl_fragment.glsl", fs_code);
-    File::read(fs::path(path) / "opengl_geometry.glsl", gs_code);
+    vs_code = parseShader(path, "vertex");
+    fs_code = parseShader(path, "fragment");
+    gs_code = parseShader(path, "geometry");
 
     std::string vertex_code = header.str() + final_header + vs_code;
     std::string fragment_code = header.str() + final_header + fs_code;
@@ -191,4 +214,41 @@ img::Palette *ResourceLoader::loadPalette(const std::string &path)
     delete img;
 
     return new img::Palette(true, area, colors);
+}
+
+std::string ResourceLoader::parseShader(const std::string &path, const std::string &type)
+{
+    std::vector<std::string> lines;
+
+    std::string fullname = "opengl_" + type + ".glsl";
+    fs::path fullpath(path);
+    fullpath /= fullname;
+
+    File::readLines(fullpath, lines);
+
+    if (lines.empty())
+        return "";
+
+    std::string res_code;
+
+    for (auto &line : lines) {
+        if (str_starts_with(line, "#include")) {
+            auto s = line.find("<");
+            auto e = line.find(">");
+
+            if (s == std::string::npos || e == std::string::npos)
+                continue;
+
+            auto filename = line.substr(s, e);
+            auto include_p = getIncludePath(filename);
+
+            std::string include_code;
+            File::read(include_p, include_code);
+            res_code += include_code;
+        }
+        else
+            res_code += line;
+    }
+
+    return res_code;
 }

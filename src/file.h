@@ -8,6 +8,7 @@ class File
 {
 public:
     static bool read(fs::path p, std::string &read_data);
+    static bool readLines(fs::path p, std::vector<std::string> &read_data);
 
     static bool write(fs::path p, std::string_view content, bool rewrite=false);
 };

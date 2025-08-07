@@ -21,6 +21,23 @@ bool File::read(fs::path p, std::string &read_data)
     return true;
 }
 
+bool File::readLines(fs::path p, std::vector<std::string> &read_data)
+{
+    std::ifstream is(p);
+
+    if (!is.is_open()) {
+        errorstream << "File::readLines(): Failed to open " << p << std::endl;
+        return false;
+    }
+
+    is.seekg(0);
+
+    for (std::string line; std::getline(is, line, '\n');)
+        read_data.push_back(line);
+
+    return true;
+}
+
 bool File::write(fs::path p, std::string_view content, bool rewrite)
 {
     std::ofstream os(p, rewrite ? std::ios::out : std::ios::app);

@@ -4,12 +4,7 @@ layout (location = 2) in vec3 normal;
 layout (location = 3) in vec2 uv;
 layout (location = 4) in int materialType;
 
-layout (std140) uniform mMatrices {
-	mat4 worldViewProj;
-	mat4 worldView;
-	mat4 world;
-	mat4 texture0;
-};
+#include <matrices>
 
 layout (std140) uniform mShadowParams {
 	// shadow texture

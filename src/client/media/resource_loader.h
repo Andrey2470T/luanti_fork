@@ -53,4 +53,6 @@ public:
 	render::Shader *loadShader(const std::string &path);
     Model *loadModel(const std::string &path);
 	img::Palette *loadPalette(const std::string &path);
+private:
+    std::string parseShader(const std::string &path, const std::string &type);
 };
