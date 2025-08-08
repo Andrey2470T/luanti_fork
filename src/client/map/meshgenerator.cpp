@@ -8,7 +8,7 @@
 #include "util/numeric.h"
 #include "util/directiontables.h"
 #include "util/tracy_wrapper.h"
-#include "mapblock_mesh.h"
+#include "mapblockmesh.h"
 #include "settings.h"
 #include "nodedef.h"
 #include "client/tile.h"

@@ -4,14 +4,13 @@
 
 #pragma once
 
-#include <string>
 #include <iostream>
 #include <map>
 #include "mapnode.h"
 #include "nameidmapping.h"
 #if CHECK_CLIENT_BUILD()
-#include "client/tile.h"
-#include <IMeshManipulator.h>
+#include "client/render/tilelayer.h"
+#include "client/mesh/meshoperations.h"
 class Client;
 #endif
 #include "itemgroup.h"
@@ -272,7 +271,7 @@ struct TileDef
 	//! If true, the tile has its own color.
 	bool has_color = false;
 	//! The color of the tile.
-	video::SColor color = video::SColor(0xFFFFFFFF);
+    img::color8 color = img::white;
 	AlignStyle align_style = ALIGN_STYLE_NODE;
 	u8 scale = 0;
 
@@ -293,6 +292,11 @@ struct TileDef
 //       parser in TextureOverrideSource must be updated so that all special
 //       tiles can be overridden.
 #define CF_SPECIAL_COUNT 6
+
+class Model;
+class TileLayer;
+
+typedef std::pair<std::shared_ptr<TileLayer>, std::shared_ptr<TileLayer>> TileSpec;
 
 struct ContentFeatures
 {
@@ -340,8 +344,8 @@ struct ContentFeatures
 	enum NodeDrawType drawtype;
 	std::string mesh;
 #if CHECK_CLIENT_BUILD()
-	scene::IMesh *mesh_ptr; // mesh in case of mesh node
-	video::SColor minimap_color;
+    Model *mesh_ptr; // mesh in case of mesh node
+    img::color8 minimap_color;
 #endif
 	float visual_scale; // Misc. scale parameter
 	TileDef tiledef[6];
@@ -350,9 +354,9 @@ struct ContentFeatures
 	TileDef tiledef_special[CF_SPECIAL_COUNT]; // eg. flowing liquid
 	AlphaMode alpha;
 	// The color of the node.
-	video::SColor color;
+    img::color8 color;
 	std::string palette_name;
-	std::vector<video::SColor> *palette;
+    std::vector<img::color8> *palette;
 	// Used for waving leaves/plants
 	u8 waving;
 	// for NDT_CONNECTED pairing
@@ -360,7 +364,7 @@ struct ContentFeatures
 	std::vector<std::string> connects_to;
 	std::vector<content_t> connects_to_ids;
 	// Post effect color, drawn when the camera is inside the node.
-	video::SColor post_effect_color;
+    img::color8 post_effect_color;
 	bool post_effect_color_shaded;
 	// Flowing liquid or leveled nodebox, value = default level
 	u8 leveled;
@@ -505,7 +509,7 @@ struct ContentFeatures
 
 #if CHECK_CLIENT_BUILD()
 	void updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc,
-		scene::IMeshManipulator *meshmanip, Client *client, const TextureSettings &tsettings);
+        Client *client, const TextureSettings &tsettings);
 #endif
 
 private:

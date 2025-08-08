@@ -7,7 +7,6 @@
 #include "mapblock.h"
 #include "map.h"
 #include "profiler.h"
-#include "client/mesh/meshoperations.h"
 #include "client/ui/minimap.h"
 #include "meshgenerator.h"
 #include "util/directiontables.h"
@@ -106,7 +105,7 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data)
 			v3s16 p = (bp + ofs) * MAP_BLOCKSIZE;
 			if (data->m_vmanip.getNodeNoEx(p).getContent() != CONTENT_IGNORE) {
 				MinimapMapblock *block = new MinimapMapblock;
-				m_minimap_mapblocks[mesh_grid.getOffsetIndex(ofs)] = block;
+                m_minimap_mapblocks[mesh_grid.getOffsetIndex(ofs)] = std::unique_ptr<MinimapMapblock>(block);
 				block->getMinimapNodes(&data->m_vmanip, p);
 			}
 		}
@@ -141,9 +140,9 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data)
 
             layer->shader = m_cache->getOrLoad<render::Shader>(ResourceType::SHADER, shadername);
 
-            auto img_size = layer->image->getSize();
+            auto img_size = layer->tile_ref->getSize();
             u32 atlas_size = layer->atlas->getTextureSize();
-            auto atlas_tile = layer->atlas->getTileByImage(layer->image);
+            auto atlas_tile = layer->atlas->getTileByImage(layer->tile_ref);
 
             for (u32 k = 0; k < buffer->getVertexCount(); k++) {
                 // Apply material type
