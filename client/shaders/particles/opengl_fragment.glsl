@@ -1,0 +1,49 @@
+layout (binding = 0) uniform sampler2D mTexture;
+layout (binding = 2) uniform sampler2D mFramebuffer;
+
+#include <blending>
+
+uniform int mGLBlending;
+uniform int mAlphaDiscard;
+
+in lowp vec4 vColor;
+in highp vec3 vEyeVec;
+in ivec2 vTileCoords;
+in ivec2 vTileSize;
+in vec2 vUV;
+
+#include <fog>
+
+out vec4 outColor;
+
+void main(void)
+{
+	// Calculate the pixel coords of the tile
+	int atlas_x = vTileCoords.x + vUV.x * vTileSize.x;
+	int atlas_y = vTileCoords.y + vUV.y * vTileCoords.y;
+
+	vec4 base = texelFetch(mBaseTexture, vec2(atlas_x, atlas_y), 0).rgba;
+
+	// Use or the gl blending or shader one (from includes/blending.glsl)
+	if (mGLBlending) {
+		if (mAlphaDiscard == 0 && base.a == 0.0)
+			discard;
+		else if (mAlphaDiscard == 1 && base.a < 0.5)
+			discard;
+	}
+
+	vec4 col = vec4(base.rgb * vColor.rgb, 1.0);
+
+    if (bool(mFogParams.enable))
+	{
+		float FogFactor = computeFog(vEyeVec);
+		vec4 FogColor = mFogParams.color;
+		FogColor.a = 1.0;
+		col = mix(FogColor, col, FogFactor);
+	}
+
+	if (!mGLBlending)
+		col = DoBlend(col, texelFetch(mFramebuffer, gl_FragCoord.xy, 0));
+
+	outColor = col;
+}

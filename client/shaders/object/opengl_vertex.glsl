@@ -6,6 +6,8 @@ layout (location = 4) in int materialType;
 layout (location = 5) in vec2i bones;	// packed bones IDs (8 u8 numbers)
 layout (location = 6) in vec2i weights; // packed weights (8 u8 numbers)
 
+#extension GL_EXT_gpu_shader4 : enable // for bitwise operators
+
 #define BONES_MAX 128
 #define BONES_IDS_MAX 8 // per a vertex
 
@@ -112,40 +114,6 @@ float directional_ambient(vec3 normal)
 	return dot(v, vec3(0.670820, 1.000000, 0.836660));
 }
 
-int modi(int x, int y) {
-    return x - y * (x / y);
-}
-
-int bitwiseAND(int a, int b) {
-    int result = 0;
-    int n = 1;
-
-    for(int i = 0; i < 32; i++) {
-        if ((modi(a, 2) == 1) && (modi(b, 2) == 1)) {
-            result += n;
-        }
-
-        a = a / 2;
-        b = b / 2;
-        n = n * 2;
-
-        if(!(a > 0 && b > 0)) {
-            break;
-        }
-    }
-    return result;
-}
-
-int bitwiseShiftLeft(int a, int n)
-{
-	return a * int(pow(2, n));
-}
-
-int bitwiseShiftRight(int a, int n)
-{
-	return a / int(pow(2, n));
-}
-
 void main(void)
 {
 	vUV0 = (mMatrices.texture0 * vec4(uv.xy, 1.0, 1.0)).st;
@@ -159,16 +127,16 @@ void main(void)
 
 		// Extract bone ID from bones
 		int bone_n = bones[i % 4];
-		int bone_id = clamp(bitwiseAND(bitwiseShiftRight(bone_n, shift_n * 8), 0xffffffff), 0, BONES_MAX-1);
+		int bone_id = clamp((bone_n >> (shift_n * 8)) & 0xffffffff, 0, BONES_MAX-1);
 
 		// Extract weight from weights
 		int weight_n = weights[i % 4];
-		float weight = float(bitwiseAND(bitwiseShiftRight(weight_n, shift_n * 8), 0xffffffff)) / 127.0;
+		float weight = float((weight_n >> (shift_n * 8)) & 0xffffffff) / 127.0;
 
 		skinnedPos += weight * mBonesTransforms[bone_id] * vec4(skinnedPos, 1.0);
 
 		if (mAnimateNormals)
-			skinnedNormal += weight * mBonesTransforms[bone_id] * vec4(skinnedNormal. 0.0);
+			skinnedNormal += weight * mBonesTransforms[bone_id] * vec4(skinnedNormal, 0.0);
 	}
 	gl_Position = mMatrices.worldViewProj * vec4(skinnedPos, 1.0);
 
