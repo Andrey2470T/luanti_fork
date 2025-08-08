@@ -161,7 +161,7 @@ void main(void)
 	float disp_z;
 	// OpenGL < 4.3 does not support continued preprocessor lines
 	if (materialType == TILE_MATERIAL_WAVING_LEAVES && ENABLE_WAVING_LEAVES) || (materialType == TILE_MATERIAL_WAVING_PLANTS && ENABLE_WAVING_PLANTS) {
-		vec4 pos2 = mWorld * pos;
+		vec4 pos2 = mMatrices.world * pos;
 		float tOffset = (pos2.x + pos2.y) * 0.001 + pos2.z * 0.002;
 		disp_x = (smoothTriangleWave(mAnimationTimer * 23.0 + tOffset) +
 		smoothTriangleWave(mAnimationTimer * 11.0 + tOffset)) * 0.4;
@@ -175,7 +175,7 @@ void main(void)
 		// Generate waves with Perlin-type noise.
 		// The constants are calibrated such that they roughly
 		// correspond to the old sine waves.
-		vec3 wavePos = (mWorld * pos).xyz + cameraOffset;
+		vec3 wavePos = (mMatrices.world * pos).xyz + cameraOffset;
 		// The waves are slightly compressed along the z-axis to get
 		// wave-fronts along the x-axis.
 		wavePos.x /= WATER_WAVE_LENGTH * 3.0;
@@ -194,11 +194,11 @@ void main(void)
 			cpos.z += disp_z;
 		}
 	}
-	vWorldPosition = (mWorld * cpos).xyz;
-	gl_Position = mWorldViewProj * cpos;
+	vWorldPosition = (mMatrices.world * cpos).xyz;
+	gl_Position = mMatrices.worldViewProj * cpos;
 
 	vPosition = gl_Position.xyz;
-	vEyeVec = -(mWorldView * cpos).xyz;
+	vEyeVec = -(mMatrices.worldView * cpos).xyz;
 #ifdef SECONDSTAGE
 	normalPass = normalize((normal+1)/2);
 #endif
@@ -242,7 +242,7 @@ void main(void)
 		/* normalOffsetScale is in world coordinates (1/10th of a meter)
 		   z_bias is in light space coordinates */
 		float normalOffsetScale, z_bias;
-		float pFactor = getPerspectiveFactor(getRelativePosition(mShadowParams.shadowViewProj * mWorld * shadow_pos));
+		float pFactor = getPerspectiveFactor(getRelativePosition(mShadowParams.shadowViewProj * mMatrices.world * shadow_pos));
 		if (vFNormalLength > 0.0) {
 			nNormal = normalize(vNormal);
 			vCosLight = max(1e-5, dot(nNormal, -mShadowParams.lightDirection));

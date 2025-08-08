@@ -9,7 +9,7 @@ uniform float mThickness;
 
 out vec2 vUV0;
 out vec4 vVertexColor;
-out float vFogCoord;
+out vec3 vViewPos;
 
 void main()
 {
@@ -23,5 +23,5 @@ void main()
 
 	vec3 Position = (mMatrices.worldView * vec4(pos, 1.0)).xyz;
 
-	vFogCoord = length(Position);
+	vViewPos = (mMatrices.worldView * vec4(pos, 1.0)).xyz;
 }

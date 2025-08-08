@@ -7,23 +7,25 @@ layout (std140) uniform mFogParams {
     float density;
 };
 
-float computeFog()
+float computeFog(vec3 viewPos)
 {
 	const float LOG2 = 1.442695;
 	float FogFactor = 0.0;
 
+	float FogCoord = length(viewPos);
+
 	if (mFogParams.type == 0) // Exp
 	{
-		FogFactor = exp2(-mFogParams.density * vFogCoord * LOG2);
+		FogFactor = exp2(-mFogParams.density * FogCoord * LOG2);
 	}
 	else if (mFogParams.type == 1) // Linear
 	{
 		float Scale = 1.0 / (mFogParams.end - mFogParams.start);
-		FogFactor = (mFogParams.end - vFogCoord) * Scale;
+		FogFactor = (mFogParams.end - FogCoord) * Scale;
 	}
 	else if (mFogParams.type == 2) // Exp2
 	{
-		FogFactor = exp2(-mFogParams.density * mFogParams.density * vFogCoord * vFogCoord * LOG2);
+		FogFactor = exp2(-mFogParams.density * mFogParams.density * FogCoord * FogCoord * LOG2);
 	}
 
 	FogFactor = clamp(FogFactor, 0.0, 1.0);

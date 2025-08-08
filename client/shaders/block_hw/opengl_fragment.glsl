@@ -551,7 +551,7 @@ void main(void)
 	// Applying fog
 	if (bool(mFogParams.enable))
 	{
-		float FogFactor = computeFog();
+		float FogFactor = computeFog(vEyeVec);
 		vec4 FogColor = mFogParams.color;
 		FogColor.a = 1.0;
 		col = mix(FogColor, col, FogFactor);

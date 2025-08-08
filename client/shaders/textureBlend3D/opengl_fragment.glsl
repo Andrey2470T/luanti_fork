@@ -9,7 +9,7 @@ uniform sampler2D mFramebuffer;
 
 in vec2 vUV0;
 in vec4 vVertexColor;
-in float vFogCoord;
+in vec3 vViewPos;
 
 out vec4 outColor;
 
@@ -23,7 +23,7 @@ void main()
 	
 	if (bool(mFogParams.enable))
 	{
-		float FogFactor = computeFog();
+		float FogFactor = computeFog(vViewPos);
 		vec4 FogColor = mFogParams.color;
 		FogColor.a = 1.0;
 		Color = mix(FogColor, Color, FogFactor);
