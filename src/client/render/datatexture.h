@@ -8,14 +8,15 @@
 class DataTexture
 {
     u32 sampleSize; // in bytes
-    u32 sampleCount;
-    u32 sampleDim; // image quad size (in pixels) of one sample
-    u32 texDim; // image quad size (in samples) of whole texture
 
     std::vector<v2u> unfilledAreas; // free areas for new samples
 
     std::unique_ptr<render::StreamTexture2D> glTexture;
 public:
+    u32 sampleCount;
+    u32 sampleDim; // image quad size (in pixels) of one sample
+    u32 texDim; // image quad size (in samples) of whole texture
+
     DataTexture(const std::string &name, u32 sampleSize, u32 sampleCount, u32 sampleElemCount);
 
     u32 getSampleCount() const

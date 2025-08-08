@@ -16,6 +16,7 @@ out highp vec3 vEyeVec;
 out ivec2 vTileCoords;
 out ivec2 vTileSize;
 out vec2 vUV;
+out int vBlendMode;
 
 void main(void)
 {
@@ -35,6 +36,9 @@ void main(void)
 
 	sampleCoords = shiftCoords(sampleCoords, texSize, 2);
 	vTileSize = unpackIntVec2(mDataTex, sampleCoords);
+
+	sampleCoords = shiftCoords(sampleCoords, texSize, 1);
+	vBlendMode = unpackInt(mDataTex, sampleCoords);
 
 	gl_Position = mMatrices.worldViewProj * transformedPos;
 

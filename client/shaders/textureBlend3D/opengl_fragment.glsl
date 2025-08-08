@@ -6,6 +6,7 @@ precision mediump float;
 uniform int mTextureUsage0;
 uniform sampler2D mTexture0;
 uniform sampler2D mFramebuffer;
+uniform int mBlendMode;
 
 in vec2 vUV0;
 in vec4 vVertexColor;
@@ -29,7 +30,7 @@ void main()
 		Color = mix(FogColor, Color, FogFactor);
 	}
 	
-	Color = DoBlend(Color, texture2D(mFramebuffer, vUV0));
+	Color = DoBlend(Color, texture2D(mFramebuffer, vUV0), mBlendMode);
 
 	outColor = Color;
 }

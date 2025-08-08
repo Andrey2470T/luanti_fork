@@ -94,9 +94,14 @@ void Renderer::setDefaultUniforms(f32 thickness, u8 alphaDiscard, f32 alphaRef, 
             }
         }
 
-        curShader->setUniformBlock("mMatrices", matrix_buffer.get());
-        curShader->setUniformBlock("mFogParams", fog_buffer.get());
+        setUniformBlocks(curShader);
     }
+}
+
+void Renderer::setUniformBlocks(Shader *shader)
+{
+    shader->setUniformBlock("mMatrices", matrix_buffer.get());
+    shader->setUniformBlock("mFogParams", fog_buffer.get());
 }
 
 void Renderer::setClipRect(const recti &clipRect)

@@ -3,14 +3,12 @@ layout (binding = 2) uniform sampler2D mFramebuffer;
 
 #include <blending>
 
-uniform int mGLBlending;
-uniform int mAlphaDiscard;
-
 in lowp vec4 vColor;
 in highp vec3 vEyeVec;
 in ivec2 vTileCoords;
 in ivec2 vTileSize;
 in vec2 vUV;
+in int vBlendMode;
 
 #include <fog>
 
@@ -24,14 +22,6 @@ void main(void)
 
 	vec4 base = texelFetch(mBaseTexture, vec2(atlas_x, atlas_y), 0).rgba;
 
-	// Use or the gl blending or shader one (from includes/blending.glsl)
-	if (mGLBlending) {
-		if (mAlphaDiscard == 0 && base.a == 0.0)
-			discard;
-		else if (mAlphaDiscard == 1 && base.a < 0.5)
-			discard;
-	}
-
 	vec4 col = vec4(base.rgb * vColor.rgb, 1.0);
 
     if (bool(mFogParams.enable))
@@ -42,8 +32,7 @@ void main(void)
 		col = mix(FogColor, col, FogFactor);
 	}
 
-	if (!mGLBlending)
-		col = DoBlend(col, texelFetch(mFramebuffer, gl_FragCoord.xy, 0));
+	col = DoBlend(col, texelFetch(mFramebuffer, gl_FragCoord.xy, 0), vBlendMode);
 
 	outColor = col;
 }

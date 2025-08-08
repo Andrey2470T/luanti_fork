@@ -12,8 +12,6 @@
 #define BM_DARKEN_ONLY 11
 #define BM_LIGHTEN_ONLY 12
 
-uniform int mBlendMode;
-
 vec4 AlphaBlend(vec4 src, vec4 dst)
 {
     vec4 color;
@@ -122,33 +120,33 @@ vec4 LightenOnlyBlend(vec4 src, vec4 dst)
 	return vec4(max(src, dst), dst.a);
 }
 
-vec4 DoBlend(vec4 src, vec4 dst)
+vec4 DoBlend(vec4 src, vec4 dst, int blendMode)
 {
-    if (mBlendMode == 0)
+    if (blendMode == 0)
         return AlphaBlend(src, dst);
-    else if (mBlendMode == 1)
+    else if (blendMode == 1)
         return AddBlend(src, dst);
-    else if (mBlendMode == 2)
+    else if (blendMode == 2)
         return SubtractBlend(src, dst);
-    else if (mBlendMode == 3)
+    else if (blendMode == 3)
         return MultiplyBlend(src, dst);
-    else if (mBlendMode == 4)
+    else if (blendMode == 4)
         return DivisionBlend(src, dst);
-    else if (mBlendMode == 5)
+    else if (blendMode == 5)
         return SceeenBlend(src, dst);
-    else if (mBlendMode == 6)
+    else if (blendMode == 6)
         return OverlayBlend(src, dst);
-    else if (mBlendMode == 7)
+    else if (blendMode == 7)
         return HardLightBlend(src, dst);
-    else if (mBlendMode == 8)
+    else if (blendMode == 8)
         return SoftLightBlend(src, dst);
-    else if (mBlendMode == 9)
+    else if (blendMode == 9)
         return GrainExtractBlend(src, dst);
-    else if (mBlendMode == 10)
+    else if (blendMode == 10)
         return GrainMergeBlend(src, dst);
-    else if (mBlendMode == 11)
+    else if (blendMode == 11)
         return DarkenOnlyBlend(src, dst);
-    else if (mBlendMode == 12)
+    else if (blendMode == 12)
         return LightOnlyBlend(src, dst);
 
     return vec4(0.0);
