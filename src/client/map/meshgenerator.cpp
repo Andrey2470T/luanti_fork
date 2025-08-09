@@ -11,12 +11,11 @@
 #include "mapblockmesh.h"
 #include "settings.h"
 #include "nodedef.h"
-#include "client/tile.h"
-#include "mesh.h"
-#include "client/meshgen/collector.h"
-#include "client/renderingengine.h"
-#include "client.h"
+#include "client/render/tilelayer.h"
+#include "client/mesh/meshoperations.h"
+#include "client/client.h"
 #include "noise.h"
+#include "client/mesh/layeredmesh.h"
 
 // Distance of light extrapolation (for oversized nodes)
 // After this distance, it gives up and considers light level constant
@@ -59,7 +58,7 @@ static const auto &quad_indices = quad_indices_02;
 
 const std::string MapblockMeshGenerator::raillike_groupname = "connect_to_raillike";
 
-MapblockMeshGenerator::MapblockMeshGenerator(MeshMakeData *input, MeshCollector *output):
+MapblockMeshGenerator::MapblockMeshGenerator(MeshMakeData *input, LayeredMesh *output):
 	data(input),
 	collector(output),
 	nodedef(data->m_nodedef),
@@ -71,13 +70,13 @@ void MapblockMeshGenerator::useTile(TileSpec *tile_ret, int index, u8 set_flags,
 		u8 reset_flags, bool special)
 {
 	if (special)
-		getSpecialTile(index, tile_ret, cur_node.p == data->m_crack_pos_relative);
+        getSpecialTile(index, tile_ret);
 	else
 		getTile(index, tile_ret);
 
-	for (auto &layer : tile_ret->layers) {
-		layer.material_flags |= set_flags;
-		layer.material_flags &= ~reset_flags;
+    for (auto &layer : *tile_ret) {
+        layer->material_flags |= set_flags;
+        layer->material_flags &= ~reset_flags;
 	}
 }
 
@@ -94,47 +93,60 @@ void MapblockMeshGenerator::getTile(v3s16 direction, TileSpec *tile_ret)
 }
 
 // Returns a special tile, ready for use, non-rotated.
-void MapblockMeshGenerator::getSpecialTile(int index, TileSpec *tile_ret, bool apply_crack)
+void MapblockMeshGenerator::getSpecialTile(int index, TileSpec *tile_ret)
 {
 	*tile_ret = cur_node.f->special_tiles[index];
-	TileLayer *top_layer = nullptr;
+    std::shared_ptr<TileLayer>top_layer;
 
-	for (auto &layernum : tile_ret->layers) {
-		TileLayer *layer = &layernum;
-		if (layer->texture_id == 0)
+    for (auto &layer : *tile_ret) {
+        if (!layer->tile_ref)
 			continue;
 		top_layer = layer;
-		if (!layer->has_color)
+        if (!(layer->material_flags & MATERIAL_FLAG_HARDWARE_COLORIZED))
 			cur_node.n.getColor(*cur_node.f, &layer->color);
 	}
-
-	if (apply_crack)
-		top_layer->material_flags |= MATERIAL_FLAG_CRACK;
 }
 
-void MapblockMeshGenerator::drawQuad(const TileSpec &tile, v3f *coords, const v3s16 &normal,
-	float vertical_tiling)
+void MapblockMeshGenerator::drawQuad(const TileSpec &tile, const std::array<v3f, 4> &coords, const v3s16 &normal)
 {
-	const v2f tcoords[4] = {v2f(0.0, 0.0), v2f(1.0, 0.0),
-		v2f(1.0, vertical_tiling), v2f(0.0, vertical_tiling)};
-	video::S3DVertex vertices[4];
+    std::array<v3f, 4> positions;
+
+    v3f normal2(normal.X, normal.Y, normal.Z);
+    std::array<v3f, 4> normals = {normal2, normal2, normal2, normal2};
+    std::array<img::color8, 4> colors;
+    rectf uvs = {
+        v2f(0.0, 1.0),
+        v2f(1.0, 0.0)
+    };
+
 	bool shade_face = !cur_node.f->light_source && (normal != v3s16(0, 0, 0));
-	v3f normal2(normal.X, normal.Y, normal.Z);
+
 	for (int j = 0; j < 4; j++) {
-		vertices[j].Pos = coords[j] + cur_node.origin;
-		vertices[j].Normal = normal2;
+        positions[j] = coords[j] + cur_node.origin;
+
 		if (data->m_smooth_lighting)
-			vertices[j].Color = blendLightColor(coords[j]);
+            colors[j] = blendLightColor(coords[j]);
 		else
-			vertices[j].Color = cur_node.lcolor;
+            colors[j] = cur_node.lcolor;
 		if (shade_face)
-			applyFacesShading(vertices[j].Color, normal2);
-		vertices[j].TCoords = tcoords[j];
+            MeshOperations::applyFacesShading(colors[j], normal2);
 	}
-	collector->append(tile, vertices, 4, quad_indices, 6);
+
+    auto layer1 = collector->findLayer(tile[0], 4, 6);
+    Batcher3D::appendFace(collector->getBuffer(layer1.second.buffer_id), positions, colors, uvs, normals);
+
+    auto layer2 = collector->findLayer(tile[1], 4, 6);
+    Batcher3D::appendFace(collector->getBuffer(layer2.second.buffer_id), positions, colors, uvs, normals);
+
 }
 
-static std::array<video::S3DVertex, 24> setupCuboidVertices(const aabb3f &box,
+void MapblockMeshGenerator::drawCuboid(const aabbf &box,
+    const std::array<rectf, 6> &txc, const std::array<TileSpec, 6> &tiles, int tilecount)
+{
+
+}
+
+static std::array<video::S3DVertex, 24> setupCuboidVertices(const aabbf &box,
 		const f32 *txc, const TileSpec *tiles, int tilecount)
 {
 	v3f min = box.MinEdge;
@@ -198,11 +210,6 @@ static std::array<video::S3DVertex, 24> setupCuboidVertices(const aabb3f &box,
 	return vertices;
 }
 
-enum class QuadDiagonal {
-	Diag02,
-	Diag13,
-};
-
 // Create a cuboid with custom lighting.
 //  tiles     - the tiles (materials) to use (for all 6 faces)
 //  tilecount - number of entries in tiles, 1<=tilecount<=6
@@ -217,7 +224,7 @@ enum class QuadDiagonal {
 //              a callback that will be called for each face drawn to setup vertex colors,
 //              and to choose diagonal to split the quad at.
 template <typename Fn>
-void MapblockMeshGenerator::drawCuboid(const aabb3f &box,
+void MapblockMeshGenerator::drawCuboid(const aabbf &box,
 		const TileSpec *tiles, int tilecount, const f32 *txc, u8 mask, Fn &&face_lighter)
 {
 	assert(tilecount >= 1 && tilecount <= 6); // pre-condition
@@ -297,7 +304,7 @@ video::SColor MapblockMeshGenerator::blendLightColor(const v3f &vertex_pos,
 	return color;
 }
 
-void MapblockMeshGenerator::generateCuboidTextureCoords(const aabb3f &box, f32 *coords)
+void MapblockMeshGenerator::generateCuboidTextureCoords(const aabbf &box, f32 *coords)
 {
 	f32 tx1 = (box.MinEdge.X / BS) + 0.5;
 	f32 ty1 = (box.MinEdge.Y / BS) + 0.5;
@@ -322,13 +329,13 @@ static inline int lightDiff(LightPair a, LightPair b)
 	return abs(a.lightDay - b.lightDay) + abs(a.lightNight - b.lightNight);
 }
 
-void MapblockMeshGenerator::drawAutoLightedCuboid(aabb3f box, const TileSpec &tile,
+void MapblockMeshGenerator::drawAutoLightedCuboid(aabbf box, const TileSpec &tile,
 		const f32 *txc, u8 mask)
 {
 	drawAutoLightedCuboid(box, &tile, 1, txc, mask);
 }
 
-void MapblockMeshGenerator::drawAutoLightedCuboid(aabb3f box,
+void MapblockMeshGenerator::drawAutoLightedCuboid(aabbf box,
 		const TileSpec *tiles, int tile_count, const f32 *txc, u8 mask)
 {
 	bool scale = std::fabs(cur_node.f->visual_scale - 1.0f) > 1e-3f;
@@ -439,7 +446,7 @@ void MapblockMeshGenerator::drawSolidNode()
 		return;
 	u8 mask = faces ^ 0b0011'1111; // k-th bit is set if k-th face is to be *omitted*, as expected by cuboid drawing functions.
 	cur_node.origin = intToFloat(cur_node.p, BS);
-	auto box = aabb3f(v3f(-0.5 * BS), v3f(0.5 * BS));
+    auto box = aabbf(v3f(-0.5 * BS), v3f(0.5 * BS));
 	f32 texture_coord_buf[24];
 	box.MinEdge += cur_node.origin;
 	box.MaxEdge += cur_node.origin;
@@ -482,7 +489,7 @@ void MapblockMeshGenerator::drawSolidNode()
 	}
 }
 
-u8 MapblockMeshGenerator::getNodeBoxMask(aabb3f box, u8 solid_neighbors, u8 sametype_neighbors) const
+u8 MapblockMeshGenerator::getNodeBoxMask(aabbf box, u8 solid_neighbors, u8 sametype_neighbors) const
 {
 	const f32 NODE_BOUNDARY = 0.5 * BS;
 
@@ -886,19 +893,19 @@ void MapblockMeshGenerator::drawGlasslikeFramedNode()
 	static const float g = a - 0.03f;
 	static const float b = 0.876f * (BS / 2.0f);
 
-	static const aabb3f frame_edges[FRAMED_EDGE_COUNT] = {
-		aabb3f( b,  b, -a,  a,  a,  a), // y+
-		aabb3f(-a,  b, -a, -b,  a,  a), // y+
-		aabb3f( b, -a, -a,  a, -b,  a), // y-
-		aabb3f(-a, -a, -a, -b, -b,  a), // y-
-		aabb3f( b, -a,  b,  a,  a,  a), // x+
-		aabb3f( b, -a, -a,  a,  a, -b), // x+
-		aabb3f(-a, -a,  b, -b,  a,  a), // x-
-		aabb3f(-a, -a, -a, -b,  a, -b), // x-
-		aabb3f(-a,  b,  b,  a,  a,  a), // z+
-		aabb3f(-a, -a,  b,  a, -b,  a), // z+
-		aabb3f(-a, -a, -a,  a, -b, -b), // z-
-		aabb3f(-a,  b, -a,  a,  a, -b), // z-
+    static const aabbf frame_edges[FRAMED_EDGE_COUNT] = {
+        aabbf( b,  b, -a,  a,  a,  a), // y+
+        aabbf(-a,  b, -a, -b,  a,  a), // y+
+        aabbf( b, -a, -a,  a, -b,  a), // y-
+        aabbf(-a, -a, -a, -b, -b,  a), // y-
+        aabbf( b, -a,  b,  a,  a,  a), // x+
+        aabbf( b, -a, -a,  a,  a, -b), // x+
+        aabbf(-a, -a,  b, -b,  a,  a), // x-
+        aabbf(-a, -a, -a, -b,  a, -b), // x-
+        aabbf(-a,  b,  b,  a,  a,  a), // z+
+        aabbf(-a, -a,  b,  a, -b,  a), // z+
+        aabbf(-a, -a, -a,  a, -b, -b), // z-
+        aabbf(-a,  b, -a,  a,  a, -b), // z-
 	};
 
 	// tables of neighbor (connect if same type and merge allowed),
@@ -995,7 +1002,7 @@ void MapblockMeshGenerator::drawGlasslikeFramedNode()
 		TileSpec tile;
 		getSpecialTile(0, &tile);
 		drawAutoLightedCuboid(
-			aabb3f(
+            aabbf(
 				-(nb[5] ? g : b),
 				-(nb[4] ? g : b),
 				-(nb[3] ? g : b),
@@ -1358,7 +1365,7 @@ void MapblockMeshGenerator::drawFencelikeNode()
 	static const f32 bar_len  = BS / 2 - post_rad;
 
 	// The post - always present
-	static const aabb3f post(-post_rad, -BS / 2, -post_rad,
+    static const aabbf post(-post_rad, -BS / 2, -post_rad,
 	                          post_rad,  BS / 2,  post_rad);
 	static const f32 postuv[24] = {
 		0.375, 0.375, 0.625, 0.625,
@@ -1376,9 +1383,9 @@ void MapblockMeshGenerator::drawFencelikeNode()
 	MapNode n2 = data->m_vmanip.getNodeNoEx(blockpos_nodes + p2);
 	const ContentFeatures *f2 = &nodedef->get(n2);
 	if (f2->drawtype == NDT_FENCELIKE) {
-		static const aabb3f bar_x1(BS / 2 - bar_len,  BS / 4 - bar_rad, -bar_rad,
+        static const aabbf bar_x1(BS / 2 - bar_len,  BS / 4 - bar_rad, -bar_rad,
 		                           BS / 2 + bar_len,  BS / 4 + bar_rad,  bar_rad);
-		static const aabb3f bar_x2(BS / 2 - bar_len, -BS / 4 - bar_rad, -bar_rad,
+        static const aabbf bar_x2(BS / 2 - bar_len, -BS / 4 - bar_rad, -bar_rad,
 		                           BS / 2 + bar_len, -BS / 4 + bar_rad,  bar_rad);
 		static const f32 xrailuv[24] = {
 			0.000, 0.125, 1.000, 0.250,
@@ -1398,9 +1405,9 @@ void MapblockMeshGenerator::drawFencelikeNode()
 	n2 = data->m_vmanip.getNodeNoEx(blockpos_nodes + p2);
 	f2 = &nodedef->get(n2);
 	if (f2->drawtype == NDT_FENCELIKE) {
-		static const aabb3f bar_z1(-bar_rad,  BS / 4 - bar_rad, BS / 2 - bar_len,
+        static const aabbf bar_z1(-bar_rad,  BS / 4 - bar_rad, BS / 2 - bar_len,
 		                            bar_rad,  BS / 4 + bar_rad, BS / 2 + bar_len);
-		static const aabb3f bar_z2(-bar_rad, -BS / 4 - bar_rad, BS / 2 - bar_len,
+        static const aabbf bar_z2(-bar_rad, -BS / 4 - bar_rad, BS / 2 - bar_len,
 		                            bar_rad, -BS / 4 + bar_rad, BS / 2 + bar_len);
 		static const f32 zrailuv[24] = {
 			0.1875, 0.0625, 0.3125, 0.3125, // cannot rotate; stretch
@@ -1623,7 +1630,7 @@ namespace {
 
 void MapblockMeshGenerator::drawAllfacesNode()
 {
-	static const aabb3f box(-BS / 2, -BS / 2, -BS / 2, BS / 2, BS / 2, BS / 2);
+    static const aabbf box(-BS / 2, -BS / 2, -BS / 2, BS / 2, BS / 2, BS / 2);
 	TileSpec tiles[6];
 	for (int face = 0; face < 6; face++)
 		getTile(nodebox_tile_dirs[face], &tiles[face]);
@@ -1679,7 +1686,7 @@ void MapblockMeshGenerator::drawNodeboxNode()
 		}
 	}
 
-	std::vector<aabb3f> boxes;
+    std::vector<aabbf> boxes;
 	cur_node.n.getNodeBoxes(nodedef, &boxes, neighbors_set);
 
 	bool isTransparent = false;
@@ -1720,10 +1727,10 @@ void MapblockMeshGenerator::drawNodeboxNode()
 			// due to e.g. precision problems.
 			// 100 is just an arbitrary, reasonably high number.
 			for (size_t i = 0; i < boxes.size() && i < 100; i++) {
-				aabb3f *box = &boxes[i];
+                aabbf *box = &boxes[i];
 				for (float section : sections) {
 					if (box->MinEdge[axis] < section && box->MaxEdge[axis] > section) {
-						aabb3f copy(*box);
+                        aabbf copy(*box);
 						copy.MinEdge[axis] = section;
 						box->MaxEdge[axis] = section;
 						boxes.push_back(copy);

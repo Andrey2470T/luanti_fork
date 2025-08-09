@@ -34,18 +34,22 @@ public:
     // The first triangle vertex is the left
     // The first face vertex is the upper left
     static void appendTriangle(MeshBuffer *buf, const std::array<v3f, 3> &positions,
-        const img::color8 &color=img::color8(), const std::array<v2f, 3> &uvs={v2f(0.0f, 0.0f), v2f(0.5f, 1.0f), v2f(1.0f, 0.0f)});
+        const img::color8 &color=img::color8(), const std::array<v2f, 3> &uvs={v2f(0.0f, 0.0f), v2f(0.5f, 1.0f), v2f(1.0f, 0.0f)},
+        std::optional<std::array<v3f, 4>> normals=std::nullopt);
     // 'rotation' in degrees!
     static void appendTriangle(MeshBuffer *buf, const std::array<v2f, 3> &positions, const v3f &rotation,
-        const img::color8 &color=img::color8(), const std::array<v2f, 3> &uvs={v2f(0.0f, 0.0f), v2f(0.5f, 1.0f), v2f(1.0f, 0.0f)});
+        const img::color8 &color=img::color8(), const std::array<v2f, 3> &uvs={v2f(0.0f, 0.0f), v2f(0.5f, 1.0f), v2f(1.0f, 0.0f)},
+         std::optional<std::array<v3f, 4>> normals=std::nullopt);
 
     static void appendFace(MeshBuffer *buf, const std::array<v3f, 4> &positions,
-        const std::array<img::color8, 4> &colors, const rectf &uvs={v2f(0.0f, 1.0f), v2f(1.0f, 0.0f)});
+        const std::array<img::color8, 4> &colors, const rectf &uvs={v2f(0.0f, 1.0f), v2f(1.0f, 0.0f)},
+         std::optional<std::array<v3f, 4>> normals=std::nullopt);
     static void appendFace(MeshBuffer *buf, const rectf &positions, const v3f &rotation,
-        const std::array<img::color8, 4> &colors, const rectf &uvs={v2f(0.0f, 1.0f), v2f(1.0f, 0.0f)});
-    static void appendUnitFace(MeshBuffer *buf, const std::array<img::color8, 4> &colors)
+        const std::array<img::color8, 4> &colors, const rectf &uvs={v2f(0.0f, 1.0f), v2f(1.0f, 0.0f)},
+         std::optional<std::array<v3f, 4>> normals=std::nullopt);
+    static void appendUnitFace(MeshBuffer *buf, const std::array<img::color8, 4> &colors, std::optional<std::array<v3f, 4>> normals=std::nullopt)
     {
-        appendFace(buf, {v3f(-1.0f, 1.0f, 0.0f), v3f(1.0f, 1.0f, 0.0f), v3f(1.0f, -1.0f, 0.0f), v3f(-1.0f, -1.0f, 0.0f)}, colors);
+        appendFace(buf, {v3f(-1.0f, 1.0f, 0.0f), v3f(1.0f, 1.0f, 0.0f), v3f(1.0f, -1.0f, 0.0f), v3f(-1.0f, -1.0f, 0.0f)}, colors, normals);
     }
 
     static void appendBox(MeshBuffer *buf, const aabbf &box, const std::array<img::color8, 8> &colors,

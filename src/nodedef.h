@@ -294,9 +294,9 @@ struct TileDef
 #define CF_SPECIAL_COUNT 6
 
 class Model;
-class TileLayer;
+struct TileLayer;
 
-typedef std::pair<std::shared_ptr<TileLayer>, std::shared_ptr<TileLayer>> TileSpec;
+typedef std::array<std::shared_ptr<TileLayer>, 2> TileSpec;
 
 struct ContentFeatures
 {

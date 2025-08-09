@@ -5,9 +5,12 @@
 #pragma once
 
 #include "nodedef.h"
+#include "client/mesh/meshbuffer.h"
+#include "client/mesh/layeredmesh.h"
+#include "client/render/batcher3d.h"
 
 struct MeshMakeData;
-struct MeshCollector;
+class LayeredMesh;
 
 struct LightPair {
 	u8 lightDay;
@@ -17,8 +20,8 @@ struct LightPair {
 	explicit LightPair(u16 value) : lightDay(value & 0xff), lightNight(value >> 8) {}
 	LightPair(u8 valueA, u8 valueB) : lightDay(valueA), lightNight(valueB) {}
 	LightPair(float valueA, float valueB) :
-		lightDay(core::clamp(core::round32(valueA), 0, 255)),
-		lightNight(core::clamp(core::round32(valueB), 0, 255)) {}
+        lightDay(std::clamp(round32(valueA), 0, 255)),
+        lightNight(std::clamp(round32(valueB), 0, 255)) {}
 	operator u16() const { return lightDay | lightNight << 8; }
 };
 
@@ -42,18 +45,22 @@ struct LightFrame {
 	bool sunlight[8];
 };
 
+enum class QuadDiagonal {
+	Diag02,
+	Diag13,
+};
+
 class MapblockMeshGenerator
 {
 public:
-	MapblockMeshGenerator(MeshMakeData *input, MeshCollector *output);
+    MapblockMeshGenerator(MeshMakeData *input, LayeredMesh *output);
 	void generate();
 
 private:
 	MeshMakeData *const data;
-	MeshCollector *const collector;
+    LayeredMesh *const collector;
 
 	const NodeDefManager *const nodedef;
-
 	const v3s16 blockpos_nodes;
 
 // current node
@@ -63,33 +70,32 @@ private:
 		MapNode n;
 		const ContentFeatures *f;
 		LightFrame lframe; // smooth lighting
-		video::SColor lcolor; // unsmooth lighting
+        img::color8 lcolor; // unsmooth lighting
 	} cur_node;
 
 // lighting
 	void getSmoothLightFrame();
 	LightInfo blendLight(const v3f &vertex_pos);
-	video::SColor blendLightColor(const v3f &vertex_pos);
-	video::SColor blendLightColor(const v3f &vertex_pos, const v3f &vertex_normal);
+    img::color8 blendLightColor(const v3f &vertex_pos);
+    img::color8 blendLightColor(const v3f &vertex_pos, const v3f &vertex_normal);
 
-	void useTile(TileSpec *tile_ret, int index = 0, u8 set_flags = MATERIAL_FLAG_CRACK_OVERLAY,
+    void useTile(TileSpec *tile_ret, int index = 0, u8 set_flags = 0,
 		u8 reset_flags = 0, bool special = false);
 	void getTile(int index, TileSpec *tile_ret);
 	void getTile(v3s16 direction, TileSpec *tile_ret);
-	void getSpecialTile(int index, TileSpec *tile_ret, bool apply_crack = false);
+    void getSpecialTile(int index, TileSpec *tile_ret);//, bool apply_crack = false);
 
 // face drawing
-	void drawQuad(const TileSpec &tile, v3f *vertices, const v3s16 &normal = v3s16(0, 0, 0),
-		float vertical_tiling = 1.0);
+    void drawQuad(const TileSpec &tile, const std::array<v3f, 4> &coords, const v3s16 &normal = v3s16(0, 0, 0));
 
 // cuboid drawing!
 	template <typename Fn>
-	void drawCuboid(const aabb3f &box, const TileSpec *tiles, int tilecount,
+    void drawCuboid(const aabbf &box, const TileSpec *tiles, int tilecount,
 			const f32 *txc, u8 mask, Fn &&face_lighter);
-	void generateCuboidTextureCoords(aabb3f const &box, f32 *coords);
-	void drawAutoLightedCuboid(aabb3f box, const TileSpec &tile, f32 const *txc	= nullptr, u8 mask = 0);
-	void drawAutoLightedCuboid(aabb3f box, const TileSpec *tiles, int tile_count, f32 const *txc = nullptr, u8 mask = 0);
-	u8 getNodeBoxMask(aabb3f box, u8 solid_neighbors, u8 sametype_neighbors) const;
+    void generateCuboidTextureCoords(const aabbf &box, f32 *coords);
+    void drawAutoLightedCuboid(aabbf box, const TileSpec &tile, f32 const *txc	= nullptr, u8 mask = 0);
+    void drawAutoLightedCuboid(aabbf box, const TileSpec *tiles, int tile_count, f32 const *txc = nullptr, u8 mask = 0);
+    u8 getNodeBoxMask(aabbf box, u8 solid_neighbors, u8 sametype_neighbors) const;
 
 // liquid-specific
 	struct LiquidData {
@@ -106,7 +112,7 @@ private:
 		TileSpec tile_top;
 		content_t c_flowing;
 		content_t c_source;
-		video::SColor color_top;
+        img::color8 color_top;
 		NeighborData neighbors[3][3];
 		f32 corner_levels[2][2];
 	};
