@@ -4,33 +4,27 @@
 
 #pragma once
 
-#include "irrlichttypes_bloated.h"
+#include <BasicIncludes.h>
 #include "constants.h"
-#include "irr_ptr.h"
 #include "skyparams.h"
 #include <iostream>
-#include <ISceneNode.h>
-#include <SMaterial.h>
-#include <SMeshBuffer.h>
+#include <Render/Shader.h>
 
-class IShaderSource;
-
-namespace irr::scene
-{
-	class ISceneManager;
-}
+class RenderSystem;
+class ResourceCache;
+class MeshBuffer;
 
 // Menu clouds
 // The mainmenu and the loading screen use the same Clouds object so that the
 // clouds don't jump when switching between the two.
 class Clouds;
-extern scene::ISceneManager *g_menucloudsmgr;
+//extern scene::ISceneManager *g_menucloudsmgr;
 extern Clouds *g_menuclouds;
 
-class Clouds : public scene::ISceneNode
+class Clouds
 {
 public:
-	Clouds(scene::ISceneManager* mgr, IShaderSource *ssrc,
+	Clouds(RenderSystem *rndsys, ResourceCache *cache,
 			s32 id,
 			u32 seed
 	);
@@ -41,7 +35,7 @@ public:
 		ISceneNode methods
 	*/
 
-	virtual void OnRegisterSceneNode();
+	/*virtual void OnRegisterSceneNode();
 
 	virtual void render();
 
@@ -58,7 +52,7 @@ public:
 	virtual video::SMaterial& getMaterial(u32 i)
 	{
 		return m_material;
-	}
+	}*/
 
 	/*
 		Other stuff
@@ -66,7 +60,9 @@ public:
 
 	void step(float dtime);
 
-	void update(const v3f &camera_p, const video::SColorf &color);
+	void update(const v3f &camera_p, const img::colorf &color);
+
+    void render();
 
 	void updateCameraOffset(v3s16 camera_offset)
 	{
@@ -84,17 +80,17 @@ public:
 		invalidateMesh();
 	}
 
-	void setColorBright(video::SColor color_bright)
+	void setColorBright(img::color8 color_bright)
 	{
 		m_params.color_bright = color_bright;
 	}
 
-	void setColorAmbient(video::SColor color_ambient)
+	void setColorAmbient(img::color8 color_ambient)
 	{
 		m_params.color_ambient = color_ambient;
 	}
 
-	void setColorShadow(video::SColor color_shadow)
+	void setColorShadow(img::color8 color_shadow)
 	{
 		if (m_params.color_shadow == color_shadow)
 			return;
@@ -127,14 +123,14 @@ public:
 
 	bool isCameraInsideCloud() const { return m_camera_inside_cloud; }
 
-	const video::SColor getColor() const { return m_color.toSColor(); }
+	const img::color8 getColor() const { return m_color; }
 
 private:
 	void updateBox()
 	{
 		float height_bs    = m_params.height    * BS;
 		float thickness_bs = m_params.thickness * BS;
-		m_box = aabb3f(-BS * 1000000.0f, height_bs, -BS * 1000000.0f,
+		m_box = aabbf(-BS * 1000000.0f, height_bs, -BS * 1000000.0f,
 				BS * 1000000.0f, height_bs + thickness_bs, BS * 1000000.0f);
 	}
 
@@ -151,8 +147,13 @@ private:
 		return m_enable_3d && m_params.thickness >= 0.01f;
 	}
 
-	video::SMaterial m_material;
-	irr_ptr<scene::SMeshBuffer> m_meshbuffer;
+    RenderSystem *m_rndsys;
+    ResourceCache *m_cache;
+
+    render::Shader *m_shader;
+
+	//video::SMaterial m_material;
+    std::unique_ptr<MeshBuffer> m_mesh;
 	// Value of m_origin at the time the mesh was last updated
 	v2f m_mesh_origin;
 	// Value of center_of_drawing_in_noise_i at the time the mesh was last updated
@@ -160,7 +161,7 @@ private:
 	// Was the mesh ever generated?
 	bool m_mesh_valid = false;
 
-	aabb3f m_box{{0.0f, 0.0f, 0.0f}};
+	aabbf m_box{{0.0f, 0.0f, 0.0f}};
 	v2f m_origin;
 	u16 m_cloud_radius_i;
 	u32 m_seed;
@@ -170,6 +171,6 @@ private:
 	bool m_camera_inside_cloud = false;
 
 	bool m_enable_3d;
-	video::SColorf m_color = video::SColorf(1.0f, 1.0f, 1.0f, 1.0f);
+	img::color8 m_color = img::white;
 	CloudParams m_params;
 };

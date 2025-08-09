@@ -2,7 +2,7 @@
 #include "Utils/Rect.h"
 #include "Render/Texture2D.h"
 #include "client/media/resource.h"
-//#include "client/render/clouds.h"
+#include "client/render/clouds.h"
 #include "client/ui/extra_images.h"
 #include "client/ui/sprite.h"
 #include "rendersystem.h"
@@ -89,7 +89,7 @@ void LoadScreen::updateText(v2u screensize, const std::wstring &text, f32 dtime,
 
         progress_rect->getShape()->updateRectangle(0, new_progress_size, {});
         progress_rect->getShape()->updateRectangle(1, new_progress_bg_size, {});
-        progress_rect->flush();
+        progress_rect->updateMesh(true);
 
         renderer->setClipRect(
             recti(percent_min * img_size.X / 100, 0, percent_max * img_size.X / 100, img_size.Y));
@@ -102,7 +102,7 @@ void LoadScreen::draw() const
     //driver->beginScene(true, true, RenderingEngine::MENU_SKY_COLOR);
 
     if (draw_clouds)
-        g_menucloudsmgr->drawAll();
+        g_menuclouds->render();
 
     progress_rect->draw();
 

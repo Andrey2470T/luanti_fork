@@ -2,19 +2,22 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 // Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
-#include "client/renderingengine.h"
-#include "client/shader.h"
 #include "clouds.h"
 #include "constants.h"
 #include "debug.h"
-#include "irrlicht_changes/printing.h"
+#include "irrlicht_gui/printing.h"
 #include "noise.h"
 #include "profiler.h"
 #include "settings.h"
-#include <cmath>
+#include "client/mesh/meshbuffer.h"
+#include "rendersystem.h"
+#include "client/media/resource.h"
+#include <Image/Converting.h>
+#include "batcher3d.h"
+#include "renderer.h"
 
 class Clouds;
-scene::ISceneManager *g_menucloudsmgr = nullptr;
+//scene::ISceneManager *g_menucloudsmgr = nullptr;
 Clouds *g_menuclouds = nullptr;
 
 // Constant for now
@@ -25,22 +28,19 @@ static void cloud_3d_setting_changed(const std::string &settingname, void *data)
 	((Clouds *)data)->readSettings();
 }
 
-Clouds::Clouds(scene::ISceneManager* mgr, IShaderSource *ssrc,
+Clouds::Clouds(RenderSystem *rndsys, ResourceCache *cache,
 		s32 id,
 		u32 seed
 ):
-	scene::ISceneNode(mgr->getRootSceneNode(), mgr, id),
-	m_seed(seed)
+    m_rndsys(rndsys), m_cache(cache), m_seed(seed)
 {
-	assert(ssrc);
-
-	m_material.BackfaceCulling = true;
+    /*m_material.BackfaceCulling = true;
 	m_material.FogEnable = true;
 	m_material.AntiAliasing = video::EAAM_SIMPLE;
 	{
 		auto sid = ssrc->getShaderRaw("cloud_shader", true);
 		m_material.MaterialType = ssrc->getShaderInfo(sid).material;
-	}
+    }*/
 
 	m_params = SkyboxDefaults::getCloudDefaults();
 
@@ -52,23 +52,14 @@ Clouds::Clouds(scene::ISceneManager* mgr, IShaderSource *ssrc,
 
 	updateBox();
 
-	m_meshbuffer.reset(new scene::SMeshBuffer());
-	m_meshbuffer->setHardwareMappingHint(scene::EHM_DYNAMIC);
+    m_mesh = std::make_unique<MeshBuffer>(true, render::DefaultVType, render::MeshUsage::DYNAMIC);
+
+    m_shader = m_cache->getOrLoad<render::Shader>(ResourceType::SHADER, "skybox");
 }
 
 Clouds::~Clouds()
 {
 	g_settings->deregisterAllChangedCallbacks(this);
-}
-
-void Clouds::OnRegisterSceneNode()
-{
-	if(IsVisible)
-	{
-		SceneManager->registerNodeForRendering(this, scene::ESNRP_TRANSPARENT);
-	}
-
-	ISceneNode::OnRegisterSceneNode();
 }
 
 void Clouds::updateMesh()
@@ -116,26 +107,26 @@ void Clouds::updateMesh()
 
 	// Colors with primitive shading
 
-	video::SColorf c_top_f(1, 1, 1, 1);
-	video::SColorf c_side_1_f(1, 1, 1, 1);
-	video::SColorf c_side_2_f(1, 1, 1, 1);
-	video::SColorf c_bottom_f(1, 1, 1, 1);
-	const video::SColorf shadow = m_params.color_shadow;
+    img::colorf c_top_f(img::PF_RGBA32F, 1, 1, 1, 1);
+    img::colorf c_side_1_f(img::PF_RGBA32F, 1, 1, 1, 1);
+    img::colorf c_side_2_f(img::PF_RGBA32F, 1, 1, 1, 1);
+    img::colorf c_bottom_f(img::PF_RGBA32F, 1, 1, 1, 1);
+    const img::colorf shadow = img::color8ToColorf(m_params.color_shadow);
 
-	c_side_1_f.r *= shadow.r * 0.25f + 0.75f;
-	c_side_1_f.g *= shadow.g * 0.25f + 0.75f;
-	c_side_1_f.b *= shadow.b * 0.25f + 0.75f;
-	c_side_2_f.r *= shadow.r * 0.5f + 0.5f;
-	c_side_2_f.g *= shadow.g * 0.5f + 0.5f;
-	c_side_2_f.b *= shadow.b * 0.5f + 0.5f;
-	c_bottom_f.r *= shadow.r;
-	c_bottom_f.g *= shadow.g;
-	c_bottom_f.b *= shadow.b;
+    c_side_1_f.R(c_side_1_f.R() * shadow.R() * 0.25f + 0.75f);
+    c_side_1_f.G(c_side_1_f.G() * shadow.G() * 0.25f + 0.75f);
+    c_side_1_f.B(c_side_1_f.B() * shadow.B() * 0.25f + 0.75f);
+    c_side_2_f.R(c_side_1_f.R() * shadow.R() * 0.5f + 0.5f);
+    c_side_2_f.G(c_side_1_f.G() * shadow.G() * 0.5f + 0.5f);
+    c_side_2_f.B(c_side_1_f.B() * shadow.B() * 0.5f + 0.5f);
+    c_bottom_f.R(c_bottom_f.R() * shadow.R());
+    c_bottom_f.G(c_bottom_f.G() * shadow.G());
+    c_bottom_f.B(c_bottom_f.B() * shadow.B());
 
-	video::SColor c_top = c_top_f.toSColor();
-	video::SColor c_side_1 = c_side_1_f.toSColor();
-	video::SColor c_side_2 = c_side_2_f.toSColor();
-	video::SColor c_bottom = c_bottom_f.toSColor();
+    img::color8 c_top = img::colorfToColor8(c_top_f);
+    img::color8 c_side_1 = img::colorfToColor8(c_side_1_f);
+    img::color8 c_side_2 = img::colorfToColor8(c_side_2_f);
+    img::color8 c_bottom = img::colorfToColor8(c_bottom_f);
 
 	// Read noise
 
@@ -154,25 +145,20 @@ void Clouds::updateMesh()
 		}
 	}
 
-
-	auto *mb = m_meshbuffer.get();
-	auto &vertices = mb->Vertices->Data;
-	auto &indices = mb->Indices->Data;
+    m_mesh->clear();
 	{
 		const u32 vertex_count = num_faces_to_draw * 16 * m_cloud_radius_i * m_cloud_radius_i;
 		const u32 quad_count = vertex_count / 4;
 		const u32 index_count = quad_count * 6;
 
 		// reserve memory
-		vertices.reserve(vertex_count);
-		indices.reserve(index_count);
+        m_mesh->reallocateData(vertex_count, index_count);
 	}
 
 #define GETINDEX(x, z, radius) (((z)+(radius))*(radius)*2 + (x)+(radius))
 #define INAREA(x, z, radius) \
 	((x) >= -(radius) && (x) < (radius) && (z) >= -(radius) && (z) < (radius))
 
-	vertices.clear();
 	for (s16 zi0= -m_cloud_radius_i; zi0 < m_cloud_radius_i; zi0++)
 	for (s16 xi0= -m_cloud_radius_i; xi0 < m_cloud_radius_i; xi0++)
 	{
@@ -191,12 +177,16 @@ void Clouds::updateMesh()
 
 		v2f p0 = v2f(xi,zi)*cloud_size + world_center_of_drawing_in_noise_f;
 
-		video::S3DVertex v[4] = {
+        std::array<v3f, 4> positions;
+        std::array<v3f, 4> normals;
+        std::array<img::color8, 4> colors;
+
+        /*video::S3DVertex v[4] = {
 			video::S3DVertex(0,0,0, 0,0,0, c_top, 0, 1),
 			video::S3DVertex(0,0,0, 0,0,0, c_top, 1, 1),
 			video::S3DVertex(0,0,0, 0,0,0, c_top, 1, 0),
 			video::S3DVertex(0,0,0, 0,0,0, c_top, 0, 0)
-		};
+        };*/
 
 		const f32 rx = cloud_size / 2.0f;
 		// if clouds are flat, the top layer should be at the given height
@@ -209,13 +199,13 @@ void Clouds::updateMesh()
 			switch (i)
 			{
 			case 0:	// top
-				for (video::S3DVertex& vertex : v) {
-					vertex.Normal.set(0, 1, 0);
+                for (v3f &n : normals) {
+                    n = v3f(0, 1, 0);
 				}
-				v[0].Pos.set(-rx, ry,-rz);
-				v[1].Pos.set(-rx, ry, rz);
-				v[2].Pos.set( rx, ry, rz);
-				v[3].Pos.set( rx, ry,-rz);
+                positions[0] = v3f(-rx, ry,-rz);
+                positions[1] = v3f(-rx, ry, rz);
+                positions[2] = v3f(rx, ry, rz);
+                positions[3] = v3f(rx, ry,-rz);
 				break;
 			case 1: // back
 				if (INAREA(xi, zi - 1, m_cloud_radius_i)) {
@@ -224,21 +214,21 @@ void Clouds::updateMesh()
 						continue;
 				}
 				if (soft_clouds_enabled) {
-					for (video::S3DVertex& vertex : v) {
-						vertex.Normal.set(0, 0, -1);
+                    for (v3f &n : normals) {
+                        n = v3f(0, 0, -1);
 					}
-					v[2].Color = c_bottom;
-					v[3].Color = c_bottom;
+                    colors[2] = c_bottom;
+                    colors[3] = c_bottom;
 				} else {
-					for (video::S3DVertex& vertex : v) {
-						vertex.Color = c_side_1;
-						vertex.Normal.set(0, 0, -1);
+                    for (u32 i = 0; i < 4; i++) {
+                        colors[i] = c_side_1;
+                        normals[i] = v3f(0, 0, -1);
 					}
 				}
-				v[0].Pos.set(-rx, ry,-rz);
-				v[1].Pos.set( rx, ry,-rz);
-				v[2].Pos.set( rx,  0,-rz);
-				v[3].Pos.set(-rx,  0,-rz);
+                positions[0] = v3f(-rx, ry,-rz);
+                positions[1] = v3f(rx, ry,-rz);
+                positions[2] = v3f(rx,  0,-rz);
+                positions[3] = v3f(-rx,  0,-rz);
 				break;
 			case 2: //right
 				if (INAREA(xi + 1, zi, m_cloud_radius_i)) {
@@ -247,22 +237,22 @@ void Clouds::updateMesh()
 						continue;
 				}
 				if (soft_clouds_enabled) {
-					for (video::S3DVertex& vertex : v) {
-						vertex.Normal.set(1, 0, 0);
+                    for (v3f &n : normals) {
+                        n = v3f(1, 0, 0);
 					}
-					v[2].Color = c_bottom;
-					v[3].Color = c_bottom;
+                    colors[2] = c_bottom;
+                    colors[3] = c_bottom;
 				}
 				else {
-					for (video::S3DVertex& vertex : v) {
-						vertex.Color = c_side_2;
-						vertex.Normal.set(1, 0, 0);
-					}
+                    for (u32 i = 0; i < 4; i++) {
+                        colors[i] = c_side_2;
+                        normals[i] = v3f(1, 0, 0);
+                    }
 				}
-				v[0].Pos.set(rx, ry,-rz);
-				v[1].Pos.set(rx, ry, rz);
-				v[2].Pos.set(rx,  0, rz);
-				v[3].Pos.set(rx,  0,-rz);
+                positions[0] = v3f(rx, ry,-rz);
+                positions[1] = v3f(rx, ry, rz);
+                positions[2] = v3f(rx,  0, rz);
+                positions[3] = v3f(rx,  0,-rz);
 				break;
 			case 3: // front
 				if (INAREA(xi, zi + 1, m_cloud_radius_i)) {
@@ -271,21 +261,21 @@ void Clouds::updateMesh()
 						continue;
 				}
 				if (soft_clouds_enabled) {
-					for (video::S3DVertex& vertex : v) {
-						vertex.Normal.set(0, 0, -1);
+                    for (v3f &n : normals) {
+                        n = v3f(0, 0, -1);
 					}
-					v[2].Color = c_bottom;
-					v[3].Color = c_bottom;
+                    colors[2] = c_bottom;
+                    colors[3] = c_bottom;
 				} else {
-					for (video::S3DVertex& vertex : v) {
-						vertex.Color = c_side_1;
-						vertex.Normal.set(0, 0, -1);
-					}
+                    for (u32 i = 0; i < 4; i++) {
+                        colors[i] = c_side_1;
+                        normals[i] = v3f(0, 0, -1);
+                    }
 				}
-				v[0].Pos.set( rx, ry, rz);
-				v[1].Pos.set(-rx, ry, rz);
-				v[2].Pos.set(-rx,  0, rz);
-				v[3].Pos.set( rx,  0, rz);
+                positions[0] = v3f(rx, ry, rz);
+                positions[1] = v3f(-rx, ry, rz);
+                positions[2] = v3f(-rx,  0, rz);
+                positions[3] = v3f(rx,  0, rz);
 				break;
 			case 4: // left
 				if (INAREA(xi - 1, zi, m_cloud_radius_i)) {
@@ -294,65 +284,44 @@ void Clouds::updateMesh()
 						continue;
 				}
 				if (soft_clouds_enabled) {
-					for (video::S3DVertex& vertex : v) {
-						vertex.Normal.set(-1, 0, 0);
+                    for (v3f &n : normals) {
+                        n = v3f(-1, 0, 0);
 					}
-					v[2].Color = c_bottom;
-					v[3].Color = c_bottom;
+                    colors[2] = c_bottom;
+                    colors[3] = c_bottom;
 				} else {
-					for (video::S3DVertex& vertex : v) {
-						vertex.Color = c_side_2;
-						vertex.Normal.set(-1, 0, 0);
-					}
+                    for (u32 i = 0; i < 4; i++) {
+                        colors[i] = c_side_2;
+                        normals[i] = v3f(-1, 0, 0);
+                    }
 				}
-				v[0].Pos.set(-rx, ry, rz);
-				v[1].Pos.set(-rx, ry,-rz);
-				v[2].Pos.set(-rx,  0,-rz);
-				v[3].Pos.set(-rx,  0, rz);
+                positions[0] = v3f(-rx, ry, rz);
+                positions[1] = v3f(-rx, ry,-rz);
+                positions[2] = v3f(-rx,  0,-rz);
+                positions[3] = v3f(-rx,  0, rz);
 				break;
 			case 5: // bottom
-				for (video::S3DVertex& vertex : v) {
-					vertex.Color = c_bottom;
-					vertex.Normal.set(0, -1, 0);
-				}
-				v[0].Pos.set( rx,  0, rz);
-				v[1].Pos.set(-rx,  0, rz);
-				v[2].Pos.set(-rx,  0,-rz);
-				v[3].Pos.set( rx,  0,-rz);
+                for (u32 i = 0; i < 4; i++) {
+                    colors[i] = c_bottom;
+                    normals[i] = v3f(0, -1, 0);
+                }
+                positions[0] = v3f(rx,  0, rz);
+                positions[1] = v3f(-rx,  0, rz);
+                positions[2] = v3f(-rx,  0,-rz);
+                positions[3] = v3f(rx,  0,-rz);
 				break;
 			}
 
 			v3f pos(p0.X, m_params.height * BS, p0.Y);
 
-			for (video::S3DVertex &vertex : v) {
-				vertex.Pos += pos;
-				vertices.push_back(vertex);
-			}
+            for (u32 i = 0; i < 4; i++) {
+                positions[i] += pos;
+            }
+            Batcher3D::appendFace(m_mesh.get(), positions, colors);
 		}
 	}
-	mb->setDirty(scene::EBT_VERTEX);
 
-	const u32 quad_count = mb->getVertexCount() / 4;
-	const u32 index_count = quad_count * 6;
-	// rewrite index array as needed
-	if (mb->getIndexCount() > index_count) {
-		indices.resize(index_count);
-		mb->setDirty(scene::EBT_INDEX);
-	} else if (mb->getIndexCount() < index_count) {
-		const u32 start = mb->getIndexCount() / 6;
-		assert(start * 6 == mb->getIndexCount());
-		for (u32 k = start; k < quad_count; k++) {
-			indices.push_back(4 * k + 0);
-			indices.push_back(4 * k + 1);
-			indices.push_back(4 * k + 2);
-			indices.push_back(4 * k + 2);
-			indices.push_back(4 * k + 3);
-			indices.push_back(4 * k + 0);
-		}
-		mb->setDirty(scene::EBT_INDEX);
-	}
-
-	tracestream << "Cloud::updateMesh(): " << mb->getVertexCount() << " vertices"
+    tracestream << "Cloud::updateMesh(): " << m_mesh->getVertexCount() << " vertices"
 		<< std::endl;
 }
 
@@ -361,67 +330,75 @@ void Clouds::render()
 	if (m_params.density <= 0.0f)
 		return; // no need to do anything
 
-	video::IVideoDriver* driver = SceneManager->getVideoDriver();
+    //video::IVideoDriver* driver = SceneManager->getVideoDriver();
 
-	if (SceneManager->getSceneNodeRenderPass() != scene::ESNRP_TRANSPARENT)
-		return;
+    //if (SceneManager->getSceneNodeRenderPass() != scene::ESNRP_TRANSPARENT)
+    //	return;
 
 	updateMesh();
 
-	// Update position
-	{
-		v2f off_origin = m_origin - m_mesh_origin;
-		v3f rel(off_origin.X, 0, off_origin.Y);
-		rel -= intToFloat(m_camera_offset, BS);
-		setPosition(rel);
-		updateAbsolutePosition();
-	}
+    auto rnd = m_rndsys->getRenderer();
+    rnd->setRenderState(true);
 
-	m_material.BackfaceCulling = is3D();
-	m_material.ColorParam = m_color.toSColor();
+    v2f off_origin = m_origin - m_mesh_origin;
+    v3f rel(off_origin.X, 0, off_origin.Y);
+    rel -= intToFloat(m_camera_offset, BS);
+    matrix4 translate;
+    translate.setTranslation(rel);
 
-	driver->setTransform(video::ETS_WORLD, AbsoluteTransformation);
-	driver->setMaterial(m_material);
+    rnd->setTransformMatrix(TMatrix::World, translate);
 
-	const float cloud_full_radius = cloud_size * m_cloud_radius_i;
+    auto ctxt = rnd->getContext();
+    ctxt->setShader(m_shader);
 
+    m_shader->setUniformIntArray("materialColor", {m_color.R(), m_color.G(), m_color.B(), m_color.A()});
+    //m_material.BackfaceCulling = is3D();
+    //m_material.ColorParam = m_color.toSColor();
+
+    //driver->setTransform(video::ETS_WORLD, AbsoluteTransformation);
+    //driver->setMaterial(m_material);
+
+    //const float cloud_full_radius = cloud_size * m_cloud_radius_i;
+
+    rnd->enableFog(true);
 	// Get fog parameters for setting them back later
-	video::SColor fog_color(0,0,0,0);
+    /*img::color8 fog_color(0,0,0,0);
 	video::E_FOG_TYPE fog_type = video::EFT_FOG_LINEAR;
 	f32 fog_start = 0;
 	f32 fog_end = 0;
 	f32 fog_density = 0;
 	bool fog_pixelfog = false;
 	bool fog_rangefog = false;
-	driver->getFog(fog_color, fog_type, fog_start, fog_end, fog_density,
+    driver->getFog(fog_color, fog_type, fog_start, fog_end, fog_density,
 			fog_pixelfog, fog_rangefog);
 
 	// Set our own fog, unless it was already disabled
-	if (fog_start < FOG_RANGE_ALL) {
+    if (fog_start < FOG_RANGE_ALL) {
 		driver->setFog(fog_color, fog_type, cloud_full_radius * 0.5,
 				cloud_full_radius*1.2, fog_density, fog_pixelfog, fog_rangefog);
-	}
+    }*/
 
-	driver->drawMeshBuffer(m_meshbuffer.get());
+    rnd->draw(m_mesh.get());
+    //driver->drawMeshBuffer(m_meshbuffer.get());
 
 	// Restore fog settings
-	driver->setFog(fog_color, fog_type, fog_start, fog_end, fog_density,
-			fog_pixelfog, fog_rangefog);
+    //driver->setFog(fog_color, fog_type, fog_start, fog_end, fog_density,
+    //		fog_pixelfog, fog_rangefog);
 }
 
 void Clouds::step(float dtime)
 {
-	m_origin = m_origin + dtime * BS * m_params.speed;
+    m_origin = m_origin + m_params.speed * dtime * BS;
 }
 
-void Clouds::update(const v3f &camera_p, const video::SColorf &color_diffuse)
+void Clouds::update(const v3f &camera_p, const img::colorf &color_diffuse)
 {
-	video::SColorf ambient(m_params.color_ambient);
-	video::SColorf bright(m_params.color_bright);
-	m_color.r = core::clamp(color_diffuse.r * bright.r, ambient.r, 1.0f);
-	m_color.g = core::clamp(color_diffuse.g * bright.g, ambient.g, 1.0f);
-	m_color.b = core::clamp(color_diffuse.b * bright.b, ambient.b, 1.0f);
-	m_color.a = bright.a;
+    img::colorf ambient = img::color8ToColorf(m_params.color_ambient);
+    img::colorf bright = img::color8ToColorf(m_params.color_bright);
+    m_color.R(std::clamp(color_diffuse.R() * bright.G(), ambient.R(), 1.0f));
+    m_color.G(std::clamp(color_diffuse.G() * bright.G(), ambient.G(), 1.0f));
+    m_color.B(std::clamp(color_diffuse.B() * bright.B(), ambient.B(), 1.0f));
+    m_color.A(bright.A());
 
 	// is the camera inside the cloud mesh?
 	m_camera_pos = camera_p;
