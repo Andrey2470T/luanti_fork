@@ -7,6 +7,7 @@
 #include <BasicIncludes.h>
 #include <Render/Texture2D.h>
 #include <Image/Image.h>
+#include <Render/Shader.h>
 #include "client/player/playercamera.h" // CameraMode
 #include "skyparams.h"
 
@@ -19,72 +20,105 @@ class MeshBuffer;
 
 class Sun
 {
-    ResourceCache *m_cache;
+    RenderSystem *m_rndsys;
     SunParams m_sun_params;
 
-    render::Texture2D *m_texture = nullptr;
+    img::Image *m_image = nullptr;
     img::Image *m_tonemap = nullptr;
+    img::Image *m_sunrise = nullptr;
+
+    std::unique_ptr<MeshBuffer> m_mesh;
+    std::unique_ptr<MeshBuffer> m_sunrise_mesh;
+    bool m_first_update = true;
+
+    img::color8 m_base_color;
 public:
-    Sun(ResourceCache *cache)
-        : m_cache(cache)
-    {}
+    Sun(RenderSystem *rndsys, ResourceCache *cache);
 
-    void setVisible(bool sun_visible) { m_sun_params.visible = sun_visible; }
+    void setVisible(bool visible) { m_sun_params.visible = visible; }
     bool getVisible() const { return m_sun_params.visible; }
-    void setTexture(const std::string &sun_texture,
-        const std::string &sun_tonemap);
-    void setScale(f32 sun_scale) { m_sun_params.scale = sun_scale; }
+    void setImage(const std::string &image,
+        const std::string &tonemap, ResourceCache *cache);
+    void setScale(f32 scale) { m_sun_params.scale = scale; }
     void setSunriseVisible(bool glow_visible) { m_sun_params.sunrise_visible = glow_visible; }
-    void setSunriseTexture(const std::string &sunglow_texture);
-    v3f getSunDirection();
+    bool getSunriseVisible() const { return m_sun_params.sunrise_visible; }
+    void setSunriseImage(const std::string &sunglow_texture, ResourceCache *cache);
+    v3f getDirection(f32 time_of_day, f32 body_orbit_tilt);
 
-    void draw(Renderer *rnd, const img::color8 &suncolor,
-        const img::color8 &suncolor2, float wicked_time_of_day);
+    img::color8 getBaseColor() const
+    {
+        if (m_tonemap)
+            return m_base_color;
+        return img::black;
+    }
+    void draw(Renderer *rnd);
+    void drawSunrise(Renderer *rnd);
+    void update(const img::color8 &suncolor,
+        const img::color8 &suncolor2, f32 time_of_day, float body_orbit_tilt);
+    void updateSunrise(float time_of_day);
 };
 
 class Moon
 {
-    ResourceCache *m_cache;
+    RenderSystem *m_rndsys;
     MoonParams m_moon_params;
 
-    render::Texture2D *m_texture = nullptr;
+    img::Image *m_image = nullptr;
     img::Image *m_tonemap = nullptr;
+
+    std::unique_ptr<MeshBuffer> m_mesh;
+    bool m_first_update = true;
+
+    img::color8 m_base_color;
 public:
-    Moon(ResourceCache *cache)
-        : m_cache(cache)
-    {}
+    Moon(RenderSystem *rndsys);
 
-    void setVisible(bool moon_visible) { m_moon_params.visible = moon_visible; }
+    void setVisible(bool visible) { m_moon_params.visible = visible; }
     bool getVisible() const { return m_moon_params.visible; }
-    void setTexture(const std::string &moon_texture,
-        const std::string &moon_tonemap);
-    void setMoonScale(f32 moon_scale) { m_moon_params.scale = moon_scale; }
-    v3f getMoonDirection();
+    void setImage(const std::string &image,
+        const std::string &tonemap, ResourceCache *cache);
+    void setScale(f32 scale) { m_moon_params.scale = scale; }
+    v3f getDirection(f32 time_of_day, f32 body_orbit_tilt);
 
-    void draw(Renderer *rnd, const img::color8 &mooncolor,
-        const img::color8 &mooncolor2, float wicked_time_of_day);
+    img::color8 getBaseColor() const
+    {
+        if (m_tonemap)
+            return m_base_color;
+        return img::black;
+    }
+    void draw(Renderer *rnd);
+    void update(const img::color8 &suncolor,
+        const img::color8 &suncolor2, f32 time_of_day, float body_orbit_tilt);
 };
 
 class Stars
 {
-    ResourceCache *m_cache;
+    RenderSystem *m_rndsys;
     StarParams m_star_params;
+    u32 m_prev_star_count;
 
     std::unique_ptr<MeshBuffer> m_mesh;
-public:
-    Stars(ResourceCache *cache)
-        : m_cache(cache)
-    {}
 
-    void setVisible(bool stars_visible) { m_star_params.visible = stars_visible; }
-    void setCount(u16 star_count);
-    void setColor(img::color8 star_color) { m_star_params.starcolor = star_color; }
-    void setScale(f32 star_scale) { m_star_params.scale = star_scale; updateStars(); }
+    render::Shader *m_shader;
+
+    bool m_first_update = true;
+
+    matrix4 m_world;
+
+    u64 m_seed = 0;
+public:
+    Stars(RenderSystem *rndsys, ResourceCache *cache);
+
+    void setVisible(bool visible) { m_star_params.visible = visible; }
+    bool getVisible() const { return m_star_params.visible; }
+    void setCount(u16 count);
+    void setColor(img::color8 color) { m_star_params.starcolor = color; }
+    void setScale(f32 scale) { m_star_params.scale = scale; updateMesh(); }
     void setDayOpacity(f32 day_opacity) { m_star_params.day_opacity = day_opacity; }
 
-    void draw(Renderer *rnd, float wicked_time_of_day);
-private:
-    void updateStars();
+    void draw(Renderer *rnd);
+    void update(Renderer *rnd, float wicked_time_of_day, float body_orbit_tilt);
+    void updateMesh();
 };
 
 // Skybox, rendered with zbuffer turned off, before all other nodes.
@@ -94,17 +128,7 @@ public:
 	//! constructor
     Sky(RenderSystem *rndsys, ResourceCache *cache);
 
-    //virtual void OnRegisterSceneNode();
-
-	//! renders the node.
-    //virtual void render();
-
-    //virtual const aabb3f &getBoundingBox() const { return m_box; }
-
-	// Used by Irrlicht for optimizing rendering
-    //virtual video::SMaterial &getMaterial(u32 i) { return m_materials[i]; }
-    //virtual u32 getMaterialCount() const { return SKY_MATERIAL_COUNT; }
-
+    void render(PlayerCamera *camera);
 	void update(float m_time_of_day, float time_brightness, float direct_brightness,
 			bool sunlight_seen, CameraMode cam_mode, float yaw, float pitch);
 
@@ -146,7 +170,7 @@ public:
 		const std::string &use_sun_tint);
 	void setInClouds(bool clouds) { m_in_clouds = clouds; }
 	void clearSkyboxTextures() { m_sky_params.textures.clear(); }
-    void addTextureToSkybox(const std::string &texture, int material_id);
+    void addTextureToSkybox(const std::string &texture, int id);
 
 	// Note: the Sky class doesn't use these values. It just stores them.
 	void setFogDistance(s16 fog_distance) { m_sky_params.fog_distance = fog_distance; }
@@ -166,8 +190,8 @@ private:
     RenderSystem *m_rndsys;
     ResourceCache *m_cache;
 
-    aabbf m_box{{0.0f, 0.0f, 0.0f}};
-    //video::SMaterial m_materials[SKY_MATERIAL_COUNT];
+    //aabbf m_box{{0.0f, 0.0f, 0.0f}};
+
 	// How much sun & moon transition should affect horizon color
 	float m_horizon_blend()
 	{
@@ -184,6 +208,10 @@ private:
 			return (0.5 - x) * 10;
 		return 0;
 	}
+
+    // update simple and far cloudy fogs
+    void updateCloudyFogColor();
+    void update_uv(MeshBuffer *buf, img::Image *img, u32 offset=0);
 
     // NOTE: BlendModes.h already has those
     // Mix two colors by a given amount
@@ -236,18 +264,23 @@ private:
 		191.0f/255.0f
 	);
 
+    std::unique_ptr<Sun> m_sun;
+    std::unique_ptr<Moon> m_moon;
+    std::unique_ptr<Stars> m_stars;
 	SkyboxParams m_sky_params;
 
+    std::array<img::Image *, 6> m_skybox_images;
+
+    std::unique_ptr<MeshBuffer> m_skybox_mesh;
+    std::unique_ptr<MeshBuffer> m_cloudyfog_mesh;
+    std::unique_ptr<MeshBuffer> m_far_cloudyfog_mesh;
+
+    matrix4 m_world;
+
 	bool m_default_tint = true;
-
-	u64 m_seed = 0;
-
-	void draw_sky_body(std::array<video::S3DVertex, 4> &vertices,
-        float pos_1, float pos_2, const img::color8 &c);
-	void place_sky_body(std::array<video::S3DVertex, 4> &vertices,
-		float horizon_position,	float day_position);
 };
 
 // calculates value for sky body positions for the given observed time of day
 // this is used to draw both Sun/Moon and shadows
 float getWickedTimeOfDay(float time_of_day);
+void update_uvs(RenderSystem *rndsys, MeshBuffer *buf, img::Image *img, u32 offset=0);
