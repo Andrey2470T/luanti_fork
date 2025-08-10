@@ -6,6 +6,7 @@
 #include "defaultVertexTypes.h"
 #include <cmath>
 #include "client/render/batcher3d.h"
+#include <Utils/Plane3D.h>
 
 inline static void applyShadeFactor(img::color8& color, float factor)
 {
@@ -215,6 +216,73 @@ MeshBuffer *MeshOperations::convertNodeboxesToMesh(const std::vector<aabbf> &box
     }
 
     return mesh;
+}
+
+static inline v3f getAngleWeight(const v3f &v1, const v3f &v2, const v3f &v3)
+{
+    // Calculate this triangle's weight for each of its three vertices
+    // start by calculating the lengths of its sides
+    const f32 a = v2.getDistanceFromSQ(v3);
+    const f32 asqrt = sqrtf(a);
+    const f32 b = v1.getDistanceFromSQ(v3);
+    const f32 bsqrt = sqrtf(b);
+    const f32 c = v1.getDistanceFromSQ(v2);
+    const f32 csqrt = sqrtf(c);
+
+    // use them to find the angle at each vertex
+    return v3f(
+        acosf((b + c - a) / (2.f * bsqrt * csqrt)),
+        acosf((-b + c + a) / (2.f * asqrt * csqrt)),
+        acosf((b - c + a) / (2.f * bsqrt * asqrt)));
+}
+
+void MeshOperations::recalculateNormalsT(MeshBuffer *mesh, bool smooth, bool angleWeighted)
+{
+    const u32 vcount = mesh->getVertexCount();
+    const u32 icount = mesh->getIndexCount();
+
+    if (!smooth) {
+        for (u32 i = 0; i < icount; i += 3) {
+            u32 i0 = mesh->getIndexAt(i + 0);
+            u32 i1 = mesh->getIndexAt(i + 1);
+            u32 i2 = mesh->getIndexAt(i + 2);
+            const v3f &v1 = svtGetPos(mesh, i0);
+            const v3f &v2 = svtGetPos(mesh, i1);
+            const v3f &v3 = svtGetPos(mesh, i2);
+            const v3f normal = plane3f(v1, v2, v3).Normal;
+            svtSetNormal(mesh, normal, i0);
+            svtSetNormal(mesh, normal, i1);
+            svtSetNormal(mesh, normal, i2);
+        }
+    } else {
+        u32 i;
+
+        for (i = 0; i != vcount; ++i)
+            svtSetNormal(mesh, v3f(), i);
+
+        for (i = 0; i < icount; i += 3) {
+            u32 i0 = mesh->getIndexAt(i + 0);
+            u32 i1 = mesh->getIndexAt(i + 1);
+            u32 i2 = mesh->getIndexAt(i + 2);
+            const v3f &v1 = svtGetPos(mesh, i0);
+            const v3f &v2 = svtGetPos(mesh, i1);
+            const v3f &v3 = svtGetPos(mesh, i2);
+            const v3f normal = plane3f(v1, v2, v3).Normal;
+            v3f weight(1.f, 1.f, 1.f);
+            if (angleWeighted)
+                weight = getAngleWeight(v1, v2, v3);
+
+            svtSetNormal(mesh, normal * weight.X, i0);
+            svtSetNormal(mesh, normal * weight.Y, i1);
+            svtSetNormal(mesh, normal * weight.Z, i2);
+        }
+
+        for (i = 0; i != vcount; ++i) {
+            v3f n = svtGetNormal(mesh, i);
+            n.normalize();
+            svtSetNormal(mesh, n, i);
+        }
+    }
 }
 
 /*void setMaterialFilters(video::SMaterialLayer &tex, bool bilinear, bool trilinear, bool anisotropic)

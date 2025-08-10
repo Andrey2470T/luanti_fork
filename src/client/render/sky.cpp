@@ -23,31 +23,11 @@
 #include "atlas.h"
 #include <Image/BlendModes.h>
 
-/*static video::SMaterial baseMaterial()
-{
-	video::SMaterial mat;
-	mat.ZBuffer = video::ECFN_DISABLED;
-	mat.ZWriteEnable = video::EZW_OFF;
-	mat.AntiAliasing = video::EAAM_OFF;
-	mat.TextureLayers[0].TextureWrapU = video::ETC_CLAMP_TO_EDGE;
-	mat.TextureLayers[0].TextureWrapV = video::ETC_CLAMP_TO_EDGE;
-	mat.BackfaceCulling = false;
-	return mat;
-}
-
-static inline void disableTextureFiltering(video::SMaterial &mat)
-{
-	mat.forEachTexture([] (auto &tex) {
-		tex.MinFilter = video::ETMINF_NEAREST_MIPMAP_NEAREST;
-		tex.MagFilter = video::ETMAGF_NEAREST;
-		tex.AnisotropicFilter = 0;
-	});
-}*/
-
 MeshBuffer *init_sky_body()
 {
     MeshBuffer *mesh = new MeshBuffer(4, 6, true);
     Batcher3D::appendFace(mesh, {}, {}, {v2f(1.0f, 1.0f), v2f(0.0f, 0.0f)});
+    mesh->uploadData();
 
     return mesh;
 }
@@ -407,6 +387,7 @@ void Stars::draw(Renderer *rnd)
 {
     auto ctxt = rnd->getContext();
     ctxt->setShader(m_shader);
+    rnd->setUniformBlocks(m_shader);
     rnd->setBlending(true);
 
     rnd->draw(m_mesh.get());
@@ -652,6 +633,9 @@ void Sky::render(PlayerCamera *camera)
     scale.setScale(v3f(viewDistance, viewDistance, viewDistance));
 
     auto rnd = m_rndsys->getRenderer();
+
+    rnd->setRenderState(true);
+
     rnd->setTransformMatrix(TMatrix::World, translate * scale);
 
 	if (m_sunlight_seen) {
@@ -670,10 +654,13 @@ void Sky::render(PlayerCamera *camera)
 			return;
 
 		// Draw the six sided skybox,
+        auto ctxt = rnd->getContext();
 		if (m_sky_params.textures.size() == 6) {
+            ctxt->enableDepthTest(false);
             rnd->setDefaultShader();
             rnd->setDefaultUniforms(1.0f, 0, 0, img::BM_COUNT);
             rnd->draw(m_skybox_mesh.get());
+            ctxt->enableDepthTest(true);
 		}
 
 		// Draw far cloudy fog thing blended with skycolor

@@ -3,12 +3,14 @@
 #include <memory>
 #include <BasicIncludes.h>
 #include <Render/VertexTypeDescriptor.h>
+#include "client/render/frustum.h"
 
 #define HAS_HW(layer) \
     layer->material_flags & MATERIAL_FLAG_HARDWARE_COLORIZED
 
 class MeshBuffer;
 struct TileLayer;
+struct Frustum;
 
 struct LayeredMeshPart
 {
@@ -90,6 +92,12 @@ public:
         return layers.at(buffer_id).at(layer_id);
     }
     
+    std::vector<MeshLayer> getAllLayers() const;
+    std::vector<LayeredMeshPart> getPartialLayers() const
+    {
+    	return partial_layers;
+    }
+    
     render::VertexTypeDescriptor getBasicVertexType() const
     {
     	return basicVertexType;
@@ -103,6 +111,11 @@ public:
     void transparentSort(const v3f &cam_pos);
     
     void updateIndexBuffers();
+    
+    bool isFrustumCulled(const Frustum &frustum)
+    {
+        return frustum.frustumCull(center_pos, radius_sq);
+    }
 private:
     bool isHardwareHolorized(u8 buf_i) const;
 };

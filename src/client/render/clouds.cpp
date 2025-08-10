@@ -34,14 +34,6 @@ Clouds::Clouds(RenderSystem *rndsys, ResourceCache *cache,
 ):
     m_rndsys(rndsys), m_cache(cache), m_seed(seed)
 {
-    /*m_material.BackfaceCulling = true;
-	m_material.FogEnable = true;
-	m_material.AntiAliasing = video::EAAM_SIMPLE;
-	{
-		auto sid = ssrc->getShaderRaw("cloud_shader", true);
-		m_material.MaterialType = ssrc->getShaderInfo(sid).material;
-    }*/
-
 	m_params = SkyboxDefaults::getCloudDefaults();
 
 	readSettings();
@@ -180,13 +172,6 @@ void Clouds::updateMesh()
         std::array<v3f, 4> positions;
         std::array<v3f, 4> normals;
         std::array<img::color8, 4> colors;
-
-        /*video::S3DVertex v[4] = {
-			video::S3DVertex(0,0,0, 0,0,0, c_top, 0, 1),
-			video::S3DVertex(0,0,0, 0,0,0, c_top, 1, 1),
-			video::S3DVertex(0,0,0, 0,0,0, c_top, 1, 0),
-			video::S3DVertex(0,0,0, 0,0,0, c_top, 0, 0)
-        };*/
 
 		const f32 rx = cloud_size / 2.0f;
 		// if clouds are flat, the top layer should be at the given height
@@ -328,14 +313,9 @@ void Clouds::updateMesh()
 void Clouds::render()
 {
 	if (m_params.density <= 0.0f)
-		return; // no need to do anything
+        return; // no need to do anything
 
-    //video::IVideoDriver* driver = SceneManager->getVideoDriver();
-
-    //if (SceneManager->getSceneNodeRenderPass() != scene::ESNRP_TRANSPARENT)
-    //	return;
-
-	updateMesh();
+	//updateMesh();
 
     auto rnd = m_rndsys->getRenderer();
     rnd->setRenderState(true);
@@ -352,6 +332,7 @@ void Clouds::render()
     ctxt->setShader(m_shader);
 
     m_shader->setUniformIntArray("materialColor", {m_color.R(), m_color.G(), m_color.B(), m_color.A()});
+    rnd->setUniformBlocks(m_shader);
     //m_material.BackfaceCulling = is3D();
     //m_material.ColorParam = m_color.toSColor();
 
