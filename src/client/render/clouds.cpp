@@ -331,33 +331,10 @@ void Clouds::render()
     auto ctxt = rnd->getContext();
     ctxt->setShader(m_shader);
 
-    m_shader->setUniformIntArray("materialColor", {m_color.R(), m_color.G(), m_color.B(), m_color.A()});
+    m_shader->setUniformInt("materialColor", img::colorObjectToU32Number(m_color));
     rnd->setUniformBlocks(m_shader);
-    //m_material.BackfaceCulling = is3D();
-    //m_material.ColorParam = m_color.toSColor();
-
-    //driver->setTransform(video::ETS_WORLD, AbsoluteTransformation);
-    //driver->setMaterial(m_material);
-
-    //const float cloud_full_radius = cloud_size * m_cloud_radius_i;
 
     rnd->enableFog(true);
-	// Get fog parameters for setting them back later
-    /*img::color8 fog_color(0,0,0,0);
-	video::E_FOG_TYPE fog_type = video::EFT_FOG_LINEAR;
-	f32 fog_start = 0;
-	f32 fog_end = 0;
-	f32 fog_density = 0;
-	bool fog_pixelfog = false;
-	bool fog_rangefog = false;
-    driver->getFog(fog_color, fog_type, fog_start, fog_end, fog_density,
-			fog_pixelfog, fog_rangefog);
-
-	// Set our own fog, unless it was already disabled
-    if (fog_start < FOG_RANGE_ALL) {
-		driver->setFog(fog_color, fog_type, cloud_full_radius * 0.5,
-				cloud_full_radius*1.2, fog_density, fog_pixelfog, fog_rangefog);
-    }*/
 
     rnd->draw(m_mesh.get());
     //driver->drawMeshBuffer(m_meshbuffer.get());

@@ -36,8 +36,6 @@ public:
 
 	Frustum(const v2u &viewportSize=v2u(), bool IsOrtogonal=false);
     void recalculatePlanes(const matrix4 &mat);
-
-    bool frustumCull(const v3f &position, f32 radiusSq) const;
 };
 
 Frustum::Frustum(const v2u &viewportSize, bool isOrtogonal)
@@ -99,14 +97,4 @@ void Frustum::recalculatePlanes(const matrix4 &mat)
 		plane.Normal *= len;
 		plane.D *= len;
 	}
-}
-
-bool Frustum::frustumCull(const v3f &position, f32 radiusSq) const
-{
-    for (auto &plane : Planes) {
-    	auto dist = plane.getDistanceTo(position);
-        if (dist*dist > radiusSq)
-            return true;
-    }
-    return false;
 }

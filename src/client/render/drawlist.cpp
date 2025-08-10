@@ -1,0 +1,231 @@
+#include "drawlist.h"
+#include "client/client.h"
+#include "client/mesh/layeredmesh.h"
+#include "client/render/tilelayer.h"
+#include "settings.h"
+#include "util/numeric.h"
+#include "renderer.h"
+#include "rendersystem.h"
+
+static void on_settings_changed(const std::string &name, void *data)
+{
+    static_cast<DistanceSortedDrawList*>(data)->onSettingChanged(name, false);
+}
+
+static const std::string ClientMap_settings[] = {
+    "trilinear_filter",
+    "bilinear_filter",
+    "anisotropic_filter",
+    "transparency_sorting_group_by_buffers",
+    "transparency_sorting_distance",
+    "occlusion_culler",
+    "enable_raytraced_culling",
+};
+
+DistanceSortedDrawList::DistanceSortedDrawList(Client *_client, DrawControl _draw_control)
+    : client(_client), draw_control(_draw_control)
+{
+    for (const auto &name : ClientMap_settings)
+        g_settings->registerChangedCallback(name, on_settings_changed, this);
+    // load all settings at once
+    onSettingChanged("", true);
+
+    drawlist_thread = std::make_unique<DrawListUpdateThread>(this);
+    drawlist_thread->start();
+}
+
+DistanceSortedDrawList::~DistanceSortedDrawList()
+{
+    g_settings->deregisterAllChangedCallbacks(this);
+
+    drawlist_thread->stop();
+    drawlist_thread->wait();
+}
+
+void DistanceSortedDrawList::addLayeredMesh(LayeredMesh *newMesh)
+{
+    MutexAutoLock meshes_lock(meshes_mutex);
+
+    auto find_mesh = std::find(meshes.begin(), meshes.end(), newMesh);
+
+    if (find_mesh != meshes.end())
+        return;
+
+    meshes.push_back(newMesh);
+
+    needs_update_drawlist = true;
+}
+
+void DistanceSortedDrawList::removeLayeredMesh(LayeredMesh *mesh)
+{
+    MutexAutoLock meshes_lock(meshes_mutex);
+
+    auto find_mesh = std::find(meshes.begin(), meshes.end(), mesh);
+
+    if (find_mesh == meshes.end())
+        return;
+
+    meshes.erase(find_mesh);
+
+    needs_update_drawlist = true;
+}
+
+bool DistanceSortedDrawList::LayeredMeshSorter::operator() (const LayeredMesh *m1, const LayeredMesh *m2) const
+{
+    v3f m1_center = m1->getBoundingSphereCenter();
+    v3f m2_center = m2->getBoundingSphereCenter();
+
+    auto dist1 = m1_center.getDistanceFromSQ(camera_pos);
+    auto dist2 = m2_center.getDistanceFromSQ(camera_pos);
+    return dist1 > dist2 || (dist1 == dist2 && m1_center > m2_center);
+}
+
+void DistanceSortedDrawList::updateCamera(v3f pos, v3f dir, f32 fov, v3s16 offset)
+{
+    v3s16 previous_node = floatToInt(last_camera_pos, BS) + last_camera_offset;
+    v3s16 previous_block = getContainerPos(previous_node, MAP_BLOCKSIZE);
+
+    last_camera_pos = pos;
+    last_camera_dir = dir;
+    last_camera_fov = fov;
+    last_camera_offset = offset;
+
+    v3s16 current_node = floatToInt(last_camera_pos, BS) + last_camera_offset;
+    v3s16 current_block = getContainerPos(current_node, MAP_BLOCKSIZE);
+
+    // rebuild the list when camera crosses block boundary
+    if (previous_block != current_block)
+        needs_update_drawlist = true;
+
+    // reorder transparent meshes when camera crosses node boundary
+    //if (previous_node != current_node)
+     //   needs_update_transparent_meshes = true;
+}
+
+void DistanceSortedDrawList::onSettingChanged(std::string_view name, bool all)
+{
+    if (all || name == "trilinear_filter")
+        cache_trilinear_filter  = g_settings->getBool("trilinear_filter");
+    if (all || name == "bilinear_filter")
+        cache_bilinear_filter   = g_settings->getBool("bilinear_filter");
+    if (all || name == "anisotropic_filter")
+        cache_anistropic_filter = g_settings->getBool("anisotropic_filter");
+    if (all || name == "transparency_sorting_distance")
+        cache_transparency_sorting_distance = g_settings->getU16("transparency_sorting_distance");
+}
+
+void DistanceSortedDrawList::updateList()
+{
+    if (!needs_update_drawlist)
+        return;
+
+    needs_update_drawlist = false;
+
+    std::list<LayeredMesh *> new_meshes_list;
+
+    MutexAutoLock meshes_lock(meshes_mutex);
+
+    //MeshGrid mesh_grid = client->getMeshGrid();
+
+    for (auto &mesh : meshes) {
+        v3f center = mesh->getBoundingSphereCenter();
+        f32 radius = mesh->getBoundingSphereRadius();
+
+        // Check that the mesh distance doesn't exceed the wanted range
+        if (!draw_control.range_all &&
+            center.getDistanceFrom(last_camera_pos) >
+                draw_control.wanted_range * BS + radius)
+            continue;
+
+        // Frustum culling
+        // Only do coarse culling here, to account for fast camera movement.
+        // This is needed because this function is not called every frame.
+        f32 frustum_cull_extra_radius = 300.0f;
+        if (mesh->isFrustumCulled(client->getCamera(), frustum_cull_extra_radius)) {
+            continue;
+        }
+
+        // Raytraced occlusion culling - send rays from the camera to the block's corners
+        /*if (!draw_control.range_all && mesh_grid.cell_size < 4 &&
+                isMeshOccluded(mesh, mesh_grid.cell_size)) {
+            continue;
+        }*/
+
+        new_meshes_list.push_back(mesh);
+    }
+
+    meshes_mutex.unlock();
+
+    // Resort the new mesh list
+    mesh_sorter.camera_pos = last_camera_pos;
+    std::sort(new_meshes_list.begin(), new_meshes_list.end(), mesh_sorter);
+
+    MutexAutoLock drawlist_lock(drawlist_mutex);
+
+    f32 sorting_distance = cache_transparency_sorting_distance * BS;
+
+    layers.clear();
+
+    // At first add solid layers, then transparent
+    for (auto &mesh : new_meshes_list) {
+        auto all_layers = mesh->getAllLayers();
+
+        for (auto &layer : all_layers) {
+            if (!(layer.first->material_flags & MATERIAL_FLAG_TRANSPARENT))
+                layers.emplace_back(layer, mesh);
+        }
+
+        v3f center = mesh->getBoundingSphereCenter();
+        f32 radius = mesh->getBoundingSphereRadius();
+        f32 distance_sq = last_camera_pos.getDistanceFromSQ(center);
+
+        if (distance_sq <= std::pow(sorting_distance + radius, 2.0f)) {
+            mesh->transparentSort(last_camera_pos);
+            mesh->updateIndexBuffers();
+
+            auto partial_layers = mesh->getPartialLayers();
+
+            for (auto &partial_layer : partial_layers)
+                layers.emplace_back(partial_layer, mesh);
+        }
+    }
+}
+
+void DistanceSortedDrawList::render()
+{
+    auto rndsys = client->getRenderSystem();
+    auto rnd = rndsys->getRenderer();
+    auto ctxt = rnd->getContext();
+
+    if (draw_control.show_wireframe)
+        ctxt->setPolygonMode(render::CM_FRONT_AND_BACK, render::PM_LINE);
+
+    for (auto &l : layers) {
+        l.first.first->setupRenderState(rndsys);
+
+        matrix4 t;
+        v3f center = l.second->getBoundingSphereCenter();
+        t.setTranslation(center - intToFloat(last_camera_offset, BS));
+        rnd->setTransformMatrix(TMatrix::World, t);
+
+        auto lp = l.first.second;
+
+        rnd->draw(l.second->getBuffer(lp.buffer_id), render::PT_TRIANGLES, lp.offset, lp.count);
+    }
+}
+
+void *DrawListUpdateThread::run()
+{
+    BEGIN_DEBUG_EXCEPTION_HANDLER
+
+    while (!stopRequested()) {
+        drawlist->updateList();
+        sleep_ms(50);
+    }
+
+    END_DEBUG_EXCEPTION_HANDLER
+}
+
+bool DistanceSortedDrawList::isMeshOccluded(LayeredMesh *mesh, u16 mesh_size)
+{
+}

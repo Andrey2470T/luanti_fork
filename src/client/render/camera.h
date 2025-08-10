@@ -152,4 +152,6 @@ public:
 	void updatePlanes();
 
     void updateMatrices();
+
+    bool frustumCull(const v3f &position, f32 radiusSq) const;
 };

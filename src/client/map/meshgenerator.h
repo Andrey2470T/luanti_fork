@@ -41,12 +41,6 @@ private:
         v3f scale;
 	} cur_node;
 
-// lighting
-    //void getSmoothLightFrame();
-    //LightInfo blendLight(const v3f &vertex_pos);
-    //img::color8 blendLightColor(const v3f &vertex_pos);
-    //img::color8 blendLightColor(const v3f &vertex_pos, const v3f &vertex_normal);
-
     void useTile(TileSpec *tile_ret, int index = 0, u8 set_flags = 0,
 		u8 reset_flags = 0, bool special = false);
 	void getTile(int index, TileSpec *tile_ret);

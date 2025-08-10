@@ -48,3 +48,13 @@ void Camera::updateMatrices()
     recalculateViewArea();
     updatePlanes();
 }
+
+bool Camera::frustumCull(const v3f &position, f32 radiusSq) const
+{
+    for (auto &plane : m_frustum.Planes) {
+        auto dist = plane.getDistanceTo(position);
+        if (dist*dist > radiusSq)
+            return true;
+    }
+    return false;
+}

@@ -27,6 +27,17 @@ LayeredMesh::LayeredMesh(const v3f &center, render::VertexTypeDescriptor basicVT
     : center_pos(center), basicVertexType(basicVType)
 {}
 
+std::vector<MeshLayer> LayeredMesh::getAllLayers() const
+{
+    std::vector<MeshLayer> all_layers;
+
+    for (auto &buf_layers : layers)
+        for (auto &layer : buf_layers)
+            all_layers.push_back(layer);
+
+    return all_layers;
+}
+
 MeshLayer &LayeredMesh::findLayer(std::shared_ptr<TileLayer> layer, u32 vertexCount, u32 indexCount)
 {
     for (u8 i = 0; i < getBuffersCount(); i++) {
@@ -115,6 +126,8 @@ void LayeredMesh::transparentSort(const v3f &cam_pos)
 
 void LayeredMesh::updateIndexBuffers()
 {
+    if (transparent_triangles.empty()) return;
+
 	std::vector<std::vector<u32>> bufs_indices(buffers.size());
 	
 	// Firstly render solid layers

@@ -64,6 +64,7 @@ set(render_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/render/camera.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/clouds.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/datatexture.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/render/drawlist.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/loadscreen.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/particles.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/rectpack2d_atlas.cpp

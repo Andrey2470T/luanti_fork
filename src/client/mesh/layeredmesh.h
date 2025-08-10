@@ -3,15 +3,16 @@
 #include <memory>
 #include <BasicIncludes.h>
 #include <Render/VertexTypeDescriptor.h>
-#include "client/render/frustum.h"
+#include "client/render/camera.h"
 
 #define HAS_HW(layer) \
     layer->material_flags & MATERIAL_FLAG_HARDWARE_COLORIZED
 
 class MeshBuffer;
 struct TileLayer;
-struct Frustum;
+class Camera;
 
+// Layer of some mesh buffer
 struct LayeredMeshPart
 {
 	u8 buffer_id;
@@ -24,6 +25,7 @@ struct LayeredMeshPart
     std::vector<u32> indices;
 };
 
+// Triangle of some mesh buffer consisting from three indices
 struct LayeredMeshTriangle
 {
     MeshBuffer *buf_ref;
@@ -36,6 +38,9 @@ struct LayeredMeshTriangle
 
 typedef std::pair<std::shared_ptr<TileLayer>, LayeredMeshPart> MeshLayer;
 
+// Mesh buffers each divided into layers with unique tile layer
+// Supports transparent auto sorting and frustum culling
+// This class used internally in MapBlockMesh, GenericCAO, SelectionMesh and CrackOverlay
 class LayeredMesh
 {
     std::vector<std::unique_ptr<MeshBuffer>> buffers;
@@ -112,9 +117,9 @@ public:
     
     void updateIndexBuffers();
     
-    bool isFrustumCulled(const Frustum &frustum)
+    bool isFrustumCulled(const Camera *camera, f32 extra_radius)
     {
-        return frustum.frustumCull(center_pos, radius_sq);
+        return camera->frustumCull(center_pos, radius_sq + extra_radius*extra_radius);
     }
 private:
     bool isHardwareHolorized(u8 buf_i) const;
