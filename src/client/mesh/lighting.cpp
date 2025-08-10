@@ -205,6 +205,107 @@ u16 getSmoothLightTransparent(const v3s16 &p, const v3s16 &corner, MeshMakeData 
     return getSmoothLightCombined(p, dirs, data);
 }
 
+// Maps light index to corner direction
+const v3s16 light_dirs[8] = {
+    v3s16(-1, -1, -1),
+    v3s16(-1, -1,  1),
+    v3s16(-1,  1, -1),
+    v3s16(-1,  1,  1),
+    v3s16( 1, -1, -1),
+    v3s16( 1, -1,  1),
+    v3s16( 1,  1, -1),
+    v3s16( 1,  1,  1),
+};
+
+// Maps cuboid face and vertex indices to the corresponding light index
+const u8 light_indices[6][4] = {
+    {3, 7, 6, 2},
+    {0, 4, 5, 1},
+    {6, 7, 5, 4},
+    {3, 2, 0, 1},
+    {7, 3, 1, 5},
+    {2, 6, 4, 0},
+};
+
+// Gets the base lighting values for a node
+void getSmoothLightFrame(LightFrame &lframe, const v3s16 &p, MeshMakeData *data)
+{
+    for (int k = 0; k < 8; ++k)
+        lframe.sunlight[k] = false;
+
+    std::array<LightPair, 8> light_corners;
+    for (int k = 0; k < 8; ++k)
+        light_corners[k] = LightPair(getSmoothLightTransparent(p, light_dirs[k], data));
+
+    for (int face = 0; face < 6; ++face) {
+        for (int k = 0; k < 4; k++) {
+            u8 index = light_indices[face][k];
+            auto lp = light_corners[index];
+
+            lframe.lightsDay[face][k] = lp.lightDay;
+            lframe.lightsNight[face][k] = lp.lightNight;
+
+            // If there is direct sunlight and no ambient occlusion at some corner,
+            // mark the vertical edge (top and bottom corners) containing it.
+            if (lp.lightDay == 255) {
+                lframe.sunlight[k] = true;
+                lframe.sunlight[k ^ 2] = true;
+            }
+        }
+    }
+}
+
+// Distance of light extrapolation (for oversized nodes)
+// After this distance, it gives up and considers light level constant
+#define SMOOTH_LIGHTING_OVERSIZE 1.0
+
+// Calculates vertex light level
+//  vertex_pos - vertex position in the node (coordinates are clamped to [0.0, 1.0] or so)
+LightInfo blendLight(const v3f &vertex_pos, LightFrame &lframe)
+{
+    // Light levels at (logical) node corners are known. Here,
+    // trilinear interpolation is used to calculate light level
+    // at a given point in the node.
+    f32 x = std::clamp(vertex_pos.X / BS + 0.5, 0.0 - SMOOTH_LIGHTING_OVERSIZE, 1.0 + SMOOTH_LIGHTING_OVERSIZE);
+    f32 y = std::clamp(vertex_pos.Y / BS + 0.5, 0.0 - SMOOTH_LIGHTING_OVERSIZE, 1.0 + SMOOTH_LIGHTING_OVERSIZE);
+    f32 z = std::clamp(vertex_pos.Z / BS + 0.5, 0.0 - SMOOTH_LIGHTING_OVERSIZE, 1.0 + SMOOTH_LIGHTING_OVERSIZE);
+    f32 lightDay = 0.0; // daylight
+    f32 lightNight = 0.0;
+    f32 lightBoosted = 0.0; // daylight + direct sunlight, if any
+
+    std::array<u8, 8> lights_days;
+    std::array<u8, 8> lights_nights;
+
+    for (int face = 0; face < 6; ++face) {
+        for (int k = 0; k < 4; k++) {
+            u8 index = light_indices[face][k];
+
+            lights_days[index] = std::max(lights_days[index], lframe.lightsDay[face][k]);
+            lights_nights[index] = std::max(lights_nights[index], lframe.lightsNight[face][k]);
+        }
+    }
+    for (int k = 0; k < 8; ++k) {
+        f32 dx = (k & 4) ? x : 1 - x;
+        f32 dy = (k & 2) ? y : 1 - y;
+        f32 dz = (k & 1) ? z : 1 - z;
+        // Use direct sunlight (255), if any; use daylight otherwise.
+        f32 light_boosted = lframe.sunlight[k] ? 255 : lights_days[k];
+        lightDay += dx * dy * dz * lights_days[k];
+        lightNight += dx * dy * dz * lights_nights[k];
+        lightBoosted += dx * dy * dz * light_boosted;
+    }
+    return LightInfo{lightDay, lightNight, lightBoosted};
+}
+
+// Calculates vertex color to be used in mapblock mesh
+//  vertex_pos - vertex position in the node (coordinates are clamped to [0.0, 1.0] or so)
+img::color8 blendLightColor(const v3f &vertex_pos, const v3f &vertex_normal,
+    LightFrame &lframe, u8 light_source)
+{
+    LightInfo light = blendLight(vertex_pos, lframe);
+    return encode_light(light.getPair(MYMAX(0.0f, vertex_normal.Y)), light_source);
+}
+
 img::color8 encode_light(u16 light, u8 emissive_light)
 {
     // Get components

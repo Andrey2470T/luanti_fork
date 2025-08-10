@@ -3,6 +3,8 @@
 #include "client/mesh/meshbuffer.h"
 #include "Utils/Matrix4.h"
 
+struct LightFrame;
+
 enum Batcher3DVertexType
 {
     B3DVT_SVT = 0,
@@ -18,6 +20,13 @@ public:
     static Batcher3DVertexType vType;
     static matrix4 curPosTransform;
     static matrix4 curUVTransform;
+
+    // lighting params
+    static bool applyFaceShading;
+    static bool smoothLighting;
+    static img::color8 curLightColor;
+    static LightFrame curLightFrame;
+    static u8 curLightSource;
 
     static void appendVertex(MeshBuffer *buf, v3f pos,
         const img::color8 &color=img::color8(), const v3f &normal=v3f(), v2f uv=v2f());
@@ -47,13 +56,13 @@ public:
     static void appendFace(MeshBuffer *buf, const rectf &positions, const v3f &rotation,
         const std::array<img::color8, 4> &colors, const rectf &uvs={v2f(0.0f, 1.0f), v2f(1.0f, 0.0f)},
          std::optional<std::array<v3f, 4>> normals=std::nullopt);
-    static void appendUnitFace(MeshBuffer *buf, const std::array<img::color8, 4> &colors, std::optional<std::array<v3f, 4>> normals=std::nullopt)
+    static void appendUnitFace(MeshBuffer *buf, const std::array<img::color8, 4> &colors)
     {
-        appendFace(buf, {v3f(-1.0f, 1.0f, 0.0f), v3f(1.0f, 1.0f, 0.0f), v3f(1.0f, -1.0f, 0.0f), v3f(-1.0f, -1.0f, 0.0f)}, colors, normals);
+        appendFace(buf, {v3f(-1.0f, 1.0f, 0.0f), v3f(1.0f, 1.0f, 0.0f), v3f(1.0f, -1.0f, 0.0f), v3f(-1.0f, -1.0f, 0.0f)}, colors);
     }
 
     static void appendBox(MeshBuffer *buf, const aabbf &box, const std::array<img::color8, 8> &colors,
-        const std::array<rectf, 6> *uvs=nullptr);
+        const std::array<rectf, 6> *uvs=nullptr, u8 mask=0xff);
     static void appendUnitBox(MeshBuffer *buf, const std::array<img::color8, 8> &colors)
     {
         appendBox(buf, {v3f(-1.0f, -1.0f, -1.0f), v3f(1.0f, 1.0f, 1.0f)}, colors);

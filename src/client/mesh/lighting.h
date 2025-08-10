@@ -13,6 +13,50 @@ u16 getFaceLight(MapNode n, MapNode n2, const NodeDefManager *ndef);
 u16 getSmoothLightSolid(const v3s16 &p, const v3s16 &face_dir, const v3s16 &corner, MeshMakeData *data);
 u16 getSmoothLightTransparent(const v3s16 &p, const v3s16 &corner, MeshMakeData *data);
 
+struct LightPair {
+    u8 lightDay;
+    u8 lightNight;
+
+    LightPair() = default;
+    explicit LightPair(u16 value) : lightDay(value & 0xff), lightNight(value >> 8) {}
+    LightPair(u8 valueA, u8 valueB) : lightDay(valueA), lightNight(valueB) {}
+    LightPair(float valueA, float valueB) :
+        lightDay(std::clamp(round32(valueA), 0, 255)),
+        lightNight(std::clamp(round32(valueB), 0, 255)) {}
+    operator u16() const { return lightDay | lightNight << 8; }
+};
+
+struct LightInfo {
+    float light_day;
+    float light_night;
+    float light_boosted;
+
+    LightPair getPair(float sunlight_boost = 0.0) const
+    {
+        return LightPair(
+            (1 - sunlight_boost) * light_day
+                + sunlight_boost * light_boosted,
+            light_night);
+    }
+};
+
+// Structure saving light values for each vertex at each cuboid face
+struct LightFrame {
+    u8 lightsDay[6][4];
+    u8 lightsNight[6][4];
+    //f32 lightsDay[8];
+    //f32 lightsNight[8];
+    bool sunlight[8];
+};
+
+extern const v3s16 light_dirs[8];
+extern const u8 light_indices[6][4];
+
+void getSmoothLightFrame(LightFrame &lframe, const v3s16 &p, MeshMakeData *data);
+LightInfo blendLight(const v3f &vertex_pos, LightFrame &lframe);
+img::color8 blendLightColor(const v3f &vertex_pos, const v3f &vertex_normal,
+    LightFrame &lframe, u8 light_source);
+
 /*!
  * Encodes light of a node.
  * The result is not the final color, but a

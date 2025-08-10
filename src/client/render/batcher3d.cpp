@@ -1,6 +1,12 @@
 #include "batcher3d.h"
 #include "client/mesh/defaultVertexTypes.h"
 #include "Utils/Plane3D.h"
+#include "client/mesh/lighting.h"
+#include "client/mesh/meshoperations.h"
+
+bool Batcher3D::applyFaceShading = false;
+bool Batcher3D::smoothLighting = false;
+img::color8 Batcher3D::curLightColor = img::white;
 
 void Batcher3D::appendVertex(MeshBuffer *buf, v3f pos,
     const img::color8 &color, const v3f &normal, v2f uv)
@@ -10,6 +16,15 @@ void Batcher3D::appendVertex(MeshBuffer *buf, v3f pos,
     v3f uv3(uv.X, uv.Y, 0.0f);
     curUVTransform.transformVect(uv3);
     uv = v2f(uv3.X, uv3.Y);
+
+    img::color8 newColor = color;
+    if (smoothLighting)
+        newColor = blendLightColor(pos, normal, curLightFrame, curLightSource);
+    else
+        newColor *= curLightColor;
+
+    if (applyFaceShading)
+        MeshOperations::applyFacesShading(newColor, normal);
 
     switch(vType) {
     case B3DVT_SVT:
@@ -150,7 +165,7 @@ void Batcher3D::appendFace(MeshBuffer *buf, const rectf &positions, const v3f &r
 }
 
 void Batcher3D::appendBox(MeshBuffer *buf, const aabbf &box, const std::array<img::color8, 8> &colors,
-    const std::array<rectf, 6> *uvs)
+    const std::array<rectf, 6> *uvs, u8 mask)
 {
     // Auto calculation of uvs
     auto calc_uv = [] (u32 face_w, u32 face_h)
@@ -178,65 +193,77 @@ void Batcher3D::appendBox(MeshBuffer *buf, const aabbf &box, const std::array<im
     v3f box_size = box.getExtent();
 
     // Up
-    rectf up_uv = uvs ? (*uvs)[0] : calc_uv(box_size.X, box_size.Z);
-    appendFace(
-        buf,
-        {
-            v3f(box.MinEdge.X, box.MaxEdge.Y, box.MaxEdge.Z), box.MaxEdge,
-            v3f(box.MaxEdge.X, box.MaxEdge.Y, box.MinEdge.Z), v3f(box.MinEdge.X, box.MaxEdge.Y, box.MinEdge.Z)
-        },
-        {colors[5], colors[6], colors[7], colors[4]}, up_uv
-    );
+    if (mask & (1 << 0)) {
+        rectf up_uv = uvs ? (*uvs)[0] : calc_uv(box_size.X, box_size.Z);
+        appendFace(
+            buf,
+            {
+                v3f(box.MinEdge.X, box.MaxEdge.Y, box.MaxEdge.Z), box.MaxEdge,
+                v3f(box.MaxEdge.X, box.MaxEdge.Y, box.MinEdge.Z), v3f(box.MinEdge.X, box.MaxEdge.Y, box.MinEdge.Z)
+            },
+            {colors[5], colors[6], colors[7], colors[4]}, up_uv
+        );
+    }
     // Down
-    rectf down_uv = uvs ? (*uvs)[1] : calc_uv(box_size.X, box_size.Z);
-    appendFace(
-        buf,
-        {
-            box.MinEdge, v3f(box.MaxEdge.X, box.MinEdge.Y, box.MinEdge.Z),
-            v3f(box.MaxEdge.X, box.MinEdge.Y, box.MaxEdge.Z), v3f(box.MinEdge.X, box.MinEdge.Y, box.MaxEdge.Z)
-        },
-        {colors[0], colors[3], colors[2], colors[1]}, down_uv
-    );
+    if (mask & (1 << 1)) {
+        rectf down_uv = uvs ? (*uvs)[1] : calc_uv(box_size.X, box_size.Z);
+        appendFace(
+            buf,
+            {
+                box.MinEdge, v3f(box.MaxEdge.X, box.MinEdge.Y, box.MinEdge.Z),
+                v3f(box.MaxEdge.X, box.MinEdge.Y, box.MaxEdge.Z), v3f(box.MinEdge.X, box.MinEdge.Y, box.MaxEdge.Z)
+            },
+            {colors[0], colors[3], colors[2], colors[1]}, down_uv
+        );
+    }
     // Right
-    rectf right_uv = uvs ? (*uvs)[2] : calc_uv(box_size.Z, box_size.Y);
-    appendFace(
-        buf,
-        {
-            v3f(box.MaxEdge.X, box.MaxEdge.Y, box.MinEdge.Z), box.MaxEdge,
-            v3f(box.MaxEdge.X, box.MinEdge.Y, box.MaxEdge.Z), v3f(box.MaxEdge.X, box.MinEdge.Y, box.MinEdge.Z)
-        },
-        {colors[7], colors[6], colors[2], colors[3]}, right_uv
-    );
+    if (mask & (1 << 2)) {
+        rectf right_uv = uvs ? (*uvs)[2] : calc_uv(box_size.Z, box_size.Y);
+        appendFace(
+            buf,
+            {
+                v3f(box.MaxEdge.X, box.MaxEdge.Y, box.MinEdge.Z), box.MaxEdge,
+                v3f(box.MaxEdge.X, box.MinEdge.Y, box.MaxEdge.Z), v3f(box.MaxEdge.X, box.MinEdge.Y, box.MinEdge.Z)
+            },
+            {colors[7], colors[6], colors[2], colors[3]}, right_uv
+        );
+    }
     // Left
-    rectf left_uv = uvs ? (*uvs)[3] : calc_uv(box_size.Z, box_size.Y);
-    appendFace(
-        buf,
-        {
-            v3f(box.MinEdge.X, box.MaxEdge.Y, box.MaxEdge.Z), v3f(box.MinEdge.X, box.MaxEdge.Y, box.MinEdge.Z),
-            box.MinEdge, v3f(box.MinEdge.X, box.MinEdge.Y, box.MaxEdge.Z)
-        },
-        {colors[5], colors[4], colors[0], colors[1]}, left_uv
-    );
+    if (mask & (1 << 3)) {
+        rectf left_uv = uvs ? (*uvs)[3] : calc_uv(box_size.Z, box_size.Y);
+        appendFace(
+            buf,
+            {
+                v3f(box.MinEdge.X, box.MaxEdge.Y, box.MaxEdge.Z), v3f(box.MinEdge.X, box.MaxEdge.Y, box.MinEdge.Z),
+                box.MinEdge, v3f(box.MinEdge.X, box.MinEdge.Y, box.MaxEdge.Z)
+            },
+            {colors[5], colors[4], colors[0], colors[1]}, left_uv
+        );
+    }
     // Back
-    rectf back_uv = uvs ? (*uvs)[4] : calc_uv(box_size.X, box_size.Y);
-    appendFace(
-        buf,
-        {
-            box.MaxEdge, v3f(box.MinEdge.X, box.MaxEdge.Y, box.MaxEdge.Z),
-            v3f(box.MinEdge.X, box.MinEdge.Y, box.MaxEdge.Z), v3f(box.MaxEdge.X, box.MinEdge.Y, box.MaxEdge.Z)
-        },
-        {colors[6], colors[5], colors[1], colors[2]}, back_uv
-    );
+    if (mask & (1 << 4)) {
+        rectf back_uv = uvs ? (*uvs)[4] : calc_uv(box_size.X, box_size.Y);
+        appendFace(
+            buf,
+            {
+                box.MaxEdge, v3f(box.MinEdge.X, box.MaxEdge.Y, box.MaxEdge.Z),
+                v3f(box.MinEdge.X, box.MinEdge.Y, box.MaxEdge.Z), v3f(box.MaxEdge.X, box.MinEdge.Y, box.MaxEdge.Z)
+            },
+            {colors[6], colors[5], colors[1], colors[2]}, back_uv
+        );
+    }
     // Front
-    rectf front_uv = uvs ? (*uvs)[5] : calc_uv(box_size.X, box_size.Y);
-    appendFace(
-        buf,
-        {
-            v3f(box.MinEdge.X, box.MaxEdge.Y, box.MinEdge.Z), v3f(box.MaxEdge.X, box.MaxEdge.Y, box.MinEdge.Z),
-            v3f(box.MaxEdge.X, box.MinEdge.Y, box.MinEdge.Z), box.MinEdge
-        },
-        {colors[4], colors[7], colors[3], colors[0]}, front_uv
-    );
+    if (mask & (1 << 5)) {
+        rectf front_uv = uvs ? (*uvs)[5] : calc_uv(box_size.X, box_size.Y);
+        appendFace(
+            buf,
+            {
+                v3f(box.MinEdge.X, box.MaxEdge.Y, box.MinEdge.Z), v3f(box.MaxEdge.X, box.MaxEdge.Y, box.MinEdge.Z),
+                v3f(box.MaxEdge.X, box.MinEdge.Y, box.MinEdge.Z), box.MinEdge
+            },
+            {colors[4], colors[7], colors[3], colors[0]}, front_uv
+        );
+    }
 }
 
 void Batcher3D::appendLineBox(MeshBuffer *buf, const aabbf &box, const img::color8 &color)

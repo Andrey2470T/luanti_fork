@@ -4,46 +4,11 @@
 
 #pragma once
 
+#include "client/mesh/lighting.h"
 #include "nodedef.h"
-#include "client/mesh/meshbuffer.h"
-#include "client/mesh/layeredmesh.h"
-#include "client/render/batcher3d.h"
 
-struct MeshMakeData;
+class MeshMakeData;
 class LayeredMesh;
-
-struct LightPair {
-	u8 lightDay;
-	u8 lightNight;
-
-	LightPair() = default;
-	explicit LightPair(u16 value) : lightDay(value & 0xff), lightNight(value >> 8) {}
-	LightPair(u8 valueA, u8 valueB) : lightDay(valueA), lightNight(valueB) {}
-	LightPair(float valueA, float valueB) :
-        lightDay(std::clamp(round32(valueA), 0, 255)),
-        lightNight(std::clamp(round32(valueB), 0, 255)) {}
-	operator u16() const { return lightDay | lightNight << 8; }
-};
-
-struct LightInfo {
-	float light_day;
-	float light_night;
-	float light_boosted;
-
-	LightPair getPair(float sunlight_boost = 0.0) const
-	{
-		return LightPair(
-			(1 - sunlight_boost) * light_day
-			+ sunlight_boost * light_boosted,
-			light_night);
-	}
-};
-
-struct LightFrame {
-	f32 lightsDay[8];
-	f32 lightsNight[8];
-	bool sunlight[8];
-};
 
 enum class QuadDiagonal {
 	Diag02,
@@ -71,30 +36,35 @@ private:
 		const ContentFeatures *f;
 		LightFrame lframe; // smooth lighting
         img::color8 lcolor; // unsmooth lighting
+        v3f translation;
+        v3f rotation; // in degrees
+        v3f scale;
 	} cur_node;
 
 // lighting
-	void getSmoothLightFrame();
-	LightInfo blendLight(const v3f &vertex_pos);
-    img::color8 blendLightColor(const v3f &vertex_pos);
-    img::color8 blendLightColor(const v3f &vertex_pos, const v3f &vertex_normal);
+    //void getSmoothLightFrame();
+    //LightInfo blendLight(const v3f &vertex_pos);
+    //img::color8 blendLightColor(const v3f &vertex_pos);
+    //img::color8 blendLightColor(const v3f &vertex_pos, const v3f &vertex_normal);
 
     void useTile(TileSpec *tile_ret, int index = 0, u8 set_flags = 0,
 		u8 reset_flags = 0, bool special = false);
 	void getTile(int index, TileSpec *tile_ret);
 	void getTile(v3s16 direction, TileSpec *tile_ret);
-    void getSpecialTile(int index, TileSpec *tile_ret);//, bool apply_crack = false);
+    void getSpecialTile(int index, TileSpec *tile_ret);
 
+    void prepareDrawing(const TileSpec &tile);
 // face drawing
-    void drawQuad(const TileSpec &tile, const std::array<v3f, 4> &coords, const v3s16 &normal = v3s16(0, 0, 0));
+    void drawQuad(const TileSpec &tile, const std::array<v3f, 4> &coords,
+        const std::array<v3f, 4> &normals={}, const rectf *uv = nullptr);
 
 // cuboid drawing!
-	template <typename Fn>
-    void drawCuboid(const aabbf &box, const TileSpec *tiles, int tilecount,
-			const f32 *txc, u8 mask, Fn &&face_lighter);
-    void generateCuboidTextureCoords(const aabbf &box, f32 *coords);
-    void drawAutoLightedCuboid(aabbf box, const TileSpec &tile, f32 const *txc	= nullptr, u8 mask = 0);
-    void drawAutoLightedCuboid(aabbf box, const TileSpec *tiles, int tile_count, f32 const *txc = nullptr, u8 mask = 0);
+    void drawCuboid(const aabbf &box, const std::array<TileSpec, 6> &tiles, int tilecount, u8 mask=0xff,
+        const std::array<rectf, 6> *uvs=nullptr);
+    //void generateCuboidTextureCoords(const aabbf &box, f32 *coords);
+    void drawAutoLightedCuboid(aabbf box, const TileSpec &tile, const std::array<rectf, 6> *uvs	= nullptr, u8 mask = 0);
+    void drawAutoLightedCuboid(aabbf box, const std::array<TileSpec, 6> &tiles, int tile_count,
+        const std::array<rectf, 6> *uvs = nullptr, u8 mask = 0);
     u8 getNodeBoxMask(aabbf box, u8 solid_neighbors, u8 sametype_neighbors) const;
 
 // liquid-specific
