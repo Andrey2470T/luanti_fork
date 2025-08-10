@@ -177,121 +177,6 @@ void MapblockMeshGenerator::drawCuboid(const aabbf &box, const std::array<TileSp
     applyTileRotation(buf1, tiles, tilecount, vcount);
 }
 
-/*static std::array<video::S3DVertex, 24> setupCuboidVertices(const aabbf &box,
-		const f32 *txc, const TileSpec *tiles, int tilecount)
-{
-	v3f min = box.MinEdge;
-	v3f max = box.MaxEdge;
-
-	std::array<video::S3DVertex, 24> vertices = {{
-		// top
-		video::S3DVertex(min.X, max.Y, max.Z, 0, 1, 0, {}, txc[0], txc[1]),
-		video::S3DVertex(max.X, max.Y, max.Z, 0, 1, 0, {}, txc[2], txc[1]),
-		video::S3DVertex(max.X, max.Y, min.Z, 0, 1, 0, {}, txc[2], txc[3]),
-		video::S3DVertex(min.X, max.Y, min.Z, 0, 1, 0, {}, txc[0], txc[3]),
-		// bottom
-		video::S3DVertex(min.X, min.Y, min.Z, 0, -1, 0, {}, txc[4], txc[5]),
-		video::S3DVertex(max.X, min.Y, min.Z, 0, -1, 0, {}, txc[6], txc[5]),
-		video::S3DVertex(max.X, min.Y, max.Z, 0, -1, 0, {}, txc[6], txc[7]),
-		video::S3DVertex(min.X, min.Y, max.Z, 0, -1, 0, {}, txc[4], txc[7]),
-		// right
-		video::S3DVertex(max.X, max.Y, min.Z, 1, 0, 0, {}, txc[ 8], txc[9]),
-		video::S3DVertex(max.X, max.Y, max.Z, 1, 0, 0, {}, txc[10], txc[9]),
-		video::S3DVertex(max.X, min.Y, max.Z, 1, 0, 0, {}, txc[10], txc[11]),
-		video::S3DVertex(max.X, min.Y, min.Z, 1, 0, 0, {}, txc[ 8], txc[11]),
-		// left
-		video::S3DVertex(min.X, max.Y, max.Z, -1, 0, 0, {}, txc[12], txc[13]),
-		video::S3DVertex(min.X, max.Y, min.Z, -1, 0, 0, {}, txc[14], txc[13]),
-		video::S3DVertex(min.X, min.Y, min.Z, -1, 0, 0, {}, txc[14], txc[15]),
-		video::S3DVertex(min.X, min.Y, max.Z, -1, 0, 0, {}, txc[12], txc[15]),
-		// back
-		video::S3DVertex(max.X, max.Y, max.Z, 0, 0, 1, {}, txc[16], txc[17]),
-		video::S3DVertex(min.X, max.Y, max.Z, 0, 0, 1, {}, txc[18], txc[17]),
-		video::S3DVertex(min.X, min.Y, max.Z, 0, 0, 1, {}, txc[18], txc[19]),
-		video::S3DVertex(max.X, min.Y, max.Z, 0, 0, 1, {}, txc[16], txc[19]),
-		// front
-		video::S3DVertex(min.X, max.Y, min.Z, 0, 0, -1, {}, txc[20], txc[21]),
-		video::S3DVertex(max.X, max.Y, min.Z, 0, 0, -1, {}, txc[22], txc[21]),
-		video::S3DVertex(max.X, min.Y, min.Z, 0, 0, -1, {}, txc[22], txc[23]),
-		video::S3DVertex(min.X, min.Y, min.Z, 0, 0, -1, {}, txc[20], txc[23]),
-	}};
-
-	for (int face = 0; face < 6; face++) {
-		int tileindex = MYMIN(face, tilecount - 1);
-		const TileSpec &tile = tiles[tileindex];
-		for (int j = 0; j < 4; j++) {
-			video::S3DVertex &vertex = vertices[face * 4 + j];
-			v2f &tcoords = vertex.TCoords;
-			switch (tile.rotation) {
-			case TileRotation::None:
-				break;
-			case TileRotation::R90:
-				tcoords.set(-tcoords.Y, tcoords.X);
-				break;
-			case TileRotation::R180:
-				tcoords.set(-tcoords.X, -tcoords.Y);
-				break;
-			case TileRotation::R270:
-				tcoords.set(tcoords.Y, -tcoords.X);
-				break;
-			}
-		}
-	}
-
-	return vertices;
-}*/
-
-// Create a cuboid with custom lighting.
-//  tiles     - the tiles (materials) to use (for all 6 faces)
-//  tilecount - number of entries in tiles, 1<=tilecount<=6
-//  txc       - texture coordinates - this is a list of texture coordinates
-//              for the opposite corners of each face - therefore, there
-//              should be (2+2)*6=24 values in the list. The order of
-//              the faces in the list is up-down-right-left-back-front
-//              (compatible with ContentFeatures).
-//  mask      - a bit mask that suppresses drawing of tiles.
-//              tile i will not be drawn if mask & (1 << i) is 1
-//  face_lighter(int face, video::S3DVertex vertices[4]) -> QuadDiagonal -
-//              a callback that will be called for each face drawn to setup vertex colors,
-//              and to choose diagonal to split the quad at.
-/*template <typename Fn>
-void MapblockMeshGenerator::drawCuboid(const aabbf &box,
-		const TileSpec *tiles, int tilecount, const f32 *txc, u8 mask, Fn &&face_lighter)
-{
-	assert(tilecount >= 1 && tilecount <= 6); // pre-condition
-
-	auto vertices = setupCuboidVertices(box, txc, tiles, tilecount);
-
-	for (int k = 0; k < 6; ++k) {
-		if (mask & (1 << k))
-			continue;
-		QuadDiagonal diagonal = face_lighter(k, &vertices[4 * k]);
-		const u16 *indices = diagonal == QuadDiagonal::Diag13 ? quad_indices_13 : quad_indices_02;
-		int tileindex = MYMIN(k, tilecount - 1);
-		collector->append(tiles[tileindex], &vertices[4 * k], 4, indices, 6);
-	}
-}*/
-
-/*void MapblockMeshGenerator::generateCuboidTextureCoords(const aabbf &box, f32 *coords)
-{
-	f32 tx1 = (box.MinEdge.X / BS) + 0.5;
-	f32 ty1 = (box.MinEdge.Y / BS) + 0.5;
-	f32 tz1 = (box.MinEdge.Z / BS) + 0.5;
-	f32 tx2 = (box.MaxEdge.X / BS) + 0.5;
-	f32 ty2 = (box.MaxEdge.Y / BS) + 0.5;
-	f32 tz2 = (box.MaxEdge.Z / BS) + 0.5;
-	f32 txc[24] = {
-		    tx1, 1 - tz2,     tx2, 1 - tz1, // up
-		    tx1,     tz1,     tx2,     tz2, // down
-		    tz1, 1 - ty2,     tz2, 1 - ty1, // right
-		1 - tz2, 1 - ty2, 1 - tz1, 1 - ty1, // left
-		1 - tx2, 1 - ty2, 1 - tx1, 1 - ty1, // back
-		    tx1, 1 - ty2,     tx2, 1 - ty1, // front
-	};
-	for (int i = 0; i != 24; ++i)
-		coords[i] = txc[i];
-}*/
-
 static inline int lightDiff(LightPair a, LightPair b)
 {
 	return abs(a.lightDay - b.lightDay) + abs(a.lightNight - b.lightNight);
@@ -308,21 +193,14 @@ void MapblockMeshGenerator::drawAutoLightedCuboid(aabbf box,
         const std::array<rectf, 6> *uvs, u8 mask)
 {
 	bool scale = std::fabs(cur_node.f->visual_scale - 1.0f) > 1e-3f;
-    //f32 texture_coord_buf[24];
     f32 dx1 = box.MinEdge.X;
 	f32 dy1 = box.MinEdge.Y;
 	f32 dz1 = box.MinEdge.Z;
 	f32 dx2 = box.MaxEdge.X;
 	f32 dy2 = box.MaxEdge.Y;
     f32 dz2 = box.MaxEdge.Z;
-	if (scale) {
+    if (scale)
         cur_node.scale = v3f(cur_node.f->visual_scale);
-        //box.MinEdge *= cur_node.f->visual_scale;
-        //box.MaxEdge *= cur_node.f->visual_scale;
-	}
-
-    //box.MinEdge += cur_node.origin;
-    //box.MaxEdge += cur_node.origin;
 
     if (data->m_smooth_lighting) {
 		LightInfo lights[8];
@@ -345,32 +223,6 @@ void MapblockMeshGenerator::drawAutoLightedCuboid(aabbf box,
     }
 
     drawCuboid(box, tiles, tile_count, mask, uvs);
-
-    /*	drawCuboid(box, tiles, tile_count, txc, mask, [&] (int face, video::S3DVertex vertices[4]) {
-			LightPair final_lights[4];
-			for (int j = 0; j < 4; j++) {
-				video::S3DVertex &vertex = vertices[j];
-				final_lights[j] = lights[light_indices[face][j]].getPair(MYMAX(0.0f, vertex.Normal.Y));
-				vertex.Color = encode_light(final_lights[j], cur_node.f->light_source);
-				if (!cur_node.f->light_source)
-					applyFacesShading(vertex.Color, vertex.Normal);
-			}
-			if (lightDiff(final_lights[1], final_lights[3]) < lightDiff(final_lights[0], final_lights[2]))
-				return QuadDiagonal::Diag13;
-			return QuadDiagonal::Diag02;
-		});
-	} else {
-		drawCuboid(box, tiles, tile_count, txc, mask, [&] (int face, video::S3DVertex vertices[4]) {
-			video::SColor color = cur_node.lcolor;
-			if (!cur_node.f->light_source)
-				applyFacesShading(color, vertices[0].Normal);
-			for (int j = 0; j < 4; j++) {
-				video::S3DVertex &vertex = vertices[j];
-				vertex.Color = color;
-			}
-			return QuadDiagonal::Diag02;
-		});
-    }*/
 }
 
 void MapblockMeshGenerator::drawSolidNode()
@@ -411,8 +263,6 @@ void MapblockMeshGenerator::drawSolidNode()
         for (auto &layer : tiles[face]) {
 			if (backface_culling)
                 layer->material_flags |= MATERIAL_FLAG_BACKFACE_CULLING;
-            //layer.material_flags |= MATERIAL_FLAG_TILEABLE_HORIZONTAL;
-            //layer.material_flags |= MATERIAL_FLAG_TILEABLE_VERTICAL;
 		}
 		if (!data->m_smooth_lighting) {
 			lights[face] = getFaceLight(cur_node.n, neighbor, nodedef);
@@ -423,12 +273,8 @@ void MapblockMeshGenerator::drawSolidNode()
 	u8 mask = faces ^ 0b0011'1111; // k-th bit is set if k-th face is to be *omitted*, as expected by cuboid drawing functions.
 	cur_node.origin = intToFloat(cur_node.p, BS);
     auto box = aabbf(v3f(-0.5 * BS), v3f(0.5 * BS));
-    //f32 texture_coord_buf[24];
-    //box.MinEdge += cur_node.origin;
-    //box.MaxEdge += cur_node.origin;
-    //generateCuboidTextureCoords(box, texture_coord_buf);
+
 	if (data->m_smooth_lighting) {
-        //LightPair lights[6][4];
 		for (int face = 0; face < 6; ++face) {
 			if (mask & (1 << face))
 				continue;
@@ -444,31 +290,6 @@ void MapblockMeshGenerator::drawSolidNode()
     }
 
     drawCuboid(box, tiles, 6, mask);
-
-    /*	drawCuboid(box, tiles, 6, texture_coord_buf, mask, [&] (int face, video::S3DVertex vertices[4]) {
-			auto final_lights = lights[face];
-			for (int j = 0; j < 4; j++) {
-				video::S3DVertex &vertex = vertices[j];
-				vertex.Color = encode_light(final_lights[j], cur_node.f->light_source);
-				if (!cur_node.f->light_source)
-					applyFacesShading(vertex.Color, vertex.Normal);
-			}
-			if (lightDiff(final_lights[1], final_lights[3]) < lightDiff(final_lights[0], final_lights[2]))
-				return QuadDiagonal::Diag13;
-			return QuadDiagonal::Diag02;
-		});
-	} else {
-		drawCuboid(box, tiles, 6, texture_coord_buf, mask, [&] (int face, video::S3DVertex vertices[4]) {
-			video::SColor color = encode_light(lights[face], cur_node.f->light_source);
-			if (!cur_node.f->light_source)
-				applyFacesShading(color, vertices[0].Normal);
-			for (int j = 0; j < 4; j++) {
-				video::S3DVertex &vertex = vertices[j];
-				vertex.Color = color;
-			}
-			return QuadDiagonal::Diag02;
-		});
-    }*/
 }
 
 u8 MapblockMeshGenerator::getNodeBoxMask(aabbf box, u8 solid_neighbors, u8 sametype_neighbors) const
@@ -671,7 +492,6 @@ void MapblockMeshGenerator::drawLiquidSides()
         std::array<v3f, 4> positions;
         std::array<v3f, 4> normals;
         rectf uv;
-        //video::S3DVertex vertices[4];
 		for (int j = 0; j < 4; j++) {
 			const UV &vertex = liquid_base_vertices[j];
 			const v3s16 &base = face.p[vertex.u];
@@ -696,21 +516,8 @@ void MapblockMeshGenerator::drawLiquidSides()
                 uv.ULC = v2f(vertex.u, v);
             else if (j == 3)
                 uv.LRC = v2f(vertex.u, v);
-            /*video::SColor color;
-			if (data->m_smooth_lighting)
-				color = blendLightColor(pos);
-			else
-				color = cur_node.lcolor;
-
-            pos += cur_node.origin;
-
-			vertices[j] = video::S3DVertex(pos.X, pos.Y, pos.Z,
-					face.dir.X, face.dir.Y, face.dir.Z,
-					color,
-                    vertex.u, v);*/
 		};
         drawQuad(cur_liquid.tile, positions, normals, &uv);
-        //collector->append(cur_liquid.tile, vertices, 4, quad_indices, 6);
 	}
 }
 
@@ -731,12 +538,6 @@ void MapblockMeshGenerator::drawLiquidTop()
     rectf uv(v2f(0,1), v2f(1.0));
 
     Batcher3D::curLightColor = cur_liquid.color_top;
-
-    /*	video::S3DVertex(-BS / 2, 0,  BS / 2, 0, 0, 0, cur_liquid.color_top, 0, 1),
-		video::S3DVertex( BS / 2, 0,  BS / 2, 0, 0, 0, cur_liquid.color_top, 1, 1),
-		video::S3DVertex( BS / 2, 0, -BS / 2, 0, 0, 0, cur_liquid.color_top, 1, 0),
-		video::S3DVertex(-BS / 2, 0, -BS / 2, 0, 0, 0, cur_liquid.color_top, 0, 0),
-    };*/
 
 	for (int i = 0; i < 4; i++) {
 		int u = corner_resolve[i][0];
@@ -801,8 +602,6 @@ void MapblockMeshGenerator::drawLiquidTop()
     std::swap(uv.ULC, uv.LRC);
 
     drawQuad(cur_liquid.tile_top, positions, normals, &uv);
-
-    //collector->append(cur_liquid.tile_top, vertices, 4, quad_indices, 6);
 }
 
 void MapblockMeshGenerator::drawLiquidBottom()
@@ -815,23 +614,10 @@ void MapblockMeshGenerator::drawLiquidBottom()
     };
     std::array<v3f, 4> normals;
     rectf uv(v2f(0,1), v2f(1.0));
-    /*video::S3DVertex vertices[4] = {
-		video::S3DVertex(-BS / 2, -BS / 2, -BS / 2, 0, 0, 0, cur_liquid.color_top, 0, 0),
-		video::S3DVertex( BS / 2, -BS / 2, -BS / 2, 0, 0, 0, cur_liquid.color_top, 1, 0),
-		video::S3DVertex( BS / 2, -BS / 2,  BS / 2, 0, 0, 0, cur_liquid.color_top, 1, 1),
-		video::S3DVertex(-BS / 2, -BS / 2,  BS / 2, 0, 0, 0, cur_liquid.color_top, 0, 1),
-    };*/
 
     Batcher3D::curLightColor = cur_liquid.color_top;
 
-    /*for (int i = 0; i < 4; i++) {
-		if (data->m_smooth_lighting)
-			vertices[i].Color = blendLightColor(vertices[i].Pos);
-		vertices[i].Pos += cur_node.origin;
-    }*/
-
     drawQuad(cur_liquid.tile_top, positions, normals, &uv);
-    //collector->append(cur_liquid.tile_top, vertices, 4, quad_indices, 6);
 }
 
 void MapblockMeshGenerator::drawLiquidNode()
@@ -1369,9 +1155,6 @@ void MapblockMeshGenerator::drawFencelikeNode()
 	TileSpec tile_nocrack;
 	useTile(&tile_nocrack, 0, 0, 0);
 
-    //for (auto &layer : tile_nocrack.layers)
-    //	layer.material_flags &= ~MATERIAL_FLAG_CRACK;
-
 	// Put wood the right way around in the posts
 	TileSpec tile_rot = tile_nocrack;
     tile_rot[0]->rotation = TileRotation::R90;
@@ -1455,9 +1238,6 @@ void getNodeTileN(MapNode mn, const v3s16 &p, u8 tileindex, MeshMakeData *data, 
             continue;
         if (!(layer->material_flags & MATERIAL_FLAG_HARDWARE_COLORIZED))
             mn.getColor(f, &(layer->color));
-        // Apply temporary crack
-        //if (has_crack)
-         //   layer.material_flags |= MATERIAL_FLAG_CRACK;
     }
 }
 
@@ -1838,49 +1618,11 @@ void MapblockMeshGenerator::drawMeshNode()
                 appendIndex(buf, buf->getIndexAt(i));
 
             delete buf;
-            //else
-             //   modified = false;
-        //if (modified) {
-        //	MeshOperations::recalculateBoundingBox(mesh);
 		}
 	} else {
 		warningstream << "drawMeshNode(): missing mesh" << std::endl;
 		return;
 	}
-
-    /*for (u32 j = 0; j < mesh->getMeshBufferCount(); j++) {
-		// Only up to 6 tiles are supported
-		const u32 tile_idx = mesh->getTextureSlot(j);
-		TileSpec tile;
-		useTile(&tile, MYMIN(tile_idx, 5));
-
-		scene::IMeshBuffer *buf = mesh->getMeshBuffer(j);
-		video::S3DVertex *vertices = (video::S3DVertex *)buf->getVertices();
-		u32 vertex_count = buf->getVertexCount();
-
-		// Mesh is always private here. So the lighting is applied to each
-		// vertex right here.
-		if (data->m_smooth_lighting) {
-			for (u32 k = 0; k < vertex_count; k++) {
-				video::S3DVertex &vertex = vertices[k];
-				vertex.Color = blendLightColor(vertex.Pos, vertex.Normal);
-				vertex.Pos += cur_node.origin;
-			}
-		} else {
-			bool is_light_source = cur_node.f->light_source != 0;
-			for (u32 k = 0; k < vertex_count; k++) {
-				video::S3DVertex &vertex = vertices[k];
-				video::SColor color = cur_node.lcolor;
-				if (!is_light_source)
-					applyFacesShading(color, vertex.Normal);
-				vertex.Color = color;
-				vertex.Pos += cur_node.origin;
-			}
-		}
-		collector->append(tile, vertices, vertex_count,
-			buf->getIndices(), buf->getIndexCount());
-    }*/
-    //mesh->drop();
 }
 
 // also called when the drawtype is known but should have been pre-converted
