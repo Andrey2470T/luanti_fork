@@ -16,10 +16,7 @@ static const std::string ClientMap_settings[] = {
     "trilinear_filter",
     "bilinear_filter",
     "anisotropic_filter",
-    "transparency_sorting_group_by_buffers",
-    "transparency_sorting_distance",
-    "occlusion_culler",
-    "enable_raytraced_culling",
+    "transparency_sorting_distance"
 };
 
 DistanceSortedDrawList::DistanceSortedDrawList(Client *_client, DrawControl _draw_control)
@@ -145,6 +142,7 @@ void DistanceSortedDrawList::updateList()
             continue;
         }
 
+        // NOTE: works only for mapblocks now
         // Raytraced occlusion culling - send rays from the camera to the block's corners
         /*if (!draw_control.range_all && mesh_grid.cell_size < 4 &&
                 isMeshOccluded(mesh, mesh_grid.cell_size)) {
@@ -171,8 +169,16 @@ void DistanceSortedDrawList::updateList()
         auto all_layers = mesh->getAllLayers();
 
         for (auto &layer : all_layers) {
-            if (!(layer.first->material_flags & MATERIAL_FLAG_TRANSPARENT))
-                layers.emplace_back(layer, mesh);
+            if (layer.first->material_flags & MATERIAL_FLAG_TRANSPARENT)
+                continue;
+                
+            auto find_layer = std::find(layers.begin(), layers.end(), layer.first.get());
+            
+            if (find_layer == layers.end()) {
+                layers.emplace_back(layer.first, {});
+                find_layer = std::prev(layers.end());
+            }
+            find_layer->second.emplace_back(layer.second, mesh);
         }
 
         v3f center = mesh->getBoundingSphereCenter();
@@ -185,8 +191,10 @@ void DistanceSortedDrawList::updateList()
 
             auto partial_layers = mesh->getPartialLayers();
 
-            for (auto &partial_layer : partial_layers)
-                layers.emplace_back(partial_layer, mesh);
+            for (auto &partial_layer : partial_layers) {
+            	auto buf_layer = mesh->getBufferLayer(partial_layer.buffer_id, partial_layer.layer_id);
+                layers.emplace_back(buf_layer.first, {partial_layer, mesh});
+            }
         }
     }
 }
@@ -201,16 +209,18 @@ void DistanceSortedDrawList::render()
         ctxt->setPolygonMode(render::CM_FRONT_AND_BACK, render::PM_LINE);
 
     for (auto &l : layers) {
-        l.first.first->setupRenderState(rndsys);
+        l.first->setupRenderState(rndsys);
 
-        matrix4 t;
-        v3f center = l.second->getBoundingSphereCenter();
-        t.setTranslation(center - intToFloat(last_camera_offset, BS));
-        rnd->setTransformMatrix(TMatrix::World, t);
+        for (auto &mesh_l : l.second) {
+            matrix4 t;
+            v3f center = mesh_l.second->getBoundingSphereCenter();
+            t.setTranslation(center - intToFloat(last_camera_offset, BS));
+            rnd->setTransformMatrix(TMatrix::World, t);
 
-        auto lp = l.first.second;
+            auto &lp = mesh_l.first;
 
-        rnd->draw(l.second->getBuffer(lp.buffer_id), render::PT_TRIANGLES, lp.offset, lp.count);
+            rnd->draw(mesh_l.second->getBuffer(lp.buffer_id), render::PT_TRIANGLES, lp.offset, lp.count);
+        }
     }
 }
 

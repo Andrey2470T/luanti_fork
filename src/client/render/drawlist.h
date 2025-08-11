@@ -12,7 +12,8 @@ class LayeredMesh;
 struct TileLayer;
 struct LayeredMeshPart;
 
-typedef std::pair<std::shared_ptr<TileLayer>, LayeredMeshPart> MeshLayer;
+typedef std::pair<std::shared_ptr<TileLayer>,
+    std::vector<std::pair<LayeredMeshPart, LayeredMesh*>>> BatchedLayer;
 
 class DistanceSortedDrawList;
 
@@ -31,7 +32,7 @@ private:
 struct DrawControl
 {
     // Wanted drawing range
-    float wanted_range = 0.0f;
+    f32 wanted_range = 0.0f;
     // Overrides limits by drawing everything
     bool range_all = false;
     // Allow rendering out of bounds
@@ -50,7 +51,7 @@ class DistanceSortedDrawList
 
     std::mutex meshes_mutex;
 
-    std::list<std::pair<MeshLayer, LayeredMesh *>> layers;
+    std::list<BatchedLayer> layers;
 
     std::mutex drawlist_mutex;
 
@@ -92,13 +93,16 @@ public:
     {
         return draw_control;
     }
+    
+    void forceUpdate()
+    {
+    	needs_update_drawlist = true;
+    }
 
     void updateCamera(v3f pos, v3f dir, f32 fov, v3s16 offset);
     void updateList();
 
     void render();
-
-    void setFilters();
 
     void onSettingChanged(std::string_view name, bool all);
 private:
