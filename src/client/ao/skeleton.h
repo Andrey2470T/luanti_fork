@@ -11,6 +11,8 @@
 #define BONE_MAX_WEIGHTS 128
 #define VERTEX_MAX_BONES 8
 
+class DataTexture;
+
 struct Weight
 {
     u32 vertex_n;
@@ -61,9 +63,11 @@ class Skeleton
 
     MeshBuffer *AffectedMesh = nullptr;
 
+    std::unique_ptr<DataTexture> BonesDataTexture;
+
     bool AnimateNormals = false;
 public:
-    Skeleton() = default;
+    Skeleton();
 
     u8 getUsedBonesCount() const
     {
@@ -88,8 +92,8 @@ public:
         AnimateNormals = animate;
     }
     void updateBonesTransforms();
-    // The method updates the "mAnimateNormals" and "mBonesTransforms" uniform mat4 array
-    void updateObjectShader(render::Shader *shader);
+    // The method updates the animate normals bool and data texture
+    void updateShaderAndDataTexture(render::Shader *shader);
     // The bones count per a vertex also has the limit, therefore this method selects out the most "affecting" bones ids and their weights
     // This method fills "bones" and "weights" attributes
     void fillMeshAttribs(MeshBuffer *mesh);

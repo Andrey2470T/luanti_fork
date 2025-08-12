@@ -1,4 +1,5 @@
 #include "skeleton.h"
+#include "client/render/datatexture.h"
 
 void BoneTransform::buildTransform(const BoneTransform *parentTransform)
 {
@@ -49,6 +50,12 @@ void Bone::updateBone()
         childBone->updateBone();
 }
 
+Skeleton::Skeleton()
+    : BonesDataTexture(std::make_unique<DataTexture>("BonesData", 4 * 4 * sizeof(f32), 0, 4 * 4))
+{
+
+}
+
 Bone *Skeleton::getBone(u8 n) const
 {
     assert(n < UsedBonesCount);
@@ -66,6 +73,11 @@ void Skeleton::addBones(std::vector<Bone *> &bones)
 
         if (bone->isRoot())
             RootBones.push_back(UsedBonesCount+i);
+
+        ByteArray bone_arr(4 * 4, 4 * 4 * sizeof(f32));
+        bone_arr.setM4x4(Bones.at(i)->Transform.GlobalTransform, 0);
+
+        BonesDataTexture->addSample(bone_arr);
     }
 
     UsedBonesCount += bones.size();
@@ -89,15 +101,15 @@ void Skeleton::updateBonesTransforms()
         Bones.at(root_id)->updateBone();
 }
 
-void Skeleton::updateObjectShader(render::Shader *shader)
+void Skeleton::updateShaderAndDataTexture(render::Shader *shader)
 {
     shader->setUniformInt("mAnimateNormals", (s32)AnimateNormals);
 
     for (u8 i = 0; i < UsedBonesCount; i++) {
-        std::string boneTName = "mBonesTransforms[";
-        boneTName += i;
-        boneTName += "]";
-        shader->setUniform4x4Matrix(boneTName, Bones.at(i)->Transform.GlobalTransform);
+        ByteArray bone_arr(4 * 4, 4 * 4 * sizeof(f32));
+        bone_arr.setM4x4(Bones.at(i)->Transform.GlobalTransform, 0);
+
+        BonesDataTexture->updateSample(i, bone_arr);
     }
 }
 

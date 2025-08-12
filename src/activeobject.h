@@ -4,9 +4,8 @@
 
 #pragma once
 
-#include "Utils/AABB.h"
-#include "Utils/Quaternion.h"
-#include "BasicIncludes.h"
+#include <Utils/AABB.h>
+#include <Utils/Quaternion.h>
 #include <unordered_map>
 
 using namespace utils;
@@ -96,13 +95,13 @@ struct BoneOverride
 			progress = 1.0f;
 		rot.slerp(rotation.previous, rotation.next, progress);
 		if (!rotation.absolute) {
-            Quaternion anim_rot(anim_rot_euler.apply(degToRad));
+            Quaternion anim_rot(anim_rot_euler * DEGTORAD);
 			rot = rot * anim_rot; // first rotate by anim. bone rot., then rot.
 		}
 
 		v3f rot_euler;
 		rot.toEuler(rot_euler);
-        return rot_euler.apply(radToDeg);
+        return rot_euler * RADTODEG;
 	}
 
 	struct ScaleProperty

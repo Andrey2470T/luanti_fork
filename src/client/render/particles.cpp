@@ -605,6 +605,7 @@ ParticleManager::ParticleManager(RenderSystem *rnd_sys, ResourceCache *cache, Cl
 {
     m_shader = m_cache->getOrLoad<render::Shader>(ResourceType::SHADER, "particles");
 
+    m_datatex = std::make_unique<DataTexture>("ParticlesData", sizeof(ParticleSampleData), 0, 4*4 + 4 + 2*2 + 2*2 + 4);
     m_unit_quad_mesh = std::make_unique<MeshBuffer>(4, 6);
     Batcher3D::vType = B3DVT_SVT;
     Batcher3D::appendFace(m_unit_quad_mesh.get(), rectf(v2f(-1.0f), v2f(1.0f)), v3f(), {});

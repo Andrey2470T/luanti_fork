@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "irrlichttypes_bloated.h"
+#include <BasicIncludes.h>
 class ClientEnvironment;
 
 class ClientSimpleObject

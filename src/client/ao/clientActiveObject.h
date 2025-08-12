@@ -7,22 +7,17 @@
 #include "activeobject.h"
 #include <unordered_map>
 #include <unordered_set>
+#include <memory>
 
 
 class ClientEnvironment;
-class ITextureSource;
 class Client;
 class IGameDef;
 class LocalPlayer;
 struct ItemStack;
 class WieldMeshSceneNode;
+class ResourceCache;
 
-namespace irr::scene
-{
-	class IAnimatedMeshSceneNode;
-	class ISceneNode;
-	class ISceneManager;
-}
 
 class ClientActiveObject : public ActiveObject
 {
@@ -30,7 +25,7 @@ public:
 	ClientActiveObject(u16 id, Client *client, ClientEnvironment *env);
 	virtual ~ClientActiveObject();
 
-	virtual void addToScene(ITextureSource *tsrc, scene::ISceneManager *smgr) = 0;
+    virtual void addToScene() = 0;
 	virtual void removeFromScene(bool permanent) {}
 
 	virtual void updateLight(u32 day_night_ratio) {}
@@ -40,10 +35,6 @@ public:
 	virtual bool collideWithObjects() const { return false; }
     virtual const v3f getPosition() const { return v3f(0.0f); } // in BS-space
     virtual const v3f getVelocity() const { return v3f(0.0f); } // in BS-space
-    virtual scene::ISceneNode *getSceneNode() const
-    { return NULL; }
-    virtual scene::IAnimatedMeshSceneNode *getAnimatedMeshSceneNode() const
-    { return NULL; }
 	virtual bool isLocalPlayer() const { return false; }
 
 	virtual ClientActiveObject *getParent() const { return nullptr; };

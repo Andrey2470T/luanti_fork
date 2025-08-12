@@ -3,6 +3,13 @@ layout (location = 1) in vec4 color;
 layout (location = 2) in vec3 normal;
 layout (location = 3) in vec2 uv;
 layout (location = 4) in int materialType;
+layout (location = 5) in vec2i bones;	// packed bones IDs (8 u8 numbers)
+layout (location = 6) in vec2i weights; // packed weights (8 u8 numbers)
+
+#extension GL_EXT_gpu_shader4 : enable // for bitwise operators
+
+#define BONES_MAX 128
+#define BONES_IDS_MAX 8 // per a vertex
 
 #include <matrices>
 
@@ -20,6 +27,14 @@ layout (std140) uniform mShadowParams {
 	float zPerspectiveBias;
 	vec3 shadowTint;
 };
+
+// Absolute bones transformations
+layout (binding = 1) uniform sampler2D mDataTex;
+uniform int mSampleDim;
+uniform int mDataTexDim;
+
+// Whether animate the normals
+uniform int mAnimateNormals;
 
 uniform vec3 mDayLight;
 uniform float mAnimationTimer;
@@ -103,12 +118,35 @@ void main(void)
 {
 	vUV0 = (mMatrices.texture0 * vec4(uv.xy, 1.0, 1.0)).st;
 
-	gl_Position = mMatrices.worldViewProj * vec4(pos, 1.0);
+	// Calculate weighted transformations from each affected bone for the current frame
+	vec3 skinnedPos = pos;
+	vec3 skinnedNormal = normal;
+
+	for (int i = 0; i < BONES_IDS_MAX; i++) {
+		int shift_n = i - (i % 4) * 4;
+
+		// Extract bone ID from bones
+		int bone_n = bones[i % 4];
+		int bone_id = clamp((bone_n >> (shift_n * 8)) & 0xffffffff, 0, BONES_MAX-1);
+
+		// Extract weight from weights
+		int weight_n = weights[i % 4];
+		float weight = float((weight_n >> (shift_n * 8)) & 0xffffffff) / 127.0;
+
+		ivec2 sampleCoords = getSampleCoords(mDataTex, BONES_MAX, mSampleDim, mDataTexDim, bone_id);
+		mat4 bone_transform = unpackFloatMat4x4(mDataTex, sampleCoords);
+
+		skinnedPos += weight * bone_transform * vec4(skinnedPos, 1.0);
+
+		if (mAnimateNormals)
+			skinnedNormal += weight * bone_transform * vec4(skinnedNormal, 0.0);
+	}
+	gl_Position = mMatrices.worldViewProj * vec4(skinnedPos, 1.0);
 
 	vPosition = gl_Position.xyz;
 	vNormal = (mMatrices.world * vec4(skinnedNormal, 0.0)).xyz;
-	vWorldPosition = (mMatrices.world * vec4(pos, 1.0)).xyz;
-	vEyeVec = -(mMatrices.worldView * vec4(pos, 1.0)).xyz;
+	vWorldPosition = (mMatrices.world * vec4(skinnedPos, 1.0)).xyz;
+	vEyeVec = -(mMatrices.worldView * vec4(skinnedPos, 1.0)).xyz;
 
 	if (materialType == TILE_MATERIAL_PLAIN) || (materialType == TILE_MATERIAL_PLAIN_ALPHA)
 		vIDiff = 1.0;
@@ -147,7 +185,7 @@ void main(void)
 		/* normalOffsetScale is in world coordinates (1/10th of a meter)
 		   z_bias is in light space coordinates */
 		float normalOffsetScale, z_bias;
-		float pFactor = getPerspectiveFactor(getRelativePosition(mShadowParams.shadowViewProj * pos));
+		float pFactor = getPerspectiveFactor(getRelativePosition(mShadowParams.shadowViewProj * skinnedPos));
 		if (vNormalLength > 0.0) {
 			nNormal = normalize(vNormal);
 			vCosLight = max(1e-5, dot(nNormal, -mShadowParams.lightDirection));
@@ -166,7 +204,7 @@ void main(void)
 		z_bias *= pFactor * pFactor / mShadowParams.textureresolution / mShadowParams.shadowfar;
 
 		// Possible breakage: the skinned position is in the absolute coords, not in the relative
-		vShadowPosition = applyPerspectiveDistortion(mShadowParams.shadowViewProj * vec4(pos + normalOffsetScale * nNormal, 1.0)).xyz;
+		vShadowPosition = applyPerspectiveDistortion(mShadowParams.shadowViewProj * vec4(skinnedPos + normalOffsetScale * nNormal, 1.0)).xyz;
 		//vShadowPosition = applyPerspectiveDistortion(mShadowParams.shadowViewProj * mMatrices.world * (vec4(pos, 1.0) + vec4(normalOffsetScale * nNormal, 0.0))).xyz;
 		vShadowPosition.z -= z_bias;
 		vPerspectiveFactor = pFactor;

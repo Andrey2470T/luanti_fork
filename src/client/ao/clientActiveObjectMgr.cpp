@@ -5,7 +5,8 @@
 #include <cmath>
 #include <log.h>
 #include "profiler.h"
-#include "clientactiveobjectmgr.h"
+#include "clientActiveObjectMgr.h"
+#include "clientActiveObject.h"
 
 namespace client
 {
@@ -90,7 +91,7 @@ void ActiveObjectMgr::getActiveObjects(const v3f &origin, f32 max_d,
 	}
 }
 
-std::vector<DistanceSortedActiveObject> ActiveObjectMgr::getActiveSelectableObjects(const core::line3d<f32> &shootline)
+std::vector<DistanceSortedActiveObject> ActiveObjectMgr::getActiveSelectableObjects(const line3f &shootline)
 {
 	std::vector<DistanceSortedActiveObject> dest;
 	f32 max_d = shootline.getLength();
@@ -101,14 +102,14 @@ std::vector<DistanceSortedActiveObject> ActiveObjectMgr::getActiveSelectableObje
 		if (!obj)
 			continue;
 
-		aabb3f selection_box{{0.0f, 0.0f, 0.0f}};
+        aabbf selection_box{{0.0f, 0.0f, 0.0f}};
 		if (!obj->getSelectionBox(&selection_box))
 			continue;
 
 		v3f obj_center = obj->getPosition() + selection_box.getCenter();
 		f32 obj_radius_sq = selection_box.getExtent().getLengthSQ() / 4;
 
-		v3f c = obj_center - shootline.start;
+        v3f c = obj_center - shootline.Start;
 		f32 a = dir.dotProduct(c);           // project c onto dir
 		f32 b_sq = c.getLengthSQ() - a * a;  // distance from shootline to obj_center, squared
 

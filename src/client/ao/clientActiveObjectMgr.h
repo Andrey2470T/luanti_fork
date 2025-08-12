@@ -6,8 +6,12 @@
 
 #include <functional>
 #include <vector>
+#include <Utils/Line3D.h>
 #include "../activeobjectmgr.h"
-#include "clientobject.h"
+//#include "clientobject.h"
+
+class ClientActiveObject;
+class DistanceSortedActiveObject;
 
 namespace client
 {
@@ -27,6 +31,6 @@ public:
 	/// Gets all CAOs whose selection boxes may intersect the @p shootline.
 	/// @note CAOs without a selection box are not returned.
 	/// @note Distances are along the @p shootline.
-	std::vector<DistanceSortedActiveObject> getActiveSelectableObjects(const core::line3d<f32> &shootline);
+    std::vector<DistanceSortedActiveObject> getActiveSelectableObjects(const line3f &shootline);
 };
 } // namespace client
