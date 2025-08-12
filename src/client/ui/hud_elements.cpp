@@ -263,17 +263,44 @@ void HudStatbar::update()
     bar->rebuildMesh();
 }
 
+Waypoint::Waypoint(Client *_client, UISpriteBank *_faceBank, v3f _worldPos)
+    : client(_client), faceBank(std::unique_ptr<UISpriteBank>(_faceBank)), worldPos(_worldPos)
+{}
+
+bool Waypoint::calculateScreenPos(v2f *pos)
+{
+    v3f w_pos = worldPos * BS;
+    w_pos -= intToFloat(client->getEnv().getCameraOffset(), BS);
+
+    RenderSystem *rnd_system = client->getRenderSystem();
+    Renderer *rnd = rnd_system->getRenderer();
+    matrix4 trans = rnd->getTransformMatrix(TMatrix::Projection);
+    trans *= rnd->getTransformMatrix(TMatrix::View);
+
+    f32 transformed_pos[4] = { w_pos.X, w_pos.Y, w_pos.Z, 1.0f };
+    trans.multiplyWith1x4Matrix(transformed_pos);
+    if (transformed_pos[3] < 0)
+        return false;
+    f32 zDiv = transformed_pos[3] == 0.0f ? 1.0f : 1.0f / sqrt((transformed_pos[3]));
+
+    v2u wndSize = rnd_system->getWindowSize();
+    pos->X = wndSize.X * (0.5f * transformed_pos[0] * zDiv + 0.5f);
+    pos->Y = wndSize.Y * (0.5f - transformed_pos[1] * zDiv * 0.5f);
+    return true;
+}
+
 HudWaypoint::HudWaypoint(Client *_client, const HudElement *elem, UISpriteBank *bank)
-    : HudSprite(_client->getResourceCache(), _client->getRenderSystem(), elem), client(_client),
-    faceBank(std::unique_ptr<UISpriteBank>(bank)), image(elem->type == HUD_ELEM_IMAGE_WAYPOINT)
+    : HudSprite(_client->getResourceCache(), _client->getRenderSystem(), elem),
+      Waypoint(_client, bank), image(elem->type == HUD_ELEM_IMAGE_WAYPOINT)
 {
     update();
 }
 
-void HudWaypoint::update()
+void HudWaypoint::updateBank(v3f newWorldPos)
 {
     v2f pixelPos;
 
+    worldPos = newWorldPos;
     calculateScreenPos(&pixelPos);
     faceBank->setCenter(pixelPos);
 
@@ -319,27 +346,6 @@ void HudWaypoint::update()
         img_sprite->updateMesh(true);
         img_sprite->updateMesh(false);
     }
-}
-
-bool HudWaypoint::calculateScreenPos(v2f *pos)
-{
-    v3f w_pos = elem->world_pos * BS;
-    w_pos -= intToFloat(client->getEnv().getCameraOffset(), BS);
-
-    Renderer *rnd = rnd_system->getRenderer();
-    matrix4 trans = rnd->getTransformMatrix(TMatrix::Projection);
-    trans *= rnd->getTransformMatrix(TMatrix::View);
-
-    f32 transformed_pos[4] = { w_pos.X, w_pos.Y, w_pos.Z, 1.0f };
-    trans.multiplyWith1x4Matrix(transformed_pos);
-    if (transformed_pos[3] < 0)
-        return false;
-    f32 zDiv = transformed_pos[3] == 0.0f ? 1.0f : 1.0f / sqrt((transformed_pos[3]));
-
-    v2u wndSize = rnd_system->getWindowSize();
-    pos->X = wndSize.X * (0.5f * transformed_pos[0] * zDiv + 0.5f);
-    pos->Y = wndSize.Y * (0.5f - transformed_pos[1] * zDiv * 0.5f);
-    return true;
 }
 
 HudImage::HudImage(Client *client, const HudElement *elem)

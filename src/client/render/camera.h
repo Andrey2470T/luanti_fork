@@ -17,13 +17,17 @@ protected:
 	// Camera offset
 	v3s16 m_offset;
 
+    v3f m_last_position;
+    v3f m_last_direction;
+    v3s16 m_last_offset;
+
     Frustum m_frustum;
     matrix4 m_projection_matrix;
     matrix4 m_view_matrix;
 public:
-	Camera(const v2u &viewportSize=v2u(),
-		   const v3f &position=v3f(), const v3f &direction=v3f(0,0,1),
-		   bool isOrthogonal=false);
+    Camera(const v2u &viewportSize=v2u(),
+            const v3f &position=v3f(), const v3f &direction=v3f(0,0,1),
+            bool isOrthogonal=false);
 
     virtual ~Camera() = default;
 
@@ -102,11 +106,13 @@ public:
 
     void setPosition(const v3f &pos)
     {
+        m_last_position = m_position;
         m_position = pos;
     }
 
     void setDirection(const v3f &dir)
     {
+        m_last_direction = m_direction;
         m_direction = dir;
         m_direction.normalize();
     }
@@ -119,6 +125,7 @@ public:
 
     void setOffset(const v3s16 &offset)
 	{
+        m_last_offset = m_offset;
 		m_offset = offset;
 	}
 
@@ -150,6 +157,8 @@ public:
     void recalculateProjectionMatrix();
 	void recalculateViewArea();
 	void updatePlanes();
+
+    bool isNecessaryUpdateDrawList();
 
     void updateMatrices();
 

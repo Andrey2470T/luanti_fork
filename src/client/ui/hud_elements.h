@@ -74,13 +74,30 @@ public:
     }
 };
 
+// General interface fot displaying always facing sprites
+class Waypoint
+{
+protected:
+	Client *client;
+    std::unique_ptr<UISpriteBank> faceBank;
+    
+    v3f worldPos;
+public:
+    Waypoint(Client *_client, UISpriteBank *_faceBank, v3f _worldPos=v3f(0.0f));
+    
+    virtual void updateBank(v3f newWorldPos) = 0;
+    void drawBank()
+    {
+        faceBank->drawBank();
+    }
+protected:
+    bool calculateScreenPos(v2f *pos);
+};
+
 // Renders an arbitrary sprite projecting it onto the screen
 // If this sprite is a distance text, then displaying the current distance from the local player before it (but not mandatorily)
-class HudWaypoint : public HudSprite
+class HudWaypoint : public HudSprite, public Waypoint
 {
-    Client *client;
-    std::unique_ptr<UISpriteBank> faceBank;
-
     bool image;
 public:
     HudWaypoint(Client *_client, const HudElement *elem, UISpriteBank *bank);
@@ -90,13 +107,15 @@ public:
         for (u32 i = 0; i < faceBank->getSpriteCount(); i++)
             faceBank->getSprite(i)->setVisible(visible);
     }
-    void update() override;
+    void update() override
+    {
+    	updateBank(elem->world_pos);
+    }
+    void updateBank(v3f newWorldPos) override;
     void draw() override
     {
-        faceBank->drawBank();
+        drawBank();
     }
-private:
-    bool calculateScreenPos(v2f *pos);
 };
 
 class HudImage : public HudSprite

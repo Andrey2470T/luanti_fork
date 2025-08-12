@@ -39,10 +39,9 @@ DistanceSortedDrawList::~DistanceSortedDrawList()
     drawlist_thread->wait();
 }
 
+// The meshes_mutex must be locked externally before this call!
 void DistanceSortedDrawList::addLayeredMesh(LayeredMesh *newMesh)
 {
-    MutexAutoLock meshes_lock(meshes_mutex);
-
     auto find_mesh = std::find(meshes.begin(), meshes.end(), newMesh);
 
     if (find_mesh != meshes.end())
@@ -53,10 +52,9 @@ void DistanceSortedDrawList::addLayeredMesh(LayeredMesh *newMesh)
     needs_update_drawlist = true;
 }
 
+// The meshes_mutex must be locked externally before this call!
 void DistanceSortedDrawList::removeLayeredMesh(LayeredMesh *mesh)
 {
-    MutexAutoLock meshes_lock(meshes_mutex);
-
     auto find_mesh = std::find(meshes.begin(), meshes.end(), mesh);
 
     if (find_mesh == meshes.end())
@@ -75,28 +73,6 @@ bool DistanceSortedDrawList::LayeredMeshSorter::operator() (const LayeredMesh *m
     auto dist1 = m1_center.getDistanceFromSQ(camera_pos);
     auto dist2 = m2_center.getDistanceFromSQ(camera_pos);
     return dist1 > dist2 || (dist1 == dist2 && m1_center > m2_center);
-}
-
-void DistanceSortedDrawList::updateCamera(v3f pos, v3f dir, f32 fov, v3s16 offset)
-{
-    v3s16 previous_node = floatToInt(last_camera_pos, BS) + last_camera_offset;
-    v3s16 previous_block = getContainerPos(previous_node, MAP_BLOCKSIZE);
-
-    last_camera_pos = pos;
-    last_camera_dir = dir;
-    last_camera_fov = fov;
-    last_camera_offset = offset;
-
-    v3s16 current_node = floatToInt(last_camera_pos, BS) + last_camera_offset;
-    v3s16 current_block = getContainerPos(current_node, MAP_BLOCKSIZE);
-
-    // rebuild the list when camera crosses block boundary
-    if (previous_block != current_block)
-        needs_update_drawlist = true;
-
-    // reorder transparent meshes when camera crosses node boundary
-    //if (previous_node != current_node)
-     //   needs_update_transparent_meshes = true;
 }
 
 void DistanceSortedDrawList::onSettingChanged(std::string_view name, bool all)
@@ -124,13 +100,15 @@ void DistanceSortedDrawList::updateList()
 
     //MeshGrid mesh_grid = client->getMeshGrid();
 
+    v3f cameraPos = client->getCamera()->getPosition();
+
     for (auto &mesh : meshes) {
         v3f center = mesh->getBoundingSphereCenter();
         f32 radius = mesh->getBoundingSphereRadius();
 
         // Check that the mesh distance doesn't exceed the wanted range
         if (!draw_control.range_all &&
-            center.getDistanceFrom(last_camera_pos) >
+            center.getDistanceFrom(cameraPos) >
                 draw_control.wanted_range * BS + radius)
             continue;
 
@@ -155,7 +133,7 @@ void DistanceSortedDrawList::updateList()
     meshes_mutex.unlock();
 
     // Resort the new mesh list
-    mesh_sorter.camera_pos = last_camera_pos;
+    mesh_sorter.camera_pos = cameraPos;
     std::sort(new_meshes_list.begin(), new_meshes_list.end(), mesh_sorter);
 
     MutexAutoLock drawlist_lock(drawlist_mutex);
@@ -183,10 +161,10 @@ void DistanceSortedDrawList::updateList()
 
         v3f center = mesh->getBoundingSphereCenter();
         f32 radius = mesh->getBoundingSphereRadius();
-        f32 distance_sq = last_camera_pos.getDistanceFromSQ(center);
+        f32 distance_sq = cameraPos.getDistanceFromSQ(center);
 
         if (distance_sq <= std::pow(sorting_distance + radius, 2.0f)) {
-            mesh->transparentSort(last_camera_pos);
+            mesh->transparentSort(cameraPos);
             mesh->updateIndexBuffers();
 
             auto partial_layers = mesh->getPartialLayers();
@@ -208,13 +186,14 @@ void DistanceSortedDrawList::render()
     if (draw_control.show_wireframe)
         ctxt->setPolygonMode(render::CM_FRONT_AND_BACK, render::PM_LINE);
 
+    v3s16 cameraOffset = client->getCamera()->getOffset();
     for (auto &l : layers) {
         l.first->setupRenderState(rndsys);
 
         for (auto &mesh_l : l.second) {
             matrix4 t;
             v3f center = mesh_l.second->getBoundingSphereCenter();
-            t.setTranslation(center - intToFloat(last_camera_offset, BS));
+            t.setTranslation(center - intToFloat(cameraOffset, BS));
             rnd->setTransformMatrix(TMatrix::World, t);
 
             auto &lp = mesh_l.first;

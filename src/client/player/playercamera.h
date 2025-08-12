@@ -8,12 +8,11 @@
 #include "util/numeric.h"
 #include "client/player/localplayer.h"
 #include "client/render/camera.h"
-#include <array>
 #include <list>
 #include <optional>
 
 class LocalPlayer;
-struct MapDrawControl;
+struct DrawControl;
 class Client;
 class RenderingEngine;
 class WieldMeshSceneNode;
@@ -48,7 +47,7 @@ struct Nametag
             return img::color8(img::PF_RGBA8, 50, 50, 50, 50);
 		else
 			// Light background for dark text
-            return img::color8(img::PF_RGBA8, 50, 255, 255, 255);
+            return img::color8(img::PF_RGBA8, 255, 255, 255, 50);
 	}
 };
 
@@ -66,21 +65,13 @@ enum CameraMode {
 class PlayerCamera : public Camera
 {
 public:
-	PlayerCamera(MapDrawControl &draw_control, Client *client, RenderingEngine *rendering_engine);
+	PlayerCamera(DrawControl &draw_control, Client *client);
 	~PlayerCamera();
 
 	// Returns the absolute position of the head SceneNode in the world
 	inline v3f getHeadPosition() const
 	{
         return m_playerbase_pos + m_head_offset;
-	}
-
-	// Returns a lambda that when called with an object's position and bounding-sphere
-	// radius (both in BS space) returns true if, and only if the object should be
-	// frustum-culled.
-    bool doFrustumCull(const v3f &position, f32 radius) const
-	{
-        return m_frustum.frustumCull(position-intToFloat(m_offset, BS), radius);
 	}
 
 	// Notify about new server-sent FOV and initialize smooth FOV transition
@@ -144,7 +135,7 @@ private:
     WieldMeshSceneNode *m_wieldnode = nullptr;
 
 	// draw control
-	MapDrawControl& m_draw_control;
+    DrawControl& m_draw_control;
 
 	Client *m_client;
 

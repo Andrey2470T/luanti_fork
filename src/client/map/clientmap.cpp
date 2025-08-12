@@ -27,7 +27,7 @@ ClientMap::ClientMap(Client *client, DistanceSortedDrawList *drawlist)
     m_client(client), m_drawlist(drawlist)
 {}
 
-void ClientMap::updateCamera(v3f pos, v3f dir, f32 fov, v3s16 offset, img::color8 light_color)
+/*void ClientMap::updateCamera(v3f pos, v3f dir, f32 fov, v3s16 offset, img::color8 light_color)
 {
     v3s16 previous_node = floatToInt(m_camera_pos, BS) + m_camera_offset;
 	v3s16 previous_block = getContainerPos(previous_node, MAP_BLOCKSIZE);
@@ -43,7 +43,7 @@ void ClientMap::updateCamera(v3f pos, v3f dir, f32 fov, v3s16 offset, img::color
         update();
         m_drawlist->updateCamera(pos, dir, fov, offset);
     }
-}
+}*/
 
 MapSector * ClientMap::emergeSector(v2s16 p2d)
 {
@@ -106,7 +106,7 @@ void ClientMap::update()
 	}
     m_visible_mapblocks.clear();
 
-    const v3s16 cam_pos_nodes = floatToInt(m_camera_pos, BS);
+    const v3s16 cam_pos_nodes = floatToInt(m_client->getCamera()->getPosition(), BS);
 
 	v3s16 p_blocks_min;
 	v3s16 p_blocks_max;
@@ -117,7 +117,7 @@ void ClientMap::update()
     // Number of blocks with mesh in rendering range
     u32 blocks_in_range_with_mesh = 0;
 
-    MapBlockVect sectorblocks;
+    //MapBlockVect sectorblocks;
 
     for (auto &sector_it : m_sectors) {
         const MapSector *sector = sector_it.second;
@@ -165,7 +165,7 @@ void ClientMap::touchMapBlocks()
     }
 }
 
-static bool getVisibleBrightness(Map *map, const v3f &p0, v3f dir, float step,
+/*static bool getVisibleBrightness(Map *map, const v3f &p0, v3f dir, float step,
 	float step_multiplier, float start_distance, float end_distance,
 	const NodeDefManager *ndef, u32 daylight_factor, float sunlight_min_d,
 	int *result, bool *sunlight_seen)
@@ -179,11 +179,11 @@ static bool getVisibleBrightness(Map *map, const v3f &p0, v3f dir, float step,
 	int noncount = 0;
 	bool nonlight_seen = false;
 	bool allow_allowing_non_sunlight_propagates = false;
-	bool allow_non_sunlight_propagates = false;
+    bool allow_non_sunlight_propagates = false;*/
 	// Check content nearly at camera position
-	{
-		v3s16 p = floatToInt(p0 /*+ dir * 3*BS*/, BS);
-		MapNode n = map->getNode(p);
+//	{
+//		v3s16 p = floatToInt(p0 /*+ dir * 3*BS*/, BS);
+/*		MapNode n = map->getNode(p);
 		if(ndef->getLightingFlags(n).has_light &&
 				!ndef->getLightingFlags(n).sunlight_propagates)
 			allow_allowing_non_sunlight_propagates = true;
@@ -230,13 +230,13 @@ static bool getVisibleBrightness(Map *map, const v3f &p0, v3f dir, float step,
 	*result = 0;
 	if(brightness_count == 0)
 		return false;
-	*result = brightness_sum / brightness_count;
+    *result = brightness_sum / brightness_count;*/
 	/*std::cerr<<"Sampled "<<brightness_count<<" points; result="
 			<<(*result)<<std::endl;*/
-	return true;
-}
+//	return true;
+//}
 
-int ClientMap::getBackgroundBrightness(float max_d, u32 daylight_factor,
+/*int ClientMap::getBackgroundBrightness(float max_d, u32 daylight_factor,
 		int oldvalue, bool *sunlight_seen_result)
 {
 	ScopeProfiler sp(g_profiler, "CM::getBackgroundBrightness", SPT_AVG);
@@ -319,9 +319,9 @@ int ClientMap::getBackgroundBrightness(float max_d, u32 daylight_factor,
 
 	*sunlight_seen_result = (sunlight_seen_count > 0);
 	return ret;
-}
+}*/
 
-void ClientMap::renderPostFx(CameraMode cam_mode)
+/*void ClientMap::renderPostFx(CameraMode cam_mode)
 {
 	// Sadly ISceneManager has no "post effects" render pass, in that case we
 	// could just register for that and handle it in renderMap().
@@ -347,14 +347,14 @@ void ClientMap::renderPostFx(CameraMode cam_mode)
         post_color = img::black;
 	}
 
-    /*if (post_color.A() != 0) {
+    if (post_color.A() != 0) {
 		// Draw a full-screen rectangle
 		video::IVideoDriver* driver = SceneManager->getVideoDriver();
 		v2u32 ss = driver->getScreenSize();
 		core::rect<s32> rect(0,0, ss.X, ss.Y);
 		driver->draw2DRectangle(post_color, rect);
-    }*/
-}
+    }
+}*/
 
 /*void ClientMap::renderMapShadows(video::IVideoDriver *driver,
 		const video::SMaterial &material, s32 pass, int frame, int total_frames)

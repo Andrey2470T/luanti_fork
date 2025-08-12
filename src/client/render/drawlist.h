@@ -57,12 +57,7 @@ class DistanceSortedDrawList
 
     std::unique_ptr<DrawListUpdateThread> drawlist_thread;
 
-    v3f last_camera_pos = v3f(0,0,0);
-    v3f last_camera_dir = v3f(0,0,1);
-    f32 last_camera_fov = M_PI;
-    v3s16 last_camera_offset;
-
-    bool needs_update_drawlist;
+    std::atomic<bool> needs_update_drawlist;
 
     bool cache_trilinear_filter;
     bool cache_bilinear_filter;
@@ -93,13 +88,22 @@ public:
     {
         return draw_control;
     }
+
+    void lockMeshes()
+    {
+        meshes_mutex.lock();
+    }
+
+    void unlockMeshes()
+    {
+        meshes_mutex.unlock();
+    }
     
     void forceUpdate()
     {
     	needs_update_drawlist = true;
     }
 
-    void updateCamera(v3f pos, v3f dir, f32 fov, v3s16 offset);
     void updateList();
 
     void render();

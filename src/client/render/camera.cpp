@@ -1,11 +1,12 @@
 #include "camera.h"
-#include "client.h"
+#include "client/client.h"
+#include "map.h"
 
 Camera::Camera(const v2u &viewportSize,
-		   const v3f &position, const v3f &direction,
-           bool isOrthogonal)
+            const v3f &position, const v3f &direction,
+            bool isOrthogonal)
 	: m_position(position), m_direction(direction),
-	  m_frustum(viewportSize, isOrthogonal)
+      m_frustum(viewportSize, isOrthogonal)
 {}
 
 void Camera::recalculateProjectionMatrix()
@@ -40,6 +41,20 @@ void Camera::updatePlanes()
 	m.setbyproduct_nocheck(m_projection_matrix, m_view_matrix);
 
 	m_frustum.recalculatePlanes(m);
+}
+
+bool Camera::isNecessaryUpdateDrawList()
+{
+    v3s16 previous_node = floatToInt(m_last_position, BS) + m_last_offset;
+    v3s16 previous_block = getContainerPos(previous_node, MAP_BLOCKSIZE);
+
+    v3s16 current_node = floatToInt(m_position, BS) + m_offset;
+    v3s16 current_block = getContainerPos(current_node, MAP_BLOCKSIZE);
+
+    f32 dir_diff = m_last_direction.getDistanceFrom(m_direction);
+
+    if (previous_block != current_block || dir_diff > 0.2f)
+        return true;
 }
 
 void Camera::updateMatrices()

@@ -37,7 +37,7 @@ public:
 	void getBlocksInViewRange(v3s16 cam_pos_nodes,
 		v3s16 *p_blocks_min, v3s16 *p_blocks_max, float range=-1.0f);
 
-    void updateCamera(v3f pos, v3f dir, f32 fov, v3s16 offset, img::color8 light_color);
+    //void updateCamera(v3f pos, v3f dir, f32 fov, v3s16 offset, img::color8 light_color);
 
     void update();
 	// @brief Calculate statistics about the map and keep the blocks alive
@@ -49,10 +49,10 @@ public:
     //void renderMapShadows(video::IVideoDriver *driver,
     //		const video::SMaterial &material, s32 pass, int frame, int total_frames);
 
-	int getBackgroundBrightness(float max_d, u32 daylight_factor,
-			int oldvalue, bool *sunlight_seen_result);
+    //int getBackgroundBrightness(float max_d, u32 daylight_factor,
+    //		int oldvalue, bool *sunlight_seen_result);
 
-	void renderPostFx(CameraMode cam_mode);
+    //void renderPostFx(CameraMode cam_mode);
 
 	void invalidateMapBlockMesh(MapBlockMesh *mesh);
 
@@ -76,10 +76,10 @@ private:
     DistanceSortedDrawList *m_drawlist;
 
     v3f m_camera_pos = v3f(0,0,0);
-    v3f m_camera_dir = v3f(0,0,1);
-    f32 m_camera_fov = M_PI;
+    //v3f m_camera_dir = v3f(0,0,1);
+    //f32 m_camera_fov = M_PI;
     v3s16 m_camera_offset;
-	img::color8 m_camera_light_color = img::white;
+    //img::color8 m_camera_light_color = img::white;
 
     std::list<MapBlock*> m_visible_mapblocks;
     //std::map<v3s16, MapBlock*> m_drawlist_shadow;

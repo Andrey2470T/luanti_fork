@@ -6,10 +6,10 @@
 #include "debug.h"
 #include "config.h"
 #include "map.h"
-#include "client/map/clientmap.h"     // MapDrawControl
 #include <cmath>
-#include "client/render/renderingengine.h"
-#include "client/ao/genericcao.h"
+#include "client/client.h"
+#include "client/map/clientmap.h"
+#include "client/ao/genericCAO.h"
 #include "settings.h"
 #include "client/render/wieldmesh.h"
 #include "noise.h"         // easeCurve
@@ -17,12 +17,14 @@
 #include "nodedef.h"
 #include "util/numeric.h"
 #include "constants.h"
-#include "client/ui/fontengine.h"
+#include "client/ui/glyph_atlas.h"
 #include "script/scripting_client.h"
 #include "gettext.h"
-#include "Image/Converting.h"
-#include "Utils/Quaternion.h"
-#include "Utils/MathFuncs.h"
+#include <Image/Converting.h>
+#include <Utils/Quaternion.h>
+#include <Utils/MathFuncs.h>
+#include "client/render/rendersystem.h"
+#include "client/render/drawlist.h"
 
 #define CAMERA_OFFSET_STEP 200
 #define WIELDMESH_OFFSET_X 55.0f
@@ -30,7 +32,7 @@
 #define WIELDMESH_AMPLITUDE_X 7.0f
 #define WIELDMESH_AMPLITUDE_Y 10.0f
 
-PlayerCamera::PlayerCamera(MapDrawControl &draw_control, Client *client, RenderingEngine *rendering_engine):
+PlayerCamera::PlayerCamera(DrawControl &draw_control, Client *client):
 	Camera(), m_draw_control(draw_control),
     m_client(client), m_player_light_color(img::colorU32NumberToObject(0xFFFFFFFF))
 {
@@ -481,7 +483,7 @@ void PlayerCamera::update(LocalPlayer* player, f32 frametime, f32 tool_reload_ra
 	m_curr_fov_degrees = rangelim(m_curr_fov_degrees, 1.0f, 160.0f);
 
 	// FOV and aspect ratio
-    const v2u &window_size = RenderingEngine::getWindowSize();
+    const v2u &window_size = m_client->getRenderSystem()->getWindowSize();
     m_frustum.Aspect = (f32) window_size.X / (f32) window_size.Y;
     m_frustum.Fovy = m_curr_fov_degrees * M_PI / 180.0;
 	// Increase vertical FOV on lower aspect ratios (<16:10)
