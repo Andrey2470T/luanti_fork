@@ -8,7 +8,6 @@
 #include <vector>
 #include <Utils/Line3D.h>
 #include "../activeobjectmgr.h"
-//#include "clientobject.h"
 
 class ClientActiveObject;
 class DistanceSortedActiveObject;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "animation.h"
+#include "client/render/datatexture.h"
 #include "skeleton.h"
 
 // Update bones transforms corresponding to the given timestamp
@@ -31,4 +32,26 @@ void BoneAnimation::animateBones(f32 time)
         Base->getBone(b_r.first)->Transform.Rotation = b_r.second;
     for (auto &b_s : posState.value())
         Base->getBone(b_s.first)->Transform.Scale = b_s.second;
+}
+
+AnimationManager::AnimationManager()
+    : bonesDataTexture(std::make_unique<DataTexture>("BonesData", 4 * 4 * sizeof(f32), 0, 4 * 4))
+{}
+
+u32 AnimationManager::getBonesCount()
+{
+    u32 num = 0;
+
+    for (auto &skeleton : skeletons)
+        num += skeleton->getUsedBonesCount();
+}
+void AnimationManager::addSkeleton(Skeleton *skeleton)
+{
+    skeletons.emplace_back(std::unique_ptr<Skeleton>(skeleton));
+}
+
+void AnimationManager::addAnimations(u32 skeletonN, const std::vector<BoneAnimation *> anims)
+{
+    for (auto &anim : anims)
+        animations.emplace_back(skeletonN, std::unique_ptr<BoneAnimation>(anim));
 }

@@ -4,7 +4,6 @@
 #include <Utils/Matrix4.h>
 #include <Utils/Quaternion.h>
 #include <Render/Shader.h>
-#include "client/mesh/meshbuffer.h"
 #include <list>
 
 #define BONES_MAX 128
@@ -12,6 +11,7 @@
 #define VERTEX_MAX_BONES 8
 
 class DataTexture;
+class LayeredMesh;
 
 struct Weight
 {
@@ -58,16 +58,18 @@ class Skeleton
 {
     std::array<std::unique_ptr<Bone>, BONES_MAX> Bones;
     u8 UsedBonesCount = 0;
+    u8 BoneOffset;
+
 
     std::vector<u8> RootBones;
 
-    MeshBuffer *AffectedMesh = nullptr;
+    LayeredMesh *AffectedMesh = nullptr;
 
-    std::unique_ptr<DataTexture> BonesDataTexture;
+    DataTexture *BonesDataTexture;
 
     bool AnimateNormals = false;
 public:
-    Skeleton();
+    Skeleton(DataTexture *tex, u8 boneOffset);
 
     u8 getUsedBonesCount() const
     {
@@ -79,11 +81,11 @@ public:
 
     std::vector<Bone *> getAllUsedBones() const;
 
-    MeshBuffer *getAnimatedMesh() const
+    LayeredMesh *getAnimatedMesh() const
     {
         return AffectedMesh;
     }
-    void setAnimatedMesh(MeshBuffer *mesh)
+    void setAnimatedMesh(LayeredMesh *mesh)
     {
         AffectedMesh = mesh;
     }
@@ -96,5 +98,5 @@ public:
     void updateShaderAndDataTexture(render::Shader *shader);
     // The bones count per a vertex also has the limit, therefore this method selects out the most "affecting" bones ids and their weights
     // This method fills "bones" and "weights" attributes
-    void fillMeshAttribs(MeshBuffer *mesh);
+    void fillMeshAttribs(LayeredMesh *mesh);
 };

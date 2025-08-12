@@ -1,5 +1,7 @@
 #include "skeleton.h"
 #include "client/render/datatexture.h"
+#include "client/mesh/layeredmesh.h"
+#include "client/mesh/meshbuffer.h"
 
 void BoneTransform::buildTransform(const BoneTransform *parentTransform)
 {
@@ -50,11 +52,9 @@ void Bone::updateBone()
         childBone->updateBone();
 }
 
-Skeleton::Skeleton()
-    : BonesDataTexture(std::make_unique<DataTexture>("BonesData", 4 * 4 * sizeof(f32), 0, 4 * 4))
-{
-
-}
+Skeleton::Skeleton(DataTexture *tex, u8 boneOffset)
+    : BoneOffset(boneOffset), BonesDataTexture(tex)//BonesDataTexture(std::make_unique<DataTexture>("BonesData", 4 * 4 * sizeof(f32), 0, 4 * 4))
+{}
 
 Bone *Skeleton::getBone(u8 n) const
 {
@@ -103,6 +103,10 @@ void Skeleton::updateBonesTransforms()
 
 void Skeleton::updateShaderAndDataTexture(render::Shader *shader)
 {
+    shader->setUniformInt("mBonesCount", UsedBonesCount);
+    shader->setUniformInt("mBonesOffset", BoneOffset);
+    shader->setUniformInt("mSampleDim", BonesDataTexture->sampleDim);
+    shader->setUniformInt("mDataTexDim", BonesDataTexture->texDim);
     shader->setUniformInt("mAnimateNormals", (s32)AnimateNormals);
 
     for (u8 i = 0; i < UsedBonesCount; i++) {
@@ -113,39 +117,42 @@ void Skeleton::updateShaderAndDataTexture(render::Shader *shader)
     }
 }
 
-void Skeleton::fillMeshAttribs(MeshBuffer *mesh)
+void Skeleton::fillMeshAttribs(LayeredMesh *mesh)
 {
-    assert(mesh->getVAO()->getVertexType().Name != "AnimatedObject3D");
+    assert(mesh->getBasicVertexType().Name != "AnimatedObject3D");
 
-    for (u32 i = 0; i < mesh->getVertexCount(); i++) {
-        u8 bones_packed = 0;
-        u8 weights_packed = 0;
-        std::array<u32, 2> bones_ids;
-        std::array<u32, 2> weights;
+    for (u32 k = 0; k < mesh->getBuffersCount(); k++) {
+        auto buf = mesh->getBuffer(k);
+        for (u32 i = 0; i < buf->getVertexCount(); i++) {
+            u8 bones_packed = 0;
+            u8 weights_packed = 0;
+            std::array<u32, 2> bones_ids;
+            std::array<u32, 2> weights;
 
-        for (u8 j = 0; j < Bones.size(); j++) {
-            for (auto w : Bones.at(j)->Weights) {
-                if (w.vertex_n != i)
-                    continue;
+            for (u8 j = 0; j < Bones.size(); j++) {
+                for (auto w : Bones.at(j)->Weights) {
+                    if (w.vertex_n != i)
+                        continue;
 
-                if (weights_packed == 8)
+                    if (weights_packed == 8)
+                        break;
+
+                    bones_ids[bones_packed / 4] <<= bones_packed % 4 * 8;
+                    bones_ids[bones_packed / 4] |= j;
+
+                    weights[weights_packed / 4] <<= weights_packed % 4 * 8;
+                    weights[weights_packed / 4] |= (u8)w.strength;
+
+                    bones_packed++;
+                    weights_packed++;
+                }
+
+                if (bones_packed == 8)
                     break;
-
-                bones_ids[bones_packed / 4] <<= bones_packed % 4 * 8;
-                bones_ids[bones_packed / 4] |= j;
-
-                weights[weights_packed / 4] <<= weights_packed % 4 * 8;
-                weights[weights_packed / 4] |= (u8)w.strength;
-
-                bones_packed++;
-                weights_packed++;
             }
 
-            if (bones_packed == 8)
-                break;
+            buf->setAttrAt<v2i>(v2i(bones_ids[0], bones_ids[1]), 5, i);
+            buf->setAttrAt<v2i>(v2i(weights[0], weights[1]), 6, i);
         }
-
-        mesh->setAttrAt<v2i>(v2i(bones_ids[0], bones_ids[1]), 5, i);
-        mesh->setAttrAt<v2i>(v2i(weights[0], weights[1]), 6, i);
     }
 }

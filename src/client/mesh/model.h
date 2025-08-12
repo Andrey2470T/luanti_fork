@@ -9,20 +9,26 @@ class Skeleton;
 class BoneAnimation;
 class Bone;
 class LayeredMesh;
+class AnimationManager;
+class ResourceCache;
 
 class Model
 {
     std::unique_ptr<LayeredMesh> mesh;
 
-    std::unique_ptr<Skeleton> skeleton;
-    std::vector<std::unique_ptr<BoneAnimation>> animations;
+    Skeleton *skeleton;
+    std::vector<BoneAnimation *> animations;
     
     std::vector<std::pair<aiNode *, Bone *>> bone_mappings;
-public:
-    Model() = default;
-    Model(render::VertexTypeDescriptor vType, const aiScene *scene);
 
-    static Model *load(const std::string &path);
+    AnimationManager *mgr;
+public:
+    Model(AnimationManager *_mgr)
+        : mgr(_mgr)
+    {}
+    Model(AnimationManager *_mgr, v3f pos, const aiScene *scene, ResourceCache *cache);
+
+    static Model *load(AnimationManager *_mgr, v3f pos, const std::string &path, ResourceCache *cache);
 
     LayeredMesh *getMesh() const
     {

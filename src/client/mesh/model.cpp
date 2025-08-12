@@ -5,6 +5,8 @@
 #include "client/ao/animation.h"
 #include <Utils/Matrix4.h>
 #include "layeredmesh.h"
+#include "client/render/tilelayer.h"
+#include "client/media/resource.h"
 
 matrix4 convertFromAssimpMatrix(aiMatrix4x4 m)
 {
@@ -32,31 +34,48 @@ KeyChannelInterpMode convertFromAssimpInterp(aiAnimBehaviour b)
     };
 }
 
-Model::Model(render::VertexTypeDescriptor vType, const aiScene *scene)
+Model::Model(AnimationManager *_mgr, v3f pos, const aiScene *scene, ResourceCache *cache)
+    : mgr(_mgr)
 {
     // aka Material Groups
     // The material groups order defines the meshes groups one
     assert(scene->mNumMaterials <= scene->mNumMeshes);
 
-    bool animated = scene->hasSkeletons() && scene->HasAnimations();
+    render::VertexTypeDescriptor vType =
+        scene->hasSkeletons() && scene->HasAnimations() ?
+        AOVType : NodeVType;
 
-    mesh = std::make_unique<LayeredMesh>(v3f(), vType);
+    mesh = std::make_unique<LayeredMesh>(v3f(), pos, vType);
 
-    if (vType.Name == "AnimatedObject3D") {
-        skeleton = std::make_unique<Skeleton>();
+    bool animated = vType.Name == "AnimatedObject3D";
+    if (animated) {
+        skeleton = new Skeleton(mgr->getBonesTexture(), mgr->getBonesCount());
         skeleton->setAnimatedMesh(mesh.get());
-        animations.resize(scene->mNumAnimations);
+        animations.reserve(scene->mNumAnimations);
+
+        u32 skeleton_id = mgr->getSkeletonCount();
+        mgr->addSkeleton(skeleton);
+
+        for (u8 i = 0; i < scene->mNumAnimations; i++)
+            animations.emplace_back();
+        mgr->addAnimations(skeleton_id, animations);
     }
+
+    std::shared_ptr<TileLayer> layer;
+    layer->alpha_discard = 1;
+    layer->material_flags = MATERIAL_FLAG_TRANSPARENT;
+    layer->use_default_shader = false;
+
+    std::string shadername = animated ? "object_skinned" : "object";
+    layer->shader = cache->getOrLoad<render::Shader>(ResourceType::SHADER, shadername);
+
+    // Assume that this is extremely low possible for the model to have > 2 milliards vertices
+    mesh->addNewBuffer(layer, new MeshBuffer(true, vType));
 
     // process meshes
     u32 curOffset = 0;
-    for (u8 i = 0; i < scene->mNumMaterials; i++) {
+    for (u8 i = 0; i < scene->mNumMaterials; i++)
         processMesh(scene->mMeshes[i]);
-        
-        u32 prevCount = scene->mMeshes[i]->mNumFaces*3;
-        parts.emplace_back(curOffset, prevCount);
-        curOffset += prevCount;
-    }
 
     // process bones (indexes of "bones" and "skeleton->mBones" coincide)
     std::vector<Bone *> bones;
@@ -90,10 +109,10 @@ Model::Model(render::VertexTypeDescriptor vType, const aiScene *scene)
         skeleton->fillMeshAttribs(mesh.get());
     }
 
-    mesh->uploadData();
+    mesh->getBuffer(0)->uploadData();
 }
 
-Model *Model::load(const std::string &path)
+Model *Model::load(AnimationManager *_mgr, v3f pos, const std::string &path, ResourceCache *cache)
 {
     Assimp::Importer importer;
 
@@ -110,35 +129,36 @@ Model *Model::load(const std::string &path)
         return nullptr;
     }
 
-    return new Model(scene);
+    return new Model(_mgr, pos, scene, cache);
 }
 
 void Model::processMesh(aiMesh *m)
 {
-	u32 vertexCount = mesh->getVertexCount();
-    u32 indexCount = mesh->getIndexCount();
+    auto buf = mesh->getBuffer(0);
+    u32 vertexCount = buf->getVertexCount();
+    u32 indexCount = buf->getIndexCount();
 
-    mesh->reallocateData(vertexCount + m->mNumVertices, indexCount + m->mNumFaces * 3);
+    buf->reallocateData(vertexCount + m->mNumVertices, indexCount + m->mNumFaces * 3);
 
-    auto vType = mesh->getVertexType();
+    auto vType = buf->getVAO()->getVertexType();
     for (u32 i = 0; i < m->mNumVertices; i++) {
         auto pos = m->mVertices[i];
         auto color = m->mColors[i];
         auto normal = m->mNormals[i];
         auto uv = m->HasTextureCoords(0) ? m->mTextureCoords[0][i] : aiVector3D(0, 0, 0);
 
-        if (vType.name == "Node3D") {
-            appendNVT(mesh.get(),
+        if (vType.Name == "Node3D") {
+            appendNVT(buf,
                 v3f(pos.x, pos.y, pos.z), img::color8(img::PF_RGBA8, color->r, color->g, color->b, color->a),
                 v3f(normal.x, normal.y, normal.z), v2f(uv.x, uv.y));
         }
-        else if (vType.name == "TwoColoredNode3D") {
-        	appendTCNVT(mesh.get(),
+        else if (vType.Name == "TwoColoredNode3D") {
+            appendTCNVT(buf,
                 v3f(pos.x, pos.y, pos.z), img::color8(img::PF_RGBA8, color->r, color->g, color->b, color->a),
                 v3f(normal.x, normal.y, normal.z), v2f(uv.x, uv.y));
         }
         else {
-        	appendAOVT(mesh.get(),
+            appendAOVT(buf,
                 v3f(pos.x, pos.y, pos.z), img::color8(img::PF_RGBA8, color->r, color->g, color->b, color->a),
                 v3f(normal.x, normal.y, normal.z), v2f(uv.x, uv.y));
         }
@@ -146,7 +166,7 @@ void Model::processMesh(aiMesh *m)
 
     for (u32 f = 0; f < m->mNumFaces; f++) {
         for (u8 k = 0; k < 3; k++)
-            appendIndex(mesh.get(), m->mFaces[f].mIndices[k]);
+            appendIndex(buf, m->mFaces[f].mIndices[k]);
     }
 }
 
@@ -210,7 +230,7 @@ void Model::processAnimations(std::vector<Bone *> &bones, const aiScene *scene)
     };
 
     for (u8 i = 0; i < scene->mNumAnimations; i++) {
-        animations[i]->setBase(skeleton.get());
+        animations[i]->setBase(skeleton);
         auto anim = scene->mAnimations[i];
 
         for (u8 j = 0; j < anim->mNumChannels; j++) {

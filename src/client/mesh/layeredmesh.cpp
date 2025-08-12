@@ -53,7 +53,8 @@ void LayeredMesh::addNewBuffer(std::shared_ptr<TileLayer> layer, MeshBuffer *buf
     recalculateBoundingRadius();
 }
 
-MeshLayer &LayeredMesh::findLayer(std::shared_ptr<TileLayer> layer, u32 vertexCount, u32 indexCount)
+MeshLayer &LayeredMesh::findLayer(std::shared_ptr<TileLayer> layer, render::VertexTypeDescriptor vType,
+    u32 vertexCount, u32 indexCount)
 {
     for (u8 i = 0; i < getBuffersCount(); i++) {
         auto buffer = getBuffer(i);
@@ -86,8 +87,8 @@ MeshLayer &LayeredMesh::findLayer(std::shared_ptr<TileLayer> layer, u32 vertexCo
         }
     }
 
-    auto vType = layer->material_flags & MATERIAL_FLAG_HARDWARE_COLORIZED ?
-        TwoColorNodeVType : basicVertexType;
+    //auto vType = layer->material_flags & MATERIAL_FLAG_HARDWARE_COLORIZED ?
+    //    TwoColorNodeVType : basicVertexType;
     buffers.emplace_back(vertexCount, indexCount, true, vType);
     layers.emplace_back();
 

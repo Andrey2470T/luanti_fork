@@ -30,6 +30,8 @@ layout (std140) uniform mShadowParams {
 
 // Absolute bones transformations
 layout (binding = 1) uniform sampler2D mDataTex;
+uniform int mBonesCount;
+uniform int mBonesOffset; // all the skeleton bones ids are relatively to this offset
 uniform int mSampleDim;
 uniform int mDataTexDim;
 
@@ -133,7 +135,7 @@ void main(void)
 		int weight_n = weights[i % 4];
 		float weight = float((weight_n >> (shift_n * 8)) & 0xffffffff) / 127.0;
 
-		ivec2 sampleCoords = getSampleCoords(mDataTex, BONES_MAX, mSampleDim, mDataTexDim, bone_id);
+		ivec2 sampleCoords = getSampleCoords(mDataTex, mBonesCount, mSampleDim, mDataTexDim, mBonesOffset+bone_id);
 		mat4 bone_transform = unpackFloatMat4x4(mDataTex, sampleCoords);
 
 		skinnedPos += weight * bone_transform * vec4(skinnedPos, 1.0);

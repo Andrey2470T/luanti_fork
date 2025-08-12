@@ -5,6 +5,7 @@
 #include <Utils/Quaternion.h>
 #include <optional>
 #include <map>
+#include <memory>
 
 enum class KeyChannelInterpMode
 {
@@ -224,4 +225,28 @@ public:
     }
     // Update bones transforms corresponding to the given timestamp
     void animateBones(f32 time);
+};
+
+class DataTexture;
+
+class AnimationManager
+{
+    std::vector<std::unique_ptr<Skeleton>> skeletons;
+    std::vector<std::pair<u32, std::unique_ptr<BoneAnimation>>> animations;
+
+    std::unique_ptr<DataTexture> bonesDataTexture;
+public:
+    AnimationManager();
+
+    DataTexture *getBonesTexture() const
+    {
+        return bonesDataTexture.get();
+    }
+    u32 getSkeletonCount()
+    {
+        return skeletons.size();
+    }
+    u32 getBonesCount();
+    void addSkeleton(Skeleton *skeleton);
+    void addAnimations(u32 skeletonN, const std::vector<BoneAnimation *> anims);
 };

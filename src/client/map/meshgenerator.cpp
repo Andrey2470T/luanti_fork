@@ -109,6 +109,10 @@ void MapblockMeshGenerator::prepareDrawing(const TileSpec &tile)
     }
 }
 
+#define SELECT_VERTEXTYPE(layer) \
+    layer->material_flags & MATERIAL_FLAG_HARDWARE_COLORIZED ? \
+    TwoColorNodeVType : NodeVType
+
 void MapblockMeshGenerator::drawQuad(const TileSpec &tile, const std::array<v3f, 4> &coords,
         const std::array<v3f, 4> &normals, const rectf *uv)
 {
@@ -120,10 +124,10 @@ void MapblockMeshGenerator::drawQuad(const TileSpec &tile, const std::array<v3f,
 
     prepareDrawing(tile);
 
-    auto layer1 = collector->findLayer(tile[0], 4, 6);
+    auto layer1 = collector->findLayer(tile[0], SELECT_VERTEXTYPE(tile[0]), 4, 6);
     Batcher3D::appendFace(collector->getBuffer(layer1.second.buffer_id), coords, colors, uv ? *uv : uvs, normals);
 
-    auto layer2 = collector->findLayer(tile[1], 4, 6);
+    auto layer2 = collector->findLayer(tile[1], SELECT_VERTEXTYPE(tile[1]), 4, 6);
     Batcher3D::appendFace(collector->getBuffer(layer2.second.buffer_id), coords, colors, uv ? *uv : uvs, normals);
 
 }
@@ -162,14 +166,14 @@ void MapblockMeshGenerator::drawCuboid(const aabbf &box, const std::array<TileSp
 
     prepareDrawing(tiles[0]);
 
-    auto layer1 = collector->findLayer(tiles[0][0], 4, 6);
+    auto layer1 = collector->findLayer(tiles[0][0], SELECT_VERTEXTYPE(tiles[0][0]), 4, 6);
     auto buf1 = collector->getBuffer(layer1.second.buffer_id);
     u32 vcount = buf1->getVertexCount();
     Batcher3D::appendBox(buf1, box, colors, uvs, mask);
 
     applyTileRotation(buf1, tiles, tilecount, vcount);
 
-    auto layer2 = collector->findLayer(tiles[0][1], 4, 6);
+    auto layer2 = collector->findLayer(tiles[0][1], SELECT_VERTEXTYPE(tiles[0][0]), 4, 6);
     auto buf2 = collector->getBuffer(layer1.second.buffer_id);
     vcount = buf2->getVertexCount();
     Batcher3D::appendBox(buf2, box, colors, uvs, mask);

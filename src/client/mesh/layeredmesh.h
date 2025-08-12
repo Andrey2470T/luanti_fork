@@ -111,7 +111,8 @@ public:
 
     void addNewBuffer(std::shared_ptr<TileLayer> layer, MeshBuffer *buffer);
 
-    MeshLayer &findLayer(std::shared_ptr<TileLayer> layer, u32 vertexCount, u32 indexCount);
+    MeshLayer &findLayer(std::shared_ptr<TileLayer> layer, render::VertexTypeDescriptor vType,
+        u32 vertexCount, u32 indexCount);
 
     void recalculateBoundingRadius();
 
