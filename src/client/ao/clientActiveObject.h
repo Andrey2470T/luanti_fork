@@ -28,11 +28,11 @@ public:
     virtual void addToScene() = 0;
 	virtual void removeFromScene(bool permanent) {}
 
-	virtual void updateLight(u32 day_night_ratio) {}
+    //virtual void updateLight(u32 day_night_ratio) {}
 
     virtual bool getCollisionBox(aabbf *toset) const { return false; }
     virtual bool getSelectionBox(aabbf *toset) const { return false; }
-	virtual bool collideWithObjects() const { return false; }
+    virtual bool collideWithObjects() const { return false; }
     virtual const v3f getPosition() const { return v3f(0.0f); } // in BS-space
     virtual const v3f getVelocity() const { return v3f(0.0f); } // in BS-space
 	virtual bool isLocalPlayer() const { return false; }
@@ -42,7 +42,7 @@ public:
 	{ static std::unordered_set<object_t> rv; return rv; }
 	virtual void updateAttachments() {};
 
-	virtual bool doShowSelectionBox() { return true; }
+    //virtual bool doShowSelectionBox() { return true; }
 
 	// Step object in time
 	virtual void step(float dtime, ClientEnvironment *env) {}
