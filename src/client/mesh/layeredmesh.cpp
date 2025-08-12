@@ -23,8 +23,8 @@ bool LayeredMesh::TransparentTrianglesSorter::operator()(const LayeredMeshTriang
     return dist1 > dist2;
 }
 
-LayeredMesh::LayeredMesh(const v3f &center, render::VertexTypeDescriptor basicVType)
-    : center_pos(center), basicVertexType(basicVType)
+LayeredMesh::LayeredMesh(const v3f &center, const v3f &abs_center, render::VertexTypeDescriptor basicVType)
+    : center_pos(center), abs_pos(abs_center), basicVertexType(basicVType)
 {}
 
 std::vector<MeshLayer> LayeredMesh::getAllLayers() const
@@ -36,6 +36,21 @@ std::vector<MeshLayer> LayeredMesh::getAllLayers() const
             all_layers.push_back(layer);
 
     return all_layers;
+}
+
+void LayeredMesh::addNewBuffer(std::shared_ptr<TileLayer> layer, MeshBuffer *buffer)
+{
+    buffers.emplace_back(std::unique_ptr<MeshBuffer>(buffer));
+
+    LayeredMeshPart mesh_p;
+    mesh_p.buffer_id = buffers.size()-1;
+    mesh_p.layer_id = 0;
+    mesh_p.offset = 0;
+    mesh_p.count = buffer->getIndexCount();
+
+    layers.emplace_back(layer, mesh_p);
+
+    recalculateBoundingRadius();
 }
 
 MeshLayer &LayeredMesh::findLayer(std::shared_ptr<TileLayer> layer, u32 vertexCount, u32 indexCount)
@@ -66,7 +81,7 @@ MeshLayer &LayeredMesh::findLayer(std::shared_ptr<TileLayer> layer, u32 vertexCo
             LayeredMeshPart mesh_p;
             mesh_p.buffer_id = i;
             mesh_p.layer_id = buf_layers.size();
-            buf_layers.emplace_back(std::shared_ptr<TileLayer>(layer), mesh_p);
+            buf_layers.emplace_back(layer, mesh_p);
             return buf_layers.back();
         }
     }
@@ -80,7 +95,9 @@ MeshLayer &LayeredMesh::findLayer(std::shared_ptr<TileLayer> layer, u32 vertexCo
     mesh_p.buffer_id = getBuffersCount();
     mesh_p.layer_id = 0;
 
-    layers.back().emplace_back(std::shared_ptr<TileLayer>(layer), mesh_p);
+    layers.back().emplace_back(layer, mesh_p);
+
+    recalculateBoundingRadius();
 
     return layers.back().at(0);
 }

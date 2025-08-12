@@ -21,11 +21,11 @@ void main()
 	if (bool(mTextureUsage0)) {
 		Color *= texture2D(mTexture0, vUV0);
 		
-		if (mAlphaDiscard == 0 && Color.a < mAlphaRef)
+		if (mAlphaDiscard == 1 && Color.a < mAlphaRef)
 	        discard;
 	}
 	
-	if (mAlphaDiscard == 1 && Color.a < mAlphaRef)
+	if (mAlphaDiscard == 0 && Color.a < mAlphaRef)
         discard;
 
 	if (bool(mFogParams.enable))

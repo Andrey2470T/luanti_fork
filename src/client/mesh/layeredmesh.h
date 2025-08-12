@@ -48,7 +48,8 @@ class LayeredMesh
     std::vector<std::vector<MeshLayer>> layers;
 
     f32 radius_sq = 0.0f;
-	v3f center_pos;
+    v3f center_pos; // relative BS coords
+    v3f abs_pos; // absolute BS coords
 	
 	render::VertexTypeDescriptor basicVertexType;
 
@@ -66,7 +67,7 @@ class LayeredMesh
 
     std::vector<LayeredMeshPart> partial_layers;
 public:
-    LayeredMesh(const v3f &center, render::VertexTypeDescriptor basicVType);
+    LayeredMesh(const v3f &center, const v3f &abs_center, render::VertexTypeDescriptor basicVType);
 
     f32 getBoundingSphereRadius() const
     {
@@ -74,7 +75,7 @@ public:
     }
     v3f getBoundingSphereCenter() const
     {
-        return center_pos;
+        return abs_pos + center_pos;
     }
 
     u8 getBuffersCount() const
@@ -107,6 +108,8 @@ public:
     {
     	return basicVertexType;
     }
+
+    void addNewBuffer(std::shared_ptr<TileLayer> layer, MeshBuffer *buffer);
 
     MeshLayer &findLayer(std::shared_ptr<TileLayer> layer, u32 vertexCount, u32 indexCount);
 

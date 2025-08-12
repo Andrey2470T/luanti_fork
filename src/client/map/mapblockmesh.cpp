@@ -84,7 +84,8 @@ void MeshMakeData::fillSingleNode(MapNode data, MapNode padding)
 */
 
 MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data)
-    : m_mesh(std::make_unique<LayeredMesh>(v3f((data->m_side_length * 0.5f - 0.5f) * BS), NodeVType)),
+    : m_mesh(std::make_unique<LayeredMesh>(v3f((data->m_side_length * 0.5f - 0.5f) * BS),
+      intToFloat(data->m_mesh_grid.getMeshPos(data->m_blockpos) * MAP_BLOCKSIZE, BS), NodeVType)),
     m_rndsys(client->getRenderSystem()), m_cache(client->getResourceCache())
 {
 	ZoneScoped;
@@ -113,7 +114,6 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data)
 
 	// algin vertices to mesh grid, not meshgen area
     //offset = intToFloat((data->m_blockpos - mesh_grid.getMeshPos(data->m_blockpos)) * MAP_BLOCKSIZE, BS);
-    m_translation = intToFloat(mesh_grid.getMeshPos(data->m_blockpos) * MAP_BLOCKSIZE, BS);
 
     /*MeshCollector collector(m_bounding_sphere_center, offset);
 
@@ -138,11 +138,11 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data)
             if (layer->material_flags & MATERIAL_FLAG_HARDWARE_COLORIZED)
                 shadername = "block_hw";
 
+            layer->use_default_shader = false;
             layer->shader = m_cache->getOrLoad<render::Shader>(ResourceType::SHADER, shadername);
 
-            auto img_size = layer->tile_ref->getSize();
+            auto img_size = src_rect.getSize();
             u32 atlas_size = layer->atlas->getTextureSize();
-            auto atlas_tile = layer->atlas->getTileByImage(layer->tile_ref);
 
             for (u32 k = 0; k < buffer->getVertexCount(); k++) {
                 // Apply material type
@@ -156,8 +156,8 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data)
                 u32 rel_y = round32(svtGetUV(buffer, k).Y * img_size.Y);
 
                 v2f atlas_uv(
-                    (atlas_tile->pos.X + rel_x) / atlas_size,
-                    (atlas_tile->pos.Y + rel_y) / atlas_size
+                    (src_rect.ULC.X + rel_x) / atlas_size,
+                    (src_rect.ULC.Y + rel_y) / atlas_size
                 );
 
                 svtSetUV(buffer, atlas_uv, k);

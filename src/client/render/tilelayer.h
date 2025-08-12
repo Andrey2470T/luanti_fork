@@ -63,13 +63,15 @@ struct TileLayer
 
     void setupRenderState(RenderSystem *rndsys) const;
 
-    // '1' = alpha discard, '2' = alpha discard ref, '3' = no discard (solid)
+    // '0' = alpha discard, '1' = alpha discard ref, '2' = no discard (solid)
     s32 alpha_discard = 2;
 
     Atlas *atlas;
     img::Image *tile_ref;
 
 	render::Shader *shader;
+
+    bool use_default_shader = true;
 
 	u8 material_type = TILE_MATERIAL_BASIC;
 	u8 material_flags =

@@ -1,5 +1,6 @@
 #include "selection.h"
 #include "client/render/renderer.h"
+#include "client/render/rendersystem.h"
 #include "client/media/resource.h"
 #include "settings.h"
 #include "client/mesh/meshoperations.h"
@@ -8,9 +9,11 @@
 #include "client/client.h"
 #include "client/player/localplayer.h"
 #include "client/player/playercamera.h"
+#include "client/mesh/layeredmesh.h"
+#include "client/render/tilelayer.h"
 
-SelectionMesh::SelectionMesh(Renderer *_rnd, ResourceCache *_cache)
-    : rnd(_rnd), cache(_cache), mesh(std::make_unique<MeshBuffer>(true, render::DefaultVType, render::MeshUsage::DYNAMIC))
+SelectionMesh::SelectionMesh(RenderSystem *_rndsys, ResourceCache *_cache)
+    : rndsys(_rndsys), cache(_cache)
 {
     v3f selectionbox_color = g_settings->getV3F("selectionbox_color").value_or(v3f());
     base_color.R(std::round(selectionbox_color.X));
@@ -29,7 +32,7 @@ SelectionMesh::SelectionMesh(Renderer *_rnd, ResourceCache *_cache)
     }
 
     if (mode == HIGHLIGHT_HALO)
-        halo_tex = cache->get<render::Texture2D>(ResourceType::TEXTURE, "halo.png");
+        halo_img = cache->get<img::Image>(ResourceType::IMAGE, "halo.png");
     else if (mode == HIGHLIGHT_BOX)
         thickness = std::clamp<f32>((f32)g_settings->getS16("selectionbox_width"), 1.0f, 5.0f);
 }
@@ -39,60 +42,10 @@ void SelectionMesh::draw() const
     if (mode == HIGHLIGHT_NONE)
         return;
 
-    render::PrimitiveType pType = mode == HIGHLIGHT_HALO ? render::PT_TRIANGLES : render::PT_LINES;
-    rnd->draw(mesh.get(), pType);
-}
+    auto layer = mesh->getBufferLayer(0, 0);
+    layer.first->setupRenderState(rndsys);
 
-void SelectionMesh::updateMesh()
-{
-    if (boxes.empty() || mode == HIGHLIGHT_NONE) {
-        // No pointed object
-        return;
-    }
-
-    Batcher3D::vType = B3DVT_SVT;
-    // Use single halo box instead of multiple overlapping boxes.
-    // Temporary solution - problem can be solved with multiple
-    // rendering targets, or some method to remove inner surfaces.
-    // Thats because of halo transparency.
-
-    mesh->clear();
-
-    if (mode == HIGHLIGHT_HALO) {
-        aabbf halo_box = default_halo_box;
-
-        for (const auto &sbox : boxes)
-            halo_box.addInternalBox(sbox);
-
-        mesh.reset(MeshOperations::convertNodeboxesToMesh({halo_box}, nullptr, 0.5f));
-
-        MeshOperations::colorizeMesh(mesh.get(), light_color);
-        img::color8 face_color(img::PF_RGBA8,
-            light_color.R() * 1.5f,
-            light_color.G() * 1.5f,
-            light_color.B() * 1.5f,
-            0);
-        MeshOperations::setMeshColorByNormal(mesh.get(), face_normal, face_color);
-
-        rnd->setDefaultShader(true);
-        rnd->setTexture(halo_tex);
-
-    }
-    else {
-        img::color8 res_color = base_color * light_color;
-        res_color.A(255);
-
-        mesh->reallocateData(8 * boxes.size(), 24 * boxes.size());
-        for (auto &box : boxes)
-            Batcher3D::appendLineBox(mesh.get(), box, res_color);
-
-        rnd->setDefaultShader();
-    }
-
-    mesh->uploadData();
-
-    rnd->setRenderState(true);
-    rnd->setDefaultUniforms(thickness, 0, 0.5f, img::BM_COUNT);
+    auto rnd = rndsys->getRenderer();
     rnd->enableFog(false);
 
     matrix4 t;
@@ -101,17 +54,79 @@ void SelectionMesh::updateMesh()
     t.setRotationDegrees(rotation);
 
     rnd->setTransformMatrix(TMatrix::World, t * r);
+
+    render::PrimitiveType pType = mode == HIGHLIGHT_HALO ? render::PT_TRIANGLES : render::PT_LINES;
+    rnd->draw(mesh->getBuffer(0), pType);
 }
 
-void SelectionMesh::setPos(const v3f &position, const v3s16 &camera_offset)
+void SelectionMesh::updateMesh(const v3f &new_pos, const v3s16 &camera_offset,
+    const std::vector<aabbf> &new_boxes)
 {
-    pos = position;
-    pos_with_offset = position - intToFloat(camera_offset, BS);
+    if (new_pos == pos || mode == HIGHLIGHT_NONE)
+        return;
+
+    if (new_boxes.empty() && mesh) {
+        mesh.reset();
+        return;
+    }
+
+    boxes = new_boxes;
+    pos = new_pos;
+    pos_with_offset = pos - intToFloat(camera_offset, BS);
+
+    aabbf max_box;
+
+    for (auto &box : boxes)
+        max_box.addInternalBox(box);
+
+    mesh = std::make_unique<LayeredMesh>(v3f(max_box.getRadius()), pos_with_offset, DefaultVType);
+
+    Batcher3D::vType = B3DVT_SVT;
+
+    std::shared_ptr<TileLayer> layer = std::make_shared<TileLayer>();
+    layer->alpha_discard = 1;
+    layer->material_flags = MATERIAL_FLAG_TRANSPARENT;
+    layer->use_default_shader = true;
+
+    // Use single halo box instead of multiple overlapping boxes.
+    // Temporary solution - problem can be solved with multiple
+    // rendering targets, or some method to remove inner surfaces.
+    // Thats because of halo transparency.
+
+    MeshBuffer *buf;
+    if (mode == HIGHLIGHT_HALO) {
+        aabbf halo_box = default_halo_box;
+
+        for (const auto &sbox : boxes)
+            halo_box.addInternalBox(sbox);
+
+        layer->tile_ref = halo_img;
+        buf = MeshOperations::convertNodeboxesToMesh({halo_box}, nullptr, 0.5f);
+
+        MeshOperations::colorizeMesh(buf, light_color);
+        img::color8 face_color(img::PF_RGBA8,
+            light_color.R() * 1.5f,
+            light_color.G() * 1.5f,
+            light_color.B() * 1.5f,
+            0);
+        MeshOperations::setMeshColorByNormal(buf, face_normal, face_color);
+    }
+    else {
+        img::color8 res_color = base_color * light_color;
+        res_color.A(255);
+
+        buf = new MeshBuffer(8 * boxes.size(), 24 * boxes.size());
+        for (auto &box : boxes)
+            Batcher3D::appendLineBox(buf, box, res_color);
+    }
+
+    buf->uploadData();
+    mesh->addNewBuffer(layer, buf);
 }
 
 
-BlockBounds::BlockBounds(Renderer *_rnd)
-    : rnd(_rnd), mesh(std::make_unique<MeshBuffer>(false, render::DefaultVType, render::MeshUsage::DYNAMIC))
+BlockBounds::BlockBounds(RenderSystem *_rndsys)
+    : rndsys(_rndsys)//, mesh(std::make_unique<MeshBuffer>(false, render::DefaultVType, render::MeshUsage::DYNAMIC))
 {
     thickness = std::clamp<f32>((f32)g_settings->getS16("selectionbox_width"), 1.0f, 5.0f);
 }
@@ -134,13 +149,21 @@ void BlockBounds::draw() const
     if (mode == BLOCK_BOUNDS_OFF)
         return;
 
-    rnd->draw(mesh.get(), render::PT_LINES);
+    auto layer = mesh->getBufferLayer(0, 0);
+    layer.first->setupRenderState(rndsys);
+
+    auto rnd = rndsys->getRenderer();
+    rnd->enableFog(false);
+
+    rnd->draw(mesh->getBuffer(0), render::PT_LINES);
 }
 
 void BlockBounds::updateMesh(Client *client)
 {
-    if (mode == BLOCK_BOUNDS_OFF)
+    if (mode == BLOCK_BOUNDS_OFF) {
+        mesh.reset();
         return;
+    }
 
     Batcher3D::vType = B3DVT_SVT;
     u16 mesh_chunk_size = std::max<u16>(1, g_settings->getU16("client_mesh_chunk"));
@@ -155,8 +178,10 @@ void BlockBounds::updateMesh(Client *client)
     s16 radius = mode == BLOCK_BOUNDS_NEAR ?
         rangelim(g_settings->getU16("show_block_bounds_radius_near"), 0, 1000) : 0;
 
-    mesh->clear();
-    mesh->reallocateData(4 * radius * radius * 3);
+    mesh = std::make_unique<LayeredMesh>(v3f(radius * MAP_BLOCKSIZE * BS),
+        intToFloat(block_pos * MAP_BLOCKSIZE, BS) - cam_offset, DefaultVType);
+    MeshBuffer *buf = new MeshBuffer(4 * radius * radius * 3, 0, false);
+
     for (s16 x = -radius; x <= radius + 1; x++)
         for (s16 y = -radius; y <= radius + 1; y++) {
             // Red for mesh chunk edges, yellow for other block edges.
@@ -174,27 +199,28 @@ void BlockBounds::updateMesh(Client *client)
             v3f pmin = v3f(x, y,    -radius) * MAP_BLOCKSIZE * BS;
             v3f pmax = v3f(x, y, 1 + radius) * MAP_BLOCKSIZE * BS;
 
-            Batcher3D::appendLine(mesh.get(),
+            Batcher3D::appendLine(buf,
                 base_corner + v3f(pmin.X, pmin.Y, pmin.Z),
                 base_corner + v3f(pmax.X, pmax.Y, pmax.Z),
                 choose_color(block_pos.X, block_pos.Y)
                 );
-            Batcher3D::appendLine(mesh.get(),
+            Batcher3D::appendLine(buf,
                 base_corner + v3f(pmin.X, pmin.Z, pmin.Y),
                 base_corner + v3f(pmax.X, pmax.Z, pmax.Y),
                 choose_color(block_pos.X, block_pos.Z)
                 );
-            Batcher3D::appendLine(mesh.get(),
+            Batcher3D::appendLine(buf,
                 base_corner + v3f(pmin.Z, pmin.X, pmin.Y),
                 base_corner + v3f(pmax.Z, pmax.X, pmax.Y),
                 choose_color(block_pos.Y, block_pos.Z)
                 );
         }
 
-    mesh->uploadData();
+    std::shared_ptr<TileLayer> layer = std::make_shared<TileLayer>();
+    layer->alpha_discard = 1;
+    layer->material_flags = MATERIAL_FLAG_TRANSPARENT;
+    layer->use_default_shader = true;
 
-    rnd->setRenderState(true);
-    rnd->setDefaultShader();
-    rnd->setDefaultUniforms(thickness, 0, 0.5f, img::BM_COUNT);
-    rnd->enableFog(false);
+    buf->uploadData();
+    mesh->addNewBuffer(layer, buf);
 }

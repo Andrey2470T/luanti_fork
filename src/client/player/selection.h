@@ -1,15 +1,15 @@
 #pragma once
 
 #include <Utils/AABB.h>
-#include "client/mesh/meshbuffer.h"
-#include <Render/Texture2D.h>
+#include <Image/Image.h>
 
-class Renderer;
+class RenderSystem;
 class ResourceCache;
+class LayeredMesh;
 
 class SelectionMesh
 {
-    Renderer *rnd;
+    RenderSystem *rndsys;
     ResourceCache *cache;
 
     enum
@@ -19,7 +19,7 @@ class SelectionMesh
         HIGHLIGHT_NONE
     } mode;
 
-    std::unique_ptr<MeshBuffer> mesh;
+    std::unique_ptr<LayeredMesh> mesh;
 
     std::vector<aabbf> boxes;
     aabbf default_halo_box = aabbf(v3f(100.0f), v3f(-100.0f));
@@ -35,16 +35,16 @@ class SelectionMesh
 
     f32 thickness;
 
-    render::Texture2D *halo_tex;
+    img::Image *halo_img;
 public:
-    SelectionMesh(Renderer *_rnd, ResourceCache *_cache);
+    SelectionMesh(RenderSystem *_rndsys, ResourceCache *_cache);
 
     void draw() const;
-    void updateMesh();
+    void updateMesh(const v3f &new_pos, const v3s16 &camera_offset,
+        const std::vector<aabbf> &new_boxes);
 
     std::vector<aabbf> *getSelectionBoxes() { return &boxes; }
 
-    void setPos(const v3f &position, const v3s16 &camera_offset);
     v3f getPos() const { return pos; }
 
     void setRotation(v3f rot) { rotation = rot; }
@@ -65,9 +65,9 @@ class Client;
 
 class BlockBounds
 {
-    Renderer *rnd;
+    RenderSystem *rndsys;
 
-    std::unique_ptr<MeshBuffer> mesh;
+    std::unique_ptr<LayeredMesh> mesh;
 
     f32 thickness;
 public:
@@ -78,7 +78,7 @@ public:
         BLOCK_BOUNDS_NEAR,
     } mode = BLOCK_BOUNDS_OFF;
 
-    BlockBounds(Renderer *_rnd);
+    BlockBounds(RenderSystem *_rndsys);
 
     Mode toggle(Client *client);
     void disable()

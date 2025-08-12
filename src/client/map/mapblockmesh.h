@@ -105,6 +105,4 @@ private:
     std::vector<std::shared_ptr<MinimapMapblock>> m_minimap_mapblocks;
 	RenderSystem *m_rndsys;
 	ResourceCache *m_cache;
-
-    v3f m_translation;
 };

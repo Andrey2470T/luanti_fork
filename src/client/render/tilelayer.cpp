@@ -33,11 +33,20 @@ void TileLayer::setupRenderState(RenderSystem *rndsys) const
 
     ctxt->enableCullFace(material_flags & MATERIAL_FLAG_BACKFACE_CULLING);
 
-    rnd->setBlending(material_flags & MATERIAL_FLAG_TRANSPARENT);
+    if (tile_ref) {
+        auto basicPool = rndsys->getPool(true);
+        rnd->setTexture(basicPool->getAtlasByTile(tile_ref)->getTexture());
+    }
 
-    auto basicPool = rndsys->getPool(true);
-    rnd->setTexture(basicPool->getAtlasByTile(tile_ref)->getTexture());
+    if (!use_default_shader) {
+        rnd->setBlending(material_flags & MATERIAL_FLAG_TRANSPARENT);
+        ctxt->setShader(shader);
+        shader->setUniformInt("mAlphaDiscard", alpha_discard);
+    }
+    else {
+        rnd->setDefaultShader(material_flags & MATERIAL_FLAG_TRANSPARENT, true);
+        rnd->setDefaultUniforms(1.0f, alpha_discard, 0.5f, img::BM_COUNT);
+    }
 
-    ctxt->setShader(shader);
-    shader->setUniformInt("mAlphaDiscard", alpha_discard);
+    rnd->setUniformBlocks(shader);
 }
