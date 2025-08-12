@@ -24,6 +24,7 @@
 #include <Utils/Quaternion.h>
 #include <Utils/MathFuncs.h>
 #include "client/render/rendersystem.h"
+#include "client/media/resource.h"
 #include "client/render/drawlist.h"
 
 #define CAMERA_OFFSET_STEP 200
@@ -31,6 +32,56 @@
 #define WIELDMESH_OFFSET_Y -35.0f
 #define WIELDMESH_AMPLITUDE_X 7.0f
 #define WIELDMESH_AMPLITUDE_Y 10.0f
+
+Nametag::Nametag(Client *client,
+        const std::string &text,
+        const img::color8 &textcolor,
+        const std::optional<img::color8> &bgcolor,
+        const v3f &pos)
+    : Waypoint(client, nullptr, client->getCamera()->getPosition()+pos*BS),
+      text(text),
+      textcolor(textcolor),
+      bgcolor(bgcolor)
+{
+    auto rndsys = client->getRenderSystem();
+    faceBank = std::make_unique<UISpriteBank>(rndsys->getRenderer(), client->getResourceCache());
+    faceBank->addTextSprite(rndsys->getFontManager(), EnrichedString(text), 0);
+
+    show_backgrounds = g_settings->getBool("show_nametag_backgrounds");
+}
+
+void Nametag::updateBank(v3f newWorldPos)
+{
+    v3f camera_pos = client->getCamera()->getPosition();
+
+    v2f screen_pos;
+    worldPos = camera_pos + newWorldPos * BS;
+    calculateScreenPos(&screen_pos);
+    faceBank->setCenter(screen_pos);
+
+    std::wstring nametag_colorless = unescape_translate(utf8_to_wide(text));
+
+    auto font_mgr = client->getRenderSystem()->getFontManager();
+
+    auto font = font_mgr->getFont(render::FontMode::GRAY, render::FontStyle::NORMAL);
+    v2u textsize = font->getTextSize(nametag_colorless.c_str());
+
+    auto text_sprite = dynamic_cast<UITextSprite *>(faceBank->getSprite(0));
+    text_sprite->setOverrideFont(font);
+    text_sprite->setText(nametag_colorless);
+
+    v2f textsize_f(textsize.X, textsize.Y);
+
+    auto bgcolor = getBgColor(show_backgrounds);
+    if (bgcolor.A() != 0) {
+        screen_pos.X -= 2.0f;
+        textsize_f.X += 4.0f;
+    }
+
+    text_sprite->setBackgroundColor(bgcolor);
+    text_sprite->setColor(textcolor);
+    text_sprite->updateBuffer(rectf(screen_pos-textsize_f/2.0f, textsize_f.X, textsize_f.Y));
+}
 
 PlayerCamera::PlayerCamera(DrawControl &draw_control, Client *client):
 	Camera(), m_draw_control(draw_control),
@@ -624,43 +675,9 @@ void PlayerCamera::drawWieldedTool(matrix4* translation)
 
 void PlayerCamera::drawNametags()
 {
-    matrix4 trans = getProjectionMatrix();
-    trans *= getViewMatrix();
-
-	gui::IGUIFont *font = g_fontengine->getFont();
-	video::IVideoDriver *driver = RenderingEngine::get_video_driver();
-    v2u screensize = driver->getScreenSize();
-
-	for (const Nametag *nametag : m_nametags) {
+    for (const auto &nametag : m_nametags) {
 		// Nametags are hidden in GenericCAO::updateNametag()
-
-        v3f pos = m_position + nametag->pos * BS;
-		f32 transformed_pos[4] = { pos.X, pos.Y, pos.Z, 1.0f };
-		trans.multiplyWith1x4Matrix(transformed_pos);
-		if (transformed_pos[3] > 0) {
-			std::wstring nametag_colorless =
-				unescape_translate(utf8_to_wide(nametag->text));
-			core::dimension2d<u32> textsize = font->getDimension(
-				nametag_colorless.c_str());
-			f32 zDiv = transformed_pos[3] == 0.0f ? 1.0f :
-				core::reciprocal(transformed_pos[3]);
-            v2i screen_pos;
-			screen_pos.X = screensize.X *
-				(0.5 * transformed_pos[0] * zDiv + 0.5) - textsize.Width / 2;
-			screen_pos.Y = screensize.Y *
-				(0.5 - transformed_pos[1] * zDiv * 0.5) - textsize.Height / 2;
-            recti size(0, 0, textsize.Width, textsize.Height);
-
-			auto bgcolor = nametag->getBgColor(m_show_nametag_backgrounds);
-            if (bgcolor.A() != 0) {
-                recti bg_size(-2, 0, textsize.Width + 2, textsize.Height);
-				driver->draw2DRectangle(bgcolor, bg_size + screen_pos);
-			}
-
-			font->draw(
-				translate_string(utf8_to_wide(nametag->text)).c_str(),
-				size + screen_pos, nametag->textcolor);
-		}
+        nametag->drawBank();
 	}
 }
 
@@ -668,13 +685,16 @@ Nametag *PlayerCamera::addNametag(
         const std::string &text, img::color8 textcolor,
         std::optional<img::color8> bgcolor, const v3f &pos)
 {
-    Nametag *nametag = new Nametag(text, textcolor, bgcolor, pos);
-	m_nametags.push_back(nametag);
-	return nametag;
+    m_nametags.emplace_back(std::make_unique<Nametag>(m_client, text, textcolor, bgcolor, pos));
+    return m_nametags.back().get();
 }
 
 void PlayerCamera::removeNametag(Nametag *nametag)
 {
-	m_nametags.remove(nametag);
-	delete nametag;
+    auto find_nametag = std::find(m_nametags.begin(), m_nametags.end(),
+        [nametag] (const std::unique_ptr<Nametag> &nt)
+        {
+            return nt.get() == nametag;
+        });
+    m_nametags.erase(find_nametag);
 }

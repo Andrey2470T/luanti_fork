@@ -269,15 +269,12 @@ Waypoint::Waypoint(Client *_client, UISpriteBank *_faceBank, v3f _worldPos)
 
 bool Waypoint::calculateScreenPos(v2f *pos)
 {
-    v3f w_pos = worldPos * BS;
-    w_pos -= intToFloat(client->getEnv().getCameraOffset(), BS);
-
     RenderSystem *rnd_system = client->getRenderSystem();
     Renderer *rnd = rnd_system->getRenderer();
     matrix4 trans = rnd->getTransformMatrix(TMatrix::Projection);
     trans *= rnd->getTransformMatrix(TMatrix::View);
 
-    f32 transformed_pos[4] = { w_pos.X, w_pos.Y, w_pos.Z, 1.0f };
+    f32 transformed_pos[4] = { worldPos.X, worldPos.Y, worldPos.Z, 1.0f };
     trans.multiplyWith1x4Matrix(transformed_pos);
     if (transformed_pos[3] < 0)
         return false;
@@ -300,7 +297,9 @@ void HudWaypoint::updateBank(v3f newWorldPos)
 {
     v2f pixelPos;
 
-    worldPos = newWorldPos;
+    worldPos = newWorldPos * BS;
+    worldPos -= intToFloat(client->getEnv().getCameraOffset(), BS);
+
     calculateScreenPos(&pixelPos);
     faceBank->setCenter(pixelPos);
 

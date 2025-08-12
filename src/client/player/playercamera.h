@@ -10,6 +10,7 @@
 #include "client/render/camera.h"
 #include <list>
 #include <optional>
+#include "client/ui/hud_elements.h"
 
 class LocalPlayer;
 struct DrawControl;
@@ -17,24 +18,21 @@ class Client;
 class RenderingEngine;
 class WieldMeshSceneNode;
 
-struct Nametag
+class Nametag : public Waypoint
 {
 	std::string text;
     img::color8 textcolor;
     std::optional<img::color8> bgcolor;
-	v3f pos;
 
-    Nametag(
+    bool show_backgrounds;
+public:
+    Nametag(Client *client,
             const std::string &text,
             const img::color8 &textcolor,
             const std::optional<img::color8> &bgcolor,
-            const v3f &pos):
-		text(text),
-		textcolor(textcolor),
-		bgcolor(bgcolor),
-		pos(pos)
-	{
-	}
+            const v3f &pos);
+
+    void updateBank(v3f newWorldPos) override;
 
     img::color8 getBgColor(bool use_fallback) const
 	{
@@ -190,7 +188,7 @@ private:
 	f32 m_cache_view_bobbing_amount;
 	bool m_arm_inertia;
 
-	std::list<Nametag *> m_nametags;
+    std::list<std::unique_ptr<Nametag>> m_nametags;
 	bool m_show_nametag_backgrounds;
 
 	// Last known light color of the player

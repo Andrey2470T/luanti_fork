@@ -55,12 +55,7 @@ void DistanceSortedDrawList::addLayeredMesh(LayeredMesh *newMesh)
 // The meshes_mutex must be locked externally before this call!
 void DistanceSortedDrawList::removeLayeredMesh(LayeredMesh *mesh)
 {
-    auto find_mesh = std::find(meshes.begin(), meshes.end(), mesh);
-
-    if (find_mesh == meshes.end())
-        return;
-
-    meshes.erase(find_mesh);
+    meshes.remove(mesh);
 
     needs_update_drawlist = true;
 }
