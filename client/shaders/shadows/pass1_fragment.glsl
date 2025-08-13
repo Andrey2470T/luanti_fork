@@ -1,5 +1,8 @@
 uniform sampler2D ColorMapSampler;
-varying vec4 tPos;
+in vec4 tPos;
+
+// the depth texture uses the GL_R32F format
+out float outDepth;
 
 void main()
 {
@@ -9,5 +12,5 @@ void main()
 		discard;
 
 	float depth = 0.5 + tPos.z * 0.5;
-	gl_FragColor = vec4(depth, 0.0, 0.0, 1.0);
+	outDepth = depth;
 }

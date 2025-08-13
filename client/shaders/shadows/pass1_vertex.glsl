@@ -1,6 +1,12 @@
+layout (location = 0) in vec3 pos;
+layout (location = 1) in vec4 color;
+layout (location = 2) in vec3 normal;
+layout (location = 3) in vec2 uv;
+
 uniform mat4 LightMVP; // world matrix
+uniform mat4 TextureM; // texture matrix
 uniform vec4 CameraPos; // camera position
-varying vec4 tPos;
+out vec4 tPos;
 
 uniform float xyPerspectiveBias0;
 uniform float xyPerspectiveBias1;
@@ -34,10 +40,10 @@ vec4 applyPerspectiveDistortion(in vec4 position)
 
 void main()
 {
-	vec4 pos = LightMVP * gl_Vertex;
+	vec4 transformPos = LightMVP * vec4(pos, 1.0);
 
-	tPos = applyPerspectiveDistortion(pos);
+	tPos = applyPerspectiveDistortion(transformPos);
 
 	gl_Position = vec4(tPos.xyz, 1.0);
-	gl_TexCoord[0] = gl_TextureMatrix[0] * gl_MultiTexCoord0;
+	gl_TexCoord[0] = TextureM * vec4(uv, 1.0, 1.0);
 }

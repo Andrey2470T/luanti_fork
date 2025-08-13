@@ -1,8 +1,8 @@
 uniform sampler2D ColorMapSampler;
-varying vec4 tPos;
+in vec4 tPos;
 
 #ifdef COLORED_SHADOWS
-varying vec3 varColor;
+in vec3 vColor;
 
 // c_precision of 128 fits within 7 base-10 digits
 const float c_precision = 128.0;
@@ -18,6 +18,8 @@ float packColor(vec3 color)
 const vec3 black = vec3(0.0);
 #endif
 
+out vec2 outColor;
+
 void main()
 {
 	vec4 col = texture2D(ColorMapSampler, gl_TexCoord[0].st);
@@ -32,11 +34,11 @@ void main()
 
 	//col.rgb = col.a == 1.0 ? vec3(1.0) : col.rgb;
 #ifdef COLORED_SHADOWS
-	col.rgb *= varColor.rgb;
+	col.rgb *= vColor.rgb;
 	// premultiply color alpha (see-through side)
 	float packedColor = packColor(col.rgb * (1.0 - col.a));
-	gl_FragColor = vec4(depth, packedColor, 0.0,1.0);
+	outColor = vec2(depth, packedColor);
 #else
-	gl_FragColor = vec4(depth, 0.0, 0.0, 1.0);
+	outColor = vec2(depth, 0.0);
 #endif
 }
