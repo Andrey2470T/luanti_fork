@@ -102,6 +102,12 @@ void TransformNodeTree::updateNodes()
         getNode(root)->updateNodeAndChildren();
 }
 
+TransformNode *TransformNodeManager::getNode(u8 treeID, u8 nodeID) const
+{
+    assert(treeID < Trees.size());
+    return Trees.at(treeID)->getNode(nodeID);
+}
+
 std::unordered_map<u16, ClientActiveObject::Factory> ClientActiveObject::m_types;
 
 template<typename T>
@@ -248,10 +254,10 @@ static bool logOnce(const std::ostringstream &from, std::ostream &log_to)
 */
 
 GenericCAO::GenericCAO(Client *client, ClientEnvironment *env):
-		ClientActiveObject(0, client, env)
+    ClientActiveObject(0, client, env), m_node_mgr(env->getTransformNodeManager())
 {
 	if (!client) {
-		ClientActiveObject::registerType(getType(), create);
+        ClientActiveObject::registerType(getType(), create);
 	} else {
 		m_client = client;
 	}

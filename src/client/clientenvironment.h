@@ -7,7 +7,7 @@
 #include "environment.h"
 #include "util/numeric.h" // IntervalLimiter
 #include "activeobjectmgr.h" // client::ActiveObjectMgr
-#include "irr_ptr.h"
+//#include "irr_ptr.h"
 #include "config.h"
 #include <set>
 
@@ -21,6 +21,7 @@ class ClientScripting;
 class ClientActiveObject;
 class GenericCAO;
 class LocalPlayer;
+class TransformNodeManager;
 
 /*
 	The client-side environment.
@@ -137,6 +138,11 @@ public:
 	u64 getFrameTime() const { return m_frame_time; }
 	u64 getFrameTimeDelta() const { return m_frame_dtime; }
 
+    TransformNodeManager *getTransformNodeManager() const
+    {
+        return m_node_mgr.get();
+    }
+
 private:
 	irr_ptr<ClientMap> m_map;
 	LocalPlayer *m_local_player = nullptr;
@@ -144,6 +150,7 @@ private:
 	Client *m_client;
 	ClientScripting *m_script = nullptr;
 	client::ActiveObjectMgr m_ao_manager;
+    std::unique_ptr<TransformNodeManager> m_node_mgr;
 	std::vector<ClientSimpleObject*> m_simple_objects;
 	std::queue<ClientEnvEvent> m_client_event_queue;
 	IntervalLimiter m_active_object_light_update_interval;

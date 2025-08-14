@@ -334,24 +334,24 @@ void ClientLauncher::config_guienv()
 {
 	gui::IGUISkin *skin = guienv->getSkin();
 
-	skin->setColor(gui::EGDC_WINDOW_SYMBOL, video::SColor(255, 255, 255, 255));
-	skin->setColor(gui::EGDC_BUTTON_TEXT, video::SColor(255, 255, 255, 255));
+	skin->setColor(GUIDefaultColor::WindowSymbol, video::SColor(255, 255, 255, 255));
+	skin->setColor(GUIDefaultColor::ButtonText, video::SColor(255, 255, 255, 255));
 	skin->setColor(gui::GUIDefaultColor::Light3D, video::SColor(0, 0, 0, 0));
 	skin->setColor(gui::GUIDefaultColor::HighLight3D, video::SColor(255, 30, 30, 30));
 	skin->setColor(gui::GUIDefaultColor::Shadow3D, video::SColor(255, 0, 0, 0));
-	skin->setColor(gui::EGDC_HIGH_LIGHT, video::SColor(255, 70, 120, 50));
-	skin->setColor(gui::EGDC_HIGH_LIGHT_TEXT, video::SColor(255, 255, 255, 255));
-	skin->setColor(gui::EGDC_EDITABLE, video::SColor(255, 128, 128, 128));
-	skin->setColor(gui::EGDC_FOCUSED_EDITABLE, video::SColor(255, 96, 134, 49));
+	skin->setColor(GUIDefaultColor::HighLight, video::SColor(255, 70, 120, 50));
+	skin->setColor(GUIDefaultColor::HighLight_TEXT, video::SColor(255, 255, 255, 255));
+	skin->setColor(GUIDefaultColor::Editable, video::SColor(255, 128, 128, 128));
+	skin->setColor(GUIDefaultColor::FocusedEditable, video::SColor(255, 96, 134, 49));
 
 	float density = rangelim(g_settings->getFloat("gui_scaling"), 0.5f, 20) *
 		RenderingEngine::getDisplayDensity();
 	skin->setScale(density);
-	skin->setSize(gui::EGDS_CHECK_BOX_WIDTH, (s32)(17.0f * density));
-	skin->setSize(gui::EGDS_SCROLLBAR_SIZE, (s32)(21.0f * density));
+	skin->setSize(GUIDefaultSize::CheckBoxWidth, (s32)(17.0f * density));
+	skin->setSize(GUIDefaultSize::ScrollbarSize, (s32)(21.0f * density));
 	skin->setSize(gui::GUIDefaultSize::WindowButtonWidth, (s32)(15.0f * density));
 
-	static u32 orig_sprite_id = skin->getIcon(gui::EGDI_CHECK_BOX_CHECKED);
+	static u32 orig_sprite_id = skin->getIcon(GUIDefaultIcon::CheckBoxChecked);
 	static std::unordered_map<std::string, u32> sprite_ids;
 
 	if (density > 1.5f) {
@@ -366,19 +366,19 @@ void ClientLauncher::config_guienv()
 
 		auto cached_id = sprite_ids.find(path);
 		if (cached_id != sprite_ids.end()) {
-			skin->setIcon(gui::EGDI_CHECK_BOX_CHECKED, cached_id->second);
+			skin->setIcon(GUIDefaultIcon::CheckBoxChecked, cached_id->second);
 		} else {
 			gui::IGUISpriteBank *sprites = skin->getSpriteBank();
 			video::IVideoDriver *driver = m_rendering_engine->get_video_driver();
 			video::ITexture *texture = driver->getTexture(path.c_str());
 			s32 id = sprites->addTextureAsSprite(texture);
 			if (id != -1) {
-				skin->setIcon(gui::EGDI_CHECK_BOX_CHECKED, id);
+				skin->setIcon(GUIDefaultIcon::CheckBoxChecked, id);
 				sprite_ids.emplace(path, id);
 			}
 		}
 	} else {
-		skin->setIcon(gui::EGDI_CHECK_BOX_CHECKED, orig_sprite_id);
+		skin->setIcon(GUIDefaultIcon::CheckBoxChecked, orig_sprite_id);
 	}
 }
 

@@ -76,7 +76,7 @@ struct TransformNode
     TransformNodeTree *Tree;
 
     TransformNode() = default;
-    ~TransformNode();
+    virtual ~TransformNode();
 
     bool isRoot() const
     {
@@ -113,9 +113,34 @@ public:
     void updateNodes();
 };
 
+class TransformNodeManager
+{
+    std::vector<std::unique_ptr<TransformNodeTree>> Trees;
+public:
+    TransformNodeManager() = default;
+
+    u8 getNodeTreeCount() const
+    {
+        return Trees.size();
+    }
+    void addNodeTree(TransformNodeTree *tree)
+    {
+        Trees.emplace_back(tree);
+    }
+    TransformNode *getNode(u8 treeID, u8 nodeID) const;
+};
+
 struct Attachment : public TransformNode
 {
     u16 ObjectId;
+    std::string AttachedToBone = "";
+    bool AttachedToLocal = false;
+    bool ForceVisible = false;
+
+    Attachment()
+    {
+        Type = TransformNodeType::OBJECT;
+    }
 };
 
 // CAO able moving in the space and being attached to another one
@@ -140,18 +165,11 @@ protected:
     SmoothTranslator<v3f> pos_translator;
     SmoothTranslatorWrappedv3f rot_translator;
 
-    object_t m_attachment_parent_id = 0;
-    std::unordered_set<object_t> m_attachment_child_ids;
-    std::string m_attachment_bone = "";
-    v3f m_attachment_position;
-    v3f m_attachment_rotation;
-    bool m_attached_to_local = false;
-    bool m_force_visible = false;
+    TransformNodeManager *m_node_mgr;
+    std::optional<u8> m_attachment_tree_id;
+    std::optional<u8> m_attachment_node_id;
 
     ItemGroupList m_armor_groups;
-
-    matrix4 m_abs_transform;
-    matrix4 m_rel_transform;
 public:
     GenericCAO(Client *client, ClientEnvironment *env);
 
@@ -186,22 +204,9 @@ public:
 
     inline const std::string &getName() const { return m_name; }
 
-    // m_matrixnode controls the position and rotation of the child node
-    // for all scene nodes, as a workaround for an Irrlicht problem with
-    // rotations. The child node's position can't be used because it's
-    // rotated, and must remain as 0.
-    // Note that m_matrixnode.setPosition() shouldn't be called. Use
-    // m_matrixnode->getRelativeTransformationMatrix().setTranslation()
-    // instead (aka getPosRotMatrix().setTranslation()).
-    inline matrix4 &getPosRotMatrix()
-    {
-        return m_rel_transform;
-    }
+    inline matrix4 &getPosRotMatrix();
 
-    inline const matrix4 &getAbsolutePosRotMatrix() const
-    {
-        return m_abs_transform;
-    }
+    inline const matrix4 &getAbsolutePosRotMatrix() const;
 
     inline bool isLocalPlayer() const override
     {
@@ -221,8 +226,7 @@ public:
     void addAttachmentChild(object_t child_id) override;
     void removeAttachmentChild(object_t child_id) override;
     ClientActiveObject *getParent() const override;
-    const std::unordered_set<object_t> &getAttachmentChildIds() const override
-    { return m_attachment_child_ids; }
+    const std::unordered_set<object_t> &getAttachmentChildIds() const override;
     void updateAttachments() override;
 
     void removeFromScene(bool permanent) override;
