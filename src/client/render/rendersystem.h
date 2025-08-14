@@ -36,8 +36,7 @@ class RenderSystem
     std::unique_ptr<CameraManager> cam_mgr;
 	std::unique_ptr<main::MainWindow> window;
 	
-	std::unique_ptr<GUIEnvironment> guienv;
-	std::unique_ptr<Hud> hud;
+	//std::unique_ptr<GUIEnvironment> guienv;
 	std::unique_ptr<ShadowRenderer> shadow_renderer;
 
     std::unique_ptr<AtlasPool> basePool;
@@ -73,14 +72,10 @@ public:
     {
         return cam_mgr.get();
     }
-    GUIEnvironment *getGUIEnvironment() const
+    /*GUIEnvironment *getGUIEnvironment() const
     {
         return guienv.get();
-    }
-    Hud *getHUD() const
-    {
-        return hud.get();
-    }
+    }*/
     ShadowRenderer *getShadowRenderer() const
     {
         return shadow_renderer.get();

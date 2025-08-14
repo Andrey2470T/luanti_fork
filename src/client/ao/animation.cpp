@@ -27,11 +27,11 @@ void BoneAnimation::animateBones(f32 time)
     auto scaleState = AnimationKeys.Scales.get(curAnimTime);
 
     for (auto &b_p : posState.value())
-        Base->getBone(b_p.first)->Transform.Position = b_p.second;
+        Base->getNode(b_p.first)->Position = b_p.second;
     for (auto &b_r : rotState.value())
-        Base->getBone(b_r.first)->Transform.Rotation = b_r.second;
+        Base->getNode(b_r.first)->Rotation = b_r.second;
     for (auto &b_s : posState.value())
-        Base->getBone(b_s.first)->Transform.Scale = b_s.second;
+        Base->getNode(b_s.first)->Scale = b_s.second;
 }
 
 AnimationManager::AnimationManager()
@@ -43,11 +43,13 @@ u32 AnimationManager::getBonesCount()
     u32 num = 0;
 
     for (auto &skeleton : skeletons)
-        num += skeleton->getUsedBonesCount();
+        num += skeleton->getNodesCount();
+
+    return num;
 }
 void AnimationManager::addSkeleton(Skeleton *skeleton)
 {
-    skeletons.emplace_back(std::unique_ptr<Skeleton>(skeleton));
+    skeletons.emplace_back(skeleton);
 }
 
 void AnimationManager::addAnimations(u32 skeletonN, const std::vector<BoneAnimation *> anims)

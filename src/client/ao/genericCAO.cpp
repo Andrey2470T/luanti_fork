@@ -3,39 +3,104 @@
 // Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "genericCAO.h"
-#include <IBillboardSceneNode.h>
-#include <ICameraSceneNode.h>
-#include <IMeshManipulator.h>
-#include <IAnimatedMeshSceneNode.h>
 #include "client/client.h"
-#include "client/renderingengine.h"
-#include "client/sound.h"
-#include "client/texturesource.h"
-#include "client/mapblock_mesh.h"
+#include "client/render/rendersystem.h"
+#include "client/sound/sound.h"
+#include "client/media/resource.h"
+#include "client/map/mapblockmesh.h"
 #include "util/basic_macros.h"
 #include "util/numeric.h"
 #include "util/serialize.h"
-#include "camera.h" // CameraModes
+#include "client/player/playercamera.h" // CameraModes
 #include "collision.h"
-#include "content_cso.h"
-#include "clientobject.h"
 #include "environment.h"
 #include "itemdef.h"
-#include "localplayer.h"
+#include "client/player/localplayer.h"
 #include "map.h"
-#include "mesh.h"
+#include "client/mesh/meshoperations.h"
 #include "nodedef.h"
 #include "settings.h"
 #include "tool.h"
-#include "wieldmesh.h"
+#include "client/render/wieldmesh.h"
 #include <algorithm>
 #include <cmath>
-#include "client/shader.h"
-#include "client/minimap.h"
-#include <quaternion.h>
+#include "client/ui/minimap.h"
+#include <Utils/Quaternion.h>
 
 class Settings;
 struct ToolCapabilities;
+
+TransformNode::~TransformNode()
+{
+    for (u8 child : Children)
+        Tree->removeNode(child);
+}
+
+TransformNode *TransformNode::getParent() const
+{
+    if (!Parent.has_value())
+        return nullptr;
+    return Tree->getNode(Parent.value());
+}
+
+void TransformNode::updateNode()
+{
+    matrix4 T;
+    T.setTranslation(Position);
+    matrix4 R;
+    Rotation.getMatrix_transposed(R);
+    matrix4 S;
+    S.setScale(Scale);
+
+    RelativeTransform = T * R * S;
+
+    auto parent = getParent();
+    if (parent)
+        AbsoluteTransform = parent->AbsoluteTransform * RelativeTransform;
+}
+
+void TransformNode::updateNodeAndChildren()
+{
+    updateNode();
+
+    for (auto child : Children)
+        Tree->getNode(child)->updateNodeAndChildren();
+}
+
+TransformNode *TransformNodeTree::getNode(u8 id) const
+{
+    assert(id < Nodes.size());
+    return Nodes.at(id).get();
+}
+
+void TransformNodeTree::addNode(TransformNode *newNode)
+{
+    assert(Nodes.size() + 1 <= maxAcceptedNodeCount);
+
+    newNode->Tree = this;
+    Nodes.emplace_back(newNode);
+
+    if (newNode->isRoot())
+        RootNodes.push_back(Nodes.size()-1);
+}
+
+void TransformNodeTree::removeNode(u8 id)
+{
+    assert(id < Nodes.size());
+
+    auto node = Nodes.begin()+id;
+
+    if ((*node)->isRoot())
+        RootNodes.erase(std::find(RootNodes.begin(), RootNodes.end(), id));
+
+    Nodes.erase(Nodes.begin()+id);
+}
+
+void TransformNodeTree::updateNodes()
+{
+    for (u8 root : RootNodes)
+        getNode(root)->updateNodeAndChildren();
+}
 
 std::unordered_map<u16, ClientActiveObject::Factory> ClientActiveObject::m_types;
 
@@ -104,7 +169,7 @@ void SmoothTranslatorWrappedv3f::translate(f32 dtime)
 {
 	anim_time_counter = anim_time_counter + dtime;
 
-	v3f val_diff_v3f;
+    v3f val_diff_v3f;
 	val_diff_v3f.X = std::abs(val_target.X - val_old.X);
 	val_diff_v3f.Y = std::abs(val_target.Y - val_old.Y);
 	val_diff_v3f.Z = std::abs(val_target.Z - val_old.Z);
@@ -139,23 +204,23 @@ void SmoothTranslatorWrappedv3f::translate(f32 dtime)
 	Other stuff
 */
 
-static void setBillboardTextureMatrix(scene::IBillboardSceneNode *bill,
+/*static void setBillboardTextureMatrix(scene::IBillboardSceneNode *bill,
 		float txs, float tys, int col, int row)
 {
 	video::SMaterial& material = bill->getMaterial(0);
 	core::matrix4& matrix = material.getTextureMatrix(0);
 	matrix.setTextureTranslate(txs*col, tys*row);
 	matrix.setTextureScale(txs, tys);
-}
+}*/
 
 // Evaluate transform chain recursively; irrlicht does not do this for us
-static void updatePositionRecursive(scene::ISceneNode *node)
+/*static void updatePositionRecursive(scene::ISceneNode *node)
 {
 	scene::ISceneNode *parent = node->getParent();
 	if (parent)
 		updatePositionRecursive(parent);
 	node->updateAbsolutePosition();
-}
+}*/
 
 static bool logOnce(const std::ostringstream &from, std::ostream &log_to)
 {
@@ -171,11 +236,11 @@ static bool logOnce(const std::ostringstream &from, std::ostream &log_to)
 	return true;
 }
 
-static void setColorParam(scene::ISceneNode *node, video::SColor color)
+/*static void setColorParam(scene::ISceneNode *node, video::SColor color)
 {
 	for (u32 i = 0; i < node->getMaterialCount(); ++i)
 		node->getMaterial(i).ColorParam = color;
-}
+}*/
 
 
 /*
@@ -192,7 +257,7 @@ GenericCAO::GenericCAO(Client *client, ClientEnvironment *env):
 	}
 }
 
-bool GenericCAO::getCollisionBox(aabb3f *toset) const
+bool GenericCAO::getCollisionBox(aabbf *toset) const
 {
 	if (m_prop.physical)
 	{
@@ -265,7 +330,7 @@ GenericCAO::~GenericCAO()
 	removeFromScene(true);
 }
 
-bool GenericCAO::getSelectionBox(aabb3f *toset) const
+bool GenericCAO::getSelectionBox(aabbf *toset) const
 {
 	if (!m_prop.is_visible || !m_is_visible || m_is_local_player) {
 		return false;
@@ -1069,7 +1134,7 @@ void GenericCAO::step(float dtime, ClientEnvironment *env)
 	}
 }
 
-static void setMeshBufferTextureCoords(scene::IMeshBuffer *buf, const v2f *uv, u32 count)
+/*static void setMeshBufferTextureCoords(scene::IMeshBuffer *buf, const v2f *uv, u32 count)
 {
 	assert(buf->getVertexType() == video::EVT_STANDARD);
 	assert(buf->getVertexCount() == count);
@@ -1077,7 +1142,7 @@ static void setMeshBufferTextureCoords(scene::IMeshBuffer *buf, const v2f *uv, u
 	for (u32 i = 0; i < count; i++)
 		vertices[i].TCoords = uv[i];
 	buf->setDirty(scene::EBT_VERTEX);
-}
+}*/
 
 void GenericCAO::updateTexturePos()
 {

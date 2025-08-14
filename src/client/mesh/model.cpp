@@ -78,6 +78,7 @@ Model::Model(AnimationManager *_mgr, v3f pos, const aiScene *scene, ResourceCach
         processMesh(scene->mMeshes[i]);
 
     // process bones (indexes of "bones" and "skeleton->mBones" coincide)
+    std::vector<TransformNode *> nodes;
     std::vector<Bone *> bones;
 
     if (animated) {
@@ -100,8 +101,10 @@ Model::Model(AnimationManager *_mgr, v3f pos, const aiScene *scene, ResourceCach
         // copy weights
         for (auto &b_m : bone_mappings)
             setBoneWeights(aiskeleton, b_m.first, b_m.second);
-            
-        skeleton->addBones(bones);
+
+        for (auto bone : bones)
+            nodes.push_back(bone);
+        skeleton->addBones(nodes);
             
         // process animations
         processAnimations(bones, scene);
@@ -170,12 +173,12 @@ void Model::processMesh(aiMesh *m)
     }
 }
 
-void Model::setBoneRelations(std::vector<Bone *> &bones, u8 &boneID, aiNode *curNode, Bone *parent)
+void Model::setBoneRelations(std::vector<Bone *> &bones, u8 &boneID, aiNode *curNode, std::optional<u8> parentID)
 {
 	Bone *curBone = bones.at(boneID);
-    if (parent) {
-        curBone->Parent = parent;
-        parent->Children.push_back(curBone);
+    if (parentID) {
+        curBone->Parent = parentID;
+        curBone->getParent()->Children.push_back(boneID);
     }
     
     curBone->Name = curNode->mName.data;
@@ -185,13 +188,13 @@ void Model::setBoneRelations(std::vector<Bone *> &bones, u8 &boneID, aiNode *cur
 
     if (curNode->mParent)
         parentTransform = convertFromAssimpMatrix(curNode->mParent->mTransformation);
-    curBone->Transform.GlobalTransform = parentTransform * localTransform;
+    curBone->AbsoluteTransform = parentTransform * localTransform;
     
     bone_mappings.emplace_back(curNode, curBone);
 
     for (u8 i = 0; i < curNode->mNumChildren; i++) {
         boneID++;
-        setBoneRelations(bones, boneID, curNode->mChildren[i], curBone);
+        setBoneRelations(bones, boneID, curNode->mChildren[i], boneID);
     }
 }
 

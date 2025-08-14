@@ -48,4 +48,38 @@ void ClientActiveObject::registerType(u16 type, Factory f)
 	m_types[type] = f;
 }
 
+void TransformNode::updateNode()
+{
+    matrix4 T;
+    T.setTranslation(Position);
+    matrix4 R;
+    Rotation.getMatrix_transposed(R);
+    matrix4 S;
+    S.setScale(Scale);
+
+    RelativeTransform = T * R * S;
+
+    if (Parent)
+        AbsoluteTransform = Parent->AbsoluteTransform * RelativeTransform;
+}
+
+void TransformNode::updateNodeAndChildren()
+{
+    updateNode();
+
+    for (auto child : Children)
+        child->updateNodeAndChildren();
+}
+
+TransformNode *TransformNodeTree::getNode(u8 id) const
+{
+    assert(id < Nodes.size());
+    return Nodes.at(id).get();
+}
+
+void TransformNodeTree::updateNodes()
+{
+    for (u8 root : RootNodes)
+        getNode(root)->updateNodeAndChildren();
+}
 

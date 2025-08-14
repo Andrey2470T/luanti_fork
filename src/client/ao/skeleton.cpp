@@ -3,31 +3,12 @@
 #include "client/mesh/layeredmesh.h"
 #include "client/mesh/meshbuffer.h"
 
-void BoneTransform::buildTransform(const BoneTransform *parentTransform)
-{
-    matrix4 T;
-    T.setTranslation(Position);
-    matrix4 R;
-    Rotation.getMatrix_transposed(R);
-    matrix4 S;
-    S.setScale(Scale);
-
-    GlobalTransform = T * R * S;
-
-    if (parentTransform)
-        GlobalTransform = parentTransform->GlobalTransform * GlobalTransform;
-
-    if (!GlobalInversedTransform) {
-        GlobalInversedTransform = GlobalTransform;
-        GlobalInversedTransform->makeInverse();
-    }
-}
 
 void Bone::addWeights(std::vector<std::pair<u32, f32> > weights)
 {
-    u8 accepedWCount = std::min<u8>(weights.size(), BONE_MAX_WEIGHTS-UsedWeightsCount);
+    u8 acceptedWCount = std::min<u8>(weights.size(), BONE_MAX_WEIGHTS-UsedWeightsCount);
 
-    if (accepedWCount == 0)
+    if (acceptedWCount == 0)
         return;
 
     // At first adds the most affecting weights
@@ -36,84 +17,76 @@ void Bone::addWeights(std::vector<std::pair<u32, f32> > weights)
         return w1.second > w2.second;
     });
 
-    for (u8 i = 0; i < accepedWCount; i++) {
+    for (u8 i = 0; i < acceptedWCount; i++) {
         Weights[UsedWeightsCount+i].vertex_n = weights.at(i).first;
         Weights[UsedWeightsCount+i].strength = weights.at(i).second;
     }
 
-    UsedWeightsCount += accepedWCount;
+    UsedWeightsCount += acceptedWCount;
 }
 
-void Bone::updateBone()
+void Bone::updateNode()
 {
-    Transform.buildTransform(!isRoot() ? &Parent->Transform : nullptr);
+    TransformNode::updateNode();
 
-    for (auto &childBone : Children)
-        childBone->updateBone();
+    if (!AbsoluteInversedTransform) {
+        AbsoluteInversedTransform = AbsoluteTransform;
+        AbsoluteInversedTransform->makeInverse();
+    }
 }
 
 Skeleton::Skeleton(DataTexture *tex, u8 boneOffset)
-    : BoneOffset(boneOffset), BonesDataTexture(tex)//BonesDataTexture(std::make_unique<DataTexture>("BonesData", 4 * 4 * sizeof(f32), 0, 4 * 4))
-{}
-
-Bone *Skeleton::getBone(u8 n) const
+    : BoneOffset(boneOffset), BonesDataTexture(tex)
 {
-    assert(n < UsedBonesCount);
-
-    return Bones.at(n).get();
+    maxAcceptedNodeCount = BONES_MAX;
 }
 
-void Skeleton::addBones(std::vector<Bone *> &bones)
+Skeleton::~Skeleton()
 {
-    assert(UsedBonesCount + bones.size() <= BONES_MAX);
+    for (u8 i = 0; i < getNodesCount(); i++)
+        BonesDataTexture->removeSample(BoneOffset+i);
+}
 
+void Skeleton::addBones(std::vector<TransformNode *> &bones)
+{
     for (u8 i = 0; i < bones.size(); i++) {
         auto bone = bones.at(i);
-        Bones[UsedBonesCount+i] = std::unique_ptr<Bone>(bone);
-
-        if (bone->isRoot())
-            RootBones.push_back(UsedBonesCount+i);
+        addNode(bone);
 
         ByteArray bone_arr(4 * 4, 4 * 4 * sizeof(f32));
-        bone_arr.setM4x4(Bones.at(i)->Transform.GlobalTransform, 0);
-
+        bone_arr.setM4x4(bone->AbsoluteTransform, 0);
         BonesDataTexture->addSample(bone_arr);
     }
-
-    UsedBonesCount += bones.size();
 }
 
-std::vector<Bone *> Skeleton::getAllUsedBones() const
+std::vector<Bone *> Skeleton::getAllBones() const
 {
-    std::vector<Bone *> usedBones(Bones.size());
+    std::vector<Bone *> bones(Nodes.size());
 
-    for (u8 i = 0; i < Bones.size(); i++)
-        usedBones[i] = Bones.at(i).get();
+    for (u8 i = 0; i < Nodes.size(); i++) {
+        auto node = getNode(i);
 
-    return usedBones;
-}
+        // NOTE: skeletons can save not just bones, but the object attachments when those are attached to them
+        if (node->Type == TransformNodeType::BONE)
+            bones[i] = dynamic_cast<Bone *>(node);
+    }
 
-void Skeleton::updateBonesTransforms()
-{
-    // Traverse through the bones tree starting from the root ones
-
-    for (u8 root_id : RootBones)
-        Bones.at(root_id)->updateBone();
+    return bones;
 }
 
 void Skeleton::updateShaderAndDataTexture(render::Shader *shader)
 {
-    shader->setUniformInt("mBonesCount", UsedBonesCount);
+    shader->setUniformInt("mBonesCount", getNodesCount());
     shader->setUniformInt("mBonesOffset", BoneOffset);
     shader->setUniformInt("mSampleDim", BonesDataTexture->sampleDim);
     shader->setUniformInt("mDataTexDim", BonesDataTexture->texDim);
     shader->setUniformInt("mAnimateNormals", (s32)AnimateNormals);
 
-    for (u8 i = 0; i < UsedBonesCount; i++) {
+    for (u8 i = 0; i < getNodesCount(); i++) {
         ByteArray bone_arr(4 * 4, 4 * 4 * sizeof(f32));
-        bone_arr.setM4x4(Bones.at(i)->Transform.GlobalTransform, 0);
+        bone_arr.setM4x4(getNode(i)->AbsoluteTransform, 0);
 
-        BonesDataTexture->updateSample(i, bone_arr);
+        BonesDataTexture->updateSample(BoneOffset+i, bone_arr);
     }
 }
 
@@ -129,8 +102,21 @@ void Skeleton::fillMeshAttribs(LayeredMesh *mesh)
             std::array<u32, 2> bones_ids;
             std::array<u32, 2> weights;
 
-            for (u8 j = 0; j < Bones.size(); j++) {
-                for (auto w : Bones.at(j)->Weights) {
+            for (u8 j = 0; j < getNodesCount(); j++) {
+                auto node = getNode(j);
+
+                std::array<Weight, BONE_MAX_WEIGHTS> *weights_p;
+
+                if (node->Type != TransformNodeType::BONE) {
+                    auto parent = node->getParent();
+                    while (parent->Type != TransformNodeType::BONE) {
+                        parent = parent->getParent();
+                    }
+                    weights_p = &(dynamic_cast<Bone *>(parent)->Weights);
+                }
+                else
+                    weights_p = &(dynamic_cast<Bone *>(node)->Weights);
+                for (auto w : *weights_p) {
                     if (w.vertex_n != i)
                         continue;
 

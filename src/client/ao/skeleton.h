@@ -5,6 +5,7 @@
 #include <Utils/Quaternion.h>
 #include <Render/Shader.h>
 #include <list>
+#include "client/ao/genericCAO.h"
 
 #define BONES_MAX 128
 #define BONE_MAX_WEIGHTS 128
@@ -19,49 +20,29 @@ struct Weight
     f32 strength = 0.0f;
 };
 
-struct BoneTransform
-{
-    v3f Position;
-    Quaternion Rotation;
-    v3f Scale {1.0f};
-
-    matrix4 GlobalTransform;
-    // The .x and .gltf formats pre-calculate this
-    std::optional<matrix4> GlobalInversedTransform;
-
-    void buildTransform(const BoneTransform *parentTransform=nullptr);
-};
-
-struct Bone
+struct Bone : public TransformNode
 {
     std::string Name;
-
-    BoneTransform Transform;
-
-    Bone* Parent = nullptr;
-	std::vector<Bone*> Children;
 
     std::array<Weight, BONE_MAX_WEIGHTS> Weights;
     u8 UsedWeightsCount = 0;
 
-    bool isRoot() const
+    // The .x and .gltf formats pre-calculate this
+    std::optional<matrix4> AbsoluteInversedTransform;
+
+    Bone()
     {
-        return !Parent;
+        Type = TransformNodeType::BONE;
     }
     // As the weights count per a bone has the limit, select out the most "affecting" weights from the vector
     void addWeights(std::vector<std::pair<u32, f32>> weights);
 
-    void updateBone();
+    void updateNode() override;
 };
 
-class Skeleton
+class Skeleton : public TransformNodeTree
 {
-    std::array<std::unique_ptr<Bone>, BONES_MAX> Bones;
-    u8 UsedBonesCount = 0;
     u8 BoneOffset;
-
-
-    std::vector<u8> RootBones;
 
     LayeredMesh *AffectedMesh = nullptr;
 
@@ -70,16 +51,11 @@ class Skeleton
     bool AnimateNormals = false;
 public:
     Skeleton(DataTexture *tex, u8 boneOffset);
+    ~Skeleton();
 
-    u8 getUsedBonesCount() const
-    {
-        return UsedBonesCount;
-    }
+    void addBones(std::vector<TransformNode *> &bones);
 
-    Bone *getBone(u8 n) const;
-    void addBones(std::vector<Bone *> &bones);
-
-    std::vector<Bone *> getAllUsedBones() const;
+    std::vector<Bone *> getAllBones() const;
 
     LayeredMesh *getAnimatedMesh() const
     {

@@ -42,7 +42,7 @@ public:
 	{ static std::unordered_set<object_t> rv; return rv; }
 	virtual void updateAttachments() {};
 
-    //virtual bool doShowSelectionBox() { return true; }
+    virtual bool doShowSelectionBox() { return true; }
 
 	// Step object in time
 	virtual void step(float dtime, ClientEnvironment *env) {}
