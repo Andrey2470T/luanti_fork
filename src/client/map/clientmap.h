@@ -7,8 +7,6 @@
 #include <BasicIncludes.h>
 #include "map.h"
 #include "client/player/playercamera.h"
-#include <set>
-#include <map>
 
 class Client;
 class DistanceSortedDrawList;
@@ -32,7 +30,7 @@ public:
 	/*
 		Forcefully get a sector from somewhere
 	*/
-	MapSector * emergeSector(v2s16 p) override;
+    MapSector *emergeSector(v2s16 p) override;
 
 	void getBlocksInViewRange(v3s16 cam_pos_nodes,
 		v3s16 *p_blocks_min, v3s16 *p_blocks_max, float range=-1.0f);
@@ -42,6 +40,10 @@ public:
     void update();
 	// @brief Calculate statistics about the map and keep the blocks alive
 	void touchMapBlocks();
+
+    void addActiveObject(u16 id);
+    void updateMapBlocksActiveObjects();
+    void removeActiveObject(u16 id);
     //void updateDrawListShadow(v3f shadow_light_pos, v3f shadow_light_dir, float radius, float length);
 	// Returns true if draw list needs updating before drawing the next frame.
     //bool needsUpdateDrawList() { return m_needs_update_drawlist; }
@@ -54,7 +56,7 @@ public:
 
     //void renderPostFx(CameraMode cam_mode);
 
-	void invalidateMapBlockMesh(MapBlockMesh *mesh);
+    //void invalidateMapBlockMesh(MapBlockMesh *mesh);
 
 	// For debug printing
 	void PrintInfo(std::ostream &out) override;

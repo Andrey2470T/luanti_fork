@@ -14,17 +14,14 @@
 #include "util/basic_macros.h"
 #include "util/tracy_wrapper.h"
 #include "client/render/drawlist.h"
-
-#include <queue>
+#include "client/ao/clientActiveObject.h"
 
 /*
 	ClientMap
 */
 
 ClientMap::ClientMap(Client *client, DistanceSortedDrawList *drawlist)
-    :
-    Map(client->idef()),
-    m_client(client), m_drawlist(drawlist)
+    : Map(client->idef()), m_client(client), m_drawlist(drawlist)
 {}
 
 /*void ClientMap::updateCamera(v3f pos, v3f dir, f32 fov, v3s16 offset, img::color8 light_color)
@@ -73,7 +70,7 @@ void ClientMap::getBlocksInViewRange(v3s16 cam_pos_nodes,
         range = m_drawlist->getDrawControl().wanted_range;
 
     v3s16 box_nodes_d = v3s16(1, 1, 1) * range;
-	// Define p_nodes_min/max as v3s32 because 'cam_pos_nodes -/+ box_nodes_d'
+    // Define p_nodes_min/max as v3s32 becaudynamic_cast<ActiveObjectMgr<ClientActiveObject> *>(m_ao_mgr)->se 'cam_pos_nodes -/+ box_nodes_d'
 	// can exceed the range of v3s16 when a large view range is used near the
 	// world edges.
     v3i p_nodes_min(
@@ -101,7 +98,13 @@ void ClientMap::update()
 	ScopeProfiler sp(g_profiler, "CM::updateDrawList()", SPT_AVG);
 
     for (auto &block : m_visible_mapblocks) {
-        m_drawlist->removeLayeredMesh(block->mesh->getMesh());
+        auto mesh = block->mesh;
+        m_drawlist->removeLayeredMesh(mesh->getMesh());
+
+        for (u16 ao_id : mesh->getActiveObjects()) {
+            auto cao = m_client->getEnv().getActiveObject(ao_id);
+            //delete the CAOs layered meshes from the drawlist
+        }
 		block->refDrop();
 	}
     m_visible_mapblocks.clear();
@@ -117,10 +120,10 @@ void ClientMap::update()
     // Number of blocks with mesh in rendering range
     u32 blocks_in_range_with_mesh = 0;
 
-    //MapBlockVect sectorblocks;
+    MapBlockVect sectorblocks;
 
     for (auto &sector_it : m_sectors) {
-        const MapSector *sector = sector_it.second;
+        MapSector *sector = sector_it.second;
         v2s16 sp = sector->getPos();
 
         blocks_loaded += sector->size();
@@ -131,8 +134,8 @@ void ClientMap::update()
         }
 
         // Loop through blocks in sector
-        for (const auto &entry : sector->getBlocks()) {
-            MapBlock *block = entry.second.get();
+        sector->getBlocks(sectorblocks);
+        for (auto &block : sectorblocks) {
             MapBlockMesh *mesh = block->mesh;
 
             if (!mesh)
@@ -141,6 +144,11 @@ void ClientMap::update()
             m_visible_mapblocks.push_back(block);
 
             m_drawlist->addLayeredMesh(mesh->getMesh());
+
+            for (u16 ao_id : mesh->getActiveObjects()) {
+                auto cao = m_client->getEnv().getActiveObject(ao_id);
+                //add the CAOs layered meshes to the drawlist
+            }
 
             block->resetUsageTimer();
             blocks_in_range_with_mesh++;
@@ -165,6 +173,51 @@ void ClientMap::touchMapBlocks()
     }
 }
 
+void ClientMap::addActiveObject(u16 id)
+{
+    auto cao = m_client->getEnv().getActiveObject(id);
+
+    v3s16 blockpos = getContainerPos(floatToInt(cao->getPosition(), BS), BS);
+    MapBlock *block = getBlockNoCreate(blockpos);
+
+    if (!block)
+        return;
+
+    block->mesh->addActiveObject(id);
+}
+
+void ClientMap::updateMapBlocksActiveObjects()
+{
+    for (auto &sector_it : m_sectors) {
+        MapBlockVect sectorblocks;
+        sector_it.second->getBlocks(sectorblocks);
+
+        for (auto &block : sectorblocks) {
+            for (u16 ao_id : block->mesh->getActiveObjects()) {
+                auto cao = m_client->getEnv().getActiveObject(ao_id);
+                v3s16 blockpos = getContainerPos(floatToInt(cao->getPosition(), BS), BS);
+
+                if (blockpos != block->getPos()) {
+                    block->mesh->removeActiveObject(ao_id);
+                    getBlockNoCreate(blockpos)->mesh->addActiveObject(ao_id);
+                }
+            }
+        }
+    }
+}
+
+void ClientMap::removeActiveObject(u16 id)
+{
+    auto cao = m_client->getEnv().getActiveObject(id);
+
+    v3s16 blockpos = getContainerPos(floatToInt(cao->getPosition(), BS), BS);
+    MapBlock *block = getBlockNoCreate(blockpos);
+
+    if (!block)
+        return;
+
+    block->mesh->removeActiveObject(id);
+}
 /*static bool getVisibleBrightness(Map *map, const v3f &p0, v3f dir, float step,
 	float step_multiplier, float start_distance, float end_distance,
 	const NodeDefManager *ndef, u32 daylight_factor, float sunlight_min_d,

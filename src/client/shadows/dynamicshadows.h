@@ -4,13 +4,16 @@
 
 #pragma once
 
-#include "irrlichttypes_bloated.h"
-#include <matrix4.h>
+#include <BasicIncludes.h>
+#include <Utils/Matrix4.h>
+#include <Image/Color.h>
+#include <Image/Converting.h>
 #include "util/basic_macros.h"
 #include "constants.h"
 
 class Camera;
 class Client;
+class DistanceSortedDrawList;
 
 struct shadowFrustum
 {
@@ -18,8 +21,8 @@ struct shadowFrustum
 	f32 zFar{0.0f};
 	f32 length{0.0f};
 	f32 radius{0.0f};
-	core::matrix4 ProjOrthMat;
-	core::matrix4 ViewMat;
+    matrix4 ProjOrthMat;
+    matrix4 ViewMat;
 	v3f position;
 	v3f player;
 	v3s16 camera_offset;
@@ -30,13 +33,14 @@ class DirectionalLight
 public:
 	DirectionalLight(const u32 shadowMapResolution,
 			const v3f &position,
-			video::SColorf lightColor = video::SColor(0xffffffff),
+            img::colorf lightColor = img::color8ToColorf(img::white),
 			f32 farValue = 100.0f);
 	~DirectionalLight() = default;
 
 	//DISABLE_CLASS_COPY(DirectionalLight)
 
-	void update_frustum(const Camera *cam, Client *client, bool force = false);
+    void update_frustum(const Camera *cam, Client *client,
+        DistanceSortedDrawList *drawlist, bool force = false);
 
 	// when set direction is updated to negative normalized(direction)
 	void setDirection(v3f dir);
@@ -48,11 +52,11 @@ public:
 	v3f getFuturePlayerPos() const;
 
 	/// Gets the light's matrices.
-	const core::matrix4 &getViewMatrix() const;
-	const core::matrix4 &getProjectionMatrix() const;
-	const core::matrix4 &getFutureViewMatrix() const;
-	const core::matrix4 &getFutureProjectionMatrix() const;
-	core::matrix4 getViewProjMatrix();
+    const matrix4 &getViewMatrix() const;
+    const matrix4 &getProjectionMatrix() const;
+    const matrix4 &getFutureViewMatrix() const;
+    const matrix4 &getFutureProjectionMatrix() const;
+    matrix4 getViewProjMatrix();
 
 	/// Gets the light's maximum far value, i.e. the shadow boundary
 	f32 getMaxFarValue() const
@@ -68,13 +72,13 @@ public:
 
 
 	/// Gets the light's color.
-	const video::SColorf &getLightColor() const
+    const img::colorf &getLightColor() const
 	{
 		return diffuseColor;
 	}
 
 	/// Sets the light's color.
-	void setLightColor(const video::SColorf &lightColor)
+    void setLightColor(const img::colorf &lightColor)
 	{
 		diffuseColor = lightColor;
 	}
@@ -92,7 +96,7 @@ public:
 private:
 	void createSplitMatrices(const Camera *cam);
 
-	video::SColorf diffuseColor;
+    img::colorf diffuseColor;
 
 	f32 farPlane;
 	u32 mapRes;

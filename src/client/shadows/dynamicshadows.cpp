@@ -7,11 +7,10 @@
 #include "client/shadows/dynamicshadows.h"
 #include "client/client.h"
 #include "client/clientenvironment.h"
-#include "client/clientmap.h"
-#include "client/camera.h"
-#include <IVideoDriver.h>
-
-using m4f = core::matrix4;
+#include "client/map/clientmap.h"
+#include "client/render/camera.h"
+#include "client/render/rendersystem.h"
+#include "client/render/drawlist.h"
 
 void DirectionalLight::createSplitMatrices(const Camera *cam)
 {
@@ -54,7 +53,7 @@ void DirectionalLight::createSplitMatrices(const Camera *cam)
 	v3f center_world = cam_pos_world + look * 0.35 * (sfFar - sfNear);
 
 	// Create a vector to the frustum far corner
-	const v3f &viewUp = cam->getCameraNode()->getUpVector();
+    const v3f &viewUp = cam->getUpVector();
 	v3f viewRight = look.crossProduct(viewUp);
 
 	v3f farCorner = (look + viewRight * tanFovX + viewUp * tanFovY).normalize();
@@ -78,21 +77,24 @@ void DirectionalLight::createSplitMatrices(const Camera *cam)
 }
 
 DirectionalLight::DirectionalLight(const u32 shadowMapResolution,
-		const v3f &position, video::SColorf lightColor,
+        const v3f &position, img::colorf lightColor,
 		f32 farValue) :
 		diffuseColor(lightColor),
 		farPlane(farValue), mapRes(shadowMapResolution), pos(position)
 {}
 
-void DirectionalLight::update_frustum(const Camera *cam, Client *client, bool force)
+void DirectionalLight::update_frustum(const Camera *cam, Client *client,
+    DistanceSortedDrawList *drawlist, bool force)
 {
 	if (dirty && !force)
 		return;
 
-	float zNear = cam->getCameraNode()->getNearValue();
+    float zNear = cam->getNearValue();
 	float zFar = getMaxFarValue();
-	if (!client->getEnv().getClientMap().getControl().range_all)
-		zFar = MYMIN(zFar, client->getEnv().getClientMap().getControl().wanted_range * BS);
+    auto drawcontrol = drawlist->getDrawControl();
+    if (!drawcontrol.range_all) {
+        zFar = MYMIN(zFar, drawcontrol.wanted_range * BS);
+    }
 
 	///////////////////////////////////
 	// update splits near and fars
@@ -148,27 +150,27 @@ v3f DirectionalLight::getFuturePlayerPos() const
 	return future_frustum.player;
 }
 
-const m4f &DirectionalLight::getViewMatrix() const
+const matrix4 &DirectionalLight::getViewMatrix() const
 {
 	return shadow_frustum.ViewMat;
 }
 
-const m4f &DirectionalLight::getProjectionMatrix() const
+const matrix4 &DirectionalLight::getProjectionMatrix() const
 {
 	return shadow_frustum.ProjOrthMat;
 }
 
-const m4f &DirectionalLight::getFutureViewMatrix() const
+const matrix4 &DirectionalLight::getFutureViewMatrix() const
 {
 	return future_frustum.ViewMat;
 }
 
-const m4f &DirectionalLight::getFutureProjectionMatrix() const
+const matrix4 &DirectionalLight::getFutureProjectionMatrix() const
 {
 	return future_frustum.ProjOrthMat;
 }
 
-m4f DirectionalLight::getViewProjMatrix()
+matrix4 DirectionalLight::getViewProjMatrix()
 {
 	return shadow_frustum.ProjOrthMat * shadow_frustum.ViewMat;
 }
