@@ -5,23 +5,7 @@ layout (location = 3) in vec2 uv;
 layout (location = 4) in int materialType;
 
 #include <matrices>
-
-layout (std140) uniform mShadowParams {
-	// shadow texture
-	sampler2D shadowMapSampler;
-	// shadow uniforms
-	vec3 lightDirection;
-	float textureresolution;
-	mat4 shadowViewProj;
-	float shadowfar;
-	float shadow_strength;
-	float timeofday;
-	vec4 cameraPos;
-	float xyPerspectiveBias0;
-	float xyPerspectiveBias1;
-	float zPerspectiveBias;
-	vec3 shadowTint;
-}
+#include <shadows>
 
 // Color of the light emitted by the sun.
 uniform vec3 mDayLight;

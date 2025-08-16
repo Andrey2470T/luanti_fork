@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 // Copyright (C) 2021 Liso <anlismon@gmail.com>
 
-#include "client/shadows/shadowsshadercallbacks.h"
+#include "client/shadows/shadowsShaderCallbacks.h"
 #include "client/renderingengine.h"
 
 void ShadowConstantSetter::onSetConstants(video::IMaterialRendererServices *services)

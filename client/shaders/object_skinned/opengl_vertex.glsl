@@ -12,21 +12,7 @@ layout (location = 6) in vec2i weights; // packed weights (8 u8 numbers)
 #define BONES_IDS_MAX 8 // per a vertex
 
 #include <matrices>
-
-layout (std140) uniform mShadowParams {
-	// shadow uniforms
-	vec3 lightDirection;
-	float textureresolution;
-	mat4 shadowViewProj;
-	float shadowfar;
-	float shadow_strength;
-	float timeofday;
-	vec4 cameraPos;
-	float xyPerspectiveBias0;
-	float xyPerspectiveBias1;
-	float zPerspectiveBias;
-	vec3 shadowTint;
-};
+#include <shadows>
 
 // Absolute bones transformations
 layout (binding = 1) uniform sampler2D mDataTex;

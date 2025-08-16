@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 // Copyright (C) 2021 Liso <anlismon@gmail.com>
 
-#include <cmath>
 
 #include "client/shadows/dynamicshadows.h"
 #include "client/client.h"

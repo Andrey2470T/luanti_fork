@@ -4,6 +4,10 @@
 #include "client/mesh/meshbuffer.h"
 #include "client/media/resource.h"
 
+// These binding points are reserved and can't be used for other UBOs
+#define MATRIX_UBO_BINDING_POINT 0
+#define FOG_UBO_BINDING_POINT 1
+
 img::ImageModifier *g_imgmodifier = new img::ImageModifier();
 
 void Renderer::setRenderState(bool mode3d)
@@ -260,8 +264,8 @@ void Renderer::createDefaultShaders()
 void Renderer::createUBOs()
 {
     ByteArray matrix_ba(16*4, matrix_buffer_size);
-    matrix_buffer = std::make_unique<UniformBuffer>(0, matrix_ba);
+    matrix_buffer = std::make_unique<UniformBuffer>(MATRIX_UBO_BINDING_POINT, matrix_ba);
 
     ByteArray fog_ba(9, fog_buffer_size);
-    fog_buffer = std::make_unique<UniformBuffer>(0, fog_ba);
+    fog_buffer = std::make_unique<UniformBuffer>(FOG_UBO_BINDING_POINT, fog_ba);
 }

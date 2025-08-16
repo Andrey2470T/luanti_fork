@@ -1,4 +1,4 @@
-layout (std140) uniform mFogParams {
+layout (std140, binding = 1) uniform mFogParams {
     int enable;
     int type;
     vec4 color;

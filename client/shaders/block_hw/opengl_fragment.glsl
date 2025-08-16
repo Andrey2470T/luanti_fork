@@ -2,24 +2,12 @@ uniform sampler2D mBaseTexture;
 uniform int mAlphaDiscard;
 uniform vec3 mDayLight;
 
-#include <fog>
+#ifdef ENABLE_DYNAMIC_SHADOWS
+	uniform sampler2D mShadowMapSampler;
+#endif
 
-layout (std140) uniform mShadowParams {
-	// shadow texture
-	sampler2D shadowMapSampler;
-	// shadow uniforms
-	vec3 lightDirection;
-	float textureresolution;
-	mat4 shadowViewProj;
-	float shadowfar;
-	float shadow_strength;
-	float timeofday;
-	vec4 cameraPos;
-	float xyPerspectiveBias0;
-	float xyPerspectiveBias1;
-	float zPerspectiveBias;
-	vec3 shadowTint;
-};
+#include <fog>
+#include <shadows>
 
 // The cameraOffset is the current center of the visible world.
 uniform highp vec3 mCameraOffset;
@@ -449,14 +437,14 @@ void main(void)
 #ifdef COLORED_SHADOWS
 			vec4 visibility;
 			if (vCosLight > 0.0 || vFNormalLength < 1e-3)
-				visibility = getShadowColor(mShadowParams.shadowMapSampler, posLightSpace.xy, posLightSpace.z);
+				visibility = getShadowColor(mShadowMapSampler, posLightSpace.xy, posLightSpace.z);
 			else
 				visibility = vec4(1.0, 0.0, 0.0, 0.0);
 			shadow_int = visibility.r;
 			shadow_color = visibility.gba;
 #else
 			if (vCosLight > 0.0 || vFNormalLength < 1e-3)
-				shadow_int = getShadow(mShadowParams.shadowMapSampler, posLightSpace.xy, posLightSpace.z);
+				shadow_int = getShadow(mShadowMapSampler, posLightSpace.xy, posLightSpace.z);
 			else
 				shadow_int = 1.0;
 #endif
