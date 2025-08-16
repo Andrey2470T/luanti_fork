@@ -38,33 +38,21 @@ public:
     //void updateCamera(v3f pos, v3f dir, f32 fov, v3s16 offset, img::color8 light_color);
 
     void update();
-    void updateShadowBlocks(const v3f &shadow_light_pos, const v3f &shadow_light_dir, f32 radius, f32 length);
+    void updateShadowBlocks(const v3f &shadow_light_pos, const v3f &shadow_light_dir, f32 radius);
 	// @brief Calculate statistics about the map and keep the blocks alive
 	void touchMapBlocks();
 
     void addActiveObject(u16 id);
     void updateMapBlocksActiveObjects();
     void removeActiveObject(u16 id);
-    //void updateDrawListShadow(v3f shadow_light_pos, v3f shadow_light_dir, float radius, float length);
-	// Returns true if draw list needs updating before drawing the next frame.
-    //bool needsUpdateDrawList() { return m_needs_update_drawlist; }
-
-    //void renderMapShadows(video::IVideoDriver *driver,
-    //		const video::SMaterial &material, s32 pass, int frame, int total_frames);
 
     //int getBackgroundBrightness(float max_d, u32 daylight_factor,
     //		int oldvalue, bool *sunlight_seen_result);
 
     //void renderPostFx(CameraMode cam_mode);
 
-    //void invalidateMapBlockMesh(MapBlockMesh *mesh);
-
 	// For debug printing
 	void PrintInfo(std::ostream &out) override;
-
-    //const MapDrawControl & getControl() const { return m_control; }
-    //f32 getWantedRange() const { return m_control.wanted_range; }
-    //f32 getCameraFov() const { return m_camera_fov; }
 
 	void onSettingChanged(std::string_view name, bool all);
 
@@ -79,12 +67,9 @@ private:
     DistanceSortedDrawList *m_drawlist;
 
     v3f m_camera_pos = v3f(0,0,0);
-    //v3f m_camera_dir = v3f(0,0,1);
-    //f32 m_camera_fov = M_PI;
     v3s16 m_camera_offset;
     //img::color8 m_camera_light_color = img::white;
 
     std::list<MapBlock*> m_visible_mapblocks;
     std::list<MapBlock*> m_visible_shadow_mapblocks;
-    //std::map<v3s16, MapBlock*> m_drawlist_shadow;
 };

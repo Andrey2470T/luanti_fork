@@ -97,6 +97,8 @@ void ClientMap::update()
 {
 	ScopeProfiler sp(g_profiler, "CM::updateDrawList()", SPT_AVG);
 
+    m_drawlist->lockMeshes();
+
     for (auto &block : m_visible_mapblocks) {
         block->mesh->removeFromDrawList(m_drawlist);
 		block->refDrop();
@@ -144,13 +146,17 @@ void ClientMap::update()
         }
 	}
 
+    m_drawlist->unlockMeshes();
+
     g_profiler->avg("MapBlocks loaded [#]", blocks_loaded);
     g_profiler->avg("MapBlocks with mesh [#]", blocks_in_range_with_mesh);
 }
 
-void ClientMap::updateShadowBlocks(const v3f &shadow_light_pos, const v3f &shadow_light_dir, f32 radius, f32 length)
+void ClientMap::updateShadowBlocks(const v3f &shadow_light_pos, const v3f &shadow_light_dir, f32 radius)
 {
     ScopeProfiler sp(g_profiler, "CM::updateShadowDrawList()", SPT_AVG);
+
+    m_drawlist->lockMeshes(true);
 
     for (auto &block : m_visible_shadow_mapblocks) {
         block->mesh->removeFromDrawList(m_drawlist, true);
@@ -190,6 +196,10 @@ void ClientMap::updateShadowBlocks(const v3f &shadow_light_pos, const v3f &shado
         }
     }
 
+    m_drawlist->setLightPos(shadow_light_pos);
+
+    m_drawlist->unlockMeshes(true);
+
     g_profiler->avg("MapBlocks loaded [#]", blocks_loaded);
     g_profiler->avg("MapBlocks with mesh [#]", blocks_in_range_with_mesh);
 }
@@ -219,10 +229,14 @@ void ClientMap::addActiveObject(u16 id)
         return;
 
     block->mesh->addActiveObject(id);
+
+
 }
 
 void ClientMap::updateMapBlocksActiveObjects()
 {
+    bool were_changes = false;
+
     for (auto &sector_it : m_sectors) {
         MapBlockVect sectorblocks;
         sector_it.second->getBlocks(sectorblocks);
@@ -442,192 +456,9 @@ void ClientMap::removeActiveObject(u16 id)
 		core::rect<s32> rect(0,0, ss.X, ss.Y);
 		driver->draw2DRectangle(post_color, rect);
     }
-}*/
-
-/*void ClientMap::renderMapShadows(video::IVideoDriver *driver,
-		const video::SMaterial &material, s32 pass, int frame, int total_frames)
-{
-	bool is_transparent_pass = pass != scene::ESNRP_SOLID;
-	std::string prefix;
-	if (is_transparent_pass)
-		prefix = "renderMap(SHADOW TRANS): ";
-	else
-		prefix = "renderMap(SHADOW SOLID): ";
-
-	const auto mesh_grid = m_client->getMeshGrid();
-	// Gets world position from block map position
-	const auto get_block_wpos = [&] (v3s16 pos) -> v3f {
-		return intToFloat(mesh_grid.getMeshPos(pos) * MAP_BLOCKSIZE - m_camera_offset, BS);
-	};
-
-	MeshBufListMaps grouped_buffers;
-	DrawDescriptorList draw_order;
-
-	std::size_t count = 0;
-	std::size_t meshes_per_frame = m_drawlist_shadow.size() / total_frames + 1;
-	std::size_t low_bound = is_transparent_pass ? 0 : meshes_per_frame * frame;
-	std::size_t high_bound = is_transparent_pass ? m_drawlist_shadow.size() : meshes_per_frame * (frame + 1);
-
-	// transparent pass should be rendered in one go
-	if (is_transparent_pass && frame != total_frames - 1) {
-		return;
-	}
-
-	for (const auto &i : m_drawlist_shadow) {
-		// only process specific part of the list & break early
-		++count;
-		if (count <= low_bound)
-			continue;
-		if (count > high_bound)
-			break;
-
-		v3s16 block_pos = i.first;
-		MapBlock *block = i.second;
-
-		// If the mesh of the block happened to get deleted, ignore it
-		if (!block->mesh)
-            continue;*/
-
-		/*
-			Get the meshbuffers of the block
-		*/
-        /*if (is_transparent_pass) {
-			// In transparent pass, the mesh will give us
-			// the partial buffers in the correct order
-			for (auto &buffer : block->mesh->getTransparentBuffers())
-				draw_order.emplace_back(get_block_wpos(block_pos), &buffer);
-		} else {
-			// Otherwise, group them
-			grouped_buffers.addFromBlock(block_pos, block->mesh, driver);
-		}
-	}
-
-	for (auto &map : grouped_buffers.maps) {
-		for (auto &list : map) {
-			transformBuffersToDrawOrder(
-				list.second, draw_order, get_block_wpos, m_dynamic_buffers);
-		}
-	}
-
-	TimeTaker draw("");
-
-	core::matrix4 m; // Model matrix
-	u32 drawcall_count = 0;
-	u32 vertex_count = 0;
-	u32 material_swaps = 0;
-
-	// Render all mesh buffers in order
-	drawcall_count += draw_order.size();
-
-	bool translucent_foliage = g_settings->getBool("enable_translucent_foliage");
-
-	video::E_MATERIAL_TYPE leaves_material = video::EMT_SOLID;
-
-	// For translucent leaves, we want to use backface culling instead of frontface.
-	if (translucent_foliage) {
-		// this is the material leaves would use, compare to nodedef.cpp
-		auto* shdsrc = m_client->getShaderSource();
-		const u32 leaves_shader = shdsrc->getShader("nodes_shader", TILE_MATERIAL_WAVING_LEAVES, NDT_ALLFACES);
-		leaves_material = shdsrc->getShaderInfo(leaves_shader).material;
-	}
-
-	for (auto &descriptor : draw_order) {
-		if (!descriptor.m_reuse_material) {
-			// override some material properties
-			video::SMaterial local_material = descriptor.getMaterial();
-			// do not override culling if the original material renders both back
-			// and front faces in solid mode (e.g. plantlike)
-			// Transparent plants would still render shadows only from one side,
-			// but this conflicts with water which occurs much more frequently
-			if (is_transparent_pass || local_material.BackfaceCulling || local_material.FrontfaceCulling) {
-				local_material.BackfaceCulling = material.BackfaceCulling;
-				local_material.FrontfaceCulling = material.FrontfaceCulling;
-			}
-			if (local_material.MaterialType == leaves_material && translucent_foliage) {
-				local_material.BackfaceCulling = true;
-				local_material.FrontfaceCulling = false;
-			}
-			local_material.MaterialType = material.MaterialType;
-			local_material.BlendOperation = material.BlendOperation;
-			driver->setMaterial(local_material);
-			++material_swaps;
-		}
-
-		m.setTranslation(descriptor.m_pos);
-
-		driver->setTransform(video::ETS_WORLD, m);
-		vertex_count += descriptor.draw(driver);
-	}
-
-	// restore the driver material state
-	video::SMaterial clean;
-	clean.BlendOperation = video::EBO_ADD;
-	driver->setMaterial(clean); // reset material to defaults
-	// FIXME: why is this here?
-	driver->draw3DLine(v3f(), v3f(), img::color8(0));
-
-	g_profiler->avg(prefix + "draw meshes [ms]", draw.stop(true));
-	g_profiler->avg(prefix + "vertices drawn [#]", vertex_count);
-	g_profiler->avg(prefix + "drawcalls [#]", drawcall_count);
-	g_profiler->avg(prefix + "material swaps [#]", material_swaps);
-}*/
-
-/*
-	Custom update draw list for the pov of shadow light.
-*/
-/*void ClientMap::updateDrawListShadow(v3f shadow_light_pos, v3f shadow_light_dir, float radius, float length)
-{
-	ScopeProfiler sp(g_profiler, "CM::updateDrawListShadow()", SPT_AVG);
-
-	for (auto &i : m_drawlist_shadow) {
-		MapBlock *block = i.second;
-		block->refDrop();
-	}
-	m_drawlist_shadow.clear();
-
-	// Number of blocks currently loaded by the client
-	u32 blocks_loaded = 0;
-	// Number of blocks with mesh in rendering range
-	u32 blocks_in_range_with_mesh = 0;
-
-	for (auto &sector_it : m_sectors) {
-		const MapSector *sector = sector_it.second;
-		if (!sector)
-			continue;
-        blocks_loaded += sector->size();*/
-
-		/*
-			Loop through blocks in sector
-		*/
-        /*for (const auto &entry : sector->getBlocks()) {
-			MapBlock *block = entry.second.get();
-			MapBlockMesh *mesh = block->mesh;
-			if (!mesh) {
-				// Ignore if mesh doesn't exist
-				continue;
-			}
-
-			v3f block_pos = intToFloat(block->getPosRelative(), BS) + mesh->getBoundingSphereCenter();
-			v3f projection = shadow_light_pos + shadow_light_dir * shadow_light_dir.dotProduct(block_pos - shadow_light_pos);
-			if (projection.getDistanceFrom(block_pos) > (radius + mesh->getBoundingRadius()))
-				continue;
-
-			blocks_in_range_with_mesh++;
-
-			// This block is in range. Reset usage timer.
-			block->resetUsageTimer();
-
-			// Add to set
-			if (m_drawlist_shadow.emplace(block->getPos(), block).second) {
-				block->refGrab();
-			}
-		}
-	}
-
-	g_profiler->avg("SHADOW MapBlock meshes in range [#]", blocks_in_range_with_mesh);
-	g_profiler->avg("SHADOW MapBlocks drawn [#]", m_drawlist_shadow.size());
-	g_profiler->avg("SHADOW MapBlocks loaded [#]", blocks_loaded);
 }
+
+
 
 void ClientMap::reportMetrics(u64 save_time_us, u32 saved_blocks, u32 all_blocks)
 {

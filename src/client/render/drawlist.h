@@ -62,6 +62,8 @@ class DistanceSortedDrawList
     std::atomic<bool> needs_update_drawlist;
     std::atomic<bool> needs_update_shadow_drawlist;
 
+    v3f cur_light_pos;
+
     bool cache_trilinear_filter;
     bool cache_bilinear_filter;
     bool cache_anistropic_filter;
@@ -115,8 +117,18 @@ public:
     	needs_update_drawlist = true;
     }
 
+    void setLightPos(const v3f &new_pos)
+    {
+        cur_light_pos = new_pos;
+    }
+
+    v3f getLightPos() const
+    {
+        return cur_light_pos;
+    }
+
     void updateList();
-    void resortShadowList(const v3f &light_pos);
+    void resortShadowList();
 
     void render();
     void renderShadows(const TileLayer &override_layer);

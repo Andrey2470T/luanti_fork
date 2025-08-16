@@ -1,6 +1,5 @@
 #include "camera.h"
 #include "client/client.h"
-#include "map.h"
 
 Camera::Camera(const v2u &viewportSize,
             const v3f &position, const v3f &direction,

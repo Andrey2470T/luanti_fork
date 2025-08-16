@@ -32,6 +32,7 @@ void TileLayer::setupRenderState(RenderSystem *rndsys) const
     auto ctxt = rnd->getContext();
 
     ctxt->enableCullFace(material_flags & MATERIAL_FLAG_BACKFACE_CULLING);
+    ctxt->setCullMode(render::CM_BACK);
 
     if (tile_ref) {
         auto basicPool = rndsys->getPool(true);

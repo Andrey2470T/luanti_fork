@@ -186,7 +186,7 @@ void DistanceSortedDrawList::updateList()
     }
 }
 
-void DistanceSortedDrawList::resortShadowList(const v3f &light_pos)
+void DistanceSortedDrawList::resortShadowList()
 {
     if (!needs_update_shadow_drawlist)
         return;
@@ -195,7 +195,7 @@ void DistanceSortedDrawList::resortShadowList(const v3f &light_pos)
 
     MutexAutoLock list_lock(shadow_meshes_mutex);
 
-    mesh_sorter.camera_pos = light_pos;
+    mesh_sorter.camera_pos = cur_light_pos;
     std::sort(shadow_meshes.begin(), shadow_meshes.end(), mesh_sorter);
 }
 
@@ -231,10 +231,9 @@ void DistanceSortedDrawList::renderShadows(const TileLayer &override_layer)
 {
     auto rndsys = client->getRenderSystem();
     auto rnd = rndsys->getRenderer();
+    auto ctxt = rnd->getContext();
 
     v3s16 cameraOffset = client->getCamera()->getOffset();
-
-    override_layer.setupRenderState(rndsys);
 
     MutexAutoLock list_lock(shadow_meshes_mutex);
     for (auto &m : shadow_meshes) {
@@ -243,8 +242,15 @@ void DistanceSortedDrawList::renderShadows(const TileLayer &override_layer)
         t.setTranslation(center - intToFloat(cameraOffset, BS));
         rnd->setTransformMatrix(TMatrix::World, t);
 
-        for (auto &l : m->getAllLayers())
-            rnd->draw(m->getBuffer(l.buffer_id), render::PT_TRIANGLES, l.offset, l.count);
+        for (auto &l : m->getAllLayers()) {
+            override_layer.material_type = l.first->material_type;
+            override_layer.setupRenderState(rndsys);
+
+            if (translucent_foliage && l.first->material_type & TILE_MATERIAL_WAVING_LEAVES)
+                ctxt->setCullMode(render::CM_FRONT);
+
+            rnd->draw(m->getBuffer(l.second.buffer_id), render::PT_TRIANGLES, l.second.offset, l.second.count);
+        }
     }
 }
 
@@ -253,6 +259,7 @@ void *DrawListUpdateThread::run()
     BEGIN_DEBUG_EXCEPTION_HANDLER
 
     while (!stopRequested()) {
+        drawlist->resortShadowList();
         drawlist->updateList();
         sleep_ms(50);
     }
