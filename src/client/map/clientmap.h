@@ -38,6 +38,7 @@ public:
     //void updateCamera(v3f pos, v3f dir, f32 fov, v3s16 offset, img::color8 light_color);
 
     void update();
+    void updateShadowBlocks(const v3f &shadow_light_pos, const v3f &shadow_light_dir, f32 radius, f32 length);
 	// @brief Calculate statistics about the map and keep the blocks alive
 	void touchMapBlocks();
 
@@ -84,5 +85,6 @@ private:
     //img::color8 m_camera_light_color = img::white;
 
     std::list<MapBlock*> m_visible_mapblocks;
+    std::list<MapBlock*> m_visible_shadow_mapblocks;
     //std::map<v3s16, MapBlock*> m_drawlist_shadow;
 };

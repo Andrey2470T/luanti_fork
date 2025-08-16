@@ -27,14 +27,14 @@ ClientMap::ClientMap(Client *client, DistanceSortedDrawList *drawlist)
 /*void ClientMap::updateCamera(v3f pos, v3f dir, f32 fov, v3s16 offset, img::color8 light_color)
 {
     v3s16 previous_node = floatToInt(m_camera_pos, BS) + m_camera_offset;
-	v3s16 previous_block = getContainerPos(previous_node, MAP_BLOCKSIZE);
+    v3s16 previous_block = getContainerPos(previous_node, MAP_BLOCKSIZE);
 
     m_camera_pos = pos;
-	m_camera_offset = offset;
-	m_camera_light_color = light_color;
+    m_camera_offset = offset;
+    m_camera_light_color = light_color;
 
     v3s16 current_node = floatToInt(m_camera_pos, BS) + m_camera_offset;
-	v3s16 current_block = getContainerPos(current_node, MAP_BLOCKSIZE);
+    v3s16 current_block = getContainerPos(current_node, MAP_BLOCKSIZE);
 
     if (previous_block != current_block) {
         update();
@@ -58,9 +58,9 @@ MapSector * ClientMap::emergeSector(v2s16 p2d)
 
 /*void ClientMap::render()
 {
-	video::IVideoDriver* driver = SceneManager->getVideoDriver();
-	driver->setTransform(video::ETS_WORLD, AbsoluteTransformation);
-	renderMap(driver, SceneManager->getSceneNodeRenderPass());
+    video::IVideoDriver* driver = SceneManager->getVideoDriver();
+    driver->setTransform(video::ETS_WORLD, AbsoluteTransformation);
+    renderMap(driver, SceneManager->getSceneNodeRenderPass());
 }*/
 
 void ClientMap::getBlocksInViewRange(v3s16 cam_pos_nodes,
@@ -98,13 +98,7 @@ void ClientMap::update()
 	ScopeProfiler sp(g_profiler, "CM::updateDrawList()", SPT_AVG);
 
     for (auto &block : m_visible_mapblocks) {
-        auto mesh = block->mesh;
-        m_drawlist->removeLayeredMesh(mesh->getMesh());
-
-        for (u16 ao_id : mesh->getActiveObjects()) {
-            auto cao = m_client->getEnv().getActiveObject(ao_id);
-            //delete the CAOs layered meshes from the drawlist
-        }
+        block->mesh->removeFromDrawList(m_drawlist);
 		block->refDrop();
 	}
     m_visible_mapblocks.clear();
@@ -143,17 +137,58 @@ void ClientMap::update()
 
             m_visible_mapblocks.push_back(block);
 
-            m_drawlist->addLayeredMesh(mesh->getMesh());
-
-            for (u16 ao_id : mesh->getActiveObjects()) {
-                auto cao = m_client->getEnv().getActiveObject(ao_id);
-                //add the CAOs layered meshes to the drawlist
-            }
+            mesh->addInDrawList(m_drawlist);
 
             block->resetUsageTimer();
             blocks_in_range_with_mesh++;
         }
 	}
+
+    g_profiler->avg("MapBlocks loaded [#]", blocks_loaded);
+    g_profiler->avg("MapBlocks with mesh [#]", blocks_in_range_with_mesh);
+}
+
+void ClientMap::updateShadowBlocks(const v3f &shadow_light_pos, const v3f &shadow_light_dir, f32 radius, f32 length)
+{
+    ScopeProfiler sp(g_profiler, "CM::updateShadowDrawList()", SPT_AVG);
+
+    for (auto &block : m_visible_shadow_mapblocks) {
+        block->mesh->removeFromDrawList(m_drawlist, true);
+        block->refDrop();
+    }
+    m_visible_shadow_mapblocks.clear();
+
+    // Number of blocks currently loaded by the client
+    u32 blocks_loaded = 0;
+    // Number of blocks with mesh in rendering range
+    u32 blocks_in_range_with_mesh = 0;
+
+    MapBlockVect sectorblocks;
+
+    for (auto &sector_it : m_sectors) {
+        MapSector *sector = sector_it.second;
+
+        // Loop through blocks in sector
+        sector->getBlocks(sectorblocks);
+        for (auto &block : sectorblocks) {
+            MapBlockMesh *mesh = block->mesh;
+
+            if (!mesh)
+                continue;
+
+            v3f block_pos = mesh->getBoundingSphereCenter();
+            v3f projection = shadow_light_pos + shadow_light_dir * shadow_light_dir.dotProduct(block_pos - shadow_light_pos);
+            if (projection.getDistanceFrom(block_pos) > (radius + mesh->getBoundingRadius()))
+                continue;
+
+            m_visible_shadow_mapblocks.push_back(block);
+
+            mesh->addInDrawList(m_drawlist, true);
+
+            block->resetUsageTimer();
+            blocks_in_range_with_mesh++;
+        }
+    }
 
     g_profiler->avg("MapBlocks loaded [#]", blocks_loaded);
     g_profiler->avg("MapBlocks with mesh [#]", blocks_in_range_with_mesh);

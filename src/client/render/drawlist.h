@@ -48,8 +48,10 @@ class DistanceSortedDrawList
     Client *client;
 
     std::list<LayeredMesh *> meshes;
+    std::list<LayeredMesh *> shadow_meshes;
 
     std::mutex meshes_mutex;
+    std::mutex shadow_meshes_mutex;
 
     std::list<BatchedLayer> layers;
 
@@ -58,18 +60,21 @@ class DistanceSortedDrawList
     std::unique_ptr<DrawListUpdateThread> drawlist_thread;
 
     std::atomic<bool> needs_update_drawlist;
+    std::atomic<bool> needs_update_shadow_drawlist;
 
     bool cache_trilinear_filter;
     bool cache_bilinear_filter;
     bool cache_anistropic_filter;
     u16 cache_transparency_sorting_distance;
+    bool enable_shadows;
+    bool translucent_foliage;
 public:
     DistanceSortedDrawList(Client *_client, DrawControl _draw_control);
 
     ~DistanceSortedDrawList();
 
-    void addLayeredMesh(LayeredMesh *newMesh);
-    void removeLayeredMesh(LayeredMesh *mesh);
+    void addLayeredMesh(LayeredMesh *newMesh, bool shadow=false);
+    void removeLayeredMesh(LayeredMesh *mesh, bool shadow=false);
 
     class LayeredMeshSorter
     {
@@ -89,14 +94,20 @@ public:
         return draw_control;
     }
 
-    void lockMeshes()
+    void lockMeshes(bool shadow=false)
     {
-        meshes_mutex.lock();
+        if (!shadow)
+            meshes_mutex.lock();
+        else
+            shadow_meshes_mutex.lock();
     }
 
-    void unlockMeshes()
+    void unlockMeshes(bool shadow=false)
     {
-        meshes_mutex.unlock();
+        if (!shadow)
+            meshes_mutex.unlock();
+        else
+            shadow_meshes_mutex.unlock();
     }
     
     void forceUpdate()
@@ -105,8 +116,10 @@ public:
     }
 
     void updateList();
+    void resortShadowList(const v3f &light_pos);
 
     void render();
+    void renderShadows(const TileLayer &override_layer);
 
     void onSettingChanged(std::string_view name, bool all);
 private:

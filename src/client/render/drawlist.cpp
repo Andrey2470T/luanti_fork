@@ -16,7 +16,9 @@ static const std::string ClientMap_settings[] = {
     "trilinear_filter",
     "bilinear_filter",
     "anisotropic_filter",
-    "transparency_sorting_distance"
+    "transparency_sorting_distance",
+    "enable_dynamic_shadows",
+    "enable_translucent_foliage"
 };
 
 DistanceSortedDrawList::DistanceSortedDrawList(Client *_client, DrawControl _draw_control)
@@ -40,24 +42,32 @@ DistanceSortedDrawList::~DistanceSortedDrawList()
 }
 
 // The meshes_mutex must be locked externally before this call!
-void DistanceSortedDrawList::addLayeredMesh(LayeredMesh *newMesh)
+void DistanceSortedDrawList::addLayeredMesh(LayeredMesh *newMesh, bool shadow)
 {
-    auto find_mesh = std::find(meshes.begin(), meshes.end(), newMesh);
+    auto &list = shadow ? shadow_meshes : meshes;
+    auto find_mesh = std::find(list.begin(), list.end(), newMesh);
 
-    if (find_mesh != meshes.end())
+    if (find_mesh != list.end())
         return;
 
-    meshes.push_back(newMesh);
+    list.push_back(newMesh);
 
-    needs_update_drawlist = true;
+    if (!shadow)
+        needs_update_drawlist = true;
+    else
+        needs_update_shadow_drawlist = true;
 }
 
 // The meshes_mutex must be locked externally before this call!
-void DistanceSortedDrawList::removeLayeredMesh(LayeredMesh *mesh)
+void DistanceSortedDrawList::removeLayeredMesh(LayeredMesh *mesh, bool shadow)
 {
-    meshes.remove(mesh);
+    auto &list = shadow ? shadow_meshes : meshes;
+    list.remove(mesh);
 
-    needs_update_drawlist = true;
+    if (!shadow)
+        needs_update_drawlist = true;
+    else
+        needs_update_shadow_drawlist = true;
 }
 
 bool DistanceSortedDrawList::LayeredMeshSorter::operator() (const LayeredMesh *m1, const LayeredMesh *m2) const
@@ -80,6 +90,10 @@ void DistanceSortedDrawList::onSettingChanged(std::string_view name, bool all)
         cache_anistropic_filter = g_settings->getBool("anisotropic_filter");
     if (all || name == "transparency_sorting_distance")
         cache_transparency_sorting_distance = g_settings->getU16("transparency_sorting_distance");
+    if (all || name == "enable_dynamic_shadows")
+        enable_shadows = g_settings->getBool("enable_dynamic_shadows");
+    if (all || name == "enable_translucent_foliage")
+        translucent_foliage = g_settings->getBool("enable_translucent_foliage");
 }
 
 void DistanceSortedDrawList::updateList()
@@ -172,6 +186,19 @@ void DistanceSortedDrawList::updateList()
     }
 }
 
+void DistanceSortedDrawList::resortShadowList(const v3f &light_pos)
+{
+    if (!needs_update_shadow_drawlist)
+        return;
+
+    needs_update_shadow_drawlist = false;
+
+    MutexAutoLock list_lock(shadow_meshes_mutex);
+
+    mesh_sorter.camera_pos = light_pos;
+    std::sort(shadow_meshes.begin(), shadow_meshes.end(), mesh_sorter);
+}
+
 void DistanceSortedDrawList::render()
 {
     auto rndsys = client->getRenderSystem();
@@ -182,6 +209,8 @@ void DistanceSortedDrawList::render()
         ctxt->setPolygonMode(render::CM_FRONT_AND_BACK, render::PM_LINE);
 
     v3s16 cameraOffset = client->getCamera()->getOffset();
+
+    MutexAutoLock drawlist_lock(drawlist_mutex);
     for (auto &l : layers) {
         l.first->setupRenderState(rndsys);
 
@@ -195,6 +224,27 @@ void DistanceSortedDrawList::render()
 
             rnd->draw(mesh_l.second->getBuffer(lp.buffer_id), render::PT_TRIANGLES, lp.offset, lp.count);
         }
+    }
+}
+
+void DistanceSortedDrawList::renderShadows(const TileLayer &override_layer)
+{
+    auto rndsys = client->getRenderSystem();
+    auto rnd = rndsys->getRenderer();
+
+    v3s16 cameraOffset = client->getCamera()->getOffset();
+
+    override_layer.setupRenderState(rndsys);
+
+    MutexAutoLock list_lock(shadow_meshes_mutex);
+    for (auto &m : shadow_meshes) {
+        matrix4 t;
+        v3f center = m->getBoundingSphereCenter();
+        t.setTranslation(center - intToFloat(cameraOffset, BS));
+        rnd->setTransformMatrix(TMatrix::World, t);
+
+        for (auto &l : m->getAllLayers())
+            rnd->draw(m->getBuffer(l.buffer_id), render::PT_TRIANGLES, l.offset, l.count);
     }
 }
 

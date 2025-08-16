@@ -17,6 +17,7 @@
 #include "client/media/resource.h"
 #include "client/mesh/defaultVertexTypes.h"
 #include "client/render/atlas.h"
+#include "client/render/drawlist.h"
 
 
 /*
@@ -84,9 +85,8 @@ void MeshMakeData::fillSingleNode(MapNode data, MapNode padding)
 */
 
 MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data)
-    : m_mesh(std::make_unique<LayeredMesh>(v3f((data->m_side_length * 0.5f - 0.5f) * BS),
-      intToFloat(data->m_mesh_grid.getMeshPos(data->m_blockpos) * MAP_BLOCKSIZE, BS), NodeVType)),
-    m_rndsys(client->getRenderSystem()), m_cache(client->getResourceCache())
+    :  m_client(client), m_mesh(std::make_unique<LayeredMesh>(v3f((data->m_side_length * 0.5f - 0.5f) * BS),
+      intToFloat(data->m_mesh_grid.getMeshPos(data->m_blockpos) * MAP_BLOCKSIZE, BS), NodeVType))
 {
 	ZoneScoped;
 
@@ -123,7 +123,7 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data)
     }*/
 
 
-    auto basicPool = m_rndsys->getPool(true);
+    auto basicPool = m_client->getRenderSystem()->getPool(true);
     for (u8 buf_i = 0; buf_i < m_mesh->getBuffersCount(); buf_i++) {
         auto buffer = m_mesh->getBuffer(buf_i);
         for (u8 layer_i = 0; layer_i < m_mesh->getBufferLayersCount(buf_i); layer_i++) {
@@ -139,7 +139,7 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data)
                 shadername = "block_hw";
 
             layer->use_default_shader = false;
-            layer->shader = m_cache->getOrLoad<render::Shader>(ResourceType::SHADER, shadername);
+            layer->shader = m_client->getResourceCache()->getOrLoad<render::Shader>(ResourceType::SHADER, shadername);
 
             auto img_size = src_rect.getSize();
             u32 atlas_size = layer->atlas->getTextureSize();
@@ -182,4 +182,38 @@ void MapBlockMesh::updateIndexBuffers(v3s16 camera_pos)
 {
     m_mesh->transparentSort(intToFloat(camera_pos, BS));
     m_mesh->updateIndexBuffers();
+}
+
+void MapBlockMesh::addActiveObject(u16 id)
+{
+    m_active_objects.emplace(id);
+}
+void MapBlockMesh::removeActiveObject(u16 id)
+{
+    auto found_ao = std::find(m_active_objects.begin(), m_active_objects.end(), id);
+
+    if (found_ao == m_active_objects.end())
+        return;
+
+    m_active_objects.erase(found_ao);
+}
+
+void MapBlockMesh::addInDrawList(DistanceSortedDrawList *drawlist, bool shadow)
+{
+    drawlist->addLayeredMesh(m_mesh.get());
+
+    for (u16 ao_id : m_active_objects) {
+        auto cao = m_client->getEnv().getActiveObject(ao_id);
+        //add the CAOs layered meshes to the drawlist
+    }
+}
+
+void MapBlockMesh::removeFromDrawList(DistanceSortedDrawList *drawlist, bool shadow)
+{
+    drawlist->removeLayeredMesh(m_mesh.get());
+
+    for (u16 ao_id : m_active_objects) {
+        auto cao = m_client->getEnv().getActiveObject(ao_id);
+        //delete the CAOs layered meshes from the drawlist
+    }
 }

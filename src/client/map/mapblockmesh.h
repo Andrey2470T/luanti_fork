@@ -23,6 +23,7 @@ class LayeredMesh;
 
 class MapBlock;
 struct MinimapMapblock;
+class DistanceSortedDrawList;
 
 struct MeshMakeData
 {
@@ -100,31 +101,22 @@ public:
 	
     void updateIndexBuffers(v3s16 camera_pos);
 
-    void addActiveObject(u16 id)
-    {
-        m_active_objects.emplace(id);
-    }
-    void removeActiveObject(u16 id)
-    {
-        auto found_ao = std::find(m_active_objects.begin(), m_active_objects.end(), id);
-
-        if (found_ao == m_active_objects.end())
-            return;
-
-        m_active_objects.erase(found_ao);
-    }
+    void addActiveObject(u16 id);
+    void removeActiveObject(u16 id);
 
     const std::set<u16> &getActiveObjects() const
     {
         return m_active_objects;
     }
 
+    void addInDrawList(DistanceSortedDrawList *drawlist, bool shadow=false);
+    void removeFromDrawList(DistanceSortedDrawList *drawlist, bool shadow=false);
+
 private:
+    Client *m_client;
+
 	std::unique_ptr<LayeredMesh> m_mesh;
     std::vector<std::shared_ptr<MinimapMapblock>> m_minimap_mapblocks;
 
     std::set<u16> m_active_objects; // all AOs currently locating within the mapblock
-
-	RenderSystem *m_rndsys;
-	ResourceCache *m_cache;
 };
