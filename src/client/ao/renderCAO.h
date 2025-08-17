@@ -44,10 +44,11 @@ private:
 	bool m_visuals_expired = false;
 	float m_step_distance_counter = 0.0f;
     img::color8 m_last_light = img::white;
-    bool m_is_visible = false;
 	// Material
     //video::E_MATERIAL_TYPE m_material_type;
 	f32 m_material_type_param;
+
+    bool m_is_visible = false;
 
 	bool visualExpiryRequired(const ObjectProperties &newprops) const;
 

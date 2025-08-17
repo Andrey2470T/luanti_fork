@@ -30,92 +30,14 @@
 class Settings;
 struct ToolCapabilities;
 
-TransformNode::~TransformNode()
-{
-    for (u8 child : Children)
-        Tree->removeNode(child);
-}
-
-TransformNode *TransformNode::getParent() const
-{
-    if (!Parent.has_value())
-        return nullptr;
-    return Tree->getNode(Parent.value());
-}
-
-void TransformNode::updateNode()
-{
-    matrix4 T;
-    T.setTranslation(Position);
-    matrix4 R;
-    Rotation.getMatrix_transposed(R);
-    matrix4 S;
-    S.setScale(Scale);
-
-    RelativeTransform = T * R * S;
-
-    auto parent = getParent();
-    if (parent)
-        AbsoluteTransform = parent->AbsoluteTransform * RelativeTransform;
-}
-
-void TransformNode::updateNodeAndChildren()
-{
-    updateNode();
-
-    for (auto child : Children)
-        Tree->getNode(child)->updateNodeAndChildren();
-}
-
-TransformNode *TransformNodeTree::getNode(u8 id) const
-{
-    assert(id < Nodes.size());
-    return Nodes.at(id).get();
-}
-
-void TransformNodeTree::addNode(TransformNode *newNode)
-{
-    assert(Nodes.size() + 1 <= maxAcceptedNodeCount);
-
-    newNode->Tree = this;
-    Nodes.emplace_back(newNode);
-
-    if (newNode->isRoot())
-        RootNodes.push_back(Nodes.size()-1);
-}
-
-void TransformNodeTree::removeNode(u8 id)
-{
-    assert(id < Nodes.size());
-
-    auto node = Nodes.begin()+id;
-
-    if ((*node)->isRoot())
-        RootNodes.erase(std::find(RootNodes.begin(), RootNodes.end(), id));
-
-    Nodes.erase(Nodes.begin()+id);
-}
-
-void TransformNodeTree::updateNodes()
-{
-    for (u8 root : RootNodes)
-        getNode(root)->updateNodeAndChildren();
-}
-
-TransformNode *TransformNodeManager::getNode(u8 treeID, u8 nodeID) const
-{
-    assert(treeID < Trees.size());
-    return Trees.at(treeID)->getNode(nodeID);
-}
-
 std::unordered_map<u16, ClientActiveObject::Factory> ClientActiveObject::m_types;
 
 template<typename T>
 void SmoothTranslator<T>::init(T current)
 {
-	val_old = current;
+    val_start = current;
 	val_current = current;
-	val_target = current;
+    val_end = current;
 	anim_time = 0;
 	anim_time_counter = 0;
 	aim_is_end = true;
@@ -125,8 +47,8 @@ template<typename T>
 void SmoothTranslator<T>::update(T new_target, bool is_end_position, float update_interval)
 {
 	aim_is_end = is_end_position;
-	val_old = val_current;
-	val_target = new_target;
+    val_start = val_current;
+    val_end = new_target;
 	if (update_interval > 0) {
 		anim_time = update_interval;
 	} else {
@@ -142,7 +64,7 @@ template<typename T>
 void SmoothTranslator<T>::translate(f32 dtime)
 {
 	anim_time_counter = anim_time_counter + dtime;
-	T val_diff = val_target - val_old;
+    T val_diff = val_end - val_start;
 	f32 moveratio = 1.0;
 	if (anim_time > 0.001)
 		moveratio = anim_time_counter / anim_time;
@@ -150,13 +72,13 @@ void SmoothTranslator<T>::translate(f32 dtime)
 
 	// Move a bit less than should, to avoid oscillation
 	moveratio = std::min(moveratio * 0.8f, move_end);
-	val_current = val_old + val_diff * moveratio;
+    val_current = val_start + val_diff * moveratio;
 }
 
 void SmoothTranslatorWrapped::translate(f32 dtime)
 {
 	anim_time_counter = anim_time_counter + dtime;
-	f32 val_diff = std::abs(val_target - val_old);
+    f32 val_diff = std::abs(val_end - val_start);
 	if (val_diff > 180.f)
 		val_diff = 360.f - val_diff;
 
@@ -167,7 +89,7 @@ void SmoothTranslatorWrapped::translate(f32 dtime)
 
 	// Move a bit less than should, to avoid oscillation
 	moveratio = std::min(moveratio * 0.8f, move_end);
-	wrappedApproachShortest(val_current, val_target,
+    wrappedApproachShortest(val_current, val_end,
 		val_diff * moveratio, 360.f);
 }
 
@@ -176,9 +98,9 @@ void SmoothTranslatorWrappedv3f::translate(f32 dtime)
 	anim_time_counter = anim_time_counter + dtime;
 
     v3f val_diff_v3f;
-	val_diff_v3f.X = std::abs(val_target.X - val_old.X);
-	val_diff_v3f.Y = std::abs(val_target.Y - val_old.Y);
-	val_diff_v3f.Z = std::abs(val_target.Z - val_old.Z);
+    val_diff_v3f.X = std::abs(val_end.X - val_start.X);
+    val_diff_v3f.Y = std::abs(val_end.Y - val_start.Y);
+    val_diff_v3f.Z = std::abs(val_end.Z - val_start.Z);
 
 	if (val_diff_v3f.X > 180.f)
 		val_diff_v3f.X = 360.f - val_diff_v3f.X;
@@ -196,13 +118,13 @@ void SmoothTranslatorWrappedv3f::translate(f32 dtime)
 
 	// Move a bit less than should, to avoid oscillation
 	moveratio = std::min(moveratio * 0.8f, move_end);
-	wrappedApproachShortest(val_current.X, val_target.X,
+    wrappedApproachShortest(val_current.X, val_end.X,
 		val_diff_v3f.X * moveratio, 360.f);
 
-	wrappedApproachShortest(val_current.Y, val_target.Y,
+    wrappedApproachShortest(val_current.Y, val_end.Y,
 		val_diff_v3f.Y * moveratio, 360.f);
 
-	wrappedApproachShortest(val_current.Z, val_target.Z,
+    wrappedApproachShortest(val_current.Z, val_end.Z,
 		val_diff_v3f.Z * moveratio, 360.f);
 }
 
@@ -263,28 +185,6 @@ GenericCAO::GenericCAO(Client *client, ClientEnvironment *env):
 	}
 }
 
-bool GenericCAO::getCollisionBox(aabbf *toset) const
-{
-	if (m_prop.physical)
-	{
-		//update collision box
-		toset->MinEdge = m_prop.collisionbox.MinEdge * BS;
-		toset->MaxEdge = m_prop.collisionbox.MaxEdge * BS;
-
-		toset->MinEdge += m_position;
-		toset->MaxEdge += m_position;
-
-		return true;
-	}
-
-	return false;
-}
-
-bool GenericCAO::collideWithObjects() const
-{
-	return m_prop.collideWithObjects;
-}
-
 void GenericCAO::initialize(const std::string &data)
 {
 	processInitData(data);
@@ -314,7 +214,7 @@ void GenericCAO::processInitData(const std::string &data)
 		LocalPlayer *player = m_env->getLocalPlayer();
 		if (player && player->getName() == m_name) {
 			m_is_local_player = true;
-			m_is_visible = false;
+            //m_is_visible = false;
 			player->setCAO(this);
 		}
 	}
@@ -336,28 +236,36 @@ GenericCAO::~GenericCAO()
 	removeFromScene(true);
 }
 
-bool GenericCAO::getSelectionBox(aabbf *toset) const
-{
-	if (!m_prop.is_visible || !m_is_visible || m_is_local_player) {
-		return false;
-	}
-	*toset = m_selection_box;
-	return true;
-}
-
 const v3f GenericCAO::getPosition() const
 {
 	if (!getParent())
 		return pos_translator.val_current;
-
+    else {
+        v3s16 camera_offset = m_env->getCameraOffset();
+        return getAttachmentNode()->getAbsolutePosition() + intToFloat(camera_offset, BS);
+    }
 	// Calculate real position in world based on MatrixNode
-	if (m_matrixnode) {
+    /*if (m_matrixnode) {
 		v3s16 camera_offset = m_env->getCameraOffset();
 		return m_matrixnode->getAbsolutePosition() +
 				intToFloat(camera_offset, BS);
-	}
+    }*/
 
 	return m_position;
+}
+
+const v3f GenericCAO::getRotation() const
+{
+    if (!getParent())
+        return rot_translator.val_current;
+    else {
+        auto rot = getAttachmentNode()->getAbsoluteRotation();
+
+        v3f euler_rot;
+        rot.toEuler(euler_rot);
+
+        return euler_rot;
+    }
 }
 
 bool GenericCAO::isImmortal() const
@@ -365,47 +273,59 @@ bool GenericCAO::isImmortal() const
 	return itemgroup_get(getGroups(), "immortal");
 }
 
-scene::ISceneNode *GenericCAO::getSceneNode() const
+matrix4 &GenericCAO::getRelativeMatrix()
 {
-	if (m_meshnode) {
-		return m_meshnode;
-	}
-
-	if (m_animated_meshnode) {
-		return m_animated_meshnode;
-	}
-
-	if (m_wield_meshnode) {
-		return m_wield_meshnode;
-	}
-
-	if (m_spritenode) {
-		return m_spritenode;
-	}
-	return NULL;
+    if (!getParent())
+        return m_rel_transform;
+    else
+        return getAttachmentNode()->RelativeTransform;
 }
 
-scene::IAnimatedMeshSceneNode *GenericCAO::getAnimatedMeshSceneNode() const
+const matrix4 &GenericCAO::getAbsoluteMatrix() const
 {
-	return m_animated_meshnode;
+    if (!getParent())
+        return m_abs_transform;
+    else
+        return getAttachmentNode()->AbsoluteTransform;
 }
 
-void GenericCAO::setChildrenVisible(bool toset)
+Attachment *GenericCAO::getAttachmentNode() const
 {
-	for (object_t cao_id : m_attachment_child_ids) {
-		GenericCAO *obj = m_env->getGenericCAO(cao_id);
-		if (obj) {
-			// Check if the entity is forced to appear in first person.
-			obj->setVisible(obj->m_force_visible ? true : toset);
-		}
-	}
+    if (!m_attachment_tree_id.has_value() || !m_attachment_node_id.has_value())
+        return nullptr;
+
+    return dynamic_cast<Attachment *>(m_node_mgr->getNode(
+        m_attachment_tree_id.value(), m_attachment_node_id.value()));
 }
 
 void GenericCAO::setAttachment(object_t parent_id, const std::string &bone,
 		v3f position, v3f rotation, bool force_visible)
 {
-	const auto old_parent = m_attachment_parent_id;
-	m_attachment_parent_id = parent_id;
+    TransformNodeTree *tree;
+
+    auto new_parent = m_env->getGenericCAO(parent_id);
+    auto new_parent_node = new_parent->getAttachmentNode();
+
+    if (new_parent_node) {
+        tree = new_parent_node->Tree;
+
+        auto cur_parent = getParent();
+        if (parent_id != cur_parent->getId())
+            cur_parent->removeAttachmentChild(m_id);
+    }
+    else {
+        tree = new TransformNodeTree();
+        new_parent_node = new Attachment();
+        new_parent_node->ObjectId = parent_id;
+        new_parent_node->Position = new_parent->getPosition();
+        new_parent_node->Rotation = new_parent->getRotation();
+        tree->addNode(new_parent_node);
+        m_node_mgr->addNodeTree(tree);
+    }
+
+    new_parent->addAttachmentChild(m_id);
+    /*const auto old_parent = m_attachment_parent_id;
+    m_attachment_parent_id = parent_id;
 	m_attachment_bone = bone;
 	m_attachment_position = position;
 	m_attachment_rotation = rotation;
@@ -433,7 +353,7 @@ void GenericCAO::setAttachment(object_t parent_id, const std::string &bone,
 		// Local players need to have this set,
 		// otherwise first person attachments fail.
 		m_is_visible = true;
-	}
+    }*/
 }
 
 void GenericCAO::getAttachment(object_t *parent_id, std::string *bone, v3f *position,
@@ -469,13 +389,20 @@ void GenericCAO::removeAttachmentChild(object_t child_id)
 	m_attachment_child_ids.erase(child_id);
 }
 
-ClientActiveObject* GenericCAO::getParent() const
+GenericCAO* GenericCAO::getParent() const
 {
-	return m_attachment_parent_id ? m_env->getActiveObject(m_attachment_parent_id) :
-			nullptr;
+    auto node = getAttachmentNode();
+    if (!node)
+        return nullptr;
+
+    auto parent = node->getParent();
+    if (!parent || parent->Type != TransformNodeType::OBJECT)
+        return nullptr;
+
+    return m_env->getGenericCAO(dynamic_cast<Attachment *>(parent)->ObjectId);
 }
 
-void GenericCAO::removeFromScene(bool permanent)
+/*void GenericCAO::removeFromScene(bool permanent)
 {
 	// Should be true when removing the object permanently
 	// and false when refreshing (eg: updating visuals)
@@ -521,9 +448,9 @@ void GenericCAO::removeFromScene(bool permanent)
 
 	if (m_marker && m_client->getMinimap())
 		m_client->getMinimap()->removeMarker(&m_marker);
-}
+}*/
 
-void GenericCAO::addToScene(ITextureSource *tsrc, scene::ISceneManager *smgr)
+void GenericCAO::addToScene()
 {
 	m_smgr = smgr;
 
@@ -769,130 +696,6 @@ void GenericCAO::addToScene(ITextureSource *tsrc, scene::ISceneManager *smgr)
 	}
 }
 
-void GenericCAO::updateLight(u32 day_night_ratio)
-{
-	if (m_prop.glow < 0)
-		return;
-
-	u16 light_at_pos = 0;
-	u8 light_at_pos_intensity = 0;
-	bool pos_ok = false;
-
-	v3s16 pos[3];
-	u16 npos = getLightPosition(pos);
-	for (u16 i = 0; i < npos; i++) {
-		bool this_ok;
-		MapNode n = m_env->getMap().getNode(pos[i], &this_ok);
-		if (this_ok) {
-			// Get light level at the position plus the entity glow
-			u16 this_light = getInteriorLight(n, m_prop.glow, m_client->ndef());
-			u8 this_light_intensity = MYMAX(this_light & 0xFF, this_light >> 8);
-			if (this_light_intensity > light_at_pos_intensity) {
-				light_at_pos = this_light;
-				light_at_pos_intensity = this_light_intensity;
-			}
-			pos_ok = true;
-		}
-	}
-	if (!pos_ok)
-		light_at_pos = LIGHT_SUN;
-
-	// Initialize with full alpha, otherwise entity won't be visible
-	video::SColor light{0xFFFFFFFF};
-
-	// Encode light into color, adding a small boost
-	// based on the entity glow.
-	light = encode_light(light_at_pos, m_prop.glow);
-
-	if (light != m_last_light) {
-		m_last_light = light;
-		setNodeLight(light);
-	}
-}
-
-void GenericCAO::setNodeLight(const video::SColor &light_color)
-{
-	if (m_prop.visual == "wielditem" || m_prop.visual == "item") {
-		if (m_wield_meshnode)
-			m_wield_meshnode->setNodeLightColor(light_color);
-		return;
-	}
-
-	{
-		auto *node = getSceneNode();
-		if (!node)
-			return;
-		setColorParam(node, light_color);
-	}
-}
-
-u16 GenericCAO::getLightPosition(v3s16 *pos)
-{
-	const auto &box = m_prop.collisionbox;
-	pos[0] = floatToInt(m_position + box.MinEdge * BS, BS);
-	pos[1] = floatToInt(m_position + box.MaxEdge * BS, BS);
-
-	// Skip center pos if it falls into the same node as Min or MaxEdge
-	if ((box.MaxEdge - box.MinEdge).getLengthSQ() < 3.0f)
-		return 2;
-	pos[2] = floatToInt(m_position + box.getCenter() * BS, BS);
-	return 3;
-}
-
-void GenericCAO::updateMarker()
-{
-	if (!m_client->getMinimap())
-		return;
-
-	if (!m_prop.show_on_minimap) {
-		if (m_marker)
-			m_client->getMinimap()->removeMarker(&m_marker);
-		return;
-	}
-
-	if (m_marker)
-		return;
-
-	scene::ISceneNode *node = getSceneNode();
-	if (!node)
-		return;
-	m_marker = m_client->getMinimap()->addMarker(node);
-}
-
-void GenericCAO::updateNametag()
-{
-	if (m_is_local_player) // No nametag for local player
-		return;
-
-	if (m_prop.nametag.empty() || m_prop.nametag_color.getAlpha() == 0) {
-		// Delete nametag
-		if (m_nametag) {
-			m_client->getCamera()->removeNametag(m_nametag);
-			m_nametag = nullptr;
-		}
-		return;
-	}
-
-	scene::ISceneNode *node = getSceneNode();
-	if (!node)
-		return;
-
-	v3f pos;
-	pos.Y = m_prop.selectionbox.MaxEdge.Y + 0.3f;
-	if (!m_nametag) {
-		// Add nametag
-		m_nametag = m_client->getCamera()->addNametag(node,
-			m_prop.nametag, m_prop.nametag_color,
-			m_prop.nametag_bgcolor, pos);
-	} else {
-		// Update nametag
-		m_nametag->text = m_prop.nametag;
-		m_nametag->textcolor = m_prop.nametag_color;
-		m_nametag->bgcolor = m_prop.nametag_bgcolor;
-		m_nametag->pos = pos;
-	}
-}
-
 void GenericCAO::updateNodePos()
 {
 	if (getParent() != NULL)
@@ -1027,7 +830,7 @@ void GenericCAO::step(float dtime, ClientEnvironment *env)
 		m_velocity = v3f(0,0,0);
 		m_acceleration = v3f(0,0,0);
 		pos_translator.val_current = m_position;
-		pos_translator.val_target = m_position;
+        pos_translator.val_end = m_position;
 	} else {
 		rot_translator.translate(dtime);
 		v3f lastpos = pos_translator.val_current;
@@ -1150,296 +953,6 @@ void GenericCAO::step(float dtime, ClientEnvironment *env)
 	buf->setDirty(scene::EBT_VERTEX);
 }*/
 
-void GenericCAO::updateTexturePos()
-{
-	if(m_spritenode)
-	{
-		scene::ICameraSceneNode* camera =
-				m_spritenode->getSceneManager()->getActiveCamera();
-		if(!camera)
-			return;
-		v3f cam_to_entity = m_spritenode->getAbsolutePosition()
-				- camera->getAbsolutePosition();
-		cam_to_entity.normalize();
-
-		int row = m_tx_basepos.Y;
-		int col = m_tx_basepos.X;
-
-		// Yawpitch goes rightwards
-		if (m_tx_select_horiz_by_yawpitch) {
-			if (cam_to_entity.Y > 0.75)
-				col += 5;
-			else if (cam_to_entity.Y < -0.75)
-				col += 4;
-			else {
-				float mob_dir =
-						atan2(cam_to_entity.Z, cam_to_entity.X) / M_PI * 180.;
-				float dir = mob_dir - m_rotation.Y;
-				dir = wrapDegrees_180(dir);
-				if (std::fabs(wrapDegrees_180(dir - 0)) <= 45.1f)
-					col += 2;
-				else if(std::fabs(wrapDegrees_180(dir - 90)) <= 45.1f)
-					col += 3;
-				else if(std::fabs(wrapDegrees_180(dir - 180)) <= 45.1f)
-					col += 0;
-				else if(std::fabs(wrapDegrees_180(dir + 90)) <= 45.1f)
-					col += 1;
-				else
-					col += 4;
-			}
-		}
-
-		// Animation goes downwards
-		row += m_anim_frame;
-
-		float txs = m_tx_size.X;
-		float tys = m_tx_size.Y;
-		setBillboardTextureMatrix(m_spritenode, txs, tys, col, row);
-	}
-
-	else if (m_meshnode) {
-		if (m_prop.visual == "upright_sprite") {
-			int row = m_tx_basepos.Y;
-			int col = m_tx_basepos.X;
-
-			// Animation goes downwards
-			row += m_anim_frame;
-
-			const auto &tx = m_tx_size;
-			v2f t[4] = { // cf. vertices in GenericCAO::addToScene()
-				tx * v2f(col+1, row+1),
-				tx * v2f(col, row+1),
-				tx * v2f(col, row),
-				tx * v2f(col+1, row),
-			};
-			auto mesh = m_meshnode->getMesh();
-			setMeshBufferTextureCoords(mesh->getMeshBuffer(0), t, 4);
-			setMeshBufferTextureCoords(mesh->getMeshBuffer(1), t, 4);
-		}
-	}
-}
-
-// Do not pass by reference, see header.
-void GenericCAO::updateTextures(std::string mod)
-{
-	ITextureSource *tsrc = m_client->tsrc();
-
-	bool use_trilinear_filter = g_settings->getBool("trilinear_filter");
-	bool use_bilinear_filter = g_settings->getBool("bilinear_filter");
-	bool use_anisotropic_filter = g_settings->getBool("anisotropic_filter");
-
-	m_previous_texture_modifier = m_current_texture_modifier;
-	m_current_texture_modifier = mod;
-
-	if (m_spritenode) {
-		if (m_prop.visual == "sprite") {
-			std::string texturestring = "no_texture.png";
-			if (!m_prop.textures.empty())
-				texturestring = m_prop.textures[0];
-			texturestring += mod;
-
-			video::SMaterial &material = m_spritenode->getMaterial(0);
-			material.MaterialType = m_material_type;
-			material.MaterialTypeParam = m_material_type_param;
-			material.setTexture(0, tsrc->getTextureForMesh(texturestring));
-
-			material.forEachTexture([=] (auto &tex) {
-				setMaterialFilters(tex, use_bilinear_filter, use_trilinear_filter,
-						use_anisotropic_filter);
-			});
-		}
-	}
-
-	else if (m_animated_meshnode) {
-		if (m_prop.visual == "mesh") {
-			for (u32 i = 0; i < m_animated_meshnode->getMaterialCount(); ++i) {
-				const auto texture_idx = m_animated_meshnode->getMesh()->getTextureSlot(i);
-				if (texture_idx >= m_prop.textures.size())
-					continue;
-				std::string texturestring = m_prop.textures[texture_idx];
-				if (texturestring.empty())
-					continue; // Empty texture string means don't modify that material
-				texturestring += mod;
-				video::ITexture *texture = tsrc->getTextureForMesh(texturestring);
-				if (!texture) {
-					errorstream<<"GenericCAO::updateTextures(): Could not load texture "<<texturestring<<std::endl;
-					continue;
-				}
-
-				// Set material flags and texture
-				video::SMaterial &material = m_animated_meshnode->getMaterial(i);
-				material.MaterialType = m_material_type;
-				material.MaterialTypeParam = m_material_type_param;
-				material.TextureLayers[0].Texture = texture;
-				material.BackfaceCulling = m_prop.backface_culling;
-
-				// don't filter low-res textures, makes them look blurry
-				// player models have a res of 64
-				const core::dimension2d<u32> &size = texture->getOriginalSize();
-				const u32 res = std::min(size.Height, size.Width);
-				use_trilinear_filter &= res > 64;
-				use_bilinear_filter &= res > 64;
-
-				material.forEachTexture([=] (auto &tex) {
-					setMaterialFilters(tex, use_bilinear_filter, use_trilinear_filter,
-							use_anisotropic_filter);
-				});
-			}
-		}
-	}
-
-	else if (m_meshnode) {
-		if(m_prop.visual == "cube")
-		{
-			for (u32 i = 0; i < 6; ++i)
-			{
-				std::string texturestring = "no_texture.png";
-				if(m_prop.textures.size() > i)
-					texturestring = m_prop.textures[i];
-				texturestring += mod;
-
-				// Set material flags and texture
-				video::SMaterial &material = m_meshnode->getMaterial(i);
-				material.MaterialType = m_material_type;
-				material.MaterialTypeParam = m_material_type_param;
-				material.setTexture(0, tsrc->getTextureForMesh(texturestring));
-				material.getTextureMatrix(0).makeIdentity();
-
-				material.forEachTexture([=] (auto &tex) {
-					setMaterialFilters(tex, use_bilinear_filter, use_trilinear_filter,
-							use_anisotropic_filter);
-				});
-			}
-		} else if (m_prop.visual == "upright_sprite") {
-			scene::IMesh *mesh = m_meshnode->getMesh();
-			{
-				std::string tname = "no_texture.png";
-				if (!m_prop.textures.empty())
-					tname = m_prop.textures[0];
-				tname += mod;
-
-				auto &material = m_meshnode->getMaterial(0);
-				material.setTexture(0, tsrc->getTextureForMesh(tname));
-
-				material.forEachTexture([=] (auto &tex) {
-					setMaterialFilters(tex, use_bilinear_filter, use_trilinear_filter,
-							use_anisotropic_filter);
-				});
-			}
-			{
-				std::string tname = "no_texture.png";
-				if (m_prop.textures.size() >= 2)
-					tname = m_prop.textures[1];
-				else if (!m_prop.textures.empty())
-					tname = m_prop.textures[0];
-				tname += mod;
-
-				auto &material = m_meshnode->getMaterial(1);
-				material.setTexture(0, tsrc->getTextureForMesh(tname));
-
-				material.forEachTexture([=] (auto &tex) {
-					setMaterialFilters(tex, use_bilinear_filter, use_trilinear_filter,
-							use_anisotropic_filter);
-				});
-			}
-			// Set mesh color (only if lighting is disabled)
-			if (!m_prop.colors.empty() && m_prop.glow < 0)
-				setMeshColor(mesh, m_prop.colors[0]);
-		}
-	}
-	// Prevent showing the player after changing texture
-	if (m_is_local_player)
-		updateMeshCulling();
-}
-
-void GenericCAO::updateAnimation()
-{
-	if (!m_animated_meshnode)
-		return;
-
-	// Note: This sets the current frame as well, (re)starting the animation.
-	m_animated_meshnode->setFrameLoop(m_animation_range.X, m_animation_range.Y);
-	if (m_animated_meshnode->getAnimationSpeed() != m_animation_speed)
-		m_animated_meshnode->setAnimationSpeed(m_animation_speed);
-	m_animated_meshnode->setTransitionTime(m_animation_blend);
-	if (m_animated_meshnode->getLoopMode() != m_animation_loop)
-		m_animated_meshnode->setLoopMode(m_animation_loop);
-}
-
-void GenericCAO::updateAnimationSpeed()
-{
-	if (!m_animated_meshnode)
-		return;
-
-	m_animated_meshnode->setAnimationSpeed(m_animation_speed);
-}
-
-void GenericCAO::updateBones(f32 dtime)
-{
-	if (!m_animated_meshnode)
-		return;
-	if (m_bone_override.empty()) {
-		m_animated_meshnode->setJointMode(scene::EJUOR_NONE);
-		return;
-	}
-
-	m_animated_meshnode->setJointMode(scene::EJUOR_CONTROL); // To write positions to the mesh on render
-	for (auto &it : m_bone_override) {
-		std::string bone_name = it.first;
-		scene::IBoneSceneNode* bone = m_animated_meshnode->getJointNode(bone_name.c_str());
-		if (!bone)
-			continue;
-
-		BoneOverride &props = it.second;
-		props.dtime_passed += dtime;
-
-		bone->setPosition(props.getPosition(bone->getPosition()));
-		bone->setRotation(props.getRotationEulerDeg(bone->getRotation()));
-		bone->setScale(props.getScale(bone->getScale()));
-	}
-
-	// search through bones to find mistakenly rotated bones due to bug in Irrlicht
-	for (u32 i = 0; i < m_animated_meshnode->getJointCount(); ++i) {
-		scene::IBoneSceneNode *bone = m_animated_meshnode->getJointNode(i);
-		if (!bone)
-			continue;
-
-		//If bone is manually positioned there is no need to perform the bug check
-		bool skip = false;
-		for (auto &it : m_bone_override) {
-			if (it.first == bone->getName()) {
-				skip = true;
-				break;
-			}
-		}
-		if (skip)
-			continue;
-
-		// Workaround for Irrlicht bug
-		// We check each bone to see if it has been rotated ~180deg from its expected position due to a bug in Irricht
-		// when using EJUOR_CONTROL joint control. If the bug is detected we update the bone to the proper position
-		// and update the bones transformation.
-		v3f bone_rot = bone->getRelativeTransformation().getRotationDegrees();
-		float offset = fabsf(bone_rot.X - bone->getRotation().X);
-		if (offset > 179.9f && offset < 180.1f) {
-			bone->setRotation(bone_rot);
-			bone->updateAbsolutePosition();
-		}
-	}
-	// The following is needed for set_bone_pos to propagate to
-	// attached objects correctly.
-	// Irrlicht ought to do this, but doesn't when using EJUOR_CONTROL.
-	for (u32 i = 0; i < m_animated_meshnode->getJointCount(); ++i) {
-		auto bone = m_animated_meshnode->getJointNode(i);
-		// Look for the root bone.
-		if (bone && bone->getParent() == m_animated_meshnode) {
-			// Update entire skeleton.
-			bone->updateAbsolutePositionOfAllChildren();
-			break;
-		}
-	}
-}
-
 void GenericCAO::updateAttachments()
 {
 	ClientActiveObject *parent = getParent();
@@ -1488,32 +1001,6 @@ void GenericCAO::updateAttachments()
 			m_matrixnode->updateAbsolutePosition();
 		}
 	}
-}
-
-bool GenericCAO::visualExpiryRequired(const ObjectProperties &new_) const
-{
-	const ObjectProperties &old = m_prop;
-	/* Visuals do not need to be expired for:
-	 * - nametag props: handled by updateNametag()
-	 * - textures:      handled by updateTextures()
-	 * - sprite props:  handled by updateTexturePos()
-	 * - glow:          handled by updateLight()
-	 * - any other properties that do not change appearance
-	 */
-
-	bool uses_legacy_texture = new_.wield_item.empty() &&
-		(new_.visual == "wielditem" || new_.visual == "item");
-	// Ordered to compare primitive types before std::vectors
-	return old.backface_culling != new_.backface_culling ||
-		old.is_visible != new_.is_visible ||
-		old.mesh != new_.mesh ||
-		old.shaded != new_.shaded ||
-		old.use_texture_alpha != new_.use_texture_alpha ||
-		old.visual != new_.visual ||
-		old.visual_size != new_.visual_size ||
-		old.wield_item != new_.wield_item ||
-		old.colors != new_.colors ||
-		(uses_legacy_texture && old.textures != new_.textures);
 }
 
 void GenericCAO::processMessage(const std::string &data)
@@ -1879,43 +1366,6 @@ std::string GenericCAO::debugInfoText()
 	}
 	os<<"}";
 	return os.str();
-}
-
-void GenericCAO::updateMeshCulling()
-{
-	if (!m_is_local_player)
-		return;
-
-	const bool hidden = m_client->getCamera()->getCameraMode() == CAMERA_MODE_FIRST;
-
-	scene::ISceneNode *node = getSceneNode();
-
-	if (!node)
-		return;
-
-	if (m_prop.visual == "upright_sprite") {
-		// upright sprite has no backface culling
-		node->forEachMaterial([=] (auto &mat) {
-			mat.FrontfaceCulling = hidden;
-		});
-		return;
-	}
-
-	if (hidden) {
-		// Hide the mesh by culling both front and
-		// back faces. Serious hackyness but it works for our
-		// purposes. This also preserves the skeletal armature.
-		node->forEachMaterial([] (auto &mat) {
-			mat.BackfaceCulling = true;
-			mat.FrontfaceCulling = true;
-		});
-	} else {
-		// Restore mesh visibility.
-		node->forEachMaterial([this] (auto &mat) {
-			mat.BackfaceCulling = m_prop.backface_culling;
-			mat.FrontfaceCulling = false;
-		});
-	}
 }
 
 // Prototype

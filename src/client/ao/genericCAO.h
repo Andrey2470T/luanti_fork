@@ -6,7 +6,7 @@
 
 #include "clientActiveObject.h"
 #include "object_properties.h"
-#include "clientSimpleObject.h"
+#include "transformNode.h"
 #include "constants.h"
 #include "itemgroup.h"
 #include <cassert>
@@ -22,9 +22,9 @@ class Client;
 template<typename T>
 struct SmoothTranslator
 {
-	T val_old;
+    T val_start;
 	T val_current;
-	T val_target;
+    T val_end;
 	f32 anim_time = 0;
 	f32 anim_time_counter = 0;
 	bool aim_is_end = true;
@@ -49,87 +49,6 @@ struct SmoothTranslatorWrappedv3f : SmoothTranslator<v3f>
 	void translate(f32 dtime);
 };
 
-enum class TransformNodeType
-{
-    BONE,
-    OBJECT
-};
-
-class TransformNodeTree;
-
-struct TransformNode
-{
-    TransformNodeType Type;
-
-    // Relative transforms
-    v3f Position;
-    Quaternion Rotation;
-    v3f Scale {1.0f};
-
-    matrix4 AbsoluteTransform;
-    matrix4 RelativeTransform;
-
-    std::optional<u8> Parent;
-
-    std::vector<u8> Children;
-
-    TransformNodeTree *Tree;
-
-    TransformNode() = default;
-    virtual ~TransformNode();
-
-    bool isRoot() const
-    {
-        return !Parent.has_value();
-    }
-    TransformNode *getParent() const;
-
-    virtual void updateNode();
-
-    void updateNodeAndChildren();
-};
-
-class TransformNodeTree
-{
-protected:
-    std::vector<std::unique_ptr<TransformNode>> Nodes;
-
-    std::vector<u8> RootNodes;
-
-    u8 maxAcceptedNodeCount = 255;
-public:
-    TransformNodeTree() = default;
-
-    u8 getNodesCount() const
-    {
-        return Nodes.size();
-    }
-
-    TransformNode *getNode(u8 id) const;
-
-    void addNode(TransformNode *newNode);
-    void removeNode(u8 id);
-
-    void updateNodes();
-};
-
-class TransformNodeManager
-{
-    std::vector<std::unique_ptr<TransformNodeTree>> Trees;
-public:
-    TransformNodeManager() = default;
-
-    u8 getNodeTreeCount() const
-    {
-        return Trees.size();
-    }
-    void addNodeTree(TransformNodeTree *tree)
-    {
-        Trees.emplace_back(tree);
-    }
-    TransformNode *getNode(u8 treeID, u8 nodeID) const;
-};
-
 struct Attachment : public TransformNode
 {
     u16 ObjectId;
@@ -141,6 +60,17 @@ struct Attachment : public TransformNode
     {
         Type = TransformNodeType::OBJECT;
     }
+};
+
+enum class GenericCAOType
+{
+    DUMMY = 0,
+    RENDER_SPRITE,
+    RENDER_UPRIGHT_SPRITE,
+    RENDER_CUBE,
+    RENDER_MESH,
+    RENDER_WIELDITEM,
+    RENDER_TEST
 };
 
 // CAO able moving in the space and being attached to another one
@@ -156,6 +86,8 @@ protected:
 
     Client *m_client = nullptr;
 
+    GenericCAOType m_gcao_type;
+
     v3f m_position = v3f(0.0f, 10.0f * BS, 0);
     v3f m_velocity;
     v3f m_acceleration;
@@ -165,11 +97,16 @@ protected:
     SmoothTranslator<v3f> pos_translator;
     SmoothTranslatorWrappedv3f rot_translator;
 
-    TransformNodeManager *m_node_mgr;
+    TransformNodeManager *m_node_mgr = nullptr;
+
+    // Attachment transform node of this GenericCAO
     std::optional<u8> m_attachment_tree_id;
     std::optional<u8> m_attachment_node_id;
 
     ItemGroupList m_armor_groups;
+
+    matrix4 m_abs_transform;
+    matrix4 m_rel_transform;
 public:
     GenericCAO(Client *client, ClientEnvironment *env);
 
@@ -180,11 +117,15 @@ public:
         return std::make_unique<GenericCAO>(client, env);
     }
 
-    inline ActiveObjectType getType() const override
+    ActiveObjectType getType() const override
     {
         return ACTIVEOBJECT_TYPE_GENERIC;
     }
-    inline const ItemGroupList &getGroups() const
+    GenericCAOType getGenericCAOType() const
+    {
+        return m_gcao_type;
+    }
+    const ItemGroupList &getGroups() const
     {
         return m_armor_groups;
     }
@@ -196,27 +137,30 @@ public:
 
     const v3f getVelocity() const override final { return m_velocity; }
 
-    inline const v3f &getRotation() const { return m_rotation; }
+    //const v3f &getRotation() const { return m_rotation; }
+    const v3f getRotation() const;
 
     bool isImmortal() const;
 
-    inline const ObjectProperties &getProperties() const { return m_prop; }
+    const ObjectProperties &getProperties() const { return m_prop; }
 
-    inline const std::string &getName() const { return m_name; }
+    const std::string &getName() const { return m_name; }
 
-    inline matrix4 &getPosRotMatrix();
+    matrix4 &getRelativeMatrix();
 
-    inline const matrix4 &getAbsolutePosRotMatrix() const;
+    const matrix4 &getAbsoluteMatrix() const;
 
-    inline bool isLocalPlayer() const override
+    bool isLocalPlayer() const override
     {
         return m_is_local_player;
     }
 
-    inline bool isPlayer() const
+    bool isPlayer() const
     {
         return m_is_player;
     }
+
+    Attachment *getAttachmentNode() const;
 
     void setAttachment(object_t parent_id, const std::string &bone, v3f position,
             v3f rotation, bool force_visible) override;
@@ -225,7 +169,7 @@ public:
     void clearChildAttachments() override;
     void addAttachmentChild(object_t child_id) override;
     void removeAttachmentChild(object_t child_id) override;
-    ClientActiveObject *getParent() const override;
+    GenericCAO *getParent() const override;
     const std::unordered_set<object_t> &getAttachmentChildIds() const override;
     void updateAttachments() override;
 
