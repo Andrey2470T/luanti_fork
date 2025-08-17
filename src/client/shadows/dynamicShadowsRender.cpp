@@ -43,7 +43,7 @@ ShadowRenderer::~ShadowRenderer()
 	// call to disable releases dynamically allocated resources
 	disable();
 
-	m_shadow_node_array.clear();
+    //m_shadow_node_array.clear();
 	m_light_list.clear();
 }
 
@@ -54,10 +54,10 @@ void ShadowRenderer::disable()
     auto ctxt = m_client->getRenderSystem()->getRenderer()->getContext();
     ctxt->setFrameBuffer(nullptr);
 
-	for (auto node : m_shadow_node_array)
+    /*for (auto node : m_shadow_node_array)
 		node.node->forEachMaterial([] (auto &mat) {
 			mat.setTexture(TEXTURE_LAYER_SHADOW, nullptr);
-		});
+        });*/
 }
 
 void ShadowRenderer::initialize()
@@ -137,7 +137,7 @@ void ShadowRenderer::setShadowIntensity(float shadow_intensity)
 		disable();
 }
 
-void ShadowRenderer::addNodeToShadowList(
+/*void ShadowRenderer::addNodeToShadowList(
 		scene::ISceneNode *node, E_SHADOW_MODE shadowMode)
 {
 	m_shadow_node_array.emplace_back(node, shadowMode);
@@ -165,68 +165,15 @@ void ShadowRenderer::removeNodeFromShadowList(scene::ISceneNode *node)
 
 void ShadowRenderer::updateSMTextures()
 {
-	if (!m_shadows_enabled || m_smgr->getActiveCamera() == nullptr) {
+    if (!m_shadows_enabled) {
 		return;
 	}
 
-    shadowMapTextureDynamicObjects =
-	if (!shadowMapTextureDynamicObjects) {
-
-		shadowMapTextureDynamicObjects = getSMTexture(
-			std::string("shadow_dynamic_") + itos(m_shadow_map_texture_size),
-			m_texture_format, true);
-		assert(shadowMapTextureDynamicObjects != nullptr);
-	}
-
-	if (!shadowMapClientMap) {
-
-		shadowMapClientMap = getSMTexture(
-			std::string("shadow_clientmap_") + itos(m_shadow_map_texture_size),
-			m_shadow_map_colored ? m_texture_format_color : m_texture_format,
-			true);
-		assert(shadowMapClientMap != nullptr);
-	}
-
-	if (!shadowMapClientMapFuture && m_map_shadow_update_frames > 1) {
-		shadowMapClientMapFuture = getSMTexture(
-			std::string("shadow_clientmap_bb_") + itos(m_shadow_map_texture_size),
-			m_shadow_map_colored ? m_texture_format_color : m_texture_format,
-			true);
-		assert(shadowMapClientMapFuture != nullptr);
-	}
-
-	if (m_shadow_map_colored && !shadowMapTextureColors) {
-		shadowMapTextureColors = getSMTexture(
-			std::string("shadow_colored_") + itos(m_shadow_map_texture_size),
-			m_shadow_map_colored ? m_texture_format_color : m_texture_format,
-			true);
-		assert(shadowMapTextureColors != nullptr);
-	}
-
-	// The merge all shadowmaps texture
-	if (!shadowMapTextureFinal) {
-		video::ECOLOR_FORMAT frt;
-		if (m_shadow_map_texture_32bit) {
-			if (m_shadow_map_colored)
-				frt = video::ECOLOR_FORMAT::ECF_A32B32G32R32F;
-			else
-				frt = video::ECOLOR_FORMAT::ECF_R32F;
-		} else {
-			if (m_shadow_map_colored)
-				frt = video::ECOLOR_FORMAT::ECF_A16B16G16R16F;
-			else
-				frt = video::ECOLOR_FORMAT::ECF_R16F;
-		}
-		shadowMapTextureFinal = getSMTexture(
-			std::string("shadowmap_final_") + itos(m_shadow_map_texture_size),
-			frt, true);
-		assert(shadowMapTextureFinal != nullptr);
-
-		for (auto &node : m_shadow_node_array)
-			node.node->forEachMaterial([this] (auto &mat) {
-				mat.setTexture(TEXTURE_LAYER_SHADOW, shadowMapTextureFinal);
-			});
-	}
+    for (auto &node : m_shadow_node_array) {
+        node.node->forEachMaterial([this] (auto &mat) {
+            mat.setTexture(TEXTURE_LAYER_SHADOW, shadowMapTextureFinal);
+        });
+    }
 
 	if (!m_shadow_node_array.empty()) {
 		bool reset_sm_texture = false;
@@ -240,9 +187,9 @@ void ShadowRenderer::updateSMTextures()
 			}
 		}
 
-		video::ITexture* shadowMapTargetTexture = shadowMapClientMapFuture;
+        render::Texture2D* shadowMapTargetTexture = shadowMapClientMapFuture.get();
 		if (shadowMapTargetTexture == nullptr)
-			shadowMapTargetTexture = shadowMapClientMap;
+            shadowMapTargetTexture = shadowMapClientMap.get();
 
 		// Update SM incrementally:
 		for (DirectionalLight &light : m_light_list) {
@@ -301,7 +248,7 @@ void ShadowRenderer::updateSMTextures()
 	}
 }
 
-void ShadowRenderer::update(video::ITexture *outputTarget)
+void ShadowRenderer::update(render::Texture2D *outputTarget)
 {
 	if (!m_shadows_enabled || m_smgr->getActiveCamera() == nullptr) {
 		return;
@@ -345,7 +292,7 @@ void ShadowRenderer::update(video::ITexture *outputTarget)
 
 		} // end for lights
 	}
-}
+}*/
 
 //void ShadowRenderer::drawDebug()
 //{
@@ -379,7 +326,7 @@ void ShadowRenderer::update(video::ITexture *outputTarget)
 }*/
 
 
-video::ITexture *ShadowRenderer::getSMTexture(const std::string &shadow_map_name,
+/*render::Texture2D *ShadowRenderer::getSMTexture(const std::string &shadow_map_name,
 		video::ECOLOR_FORMAT texture_format, bool force_creation)
 {
 	if (force_creation) {
@@ -392,7 +339,7 @@ video::ITexture *ShadowRenderer::getSMTexture(const std::string &shadow_map_name
 	return m_driver->getTexture(shadow_map_name.c_str());
 }
 
-void ShadowRenderer::renderShadowMap(video::ITexture *target,
+void ShadowRenderer::renderShadowMap(render::Texture2D *target,
 		DirectionalLight &light, scene::E_SCENE_NODE_RENDER_PASS pass)
 {
 	m_driver->setTransform(video::ETS_VIEW, light.getFutureViewMatrix());
@@ -427,7 +374,7 @@ void ShadowRenderer::renderShadowMap(video::ITexture *target,
 }
 
 void ShadowRenderer::renderShadowObjects(
-		video::ITexture *target, DirectionalLight &light)
+        render::Texture2D *target, DirectionalLight &light)
 {
 	m_driver->setTransform(video::ETS_VIEW, light.getViewMatrix());
 	m_driver->setTransform(video::ETS_PROJECTION, light.getProjectionMatrix());
@@ -481,7 +428,7 @@ void ShadowRenderer::renderShadowObjects(
 		}
 
 	} // end for caster shadow nodes
-}
+}*/
 
 /*
  * @Liso's disclaimer ;) This function loads the Shadow Mapping Shaders.
@@ -541,3 +488,93 @@ ShadowRenderer *createShadowRenderer(Client *client)
 
 	return nullptr;
 }
+
+/*
+void ShadowConstantSetter::onSetConstants(video::IMaterialRendererServices *services)
+{
+    auto *shadow = RenderingEngine::get_shadow_renderer();
+    if (!shadow)
+        return;
+
+    const auto &light = shadow->getDirectionalLight();
+
+    core::matrix4 shadowViewProj = light.getProjectionMatrix();
+    shadowViewProj *= light.getViewMatrix();
+    m_shadow_view_proj.set(shadowViewProj.pointer(), services);
+
+    m_light_direction.set(light.getDirection(), services);
+
+    f32 TextureResolution = light.getMapResolution();
+    m_texture_res.set(&TextureResolution, services);
+
+    f32 ShadowStrength = shadow->getShadowStrength();
+    m_shadow_strength.set(&ShadowStrength, services);
+
+    video::SColor ShadowTint = shadow->getShadowTint();
+    m_shadow_tint.set(ShadowTint, services);
+
+    f32 timeOfDay = shadow->getTimeOfDay();
+    m_time_of_day.set(&timeOfDay, services);
+
+    f32 shadowFar = shadow->getMaxShadowFar();
+    m_shadowfar.set(&shadowFar, services);
+
+    f32 cam_pos[4];
+    shadowViewProj.transformVect(cam_pos, light.getPlayerPos());
+    m_camera_pos.set(cam_pos, services);
+
+    s32 TextureLayerID = ShadowRenderer::TEXTURE_LAYER_SHADOW;
+    m_shadow_texture.set(&TextureLayerID, services);
+
+    f32 bias0 = shadow->getPerspectiveBiasXY();
+    m_perspective_bias0_vertex.set(&bias0, services);
+    m_perspective_bias0_pixel.set(&bias0, services);
+    f32 bias1 = 1.0f - bias0 + 1e-5f;
+    m_perspective_bias1_vertex.set(&bias1, services);
+    m_perspective_bias1_pixel.set(&bias1, services);
+    f32 zbias = shadow->getPerspectiveBiasZ();
+    m_perspective_zbias_vertex.set(&zbias, services);
+    m_perspective_zbias_pixel.set(&zbias, services);
+}
+
+void ShadowDepthShaderCB::OnSetConstants(
+        video::IMaterialRendererServices *services, s32 userData)
+{
+    video::IVideoDriver *driver = services->getVideoDriver();
+
+    core::matrix4 lightMVP = driver->getTransform(video::ETS_PROJECTION);
+    lightMVP *= driver->getTransform(video::ETS_VIEW);
+
+    f32 cam_pos[4];
+    lightMVP.transformVect(cam_pos, CameraPos);
+
+    lightMVP *= driver->getTransform(video::ETS_WORLD);
+
+    m_light_mvp_setting.set(lightMVP, services);
+    m_map_resolution_setting.set(&MapRes, services);
+    m_max_far_setting.set(&MaxFar, services);
+    s32 TextureId = 0;
+    m_color_map_sampler_setting.set(&TextureId, services);
+    f32 bias0 = PerspectiveBiasXY;
+    m_perspective_bias0.set(&bias0, services);
+    f32 bias1 = 1.0f - bias0 + 1e-5f;
+    m_perspective_bias1.set(&bias1, services);
+    f32 zbias = PerspectiveBiasZ;
+    m_perspective_zbias.set(&zbias, services);
+
+    m_cam_pos_setting.set(cam_pos, services);
+}
+
+void shadowScreenQuadCB::OnSetConstants(
+        video::IMaterialRendererServices *services, s32 userData)
+{
+    s32 TextureId = 0;
+    m_sm_client_map_setting.set(&TextureId, services);
+
+    TextureId = 1;
+    m_sm_client_map_trans_setting.set(&TextureId, services);
+
+    TextureId = 2;
+    m_sm_dynamic_sampler_setting.set(&TextureId, services);
+}
+*/

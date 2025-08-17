@@ -15,7 +15,7 @@ enum E_SHADOW_MODE : u8
 	ESM_BOTH,
 };
 
-struct NodeToApply
+/*struct NodeToApply
 {
 	NodeToApply(scene::ISceneNode *n,
 			E_SHADOW_MODE m = E_SHADOW_MODE::ESM_BOTH) :
@@ -27,7 +27,7 @@ struct NodeToApply
 
 	E_SHADOW_MODE shadowMode{E_SHADOW_MODE::ESM_BOTH};
 	bool dirty{false};
-};
+};*/
 
 class ShadowRenderer
 {
@@ -51,9 +51,9 @@ public:
 	/// ESM_BOTH casts and receives shadows
 	/// ESM_RECEIVE only receives but does not cast shadows.
 	///
-	void addNodeToShadowList(scene::ISceneNode *node,
+    /*void addNodeToShadowList(scene::ISceneNode *node,
 			E_SHADOW_MODE shadowMode = ESM_BOTH);
-	void removeNodeFromShadowList(scene::ISceneNode *node);
+    void removeNodeFromShadowList(scene::ISceneNode *node);*/
 
     void update(render::Texture2D *outputTarget = nullptr);
 	void setForceUpdateShadowMap() { m_force_update_shadow_map = true; }
@@ -61,7 +61,7 @@ public:
 
     render::Texture2D *get_texture()
 	{
-		return shadowMapTextureFinal;
+        return shadowMapTextureFinal.get();
 	}
 
 
@@ -79,13 +79,13 @@ public:
 	f32 getPerspectiveBiasZ() { return m_perspective_bias_z; }
 
 private:
-    render::Texture2D *getSMTexture(const std::string &shadow_map_name,
+    /*render::Texture2D *getSMTexture(const std::string &shadow_map_name,
 			video::ECOLOR_FORMAT texture_format,
 			bool force_creation = false);
 
     void renderShadowMap(render::Texture2D *target, DirectionalLight &light,
 			scene::E_SCENE_NODE_RENDER_PASS pass =
-					scene::ESNRP_SOLID);
+                    scene::ESNRP_SOLID);*/
     void renderShadowObjects(render::Texture2D *target, DirectionalLight &light);
 	void updateSMTextures();
 
@@ -101,7 +101,7 @@ private:
     std::unique_ptr<render::Texture2D> shadowMapTextureColors;
 
 	std::vector<DirectionalLight> m_light_list;
-	std::vector<NodeToApply> m_shadow_node_array;
+    //std::vector<NodeToApply> m_shadow_node_array;
 
     f32 m_shadow_strength;
     img::color8 m_shadow_tint{img::black};
@@ -147,3 +147,82 @@ private:
  * @return A new ShadowRenderer instance or nullptr if shadows are disabled or not supported.
  */
 ShadowRenderer *createShadowRenderer(Client *client);
+
+/*
+class ShadowConstantSetter : public IShaderConstantSetter
+{
+    CachedPixelShaderSetting<f32, 16> m_shadow_view_proj{"m_ShadowViewProj"};
+    CachedPixelShaderSetting<f32, 3> m_light_direction{"v_LightDirection"};
+    CachedPixelShaderSetting<f32> m_texture_res{"f_textureresolution"};
+    CachedPixelShaderSetting<f32> m_shadow_strength{"f_shadow_strength"};
+    CachedPixelShaderSetting<f32, 3> m_shadow_tint{ "shadow_tint" };
+    CachedPixelShaderSetting<f32> m_time_of_day{"f_timeofday"};
+    CachedPixelShaderSetting<f32> m_shadowfar{"f_shadowfar"};
+    CachedPixelShaderSetting<f32, 4> m_camera_pos{"CameraPos"};
+    CachedPixelShaderSetting<s32> m_shadow_texture{"ShadowMapSampler"};
+    CachedVertexShaderSetting<f32>
+        m_perspective_bias0_vertex{"xyPerspectiveBias0"};
+    CachedPixelShaderSetting<f32>
+        m_perspective_bias0_pixel{"xyPerspectiveBias0"};
+    CachedVertexShaderSetting<f32>
+        m_perspective_bias1_vertex{"xyPerspectiveBias1"};
+    CachedPixelShaderSetting<f32>
+        m_perspective_bias1_pixel{"xyPerspectiveBias1"};
+    CachedVertexShaderSetting<f32>
+        m_perspective_zbias_vertex{"zPerspectiveBias"};
+    CachedPixelShaderSetting<f32> m_perspective_zbias_pixel{"zPerspectiveBias"};
+
+public:
+    ShadowConstantSetter() = default;
+    ~ShadowConstantSetter() = default;
+
+    virtual void onSetConstants(video::IMaterialRendererServices *services) override;
+};
+
+class ShadowConstantSetterFactory : public IShaderConstantSetterFactory
+{
+public:
+    virtual IShaderConstantSetter *create() {
+        return new ShadowConstantSetter();
+    }
+};
+
+// Used by depth shader
+
+class ShadowDepthShaderCB : public video::IShaderConstantSetCallBack
+{
+public:
+    void OnSetMaterial(const video::SMaterial &material) override {}
+
+    void OnSetConstants(video::IMaterialRendererServices *services,
+            s32 userData) override;
+
+    f32 MaxFar{2048.0f}, MapRes{1024.0f};
+    f32 PerspectiveBiasXY {0.9f}, PerspectiveBiasZ {0.5f};
+    v3f CameraPos;
+
+private:
+    CachedVertexShaderSetting<f32, 16> m_light_mvp_setting{"LightMVP"};
+    CachedVertexShaderSetting<f32> m_map_resolution_setting{"MapResolution"};
+    CachedVertexShaderSetting<f32> m_max_far_setting{"MaxFar"};
+    CachedPixelShaderSetting<s32>
+        m_color_map_sampler_setting{"ColorMapSampler"};
+    CachedVertexShaderSetting<f32> m_perspective_bias0{"xyPerspectiveBias0"};
+    CachedVertexShaderSetting<f32> m_perspective_bias1{"xyPerspectiveBias1"};
+    CachedVertexShaderSetting<f32> m_perspective_zbias{"zPerspectiveBias"};
+    CachedVertexShaderSetting<f32, 4> m_cam_pos_setting{"CameraPos"};
+};
+
+class shadowScreenQuadCB : public video::IShaderConstantSetCallBack
+{
+public:
+    virtual void OnSetConstants(video::IMaterialRendererServices *services,
+            s32 userData);
+private:
+    CachedPixelShaderSetting<s32> m_sm_client_map_setting{"ShadowMapClientMap"};
+    CachedPixelShaderSetting<s32>
+        m_sm_client_map_trans_setting{"ShadowMapClientMapTraslucent"};
+    CachedPixelShaderSetting<s32>
+        m_sm_dynamic_sampler_setting{"ShadowMapSamplerdynamic"};
+};
+*/

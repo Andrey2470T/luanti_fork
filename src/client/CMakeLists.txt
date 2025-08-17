@@ -79,8 +79,6 @@ set(render_SRCS
 set(shadows_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/shadows/dynamicshadows.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/shadows/dynamicShadowsRender.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/shadows/shadowsScreenQuad.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/shadows/shadowsShaderCallbacks.cpp
 )
 
 set(sound_SRCS ${CMAKE_CURRENT_SOURCE_DIR}/sound/sound.cpp)
