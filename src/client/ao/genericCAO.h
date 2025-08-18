@@ -97,17 +97,17 @@ protected:
     SmoothTranslator<v3f> pos_translator;
     SmoothTranslatorWrappedv3f rot_translator;
 
+    //ItemGroupList m_armor_groups;
+
+    matrix4 m_abs_transform;
+    matrix4 m_rel_transform;
+public:
     TransformNodeManager *m_node_mgr = nullptr;
 
     // Attachment transform node of this GenericCAO
     std::optional<u8> m_attachment_tree_id;
     std::optional<u8> m_attachment_node_id;
 
-    ItemGroupList m_armor_groups;
-
-    matrix4 m_abs_transform;
-    matrix4 m_rel_transform;
-public:
     GenericCAO(Client *client, ClientEnvironment *env);
 
     ~GenericCAO();
@@ -125,10 +125,10 @@ public:
     {
         return m_gcao_type;
     }
-    const ItemGroupList &getGroups() const
+    /*const ItemGroupList &getGroups() const
     {
         return m_armor_groups;
-    }
+    }*/
     void initialize(const std::string &data) override;
 
     void processInitData(const std::string &data);
@@ -150,6 +150,8 @@ public:
 
     const matrix4 &getAbsoluteMatrix() const;
 
+    void updateMatrices();
+
     bool isLocalPlayer() const override
     {
         return m_is_local_player;
@@ -161,6 +163,7 @@ public:
     }
 
     Attachment *getAttachmentNode() const;
+    void removeAttachmentNode();
 
     void setAttachment(object_t parent_id, const std::string &bone, v3f position,
             v3f rotation, bool force_visible) override;
@@ -169,19 +172,18 @@ public:
     void clearChildAttachments() override;
     void addAttachmentChild(object_t child_id) override;
     void removeAttachmentChild(object_t child_id) override;
-    GenericCAO *getParent() const override;
+    GenericCAO *getParent() const;
     const std::unordered_set<object_t> &getAttachmentChildIds() const override;
-    void updateAttachments() override;
 
-    void removeFromScene(bool permanent) override;
+    //void removeFromScene(bool permanent) override;
 
-    void addToScene() override;
+    //void addToScene() override;
 
     void step(float dtime, ClientEnvironment *env) override;
 
     void processMessage(const std::string &data) override;
 
-    bool directReportPunch(v3f dir, const ItemStack *punchitem=NULL,
+    /*bool directReportPunch(v3f dir, const ItemStack *punchitem=NULL,
             float time_from_last_punch=1000000) override;
 
     std::string debugInfoText() override;
@@ -189,5 +191,5 @@ public:
     std::string infoText() override
     {
         return m_prop.infotext;
-    }
+    }*/
 };

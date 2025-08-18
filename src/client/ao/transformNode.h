@@ -67,7 +67,7 @@ public:
 
     TransformNode *getNode(u8 id) const;
 
-    void addNode(TransformNode *newNode);
+    void addNode(TransformNode *newNode, std::optional<u8> parent=std::nullopt);
     void removeNode(u8 id);
 
     void updateNodes();
@@ -87,5 +87,6 @@ public:
     {
         Trees.emplace_back(tree);
     }
+    void removeNodeTree(u8 id);
     TransformNode *getNode(u8 treeID, u8 nodeID) const;
 };
