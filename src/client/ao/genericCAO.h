@@ -8,7 +8,6 @@
 #include "object_properties.h"
 #include "transformNode.h"
 #include "constants.h"
-#include "itemgroup.h"
 #include <cassert>
 #include <map>
 #include <memory>
@@ -97,8 +96,6 @@ protected:
     SmoothTranslator<v3f> pos_translator;
     SmoothTranslatorWrappedv3f rot_translator;
 
-    //ItemGroupList m_armor_groups;
-
     matrix4 m_abs_transform;
     matrix4 m_rel_transform;
 public:
@@ -125,10 +122,7 @@ public:
     {
         return m_gcao_type;
     }
-    /*const ItemGroupList &getGroups() const
-    {
-        return m_armor_groups;
-    }*/
+
     void initialize(const std::string &data) override;
 
     void processInitData(const std::string &data);
@@ -137,8 +131,7 @@ public:
 
     const v3f getVelocity() const override final { return m_velocity; }
 
-    //const v3f &getRotation() const { return m_rotation; }
-    const v3f getRotation() const;
+    const v3f getRotation() const { return m_rotation; };
 
     bool isImmortal() const;
 
@@ -170,26 +163,10 @@ public:
     void getAttachment(object_t *parent_id, std::string *bone, v3f *position,
             v3f *rotation, bool *force_visible) const override;
     void clearChildAttachments() override;
-    void addAttachmentChild(object_t child_id) override;
-    void removeAttachmentChild(object_t child_id) override;
     GenericCAO *getParent() const;
-    const std::unordered_set<object_t> &getAttachmentChildIds() const override;
-
-    //void removeFromScene(bool permanent) override;
-
-    //void addToScene() override;
+    const std::unordered_set<u16> getAttachmentChildIds() const override;
 
     void step(float dtime, ClientEnvironment *env) override;
 
     void processMessage(const std::string &data) override;
-
-    /*bool directReportPunch(v3f dir, const ItemStack *punchitem=NULL,
-            float time_from_last_punch=1000000) override;
-
-    std::string debugInfoText() override;
-
-    std::string infoText() override
-    {
-        return m_prop.infotext;
-    }*/
 };

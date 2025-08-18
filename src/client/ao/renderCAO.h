@@ -50,6 +50,8 @@ private:
 
     bool m_is_visible = false;
 
+    ItemGroupList m_armor_groups;
+
 	bool visualExpiryRequired(const ObjectProperties &newprops) const;
 
 public:
@@ -63,37 +65,49 @@ public:
 
     virtual bool getSelectionBox(aabbf *toset) const override;
 
-	inline f32 getStepHeight() const
+    f32 getStepHeight() const
 	{
 		return m_prop.stepheight;
 	}
 
-	inline bool isLocalPlayer() const override
+    const ItemGroupList &getGroups() const
+    {
+        return m_armor_groups;
+    }
+
+    bool isLocalPlayer() const override
 	{
 		return m_is_local_player;
 	}
 
-	inline bool isPlayer() const
+    bool isPlayer() const
 	{
 		return m_is_player;
 	}
 
-	inline bool isVisible() const
+    bool isVisible() const
 	{
 		return m_is_visible;
 	}
 
-	inline void setVisible(bool toset)
+    void setVisible(bool toset)
 	{
 		m_is_visible = toset;
 	}
 
 	void setChildrenVisible(bool toset);
 
-	inline void expireVisuals()
+    //void addToScene() override;
+
+    void expireVisuals()
 	{
 		m_visuals_expired = true;
 	}
+
+    void setAttachment(object_t parent_id, const std::string &bone, v3f position,
+        v3f rotation, bool force_visible) override;
+
+    void step(float dtime, ClientEnvironment *env) override;
 
     void updateLight(u32 day_night_ratio);
 
@@ -110,8 +124,6 @@ public:
 
 	void updateNodePos();
 
-	void step(float dtime, ClientEnvironment *env) override;
-
 	void updateTexturePos();
 
 	// ffs this HAS TO BE a string copy! See #5739 if you think otherwise
@@ -125,4 +137,15 @@ public:
 	void updateBones(f32 dtime);
 
 	void updateMeshCulling();
+
+    void processMessage(const std::string &data) override;
+    /*bool directReportPunch(v3f dir, const ItemStack *punchitem=NULL,
+            float time_from_last_punch=1000000) override;
+
+    std::string debugInfoText() override;
+
+    std::string infoText() override
+    {
+        return m_prop.infotext;
+    }*/
 };
