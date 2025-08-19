@@ -1,40 +1,31 @@
 #include "genericCAO.h"
 
 class Nametag;
-struct MinimapMarker;
 class RenderSystem;
+class ResourceCache;
+class Model;
+class AnimationManager;
+class BoneAnimation;
 
 // CAO able to be rendered and animated
 class RenderCAO : public GenericCAO
 {
 private:
-    //scene::ISceneManager *m_smgr = nullptr;
+    RenderSystem *m_rndsys;
+    ResourceCache *m_cache;
 
     aabbf m_selection_box = aabbf(-BS/3.,-BS/3.,-BS/3., BS/3.,BS/3.,BS/3.);
-    //scene::IMeshSceneNode *m_meshnode = nullptr;
-    //scene::IAnimatedMeshSceneNode *m_animated_meshnode = nullptr;
-    //WieldMeshSceneNode *m_wield_meshnode = nullptr;
-    //scene::IBillboardSceneNode *m_spritenode = nullptr;
 
-	Nametag *m_nametag = nullptr;
-	MinimapMarker *m_marker = nullptr;
+    Model *m_model = nullptr;
+
+    Nametag *m_nametag = nullptr;
+    std::optional<v3f> m_marker;
 
 	// Spritesheet/animation stuff
 	v2f m_tx_size = v2f(1,1);
 	v2s16 m_tx_basepos;
 	bool m_initial_tx_basepos_set = false;
 	bool m_tx_select_horiz_by_yawpitch = false;
-	v2f m_animation_range;
-	float m_animation_speed = 15.0f;
-	float m_animation_blend = 0.0f;
-	bool m_animation_loop = true;
-	// stores position and rotation for each bone name
-	BoneOverrideMap m_bone_override;
-
-	int m_anim_frame = 0;
-	int m_anim_num_frames = 1;
-	float m_anim_framelength = 0.2f;
-	float m_anim_timer = 0.0f;
 
 	float m_reset_textures_timer = -1.0f;
 	// stores texture modifier before punch update
@@ -75,6 +66,11 @@ public:
         return m_armor_groups;
     }
 
+    Model *getModel() const
+    {
+        return m_model;
+    }
+
     bool isLocalPlayer() const override
 	{
 		return m_is_local_player;
@@ -97,6 +93,7 @@ public:
 
 	void setChildrenVisible(bool toset);
 
+    virtual void addMesh() = 0;
     //void addToScene() override;
 
     void expireVisuals()

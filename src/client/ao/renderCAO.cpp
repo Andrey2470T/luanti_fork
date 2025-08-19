@@ -1,22 +1,35 @@
 #include "renderCAO.h"
+#include "client/client.h"
+#include "client/player/playercamera.h"
+#include "client/ui/minimap.h"
 #include "itemgroup.h"
+#include "client/render/rendersystem.h"
+#include "client/media/resource.h"
+#include "client/ao/transformNode.h"
+
+RenderCAO::RenderCAO(Client *client, ClientEnvironment *env)
+    : GenericCAO(client, env), m_rndsys(client->getRenderSystem()), m_cache(client->getResourceCache())
+{}
 
 RenderCAO::~RenderCAO()
 {
     /*
     if (auto shadow = RenderingEngine::get_shadow_renderer())
         if (auto node = getSceneNode())
-            shadow->removeNodeFromShadowList(node);
+            shadow->removeNodeFromShadowList(node);*/
+
+    if (m_model)
+        m_cache->clearResource<Model>(ResourceType::MODEL, m_model);
 
     if (m_nametag) {
         m_client->getCamera()->removeNametag(m_nametag);
         m_nametag = nullptr;
     }
 
-    if (m_marker && m_client->getMinimap())
-        m_client->getMinimap()->removeMarker(&m_marker);
-    */
+    if (m_marker.has_value() && m_client->getMinimap())
+        m_client->getMinimap()->removeMarker(m_marker.value());
 }
+
 bool RenderCAO::getCollisionBox(aabbf *toset) const
 {
     if (m_prop.physical)
@@ -50,12 +63,17 @@ bool RenderCAO::getSelectionBox(aabbf *toset) const
 
 void RenderCAO::setChildrenVisible(bool toset)
 {
-    for (object_t cao_id : m_attachment_child_ids) {
-        GenericCAO *obj = m_env->getGenericCAO(cao_id);
-        if (obj) {
-            // Check if the entity is forced to appear in first person.
-            obj->setVisible(obj->m_force_visible ? true : toset);
-        }
+    auto children = getAttachmentChildIds();
+
+    for (u16 child_id : children) {
+        auto cao = dynamic_cast<RenderCAO *>(m_env->getGenericCAO(child_id));
+
+        if (!cao)
+            continue;
+
+        auto attach_node = cao->getAttachmentNode();
+        // Check if the entity is forced to appear in first person.
+        cao->setVisible(attach_node->ForceVisible ? true : toset);
     }
 }
 
@@ -323,19 +341,20 @@ void RenderCAO::setAttachment(object_t parent_id, const std::string &bone,
 {
     GenericCAO::setAttachment(parent_id, bone, position, rotation, force_visible);
 
+    auto node = getAttachmentNode();
     // Forcibly show attachments if required by set_attach
-    /*if (m_force_visible) {
+    if (node->ForceVisible) {
         m_is_visible = true;
     } else if (!m_is_local_player) {
         // Objects attached to the local player should be hidden in first person
-        m_is_visible = !m_attached_to_local ||
+        m_is_visible = !node->AttachedToLocal ||
             m_client->getCamera()->getCameraMode() != CAMERA_MODE_FIRST;
-        m_force_visible = false;
+        node->ForceVisible = false;
     } else {
         // Local players need to have this set,
         // otherwise first person attachments fail.
         m_is_visible = true;
-    }*/
+    }
 }
 
 void GenericCAO::step(float dtime, ClientEnvironment *env)
@@ -570,7 +589,7 @@ void GenericCAO::step(float dtime, ClientEnvironment *env)
         updateBones(dtime);
     }*/
 }
-}
+
 
 void RenderCAO::updateLight(u32 day_night_ratio)
 {

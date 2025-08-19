@@ -109,7 +109,14 @@ public:
     	return basicVertexType;
     }
 
-    void addNewBuffer(std::shared_ptr<TileLayer> layer, MeshBuffer *buffer);
+    void addNewBuffer(MeshBuffer *buffer)
+    {
+        buffers.emplace_back(std::unique_ptr<MeshBuffer>(buffer));
+    }
+    void addNewLayer(std::shared_ptr<TileLayer> layer, const LayeredMeshPart &mesh_p)
+    {
+        layers.emplace_back(layer, mesh_p);
+    }
 
     MeshLayer &findLayer(std::shared_ptr<TileLayer> layer, render::VertexTypeDescriptor vType,
         u32 vertexCount, u32 indexCount);

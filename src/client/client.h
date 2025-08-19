@@ -29,7 +29,7 @@
 
 #define CLIENT_CHAT_MESSAGE_LIMIT_PER_10S 10.0f
 
-class Camera;
+class PlayerCamera;
 class ClientMediaDownloader;
 class ISoundManager;
 class IWritableItemDefManager;
@@ -354,9 +354,9 @@ public:
 	}
 
 	Minimap* getMinimap() { return m_minimap; }
-	void setCamera(Camera* camera) { m_camera = camera; }
+    void setCamera(PlayerCamera* camera) { m_camera = camera; }
 
-	Camera* getCamera () { return m_camera; }
+    PlayerCamera* getCamera() { return m_camera; }
 	scene::ISceneManager *getSceneManager();
 
 	// IGameDef interface
@@ -494,7 +494,7 @@ private:
 	std::unique_ptr<con::IConnection> m_con;
 	std::string m_address_name;
 	ELoginRegister m_allow_login_or_register = ELoginRegister::Any;
-	Camera *m_camera = nullptr;
+    PlayerCamera *m_camera = nullptr;
 	Minimap *m_minimap = nullptr;
 
 	// Server serialization version

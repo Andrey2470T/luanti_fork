@@ -3,6 +3,7 @@
 // Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "genericCAO.h"
+#include "renderCAO.h"
 #include "client/client.h"
 #include "util/numeric.h"
 #include "util/serialize.h"
@@ -10,6 +11,9 @@
 #include <algorithm>
 #include <cmath>
 #include <Utils/Quaternion.h>
+#include "client/mesh/model.h"
+#include "client/mesh/layeredmesh.h"
+#include "client/ao/skeleton.h"
 
 class Settings;
 struct ToolCapabilities;
@@ -308,32 +312,58 @@ void GenericCAO::setAttachment(object_t parent_id, const std::string &bone,
 
     auto new_parent = m_env->getGenericCAO(parent_id);
     if (attachment_changed) {
+        TransformNodeTree *cur_tree;
+        TransformNode *parent_node;
         if (bone.empty()) {
             TransformNodeTree *cur_tree;
-            auto parent_node = new_parent->getAttachmentNode();
+            auto attach_node = new_parent->getAttachmentNode();
+            parent_node = attach_node;
 
-            if (!parent_node) {
+            if (!attach_node) {
                 cur_tree = new TransformNodeTree();
 
-                parent_node = new Attachment();
-                parent_node->ObjectId = parent_id;
-                parent_node->Position = new_parent->getPosition();
+                attach_node = new Attachment();
+                attach_node->ObjectId = parent_id;
+                attach_node->Position = new_parent->getPosition();
 
                 v3f euler_rot = new_parent->getRotation();
                 Quaternion rot;
                 rot.fromEuler(euler_rot);
-                parent_node->Rotation = rot;
-                parent_node->Tree = cur_tree;
+                attach_node->Rotation = rot;
+                attach_node->Tree = cur_tree;
 
-                cur_tree->addNode(parent_node);
+                parent_node = attach_node;
+
+                cur_tree->addNode(attach_node);
                 m_node_mgr->addNodeTree(cur_tree);
 
                 new_parent->m_attachment_tree_id = m_node_mgr->getNodeTreeCount()-1;
                 new_parent->m_attachment_node_id = 0;
             }
             else
-                cur_tree = parent_node->Tree;
+                cur_tree = attach_node->Tree;
+        }
+        else {
+            auto rendercao = dynamic_cast<RenderCAO *>(new_parent);
 
+            if (rendercao) {
+                auto skeleton = rendercao->getModel()->getSkeleton();
+                auto bones = skeleton->getAllBones();
+
+                auto found_bone = std::find(bones.begin(), bones.end(),
+                [bone] (const Bone *cur_bone)
+                {
+                    return bone == cur_bone->Name;
+                });
+
+                if (found_bone != bones.end()) {
+                    cur_tree = found_bone->Tree;
+                    parent_node = found_bone;
+                }
+            }
+        }
+
+        if (cur_tree && parent_node) {
             cur_tree->addNode(cur_node, new_parent->m_attachment_node_id);
             parent_node->updateNodeAndChildren();
 

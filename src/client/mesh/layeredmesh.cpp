@@ -38,7 +38,7 @@ std::vector<MeshLayer> LayeredMesh::getAllLayers() const
     return all_layers;
 }
 
-void LayeredMesh::addNewBuffer(std::shared_ptr<TileLayer> layer, MeshBuffer *buffer)
+void LayeredMesh::addNewBuffer(MeshBuffer *buffer)
 {
     buffers.emplace_back(std::unique_ptr<MeshBuffer>(buffer));
 
@@ -87,8 +87,6 @@ MeshLayer &LayeredMesh::findLayer(std::shared_ptr<TileLayer> layer, render::Vert
         }
     }
 
-    //auto vType = layer->material_flags & MATERIAL_FLAG_HARDWARE_COLORIZED ?
-    //    TwoColorNodeVType : basicVertexType;
     buffers.emplace_back(vertexCount, indexCount, true, vType);
     layers.emplace_back();
 

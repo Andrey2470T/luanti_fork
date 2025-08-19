@@ -34,7 +34,17 @@ KeyChannelInterpMode convertFromAssimpInterp(aiAnimBehaviour b)
     };
 }
 
-Model::Model(AnimationManager *_mgr, v3f pos, const aiScene *scene, ResourceCache *cache)
+Model::Model(v3f pos, const std::vector<MeshLayer> &layers, MeshBuffer *buffer)
+{
+    mesh = std::make_unique<LayeredMesh>(v3f(), pos, NodeVType);
+    mesh->addNewBuffer(buffer);
+
+    for (auto layer : layers)
+        mesh->addNewLayer(layer.first, layer.second);
+}
+
+Model::Model(AnimationManager *_mgr, v3f pos, const std::vector<std::shared_ptr<TileLayer>> &layers,
+    const aiScene *scene, ResourceCache *cache)
     : mgr(_mgr)
 {
     // aka Material Groups
@@ -46,8 +56,9 @@ Model::Model(AnimationManager *_mgr, v3f pos, const aiScene *scene, ResourceCach
 
     render::VertexTypeDescriptor vType = has_skeleton ? AOVType : NodeVType;
     mesh = std::make_unique<LayeredMesh>(v3f(), pos, vType);
+    mesh->addNewBuffer(new MeshBuffer(true, vType));
 
-    std::shared_ptr<TileLayer> layer;
+    /*std::shared_ptr<TileLayer> layer;
     layer->alpha_discard = 1;
     layer->material_flags = MATERIAL_FLAG_TRANSPARENT;
     layer->use_default_shader = false;
@@ -56,12 +67,13 @@ Model::Model(AnimationManager *_mgr, v3f pos, const aiScene *scene, ResourceCach
     layer->shader = cache->getOrLoad<render::Shader>(ResourceType::SHADER, shadername);
 
     // Assume that this is extremely low possible for the model to have > 2 milliards vertices
-    mesh->addNewBuffer(layer, new MeshBuffer(true, vType));
+    mesh->addNewBuffer(layer, new MeshBuffer(true, vType));*/
 
     // process meshes
     u32 curOffset = 0;
-    for (u8 i = 0; i < scene->mNumMaterials; i++)
-        processMesh(scene->mMeshes[i]);
+    for (u8 i = 0; i < scene->mNumMaterials; i++) {
+        processMesh(i, scene->mMeshes[i], layers.at(i));
+    }
 
     // Adds only the first skeleton and first animation
     if (has_skeleton) {
@@ -74,7 +86,8 @@ Model::Model(AnimationManager *_mgr, v3f pos, const aiScene *scene, ResourceCach
     mesh->getBuffer(0)->uploadData();
 }
 
-Model *Model::load(AnimationManager *_mgr, v3f pos, const std::string &path, ResourceCache *cache)
+Model *Model::load(AnimationManager *_mgr, v3f pos, const std::vector<std::shared_ptr<TileLayer> > &layers,
+    const std::string &path, ResourceCache *cache)
 {
     Assimp::Importer importer;
 
@@ -91,16 +104,24 @@ Model *Model::load(AnimationManager *_mgr, v3f pos, const std::string &path, Res
         return nullptr;
     }
 
-    return new Model(_mgr, pos, scene, cache);
+    return new Model(_mgr, pos, layers, scene, cache);
 }
 
-void Model::processMesh(aiMesh *m)
+void Model::processMesh(u8 mat_i, aiMesh *m, std::shared_ptr<TileLayer> layer)
 {
     auto buf = mesh->getBuffer(0);
     u32 vertexCount = buf->getVertexCount();
     u32 indexCount = buf->getIndexCount();
 
     buf->reallocateData(vertexCount + m->mNumVertices, indexCount + m->mNumFaces * 3);
+
+    LayeredMeshPart mesh_part;
+    mesh_part.buffer_id = 0;
+    mesh_part.layer_id = mat_i;
+    mesh_part.offset = indexCount;
+    mesh_part.count = m->mNumFaces * 3;
+
+    mesh->addNewLayer(layer, mesh_part);
 
     auto vType = buf->getVAO()->getVertexType();
     for (u32 i = 0; i < m->mNumVertices; i++) {
