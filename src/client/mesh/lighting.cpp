@@ -4,6 +4,7 @@
 #include "nodedef.h"
 #include "client/map/mapblockmesh.h"
 #include "settings.h"
+#include "map.h"
 
 /*
     Calculate non-smooth lighting at interior of node.
@@ -377,4 +378,37 @@ void final_color_blend(img::color8 *result,
     result->R(r * 255);
     result->G(g * 255);
     result->B(b * 255);
+}
+
+img::color8 getLightColor(Map &map, const NodeDefManager *ndef, const std::vector<v3s16> &positions, s32 glow)
+{
+    u16 light_at_pos = 0;
+    u8 light_at_pos_intensity = 0;
+    bool pos_ok = false;
+
+    for (auto &pos : positions) {
+        bool this_ok;
+        MapNode n = map.getNode(pos, &this_ok);
+        if (this_ok) {
+            // Get light level at the position plus the entity glow
+            u16 this_light = getInteriorLight(n, glow, ndef);
+            u8 this_light_intensity = MYMAX(this_light & 0xFF, this_light >> 8);
+            if (this_light_intensity > light_at_pos_intensity) {
+                light_at_pos = this_light;
+                light_at_pos_intensity = this_light_intensity;
+            }
+            pos_ok = true;
+        }
+    }
+    if (!pos_ok)
+        light_at_pos = LIGHT_SUN;
+
+    // Initialize with full alpha, otherwise entity won't be visible
+    img::color8 light_color = img::white;
+
+    // Encode light into color, adding a small boost
+    // based on the entity glow.
+    light_color = encode_light(light_at_pos, glow);
+
+    return light_color;
 }

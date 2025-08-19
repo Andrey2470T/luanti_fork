@@ -224,7 +224,7 @@ public:
         curAnimTime = 1.0f / Speed * Range.X;
     }
     // Update bones transforms corresponding to the given timestamp
-    void animateBones(f32 time);
+    bool animateBones(f32 time);
 };
 
 class DataTexture;

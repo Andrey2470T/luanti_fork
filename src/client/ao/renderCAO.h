@@ -1,4 +1,5 @@
 #include "genericCAO.h"
+#include <Render/DrawContext.h>
 
 class Nametag;
 class RenderSystem;
@@ -41,9 +42,11 @@ private:
 
     bool m_is_visible = false;
 
+    bool m_update_anim_start_time = false;
+
     ItemGroupList m_armor_groups;
 
-	bool visualExpiryRequired(const ObjectProperties &newprops) const;
+    virtual bool visualExpiryRequired(const ObjectProperties &newprops) = 0;
 
 public:
     RenderCAO(Client *client, ClientEnvironment *env);
@@ -99,16 +102,14 @@ public:
     void expireVisuals()
 	{
 		m_visuals_expired = true;
-	}
+    }
 
     void setAttachment(object_t parent_id, const std::string &bone, v3f position,
         v3f rotation, bool force_visible) override;
 
     void step(float dtime, ClientEnvironment *env) override;
 
-    void updateLight(u32 day_night_ratio);
-
-    void setNodeLight(const img::color8 &light);
+    void updateLight();
 
 	/* Get light position(s).
 	 * returns number of positions written into pos[], which must have space
@@ -121,22 +122,22 @@ public:
 
 	void updateNodePos();
 
-	void updateTexturePos();
+    void updateTexturePos() {}
 
 	// ffs this HAS TO BE a string copy! See #5739 if you think otherwise
 	// Reason: updateTextures(m_previous_texture_modifier);
-	void updateTextures(std::string mod);
+    virtual void updateAppearance(std::string mod) = 0;
 
-	void updateAnimation();
+    void setAnimation(v2i range, f32 speed, bool loop);
 
-	void updateAnimationSpeed();
+    void setAnimationSpeed(f32 speed);
 
-	void updateBones(f32 dtime);
+    void updateBones(f32 time);
 
-	void updateMeshCulling();
+    void updateMeshCulling(render::DrawContext *ctxt);
 
     void processMessage(const std::string &data) override;
-    /*bool directReportPunch(v3f dir, const ItemStack *punchitem=NULL,
+    bool directReportPunch(v3f dir, const ItemStack *punchitem=NULL,
             float time_from_last_punch=1000000) override;
 
     std::string debugInfoText() override;
@@ -144,5 +145,5 @@ public:
     std::string infoText() override
     {
         return m_prop.infotext;
-    }*/
+    }
 };

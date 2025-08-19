@@ -5,12 +5,12 @@
 #include "skeleton.h"
 
 // Update bones transforms corresponding to the given timestamp
-void BoneAnimation::animateBones(f32 time)
+bool BoneAnimation::animateBones(f32 time)
 {
     f32 dtime = time - lastTime;
 
     if (dtime < 1.0f / Speed)
-        return;
+        return false;
 
     lastTime = time;
 
@@ -32,6 +32,8 @@ void BoneAnimation::animateBones(f32 time)
         Base->getNode(b_r.first)->Rotation = b_r.second;
     for (auto &b_s : posState.value())
         Base->getNode(b_s.first)->Scale = b_s.second;
+
+    return true;
 }
 
 AnimationManager::AnimationManager(TransformNodeManager *_nodeMgr)

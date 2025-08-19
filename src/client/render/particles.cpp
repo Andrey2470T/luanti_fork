@@ -402,12 +402,9 @@ void ParticleSpawner::spawnParticle(ClientEnvironment *env, float radius,
 
 	if (attractor_obj)
 		attractor_origin += attractor_obj->getPosition() / BS;
-	if (attractor_direction_obj) {
-		auto *attractor_absolute_pos_rot_matrix = attractor_direction_obj->getAbsolutePosRotMatrix();
-		if (attractor_absolute_pos_rot_matrix) {
-			attractor_direction = attractor_absolute_pos_rot_matrix
-					->rotateAndScaleVect(attractor_direction);
-		}
+    if (attractor_direction_obj) {
+        auto attractor_absolute_pos_rot_matrix = attractor_direction_obj->getAbsoluteMatrix();
+        attractor_direction = attractor_absolute_pos_rot_matrix.rotateAndScaleVect(attractor_direction);
 	}
 
 	pp.expirationtime = r_exp.pickWithin();
@@ -557,10 +554,10 @@ void ParticleSpawner::step(float dtime, ClientEnvironment *env)
 			g_settings->getS16("max_block_send_distance") * MAP_BLOCKSIZE;
 
 	bool unloaded = false;
-    const matrix4 *attached_absolute_pos_rot_matrix = nullptr;
+    matrix4 attached_absolute_pos_rot_matrix;
 	if (m_attached_id) {
 		if (GenericCAO *attached = env->getGenericCAO(m_attached_id)) {
-			attached_absolute_pos_rot_matrix = attached->getAbsolutePosRotMatrix();
+            attached_absolute_pos_rot_matrix = attached->getAbsoluteMatrix();
 		} else {
 			unloaded = true;
 		}
@@ -575,7 +572,7 @@ void ParticleSpawner::step(float dtime, ClientEnvironment *env)
 				// Pretend to, but don't actually spawn a particle if it is
 				// attached to an unloaded object or distant from player.
 				if (!unloaded)
-					spawnParticle(env, radius, attached_absolute_pos_rot_matrix);
+                    spawnParticle(env, radius, &attached_absolute_pos_rot_matrix);
 
 				i = m_spawntimes.erase(i);
 			} else {
@@ -591,7 +588,7 @@ void ParticleSpawner::step(float dtime, ClientEnvironment *env)
 
 		for (int i = 0; i <= p.amount; i++) {
 			if (myrand_float() < dtime)
-				spawnParticle(env, radius, attached_absolute_pos_rot_matrix);
+                spawnParticle(env, radius, &attached_absolute_pos_rot_matrix);
 		}
 	}
 }

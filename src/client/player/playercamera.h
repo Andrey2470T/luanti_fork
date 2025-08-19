@@ -20,12 +20,12 @@ class WieldMeshSceneNode;
 
 class Nametag : public Waypoint
 {
-	std::string text;
+    bool show_backgrounds;
+public:
+    std::string text;
     img::color8 textcolor;
     std::optional<img::color8> bgcolor;
 
-    bool show_backgrounds;
-public:
     Nametag(Client *client,
             const std::string &text,
             const img::color8 &textcolor,

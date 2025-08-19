@@ -20,8 +20,8 @@ class Model
 {
     std::unique_ptr<LayeredMesh> mesh;
 
-    Skeleton *skeleton;
-    BoneAnimation *animation;
+    Skeleton *skeleton = nullptr;
+    BoneAnimation *animation = nullptr;
     
     std::vector<std::pair<aiNode *, Bone *>> bone_mappings;
     std::vector<Bone *> bones;

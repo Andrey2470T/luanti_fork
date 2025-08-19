@@ -74,14 +74,17 @@ std::vector<Bone *> Skeleton::getAllBones() const
     return bones;
 }
 
-void Skeleton::updateShaderAndDataTexture(render::Shader *shader)
+void Skeleton::updateShader(render::Shader *shader)
 {
     shader->setUniformInt("mBonesCount", getNodesCount());
     shader->setUniformInt("mBonesOffset", BoneOffset);
     shader->setUniformInt("mSampleDim", BonesDataTexture->sampleDim);
     shader->setUniformInt("mDataTexDim", BonesDataTexture->texDim);
     shader->setUniformInt("mAnimateNormals", (s32)AnimateNormals);
+}
 
+void Skeleton::updateDataTexture()
+{
     for (u8 i = 0; i < getNodesCount(); i++) {
         ByteArray bone_arr(4 * 4, 4 * 4 * sizeof(f32));
         bone_arr.setM4x4(getNode(i)->AbsoluteTransform, 0);

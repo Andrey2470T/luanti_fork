@@ -69,9 +69,9 @@ public:
     {
         AnimateNormals = animate;
     }
-    void updateBonesTransforms();
+    void updateShader(render::Shader *shader);
     // The method updates the animate normals bool and data texture
-    void updateShaderAndDataTexture(render::Shader *shader);
+    void updateDataTexture();
     // The bones count per a vertex also has the limit, therefore this method selects out the most "affecting" bones ids and their weights
     // This method fills "bones" and "weights" attributes
     void fillMeshAttribs(LayeredMesh *mesh);

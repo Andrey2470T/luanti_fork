@@ -6,6 +6,14 @@
 #include "client/render/rendersystem.h"
 #include "client/media/resource.h"
 #include "client/ao/transformNode.h"
+#include "map.h"
+#include "client/mesh/lighting.h"
+#include "client/mesh/model.h"
+#include "client/ao/skeleton.h"
+#include "client/ao/animation.h"
+#include "collision.h"
+#include "nodedef.h"
+#include "client/sound/sound.h"
 
 RenderCAO::RenderCAO(Client *client, ClientEnvironment *env)
     : GenericCAO(client, env), m_rndsys(client->getRenderSystem()), m_cache(client->getResourceCache())
@@ -357,13 +365,13 @@ void RenderCAO::setAttachment(object_t parent_id, const std::string &bone,
     }
 }
 
-void GenericCAO::step(float dtime, ClientEnvironment *env)
+void RenderCAO::step(float dtime, ClientEnvironment *env)
 {
     // Handle model animations and update positions instantly to prevent lags
 
     // MOVE TO RENDER_CAO.H/CPP (OR PLAYER_CAO.H/CPP)
 
-    /*if (m_is_local_player) {
+    if (m_is_local_player) {
         LocalPlayer *player = m_env->getLocalPlayer();
         m_position = player->getPosition();
         pos_translator.val_current = m_position;
@@ -412,29 +420,41 @@ void GenericCAO::step(float dtime, ClientEnvironment *env)
 
             // Apply animations if input detected and not attached
             // or set idle animation
-            if ((new_anim.X + new_anim.Y) > 0 && !getParent()) {
-                allow_update = true;
-                m_animation_range = new_anim;
-                m_animation_speed = new_speed;
-                player->last_animation_speed = m_animation_speed;
-            } else {
-                player->last_animation = LocalPlayerAnimation::NO_ANIM;
 
-                if (old_anim != LocalPlayerAnimation::NO_ANIM) {
-                    m_animation_range = player->local_animations[0];
-                    updateAnimation();
+            auto anim = m_model->getAnimation();
+
+            if (anim) {
+                v2i set_range = anim->getRange();
+                f32 set_speed = anim->getFPS();
+
+                bool update = true;
+                if ((new_anim.X + new_anim.Y) > 0 && !getParent()) {
+                    allow_update = true;
+                    set_range = v2i(new_anim.X, new_anim.Y);
+                    set_speed = new_speed;
+                    player->last_animation_speed = set_speed;
+                } else {
+                    player->last_animation = LocalPlayerAnimation::NO_ANIM;
+
+                    if (old_anim != LocalPlayerAnimation::NO_ANIM) {
+                        auto range = player->local_animations[0];
+                        set_range = v2i(range.X, range.Y);
+                    }
                 }
+
+                // Update local player animations
+                if (!((player->last_animation != old_anim ||
+                        set_speed != old_anim_speed) &&
+                        player->last_animation != LocalPlayerAnimation::NO_ANIM &&
+                        allow_update))
+                    update = false;
+
+                if (update)
+                    setAnimation(set_range, set_speed, anim->getLooped());
             }
 
-            // Update local player animations
-            if ((player->last_animation != old_anim ||
-                    m_animation_speed != old_anim_speed) &&
-                    player->last_animation != LocalPlayerAnimation::NO_ANIM &&
-                    allow_update)
-                updateAnimation();
-
         }
-    }*/
+    }
 
     /*if (m_visuals_expired && m_smgr) {
         m_visuals_expired = false;
@@ -461,12 +481,11 @@ void GenericCAO::step(float dtime, ClientEnvironment *env)
             if (obj)
                 obj->updateAttachments();
         }
-    }
+    }*/
 
     // Make sure m_is_visible is always applied
-    scene::ISceneNode *node = getSceneNode();
-    if (node)
-        node->setVisible(m_is_visible);*/
+
+    setVisible(m_is_visible);
 
     if(getParent()) // Attachments should be glued to their parent by Irrlicht
     {
@@ -478,11 +497,11 @@ void GenericCAO::step(float dtime, ClientEnvironment *env)
         pos_translator.val_end = m_position;
     } else {
         rot_translator.translate(dtime);
-        //v3f lastpos = pos_translator.val_current;
+        v3f lastpos = pos_translator.val_current;
 
-        /*if(m_prop.physical)
+        if(m_prop.physical)
         {
-            aabb3f box = m_prop.collisionbox;
+            aabbf box = m_prop.collisionbox;
             box.MinEdge *= BS;
             box.MaxEdge *= BS;
             collisionMoveResult moveresult;
@@ -498,17 +517,16 @@ void GenericCAO::step(float dtime, ClientEnvironment *env)
 
             bool is_end_position = moveresult.collides;
             pos_translator.update(m_position, is_end_position, dtime);
-        } else {*/
+        } else {
         m_position += m_velocity * dtime + m_acceleration * 0.5f * dtime * dtime;
         m_velocity += m_acceleration * dtime;
         pos_translator.update(m_position, pos_translator.aim_is_end,
             pos_translator.anim_time);
-        //}
+        }
         pos_translator.translate(dtime);
-        //updateNodePos();
         updateMatrices();
 
-        /*float moved = lastpos.getDistanceFrom(pos_translator.val_current);
+        float moved = lastpos.getDistanceFrom(pos_translator.val_current);
         m_step_distance_counter += moved;
         if (m_step_distance_counter > 1.5f * BS) {
             m_step_distance_counter = 0.0f;
@@ -526,7 +544,7 @@ void GenericCAO::step(float dtime, ClientEnvironment *env)
                 // The footstep-sound doesn't travel with the object. => vel=0
                 m_client->sound()->playSoundAt(0, spec, foot_pos, v3f(0.0f));
             }
-        }*/
+        }
     }
 
     /*m_anim_timer += dtime;
@@ -536,7 +554,7 @@ void GenericCAO::step(float dtime, ClientEnvironment *env)
         m_anim_frame++;
         if(m_anim_frame >= m_anim_num_frames)
             m_anim_frame = 0;
-    }
+    }*/
 
     updateTexturePos();
 
@@ -545,9 +563,9 @@ void GenericCAO::step(float dtime, ClientEnvironment *env)
         m_reset_textures_timer -= dtime;
         if(m_reset_textures_timer <= 0) {
             m_reset_textures_timer = -1;
-            updateTextures(m_previous_texture_modifier);
+            updateAppearance(m_previous_texture_modifier);
         }
-    }*/
+    }
 
     if (std::abs(m_prop.automatic_rotate) > 0.001f) {
         // This is the child node's rotation. It is only used for automatic_rotate.
@@ -573,7 +591,6 @@ void GenericCAO::step(float dtime, ClientEnvironment *env)
         }
 
         rot_translator.val_current = m_rotation;
-        //updateNodePos();
         updateMatrices();
     }
 
@@ -591,60 +608,24 @@ void GenericCAO::step(float dtime, ClientEnvironment *env)
 }
 
 
-void RenderCAO::updateLight(u32 day_night_ratio)
+void RenderCAO::updateLight()
 {
     if (m_prop.glow < 0)
         return;
 
-    u16 light_at_pos = 0;
-    u8 light_at_pos_intensity = 0;
-    bool pos_ok = false;
-
     v3s16 pos[3];
     u16 npos = getLightPosition(pos);
-    for (u16 i = 0; i < npos; i++) {
-        bool this_ok;
-        MapNode n = m_env->getMap().getNode(pos[i], &this_ok);
-        if (this_ok) {
-            // Get light level at the position plus the entity glow
-            u16 this_light = getInteriorLight(n, m_prop.glow, m_client->ndef());
-            u8 this_light_intensity = MYMAX(this_light & 0xFF, this_light >> 8);
-            if (this_light_intensity > light_at_pos_intensity) {
-                light_at_pos = this_light;
-                light_at_pos_intensity = this_light_intensity;
-            }
-            pos_ok = true;
-        }
-    }
-    if (!pos_ok)
-        light_at_pos = LIGHT_SUN;
 
-    // Initialize with full alpha, otherwise entity won't be visible
-    video::SColor light{0xFFFFFFFF};
+    std::vector<v3s16> positions;
 
-    // Encode light into color, adding a small boost
-    // based on the entity glow.
-    light = encode_light(light_at_pos, m_prop.glow);
+    for (u16 i = 0; i < npos; i++)
+        positions[i] = pos[i];
+
+    auto light = getLightColor( m_env->getMap(), m_client->ndef(), positions, m_prop.glow);
 
     if (light != m_last_light) {
         m_last_light = light;
         setNodeLight(light);
-    }
-}
-
-void RenderCAO::setNodeLight(const video::SColor &light_color)
-{
-    if (m_prop.visual == "wielditem" || m_prop.visual == "item") {
-        if (m_wield_meshnode)
-            m_wield_meshnode->setNodeLightColor(light_color);
-        return;
-    }
-
-    {
-        auto *node = getSceneNode();
-        if (!node)
-            return;
-        setColorParam(node, light_color);
     }
 }
 
@@ -667,18 +648,16 @@ void RenderCAO::updateMarker()
         return;
 
     if (!m_prop.show_on_minimap) {
-        if (m_marker)
-            m_client->getMinimap()->removeMarker(&m_marker);
+        if (m_marker.has_value())
+            m_client->getMinimap()->removeMarker(m_marker.value());
         return;
     }
 
     if (m_marker)
         return;
 
-    scene::ISceneNode *node = getSceneNode();
-    if (!node)
-        return;
-    m_marker = m_client->getMinimap()->addMarker(node);
+    m_marker = getPosition();
+    m_client->getMinimap()->addMarker(m_marker.value());
 }
 
 void RenderCAO::updateNametag()
@@ -686,7 +665,7 @@ void RenderCAO::updateNametag()
     if (m_is_local_player) // No nametag for local player
         return;
 
-    if (m_prop.nametag.empty() || m_prop.nametag_color.getAlpha() == 0) {
+    if (m_prop.nametag.empty() || m_prop.nametag_color.A() == 0) {
         // Delete nametag
         if (m_nametag) {
             m_client->getCamera()->removeNametag(m_nametag);
@@ -695,15 +674,11 @@ void RenderCAO::updateNametag()
         return;
     }
 
-    scene::ISceneNode *node = getSceneNode();
-    if (!node)
-        return;
-
     v3f pos;
     pos.Y = m_prop.selectionbox.MaxEdge.Y + 0.3f;
     if (!m_nametag) {
         // Add nametag
-        m_nametag = m_client->getCamera()->addNametag(node,
+        m_nametag = m_client->getCamera()->addNametag(
             m_prop.nametag, m_prop.nametag_color,
             m_prop.nametag_bgcolor, pos);
     } else {
@@ -711,11 +686,11 @@ void RenderCAO::updateNametag()
         m_nametag->text = m_prop.nametag;
         m_nametag->textcolor = m_prop.nametag_color;
         m_nametag->bgcolor = m_prop.nametag_bgcolor;
-        m_nametag->pos = pos;
+        m_nametag->updateBank(pos);
     }
 }
 
-void RenderCAO::updateTexturePos()
+/*void RenderCAO::updateTexturePos()
 {
     if(m_spritenode)
     {
@@ -782,10 +757,10 @@ void RenderCAO::updateTexturePos()
             setMeshBufferTextureCoords(mesh->getMeshBuffer(1), t, 4);
         }
     }
-}
+}*/
 
 // Do not pass by reference, see header.
-void RenderCAO::updateTextures(std::string mod)
+/*void RenderCAO::updateTextures(std::string mod)
 {
     ITextureSource *tsrc = m_client->tsrc();
 
@@ -915,99 +890,52 @@ void RenderCAO::updateTextures(std::string mod)
     // Prevent showing the player after changing texture
     if (m_is_local_player)
         updateMeshCulling();
-}
+}*/
 
-void RenderCAO::updateAnimation()
+void RenderCAO::setAnimation(v2i range, f32 speed, bool loop)
 {
-    if (!m_animated_meshnode)
+    auto anim = m_model->getAnimation();
+
+    if (!anim)
         return;
 
     // Note: This sets the current frame as well, (re)starting the animation.
-    m_animated_meshnode->setFrameLoop(m_animation_range.X, m_animation_range.Y);
-    if (m_animated_meshnode->getAnimationSpeed() != m_animation_speed)
-        m_animated_meshnode->setAnimationSpeed(m_animation_speed);
-    m_animated_meshnode->setTransitionTime(m_animation_blend);
-    if (m_animated_meshnode->getLoopMode() != m_animation_loop)
-        m_animated_meshnode->setLoopMode(m_animation_loop);
+    anim->setLooped(loop);
+    anim->setFPS(speed);
+    anim->setRange(range);
+    //m_animated_meshnode->setTransitionTime(m_animation_blend);
+
+    m_update_anim_start_time = true;
 }
 
-void RenderCAO::updateAnimationSpeed()
+void RenderCAO::setAnimationSpeed(f32 speed)
 {
-    if (!m_animated_meshnode)
+    auto anim = m_model->getAnimation();
+
+    if (!anim)
         return;
 
-    m_animated_meshnode->setAnimationSpeed(m_animation_speed);
+    anim->setFPS(speed);
+
+    m_update_anim_start_time = true;
 }
 
-void RenderCAO::updateBones(f32 dtime)
+void RenderCAO::updateBones(f32 time)
 {
-    if (!m_animated_meshnode)
+    auto anim = m_model->getAnimation();
+
+    if (!anim)
         return;
-    if (m_bone_override.empty()) {
-        m_animated_meshnode->setJointMode(scene::EJUOR_NONE);
-        return;
-    }
 
-    m_animated_meshnode->setJointMode(scene::EJUOR_CONTROL); // To write positions to the mesh on render
-    for (auto &it : m_bone_override) {
-        std::string bone_name = it.first;
-        scene::IBoneSceneNode* bone = m_animated_meshnode->getJointNode(bone_name.c_str());
-        if (!bone)
-            continue;
+    bool animated = anim->animateBones(time);
 
-        BoneOverride &props = it.second;
-        props.dtime_passed += dtime;
-
-        bone->setPosition(props.getPosition(bone->getPosition()));
-        bone->setRotation(props.getRotationEulerDeg(bone->getRotation()));
-        bone->setScale(props.getScale(bone->getScale()));
-    }
-
-    // search through bones to find mistakenly rotated bones due to bug in Irrlicht
-    for (u32 i = 0; i < m_animated_meshnode->getJointCount(); ++i) {
-        scene::IBoneSceneNode *bone = m_animated_meshnode->getJointNode(i);
-        if (!bone)
-            continue;
-
-        //If bone is manually positioned there is no need to perform the bug check
-        bool skip = false;
-        for (auto &it : m_bone_override) {
-            if (it.first == bone->getName()) {
-                skip = true;
-                break;
-            }
-        }
-        if (skip)
-            continue;
-
-        // Workaround for Irrlicht bug
-        // We check each bone to see if it has been rotated ~180deg from its expected position due to a bug in Irricht
-        // when using EJUOR_CONTROL joint control. If the bug is detected we update the bone to the proper position
-        // and update the bones transformation.
-        v3f bone_rot = bone->getRelativeTransformation().getRotationDegrees();
-        float offset = fabsf(bone_rot.X - bone->getRotation().X);
-        if (offset > 179.9f && offset < 180.1f) {
-            bone->setRotation(bone_rot);
-            bone->updateAbsolutePosition();
-        }
-    }
-    // The following is needed for set_bone_pos to propagate to
-    // attached objects correctly.
-    // Irrlicht ought to do this, but doesn't when using EJUOR_CONTROL.
-    for (u32 i = 0; i < m_animated_meshnode->getJointCount(); ++i) {
-        auto bone = m_animated_meshnode->getJointNode(i);
-        // Look for the root bone.
-        if (bone && bone->getParent() == m_animated_meshnode) {
-            // Update entire skeleton.
-            bone->updateAbsolutePositionOfAllChildren();
-            break;
-        }
-    }
+    if (animated)
+        m_model->getSkeleton()->updateDataTexture();
 }
 
-bool RenderCAO::visualExpiryRequired(const ObjectProperties &new_) const
-{
-    const ObjectProperties &old = m_prop;
+//bool RenderCAO::visualExpiryRequired(const ObjectProperties &new_) const
+//{
+    //const ObjectProperties &old = m_prop;
     /* Visuals do not need to be expired for:
      * - nametag props: handled by updateNametag()
      * - textures:      handled by updateTextures()
@@ -1016,10 +944,10 @@ bool RenderCAO::visualExpiryRequired(const ObjectProperties &new_) const
      * - any other properties that do not change appearance
      */
 
-    bool uses_legacy_texture = new_.wield_item.empty() &&
-        (new_.visual == "wielditem" || new_.visual == "item");
+    //bool uses_legacy_texture = new_.wield_item.empty() &&
+    //    (new_.visual == "wielditem" || new_.visual == "item");
     // Ordered to compare primitive types before std::vectors
-    return old.backface_culling != new_.backface_culling ||
+    /*return old.backface_culling != new_.backface_culling ||
         old.is_visible != new_.is_visible ||
         old.mesh != new_.mesh ||
         old.shaded != new_.shaded ||
@@ -1029,46 +957,33 @@ bool RenderCAO::visualExpiryRequired(const ObjectProperties &new_) const
         old.wield_item != new_.wield_item ||
         old.colors != new_.colors ||
         (uses_legacy_texture && old.textures != new_.textures);
-}
+}*/
 
-void RenderCAO::updateMeshCulling()
+void RenderCAO::updateMeshCulling(render::DrawContext *ctxt)
 {
     if (!m_is_local_player)
         return;
 
-    const bool hidden = m_client->getCamera()->getCameraMode() == CAMERA_MODE_FIRST;
-
-    scene::ISceneNode *node = getSceneNode();
-
-    if (!node)
-        return;
-
-    if (m_prop.visual == "upright_sprite") {
-        // upright sprite has no backface culling
-        node->forEachMaterial([=] (auto &mat) {
-            mat.FrontfaceCulling = hidden;
-        });
-        return;
-    }
+    bool hidden = m_client->getCamera()->getCameraMode() == CAMERA_MODE_FIRST;
 
     if (hidden) {
         // Hide the mesh by culling both front and
         // back faces. Serious hackyness but it works for our
         // purposes. This also preserves the skeletal armature.
-        node->forEachMaterial([] (auto &mat) {
-            mat.BackfaceCulling = true;
-            mat.FrontfaceCulling = true;
-        });
+        ctxt->enableCullFace(true);
+        ctxt->setCullMode(render::CM_FRONT_AND_BACK);
     } else {
         // Restore mesh visibility.
-        node->forEachMaterial([this] (auto &mat) {
-            mat.BackfaceCulling = m_prop.backface_culling;
-            mat.FrontfaceCulling = false;
-        });
+        if (m_prop.backface_culling) {
+            ctxt->enableCullFace(true);
+            ctxt->setCullMode(render::CM_BACK);
+        }
+        else
+            ctxt->enableCullFace(false);
     }
 }
 
-void GenericCAO::processMessage(const std::string &data)
+void RenderCAO::processMessage(const std::string &data)
 {
     //infostream<<"GenericCAO: Got message"<<std::endl;
     std::istringstream is(data, std::ios::binary);
@@ -1081,13 +996,13 @@ void GenericCAO::processMessage(const std::string &data)
         newprops.deSerialize(is);
 
         // Check what exactly changed
-        //bool expire_visuals = visualExpiryRequired(newprops);
-        //bool textures_changed = m_prop.textures != newprops.textures;
+        bool expire_visuals = visualExpiryRequired(newprops);
+        bool textures_changed = m_prop.textures != newprops.textures;
 
         // Apply changes
         m_prop = std::move(newprops);
 
-        /*m_selection_box = m_prop.selectionbox;
+        m_selection_box = m_prop.selectionbox;
         m_selection_box.MinEdge *= BS;
         m_selection_box.MaxEdge *= BS;
 
@@ -1101,7 +1016,7 @@ void GenericCAO::processMessage(const std::string &data)
         if (m_is_local_player) {
             LocalPlayer *player = m_env->getLocalPlayer();
             player->makes_footstep_sound = m_prop.makes_footstep_sound;
-            aabb3f collision_box = m_prop.collisionbox;
+            aabbf collision_box = m_prop.collisionbox;
             collision_box.MinEdge *= BS;
             collision_box.MaxEdge *= BS;
             player->setCollisionbox(collision_box);
@@ -1120,11 +1035,11 @@ void GenericCAO::processMessage(const std::string &data)
             if (textures_changed) {
                 // don't update while punch texture modifier is active
                 if (m_reset_textures_timer < 0)
-                    updateTextures(m_current_texture_modifier);
+                    updateAppearance(m_current_texture_modifier);
             }
             updateNametag();
             updateMarker();
-        }*/
+        }
     } else if (cmd == AO_CMD_UPDATE_POSITION) {
         // Not sent by the server if this object is an attachment.
         // We might however get here if the server notices the object being detached before the client.
@@ -1138,7 +1053,7 @@ void GenericCAO::processMessage(const std::string &data)
         bool is_end_position = readU8(is);
         float update_interval = readF32(is);
 
-        if(getParent() != NULL) // Just in case
+        if(getParent()) // Just in case
             return;
 
         if(do_interpolate)
@@ -1149,31 +1064,30 @@ void GenericCAO::processMessage(const std::string &data)
             pos_translator.init(m_position);
         }
         rot_translator.update(m_rotation, false, update_interval);
-        //updateNodePos();
         updateMatrices();
-    } /*else if (cmd == AO_CMD_SET_TEXTURE_MOD) {
+    } else if (cmd == AO_CMD_SET_TEXTURE_MOD) {
         std::string mod = deSerializeString16(is);
 
         // immediately reset an engine issued texture modifier if a mod sends a different one
         if (m_reset_textures_timer > 0) {
             m_reset_textures_timer = -1;
-            updateTextures(m_previous_texture_modifier);
+            updateAppearance(m_previous_texture_modifier);
         }
-        updateTextures(mod);
+        updateAppearance(mod);
     } else if (cmd == AO_CMD_SET_SPRITE) {
-        v2s16 p = readV2S16(is);
+        /*v2s16 p = readV2S16(is);
         int num_frames = readU16(is);
         float framelength = readF32(is);
         bool select_horiz_by_yawpitch = readU8(is);
 
         m_tx_basepos = p;
-        m_anim_num_frames = num_frames;
-        m_anim_frame = 0;
-        m_anim_framelength = framelength;
+        //m_anim_num_frames = num_frames;
+        //m_anim_frame = 0;
+        //m_anim_framelength = framelength;
         m_tx_select_horiz_by_yawpitch = select_horiz_by_yawpitch;
 
-        updateTexturePos();
-    }*/ else if (cmd == AO_CMD_SET_PHYSICS_OVERRIDE) {
+        updateTexturePos();*/
+    } else if (cmd == AO_CMD_SET_PHYSICS_OVERRIDE) {
         float override_speed = readF32(is);
         float override_jump = readF32(is);
         float override_gravity = readF32(is);
@@ -1229,45 +1143,43 @@ void GenericCAO::processMessage(const std::string &data)
             phys.acceleration_fast = override_acceleration_fast;
             phys.speed_walk = override_speed_walk;
         }
-    } /*else if (cmd == AO_CMD_SET_ANIMATION) {
+    } else if (cmd == AO_CMD_SET_ANIMATION) {
         v2f range = readV2F32(is);
-        if (!m_is_local_player) {
-            m_animation_range = range;
-            m_animation_speed = readF32(is);
-            m_animation_blend = readF32(is);
-            // these are sent inverted so we get true when the server sends nothing
-            m_animation_loop = !readU8(is);
-            updateAnimation();
-        } else {
+        f32 speed = readF32(is);
+        f32 blend = readF32(is); // unused for now
+        bool loop = !readU8(is);
+
+        bool update = true;
+        if (m_is_local_player) {
             LocalPlayer *player = m_env->getLocalPlayer();
-            if(player->last_animation == LocalPlayerAnimation::NO_ANIM)
-            {
-                m_animation_range = range;
-                m_animation_speed = readF32(is);
-                m_animation_blend = readF32(is);
-                // these are sent inverted so we get true when the server sends nothing
-                m_animation_loop = !readU8(is);
-            }
             // update animation only if local animations present
             // and received animation is unknown (except idle animation)
             bool is_known = false;
-            for (int i = 1;i<4;i++)
-            {
-                if(m_animation_range.Y == player->local_animations[i].Y)
-                    is_known = true;
+
+            auto anim = m_model->getAnimation();
+
+            if (anim) {
+                for (int i = 1;i<4;i++)
+                {
+                    if(anim->getRange().Y == player->local_animations[i].Y)
+                        is_known = true;
+                }
             }
-            if(!is_known ||
-                    (player->local_animations[1].Y + player->local_animations[2].Y < 1))
+            if(!(!is_known ||
+                    (player->local_animations[1].Y + player->local_animations[2].Y < 1)))
             {
-                    updateAnimation();
+                update = false;
             }
             // FIXME: ^ This code is trash. It's also broken.
         }
+
+        if (update)
+            setAnimation(v2i(range.X, range.Y), speed, loop);
     } else if (cmd == AO_CMD_SET_ANIMATION_SPEED) {
-        m_animation_speed = readF32(is);
-        updateAnimationSpeed();
+        f32 speed = readF32(is);
+        setAnimationSpeed(speed);
     } else if (cmd == AO_CMD_SET_BONE_POSITION) {
-        std::string bone = deSerializeString16(is);
+        /*std::string bone = deSerializeString16(is);
         auto it = m_bone_override.find(bone);
         BoneOverride props;
         if (it != m_bone_override.end()) {
@@ -1306,9 +1218,9 @@ void GenericCAO::processMessage(const std::string &data)
             m_bone_override.erase(bone);
         } else {
             m_bone_override[bone] = props;
-        }
+        }*/
         // updateBones(); now called every step
-    } */else if (cmd == AO_CMD_ATTACH_TO) {
+    } else if (cmd == AO_CMD_ATTACH_TO) {
         u16 parent_id = readS16(is);
         std::string bone = deSerializeString16(is);
         v3f position = readV3F32(is);
@@ -1316,7 +1228,7 @@ void GenericCAO::processMessage(const std::string &data)
         bool force_visible = readU8(is); // Returns false for EOF
 
         setAttachment(parent_id, bone, position, rotation, force_visible);
-    } /*else if (cmd == AO_CMD_PUNCHED) {
+    } else if (cmd == AO_CMD_PUNCHED) {
         u16 result_hp = readU16(is);
 
         // Use this instead of the send damage to not interfere with prediction
@@ -1333,17 +1245,17 @@ void GenericCAO::processMessage(const std::string &data)
             {
                 // TODO: Execute defined fast response
                 // As there is no definition, make a smoke puff
-                ClientSimpleObject *simple = createSmokePuff(
+                /*ClientSimpleObject *simple = createSmokePuff(
                         m_smgr, m_env, m_position,
                         v2f(m_prop.visual_size.X, m_prop.visual_size.Y) * BS);
-                m_env->addSimpleObject(simple);
+                m_env->addSimpleObject(simple);*/
             } else if (m_reset_textures_timer < 0 && !m_prop.damage_texture_modifier.empty()) {
                 m_reset_textures_timer = 0.05;
                 if(damage >= 2)
                     m_reset_textures_timer += 0.05 * damage;
                 // Cap damage overlay to 1 second
                 m_reset_textures_timer = std::min(m_reset_textures_timer, 1.0f);
-                updateTextures(m_current_texture_modifier + m_prop.damage_texture_modifier);
+                updateAppearance(m_current_texture_modifier + m_prop.damage_texture_modifier);
             }
         }
 
@@ -1363,7 +1275,7 @@ void GenericCAO::processMessage(const std::string &data)
             int rating = readS16(is);
             m_armor_groups[name] = rating;
         }
-    } */else if (cmd == AO_CMD_SPAWN_INFANT) {
+    } else if (cmd == AO_CMD_SPAWN_INFANT) {
         u16 child_id = readU16(is);
         u8 type = readU8(is); // maybe this will be useful later
         (void)type;
@@ -1380,7 +1292,7 @@ void GenericCAO::processMessage(const std::string &data)
 
 /* \pre punchitem != NULL
  */
-/*bool GenericCAO::directReportPunch(v3f dir, const ItemStack *punchitem,
+bool RenderCAO::directReportPunch(v3f dir, const ItemStack *punchitem,
         float time_from_last_punch)
 {
     assert(punchitem);	// pre-condition
@@ -1402,10 +1314,10 @@ void GenericCAO::processMessage(const std::string &data)
             m_hp = 0;
             // TODO: Execute defined fast response
             // As there is no definition, make a smoke puff
-            ClientSimpleObject *simple = createSmokePuff(
+            /*ClientSimpleObject *simple = createSmokePuff(
                     m_smgr, m_env, m_position,
                     v2f(m_prop.visual_size.X, m_prop.visual_size.Y) * BS);
-            m_env->addSimpleObject(simple);
+            m_env->addSimpleObject(simple);*/
         }
         if (m_reset_textures_timer < 0 && !m_prop.damage_texture_modifier.empty()) {
             m_reset_textures_timer = 0.05;
@@ -1413,14 +1325,14 @@ void GenericCAO::processMessage(const std::string &data)
                 m_reset_textures_timer += 0.05 * result.damage;
             // Cap damage overlay to 1 second
             m_reset_textures_timer = std::min(m_reset_textures_timer, 1.0f);
-            updateTextures(m_current_texture_modifier + m_prop.damage_texture_modifier);
+            updateAppearance(m_current_texture_modifier + m_prop.damage_texture_modifier);
         }
     }
 
     return false;
 }
 
-std::string GenericCAO::debugInfoText()
+std::string RenderCAO::debugInfoText()
 {
     std::ostringstream os(std::ios::binary);
     os<<"GenericCAO hp="<<m_hp<<"\n";
@@ -1432,4 +1344,4 @@ std::string GenericCAO::debugInfoText()
     }
     os<<"}";
     return os.str();
-}*/
+}
