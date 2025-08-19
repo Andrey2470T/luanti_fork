@@ -17,9 +17,10 @@ class Model
     std::unique_ptr<LayeredMesh> mesh;
 
     Skeleton *skeleton;
-    std::vector<BoneAnimation *> animations;
+    BoneAnimation *animation;
     
     std::vector<std::pair<aiNode *, Bone *>> bone_mappings;
+    std::vector<Bone *> bones;
 
     AnimationManager *mgr;
 public:
@@ -40,5 +41,6 @@ private:
     void setBoneRelations(std::vector<Bone *> &bones, u8 &boneID, aiNode *curNode, std::optional<u8> parentID = std::nullopt);
     void setBoneWeights(aiSkeleton *skeleton, aiNode *node, Bone *bone);
 
-    void processAnimations(std::vector<Bone *> &bones, const aiScene *scene);
+    void processBones(const aiScene *scene);
+    void processAnimations(const aiScene *scene);
 };

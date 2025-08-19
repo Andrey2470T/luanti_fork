@@ -34,8 +34,9 @@ void BoneAnimation::animateBones(f32 time)
         Base->getNode(b_s.first)->Scale = b_s.second;
 }
 
-AnimationManager::AnimationManager()
-    : bonesDataTexture(std::make_unique<DataTexture>("BonesData", 4 * 4 * sizeof(f32), 0, 4 * 4))
+AnimationManager::AnimationManager(TransformNodeManager *_nodeMgr)
+    : nodeMgr(_nodeMgr),
+      bonesDataTexture(std::make_unique<DataTexture>("BonesData", 4 * 4 * sizeof(f32), 0, 4 * 4))
 {}
 
 u32 AnimationManager::getBonesCount()
@@ -49,11 +50,11 @@ u32 AnimationManager::getBonesCount()
 }
 void AnimationManager::addSkeleton(Skeleton *skeleton)
 {
+    nodeMgr->addNodeTree(skeleton);
     skeletons.emplace_back(skeleton);
 }
 
-void AnimationManager::addAnimations(u32 skeletonN, const std::vector<BoneAnimation *> anims)
+void AnimationManager::addAnimation(const BoneAnimation *anim)
 {
-    for (auto &anim : anims)
-        animations.emplace_back(skeletonN, std::unique_ptr<BoneAnimation>(anim));
+    animations.emplace_back(anim);
 }

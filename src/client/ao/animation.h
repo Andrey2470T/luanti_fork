@@ -228,16 +228,19 @@ public:
 };
 
 class DataTexture;
+class TransformNodeManager;
 
 class AnimationManager
 {
+    TransformNodeManager *nodeMgr;
+
     // Skeletons (aka TransformNodeTree) are saved in TransformNodeManager
     std::vector<Skeleton *> skeletons;
-    std::vector<std::pair<u32, std::unique_ptr<BoneAnimation>>> animations;
+    std::vector<std::unique_ptr<BoneAnimation>> animations;
 
     std::unique_ptr<DataTexture> bonesDataTexture;
 public:
-    AnimationManager();
+    AnimationManager(TransformNodeManager *_nodeMgr);
 
     DataTexture *getBonesTexture() const
     {
@@ -249,5 +252,5 @@ public:
     }
     u32 getBonesCount();
     void addSkeleton(Skeleton *skeleton);
-    void addAnimations(u32 skeletonN, const std::vector<BoneAnimation *> anims);
+    void addAnimation(const BoneAnimation *anim);
 };

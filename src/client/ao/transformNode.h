@@ -83,10 +83,7 @@ public:
     {
         return Trees.size();
     }
-    void addNodeTree(TransformNodeTree *tree)
-    {
-        Trees.emplace_back(tree);
-    }
+    void addNodeTree(TransformNodeTree *tree);
     void removeNodeTree(u8 id);
     TransformNode *getNode(u8 treeID, u8 nodeID) const;
 };

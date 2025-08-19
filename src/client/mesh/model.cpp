@@ -41,32 +41,18 @@ Model::Model(AnimationManager *_mgr, v3f pos, const aiScene *scene, ResourceCach
     // The material groups order defines the meshes groups one
     assert(scene->mNumMaterials <= scene->mNumMeshes);
 
-    render::VertexTypeDescriptor vType =
-        scene->hasSkeletons() && scene->HasAnimations() ?
-        AOVType : NodeVType;
+    bool has_skeleton = scene->hasSkeletons();
+    bool has_anim = scene->HasAnimations();
 
+    render::VertexTypeDescriptor vType = has_skeleton ? AOVType : NodeVType;
     mesh = std::make_unique<LayeredMesh>(v3f(), pos, vType);
-
-    bool animated = vType.Name == "AnimatedObject3D";
-    if (animated) {
-        skeleton = new Skeleton(mgr->getBonesTexture(), mgr->getBonesCount());
-        skeleton->setAnimatedMesh(mesh.get());
-        animations.reserve(scene->mNumAnimations);
-
-        u32 skeleton_id = mgr->getSkeletonCount();
-        mgr->addSkeleton(skeleton);
-
-        for (u8 i = 0; i < scene->mNumAnimations; i++)
-            animations.emplace_back();
-        mgr->addAnimations(skeleton_id, animations);
-    }
 
     std::shared_ptr<TileLayer> layer;
     layer->alpha_discard = 1;
     layer->material_flags = MATERIAL_FLAG_TRANSPARENT;
     layer->use_default_shader = false;
 
-    std::string shadername = animated ? "object_skinned" : "object";
+    std::string shadername = has_skeleton ? "object_skinned" : "object";
     layer->shader = cache->getOrLoad<render::Shader>(ResourceType::SHADER, shadername);
 
     // Assume that this is extremely low possible for the model to have > 2 milliards vertices
@@ -77,39 +63,12 @@ Model::Model(AnimationManager *_mgr, v3f pos, const aiScene *scene, ResourceCach
     for (u8 i = 0; i < scene->mNumMaterials; i++)
         processMesh(scene->mMeshes[i]);
 
-    // process bones (indexes of "bones" and "skeleton->mBones" coincide)
-    std::vector<TransformNode *> nodes;
-    std::vector<Bone *> bones;
+    // Adds only the first skeleton and first animation
+    if (has_skeleton) {
+        processBones(scene);
 
-    if (animated) {
-        // Load only the first skeleton
-        auto aiskeleton = scene->mSkeletons[0];
-        bones.resize(aiskeleton->mNumBones);
-
-        // fill with the info about the each bone' parents and children
-        bone_mappings.clear();
-        u8 bone_id = 0;
-        for (u8 i = 0; i < aiskeleton->mNumBones; i++) {
-            auto boneNode = aiskeleton->mBones[i]->mNode;
-
-            // start from the root bones
-            if (boneNode->mParent)
-                continue;
-            setBoneRelations(bones, bone_id, boneNode);
-        }
-        
-        // copy weights
-        for (auto &b_m : bone_mappings)
-            setBoneWeights(aiskeleton, b_m.first, b_m.second);
-
-        for (auto bone : bones)
-            nodes.push_back(bone);
-        skeleton->addBones(nodes);
-            
-        // process animations
-        processAnimations(bones, scene);
-
-        skeleton->fillMeshAttribs(mesh.get());
+        if (has_anim)
+            processAnimations(scene);
     }
 
     mesh->getBuffer(0)->uploadData();
@@ -213,14 +172,53 @@ void Model::setBoneWeights(aiSkeleton *skeleton, aiNode *node, Bone *bone)
     bone->addWeights(weights);
 }
 
-void Model::processAnimations(std::vector<Bone *> &bones, const aiScene *scene)
+void Model::processBones(const aiScene *scene)
 {
+    skeleton = new Skeleton(mgr->getBonesTexture(), mgr->getBonesCount());
+    skeleton->setAnimatedMesh(mesh.get());
+    mgr->addSkeleton(skeleton);
+
+    // process bones (indexes of "bones" and "skeleton->mBones" coincide)
+    std::vector<TransformNode *> nodes;
+
+    // Load only the first skeleton
+    auto aiskeleton = scene->mSkeletons[0];
+    bones.resize(aiskeleton->mNumBones);
+
+    // fill with the info about the each bone' parents and children
+    bone_mappings.clear();
+    u8 bone_id = 0;
+    for (u8 i = 0; i < aiskeleton->mNumBones; i++) {
+        auto boneNode = aiskeleton->mBones[i]->mNode;
+
+        // start from the root bones
+        if (boneNode->mParent)
+            continue;
+        setBoneRelations(bones, bone_id, boneNode);
+    }
+
+    // copy weights
+    for (auto &b_m : bone_mappings)
+        setBoneWeights(aiskeleton, b_m.first, b_m.second);
+
+    for (auto bone : bones)
+        nodes.push_back(bone);
+    skeleton->addBones(nodes);
+
+    skeleton->fillMeshAttribs(mesh.get());
+}
+
+void Model::processAnimations(const aiScene *scene)
+{
+    animation = new BoneAnimation();
+    mgr->addAnimation(animation);
+
     std::map<f32, std::map<u8, v3f>> posKeys;
     std::map<f32, std::map<u8, Quaternion>> rotKeys;
     std::map<f32, std::map<u8, v3f>> scaleKeys;
     KeyChannelInterpMode posInterp, rotInterp, scaleInterp;
 
-    auto getBoneID = [&bones] (std::string name) -> s32 {
+    auto getBoneID = [this] (std::string name) -> s32 {
         auto boneIt = std::find(bones.begin(), bones.end(), [&name] (const Bone *bone)
         {
             return name == bone->Name;
@@ -232,56 +230,54 @@ void Model::processAnimations(std::vector<Bone *> &bones, const aiScene *scene)
         return std::distance(bones.begin(), boneIt);
     };
 
-    for (u8 i = 0; i < scene->mNumAnimations; i++) {
-        animations[i]->setBase(skeleton);
-        auto anim = scene->mAnimations[i];
+    animation->setBase(skeleton);
+    auto anim = scene->mAnimations[0];
 
-        for (u8 j = 0; j < anim->mNumChannels; j++) {
-            auto boneChannels = anim->mChannels[j];
+    for (u8 j = 0; j < anim->mNumChannels; j++) {
+        auto boneChannels = anim->mChannels[j];
 
-            s32 boneID = getBoneID(boneChannels->mNodeName.data);
+        s32 boneID = getBoneID(boneChannels->mNodeName.data);
 
-            if (boneID == -1)
-                continue;
-            for (u8 p_f = 0; p_f < boneChannels->mNumPositionKeys; p_f++) {
-                auto pos = boneChannels->mPositionKeys[p_f];
-                posKeys[pos.mTime][boneID] = v3f(pos.mValue.x, pos.mValue.y, pos.mValue.z);
-            }
-            for (u8 r_f = 0; r_f < boneChannels->mNumRotationKeys; r_f++) {
-                auto rot = boneChannels->mRotationKeys[r_f];
-                rotKeys[rot.mTime][boneID] = Quaternion(rot.mValue.x, rot.mValue.y, rot.mValue.z, rot.mValue.w);
-            }
-            for (u8 s_f = 0; s_f < boneChannels->mNumScalingKeys; s_f++) {
-                auto scale = boneChannels->mScalingKeys[s_f];
-                scaleKeys[scale.mTime][boneID] = v3f(scale.mValue.x, scale.mValue.y, scale.mValue.z);
-            }
-
-            posInterp = convertFromAssimpInterp(boneChannels->mPreState);
-            rotInterp = convertFromAssimpInterp(boneChannels->mPreState);
-            scaleInterp = convertFromAssimpInterp(boneChannels->mPreState);
+        if (boneID == -1)
+            continue;
+        for (u8 p_f = 0; p_f < boneChannels->mNumPositionKeys; p_f++) {
+            auto pos = boneChannels->mPositionKeys[p_f];
+            posKeys[pos.mTime][boneID] = v3f(pos.mValue.x, pos.mValue.y, pos.mValue.z);
+        }
+        for (u8 r_f = 0; r_f < boneChannels->mNumRotationKeys; r_f++) {
+            auto rot = boneChannels->mRotationKeys[r_f];
+            rotKeys[rot.mTime][boneID] = Quaternion(rot.mValue.x, rot.mValue.y, rot.mValue.z, rot.mValue.w);
+        }
+        for (u8 s_f = 0; s_f < boneChannels->mNumScalingKeys; s_f++) {
+            auto scale = boneChannels->mScalingKeys[s_f];
+            scaleKeys[scale.mTime][boneID] = v3f(scale.mValue.x, scale.mValue.y, scale.mValue.z);
         }
 
-        u32 maxFrameCount = std::max({posKeys.size(), rotKeys.size(), scaleKeys.size()});
-        auto posIt = posKeys.begin();
-        auto rotIt = rotKeys.begin();
-        auto scaleIt = scaleKeys.begin();
-
-        for (u32 j = 0; j < maxFrameCount; j++) {
-            auto p = posIt++;
-            if (p != posKeys.end())
-                animations[i]->appendPositionKey(p->first, p->second);
-            auto r = rotIt++;
-            if (r != rotKeys.end())
-                animations[i]->appendRotationKey(r->first, r->second);
-            auto s = scaleIt++;
-            if (s != scaleKeys.end())
-                animations[i]->appendScaleKey(s->first, s->second);
-        }
-
-        animations[i]->setInterpModes(posInterp, rotInterp, scaleInterp);
-
-        posKeys.clear();
-        rotKeys.clear();
-        scaleKeys.clear();
+        posInterp = convertFromAssimpInterp(boneChannels->mPreState);
+        rotInterp = convertFromAssimpInterp(boneChannels->mPreState);
+        scaleInterp = convertFromAssimpInterp(boneChannels->mPreState);
     }
+
+    u32 maxFrameCount = std::max({posKeys.size(), rotKeys.size(), scaleKeys.size()});
+    auto posIt = posKeys.begin();
+    auto rotIt = rotKeys.begin();
+    auto scaleIt = scaleKeys.begin();
+
+    for (u32 j = 0; j < maxFrameCount; j++) {
+        auto p = posIt++;
+        if (p != posKeys.end())
+            animation->appendPositionKey(p->first, p->second);
+        auto r = rotIt++;
+        if (r != rotKeys.end())
+            animation->appendRotationKey(r->first, r->second);
+        auto s = scaleIt++;
+        if (s != scaleKeys.end())
+            animation->appendScaleKey(s->first, s->second);
+    }
+
+    animation->setInterpModes(posInterp, rotInterp, scaleInterp);
+
+    posKeys.clear();
+    rotKeys.clear();
+    scaleKeys.clear();
 }

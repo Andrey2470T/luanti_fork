@@ -110,6 +110,18 @@ void TransformNodeTree::updateNodes()
         getNode(root)->updateNodeAndChildren();
 }
 
+void TransformNodeManager::addNodeTree(TransformNodeTree *tree)
+{
+    auto found = std::find_if(Trees.begin(), Trees.end(),
+    [tree] (const std::unique_ptr<TransformNodeTree> &cur_tree)
+    {
+        return tree == cur_tree.get();
+    });
+
+    if (found == Trees.end())
+        Trees.emplace_back(tree);
+}
+
 void TransformNodeManager::removeNodeTree(u8 id)
 {
     assert(id < Trees.size());
