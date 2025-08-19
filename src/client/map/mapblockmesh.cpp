@@ -18,6 +18,8 @@
 #include "client/mesh/defaultVertexTypes.h"
 #include "client/render/atlas.h"
 #include "client/render/drawlist.h"
+#include "client/ao/renderCAO.h"
+#include "client/mesh/model.h"
 
 
 /*
@@ -203,8 +205,15 @@ void MapBlockMesh::addInDrawList(DistanceSortedDrawList *drawlist, bool shadow)
     drawlist->addLayeredMesh(m_mesh.get());
 
     for (u16 ao_id : m_active_objects) {
-        auto cao = m_client->getEnv().getActiveObject(ao_id);
-        //add the CAOs layered meshes to the drawlist
+        auto cao = dynamic_cast<RenderCAO*>(m_client->getEnv().getActiveObject(ao_id));
+
+        if (!cao)
+            continue;
+
+        if (!cao->isVisible())
+            continue;
+
+        drawlist->addLayeredMesh(cao->getModel()->getMesh());
     }
 }
 
@@ -213,7 +222,11 @@ void MapBlockMesh::removeFromDrawList(DistanceSortedDrawList *drawlist, bool sha
     drawlist->removeLayeredMesh(m_mesh.get());
 
     for (u16 ao_id : m_active_objects) {
-        auto cao = m_client->getEnv().getActiveObject(ao_id);
-        //delete the CAOs layered meshes from the drawlist
+        auto cao = dynamic_cast<RenderCAO*>(m_client->getEnv().getActiveObject(ao_id));
+
+        if (!cao)
+            continue;
+
+        drawlist->removeLayeredMesh(cao->getModel()->getMesh());
     }
 }

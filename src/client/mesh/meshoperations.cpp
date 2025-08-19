@@ -236,7 +236,7 @@ static inline v3f getAngleWeight(const v3f &v1, const v3f &v2, const v3f &v3)
         acosf((b - c + a) / (2.f * bsqrt * asqrt)));
 }
 
-void MeshOperations::recalculateNormalsT(MeshBuffer *mesh, bool smooth, bool angleWeighted)
+void MeshOperations::recalculateNormals(MeshBuffer *mesh, bool smooth, bool angleWeighted)
 {
     const u32 vcount = mesh->getVertexCount();
     const u32 icount = mesh->getIndexCount();

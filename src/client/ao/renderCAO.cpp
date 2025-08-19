@@ -9,15 +9,31 @@
 #include "map.h"
 #include "client/mesh/lighting.h"
 #include "client/mesh/model.h"
+#include "client/mesh/meshoperations.h"
+#include "client/mesh/layeredmesh.h"
 #include "client/ao/skeleton.h"
 #include "client/ao/animation.h"
 #include "collision.h"
 #include "nodedef.h"
 #include "client/sound/sound.h"
+#include "client/render/batcher3d.h"
+#include "client/render/atlas.h"
+#include "client/mesh/defaultVertexTypes.h"
 
 RenderCAO::RenderCAO(Client *client, ClientEnvironment *env)
-    : GenericCAO(client, env), m_rndsys(client->getRenderSystem()), m_cache(client->getResourceCache())
-{}
+    : GenericCAO(client, env), m_rndsys(client->getRenderSystem()), m_cache(client->getResourceCache()),
+      m_anim_mgr(env->getAnimationManager())
+{
+    initTileLayer();
+
+    /* don't update while punch texture modifier is active */
+    if (m_reset_textures_timer < 0)
+        updateAppearance(m_current_texture_modifier);
+
+    /*if (auto shadow = RenderingEngine::get_shadow_renderer())
+            shadow->addNodeToShadowList(node);
+    }*/
+}
 
 RenderCAO::~RenderCAO()
 {
@@ -84,265 +100,6 @@ void RenderCAO::setChildrenVisible(bool toset)
         cao->setVisible(attach_node->ForceVisible ? true : toset);
     }
 }
-
-//void GenericCAO::addToScene()
-//{
-    //m_visuals_expired = false;
-
-    //if (!m_prop.is_visible)
-    //	return;
-
-    //infostream << "GenericCAO::addToScene(): " << m_prop.visual << std::endl;
-
-    /*m_material_type_param = 0.5f; // May cut off alpha < 128 depending on m_material_type
-
-    {
-        IShaderSource *shader_source = m_client->getShaderSource();
-        MaterialType material_type;
-
-        if (m_prop.shaded && m_prop.glow == 0)
-            material_type = (m_prop.use_texture_alpha) ?
-                TILE_MATERIAL_ALPHA : TILE_MATERIAL_BASIC;
-        else
-            material_type = (m_prop.use_texture_alpha) ?
-                TILE_MATERIAL_PLAIN_ALPHA : TILE_MATERIAL_PLAIN;
-
-        u32 shader_id = shader_source->getShader("object_shader", material_type, NDT_NORMAL);
-        m_material_type = shader_source->getShaderInfo(shader_id).material;
-    }
-
-    auto grabMatrixNode = [this] {
-        m_matrixnode = m_smgr->addDummyTransformationSceneNode();
-        m_matrixnode->grab();
-    };
-
-    auto setMaterial = [this] (video::SMaterial &mat) {
-        mat.MaterialType = m_material_type;
-        mat.FogEnable = true;
-        mat.forEachTexture([] (auto &tex) {
-            tex.MinFilter = video::ETMINF_NEAREST_MIPMAP_NEAREST;
-            tex.MagFilter = video::ETMAGF_NEAREST;
-        });
-    };
-
-    auto setSceneNodeMaterials = [setMaterial] (scene::ISceneNode *node) {
-        node->forEachMaterial(setMaterial);
-    };
-
-    if (m_prop.visual == "sprite") {
-        grabMatrixNode();
-        m_spritenode = m_smgr->addBillboardSceneNode(
-                m_matrixnode, v2f(1, 1), v3f(0,0,0), -1);
-        m_spritenode->grab();
-        video::ITexture *tex = tsrc->getTextureForMesh("no_texture.png");
-        m_spritenode->forEachMaterial([tex] (auto &mat) {
-            mat.setTexture(0, tex);
-        });
-
-        setSceneNodeMaterials(m_spritenode);
-
-        m_spritenode->setSize(v2f(m_prop.visual_size.X,
-                m_prop.visual_size.Y) * BS);
-        {
-            const float txs = 1.0 / 1;
-            const float tys = 1.0 / 1;
-            setBillboardTextureMatrix(m_spritenode,
-                    txs, tys, 0, 0);
-        }
-    } else if (m_prop.visual == "upright_sprite") {
-        grabMatrixNode();
-        auto mesh = make_irr<scene::SMesh>();
-        f32 dx = BS * m_prop.visual_size.X / 2;
-        f32 dy = BS * m_prop.visual_size.Y / 2;
-        video::SColor c(0xFFFFFFFF);
-
-        video::S3DVertex vertices[4] = {
-            video::S3DVertex(-dx, -dy, 0, 0,0,1, c, 1,1),
-            video::S3DVertex( dx, -dy, 0, 0,0,1, c, 0,1),
-            video::S3DVertex( dx,  dy, 0, 0,0,1, c, 0,0),
-            video::S3DVertex(-dx,  dy, 0, 0,0,1, c, 1,0),
-        };
-        if (m_is_player) {
-            // Move minimal Y position to 0 (feet position)
-            for (auto &vertex : vertices)
-                vertex.Pos.Y += dy;
-        }
-        const u16 indices[] = {0,1,2,2,3,0};
-
-        for (int face : {0, 1}) {
-            auto buf = make_irr<scene::SMeshBuffer>();
-            // Front (0) or Back (1)
-            if (face == 1) {
-                for (auto &v : vertices)
-                    v.Normal *= -1;
-                for (int i : {0, 2})
-                    std::swap(vertices[i].Pos, vertices[i+1].Pos);
-            }
-            buf->append(vertices, 4, indices, 6);
-
-            // Set material
-            setMaterial(buf->getMaterial());
-            buf->getMaterial().ColorParam = c;
-
-            // Add to mesh
-            mesh->addMeshBuffer(buf.get());
-        }
-
-        mesh->recalculateBoundingBox();
-        m_meshnode = m_smgr->addMeshSceneNode(mesh.get(), m_matrixnode);
-        m_meshnode->grab();
-    } else if (m_prop.visual == "cube") {
-        grabMatrixNode();
-        scene::IMesh *mesh = createCubeMesh(v3f(BS,BS,BS));
-        m_meshnode = m_smgr->addMeshSceneNode(mesh, m_matrixnode);
-        m_meshnode->grab();
-        mesh->drop();
-
-        m_meshnode->setScale(m_prop.visual_size);
-
-        setSceneNodeMaterials(m_meshnode);
-
-        m_meshnode->forEachMaterial([this] (auto &mat) {
-            mat.BackfaceCulling = m_prop.backface_culling;
-        });
-    } else if (m_prop.visual == "mesh") {
-        grabMatrixNode();
-        scene::IAnimatedMesh *mesh = m_client->getMesh(m_prop.mesh, true);
-        if (mesh) {
-            if (!checkMeshNormals(mesh)) {
-                infostream << "GenericCAO: recalculating normals for mesh "
-                    << m_prop.mesh << std::endl;
-                m_smgr->getMeshManipulator()->
-                        recalculateNormals(mesh, true, false);
-            }
-
-            m_animated_meshnode = m_smgr->addAnimatedMeshSceneNode(mesh, m_matrixnode);
-            m_animated_meshnode->grab();
-            mesh->drop(); // The scene node took hold of it
-            m_animated_meshnode->animateJoints(); // Needed for some animations
-            m_animated_meshnode->setScale(m_prop.visual_size);
-
-            // set vertex colors to ensure alpha is set
-            setMeshColor(m_animated_meshnode->getMesh(), video::SColor(0xFFFFFFFF));
-
-            setSceneNodeMaterials(m_animated_meshnode);
-
-            m_animated_meshnode->forEachMaterial([this] (auto &mat) {
-                mat.BackfaceCulling = m_prop.backface_culling;
-            });
-        } else
-            errorstream<<"GenericCAO::addToScene(): Could not load mesh "<<m_prop.mesh<<std::endl;
-    } else if (m_prop.visual == "wielditem" || m_prop.visual == "item") {
-        grabMatrixNode();
-        ItemStack item;
-        if (m_prop.wield_item.empty()) {
-            // Old format, only textures are specified.
-            infostream << "textures: " << m_prop.textures.size() << std::endl;
-            if (!m_prop.textures.empty()) {
-                infostream << "textures[0]: " << m_prop.textures[0]
-                    << std::endl;
-                IItemDefManager *idef = m_client->idef();
-                item = ItemStack(m_prop.textures[0], 1, 0, idef);
-            }
-        } else {
-            infostream << "serialized form: " << m_prop.wield_item << std::endl;
-            item.deSerialize(m_prop.wield_item, m_client->idef());
-        }
-        m_wield_meshnode = new WieldMeshSceneNode(m_smgr, -1);
-        m_wield_meshnode->setItem(item, m_client,
-            (m_prop.visual == "wielditem"));
-
-        m_wield_meshnode->setScale(m_prop.visual_size / 2.0f);
-    } else {
-        infostream<<"GenericCAO::addToScene(): \""<<m_prop.visual
-                <<"\" not supported"<<std::endl;
-    }*/
-
-    /* Set VBO hint */
-    // wieldmesh sets its own hint, no need to handle it
-    /*if (m_meshnode || m_animated_meshnode) {
-        // sprite uses vertex animation
-        if (m_meshnode && m_prop.visual != "upright_sprite")
-            m_meshnode->getMesh()->setHardwareMappingHint(scene::EHM_STATIC);
-
-        if (m_animated_meshnode) {
-            auto *mesh = m_animated_meshnode->getMesh();
-            // skinning happens on the CPU
-            if (m_animated_meshnode->getJointCount() > 0)
-                mesh->setHardwareMappingHint(scene::EHM_STREAM, scene::EBT_VERTEX);
-            else
-                mesh->setHardwareMappingHint(scene::EHM_STATIC, scene::EBT_VERTEX);
-            mesh->setHardwareMappingHint(scene::EHM_STATIC, scene::EBT_INDEX);
-        }
-    }*/
-
-    /* don't update while punch texture modifier is active */
-    //if (m_reset_textures_timer < 0)
-    //	updateTextures(m_current_texture_modifier);
-
-    /*if (scene::ISceneNode *node = getSceneNode()) {
-        if (m_matrixnode)
-            node->setParent(m_matrixnode);
-
-        if (auto shadow = RenderingEngine::get_shadow_renderer())
-            shadow->addNodeToShadowList(node);
-    }*/
-
-    //updateNametag();
-    //updateMarker();
-    //updateNodePos();
-    //updateAnimation();
-    //updateBones(.0f);
-    //updateAttachments();
-    //setNodeLight(m_last_light);
-    //updateMeshCulling();
-
-    /*if (m_animated_meshnode) {
-        u32 mat_count = m_animated_meshnode->getMaterialCount();
-        assert(mat_count == m_animated_meshnode->getMesh()->getMeshBufferCount());
-        u32 max_tex_idx = 0;
-        for (u32 i = 0; i < mat_count; ++i) {
-            max_tex_idx = std::max(max_tex_idx,
-                    m_animated_meshnode->getMesh()->getTextureSlot(i));
-        }
-        if (mat_count == 0 || m_prop.textures.empty()) {
-            // nothing
-        } else if (max_tex_idx >= m_prop.textures.size()) {
-            std::ostringstream oss;
-            oss << "GenericCAO::addToScene(): Model "
-                << m_prop.mesh << " is missing " << (max_tex_idx + 1 - m_prop.textures.size())
-                << " more texture(s), this is deprecated.";
-            logOnce(oss, warningstream);
-
-            video::ITexture *last = m_animated_meshnode->getMaterial(0).TextureLayers[0].Texture;
-            for (u32 i = 1; i < mat_count; i++) {
-                auto &layer = m_animated_meshnode->getMaterial(i).TextureLayers[0];
-                if (!layer.Texture)
-                    layer.Texture = last;
-                last = layer.Texture;
-            }
-        }
-    }*/
-//}
-
-/*static void setBillboardTextureMatrix(scene::IBillboardSceneNode *bill,
-        float txs, float tys, int col, int row)
-{
-    video::SMaterial& material = bill->getMaterial(0);
-    core::matrix4& matrix = material.getTextureMatrix(0);
-    matrix.setTextureTranslate(txs*col, tys*row);
-    matrix.setTextureScale(txs, tys);
-}*/
-
-/*static void setMeshBufferTextureCoords(scene::IMeshBuffer *buf, const v2f *uv, u32 count)
-{
-    assert(buf->getVertexType() == video::EVT_STANDARD);
-    assert(buf->getVertexCount() == count);
-    auto *vertices = static_cast<video::S3DVertex *>(buf->getVertices());
-    for (u32 i = 0; i < count; i++)
-        vertices[i].TCoords = uv[i];
-    buf->setDirty(scene::EBT_VERTEX);
-}*/
 
 void RenderCAO::setAttachment(object_t parent_id, const std::string &bone,
         v3f position, v3f rotation, bool force_visible)
@@ -594,17 +351,9 @@ void RenderCAO::step(float dtime, ClientEnvironment *env)
         updateMatrices();
     }
 
-    /*if (m_animated_meshnode) {
-        // Everything must be updated; the whole transform
-        // chain as well as the animated mesh node.
-        // Otherwise, bone attachments would be relative to
-        // a position that's one frame old.
-        if (m_matrixnode)
-            updatePositionRecursive(m_matrixnode);
-        m_animated_meshnode->updateAbsolutePosition();
-        m_animated_meshnode->animateJoints();
-        updateBones(dtime);
-    }*/
+    updateMeshCulling();
+
+    updateBones(dtime);
 }
 
 
@@ -625,7 +374,7 @@ void RenderCAO::updateLight()
 
     if (light != m_last_light) {
         m_last_light = light;
-        setNodeLight(light);
+        MeshOperations::colorizeMesh(m_model->getMesh()->getBuffer(0), m_last_light);
     }
 }
 
@@ -759,139 +508,6 @@ void RenderCAO::updateNametag()
     }
 }*/
 
-// Do not pass by reference, see header.
-/*void RenderCAO::updateTextures(std::string mod)
-{
-    ITextureSource *tsrc = m_client->tsrc();
-
-    bool use_trilinear_filter = g_settings->getBool("trilinear_filter");
-    bool use_bilinear_filter = g_settings->getBool("bilinear_filter");
-    bool use_anisotropic_filter = g_settings->getBool("anisotropic_filter");
-
-    m_previous_texture_modifier = m_current_texture_modifier;
-    m_current_texture_modifier = mod;
-
-    if (m_spritenode) {
-        if (m_prop.visual == "sprite") {
-            std::string texturestring = "no_texture.png";
-            if (!m_prop.textures.empty())
-                texturestring = m_prop.textures[0];
-            texturestring += mod;
-
-            video::SMaterial &material = m_spritenode->getMaterial(0);
-            material.MaterialType = m_material_type;
-            material.MaterialTypeParam = m_material_type_param;
-            material.setTexture(0, tsrc->getTextureForMesh(texturestring));
-
-            material.forEachTexture([=] (auto &tex) {
-                setMaterialFilters(tex, use_bilinear_filter, use_trilinear_filter,
-                        use_anisotropic_filter);
-            });
-        }
-    }
-
-    else if (m_animated_meshnode) {
-        if (m_prop.visual == "mesh") {
-            for (u32 i = 0; i < m_animated_meshnode->getMaterialCount(); ++i) {
-                const auto texture_idx = m_animated_meshnode->getMesh()->getTextureSlot(i);
-                if (texture_idx >= m_prop.textures.size())
-                    continue;
-                std::string texturestring = m_prop.textures[texture_idx];
-                if (texturestring.empty())
-                    continue; // Empty texture string means don't modify that material
-                texturestring += mod;
-                video::ITexture *texture = tsrc->getTextureForMesh(texturestring);
-                if (!texture) {
-                    errorstream<<"GenericCAO::updateTextures(): Could not load texture "<<texturestring<<std::endl;
-                    continue;
-                }
-
-                // Set material flags and texture
-                video::SMaterial &material = m_animated_meshnode->getMaterial(i);
-                material.MaterialType = m_material_type;
-                material.MaterialTypeParam = m_material_type_param;
-                material.TextureLayers[0].Texture = texture;
-                material.BackfaceCulling = m_prop.backface_culling;
-
-                // don't filter low-res textures, makes them look blurry
-                // player models have a res of 64
-                const core::dimension2d<u32> &size = texture->getOriginalSize();
-                const u32 res = std::min(size.Height, size.Width);
-                use_trilinear_filter &= res > 64;
-                use_bilinear_filter &= res > 64;
-
-                material.forEachTexture([=] (auto &tex) {
-                    setMaterialFilters(tex, use_bilinear_filter, use_trilinear_filter,
-                            use_anisotropic_filter);
-                });
-            }
-        }
-    }
-
-    else if (m_meshnode) {
-        if(m_prop.visual == "cube")
-        {
-            for (u32 i = 0; i < 6; ++i)
-            {
-                std::string texturestring = "no_texture.png";
-                if(m_prop.textures.size() > i)
-                    texturestring = m_prop.textures[i];
-                texturestring += mod;
-
-                // Set material flags and texture
-                video::SMaterial &material = m_meshnode->getMaterial(i);
-                material.MaterialType = m_material_type;
-                material.MaterialTypeParam = m_material_type_param;
-                material.setTexture(0, tsrc->getTextureForMesh(texturestring));
-                material.getTextureMatrix(0).makeIdentity();
-
-                material.forEachTexture([=] (auto &tex) {
-                    setMaterialFilters(tex, use_bilinear_filter, use_trilinear_filter,
-                            use_anisotropic_filter);
-                });
-            }
-        } else if (m_prop.visual == "upright_sprite") {
-            scene::IMesh *mesh = m_meshnode->getMesh();
-            {
-                std::string tname = "no_texture.png";
-                if (!m_prop.textures.empty())
-                    tname = m_prop.textures[0];
-                tname += mod;
-
-                auto &material = m_meshnode->getMaterial(0);
-                material.setTexture(0, tsrc->getTextureForMesh(tname));
-
-                material.forEachTexture([=] (auto &tex) {
-                    setMaterialFilters(tex, use_bilinear_filter, use_trilinear_filter,
-                            use_anisotropic_filter);
-                });
-            }
-            {
-                std::string tname = "no_texture.png";
-                if (m_prop.textures.size() >= 2)
-                    tname = m_prop.textures[1];
-                else if (!m_prop.textures.empty())
-                    tname = m_prop.textures[0];
-                tname += mod;
-
-                auto &material = m_meshnode->getMaterial(1);
-                material.setTexture(0, tsrc->getTextureForMesh(tname));
-
-                material.forEachTexture([=] (auto &tex) {
-                    setMaterialFilters(tex, use_bilinear_filter, use_trilinear_filter,
-                            use_anisotropic_filter);
-                });
-            }
-            // Set mesh color (only if lighting is disabled)
-            if (!m_prop.colors.empty() && m_prop.glow < 0)
-                setMeshColor(mesh, m_prop.colors[0]);
-        }
-    }
-    // Prevent showing the player after changing texture
-    if (m_is_local_player)
-        updateMeshCulling();
-}*/
-
 void RenderCAO::setAnimation(v2i range, f32 speed, bool loop)
 {
     auto anim = m_model->getAnimation();
@@ -920,14 +536,16 @@ void RenderCAO::setAnimationSpeed(f32 speed)
     m_update_anim_start_time = true;
 }
 
-void RenderCAO::updateBones(f32 time)
+void RenderCAO::updateBones(f32 dtime)
 {
     auto anim = m_model->getAnimation();
 
     if (!anim)
         return;
 
-    bool animated = anim->animateBones(time);
+    if (!anim->isStarted())
+        anim->start();
+    bool animated = anim->animateBones(dtime);
 
     if (animated)
         m_model->getSkeleton()->updateDataTexture();
@@ -959,28 +577,31 @@ void RenderCAO::updateBones(f32 time)
         (uses_legacy_texture && old.textures != new_.textures);
 }*/
 
-void RenderCAO::updateMeshCulling(render::DrawContext *ctxt)
+void RenderCAO::initTileLayer()
+{
+    m_tile_layer.alpha_discard = 1;
+    m_tile_layer.material_flags = MATERIAL_FLAG_TRANSPARENT;
+
+    if (m_prop.shaded && m_prop.glow == 0)
+        m_tile_layer.material_type = (m_prop.use_texture_alpha) ?
+            TILE_MATERIAL_ALPHA : TILE_MATERIAL_BASIC;
+    else
+        m_tile_layer.material_type = (m_prop.use_texture_alpha) ?
+            TILE_MATERIAL_PLAIN_ALPHA : TILE_MATERIAL_PLAIN;
+    m_tile_layer.use_default_shader = false;
+
+    std::string shadername = m_model->getSkeleton() ? "object_skinned" : "object";
+    m_tile_layer.shader = m_cache->getOrLoad<render::Shader>(ResourceType::SHADER, shadername);
+}
+
+void RenderCAO::updateMeshCulling()
 {
     if (!m_is_local_player)
         return;
 
     bool hidden = m_client->getCamera()->getCameraMode() == CAMERA_MODE_FIRST;
 
-    if (hidden) {
-        // Hide the mesh by culling both front and
-        // back faces. Serious hackyness but it works for our
-        // purposes. This also preserves the skeletal armature.
-        ctxt->enableCullFace(true);
-        ctxt->setCullMode(render::CM_FRONT_AND_BACK);
-    } else {
-        // Restore mesh visibility.
-        if (m_prop.backface_culling) {
-            ctxt->enableCullFace(true);
-            ctxt->setCullMode(render::CM_BACK);
-        }
-        else
-            ctxt->enableCullFace(false);
-    }
+    setVisible(hidden);
 }
 
 void RenderCAO::processMessage(const std::string &data)
@@ -1344,4 +965,239 @@ std::string RenderCAO::debugInfoText()
     }
     os<<"}";
     return os.str();
+}
+
+void SpriteRenderCAO::addMesh()
+{
+    MeshBuffer *sprite = new MeshBuffer(4, 6);
+    Batcher3D::appendUnitFace(sprite, {});
+
+    MeshOperations::scaleMesh(sprite, m_prop.visual_size * BS);
+
+    LayeredMeshPart mesh_p;
+    mesh_p.count = 6;
+
+    MeshLayer mesh_l;
+    mesh_l.first = std::make_shared<TileLayer>(m_tile_layer);
+    mesh_l.second = mesh_p;
+    m_model = new Model(m_position, {mesh_l}, sprite);
+    m_cache->cacheResource<Model>(ResourceType::MODEL, m_model);
+}
+
+void RenderCAO::updateLayerUVs(std::string new_texture, u8 layer_id)
+{
+    auto img = m_cache->getOrLoad<img::Image>(ResourceType::IMAGE, new_texture);
+
+    if (!img)
+        return;
+
+    auto basic_pool = m_rndsys->getPool(true);
+    auto buffer = m_model->getMesh()->getBuffer(0);
+    auto layer = m_model->getMesh()->getBufferLayer(0, layer_id);
+
+    if (layer.first->tile_ref) {
+        auto prev_atlas = basic_pool->getAtlasByTile(layer.first->tile_ref, true);
+        u32 prev_atlas_res = prev_atlas->getTextureSize();
+        auto prev_tile = basic_pool->getTileRect(layer.first->tile_ref);
+
+        for (u32 k = layer.second.offset; k < layer.second.count; k++) {
+            v2f cur_uv = svtGetUV(buffer, k);
+
+            v2u pixel_coords;
+            pixel_coords.X = cur_uv.X * prev_atlas_res;
+            pixel_coords.Y = cur_uv.Y * prev_atlas_res;
+
+            pixel_coords -= v2u(prev_tile.ULC.X, prev_tile.ULC.Y);
+
+            v2f texture_uv;
+            texture_uv.X = pixel_coords.X / prev_tile.getWidth();
+            texture_uv.Y = pixel_coords.Y / prev_tile.getHeight();
+
+            svtSetUV(buffer, texture_uv, k);
+        }
+    }
+
+    auto atlas = basic_pool->getAtlasByTile(img, true);
+    layer.first->atlas = atlas;
+    layer.first->tile_ref = img;
+
+    u32 atlas_res = atlas->getTextureSize();
+    rectf r = basic_pool->getTileRect(img, false, true);
+
+    for (u32 k = layer.second.offset; k < layer.second.count; k++) {
+        v2f cur_uv = svtGetUV(buffer, k);
+
+        u32 rel_x = round32(cur_uv.X * r.getWidth());
+        u32 rel_y = round32(cur_uv.Y * r.getHeight());
+
+        v2f atlas_uv(
+            (r.ULC.X + rel_x) / atlas_res,
+            (r.ULC.Y + rel_y) / atlas_res
+        );
+
+        svtSetUV(buffer, atlas_uv, k);
+    }
+}
+
+void SpriteRenderCAO::updateAppearance(std::string mod)
+{
+    m_previous_texture_modifier = m_current_texture_modifier;
+    m_current_texture_modifier = mod;
+
+    std::string texturestring = "no_texture.png";
+    if (!m_prop.textures.empty())
+        texturestring = m_prop.textures[0];
+    texturestring += mod;
+
+    updateLayerUVs(texturestring, 0);
+}
+
+void UprightSpriteRenderCAO::addMesh()
+{
+    MeshBuffer *sprite = new MeshBuffer(4, 6);
+    Batcher3D::appendUnitFace(sprite, {});
+
+    MeshOperations::scaleMesh(sprite, m_prop.visual_size * BS);
+
+    if (m_is_player) {
+        f32 dy = BS * m_prop.visual_size.Y / 2;
+        // Move minimal Y position to 0 (feet position)
+        MeshOperations::translateMesh(sprite, v3f(0.0f, dy, 0.0f));
+    }
+
+    LayeredMeshPart mesh_p;
+    mesh_p.count = 6;
+
+    MeshLayer mesh_l;
+    mesh_l.first = std::make_shared<TileLayer>(m_tile_layer);
+    mesh_l.second = mesh_p;
+    m_model = new Model(m_position, {mesh_l}, sprite);
+    m_cache->cacheResource<Model>(ResourceType::MODEL, m_model);
+}
+
+void UprightSpriteRenderCAO::updateAppearance(std::string mod)
+{
+    m_previous_texture_modifier = m_current_texture_modifier;
+    m_current_texture_modifier = mod;
+
+    std::string tname1 = "no_texture.png";
+    std::string tname2 = "no_texture.png";
+
+    if (!m_prop.textures.empty()) {
+        tname1 = m_prop.textures[0];
+        tname2 = m_prop.textures[1];
+    }
+    tname1 += mod;
+    tname2 += mod;
+
+    updateLayerUVs(tname1, 0);
+    updateLayerUVs(tname2, 1);
+
+    // Set mesh color (only if lighting is disabled)
+    if (!m_prop.colors.empty() && m_prop.glow < 0)
+        MeshOperations::colorizeMesh(m_model->getMesh()->getBuffer(0), m_prop.colors[0]);
+}
+
+void CubeRenderCAO::addMesh()
+{
+    MeshBuffer *cube = new MeshBuffer(4 * 6, 6 * 6);
+    Batcher3D::appendUnitBox(cube, {});
+
+    MeshOperations::scaleMesh(cube, m_prop.visual_size * BS);
+
+    LayeredMeshPart mesh_p;
+    mesh_p.count = 6 * 6;
+
+    MeshLayer mesh_l;
+    mesh_l.first = std::make_shared<TileLayer>(m_tile_layer);
+    mesh_l.second = mesh_p;
+    m_model = new Model(m_position, {mesh_l}, cube);
+    m_cache->cacheResource<Model>(ResourceType::MODEL, m_model);
+}
+void CubeRenderCAO::updateAppearance(std::string mod)
+{
+    for (u32 i = 0; i < 6; ++i)
+    {
+        std::string texturestring = "no_texture.png";
+        if(m_prop.textures.size() > i)
+            texturestring = m_prop.textures[i];
+        texturestring += mod;
+
+        updateLayerUVs(texturestring, i);
+    }
+}
+
+void MeshRenderCAO::addMesh()
+{
+    std::vector<std::shared_ptr<TileLayer>> layers;
+
+    for (u8 i = 0; i < 6; i++)
+        layers.push_back(std::make_shared<TileLayer>(m_tile_layer));
+    m_model = Model::load(m_anim_mgr, m_position, layers, m_prop.mesh, m_cache);
+
+    if (m_model) {
+        auto mesh = m_model->getMesh();
+
+        for (u8 i = 0; i < mesh->getBuffersCount(); i++) {
+            auto buffer = mesh->getBuffer(i);
+
+            if (!MeshOperations::checkMeshNormals(buffer)) {
+                infostream << "MeshRenderCAO: recalculating normals for mesh "
+                    << m_prop.mesh << std::endl;
+                MeshOperations::recalculateNormals(buffer, true, false);
+            }
+
+            MeshOperations::scaleMesh(buffer, m_prop.visual_size);
+            MeshOperations::colorizeMesh(buffer, img::white);
+        }
+    }
+    m_cache->cacheResource<Model>(ResourceType::MODEL, m_model);
+}
+
+void MeshRenderCAO::updateAppearance(std::string mod)
+{
+    for (u32 i = 0; i < m_model->getMesh()->getBufferLayersCount(0); ++i) {
+        std::string texturestring = m_prop.textures[i];
+        if (texturestring.empty())
+            continue; // Empty texture string means don't modify that material
+        texturestring += mod;
+
+        updateLayerUVs(texturestring, i);
+
+        auto layer = m_model->getMesh()->getBufferLayer(0, i);
+
+        if (m_prop.backface_culling)
+            layer.first->material_flags |= MATERIAL_FLAG_BACKFACE_CULLING;
+        else
+            layer.first->material_flags &= ~MATERIAL_FLAG_BACKFACE_CULLING;
+    }
+}
+
+void WieldItemRenderCAO::addMesh()
+{
+    /*if (m_prop.visual == "wielditem" || m_prop.visual == "item") {
+        grabMatrixNode();
+        ItemStack item;
+        if (m_prop.wield_item.empty()) {
+            // Old format, only textures are specified.
+            infostream << "textures: " << m_prop.textures.size() << std::endl;
+            if (!m_prop.textures.empty()) {
+                infostream << "textures[0]: " << m_prop.textures[0]
+                    << std::endl;
+                IItemDefManager *idef = m_client->idef();
+                item = ItemStack(m_prop.textures[0], 1, 0, idef);
+            }
+        } else {
+            infostream << "serialized form: " << m_prop.wield_item << std::endl;
+            item.deSerialize(m_prop.wield_item, m_client->idef());
+        }
+        m_wield_meshnode = new WieldMeshSceneNode(m_smgr, -1);
+        m_wield_meshnode->setItem(item, m_client,
+            (m_prop.visual == "wielditem"));
+
+        m_wield_meshnode->setScale(m_prop.visual_size / 2.0f);
+    } else {
+        infostream<<"GenericCAO::addToScene(): \""<<m_prop.visual
+                <<"\" not supported"<<std::endl;
+    }*/
 }

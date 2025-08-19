@@ -1,5 +1,6 @@
 #include "genericCAO.h"
 #include <Render/DrawContext.h>
+#include "client/render/tilelayer.h"
 
 class Nametag;
 class RenderSystem;
@@ -11,13 +12,22 @@ class BoneAnimation;
 // CAO able to be rendered and animated
 class RenderCAO : public GenericCAO
 {
-private:
+protected:
     RenderSystem *m_rndsys;
     ResourceCache *m_cache;
 
-    aabbf m_selection_box = aabbf(-BS/3.,-BS/3.,-BS/3., BS/3.,BS/3.,BS/3.);
-
+    AnimationManager *m_anim_mgr;
     Model *m_model = nullptr;
+    TileLayer m_tile_layer;
+
+    // stores texture modifier before punch update
+    std::string m_previous_texture_modifier = "";
+    // last applied texture modifier
+    std::string m_current_texture_modifier = "";
+
+    void updateLayerUVs(std::string new_texture, u8 layer_id);
+private:
+    aabbf m_selection_box = aabbf(-BS/3.,-BS/3.,-BS/3., BS/3.,BS/3.,BS/3.);
 
     Nametag *m_nametag = nullptr;
     std::optional<v3f> m_marker;
@@ -29,10 +39,6 @@ private:
 	bool m_tx_select_horiz_by_yawpitch = false;
 
 	float m_reset_textures_timer = -1.0f;
-	// stores texture modifier before punch update
-	std::string m_previous_texture_modifier = "";
-	// last applied texture modifier
-	std::string m_current_texture_modifier = "";
 	bool m_visuals_expired = false;
 	float m_step_distance_counter = 0.0f;
     img::color8 m_last_light = img::white;
@@ -47,6 +53,8 @@ private:
     ItemGroupList m_armor_groups;
 
     virtual bool visualExpiryRequired(const ObjectProperties &newprops) = 0;
+
+    void initTileLayer();
 
 public:
     RenderCAO(Client *client, ClientEnvironment *env);
@@ -116,11 +124,11 @@ public:
 	 * for at least 3 vectors. */
 	u16 getLightPosition(v3s16 *pos);
 
+    void setNodeLight();
+
 	void updateNametag();
 
 	void updateMarker();
-
-	void updateNodePos();
 
     void updateTexturePos() {}
 
@@ -132,9 +140,9 @@ public:
 
     void setAnimationSpeed(f32 speed);
 
-    void updateBones(f32 time);
+    void updateBones(f32 dtime);
 
-    void updateMeshCulling(render::DrawContext *ctxt);
+    void updateMeshCulling();
 
     void processMessage(const std::string &data) override;
     bool directReportPunch(v3f dir, const ItemStack *punchitem=NULL,
@@ -147,3 +155,55 @@ public:
         return m_prop.infotext;
     }
 };
+
+class SpriteRenderCAO : public RenderCAO
+{
+public:
+    SpriteRenderCAO(Client *client, ClientEnvironment *env)
+        : RenderCAO(client, env)
+    {}
+
+    void addMesh() override;
+    void updateAppearance(std::string mod) override;
+};
+
+class UprightSpriteRenderCAO : public RenderCAO
+{
+    UprightSpriteRenderCAO(Client *client, ClientEnvironment *env)
+        : RenderCAO(client, env)
+    {}
+
+    void addMesh() override;
+    void updateAppearance(std::string mod) override;
+};
+
+class CubeRenderCAO : public RenderCAO
+{
+    CubeRenderCAO(Client *client, ClientEnvironment *env)
+        : RenderCAO(client, env)
+    {}
+
+    void addMesh() override;
+    void updateAppearance(std::string mod) override;
+};
+
+class MeshRenderCAO : public RenderCAO
+{
+    MeshRenderCAO(Client *client, ClientEnvironment *env)
+        : RenderCAO(client, env)
+    {}
+
+    void addMesh() override;
+    void updateAppearance(std::string mod) override;
+};
+
+class WieldItemRenderCAO : public RenderCAO
+{
+    WieldItemRenderCAO(Client *client, ClientEnvironment *env)
+        : RenderCAO(client, env)
+    {}
+
+    void addMesh() override;
+    void updateAppearance(std::string mod) override {};
+};
+

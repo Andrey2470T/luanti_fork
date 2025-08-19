@@ -58,17 +58,6 @@ Model::Model(AnimationManager *_mgr, v3f pos, const std::vector<std::shared_ptr<
     mesh = std::make_unique<LayeredMesh>(v3f(), pos, vType);
     mesh->addNewBuffer(new MeshBuffer(true, vType));
 
-    /*std::shared_ptr<TileLayer> layer;
-    layer->alpha_discard = 1;
-    layer->material_flags = MATERIAL_FLAG_TRANSPARENT;
-    layer->use_default_shader = false;
-
-    std::string shadername = has_skeleton ? "object_skinned" : "object";
-    layer->shader = cache->getOrLoad<render::Shader>(ResourceType::SHADER, shadername);
-
-    // Assume that this is extremely low possible for the model to have > 2 milliards vertices
-    mesh->addNewBuffer(layer, new MeshBuffer(true, vType));*/
-
     // process meshes
     u32 curOffset = 0;
     for (u8 i = 0; i < scene->mNumMaterials; i++) {

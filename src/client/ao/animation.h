@@ -140,9 +140,9 @@ class BoneAnimation {
     f32 Speed = 15.0f;
     bool Looped = false;
 
-    f32 lastTime = 0.0f;
-
     f32 curAnimTime = 0.0f;
+
+    bool animStarted = false;
 public:
     BoneAnimation() = default;
 
@@ -217,14 +217,22 @@ public:
         AnimationKeys.Rotations.InterpMode = rotInterp;
         AnimationKeys.Scales.InterpMode = scaleInterp;
     }
-    // 'time' is the global time
-    void setStartTime(f32 time)
+
+    bool isStarted() const
     {
-        lastTime = time;
+        return animStarted;
+    }
+    void start()
+    {
         curAnimTime = 1.0f / Speed * Range.X;
+        animStarted = true;
+    }
+    void stop()
+    {
+        animStarted = false;
     }
     // Update bones transforms corresponding to the given timestamp
-    bool animateBones(f32 time);
+    bool animateBones(f32 dtime);
 };
 
 class DataTexture;

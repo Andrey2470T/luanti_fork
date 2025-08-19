@@ -99,6 +99,6 @@ public:
 	*/
 	//static void setMaterialFilters(video::SMaterialLayer &tex, bool bilinear, bool trilinear, bool anisotropic);
 
-    void recalculateNormalsT(MeshBuffer *mesh, bool smooth = false, bool angleWeighted = false);
+    static void recalculateNormals(MeshBuffer *mesh, bool smooth = false, bool angleWeighted = false);
 
 };

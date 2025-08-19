@@ -5,14 +5,12 @@
 #include "skeleton.h"
 
 // Update bones transforms corresponding to the given timestamp
-bool BoneAnimation::animateBones(f32 time)
+bool BoneAnimation::animateBones(f32 dtime)
 {
-    f32 dtime = time - lastTime;
-
+    if (!animStarted)
+        return false;
     if (dtime < 1.0f / Speed)
         return false;
-
-    lastTime = time;
 
     f32 maxAnimTime = Range.Y == 0 ? AnimationKeys.getAnimationTime() : 1.0f / Speed * Range.Y;
 

@@ -4,6 +4,7 @@
 #include <BasicIncludes.h>
 #include <Render/VertexTypeDescriptor.h>
 #include "client/render/camera.h"
+#include <Utils/Quaternion.h>
 
 #define HAS_HW(layer) \
     layer->material_flags & MATERIAL_FLAG_HARDWARE_COLORIZED
@@ -50,6 +51,8 @@ class LayeredMesh
     f32 radius_sq = 0.0f;
     v3f center_pos; // relative BS coords
     v3f abs_pos; // absolute BS coords
+
+    v3f abs_rot;
 	
 	render::VertexTypeDescriptor basicVertexType;
 
@@ -76,6 +79,11 @@ public:
     v3f getBoundingSphereCenter() const
     {
         return abs_pos + center_pos;
+    }
+
+    v3f &getRotation()
+    {
+        return abs_rot;
     }
 
     u8 getBuffersCount() const
@@ -112,6 +120,7 @@ public:
     void addNewBuffer(MeshBuffer *buffer)
     {
         buffers.emplace_back(std::unique_ptr<MeshBuffer>(buffer));
+        recalculateBoundingRadius();
     }
     void addNewLayer(std::shared_ptr<TileLayer> layer, const LayeredMeshPart &mesh_p)
     {

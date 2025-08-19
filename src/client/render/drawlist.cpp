@@ -1,6 +1,7 @@
 #include "drawlist.h"
 #include "client/client.h"
 #include "client/mesh/layeredmesh.h"
+#include "client/player/playercamera.h"
 #include "client/render/tilelayer.h"
 #include "settings.h"
 #include "util/numeric.h"
@@ -218,6 +219,7 @@ void DistanceSortedDrawList::render()
             matrix4 t;
             v3f center = mesh_l.second->getBoundingSphereCenter();
             t.setTranslation(center - intToFloat(cameraOffset, BS));
+            t.setRotationDegrees(mesh_l.second->getRotation());
             rnd->setTransformMatrix(TMatrix::World, t);
 
             auto &lp = mesh_l.first;

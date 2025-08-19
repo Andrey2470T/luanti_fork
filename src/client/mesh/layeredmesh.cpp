@@ -38,21 +38,6 @@ std::vector<MeshLayer> LayeredMesh::getAllLayers() const
     return all_layers;
 }
 
-void LayeredMesh::addNewBuffer(MeshBuffer *buffer)
-{
-    buffers.emplace_back(std::unique_ptr<MeshBuffer>(buffer));
-
-    LayeredMeshPart mesh_p;
-    mesh_p.buffer_id = buffers.size()-1;
-    mesh_p.layer_id = 0;
-    mesh_p.offset = 0;
-    mesh_p.count = buffer->getIndexCount();
-
-    layers.emplace_back(layer, mesh_p);
-
-    recalculateBoundingRadius();
-}
-
 MeshLayer &LayeredMesh::findLayer(std::shared_ptr<TileLayer> layer, render::VertexTypeDescriptor vType,
     u32 vertexCount, u32 indexCount)
 {
