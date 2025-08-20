@@ -8,9 +8,11 @@
 #include "secondstage.h"
 #include "client/shadows/dynamicShadowsRender.h"
 #include "log.h"
+#include "client/client.h"
+#include "client/ui/gameui.h"
 
 PipelineCore::PipelineCore(Client *_client, bool enable_shadows)
-    : client(_client), rndSystem(client->getRenderSystem()), pipeline(new Pipeline())
+    : client(_client), rndSystem(client->getRenderSystem()), pipeline(new RenderPipeline())
 {
     std::string stereoMode = g_settings->get("3d_mode");
 
@@ -39,7 +41,7 @@ PipelineCore::PipelineCore(Client *_client, bool enable_shadows)
 void PipelineCore::run(img::color8 skycolor, bool show_hud,
          bool draw_wield_tool, bool draw_crosshair)
 {
-	Hud *hud = rndSystem->getHud();
+    Hud *hud = rndSystem->getGameUI()->getHud();
 	ShadowRenderer *shadow_renderer = rndSystem->getShadowRenderer();
 	v2u wndsize = rndSystem->getWindowSize();
 	

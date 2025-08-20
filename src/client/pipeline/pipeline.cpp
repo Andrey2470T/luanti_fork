@@ -11,6 +11,8 @@
 #include <Render/DrawContext.h>
 #include "log.h"
 #include <Main/MainWindow.h>
+#include "client/render/rendersystem.h"
+#include "client/render/renderer.h"
 
 TextureBuffer::~TextureBuffer()
 {
@@ -131,10 +133,8 @@ bool TextureBuffer::ensureTexture(render::Texture **texture, const TextureDefini
         if (!definition.cubemap) {
             if (!definition.clear)
                 *texture = (render::Texture *)new render::Texture2D(definition.name, size.X, size.Y, definition.format, definition.msaa);
-            else {
-                img::Image *img = new img::Image(definition.format, size.X, size.Y);
-                *texture = (render::Texture *)new render::Texture2D(definition.name, std::unique_ptr<img::Image>(img));
-            }
+            else
+                *texture = (render::Texture *)new render::Texture2D(definition.name, std::make_unique<img::Image>(definition.format, size.X, size.Y)));
         }
         else {
             if (!definition.clear)
@@ -203,8 +203,8 @@ void TextureBufferOutput::activate(PipelineContext &context)
     auto ctxt = context.client->getRenderSystem()->getRenderer()->getContext();
     u16 clear = m_clear ? render::CBF_COLOR | render::CBF_DEPTH | render::CBF_STENCIL : render::CBF_NONE;
     ctxt->clearBuffers(clear, context.clear_color);
-    ctxt->setFrameBuffer(render_target);
-    ctxt->setViewPort(recti(0, 0, size.X, size.Y));
+    ctxt->setFrameBuffer(render_target.get());
+    ctxt->setViewportSize(recti(0, 0, size.X, size.Y));
 
 	RenderTarget::activate(context);
 }
@@ -232,7 +232,7 @@ void ScreenTarget::activate(PipelineContext &context)
     auto ctxt = context.client->getRenderSystem()->getRenderer()->getContext();
     u16 clear = m_clear ? render::CBF_COLOR | render::CBF_DEPTH | render::CBF_STENCIL : render::CBF_NONE;
     ctxt->clearBuffers(clear, context.clear_color);
-    ctxt->setViewPort(recti(0, 0, size.X, size.Y));
+    ctxt->setViewportSize(recti(0, 0, size.X, size.Y));
 
 	RenderTarget::activate(context);
 }
@@ -270,17 +270,17 @@ void SwapTexturesStep::run(PipelineContext &context)
 	buffer->swapTextures(texture_a, texture_b);
 }
 
-RenderSource *Pipeline::getInput()
+RenderSource *RenderPipeline::getInput()
 {
 	return &m_input;
 }
 
-RenderTarget *Pipeline::getOutput()
+RenderTarget *RenderPipeline::getOutput()
 {
 	return &m_output;
 }
 
-void Pipeline::run(PipelineContext &context)
+void RenderPipeline::run(PipelineContext &context)
 {
     v2u original_size = context.target_size;
     context.target_size = v2u(original_size.X * scale.X, original_size.Y * scale.Y);
@@ -294,12 +294,12 @@ void Pipeline::run(PipelineContext &context)
 	context.target_size = original_size;
 }
 
-void Pipeline::setRenderSource(RenderSource *source)
+void RenderPipeline::setRenderSource(RenderSource *source)
 {
 	m_input.setRenderSource(source);
 }
 
-void Pipeline::setRenderTarget(RenderTarget *target)
+void RenderPipeline::setRenderTarget(RenderTarget *target)
 {
 	m_output.setRenderTarget(target);
 }

@@ -19,8 +19,10 @@ class AtlasPool;
 class FontManager;
 class Renderer;
 class Camera;
-class PipelineFactory;
-class CameraManager;
+class PipelineCore;
+//class CameraManager;
+class GameUI;
+class Inventory;
 	
 class RenderSystem
 {
@@ -32,10 +34,11 @@ class RenderSystem
     std::unique_ptr<Renderer> renderer;
 
     std::unique_ptr<LoadScreen> load_screen;
-    std::unique_ptr<PipelineFactory> pp_factory;
-    std::unique_ptr<CameraManager> cam_mgr;
+    std::unique_ptr<PipelineCore> pp_core;
+    //std::unique_ptr<CameraManager> cam_mgr;
 	std::unique_ptr<main::MainWindow> window;
 	
+    std::unique_ptr<GameUI> gameui;
 	//std::unique_ptr<GUIEnvironment> guienv;
 	std::unique_ptr<ShadowRenderer> shadow_renderer;
 
@@ -49,7 +52,7 @@ class RenderSystem
     f32 gui_scaling;
     bool menu_clouds;
 public:
-    RenderSystem(Client *_client, ResourceCache *_cache, MyEventReceiver *_receiver);
+    RenderSystem(Client *_client, ResourceCache *_cache, MyEventReceiver *_receiver, Inventory *inv);
     ~RenderSystem();
 
     main::MainWindow *getWindow() const
@@ -64,14 +67,18 @@ public:
     {
         return load_screen.get();
     }
-    PipelineFactory *getPipelineFactory() const
+    PipelineCore *getPipelineCore() const
     {
-        return pp_factory.get();
+        return pp_core.get();
     }
-    CameraManager *getCameraManager() const
+    GameUI *getGameUI() const
+    {
+        return gameui.get();
+    }
+    /*CameraManager *ge tCameraManager() const
     {
         return cam_mgr.get();
-    }
+    }*/
     /*GUIEnvironment *getGUIEnvironment() const
     {
         return guienv.get();
@@ -122,8 +129,8 @@ public:
     }
     void setWindowIcon();
 
-    void setActivePipeline(RenderPipeline *pipeline);
-    void setActiveCamera(Camera *camera);
+    void setPipeline(RenderPipeline *pipeline);
+    //void setActiveCamera(Camera *camera);
 
 	void drawScene(bool show_hud,
         bool draw_wield_tool, bool draw_crosshair);

@@ -9,11 +9,12 @@
 #include "porting.h"
 #include "client/media/resource.h"
 #include <FilesystemVersions.h>
-#include "client/pipeline/factory.h"
+#include "client/pipeline/core.h"
+#include "client/ui/gameui.h"
 
 const img::color8 RenderSystem::menu_sky_color = img::color8(img::PF_RGBA8, 140, 186, 250, 255);
 
-RenderSystem::RenderSystem(Client *_client, ResourceCache *_cache, MyEventReceiver *_receiver)
+RenderSystem::RenderSystem(Client *_client, ResourceCache *_cache, MyEventReceiver *_receiver, Inventory *inv)
     : client(_client), cache(_cache), receiver(_receiver)
 {
     initWindow();
@@ -23,7 +24,8 @@ RenderSystem::RenderSystem(Client *_client, ResourceCache *_cache, MyEventReceiv
     auto glParams = window->getGLParams();
     renderer = std::make_unique<Renderer>(cache, recti(0, 0, viewport.X, viewport.Y), glParams.maxTextureUnits);
     load_screen = std::make_unique<LoadScreen>(cache, this, fmgr);
-    pp_factory = std::make_unique<PipelineFactory>(this, g_settings->getBool("enable_dynamic_shadows"));
+    pp_core = std::make_unique<PipelineCore>(client, g_settings->getBool("enable_dynamic_shadows"));
+    gameui = std::make_unique<GameUI>(client, inv);
 
     basePool = std::make_unique<AtlasPool>(AtlasType::RECTPACK2D, "Basic", cache, glParams.maxTextureSize, true);
     guiPool = std::make_unique<AtlasPool>(AtlasType::RECTPACK2D, "GUI", cache, glParams.maxTextureSize, false);

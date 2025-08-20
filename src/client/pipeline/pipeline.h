@@ -4,6 +4,7 @@
 #pragma once
 
 #include <BasicIncludes.h>
+#include <Image/Color.h>
 
 class RenderSource;
 class RenderTarget;
@@ -305,7 +306,7 @@ private:
  *
  * RenderPipeline also implements @see RenderStep, allowing for nesting of the pipelines.
  */
-class Pipeline : public RenderStep
+class RenderPipeline : public RenderStep
 {
 public:
 	/**

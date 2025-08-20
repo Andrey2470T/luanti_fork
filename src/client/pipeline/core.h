@@ -2,20 +2,20 @@
 
 #include "client/render/rendersystem.h"
 
-class Pipeline;
+class RenderPipeline;
 
 class PipelineCore
 {
 	Client *client;
     RenderSystem *rndSystem;
-    std::unique_ptr<Pipeline> pipeline;
+    std::unique_ptr<RenderPipeline> pipeline;
 
     v2f virtual_size_scale{1.0f};
     v2u virtual_size{0, 0};
 public:
     PipelineCore(Client *_client, bool enable_shadows);
 
-    Pipeline *getPipeline() const
+    RenderPipeline *getPipeline() const
     {
         return pipeline.get();
     }
