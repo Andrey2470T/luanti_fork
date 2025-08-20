@@ -10,6 +10,6 @@ out vec2 vUV0;
 void main(void)
 {
 	vUV0 = uv;
-	gl_Position = mWorld * pos;
+	gl_Position = mWorld * vec4(pos, 0.0, 1.0);
 	vVertexColor = color;
 }

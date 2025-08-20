@@ -10,7 +10,7 @@ out vec4 vVertexColor;
 
 void main()
 {
-	gl_Position = mProjection * vec4(pos, 1.0, 1.0);
+	gl_Position = mProjection * vec4(pos, 0.0, 1.0);
 	gl_PointSize = mThickness;
 	vUV0 = uv;
 	vVertexColor = color.bgra;

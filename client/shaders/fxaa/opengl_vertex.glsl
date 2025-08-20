@@ -1,15 +1,19 @@
+layout (location = 0) in vec2 pos;
+layout (location = 1) in vec4 color;
+layout (location = 2) in vec2 uv;
+
 uniform vec2 texelSize0;
 
 #ifdef GL_ES
-varying mediump vec2 varTexCoord;
+out mediump vec2 vUV;
 #else
-centroid varying vec2 varTexCoord;
+centroid out vec2 vUV;
 #endif
 
-varying vec2 sampleNW;
-varying vec2 sampleNE;
-varying vec2 sampleSW;
-varying vec2 sampleSE;
+out vec2 sampleNW;
+out vec2 sampleNE;
+out vec2 sampleSW;
+out vec2 sampleSE;
 
 /*
 Based on
@@ -18,10 +22,10 @@ Portions Copyright (c) 2011 by Armin Ronacher.
 */
 void main(void)
 {
-	varTexCoord.st = inTexCoord0.st;
+	vUV = uv;
 	sampleNW = varTexCoord.st + vec2(-1.0, -1.0) * texelSize0;
 	sampleNE = varTexCoord.st + vec2(1.0, -1.0) * texelSize0;
 	sampleSW = varTexCoord.st + vec2(-1.0, 1.0) * texelSize0;
 	sampleSE = varTexCoord.st + vec2(1.0, 1.0) * texelSize0;
-	gl_Position = inVertexPosition;
+	gl_Position = vec4(pos, 0.0, 1.0);
 }

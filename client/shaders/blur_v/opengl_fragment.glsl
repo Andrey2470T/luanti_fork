@@ -6,9 +6,9 @@ uniform mediump float bloomRadius;
 uniform mat3 bloomBlurWeights;
 
 #ifdef GL_ES
-varying mediump vec2 varTexCoord;
+in mediump vec2 vUV;
 #else
-centroid varying vec2 varTexCoord;
+centroid in vec2 vUV;
 #endif
 
 // smoothstep - squared
@@ -18,12 +18,14 @@ float smstsq(float f)
 	return f;
 }
 
+out vec4 outColor;
+
 void main(void)
 {
 	// kernel distance and linear size
 	mediump float n = 2. * bloomRadius + 1.;
 
-	vec2 uv = varTexCoord.st - vec2(0., bloomRadius * texelSize0.y);
+	vec2 uv = vUV - vec2(0., bloomRadius * texelSize0.y);
 	vec4 color = vec4(0.);
 	mediump float sum = 0.;
 	for (mediump float i = 0.; i < n; i++) {
@@ -33,5 +35,5 @@ void main(void)
 		uv += vec2(0., texelSize0.y);
 	}
 	color /= sum;
-	gl_FragColor = vec4(color.rgb, 1.0); // force full alpha to avoid holes in the image.
+	outColor = vec4(color.rgb, 1.0); // force full alpha to avoid holes in the image.
 }

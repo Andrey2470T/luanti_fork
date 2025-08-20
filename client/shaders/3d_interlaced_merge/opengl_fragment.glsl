@@ -6,18 +6,19 @@ uniform sampler2D textureFlags;
 #define rightImage normalTexture
 #define maskImage textureFlags
 
-varying mediump vec4 varTexCoord;
+in mediump vec2 vUV;
+
+out vec4 outColor;
 
 void main(void)
 {
-	vec2 uv = varTexCoord.st;
-	vec4 left = texture2D(leftImage, uv).rgba;
-	vec4 right = texture2D(rightImage, uv).rgba;
-	vec4 mask = texture2D(maskImage, uv).rgba;
+	vec4 left = texture2D(leftImage, vUV).rgba;
+	vec4 right = texture2D(rightImage, vUV).rgba;
+	vec4 mask = texture2D(maskImage, vUV).rgba;
 	vec4 color;
 	if (mask.r > 0.5)
 		color = right;
 	else
 		color = left;
-	gl_FragColor = color;
+	outColor = color;
 }

@@ -3,15 +3,15 @@
 uniform sampler2D rendered;
 uniform vec2 texelSize0;
 
-varying vec2 sampleNW;
-varying vec2 sampleNE;
-varying vec2 sampleSW;
-varying vec2 sampleSE;
+in vec2 sampleNW;
+in vec2 sampleNE;
+in vec2 sampleSW;
+in vec2 sampleSE;
 
 #ifdef GL_ES
-varying mediump vec2 varTexCoord;
+in mediump vec2 vUV;
 #else
-centroid varying vec2 varTexCoord;
+centroid in vec2 vUV;
 #endif
 
 /**
@@ -107,10 +107,10 @@ vec4 fxaa(sampler2D tex, vec2 fragCoord, vec2 inverseVP,
     return color;
 }
 
+out vec4 outColor;
+
 void main(void)
 {
-	vec2 uv = varTexCoord.st;
-
-	gl_FragColor = fxaa(rendered, uv, texelSize0,
-		sampleNW, sampleNE, sampleSW, sampleSE, uv);
+	outColor = fxaa(rendered, vUV, texelSize0,
+		sampleNW, sampleNE, sampleSW, sampleSE, vUV);
 }

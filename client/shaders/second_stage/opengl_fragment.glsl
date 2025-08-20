@@ -22,13 +22,13 @@ uniform lowp float bloomIntensity;
 uniform lowp float saturation;
 
 #ifdef GL_ES
-varying mediump vec2 varTexCoord;
+in mediump vec2 vUV;
 #else
-centroid varying vec2 varTexCoord;
+centroid in vec2 vUV;
 #endif
 
 #ifdef ENABLE_AUTO_EXPOSURE
-varying float exposure; // linear exposure factor, see vertex shader
+in float exposure; // linear exposure factor, see vertex shader
 #endif
 
 #ifdef ENABLE_BLOOM
@@ -103,24 +103,25 @@ vec3 screen_space_dither(highp vec2 frag_coord) {
 }
 #endif
 
+out vec4 outColor;
+
 void main(void)
 {
-	vec2 uv = varTexCoord.st;
 #ifdef ENABLE_SSAA
 	vec4 color = vec4(0.);
 	for (float dx = 1.; dx < SSAA_SCALE; dx += 2.)
 	for (float dy = 1.; dy < SSAA_SCALE; dy += 2.)
-		color += texture2D(rendered, uv + texelSize0 * vec2(dx, dy)).rgba;
+		color += texture2D(rendered, vUV + texelSize0 * vec2(dx, dy)).rgba;
 	color /= SSAA_SCALE * SSAA_SCALE / 4.;
 #else
-	vec4 color = texture2D(rendered, uv).rgba;
+	vec4 color = texture2D(rendered, vUV).rgba;
 #endif
 
 	// translate to linear colorspace (approximate)
 	color.rgb = pow(color.rgb, vec3(2.2));
 
 #ifdef ENABLE_BLOOM_DEBUG
-	if (uv.x > 0.5 || uv.y > 0.5)
+	if (vUV.x > 0.5 || vUV.y > 0.5)
 #endif
 	{
 		color.rgb *= exposureParams.compensationFactor;
@@ -130,7 +131,7 @@ void main(void)
 	}
 
 #ifdef ENABLE_BLOOM
-	color = applyBloom(color, uv);
+	color = applyBloom(color, vUV);
 #endif
 
 
@@ -140,7 +141,7 @@ void main(void)
 	color.rgb = pow(color.rgb, vec3(1.0 / 2.2));
 
 #ifdef ENABLE_BLOOM_DEBUG
-	if (uv.x > 0.5 || uv.y > 0.5)
+	if (vUV.x > 0.5 || vUV.y > 0.5)
 #endif
 	{
 #if ENABLE_TONE_MAPPING
@@ -155,5 +156,5 @@ void main(void)
 	color.rgb += screen_space_dither(gl_FragCoord.xy);
 #endif
 
-	gl_FragColor = vec4(color.rgb, 1.0); // force full alpha to avoid holes in the image.
+	outColor = vec4(color.rgb, 1.0); // force full alpha to avoid holes in the image.
 }

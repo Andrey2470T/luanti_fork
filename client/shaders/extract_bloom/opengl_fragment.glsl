@@ -9,19 +9,20 @@ uniform mediump float bloomStrength;
 uniform ExposureParams exposureParams;
 
 #ifdef GL_ES
-varying mediump vec2 varTexCoord;
+in mediump vec2 vUV;
 #else
-centroid varying vec2 varTexCoord;
+centroid in vec2 vUV;
 #endif
 
 #ifdef ENABLE_AUTO_EXPOSURE
-varying float exposure; // linear exposure factor, see vertex shader
+in float exposure; // linear exposure factor, see vertex shader
 #endif
+
+out vec4 outColor;
 
 void main(void)
 {
-	vec2 uv = varTexCoord.st;
-	vec3 color = texture2D(rendered, uv).rgb;
+	vec3 color = texture2D(rendered, vUV).rgb;
 	// translate to linear colorspace (approximate)
 #ifdef GL_ES
 	// clamp color to [0,1] range in lieu of centroids
@@ -36,5 +37,5 @@ void main(void)
 	color *= exposure;
 #endif
 
-	gl_FragColor = vec4(color, 1.0); // force full alpha to avoid holes in the image.
+	outColor = vec4(color, 1.0); // force full alpha to avoid holes in the image.
 }
