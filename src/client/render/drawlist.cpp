@@ -23,8 +23,8 @@ static const std::string ClientMap_settings[] = {
     "enable_translucent_foliage"
 };
 
-DistanceSortedDrawList::DistanceSortedDrawList(Client *_client, DrawControl _draw_control)
-    : client(_client), draw_control(_draw_control)
+DistanceSortedDrawList::DistanceSortedDrawList(Client *_client)
+    : client(_client)
 {
     for (const auto &name : ClientMap_settings)
         g_settings->registerChangedCallback(name, on_settings_changed, this);

@@ -165,6 +165,15 @@ void Hud::removeHUDElement(u32 id)
     hudsprites.erase(found_elem);
 }
 
+void Hud::render()
+{
+    if (!crosshair_hidden)
+        crosshair->draw();
+
+    for (auto &sprite : hudsprites)
+        sprite.second->draw();
+}
+
 void Hud::initCrosshair()
 {
     v3f cross_color = g_settings->getV3F("crosshair_color").value_or(v3f());

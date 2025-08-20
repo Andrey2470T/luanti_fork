@@ -12,48 +12,17 @@
 #include "client/minimap.h"
 #include "client/shadows/dynamicshadowsrender.h"
 
-/// Draw3D pipeline step
-void Draw3D::run(PipelineContext &context)
-{
-	if (m_target)
-		m_target->activate(context);
-
-	context.device->getSceneManager()->drawAll();
-	context.device->getVideoDriver()->setTransform(video::ETS_WORLD, core::IdentityMatrix);
-	if (!context.show_hud)
-		return;
-	context.hud->drawBlockBounds();
-	context.hud->drawSelectionMesh();
-}
-
-void DrawWield::run(PipelineContext &context)
+/*void DrawWield::run(PipelineContext &context)
 {
 	if (m_target)
 		m_target->activate(context);
 
 	if (context.draw_wield_tool)
 		context.client->getCamera()->drawWieldedTool();
-}
-
-void DrawHUD::run(PipelineContext &context)
-{
-	if (context.show_hud) {
-		if (context.shadow_renderer)
-			context.shadow_renderer->drawDebug();
-
-		context.hud->resizeHotbar();
-
-		if (context.draw_crosshair)
-			context.hud->drawCrosshair();
-
-		context.hud->drawLuaElements(context.client->getCamera()->getOffset());
-		context.client->getCamera()->drawNametags();
-	}
-	context.device->getGUIEnvironment()->drawAll();
-}
+}*/
 
 
-void MapPostFxStep::setRenderTarget(RenderTarget * _target)
+/*void MapPostFxStep::setRenderTarget(RenderTarget * _target)
 {
 	target = _target;
 }
@@ -64,14 +33,7 @@ void MapPostFxStep::run(PipelineContext &context)
 		target->activate(context);
 
 	context.client->getEnv().getClientMap().renderPostFx(context.client->getCamera()->getCameraMode());
-}
-
-void RenderShadowMapStep::run(PipelineContext &context)
-{
-	// This is necessary to render shadows for animations correctly
-	context.device->getSceneManager()->getRootSceneNode()->OnAnimate(context.device->getTimer()->getTime());
-	context.shadow_renderer->update();
-}
+}*/
 
 // class UpscaleStep
 
@@ -82,20 +44,6 @@ void UpscaleStep::run(PipelineContext &context)
 	context.device->getVideoDriver()->draw2DImage(lowres,
 			core::rect<s32>(0, 0, context.target_size.X, context.target_size.Y),
 			core::rect<s32>(0, 0, lowres->getSize().Width, lowres->getSize().Height));
-}
-
-std::unique_ptr<RenderStep> create3DStage(Client *client, v2f scale)
-{
-	RenderStep *step = new Draw3D();
-	if (g_settings->getBool("enable_post_processing")) {
-		RenderPipeline *pipeline = new RenderPipeline();
-		pipeline->addStep(pipeline->own(std::unique_ptr<RenderStep>(step)));
-
-		auto effect = addPostProcessing(pipeline, step, scale, client);
-		effect->setRenderTarget(pipeline->getOutput());
-		step = pipeline;
-	}
-	return std::unique_ptr<RenderStep>(step);
 }
 
 static v2f getDownscaleFactor()
@@ -151,23 +99,4 @@ void populatePlainPipeline(RenderPipeline *pipeline, Client *client)
 	step3D->setRenderTarget(pipeline->createOwned<ScreenTarget>());
 
 	pipeline->addStep<DrawHUD>();
-}
-
-video::ECOLOR_FORMAT selectColorFormat(video::IVideoDriver *driver)
-{
-	u32 bits = g_settings->getU32("post_processing_texture_bits");
-	if (bits >= 16 && driver->queryTextureFormat(video::ECF_A16B16G16R16F))
-		return video::ECF_A16B16G16R16F;
-	if (bits >= 10 && driver->queryTextureFormat(video::ECF_A2R10G10B10))
-		return video::ECF_A2R10G10B10;
-	return video::ECF_A8R8G8B8;
-}
-
-video::ECOLOR_FORMAT selectDepthFormat(video::IVideoDriver *driver)
-{
-	if (driver->queryTextureFormat(video::ECF_D24))
-		return video::ECF_D24;
-	if (driver->queryTextureFormat(video::ECF_D24S8))
-		return video::ECF_D24S8;
-	return video::ECF_D16; // fallback depth format
 }

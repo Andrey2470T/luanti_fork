@@ -38,16 +38,13 @@ PipelineCore::PipelineCore(Client *_client, bool enable_shadows)
     virtual_size = v2u(wndsize.X * virtual_size_scale.X, wndsize.Y * virtual_size_scale.Y);
 }
 
-void PipelineCore::run(img::color8 skycolor, bool show_hud,
-         bool draw_wield_tool, bool draw_crosshair)
+void PipelineCore::run(img::color8 skycolor, bool show_hud)
 {
     Hud *hud = rndSystem->getGameUI()->getHud();
 	ShadowRenderer *shadow_renderer = rndSystem->getShadowRenderer();
 	v2u wndsize = rndSystem->getWindowSize();
 	
     PipelineContext context(client, hud, shadow_renderer, skycolor, wndsize);
-    context.draw_crosshair = draw_crosshair;
-    context.draw_wield_tool = draw_wield_tool;
     context.show_hud = show_hud;
 
     pipeline->reset(context);

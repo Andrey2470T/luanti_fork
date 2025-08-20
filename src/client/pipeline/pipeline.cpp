@@ -97,9 +97,6 @@ void TextureBuffer::swapTextures(u8 texture_a, u8 texture_b)
 {
 	assert(m_definitions[texture_a].valid && m_definitions[texture_b].valid);
     std::swap(m_textures[texture_a], m_textures[texture_b]);
-    /*render::Texture *temp = m_textures[texture_a];
-	m_textures[texture_a] = m_textures[texture_b];
-	m_textures[texture_b] = temp;*/
 }
 
 

@@ -61,6 +61,10 @@ void Camera::updateMatrices()
     recalculateProjectionMatrix();
     recalculateViewArea();
     updatePlanes();
+
+    m_world_matrix.makeIdentity();
+    m_world_matrix.setTranslation(m_position);
+    m_world_matrix.setRotationDegrees(m_rotation);
 }
 
 bool Camera::frustumCull(const v3f &position, f32 radiusSq) const

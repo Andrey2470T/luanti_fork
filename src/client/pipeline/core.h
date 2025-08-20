@@ -25,6 +25,5 @@ public:
         return virtual_size;
     }
 
-    void run(img::color8 skycolor, bool show_hud,
-        bool draw_wield_tool, bool draw_crosshair);
+    void run(img::color8 skycolor, bool show_hud);
 };

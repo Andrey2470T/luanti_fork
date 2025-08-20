@@ -20,7 +20,10 @@ class FontManager;
 class Renderer;
 class Camera;
 class PipelineCore;
-//class CameraManager;
+class DistanceSortedDrawList;
+class ParticleManager;
+class Sky;
+class Clouds;
 class GameUI;
 class Inventory;
 	
@@ -35,9 +38,13 @@ class RenderSystem
 
     std::unique_ptr<LoadScreen> load_screen;
     std::unique_ptr<PipelineCore> pp_core;
-    //std::unique_ptr<CameraManager> cam_mgr;
 	std::unique_ptr<main::MainWindow> window;
 	
+    std::unique_ptr<DistanceSortedDrawList> drawlist;
+    std::unique_ptr<ParticleManager> particle_manager;
+    std::unique_ptr<Sky> sky;
+    std::unique_ptr<Clouds> clouds;
+
     std::unique_ptr<GameUI> gameui;
 	//std::unique_ptr<GUIEnvironment> guienv;
 	std::unique_ptr<ShadowRenderer> shadow_renderer;
@@ -71,14 +78,26 @@ public:
     {
         return pp_core.get();
     }
+    DistanceSortedDrawList *getDrawList() const
+    {
+        return drawlist.get();
+    }
+    ParticleManager *getParticleManager() const
+    {
+        return particle_manager.get();
+    }
+    Sky *getSky() const
+    {
+        return sky.get();
+    }
+    Clouds *getClouds() const
+    {
+        return clouds.get();
+    }
     GameUI *getGameUI() const
     {
         return gameui.get();
     }
-    /*CameraManager *ge tCameraManager() const
-    {
-        return cam_mgr.get();
-    }*/
     /*GUIEnvironment *getGUIEnvironment() const
     {
         return guienv.get();
@@ -130,8 +149,6 @@ public:
     void setWindowIcon();
 
     void setPipeline(RenderPipeline *pipeline);
-    //void setActiveCamera(Camera *camera);
-
 	void drawScene(bool show_hud,
         bool draw_wield_tool, bool draw_crosshair);
 private:

@@ -6,6 +6,9 @@
 #include "anaglyph.h"
 #include "client/render/camera.h"
 #include <Render/DrawContext.h>
+#include "client/client.h"
+#include "client/render/rendersystem.h"
+#include "client/render/renderer.h"
 
 
 /// SetColorMaskStep step

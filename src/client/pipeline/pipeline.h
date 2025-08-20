@@ -38,25 +38,25 @@ struct PipelineContext
     v2u target_size;
 
 	bool show_hud {true};
-	bool draw_wield_tool {true};
-	bool draw_crosshair {true};
+    //bool draw_wield_tool {true};
+    //bool draw_crosshair {true};
 };
 
 /**
  * Base object that can be owned by Pipeline
  *
  */
-class PipelineObject
+class RenderPipelineObject
 {
 public:
-    virtual ~PipelineObject() = default;
+    virtual ~RenderPipelineObject() = default;
 	virtual void reset(PipelineContext &context) {}
 };
 
 /**
  * Represents a source of rendering information such as textures
  */
-class RenderSource : virtual public PipelineObject
+class RenderSource : virtual public RenderPipelineObject
 {
 public:
 	/**
@@ -74,7 +74,7 @@ public:
 /**
  *	Represents a render target (screen or framebuffer)
  */
-class RenderTarget : virtual public PipelineObject
+class RenderTarget : virtual public RenderPipelineObject
 {
 public:
 	/**
@@ -237,7 +237,7 @@ private:
 /**
  * Base class for rendering steps in the pipeline
  */
-class RenderStep : virtual public PipelineObject
+class RenderStep : virtual public RenderPipelineObject
 {
 public:
 	/**
@@ -320,22 +320,50 @@ public:
 		return step;
 	}
 
-	/**
-	 * Create and add a step managed by the pipeline and return a pointer
-	 * to the step for further configuration.
-	 *
-	 * @tparam T Type of the step to be added.
-	 * @tparam Args Types of the constructor parameters
-	 * @param args Constructor parameters
-	 * @return RenderStep* Pointer to the created step for further configuration.
-	 */
-	template<typename T, typename... Args>
-	T *addStep(Args&&... args) {
-		T* result = new T(std::forward<Args>(args)...);
-		m_objects.emplace_back(result);
-		addStep(result);
-		return result;
-	}
+    /**
+     * Capture ownership of a dynamically created @see RenderStep instance.
+     *
+     * RenderPipeline will delete the instance when the pipeline is destroyed.
+     *
+     * @param step reference to the instance.
+     * @return RenderStep* value of the 'step' parameter.
+     */
+    template<typename T>
+    T *own(std::unique_ptr<T> &&object)
+    {
+    T* result = object.release();
+        m_objects.push_back(std::unique_ptr<RenderPipelineObject>(result));
+        return result;
+    }
+
+    /**
+     * Create a new object that will be managed by the pipeline
+     *
+     * @tparam T type of the object to be created
+     * @tparam Args types of constructor arguments
+     * @param args constructor arguments
+     * @return T* pointer to the newly created object
+     */
+    template<typename T, typename... Args>
+    T *createOwned(Args&&... args) {
+        return own(std::make_unique<T>(std::forward<Args>(args)...));
+    }
+
+    /**
+     * Create and add a step managed by the pipeline and return a pointer
+     * to the step for further configuration.
+     *
+     * @tparam T Type of the step to be added.
+     * @tparam Args Types of the constructor parameters
+     * @param args Constructor parameters
+     * @return RenderStep* Pointer to the created step for further configuration.
+     */
+    template<typename T, typename... Args>
+    T *addStep(Args&&... args) {
+        T* result = own(std::make_unique<T>(std::forward<Args>(args)...));
+        addStep(result);
+        return result;
+    }
 
 	RenderSource *getInput();
 	RenderTarget *getOutput();
@@ -350,7 +378,7 @@ public:
 	virtual void setRenderTarget(RenderTarget *target) override;
 private:
 	std::vector<RenderStep *> m_pipeline;
-    std::vector< std::unique_ptr<PipelineObject> > m_objects;
+    std::vector< std::unique_ptr<RenderPipelineObject> > m_objects;
 	DynamicSource m_input;
 	DynamicTarget m_output;
 	v2f scale { 1.0f, 1.0f };

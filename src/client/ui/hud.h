@@ -52,6 +52,7 @@ class Hud
     std::map<u32, std::unique_ptr<HudSprite>, HudSpriteSorter> hudsprites;
 public:
     // Crosshair
+    bool crosshair_hidden = false;
     img::color8 crosshair_color;
     const std::string crosshair_img = "crosshair.png";
     const std::string object_crosshair_img = "object_crosshair.png";
@@ -68,6 +69,8 @@ public:
     void addHUDElement(u32 id, const HudElement *elem);
     void removeHUDElement(u32 id);
     void updateHUDElement(u32 id);
+
+    void render();
 private:
     void initCrosshair();
 };

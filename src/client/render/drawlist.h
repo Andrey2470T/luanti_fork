@@ -76,7 +76,7 @@ class DistanceSortedDrawList
     bool enable_shadows;
     bool translucent_foliage;
 public:
-    DistanceSortedDrawList(Client *_client, DrawControl _draw_control);
+    DistanceSortedDrawList(Client *_client);
 
     ~DistanceSortedDrawList();
 
