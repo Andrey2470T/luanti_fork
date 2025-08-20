@@ -7,6 +7,7 @@
 #include "util/numeric.h"
 #include "renderer.h"
 #include "rendersystem.h"
+#include "client/player/selection.h"
 
 static void on_settings_changed(const std::string &name, void *data)
 {
@@ -30,6 +31,8 @@ DistanceSortedDrawList::DistanceSortedDrawList(Client *_client, DrawControl _dra
     // load all settings at once
     onSettingChanged("", true);
 
+    selection_mesh = std::make_unique<SelectionMesh>(client->getRenderSystem(), client->getResourceCache());
+    block_bounds = std::make_unique<BlockBounds>(client->getRenderSystem());
     drawlist_thread = std::make_unique<DrawListUpdateThread>(this);
     drawlist_thread->start();
 }

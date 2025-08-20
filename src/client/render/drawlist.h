@@ -11,6 +11,8 @@ class Client;
 class LayeredMesh;
 struct TileLayer;
 struct LayeredMeshPart;
+class SelectionMesh;
+class BlockBounds;
 
 typedef std::pair<std::shared_ptr<TileLayer>,
     std::vector<std::pair<LayeredMeshPart, LayeredMesh*>>> BatchedLayer;
@@ -64,6 +66,9 @@ class DistanceSortedDrawList
 
     v3f cur_light_pos;
 
+    std::unique_ptr<SelectionMesh> selection_mesh;
+    std::unique_ptr<BlockBounds> block_bounds;
+
     bool cache_trilinear_filter;
     bool cache_bilinear_filter;
     bool cache_anistropic_filter;
@@ -94,6 +99,15 @@ public:
     const DrawControl &getDrawControl() const
     {
         return draw_control;
+    }
+
+    SelectionMesh *getSelectionMesh() const
+    {
+        return selection_mesh.get();
+    }
+    BlockBounds *getBlockBounds() const
+    {
+        return block_bounds.get();
     }
 
     void lockMeshes(bool shadow=false)

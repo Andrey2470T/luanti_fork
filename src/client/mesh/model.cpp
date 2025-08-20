@@ -41,6 +41,7 @@ Model::Model(v3f pos, const std::vector<MeshLayer> &layers, MeshBuffer *buffer)
 
     for (auto layer : layers)
         mesh->addNewLayer(layer.first, layer.second);
+    mesh->splitTransparentLayers();
 }
 
 Model::Model(AnimationManager *_mgr, v3f pos, const std::vector<std::shared_ptr<TileLayer>> &layers,
@@ -72,6 +73,7 @@ Model::Model(AnimationManager *_mgr, v3f pos, const std::vector<std::shared_ptr<
             processAnimations(scene);
     }
 
+    mesh->splitTransparentLayers();
     mesh->getBuffer(0)->uploadData();
 }
 

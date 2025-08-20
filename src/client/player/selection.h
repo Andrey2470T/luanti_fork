@@ -6,6 +6,7 @@
 class RenderSystem;
 class ResourceCache;
 class LayeredMesh;
+class DistanceSortedDrawList;
 
 class SelectionMesh
 {
@@ -40,7 +41,7 @@ public:
     SelectionMesh(RenderSystem *_rndsys, ResourceCache *_cache);
 
     void updateMesh(const v3f &new_pos, const v3s16 &camera_offset,
-        const std::vector<aabbf> &new_boxes);
+        const std::vector<aabbf> &new_boxes, DistanceSortedDrawList *drawlist);
 
     bool isDisabled() const
     {
@@ -95,11 +96,11 @@ public:
     {
         return mesh.get();
     }
-    Mode toggle(Client *client);
+    Mode toggle(Client *client, DistanceSortedDrawList *drawlist);
     void disable()
     {
         mode = BLOCK_BOUNDS_OFF;
     }
 private:
-    void updateMesh(Client *client);
+    void updateMesh(Client *client, DistanceSortedDrawList *drawlist);
 };

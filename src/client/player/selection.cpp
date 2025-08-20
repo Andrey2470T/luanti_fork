@@ -11,6 +11,7 @@
 #include "client/player/playercamera.h"
 #include "client/mesh/layeredmesh.h"
 #include "client/render/tilelayer.h"
+#include "client/render/drawlist.h"
 
 SelectionMesh::SelectionMesh(RenderSystem *_rndsys, ResourceCache *_cache)
     : rndsys(_rndsys), cache(_cache)
@@ -38,7 +39,7 @@ SelectionMesh::SelectionMesh(RenderSystem *_rndsys, ResourceCache *_cache)
 }
 
 void SelectionMesh::updateMesh(const v3f &new_pos, const v3s16 &camera_offset,
-    const std::vector<aabbf> &new_boxes)
+    const std::vector<aabbf> &new_boxes, DistanceSortedDrawList *drawlist)
 {
     if (new_pos == pos || mode == HIGHLIGHT_NONE)
         return;
@@ -47,6 +48,8 @@ void SelectionMesh::updateMesh(const v3f &new_pos, const v3s16 &camera_offset,
         mesh.reset();
         return;
     }
+
+    drawlist->removeLayeredMesh(mesh.get());
 
     boxes = new_boxes;
     pos = new_pos;
@@ -109,6 +112,8 @@ void SelectionMesh::updateMesh(const v3f &new_pos, const v3s16 &camera_offset,
     mesh->addNewLayer(layer, mesh_p);
 
     mesh->splitTransparentLayers();
+
+    drawlist->addLayeredMesh(mesh.get());
 }
 
 
@@ -118,7 +123,7 @@ BlockBounds::BlockBounds(RenderSystem *_rndsys)
     thickness = std::clamp<f32>((f32)g_settings->getS16("selectionbox_width"), 1.0f, 5.0f);
 }
 
-BlockBounds::Mode BlockBounds::toggle(Client *client)
+BlockBounds::Mode BlockBounds::toggle(Client *client, DistanceSortedDrawList *drawlist)
 {
     mode = static_cast<Mode>(mode + 1);
 
@@ -126,17 +131,19 @@ BlockBounds::Mode BlockBounds::toggle(Client *client)
        mode = BLOCK_BOUNDS_OFF;
     }
 
-    updateMesh(client);
+    updateMesh(client, drawlist);
 
     return mode;
 }
 
-void BlockBounds::updateMesh(Client *client)
+void BlockBounds::updateMesh(Client *client, DistanceSortedDrawList *drawlist)
 {
     if (mode == BLOCK_BOUNDS_OFF) {
         mesh.reset();
         return;
     }
+
+    drawlist->removeLayeredMesh(mesh.get());
 
     Batcher3D::vType = B3DVT_SVT;
     u16 mesh_chunk_size = std::max<u16>(1, g_settings->getU16("client_mesh_chunk"));
@@ -203,4 +210,6 @@ void BlockBounds::updateMesh(Client *client)
     mesh->addNewLayer(layer, mesh_p);
 
     mesh->splitTransparentLayers();
+
+    drawlist->addLayeredMesh(mesh.get());
 }
