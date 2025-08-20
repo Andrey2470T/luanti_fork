@@ -275,8 +275,11 @@ void Batcher3D::appendLineBox(MeshBuffer *buf, const aabbf &box, const img::colo
     for (auto edge : edges)
         appendVertex(buf, edge, color);
 
-    std::array<u32, 24> indices = {
-        5, 1, 1, 3, 3, 7, 7, 5, 0, 2, 2, 6, 6, 4, 4, 0, 1, 0, 3, 2, 7, 6, 5, 4
+    // Draws the lines as flattened triangles to be transparenct-sorted in the drawlist
+    std::array<u32, 36> indices = {
+        5, 1, 1,    1, 3, 3,    3, 7, 7,    7, 5, 5,
+        0, 2, 2,    2, 6, 6,    6, 4, 4,    4, 0, 0,
+        1, 0, 0,    3, 2, 2,    7, 6, 6,    5, 4, 4
     };
 
     for (u32 i : indices)

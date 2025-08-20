@@ -373,6 +373,7 @@ Stars::Stars(RenderSystem *rndsys, ResourceCache *cache)
     m_seed((u64)myrand() << 32 | myrand())
 {
     m_shader = cache->getOrLoad<render::Shader>(ResourceType::SHADER, "skybox");
+    m_mesh = std::make_unique<MeshBuffer>(true, SkyboxVType);
 }
 void Stars::setCount(u16 count)
 {
@@ -406,11 +407,14 @@ void Stars::update(Renderer *rnd, float wicked_time_of_day, float body_orbit_til
     float starbrightness = (0.25f - std::abs(tod)) * 20.0f;
     float alpha = std::clamp(starbrightness, day_opacity, 1.0f);
 
-    img::colorf color = img::color8ToColorf(m_star_params.starcolor);
-    color.A(color.A()*alpha);
-    if (color.A() <= 0.0f) // Stars are only drawn when not fully transparent
+    img::colorf color_f = img::color8ToColorf(m_star_params.starcolor);
+    color_f.A(color_f.A()*alpha);
+    if (color_f.A() <= 0.0f) // Stars are only drawn when not fully transparent
         return;
-    //m_materials[0].ColorParam = color.toSColor();
+    auto color = img::colorfToColor8(color_f);
+
+    for (u32 i = 0; i < m_mesh->getVertexCount(); i++)
+        svtSetHWColor(m_mesh.get(), color, i);
 
     auto day_rotation = matrix4().setRotationAxisRadians(2.0f * M_PI * (wicked_time_of_day - 0.25f), v3f(0.0f, 0.0f, 1.0f));
     auto orbit_rotation = matrix4().setRotationAxisRadians(body_orbit_tilt * M_PI / 180.0, v3f(1.0f, 0.0f, 0.0f));

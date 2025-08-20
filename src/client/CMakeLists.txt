@@ -45,7 +45,7 @@ set(media_SRCS
 
 set(pipeline_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/pipeline/anaglyph.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/pipeline/factory.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/pipeline/core.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/pipeline/interlaced.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/pipeline/pipeline.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/pipeline/plain.cpp

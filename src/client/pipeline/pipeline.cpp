@@ -8,6 +8,7 @@
 #include <Render/Texture2D.h>
 #include <Render/TextureCubeMap.h>
 #include <Render/FrameBuffer.h>
+#include <Render/DrawContext.h>
 #include "log.h"
 #include <Main/MainWindow.h>
 
@@ -93,10 +94,10 @@ void TextureBuffer::reset(PipelineContext &context)
 void TextureBuffer::swapTextures(u8 texture_a, u8 texture_b)
 {
 	assert(m_definitions[texture_a].valid && m_definitions[texture_b].valid);
-
-    render::Texture *temp = m_textures[texture_a];
+    std::swap(m_textures[texture_a], m_textures[texture_b]);
+    /*render::Texture *temp = m_textures[texture_a];
 	m_textures[texture_a] = m_textures[texture_b];
-	m_textures[texture_b] = temp;
+	m_textures[texture_b] = temp;*/
 }
 
 
@@ -130,7 +131,7 @@ bool TextureBuffer::ensureTexture(render::Texture **texture, const TextureDefini
         if (!definition.cubemap) {
             if (!definition.clear)
                 *texture = (render::Texture *)new render::Texture2D(definition.name, size.X, size.Y, definition.format, definition.msaa);
-            {
+            else {
                 img::Image *img = new img::Image(definition.format, size.X, size.Y);
                 *texture = (render::Texture *)new render::Texture2D(definition.name, std::unique_ptr<img::Image>(img));
             }

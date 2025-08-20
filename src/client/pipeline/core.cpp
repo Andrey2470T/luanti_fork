@@ -1,48 +1,55 @@
-#include "factory.h"
+#include "core.h"
 #include "settings.h"
 #include "pipeline.h"
+#include "plain.h"
+#include "anaglyph.h"
+#include "interlaced.h"
+#include "sidebyside.h"
+#include "secondstage.h"
 #include "client/shadows/dynamicShadowsRender.h"
 #include "log.h"
 
-PipelineFactory::PipelineFactory(RenderSystem *rnd_system, bool enable_shadows)
-    : rndSystem(rnd_system), activePipeline(new Pipeline())
+PipelineCore::PipelineCore(Client *_client, bool enable_shadows)
+    : client(_client), rndSystem(client->getRenderSystem()), pipeline(new Pipeline())
 {
     std::string stereoMode = g_settings->get("3d_mode");
 
-    if (enable_shadows)
-        activePipeline->addStep<RenderShadowMapStep>();
+    //if (enable_shadows)
+        //activePipeline->addStep<RenderShadowMapStep>();
 
     if (stereoMode == "none")
-        createPlainPipeline();
+        populatePlainPipeline(pipeline.get());
     else if (stereoMode == "anaglyph")
-        createAnaglyphPipeline();
+        populateAnaglyphPipeline(pipeline.get());
     else if (stereoMode == "interlaced")
-        createInterlacedPipeline();
-    else if (stereoMode == "sidebyside")
-        createSideBySidePipeline();
-    else if (stereoMode == "topbottom")
-        createSideBySidePipeline();
-    else if (stereoMode == "crossview")
-        createSideBySidePipeline();
+        populateInterlacedPipeline(pipeline.get());
+    else if (stereoMode == "sidebyside" ||
+            stereoMode == "topbottom" ||
+            stereoMode == "crossview")
+        populateSideBySidePipeline(pipeline.get());
     else {
         errorstream << "Invalid rendering mode: " << stereoMode << std::endl;
-        createPlainPipeline();
+        populatePlainPipeline(pipeline.get());
     }
 
     v2u wndsize = rndSystem->getWindowSize();
     virtual_size = v2u(wndsize.X * virtual_size_scale.X, wndsize.Y * virtual_size_scale.Y);
 }
 
-void PipelineFactory::run(img::color8 skycolor, bool show_hud,
+void PipelineCore::run(img::color8 skycolor, bool show_hud,
          bool draw_wield_tool, bool draw_crosshair)
 {
-    /*PipelineContext context(client, hud, shadow_renderer, _skycolor, screensize);
-    context.draw_crosshair = _draw_crosshair;
-    context.draw_wield_tool = _draw_wield_tool;
-    context.show_hud = _show_hud;
+	Hud *hud = rndSystem->getHud();
+	ShadowRenderer *shadow_renderer = rndSystem->getShadowRenderer();
+	v2u wndsize = rndSystem->getWindowSize();
+	
+    PipelineContext context(client, hud, shadow_renderer, skycolor, wndsize);
+    context.draw_crosshair = draw_crosshair;
+    context.draw_wield_tool = draw_wield_tool;
+    context.show_hud = show_hud;
 
     pipeline->reset(context);
-    pipeline->run(context);*/
+    pipeline->run(context);
 }
 /*#include "log.h"
 #include "plain.h"

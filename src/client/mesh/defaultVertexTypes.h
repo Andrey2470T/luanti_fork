@@ -10,6 +10,8 @@ extern const render::VertexTypeDescriptor TwoColorNodeVType;
 extern const render::VertexTypeDescriptor VType2D;
 // Bone animated object vertex type (position, color, normal, uv, materialType, bones, weights)
 extern const render::VertexTypeDescriptor AOVType;
+// Skybox (clouds and stars) vertex type with the second (hardware) color (position, color, normal, uv, hw_color)
+extern const render::VertexTypeDescriptor SkyboxVType;
 
 // Getters used for DefaultVType and TwoColorVType
 v3f svtGetPos(MeshBuffer *buf, u32 num);

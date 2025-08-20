@@ -15,6 +15,7 @@
 #include <Image/Converting.h>
 #include "batcher3d.h"
 #include "renderer.h"
+#include "client/mesh/defaultVertexTypes.h"
 
 class Clouds;
 //scene::ISceneManager *g_menucloudsmgr = nullptr;
@@ -44,7 +45,7 @@ Clouds::Clouds(RenderSystem *rndsys, ResourceCache *cache,
 
 	updateBox();
 
-    m_mesh = std::make_unique<MeshBuffer>(true, render::DefaultVType, render::MeshUsage::DYNAMIC);
+    m_mesh = std::make_unique<MeshBuffer>(true, SkyboxVType, render::MeshUsage::DYNAMIC);
 
     m_shader = m_cache->getOrLoad<render::Shader>(ResourceType::SHADER, "skybox");
 }
@@ -331,7 +332,6 @@ void Clouds::render()
     auto ctxt = rnd->getContext();
     ctxt->setShader(m_shader);
 
-    m_shader->setUniformInt("materialColor", img::colorObjectToU32Number(m_color));
     rnd->setUniformBlocks(m_shader);
 
     rnd->enableFog(true);
@@ -372,6 +372,9 @@ void Clouds::update(const v3f &camera_p, const img::colorf &color_diffuse)
 			m_camera_inside_cloud = filled;
 		}
 	}
+
+    for (u32 i = 0; i < m_mesh->getVertexCount(); i++)
+        svtSetHWColor(m_mesh.get(), m_color, i);
 }
 
 void Clouds::readSettings()

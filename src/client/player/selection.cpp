@@ -37,28 +37,6 @@ SelectionMesh::SelectionMesh(RenderSystem *_rndsys, ResourceCache *_cache)
         thickness = std::clamp<f32>((f32)g_settings->getS16("selectionbox_width"), 1.0f, 5.0f);
 }
 
-void SelectionMesh::draw() const
-{
-    if (mode == HIGHLIGHT_NONE)
-        return;
-
-    auto layer = mesh->getBufferLayer(0, 0);
-    layer.first->setupRenderState(rndsys);
-
-    auto rnd = rndsys->getRenderer();
-    rnd->enableFog(false);
-
-    matrix4 t;
-    t.setTranslation(pos_with_offset);
-    matrix4 r;
-    t.setRotationDegrees(rotation);
-
-    rnd->setTransformMatrix(TMatrix::World, t * r);
-
-    render::PrimitiveType pType = mode == HIGHLIGHT_HALO ? render::PT_TRIANGLES : render::PT_LINES;
-    rnd->draw(mesh->getBuffer(0), pType);
-}
-
 void SelectionMesh::updateMesh(const v3f &new_pos, const v3s16 &camera_offset,
     const std::vector<aabbf> &new_boxes)
 {
@@ -80,6 +58,7 @@ void SelectionMesh::updateMesh(const v3f &new_pos, const v3s16 &camera_offset,
         max_box.addInternalBox(box);
 
     mesh = std::make_unique<LayeredMesh>(v3f(max_box.getRadius()), pos_with_offset, DefaultVType);
+    mesh->getRotation() = rotation;
 
     Batcher3D::vType = B3DVT_SVT;
 
@@ -118,10 +97,18 @@ void SelectionMesh::updateMesh(const v3f &new_pos, const v3s16 &camera_offset,
         buf = new MeshBuffer(8 * boxes.size(), 24 * boxes.size());
         for (auto &box : boxes)
             Batcher3D::appendLineBox(buf, box, res_color);
+
+        layer->line_thickness = thickness;
     }
 
     buf->uploadData();
-    mesh->addNewBuffer(layer, buf);
+    mesh->addNewBuffer(buf);
+
+    LayeredMeshPart mesh_p;
+    mesh_p.count = buf->getIndexCount();
+    mesh->addNewLayer(layer, mesh_p);
+
+    mesh->splitTransparentLayers();
 }
 
 
@@ -142,20 +129,6 @@ BlockBounds::Mode BlockBounds::toggle(Client *client)
     updateMesh(client);
 
     return mode;
-}
-
-void BlockBounds::draw() const
-{
-    if (mode == BLOCK_BOUNDS_OFF)
-        return;
-
-    auto layer = mesh->getBufferLayer(0, 0);
-    layer.first->setupRenderState(rndsys);
-
-    auto rnd = rndsys->getRenderer();
-    rnd->enableFog(false);
-
-    rnd->draw(mesh->getBuffer(0), render::PT_LINES);
 }
 
 void BlockBounds::updateMesh(Client *client)
@@ -220,7 +193,14 @@ void BlockBounds::updateMesh(Client *client)
     layer->alpha_discard = 1;
     layer->material_flags = MATERIAL_FLAG_TRANSPARENT;
     layer->use_default_shader = true;
+    layer->line_thickness = thickness;
 
     buf->uploadData();
-    mesh->addNewBuffer(layer, buf);
+    mesh->addNewBuffer(buf);
+
+    LayeredMeshPart mesh_p;
+    mesh_p.count = buf->getIndexCount();
+    mesh->addNewLayer(layer, mesh_p);
+
+    mesh->splitTransparentLayers();
 }

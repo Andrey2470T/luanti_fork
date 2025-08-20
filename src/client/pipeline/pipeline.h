@@ -3,7 +3,7 @@
 // Copyright (C) 2022 x2048, Dmitry Kostenko <codeforsmile@gmail.com>
 #pragma once
 
-#include <Render/DrawContext.h>
+#include <BasicIncludes.h>
 
 class RenderSource;
 class RenderTarget;
@@ -320,35 +320,6 @@ public:
 	}
 
 	/**
-	 * Capture ownership of a dynamically created @see RenderStep instance.
-	 *
-	 * RenderPipeline will delete the instance when the pipeline is destroyed.
-	 *
-	 * @param step reference to the instance.
-	 * @return RenderStep* value of the 'step' parameter.
-	 */
-	template<typename T>
-	T *own(std::unique_ptr<T> &&object)
-	{
-		T* result = object.release();
-        m_objects.push_back(std::unique_ptr<PipelineObject>(result));
-		return result;
-	}
-
-	/**
-	 * Create a new object that will be managed by the pipeline
-	 *
-	 * @tparam T type of the object to be created
-	 * @tparam Args types of constructor arguments
-	 * @param args constructor arguments
-	 * @return T* pointer to the newly created object
-	 */
-	template<typename T, typename... Args>
-	T *createOwned(Args&&... args) {
-		return own(std::make_unique<T>(std::forward<Args>(args)...));
-	}
-
-	/**
 	 * Create and add a step managed by the pipeline and return a pointer
 	 * to the step for further configuration.
 	 *
@@ -359,7 +330,8 @@ public:
 	 */
 	template<typename T, typename... Args>
 	T *addStep(Args&&... args) {
-		T* result = own(std::make_unique<T>(std::forward<Args>(args)...));
+		T* result = new T(std::forward<Args>(args)...);
+		m_objects.emplace_back(result);
 		addStep(result);
 		return result;
 	}

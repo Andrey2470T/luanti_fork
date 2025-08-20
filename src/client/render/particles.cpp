@@ -132,7 +132,7 @@ void Particle::step(f32 dtime, ClientEnvironment *env)
 	}
 
 	// Update lighting
-    updateLight(env);
+    updateVertexColor(env);
 
     // Update transform matrix
     updateTransform(env);
@@ -195,7 +195,7 @@ void Particle::calcTileRect(const std::string &newImg)
     }
 }
 
-void Particle::updateLight(ClientEnvironment *env)
+void Particle::updateVertexColor(ClientEnvironment *env)
 {
 	u8 light = 0;
 	bool pos_ok;

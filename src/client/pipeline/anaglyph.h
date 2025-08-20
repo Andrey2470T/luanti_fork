@@ -12,11 +12,11 @@
 class SetColorMaskStep : public TrivialRenderStep
 {
 public:
-	SetColorMaskStep(int color_mask);
+	SetColorMaskStep(s32 color_mask);
 
 	void run(PipelineContext &context) override;
 private:
-	int color_mask;
+	s32 color_mask;
 };
 
 /**

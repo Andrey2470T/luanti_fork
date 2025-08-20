@@ -60,13 +60,13 @@ void MeshOperations::translateMesh(MeshBuffer *mesh, v3f vec)
 }
 
 void MeshOperations::colorizeMesh(MeshBuffer *mesh, const img::color8 &color,
-	bool apply_face_shading)
+    bool apply_face_shading)
 {
 	if (!mesh)
 		return;
 
 	for (u32 i = 0; i < mesh->getVertexCount(); i++) {
-		img::color8 res_c = color;
+        img::color8 res_c = color;
 
 		if (apply_face_shading)
 			applyFacesShading(res_c, svtGetNormal(mesh, i));

@@ -9,7 +9,6 @@ layout (location = 4) in int materialType;
 
 uniform vec3 mDayLight;
 uniform float mAnimationTimer;
-uniform lowp vec4 mMaterialColor;
 
 out vec3 vNormal;
 out vec3 vPosition;
@@ -107,8 +106,6 @@ void main(void)
 	}
 
 	vColor = color;
-
-	vColor *= mMaterialColor;
 
 	// The alpha gives the ratio of sunlight in the incoming light.
 	vvNightRatio = 1.0 - vColor.a;

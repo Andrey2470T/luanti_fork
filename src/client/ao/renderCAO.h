@@ -25,6 +25,8 @@ protected:
     // last applied texture modifier
     std::string m_current_texture_modifier = "";
 
+    img::color8 m_base_color;
+
     void updateLayerUVs(std::string new_texture, u8 layer_id);
 private:
     aabbf m_selection_box = aabbf(-BS/3.,-BS/3.,-BS/3., BS/3.,BS/3.,BS/3.);
@@ -42,17 +44,14 @@ private:
 	bool m_visuals_expired = false;
 	float m_step_distance_counter = 0.0f;
     img::color8 m_last_light = img::white;
-	// Material
-    //video::E_MATERIAL_TYPE m_material_type;
-	f32 m_material_type_param;
 
     bool m_is_visible = false;
 
-    bool m_update_anim_start_time = false;
+    bool m_restart_anim = false;
 
     ItemGroupList m_armor_groups;
 
-    virtual bool visualExpiryRequired(const ObjectProperties &newprops) = 0;
+    bool visualExpiryRequired(const ObjectProperties &newprops);
 
     void initTileLayer();
 
@@ -105,7 +104,7 @@ public:
 	void setChildrenVisible(bool toset);
 
     virtual void addMesh() = 0;
-    //void addToScene() override;
+    void removeMesh();
 
     void expireVisuals()
 	{
@@ -117,7 +116,7 @@ public:
 
     void step(float dtime, ClientEnvironment *env) override;
 
-    void updateLight();
+    void updateVertexColor(bool update_light);
 
 	/* Get light position(s).
 	 * returns number of positions written into pos[], which must have space

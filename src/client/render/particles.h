@@ -70,7 +70,7 @@ public:
     static bool particles_changed;
 private:
     void calcTileRect(const std::string &newImg);
-    void updateLight(ClientEnvironment *env);
+    void updateVertexColor(ClientEnvironment *env);
     void updateTransform(ClientEnvironment *env);
     void setBlending(ByteArray &sampleArr);
 

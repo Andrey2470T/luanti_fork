@@ -39,10 +39,17 @@ class SelectionMesh
 public:
     SelectionMesh(RenderSystem *_rndsys, ResourceCache *_cache);
 
-    void draw() const;
     void updateMesh(const v3f &new_pos, const v3s16 &camera_offset,
         const std::vector<aabbf> &new_boxes);
 
+    bool isDisabled() const
+    {
+        return mode == HIGHLIGHT_NONE;
+    }
+    LayeredMesh *getMesh() const
+    {
+        return mesh.get();
+    }
     std::vector<aabbf> *getSelectionBoxes() { return &boxes; }
 
     v3f getPos() const { return pos; }
@@ -80,12 +87,19 @@ public:
 
     BlockBounds(RenderSystem *_rndsys);
 
+    bool isDisabled() const
+    {
+        return mode == BLOCK_BOUNDS_OFF;
+    }
+    LayeredMesh *getMesh() const
+    {
+        return mesh.get();
+    }
     Mode toggle(Client *client);
     void disable()
     {
         mode = BLOCK_BOUNDS_OFF;
     }
-    void draw() const;
 private:
     void updateMesh(Client *client);
 };

@@ -15,7 +15,7 @@ const render::VertexTypeDescriptor TwoColorNodeVType{
     "TwoColorNode3D",
     {
         {"materialType", 1, BasicType::UINT8},
-        {"HWColor", 4, BasicType::UINT8, render::VertexAttribute::DataFormat::Normalized}
+        {"HWColor", 3, BasicType::UINT8, render::VertexAttribute::DataFormat::Normalized}
     },
     3,
     4,
@@ -46,6 +46,17 @@ const render::VertexTypeDescriptor AOVType{
     true,
     true,
     2
+};
+
+const render::VertexTypeDescriptor SkyboxVType{
+    "Skybox3D",
+    {
+        {"HWColor", 4, BasicType::UINT8, render::VertexAttribute::DataFormat::Normalized}
+    },
+    3,
+    4,
+    true,
+    true
 };
 
 // Getters used for DefaultVType and TwoColorVType
@@ -79,7 +90,11 @@ inline u8 svtGetMType(MeshBuffer *buf, u32 num)
 }
 inline img::color8 svtGetHWColor(MeshBuffer *buf, u32 num)
 {
-    return buf->getAttrAt<img::color8>(5, num);
+    u32 attr_n = 4;
+
+    if (buf->getVAO()->getVertexType().Name == "TwoColorNode3D")
+        attr_n = 5;
+    return buf->getAttrAt<img::color8>(attr_n, num);
 }
 
 
@@ -126,7 +141,11 @@ inline void svtSetMType(MeshBuffer *buf, u8 mt, u32 num)
 
 inline void svtSetHWColor(MeshBuffer *buf, const img::color8 &hw_c, u32 num)
 {
-    buf->setAttrAt<img::color8>(hw_c, 5, num);
+    u32 attr_n = 4;
+
+    if (buf->getVAO()->getVertexType().Name == "TwoColorNode3D")
+        attr_n = 5;
+    buf->setAttrAt<img::color8>(hw_c, attr_n, num);
 }
 
 

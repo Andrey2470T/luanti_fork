@@ -94,6 +94,8 @@ struct TileLayer
      */
 	u8 scale = 1;
 
+    f32 line_thickness = 1.0f;
+
 	//! Tile rotation.
 	TileRotation rotation = TileRotation::None;
 	//! This much light does the tile emit.

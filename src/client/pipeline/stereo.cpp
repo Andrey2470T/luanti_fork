@@ -5,11 +5,11 @@
 
 #include "stereo.h"
 //#include "client/client.h"
-//#include "client/camera.h"
+#include "client/player/playercamera.h"
 #include "constants.h"
 #include "settings.h"
 
-OffsetCameraStep::OffsetCameraStep(float eye_offset)
+OffsetCameraStep::OffsetCameraStep(f32 eye_offset)
 {
     move.setTranslation(v3f(eye_offset, 0.0f, 0.0f));
 }
@@ -17,16 +17,16 @@ OffsetCameraStep::OffsetCameraStep(float eye_offset)
 
 OffsetCameraStep::OffsetCameraStep(bool right_eye)
 {
-	float eye_offset = BS * g_settings->getFloat("3d_paralax_strength", -0.087f, 0.087f) * (right_eye ? 1 : -1);
+	f32 eye_offset = BS * g_settings->getFloat("3d_paralax_strength", -0.087f, 0.087f) * (right_eye ? 1 : -1);
     move.setTranslation(v3f(eye_offset, 0.0f, 0.0f));
 }
 
-/*void OffsetCameraStep::reset(PipelineContext &context)
+void OffsetCameraStep::reset(PipelineContext &context)
 {
-	base_transform = context.client->getCamera()->getCameraNode()->getRelativeTransformation();
+	base_transform = context.client->getCamera()->getRelativeTransformation();
 }
 
 void OffsetCameraStep::run(PipelineContext &context)
 {
-	context.client->getCamera()->getCameraNode()->setPosition((base_transform * move).getTranslation());
-}*/
+	context.client->getCamera()->setPosition((base_transform * move).getTranslation());
+}

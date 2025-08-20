@@ -42,8 +42,7 @@ RenderCAO::~RenderCAO()
         if (auto node = getSceneNode())
             shadow->removeNodeFromShadowList(node);*/
 
-    if (m_model)
-        m_cache->clearResource<Model>(ResourceType::MODEL, m_model);
+    removeMesh();
 
     if (m_nametag) {
         m_client->getCamera()->removeNametag(m_nametag);
@@ -99,6 +98,14 @@ void RenderCAO::setChildrenVisible(bool toset)
         // Check if the entity is forced to appear in first person.
         cao->setVisible(attach_node->ForceVisible ? true : toset);
     }
+}
+
+void RenderCAO::removeMesh()
+{
+    if (m_model)
+        m_cache->clearResource<Model>(ResourceType::MODEL, m_model);
+
+    m_model = nullptr;
 }
 
 void RenderCAO::setAttachment(object_t parent_id, const std::string &bone,
@@ -213,12 +220,12 @@ void RenderCAO::step(float dtime, ClientEnvironment *env)
         }
     }
 
-    /*if (m_visuals_expired && m_smgr) {
+    if (m_visuals_expired) {
         m_visuals_expired = false;
 
         // Attachments, part 1: All attached objects must be unparented first,
         // or Irrlicht causes a segmentation fault
-        for (u16 cao_id : m_attachment_child_ids) {
+        /*for (u16 cao_id : m_attachment_child_ids) {
             ClientActiveObject *obj = m_env->getActiveObject(cao_id);
             if (obj) {
                 scene::ISceneNode *child_node = obj->getSceneNode();
@@ -227,18 +234,18 @@ void RenderCAO::step(float dtime, ClientEnvironment *env)
                 if (child_node)
                     child_node->getParent()->setParent(m_smgr->getRootSceneNode());
             }
-        }
+        }*/
 
-        removeFromScene(false);
-        addToScene(m_client->tsrc(), m_smgr);
+        removeMesh();
+        addMesh();
 
         // Attachments, part 2: Now that the parent has been refreshed, put its attachments back
-        for (u16 cao_id : m_attachment_child_ids) {
+        /*for (u16 cao_id : m_attachment_child_ids) {
             ClientActiveObject *obj = m_env->getActiveObject(cao_id);
             if (obj)
                 obj->updateAttachments();
-        }
-    }*/
+        }*/
+    }
 
     // Make sure m_is_visible is always applied
 
@@ -357,25 +364,24 @@ void RenderCAO::step(float dtime, ClientEnvironment *env)
 }
 
 
-void RenderCAO::updateLight()
+void RenderCAO::updateVertexColor(bool update_light)
 {
-    if (m_prop.glow < 0)
-        return;
+    if (m_prop.glow >= 0 && update_light) {
+        v3s16 pos[3];
+        u16 npos = getLightPosition(pos);
 
-    v3s16 pos[3];
-    u16 npos = getLightPosition(pos);
+        std::vector<v3s16> positions;
 
-    std::vector<v3s16> positions;
+        for (u16 i = 0; i < npos; i++)
+            positions[i] = pos[i];
 
-    for (u16 i = 0; i < npos; i++)
-        positions[i] = pos[i];
+        auto light = getLightColor( m_env->getMap(), m_client->ndef(), positions, m_prop.glow);
 
-    auto light = getLightColor( m_env->getMap(), m_client->ndef(), positions, m_prop.glow);
+        if (light != m_last_light)
+            m_last_light = light;
 
-    if (light != m_last_light) {
-        m_last_light = light;
-        MeshOperations::colorizeMesh(m_model->getMesh()->getBuffer(0), m_last_light);
     }
+    MeshOperations::colorizeMesh(m_model->getMesh()->getBuffer(0), m_base_color*m_last_light);
 }
 
 u16 RenderCAO::getLightPosition(v3s16 *pos)
@@ -521,7 +527,7 @@ void RenderCAO::setAnimation(v2i range, f32 speed, bool loop)
     anim->setRange(range);
     //m_animated_meshnode->setTransitionTime(m_animation_blend);
 
-    m_update_anim_start_time = true;
+    m_restart_anim = true;
 }
 
 void RenderCAO::setAnimationSpeed(f32 speed)
@@ -533,7 +539,7 @@ void RenderCAO::setAnimationSpeed(f32 speed)
 
     anim->setFPS(speed);
 
-    m_update_anim_start_time = true;
+    m_restart_anim = true;
 }
 
 void RenderCAO::updateBones(f32 dtime)
@@ -543,17 +549,19 @@ void RenderCAO::updateBones(f32 dtime)
     if (!anim)
         return;
 
-    if (!anim->isStarted())
+    if (!anim->isStarted() || m_restart_anim) {
+        m_restart_anim = false;
         anim->start();
+    }
     bool animated = anim->animateBones(dtime);
 
     if (animated)
         m_model->getSkeleton()->updateDataTexture();
 }
 
-//bool RenderCAO::visualExpiryRequired(const ObjectProperties &new_) const
-//{
-    //const ObjectProperties &old = m_prop;
+bool RenderCAO::visualExpiryRequired(const ObjectProperties &newprops)
+{
+    const ObjectProperties &old = m_prop;
     /* Visuals do not need to be expired for:
      * - nametag props: handled by updateNametag()
      * - textures:      handled by updateTextures()
@@ -562,20 +570,20 @@ void RenderCAO::updateBones(f32 dtime)
      * - any other properties that do not change appearance
      */
 
-    //bool uses_legacy_texture = new_.wield_item.empty() &&
-    //    (new_.visual == "wielditem" || new_.visual == "item");
+    bool uses_legacy_texture = newprops.wield_item.empty() &&
+        (newprops.visual == "wielditem" || newprops.visual == "item");
     // Ordered to compare primitive types before std::vectors
-    /*return old.backface_culling != new_.backface_culling ||
-        old.is_visible != new_.is_visible ||
-        old.mesh != new_.mesh ||
-        old.shaded != new_.shaded ||
-        old.use_texture_alpha != new_.use_texture_alpha ||
-        old.visual != new_.visual ||
-        old.visual_size != new_.visual_size ||
-        old.wield_item != new_.wield_item ||
-        old.colors != new_.colors ||
-        (uses_legacy_texture && old.textures != new_.textures);
-}*/
+    return old.backface_culling != newprops.backface_culling ||
+        old.is_visible != newprops.is_visible ||
+        old.mesh != newprops.mesh ||
+        old.shaded != newprops.shaded ||
+        old.use_texture_alpha != newprops.use_texture_alpha ||
+        old.visual != newprops.visual ||
+        old.visual_size != newprops.visual_size ||
+        old.wield_item != newprops.wield_item ||
+        old.colors != newprops.colors ||
+        (uses_legacy_texture && old.textures != newprops.textures);
+}
 
 void RenderCAO::initTileLayer()
 {
@@ -1094,8 +1102,10 @@ void UprightSpriteRenderCAO::updateAppearance(std::string mod)
     updateLayerUVs(tname2, 1);
 
     // Set mesh color (only if lighting is disabled)
-    if (!m_prop.colors.empty() && m_prop.glow < 0)
-        MeshOperations::colorizeMesh(m_model->getMesh()->getBuffer(0), m_prop.colors[0]);
+    if (!m_prop.colors.empty() && m_prop.glow < 0) {
+        m_base_color = m_prop.colors[0];
+        updateVertexColor(false);
+    }
 }
 
 void CubeRenderCAO::addMesh()
@@ -1148,9 +1158,10 @@ void MeshRenderCAO::addMesh()
             }
 
             MeshOperations::scaleMesh(buffer, m_prop.visual_size);
-            MeshOperations::colorizeMesh(buffer, img::white);
         }
     }
+    m_base_color = img::white;
+    updateVertexColor(false);
     m_cache->cacheResource<Model>(ResourceType::MODEL, m_model);
 }
 

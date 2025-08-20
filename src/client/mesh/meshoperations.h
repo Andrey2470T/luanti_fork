@@ -42,7 +42,7 @@ public:
 	 * The color is darkened based on the normal vector of the vertices.
 	*/
 	static void colorizeMesh(MeshBuffer *mesh, const img::color8 &color,
-		bool apply_face_shading=false);
+        bool apply_face_shading=false);
 
 	/*
 		Set the color of all vertices in the mesh.
