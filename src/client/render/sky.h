@@ -51,8 +51,8 @@ public:
             return m_base_color;
         return img::black;
     }
-    void draw(Renderer *rnd);
-    void drawSunrise(Renderer *rnd);
+    void draw();
+    void drawSunrise();
     void update(const img::color8 &suncolor,
         const img::color8 &suncolor2, f32 time_of_day, float body_orbit_tilt);
     void updateSunrise(float time_of_day);
@@ -86,7 +86,7 @@ public:
             return m_base_color;
         return img::black;
     }
-    void draw(Renderer *rnd);
+    void draw();
     void update(const img::color8 &suncolor,
         const img::color8 &suncolor2, f32 time_of_day, float body_orbit_tilt);
 };
@@ -116,7 +116,7 @@ public:
     void setScale(f32 scale) { m_star_params.scale = scale; updateMesh(); }
     void setDayOpacity(f32 day_opacity) { m_star_params.day_opacity = day_opacity; }
 
-    void draw(Renderer *rnd);
+    void draw();
     void update(Renderer *rnd, float wicked_time_of_day, float body_orbit_tilt);
     void updateMesh();
 };
@@ -170,7 +170,7 @@ public:
 		const std::string &use_sun_tint);
 	void setInClouds(bool clouds) { m_in_clouds = clouds; }
 	void clearSkyboxTextures() { m_sky_params.textures.clear(); }
-    void addTextureToSkybox(const std::string &texture, int id);
+    void addTextureToSkybox(const std::string &texture, u8 id);
 
 	// Note: the Sky class doesn't use these values. It just stores them.
 	void setFogDistance(s16 fog_distance) { m_sky_params.fog_distance = fog_distance; }
@@ -189,8 +189,6 @@ public:
 private:
     RenderSystem *m_rndsys;
     ResourceCache *m_cache;
-
-    //aabbf m_box{{0.0f, 0.0f, 0.0f}};
 
 	// How much sun & moon transition should affect horizon color
 	float m_horizon_blend()
@@ -212,27 +210,6 @@ private:
     // update simple and far cloudy fogs
     void updateCloudyFogColor();
     void update_uv(MeshBuffer *buf, img::Image *img, u32 offset=0);
-
-    // NOTE: BlendModes.h already has those
-    // Mix two colors by a given amount
-    /*static img::color8 m_mix_scolor(img::color8 col1, img::color8 col2, f32 factor)
-	{
-        img::color8 result = img::color8(
-				col1.getAlpha() * (1 - factor) + col2.getAlpha() * factor,
-				col1.getRed() * (1 - factor) + col2.getRed() * factor,
-				col1.getGreen() * (1 - factor) + col2.getGreen() * factor,
-				col1.getBlue() * (1 - factor) + col2.getBlue() * factor);
-		return result;
-	}
-    static img::color8f m_mix_scolorf(img::color8f col1, img::color8f col2, f32 factor)
-	{
-        img::color8f result =
-                img::color8f(col1.r * (1 - factor) + col2.r * factor,
-						col1.g * (1 - factor) + col2.g * factor,
-						col1.b * (1 - factor) + col2.b * factor,
-						col1.a * (1 - factor) + col2.a * factor);
-		return result;
-    }*/
 
 	bool m_visible = true;
 	// Used when m_visible=false

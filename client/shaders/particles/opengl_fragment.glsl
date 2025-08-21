@@ -1,5 +1,5 @@
-layout (binding = 0) uniform sampler2D mTexture;
-layout (binding = 2) uniform sampler2D mFramebuffer;
+uniform sampler2D mTexture;
+uniform sampler2D mFramebuffer;
 
 #include <blending>
 

@@ -19,6 +19,7 @@
 #include "client/render/batcher3d.h"
 #include "client/render/atlas.h"
 #include "client/mesh/defaultVertexTypes.h"
+#include "client/render/datatexture.h"
 
 RenderCAO::RenderCAO(Client *client, ClientEnvironment *env)
     : GenericCAO(client, env), m_rndsys(client->getRenderSystem()), m_cache(client->getResourceCache()),
@@ -600,6 +601,8 @@ void RenderCAO::initTileLayer()
 
     std::string shadername = m_model->getSkeleton() ? "object_skinned" : "object";
     m_tile_layer.shader = m_cache->getOrLoad<render::Shader>(ResourceType::SHADER, shadername);
+    m_tile_layer.shader->mapSamplers({"mTexture0", "mDataTex"});
+    m_tile_layer.textures.push_back(dynamic_cast<render::Texture *>(m_anim_mgr->getBonesTexture()->getGLTexture()));
 }
 
 void RenderCAO::updateMeshCulling()
@@ -1003,48 +1006,9 @@ void RenderCAO::updateLayerUVs(std::string new_texture, u8 layer_id)
     auto buffer = m_model->getMesh()->getBuffer(0);
     auto layer = m_model->getMesh()->getBufferLayer(0, layer_id);
 
-    if (layer.first->tile_ref) {
-        auto prev_atlas = basic_pool->getAtlasByTile(layer.first->tile_ref, true);
-        u32 prev_atlas_res = prev_atlas->getTextureSize();
-        auto prev_tile = basic_pool->getTileRect(layer.first->tile_ref);
+    basic_pool->updateMeshUVs(buffer, layer.second.offset, layer.second.count, img, layer.first->tile_ref, true);
 
-        for (u32 k = layer.second.offset; k < layer.second.count; k++) {
-            v2f cur_uv = svtGetUV(buffer, k);
-
-            v2u pixel_coords;
-            pixel_coords.X = cur_uv.X * prev_atlas_res;
-            pixel_coords.Y = cur_uv.Y * prev_atlas_res;
-
-            pixel_coords -= v2u(prev_tile.ULC.X, prev_tile.ULC.Y);
-
-            v2f texture_uv;
-            texture_uv.X = pixel_coords.X / prev_tile.getWidth();
-            texture_uv.Y = pixel_coords.Y / prev_tile.getHeight();
-
-            svtSetUV(buffer, texture_uv, k);
-        }
-    }
-
-    auto atlas = basic_pool->getAtlasByTile(img, true);
-    layer.first->atlas = atlas;
     layer.first->tile_ref = img;
-
-    u32 atlas_res = atlas->getTextureSize();
-    rectf r = basic_pool->getTileRect(img, false, true);
-
-    for (u32 k = layer.second.offset; k < layer.second.count; k++) {
-        v2f cur_uv = svtGetUV(buffer, k);
-
-        u32 rel_x = round32(cur_uv.X * r.getWidth());
-        u32 rel_y = round32(cur_uv.Y * r.getHeight());
-
-        v2f atlas_uv(
-            (r.ULC.X + rel_x) / atlas_res,
-            (r.ULC.Y + rel_y) / atlas_res
-        );
-
-        svtSetUV(buffer, atlas_uv, k);
-    }
 }
 
 void SpriteRenderCAO::updateAppearance(std::string mod)

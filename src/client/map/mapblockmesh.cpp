@@ -129,11 +129,12 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data)
     for (u8 buf_i = 0; buf_i < m_mesh->getBuffersCount(); buf_i++) {
         auto buffer = m_mesh->getBuffer(buf_i);
         for (u8 layer_i = 0; layer_i < m_mesh->getBufferLayersCount(buf_i); layer_i++) {
-            auto layer = m_mesh->getBufferLayer(buf_i, layer_i).first;
+            auto mesh_layer = m_mesh->getBufferLayer(buf_i, layer_i);
+            auto layer = mesh_layer.first;
 
             layer->material_flags |= MATERIAL_FLAG_BACKFACE_CULLING;
 
-            layer->atlas = basicPool->getAtlasByTile(layer->tile_ref);
+            auto atlas = basicPool->getAtlasByTile(layer->tile_ref);
             auto src_rect = basicPool->getTileRect(layer->tile_ref);
 
             std::string shadername = "block";
@@ -142,28 +143,24 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data)
 
             layer->use_default_shader = false;
             layer->shader = m_client->getResourceCache()->getOrLoad<render::Shader>(ResourceType::SHADER, shadername);
+            layer->shader->mapSamplers({"mBaseTexture"});
 
             auto img_size = src_rect.getSize();
-            u32 atlas_size = layer->atlas->getTextureSize();
+            u32 atlas_size = atlas->getTextureSize();
 
-            for (u32 k = 0; k < buffer->getVertexCount(); k++) {
+            u32 offset = mesh_layer.second.offset;
+            u32 count = mesh_layer.second.count;
+
+            for (u32 k = offset; k < offset+count; k++) {
+                u32 index = buffer->getIndexAt(k);
                 // Apply material type
-                svtSetMType(buffer, layer->material_type, k);
+                svtSetMType(buffer, layer->material_type, index);
                 // Apply hw color
                 if (layer->material_flags & MATERIAL_FLAG_HARDWARE_COLORIZED)
-                    svtSetHWColor(buffer, layer->color, k);
-
-                // Calculate uvs in the given atlas
-                u32 rel_x = round32(svtGetUV(buffer, k).X * img_size.X);
-                u32 rel_y = round32(svtGetUV(buffer, k).Y * img_size.Y);
-
-                v2f atlas_uv(
-                    (src_rect.ULC.X + rel_x) / atlas_size,
-                    (src_rect.ULC.Y + rel_y) / atlas_size
-                );
-
-                svtSetUV(buffer, atlas_uv, k);
+                    svtSetHWColor(buffer, layer->color, index);
             }
+
+            MeshOperations::recalculateMeshAtlasUVs(buffer, offset, count, atlas_size, src_rect);
         }
     }
 

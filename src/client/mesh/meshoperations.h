@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "Image/Image.h"
 #include "meshbuffer.h"
 #include "Image/Color.h"
 
@@ -100,5 +101,13 @@ public:
 	//static void setMaterialFilters(video::SMaterialLayer &tex, bool bilinear, bool trilinear, bool anisotropic);
 
     static void recalculateNormals(MeshBuffer *mesh, bool smooth = false, bool angleWeighted = false);
+
+    /*
+        Calculates the mesh uvs in the index range [start_index, start_index+index_count] according to the atlas tile "newImg".
+        If "oldImg" is omitted, assume the current uvs are local to the image, otherwise are relatively to the atlas size
+    */
+    static void recalculateMeshAtlasUVs(MeshBuffer *mesh, u32 start_index, u32 index_count,
+        u32 newAtlasSize, const rectf &newImgRect, std::optional<u32> oldAtlasSize=std::nullopt,
+        std::optional<rectf> oldImgRect=std::nullopt);
 
 };

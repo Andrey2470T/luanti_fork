@@ -96,7 +96,7 @@ public:
 };
 
 class ResourceCache;
-
+class MeshBuffer;
 
 // Interface saving and handling sets of atlases of some type
 // Note: 'addTile' and 'addAnimatedTile' calls and atlases building
@@ -139,6 +139,11 @@ public:
     void buildGlyphAtlas(render::TTFont *ttfont);
 
     void updateAnimatedTiles(f32 time);
+
+    void updateMeshUVs(MeshBuffer *buffer, u32 start_index, u32 index_count, img::Image *tile,
+        std::optional<img::Image *> oldTile=std::nullopt, bool force_add=false, std::optional<AtlasTileAnim> anim=std::nullopt);
+    void updateAllMeshUVs(MeshBuffer *buffer, img::Image *tile,
+        std::optional<img::Image *> oldTile=std::nullopt, bool force_add=false, std::optional<AtlasTileAnim> anim=std::nullopt);
 private:
     void forceAddTile(img::Image *img, std::optional<AtlasTileAnim> anim=std::nullopt);
 };

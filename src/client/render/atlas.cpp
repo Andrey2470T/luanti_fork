@@ -2,6 +2,7 @@
 #include "rectpack2d_atlas.h"
 #include "client/ui/glyph_atlas.h"
 #include "client/media/resource.h"
+#include "client/mesh/meshoperations.h"
 
 rectf AtlasTile::toUV(u32 atlasSize) const
 {
@@ -271,6 +272,32 @@ void AtlasPool::updateAnimatedTiles(f32 time)
         auto atlas = dynamic_cast<Rectpack2DAtlas*>(atlases.at(i));
         atlas->updateAnimatedTiles(time);
     }
+}
+
+void AtlasPool::updateMeshUVs(MeshBuffer *buffer, u32 start_index, u32 index_count, img::Image *tile,
+    std::optional<img::Image *> oldTile, bool force_add, std::optional<AtlasTileAnim> anim)
+{
+    std::optional<u32> oldAtlasSize;
+    std::optional<rectf> oldTileRect;
+
+    if (oldTile.has_value()) {
+        auto prev_atlas = getAtlasByTile(oldTile.value());
+        oldAtlasSize = prev_atlas->getTextureSize();
+        oldTileRect = getTileRect(oldTile.value());
+    }
+
+    auto atlas = getAtlasByTile(tile, force_add, anim);
+    u32 newAtlasSize = atlas->getTextureSize();
+    rectf newTileRect = getTileRect(tile);
+
+    MeshOperations::recalculateMeshAtlasUVs(buffer, start_index, index_count,
+        newAtlasSize, newTileRect, oldAtlasSize, oldTileRect);
+}
+
+void AtlasPool::updateAllMeshUVs(MeshBuffer *buffer, img::Image *tile,
+    std::optional<img::Image *> oldTile, bool force_add, std::optional<AtlasTileAnim> anim)
+{
+    updateMeshUVs(buffer, 0, buffer->getIndexCount(), tile, oldTile, force_add, anim);
 }
 
 void AtlasPool::forceAddTile(img::Image *img, std::optional<AtlasTileAnim> anim)

@@ -332,7 +332,7 @@ void Clouds::render()
     auto ctxt = rnd->getContext();
     ctxt->setShader(m_shader);
 
-    rnd->setUniformBlocks(m_shader);
+    rnd->setUniformBlocks();
 
     rnd->enableFog(true);
 

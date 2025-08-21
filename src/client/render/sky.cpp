@@ -66,23 +66,9 @@ void Sun::setImage(const std::string &image,
         return;
     m_sun_params.texture = image;
 
+    auto last_image = m_image;
     m_image = cache->getOrLoad<img::Image>(ResourceType::IMAGE, image);
-
-    update_uvs(m_rndsys, m_mesh.get(), m_image);
-    /*if (sun_texture == "sun.png") {
-        // Dumb compatibility fix: sun.png transparently falls back to no texture
-        m_sun_texture = tsrc->isKnownSourceImage(sun_texture) ?
-                            tsrc->getTexture(sun_texture) : nullptr;
-    } else if (!sun_texture.empty()) {
-        m_sun_texture = tsrc->getTextureForMesh(sun_texture);
-    }
-
-    if (m_sun_texture) {
-        m_materials[3] = baseMaterial();
-        m_materials[3].setTexture(0, m_sun_texture);
-        m_materials[3].MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL;
-        disableTextureFiltering(m_materials[3]);
-    }*/
+    m_rndsys->getPool(true)->updateAllMeshUVs(m_mesh.get(), m_image, last_image, true);
 }
 
 void Sun::setSunriseImage(const std::string &sunglow_texture, ResourceCache *cache)
@@ -91,11 +77,10 @@ void Sun::setSunriseImage(const std::string &sunglow_texture, ResourceCache *cac
     if (m_sun_params.sunrise == sunglow_texture)
         return;
     m_sun_params.sunrise = sunglow_texture;
+    auto last_image = m_sunrise;
     m_sunrise = cache->getOrLoad<img::Image>(ResourceType::IMAGE, sunglow_texture);
-    /*m_materials[2].setTexture(0, tsrc->getTextureForMesh(
-                                     sunglow_texture.empty() ? "sunrisebg.png" : sunglow_texture)
-                              );*/
-    update_uvs(m_rndsys, m_sunrise_mesh.get(), m_sunrise);
+
+    m_rndsys->getPool(true)->updateAllMeshUVs(m_sunrise_mesh.get(), m_sunrise, last_image, true);
 }
 
 static v3f getSkyBodyPosition(float horizon_position, float day_position, float orbit_tilt)
@@ -149,17 +134,21 @@ void place_sky_body(
     }
 }
 
-void Sun::draw(Renderer *rnd)
+void Sun::draw()
 {
+    auto rnd = m_rndsys->getRenderer();
     rnd->setDefaultShader(true);
+    m_rndsys->activateAtlas(m_image);
     rnd->setDefaultUniforms(1.0f, 0, 0.5f, img::BM_COUNT);
 
     rnd->draw(m_mesh.get());
 }
 
-void Sun::drawSunrise(Renderer *rnd)
+void Sun::drawSunrise()
 {
+    auto rnd = m_rndsys->getRenderer();
     rnd->setDefaultShader(true);
+    m_rndsys->activateAtlas(m_sunrise);
     rnd->setDefaultUniforms(1.0f, 0, 0.5f, img::BM_COUNT);
 
     rnd->draw(m_sunrise_mesh.get());
@@ -179,10 +168,7 @@ void Sun::update(const img::color8 &color,
 
     float wicked_time_of_day = getWickedTimeOfDay(time_of_day);
 
-    //static const u16 indices[] = {0, 1, 2, 0, 2, 3};
-    //std::array<video::S3DVertex, 4> vertices;
     if (!m_image) {
-        //driver->setMaterial(m_materials[1]);
         const float sunsizes[4] = {
             (sunsize * 1.7f) * m_sun_params.scale,
             (sunsize * 1.2f) * m_sun_params.scale,
@@ -197,10 +183,8 @@ void Sun::update(const img::color8 &color,
         for (int i = 0; i < 4; i++) {
             update_sky_body(m_mesh.get(), -sunsizes[i], sunsizes[i], colors[i]);
             place_sky_body(m_mesh.get(), 90, wicked_time_of_day * 360 - 90, body_orbit_tilt);
-            //driver->drawIndexedTriangleList(&vertices[0], 4, indices, 2);
         }
     } else {
-        //driver->setMaterial(m_materials[3]);
         // Another magic number that contributes to the ratio 1.57 sun/moon size
         // difference.
         float d = (sunsize * 1.7) * m_sun_params.scale;
@@ -217,13 +201,11 @@ void Sun::update(const img::color8 &color,
 
         update_sky_body(m_mesh.get(), -d, d, c);
         place_sky_body(m_mesh.get(), 90, wicked_time_of_day * 360 - 90, body_orbit_tilt);
-        //driver->drawIndexedTriangleList(&vertices[0], 4, indices, 2);
     }
 }
 
 void Sun::updateSunrise(float time_of_day)
 {
-    //driver->setMaterial(m_materials[2]);
     float wicked_time_of_day = getWickedTimeOfDay(time_of_day);
     float mid1 = 0.25;
     float mid = wicked_time_of_day < 0.5 ? mid1 : (1.0 - mid1);
@@ -250,7 +232,6 @@ void Sun::updateSunrise(float time_of_day)
 
         svtSetPos(m_sunrise_mesh.get(), pos, i);
     }
-    //driver->drawIndexedTriangleList(&vertices[0], 4, indices, 2);
 }
 
 Moon::Moon(RenderSystem *rndsys)
@@ -274,23 +255,10 @@ void Moon::setImage(const std::string &image,
         return;
     m_moon_params.texture = image;
 
+    auto last_image = m_image;
     m_image = cache->getOrLoad<img::Image>(ResourceType::IMAGE, image);
 
-    update_uvs(m_rndsys, m_mesh.get(), m_image);
-    /*if (sun_texture == "sun.png") {
-        // Dumb compatibility fix: sun.png transparently falls back to no texture
-        m_sun_texture = tsrc->isKnownSourceImage(sun_texture) ?
-                            tsrc->getTexture(sun_texture) : nullptr;
-    } else if (!sun_texture.empty()) {
-        m_sun_texture = tsrc->getTextureForMesh(sun_texture);
-    }
-
-    if (m_moon_texture) {
-        m_materials[4] = baseMaterial();
-        m_materials[4].setTexture(0, m_moon_texture);
-        m_materials[4].MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL;
-        disableTextureFiltering(m_materials[4]);
-    }*/
+    m_rndsys->getPool(true)->updateAllMeshUVs(m_mesh.get(), m_image, last_image, true);
 }
 
 v3f Moon::getDirection(f32 time_of_day, f32 body_orbit_tilt)
@@ -298,9 +266,11 @@ v3f Moon::getDirection(f32 time_of_day, f32 body_orbit_tilt)
     return getSkyBodyPosition(270, getWickedTimeOfDay(time_of_day) * 360 - 90, body_orbit_tilt);
 }
 
-void Moon::draw(Renderer *rnd)
+void Moon::draw()
 {
+    auto rnd = m_rndsys->getRenderer();
     rnd->setDefaultShader(true);
+    m_rndsys->activateAtlas(m_image);
     rnd->setDefaultUniforms(1.0f, 0, 0.5f, img::BM_COUNT);
 
     rnd->draw(m_mesh.get());
@@ -320,10 +290,7 @@ void Moon::update(const img::color8 &color,
 
     float wicked_time_of_day = getWickedTimeOfDay(time_of_day);
 
-    //static const u16 indices[] = {0, 1, 2, 0, 2, 3};
-    //std::array<video::S3DVertex, 4> vertices;
     if (!m_image) {
-        //driver->setMaterial(m_materials[1]);
         const float moonsizes_1[4] = {
             (-moonsize * 1.9f) * m_moon_params.scale,
             (-moonsize * 1.3f) * m_moon_params.scale,
@@ -344,10 +311,8 @@ void Moon::update(const img::color8 &color,
         for (int i = 0; i < 4; i++) {
             update_sky_body(m_mesh.get(), moonsizes_1[i], moonsizes_2[i], colors[i]);
             place_sky_body(m_mesh.get(), -90, wicked_time_of_day * 360 - 90, body_orbit_tilt);
-            //driver->drawIndexedTriangleList(&vertices[0], 4, indices, 2);
         }
     } else {
-        //driver->setMaterial(m_materials[3]);
         // Another magic number that contributes to the ratio 1.57 sun/moon size
         // difference.
         float d = (moonsize * 1.9)  * m_moon_params.scale;
@@ -364,7 +329,6 @@ void Moon::update(const img::color8 &color,
 
         update_sky_body(m_mesh.get(), -d, d, c);
         place_sky_body(m_mesh.get(), -90, wicked_time_of_day * 360 - 90, body_orbit_tilt);
-        //driver->drawIndexedTriangleList(&vertices[0], 4, indices, 2);
     }
 }
 
@@ -384,11 +348,12 @@ void Stars::setCount(u16 count)
     }
 }
 
-void Stars::draw(Renderer *rnd)
+void Stars::draw()
 {
+    auto rnd = m_rndsys->getRenderer();
     auto ctxt = rnd->getContext();
     ctxt->setShader(m_shader);
-    rnd->setUniformBlocks(m_shader);
+    rnd->setUniformBlocks();
     rnd->setBlending(true);
 
     rnd->draw(m_mesh.get());
@@ -421,10 +386,6 @@ void Stars::update(Renderer *rnd, float wicked_time_of_day, float body_orbit_til
     auto sky_rotation = orbit_rotation * day_rotation;
     auto world_matrix = rnd->getTransformMatrix(TMatrix::World);
     m_world = world_matrix * sky_rotation;
-    /*driver->setTransform(video::ETS_WORLD, world_matrix * sky_rotation);
-    driver->setMaterial(m_materials[0]);
-    driver->drawMeshBuffer(m_stars.get());
-    driver->setTransform(video::ETS_WORLD, world_matrix);*/
 }
 
 void Stars::updateMesh()
@@ -469,34 +430,10 @@ void Stars::updateMesh()
 Sky::Sky(RenderSystem *rndsys, ResourceCache *cache) :
     m_rndsys(rndsys), m_cache(cache)
 {
-    //setAutomaticCulling(scene::EAC_OFF);
-
 	m_sky_params = SkyboxDefaults::getSkyDefaults();
     m_sun = std::make_unique<Sun>(rndsys, cache);
     m_moon = std::make_unique<Moon>(rndsys);
     m_stars = std::make_unique<Stars>(rndsys, cache);
-
-	// Create materials
-\
-    /*m_materials[0] = baseMaterial();
-	m_materials[0].MaterialType =
-			ssrc->getShaderInfo(ssrc->getShaderRaw("stars_shader", true)).material;
-
-	m_materials[1] = baseMaterial();
-	m_materials[1].MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL;
-
-	m_materials[2] = baseMaterial();
-	m_materials[2].setTexture(0, tsrc->getTextureForMesh("sunrisebg.png"));
-    m_materials[2].MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL;*/
-
-    //setSunTexture(m_sun_params.texture, m_sun_params.tonemap, tsrc);
-
-    //setMoonTexture(m_moon_params.texture, m_moon_params.tonemap, tsrc);
-
-    /*for (int i = 5; i < 11; i++) {
-		m_materials[i] = baseMaterial();
-		m_materials[i].MaterialType = video::EMT_SOLID;
-    }*/
 
 
     // skybox
@@ -539,10 +476,12 @@ Sky::Sky(RenderSystem *rndsys, ResourceCache *cache) :
 
     m_skybox_mesh->uploadData();
 
+    for (u8 i = 0; i < 6; i++)
+        m_skybox_images[i] = nullptr;
+
     // cloudy fog
     m_cloudyfog_mesh = std::make_unique<MeshBuffer>(4 * 4, 6 * 4);
 
-    //driver->setMaterial(m_materials[1]);
     for (u32 j = 0; j < 4; j++) {
         std::array<v3f, 4> positions = {
             v3f(-1, -0.02, -1),
@@ -564,11 +503,9 @@ Sky::Sky(RenderSystem *rndsys, ResourceCache *cache) :
         }
 
         Batcher3D::appendFace(m_cloudyfog_mesh.get(), positions, {}, {v2f(1.0f, 1.0f), v2f(0.0f, 0.0f)});
-        //driver->drawIndexedTriangleList(&vertices[0], 4, indices, 2);
     }
 
     // far cloudy fog
-    //driver->setMaterial(m_materials[1]);
 
     m_far_cloudyfog_mesh = std::make_unique<MeshBuffer>(4 * 5, 6 * 5);
 
@@ -593,11 +530,7 @@ Sky::Sky(RenderSystem *rndsys, ResourceCache *cache) :
         }
 
         Batcher3D::appendFace(m_far_cloudyfog_mesh.get(), positions, {}, {v2f(1.0f, 1.0f), v2f(0.0f, 0.0f)});
-        //driver->drawIndexedTriangleList(&vertices[0], 4, indices, 2);
     }
-
-    // Draw bottom far cloudy fog thing in front of sun, moon and stars
-    //img::color8 c = cloudyfogcolor;
 
     Batcher3D::appendFace(m_far_cloudyfog_mesh.get(),
         {
@@ -618,12 +551,6 @@ Sky::Sky(RenderSystem *rndsys, ResourceCache *cache) :
 
 void Sky::render(PlayerCamera *camera)
 {
-    //video::IVideoDriver *driver = SceneManager->getVideoDriver();
-    //scene::ICameraSceneNode *camera = SceneManager->getActiveCamera();
-
-    //if (!camera || !driver)
-    //	return;
-
 	ScopeProfiler sp(g_profiler, "Sky::render()", SPT_AVG, PRECISION_MICRO);
 
 	// Draw perspective skybox
@@ -643,13 +570,6 @@ void Sky::render(PlayerCamera *camera)
     rnd->setTransformMatrix(TMatrix::World, translate * scale);
 
 	if (m_sunlight_seen) {
-        /*const f32 t = 1.0f;
-		const f32 o = 0.0f;
-		static const u16 indices[6] = {0, 1, 2, 0, 2, 3};
-		video::S3DVertex vertices[4];
-
-        driver->setMaterial(m_materials[1]);*/
-
         img::color8 cloudyfogcolor = m_bgcolor;
 
 		// Abort rendering if we're in the clouds.
@@ -676,24 +596,20 @@ void Sky::render(PlayerCamera *camera)
 
 		// Draw stars before sun and moon to be behind them
         if (m_stars->getVisible())
-            m_stars->draw(rnd);
+            m_stars->draw();
 
 		// Draw sunrise/sunset horizon glow texture
 		// (textures/base/pack/sunrisebg.png)
-        if (m_sun->getSunriseVisible()) {
-            m_sun->drawSunrise(rnd);
-            /*rnd->setDefaultShader(true);
-            rnd->setDefaultUniforms(1.0f, 0, 0.5f, img::BM_COUNT);
-            rnd->draw(m_cloudyfog_mesh.get());*/
-		}
+        if (m_sun->getSunriseVisible())
+            m_sun->drawSunrise();
 
 		// Draw sun
         if (m_sun->getVisible())
-            m_sun->draw(rnd);
+            m_sun->draw();
 
 		// Draw moon
         if (m_moon->getVisible())
-            m_moon->draw(rnd);
+            m_moon->draw();
 
 		// Draw far cloudy fog thing below all horizons in front of sun, moon
 		// and stars.
@@ -976,7 +892,7 @@ void Sky::setHorizonTint(img::color8 sun_tint, img::color8 moon_tint,
 		m_default_tint = true;
 }
 
-void Sky::addTextureToSkybox(const std::string &texture, int id)
+void Sky::addTextureToSkybox(const std::string &texture, u8 id)
 {
 	// Sanity check for more than six textures.
     if (id + 5 >= SKY_MATERIAL_COUNT)
@@ -984,13 +900,10 @@ void Sky::addTextureToSkybox(const std::string &texture, int id)
 	// Keep a list of texture names handy.
 	m_sky_params.textures.emplace_back(texture);
 
+    auto last_image = m_skybox_images[id];
     m_skybox_images[id] = m_cache->getOrLoad<img::Image>(ResourceType::IMAGE, texture);
 
-    update_uvs(m_rndsys, m_skybox_mesh.get(), m_skybox_images[id], id*4);
-    /*video::ITexture *result = tsrc->getTextureForMesh(texture);
-	m_materials[material_id+5] = baseMaterial();
-	m_materials[material_id+5].setTexture(0, result);
-    m_materials[material_id+5].MaterialType = video::EMT_SOLID;*/
+    m_rndsys->getPool(true)->updateMeshUVs(m_skybox_mesh.get(), id*6, 6, m_skybox_images[id], last_image, true);
 }
 
 float getWickedTimeOfDay(float time_of_day)

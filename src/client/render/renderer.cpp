@@ -73,9 +73,6 @@ void Renderer::setDefaultUniforms(f32 thickness, u8 alphaDiscard, f32 alphaRef, 
 
     bool useTexture = curTexture != nullptr;
     curShader->setUniformInt("mTextureUsage0", (s32)useTexture);
-    if (useTexture) {
-        curShader->setUniformInt("mTexture0", 0);
-    }
 
     if (!use3DMode) {
         auto cur_viewport = context->getViewportSize();
@@ -94,18 +91,17 @@ void Renderer::setDefaultUniforms(f32 thickness, u8 alphaDiscard, f32 alphaRef, 
             }
             else {
                 curShader->setUniformInt("mBlendMode", (s32)blendMode);
-                curShader->setUniformInt("mFramebuffer", 1);
             }
         }
 
-        setUniformBlocks(curShader);
+        setUniformBlocks();
     }
 }
 
-void Renderer::setUniformBlocks(Shader *shader)
+void Renderer::setUniformBlocks()
 {
-    shader->setUniformBlock("mMatrices", matrix_buffer.get());
-    shader->setUniformBlock("mFogParams", fog_buffer.get());
+    curShader->setUniformBlock("mMatrices", matrix_buffer.get());
+    curShader->setUniformBlock("mFogParams", fog_buffer.get());
 }
 
 void Renderer::setClipRect(const recti &clipRect)
@@ -255,10 +251,20 @@ void Renderer::draw(MeshBuffer *buffer, PrimitiveType type,
 
 void Renderer::createDefaultShaders()
 {
-    defaultShaders["standard2D"] = resCache->getOrLoad<render::Shader>(ResourceType::SHADER, "standard2D");
-    defaultShaders["solid3D"] = resCache->getOrLoad<render::Shader>(ResourceType::SHADER, "solid3D");
-    defaultShaders["transparent3D"] = resCache->getOrLoad<render::Shader>(ResourceType::SHADER, "transparent3D");
-    defaultShaders["textureBlend3D"] = resCache->getOrLoad<render::Shader>(ResourceType::SHADER, "textureBlend3D");
+    auto standard2d = resCache->getOrLoad<render::Shader>(ResourceType::SHADER, "standard2D");
+    auto solid3d = resCache->getOrLoad<render::Shader>(ResourceType::SHADER, "solid3D");
+    auto transparent3d = resCache->getOrLoad<render::Shader>(ResourceType::SHADER, "transparent3D");
+    auto textureBlend3d = resCache->getOrLoad<render::Shader>(ResourceType::SHADER, "textureBlend3D");
+
+    standard2d->mapSamplers({"mTexture0"});
+    solid3d->mapSamplers({"mTexture0"});
+    transparent3d->mapSamplers({"mTexture0"});
+    textureBlend3d->mapSamplers({"mTexture0", "mFramebuffer"});
+
+    defaultShaders["standard2D"] = standard2d;
+    defaultShaders["solid3D"] = solid3d;
+    defaultShaders["transparent3D"] = transparent3d;
+    defaultShaders["textureBlend3D"] = textureBlend3d;
 }
 
 void Renderer::createUBOs()

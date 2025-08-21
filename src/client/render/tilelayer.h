@@ -5,6 +5,7 @@
 #pragma once
 
 #include <BasicIncludes.h>
+#include <Render/Texture.h>
 #include <Render/Shader.h>
 #include <Image/Image.h>
 
@@ -66,12 +67,14 @@ struct TileLayer
     // '0' = alpha discard, '1' = alpha discard ref, '2' = no discard (solid)
     s32 alpha_discard = 2;
 
-    Atlas *atlas;
     img::Image *tile_ref;
 
 	render::Shader *shader;
 
     bool use_default_shader = true;
+
+    // Additional textures after the first atlas one
+    std::vector<render::Texture *> textures;
 
 	u8 material_type = TILE_MATERIAL_BASIC;
 	u8 material_flags =

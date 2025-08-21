@@ -148,9 +148,7 @@ public:
     }
     void setWindowIcon();
 
-    void setPipeline(RenderPipeline *pipeline);
-	void drawScene(bool show_hud,
-        bool draw_wield_tool, bool draw_crosshair);
+    void activateAtlas(img::Image *img, bool basic_pool=true);
 private:
     void initWindow();
 

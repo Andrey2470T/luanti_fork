@@ -15,7 +15,7 @@ layout (location = 6) in vec2i weights; // packed weights (8 u8 numbers)
 #include <shadows>
 
 // Absolute bones transformations
-layout (binding = 1) uniform sampler2D mDataTex;
+uniform sampler2D mDataTex;
 uniform int mBonesCount;
 uniform int mBonesOffset; // all the skeleton bones ids are relatively to this offset
 uniform int mSampleDim;

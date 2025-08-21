@@ -1,7 +1,7 @@
-layout (binding = 0) uniform sampler2D mTexture0;
+uniform sampler2D mTexture0;
 
 #ifdef ENABLE_DYNAMIC_SHADOWS
-	layout (binding = 1) uniform sampler2D mShadowMapSampler;
+	uniform sampler2D mShadowMapSampler;
 #endif
 uniform vec3 mDayLight;
 uniform int mAlphaDiscard;

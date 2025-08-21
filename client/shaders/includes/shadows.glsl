@@ -1,4 +1,4 @@
-layout (std140, binding = 2) uniform mShadowParams {
+layout (std140) uniform mShadowParams {
 	// shadow uniforms
 	vec3 lightDirection;
 	float textureresolution;

@@ -6,7 +6,7 @@ layout (location = 3) in vec2 uv;
 #include <matrices>
 #include <data_unpack>
 
-layout (binding = 1) uniform sampler2D mDataTex;
+uniform sampler2D mDataTex;
 uniform int mParticleCount;
 uniform int mSampleDim;
 uniform int mDataTexDim;

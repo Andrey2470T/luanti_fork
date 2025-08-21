@@ -77,7 +77,7 @@ public:
     void setTexture(Texture2D *tex);
     void setDefaultUniforms(f32 thickness, u8 alphaDiscard, f32 alphaRef, img::BlendMode blendMode);
 
-    void setUniformBlocks(Shader *shader);
+    void setUniformBlocks();
     void setClipRect(const recti &clipRect);
     void disableScissorTest();
 

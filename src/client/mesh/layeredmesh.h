@@ -19,8 +19,8 @@ struct LayeredMeshPart
 	u8 buffer_id;
     u8 layer_id;
 
-	u32 offset = 0;
-	u32 count;
+    u32 offset = 0; // number of start index in the index buffer
+    u32 count; // count of buffer indices starting from "offset"
 
     // After 3d vertex batching, new indices are mandatory to be added also here
     std::vector<u32> indices;

@@ -5,7 +5,6 @@
 #include "tilelayer.h"
 #include "rendersystem.h"
 #include "renderer.h"
-#include "atlas.h"
 
 /*!
  * Two layers are equal if they can be merged.
@@ -35,20 +34,19 @@ void TileLayer::setupRenderState(RenderSystem *rndsys) const
     ctxt->setCullMode(render::CM_BACK);
     ctxt->setLineWidth(line_thickness);
 
-    if (tile_ref) {
-        auto basicPool = rndsys->getPool(true);
-        rnd->setTexture(basicPool->getAtlasByTile(tile_ref)->getTexture());
-    }
-
     if (!use_default_shader) {
         rnd->setBlending(material_flags & MATERIAL_FLAG_TRANSPARENT);
         ctxt->setShader(shader);
         shader->setUniformInt("mAlphaDiscard", alpha_discard);
+        rnd->setUniformBlocks();
     }
     else {
         rnd->setDefaultShader(material_flags & MATERIAL_FLAG_TRANSPARENT, true);
         rnd->setDefaultUniforms(1.0f, alpha_discard, 0.5f, img::BM_COUNT);
     }
 
-    rnd->setUniformBlocks(shader);
+    if (tile_ref)
+        rndsys->activateAtlas(tile_ref);
+    for (u8 i = 0; i < textures.size(); i++)
+        ctxt->setActiveUnit(i+1, textures.at(i));
 }
