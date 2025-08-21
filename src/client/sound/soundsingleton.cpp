@@ -6,7 +6,7 @@
 // Copyright (C) 2011 Cyriaque 'Cisoun' Skrapits <cysoun@gmail.com>
 // Copyright (C) 2011 Giuseppe Bilotta <giuseppe.bilotta@gmail.com>
 
-#include "sound_singleton.h"
+#include "soundsingleton.h"
 
 namespace sound {
 

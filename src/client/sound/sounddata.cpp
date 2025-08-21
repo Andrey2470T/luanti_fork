@@ -6,9 +6,9 @@
 // Copyright (C) 2011 Cyriaque 'Cisoun' Skrapits <cysoun@gmail.com>
 // Copyright (C) 2011 Giuseppe Bilotta <giuseppe.bilotta@gmail.com>
 
-#include "sound_data.h"
+#include "sounddata.h"
 
-#include "sound_constants.h"
+#include "soundconstants.h"
 #include <algorithm>
 
 namespace sound {

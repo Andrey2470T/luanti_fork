@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "sound_data.h"
+#include "sounddata.h"
 namespace sound { struct ALExtensions; }
 
 namespace sound {

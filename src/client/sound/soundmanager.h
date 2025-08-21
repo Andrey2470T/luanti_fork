@@ -8,10 +8,10 @@
 
 #pragma once
 
-#include "playing_sound.h"
+#include "playingsound.h"
 #include "al_extensions.h"
-#include "sound_constants.h"
-#include "sound_manager_messages.h"
+#include "soundconstants.h"
+#include "soundmanagermessages.h"
 #include "../sound.h"
 #include "threading/thread.h"
 #include "util/container.h" // MutexedQueue

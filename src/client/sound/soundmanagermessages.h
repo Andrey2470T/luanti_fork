@@ -4,8 +4,8 @@
 
 #pragma once
 
+#include "sound.h"
 #include "../sound.h"
-#include "../../sound.h"
 #include <variant>
 
 namespace sound {

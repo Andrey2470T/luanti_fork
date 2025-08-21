@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "sound_manager.h"
+#include "soundmanager.h"
 
 namespace sound {
 

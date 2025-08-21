@@ -5,10 +5,10 @@
 // Copyright (C) 2011 Cyriaque 'Cisoun' Skrapits <cysoun@gmail.com>
 // Copyright (C) 2011 Giuseppe Bilotta <giuseppe.bilotta@gmail.com>
 
-#include "sound_openal.h"
+#include "soundopenal.h"
 
-#include "sound_singleton.h"
-#include "proxy_sound_manager.h"
+#include "soundsingleton.h"
+#include "proxysoundmanager.h"
 
 std::shared_ptr<SoundManagerSingleton> g_sound_manager_singleton;
 

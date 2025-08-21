@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 // Copyright (C) 2023 DS
 
-#include "proxy_sound_manager.h"
+#include "proxysoundmanager.h"
 
 #include "filesys.h"
 

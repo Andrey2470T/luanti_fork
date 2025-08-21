@@ -6,11 +6,11 @@
 // Copyright (C) 2011 Cyriaque 'Cisoun' Skrapits <cysoun@gmail.com>
 // Copyright (C) 2011 Giuseppe Bilotta <giuseppe.bilotta@gmail.com>
 
-#include "playing_sound.h"
+#include "playingsound.h"
 
 #include "al_extensions.h"
 #include "debug.h"
-#include "sound_constants.h"
+#include "soundconstants.h"
 #include <cassert>
 #include <cmath>
 

@@ -4,13 +4,12 @@
 
 #pragma once
 
-#include "irr_v3d.h"
+#include <BasicIncludes.h>
 #include "config.h"
 #include <limits>
-#include <string>
 #include <unordered_map>
 #include <unordered_set>
-#include <vector>
+#
 
 #if !IS_CLIENT_BUILD
 #error Do not include in server builds

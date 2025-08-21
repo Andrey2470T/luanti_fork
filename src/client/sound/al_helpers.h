@@ -10,7 +10,7 @@
 
 #include "log.h"
 #include "util/basic_macros.h"
-#include "irr_v3d.h"
+#include <BasicIncludes.h>
 
 #if defined(_WIN32)
 	#include <al.h>

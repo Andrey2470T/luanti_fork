@@ -6,7 +6,7 @@
 // Copyright (C) 2011 Cyriaque 'Cisoun' Skrapits <cysoun@gmail.com>
 // Copyright (C) 2011 Giuseppe Bilotta <giuseppe.bilotta@gmail.com>
 
-#include "ogg_file.h"
+#include "oggfile.h"
 
 #include <cassert>
 #include <cstring> // memcpy
