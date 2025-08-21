@@ -10,6 +10,10 @@
 #include "client/render/rendersystem.h"
 #include "settings.h"
 #include <Render/FrameBuffer.h>
+#include "client/map/clientmap.h"
+#include "client/player/playercamera.h"
+#include "nodedef.h"
+#include "client/render/drawlist.h"
 
 PostProcessingStep::PostProcessingStep(RenderSystem *_rnd_sys, RenderSource *_source, render::Shader *shader, const std::vector<u8> &_texture_map)
     : rnd_sys(_rnd_sys)
@@ -46,7 +50,6 @@ void PostProcessingStep::run(PipelineContext &context)
 RenderStep *addPostProcessing(RenderPipeline *pipeline, RenderStep *previousStep, v2f scale, Client *client)
 {
 	auto buffer = pipeline->createOwned<TextureBuffer>();
-	auto driver = client->getSceneManager()->getVideoDriver();
 
 	// configure texture formats
     auto color_format = selectColorFormat();
@@ -122,7 +125,6 @@ RenderStep *addPostProcessing(RenderPipeline *pipeline, RenderStep *previousStep
 
     render::Shader *shader;
 
-    auto rndsys = client->getRenderSystem();
     auto cache = client->getResourceCache();
 
     u8 final_stage_source = TEXTURE_COLOR;
@@ -242,7 +244,58 @@ RenderStep *addPostProcessing(RenderPipeline *pipeline, RenderStep *previousStep
 		pipeline->addStep<SwapTexturesStep>(buffer, TEXTURE_EXPOSURE_1, TEXTURE_EXPOSURE_2);
 	}
 
+    pipeline->addStep<MapPostFxStep>(buffer, final_stage_source);
+
 	return effect;
+}
+
+void MapPostFxStep::setRenderTarget(RenderTarget * _target)
+{
+    target = _target;
+}
+
+void MapPostFxStep::run(PipelineContext &context)
+{
+    if (target)
+        target->activate(context);
+
+    Map *map = dynamic_cast<Map *>(&context.client->getEnv().getClientMap());
+    auto camera = context.client->getCamera();
+
+    MapNode n = map->getNode(floatToInt(camera->getPosition(), BS));
+
+    const ContentFeatures& features = map->getNodeDefManager()->get(n);
+    img::color8 post_color = features.post_effect_color;
+
+    if (features.post_effect_color_shaded) {
+        auto apply_light = [] (u32 color, u32 light) {
+            return std::clamp(round32(color * light / 255.0f), 0, 255);
+        };
+        auto light_color = camera->getLightColor();
+        post_color.R(apply_light(post_color.R(), light_color.R()));
+        post_color.G(apply_light(post_color.G(), light_color.G()));
+        post_color.B(apply_light(post_color.B(), light_color.B()));
+    }
+
+    auto rnd_sys = context.client->getRenderSystem();
+    auto drawlist = rnd_sys->getDrawList();
+    // If the camera is in a solid node, make everything black.
+    // (first person mode only)
+    if (features.solidness == 2 && camera->getCameraMode() == CAMERA_MODE_FIRST &&
+            !drawlist->getDrawControl().allow_noclip) {
+        post_color = img::black;
+    }
+
+    if (post_color.A() != 0) {
+        if (!quad) {
+            quad = std::make_unique<ScreenQuad>(rnd_sys, source);
+            quad->setTextureMap({texture_index});
+        }
+
+        quad->updateQuad();
+        // Draw a full-screen rectangle
+        quad->render();
+    }
 }
 
 void ResolveMSAAStep::run(PipelineContext &context)

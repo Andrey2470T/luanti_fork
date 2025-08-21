@@ -24,24 +24,6 @@ ClientMap::ClientMap(Client *client, DistanceSortedDrawList *drawlist)
     : Map(client->idef()), m_client(client), m_drawlist(drawlist)
 {}
 
-/*void ClientMap::updateCamera(v3f pos, v3f dir, f32 fov, v3s16 offset, img::color8 light_color)
-{
-    v3s16 previous_node = floatToInt(m_camera_pos, BS) + m_camera_offset;
-    v3s16 previous_block = getContainerPos(previous_node, MAP_BLOCKSIZE);
-
-    m_camera_pos = pos;
-    m_camera_offset = offset;
-    m_camera_light_color = light_color;
-
-    v3s16 current_node = floatToInt(m_camera_pos, BS) + m_camera_offset;
-    v3s16 current_block = getContainerPos(current_node, MAP_BLOCKSIZE);
-
-    if (previous_block != current_block) {
-        update();
-        m_drawlist->updateCamera(pos, dir, fov, offset);
-    }
-}*/
-
 MapSector * ClientMap::emergeSector(v2s16 p2d)
 {
 	// Check that it doesn't exist already
@@ -235,8 +217,6 @@ void ClientMap::addActiveObject(u16 id)
 
 void ClientMap::updateMapBlocksActiveObjects()
 {
-    bool were_changes = false;
-
     for (auto &sector_it : m_sectors) {
         MapBlockVect sectorblocks;
         sector_it.second->getBlocks(sectorblocks);
@@ -267,7 +247,7 @@ void ClientMap::removeActiveObject(u16 id)
 
     block->mesh->removeActiveObject(id);
 }
-/*static bool getVisibleBrightness(Map *map, const v3f &p0, v3f dir, float step,
+static bool getVisibleBrightness(Map *map, const v3f &p0, v3f dir, float step,
 	float step_multiplier, float start_distance, float end_distance,
 	const NodeDefManager *ndef, u32 daylight_factor, float sunlight_min_d,
 	int *result, bool *sunlight_seen)
@@ -281,11 +261,11 @@ void ClientMap::removeActiveObject(u16 id)
 	int noncount = 0;
 	bool nonlight_seen = false;
 	bool allow_allowing_non_sunlight_propagates = false;
-    bool allow_non_sunlight_propagates = false;*/
+    bool allow_non_sunlight_propagates = false;
 	// Check content nearly at camera position
-//	{
-//		v3s16 p = floatToInt(p0 /*+ dir * 3*BS*/, BS);
-/*		MapNode n = map->getNode(p);
+    {
+        v3s16 p = floatToInt(p0 /*+ dir * 3*BS*/, BS);
+        MapNode n = map->getNode(p);
 		if(ndef->getLightingFlags(n).has_light &&
 				!ndef->getLightingFlags(n).sunlight_propagates)
 			allow_allowing_non_sunlight_propagates = true;
@@ -332,13 +312,13 @@ void ClientMap::removeActiveObject(u16 id)
 	*result = 0;
 	if(brightness_count == 0)
 		return false;
-    *result = brightness_sum / brightness_count;*/
+    *result = brightness_sum / brightness_count;
 	/*std::cerr<<"Sampled "<<brightness_count<<" points; result="
 			<<(*result)<<std::endl;*/
-//	return true;
-//}
+    return true;
+}
 
-/*int ClientMap::getBackgroundBrightness(float max_d, u32 daylight_factor,
+int ClientMap::getBackgroundBrightness(float max_d, u32 daylight_factor,
 		int oldvalue, bool *sunlight_seen_result)
 {
 	ScopeProfiler sp(g_profiler, "CM::getBackgroundBrightness", SPT_AVG);
@@ -367,11 +347,14 @@ void ClientMap::removeActiveObject(u16 id)
 		sunlight_min_d = 35*BS;
 	std::vector<int> values;
 	values.reserve(ARRLEN(z_directions));
+
+    v3f camera_dir = m_client->getCamera()->getDirection();
 	for (u32 i = 0; i < ARRLEN(z_directions); i++) {
 		v3f z_dir = z_directions[i];
         matrix4 a;
 		a.buildRotateFromTo(v3f(0,1,0), z_dir);
-        v3f dir = a.rotateAndScaleVect(m_camera_dir);
+
+        v3f dir = a.rotateAndScaleVect(camera_dir);
 		int br = 0;
 		float step = BS*1.5;
 		if(max_d > 35*BS)
@@ -421,46 +404,10 @@ void ClientMap::removeActiveObject(u16 id)
 
 	*sunlight_seen_result = (sunlight_seen_count > 0);
 	return ret;
-}*/
-
-/*void ClientMap::renderPostFx(CameraMode cam_mode)
-{
-	// Sadly ISceneManager has no "post effects" render pass, in that case we
-	// could just register for that and handle it in renderMap().
-
-    MapNode n = getNode(floatToInt(m_camera_pos, BS));
-
-	const ContentFeatures& features = m_nodedef->get(n);
-	img::color8 post_color = features.post_effect_color;
-
-	if (features.post_effect_color_shaded) {
-		auto apply_light = [] (u32 color, u32 light) {
-            return std::clamp(round32(color * light / 255.0f), 0, 255);
-		};
-        post_color.R(apply_light(post_color.R(), m_camera_light_color.R()));
-        post_color.G(apply_light(post_color.G(), m_camera_light_color.G()));
-        post_color.B(apply_light(post_color.B(), m_camera_light_color.B()));
-	}
-
-	// If the camera is in a solid node, make everything black.
-	// (first person mode only)
-	if (features.solidness == 2 && cam_mode == CAMERA_MODE_FIRST &&
-            !m_drawlist->getDrawControl().allow_noclip) {
-        post_color = img::black;
-	}
-
-    if (post_color.A() != 0) {
-		// Draw a full-screen rectangle
-		video::IVideoDriver* driver = SceneManager->getVideoDriver();
-		v2u32 ss = driver->getScreenSize();
-		core::rect<s32> rect(0,0, ss.X, ss.Y);
-		driver->draw2DRectangle(post_color, rect);
-    }
 }
-
 
 
 void ClientMap::reportMetrics(u64 save_time_us, u32 saved_blocks, u32 all_blocks)
 {
 	g_profiler->avg("CM::reportMetrics loaded blocks [#]", all_blocks);
-}*/
+}

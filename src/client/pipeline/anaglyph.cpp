@@ -72,6 +72,5 @@ void populateAnaglyphPipeline(RenderPipeline *pipeline, Client *client)
     pipeline->addStep<SetColorMaskStep>(render::CP_ALL);
 
     //pipeline->addStep<DrawWield>();
-    //pipeline->addStep<MapPostFxStep>();
 	pipeline->addStep<DrawHUD>();
 }

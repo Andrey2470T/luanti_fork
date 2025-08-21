@@ -6,6 +6,7 @@
 #pragma once
 #include "base.h"
 #include "pipeline.h"
+#include "client/player/playercamera.h"
 
 /**
  *  Step to apply post-processing filter to the rendered image
@@ -39,6 +40,24 @@ private:
     std::unique_ptr<ScreenQuad> quad;
 };
 
+class ClientMap;
+class PlayerCamera;
+
+class MapPostFxStep : public TrivialRenderStep
+{
+public:
+    MapPostFxStep(RenderSource *_source, u8 _texture_index)
+        : source(_source), texture_index(_texture_index)
+    {}
+    virtual void setRenderTarget(RenderTarget *) override;
+    virtual void run(PipelineContext &context) override;
+private:
+    RenderTarget *target;
+
+    RenderSource *source;
+    u8 texture_index;
+    std::unique_ptr<ScreenQuad> quad;
+};
 
 class ResolveMSAAStep : public TrivialRenderStep
 {

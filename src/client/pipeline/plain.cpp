@@ -7,6 +7,8 @@
 #include "postprocess.h"
 #include "client/shadows/dynamicshadowsrender.h"
 #include "base.h"
+#include "settings.h"
+#include "client/client.h"
 
 /*void DrawWield::run(PipelineContext &context)
 {
@@ -92,7 +94,6 @@ void populatePlainPipeline(RenderPipeline *pipeline, Client *client)
 	auto step3D = pipeline->own(create3DStage(client, downscale_factor));
 	pipeline->addStep(step3D);
     //pipeline->addStep<DrawWield>();
-    //pipeline->addStep<MapPostFxStep>();
 
 	step3D = addUpscaling(pipeline, step3D, downscale_factor, client);
 

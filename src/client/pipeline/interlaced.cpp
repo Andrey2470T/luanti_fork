@@ -63,7 +63,6 @@ void populateInterlacedPipeline(RenderPipeline *pipeline, Client *client)
 		pipeline->addStep<SetRenderTargetStep>(step3D, output);
 		pipeline->addStep(step3D);
         //pipeline->addStep<DrawWield>();
-        //pipeline->addStep<MapPostFxStep>();
 	}
 
 	pipeline->addStep<OffsetCameraStep>(0.0f);

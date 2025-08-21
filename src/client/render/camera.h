@@ -1,6 +1,7 @@
 #pragma once
 
 #include "frustum.h"
+#include <Image/Color.h>
 
 // General camera class used for the player, wieldmesh and guiscene.
 // Supports the perspective and orthogonal projection.
@@ -27,6 +28,8 @@ protected:
     matrix4 m_projection_matrix;
     matrix4 m_view_matrix;
     matrix4 m_world_matrix;
+
+    img::color8 m_light_color;
 public:
     Camera(const v2u &viewportSize=v2u(),
             const v3f &position=v3f(), const v3f &direction=v3f(0,0,1),
@@ -164,6 +167,14 @@ public:
 		m_frustum.ZFar = zfar;
     }
 
+    img::color8 getLightColor() const
+    {
+        return m_light_color;
+    }
+    void updateLightColor(const img::color8 &newColor)
+    {
+        m_light_color = newColor;
+    }
     void recalculateProjectionMatrix();
 	void recalculateViewArea();
 	void updatePlanes();
