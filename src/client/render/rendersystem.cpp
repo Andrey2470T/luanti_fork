@@ -16,6 +16,8 @@
 #include "client/render/particles.h"
 #include "client/render/sky.h"
 #include "client/render/clouds.h"
+#include "client/ao/transformNode.h"
+#include "client/ao/animation.h"
 
 const img::color8 RenderSystem::menu_sky_color = img::color8(img::PF_RGBA8, 140, 186, 250, 255);
 
@@ -35,6 +37,9 @@ RenderSystem::RenderSystem(Client *_client, ResourceCache *_cache, MyEventReceiv
     particle_manager = std::make_unique<ParticleManager>(this, cache, &client->getEnv());
     sky = std::make_unique<Sky>(this, cache);
     clouds = std::make_unique<Clouds>(this, cache, -1, myrand());
+
+    node_mgr = std::make_unique<TransformNodeManager>();
+    anim_mgr = std::make_unique<AnimationManager>(node_mgr.get());
 
     gameui = std::make_unique<GameUI>(client, inv);
 

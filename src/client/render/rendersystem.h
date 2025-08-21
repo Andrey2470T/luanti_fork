@@ -26,6 +26,8 @@ class Sky;
 class Clouds;
 class GameUI;
 class Inventory;
+class TransformNodeManager;
+class AnimationManager;
 	
 class RenderSystem
 {
@@ -44,6 +46,9 @@ class RenderSystem
     std::unique_ptr<ParticleManager> particle_manager;
     std::unique_ptr<Sky> sky;
     std::unique_ptr<Clouds> clouds;
+
+    std::unique_ptr<TransformNodeManager> node_mgr;
+    std::unique_ptr<AnimationManager> anim_mgr;
 
     std::unique_ptr<GameUI> gameui;
 	//std::unique_ptr<GUIEnvironment> guienv;
@@ -93,6 +98,14 @@ public:
     Clouds *getClouds() const
     {
         return clouds.get();
+    }
+    TransformNodeManager *getNodeManager() const
+    {
+        return node_mgr.get();
+    }
+    AnimationManager *getAnimationManager() const
+    {
+        return anim_mgr.get();
     }
     GameUI *getGameUI() const
     {

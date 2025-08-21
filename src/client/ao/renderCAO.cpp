@@ -23,7 +23,7 @@
 
 RenderCAO::RenderCAO(Client *client, ClientEnvironment *env)
     : GenericCAO(client, env), m_rndsys(client->getRenderSystem()), m_cache(client->getResourceCache()),
-      m_anim_mgr(env->getAnimationManager())
+      m_anim_mgr(client->getRenderSystem()->getAnimationManager())
 {
     initTileLayer();
 
