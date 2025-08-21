@@ -5,6 +5,7 @@
 
 #pragma once
 #include "pipeline.h"
+#include <Render/Shader.h>
 
 /**
  * Offset camera for a specific eye in stereo rendering mode
@@ -56,7 +57,41 @@ public:
 public:
     virtual void run(PipelineContext &context) override;
 };*/
-std::unique_ptr<RenderStep> create3DStage(Client *client, v2f scale);
+
+
+class RenderSystem;
+class MeshBuffer;
+
+class ScreenQuad
+{
+    RenderSystem *rndsys;
+    std::unique_ptr<MeshBuffer> quad;
+
+    RenderSource *textures;
+    std::vector<u8> texture_map;
+
+    render::Shader *shader;
+    bool use_default = true;
+
+    v2u prev_size;
+public:
+    ScreenQuad(RenderSystem *_rndsys, RenderSource *_textures);
+
+    void updateQuad(std::optional<v2u> offset=std::nullopt, std::optional<v2u> size=std::nullopt);
+
+    void setTextureMap(const std::vector<u8> &map)
+    {
+        texture_map = map;
+    }
+    void setShader(bool set_default=true, std::optional<render::Shader *> new_shader=std::nullopt);
+
+    void configureTexturesSettings();
+    void setBilinearFilter(u8 index, bool value);
+
+    void render();
+};
+
+RenderStep *create3DStage(Client *client, v2f scale);
 
 img::PixelFormat selectColorFormat();
 img::PixelFormat selectDepthFormat(u32 bits, bool stencil);

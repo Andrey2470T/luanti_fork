@@ -75,7 +75,7 @@ public:
     void setDefaultShader(bool transparent=false, bool glBlend=true);
 
     void setTexture(Texture2D *tex);
-    void setDefaultUniforms(f32 thickness, u8 alphaDiscard, f32 alphaRef, img::BlendMode blendMode);
+    void setDefaultUniforms(f32 thickness=1.0f, u8 alphaDiscard=0, f32 alphaRef=0.5f, img::BlendMode blendMode=img::BM_COUNT);
 
     void setUniformBlocks();
     void setClipRect(const recti &clipRect);

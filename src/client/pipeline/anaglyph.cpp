@@ -4,7 +4,6 @@
 // Copyright (C) 2017 numzero, Lobachevskiy Vitaliy <numzer0@yandex.ru>
 
 #include "anaglyph.h"
-#include "client/render/camera.h"
 #include <Render/DrawContext.h>
 #include "client/client.h"
 #include "client/render/rendersystem.h"
@@ -72,7 +71,7 @@ void populateAnaglyphPipeline(RenderPipeline *pipeline, Client *client)
 	pipeline->addStep<OffsetCameraStep>(0.0f);
     pipeline->addStep<SetColorMaskStep>(render::CP_ALL);
 
-	pipeline->addStep<DrawWield>();
-	pipeline->addStep<MapPostFxStep>();
+    //pipeline->addStep<DrawWield>();
+    //pipeline->addStep<MapPostFxStep>();
 	pipeline->addStep<DrawHUD>();
 }

@@ -4,7 +4,7 @@
 // Copyright (C) 2017 numzero, Lobachevskiy Vitaliy <numzer0@yandex.ru>
 
 #pragma once
-#include "stereo.h"
+#include "base.h"
 #include <Render/Texture2D.h>
 
 class InitInterlacedMaskStep : public TrivialRenderStep
@@ -18,4 +18,4 @@ private:
 	u8 index;
 };
 
-void populateInterlacedPipeline(Pipeline *pipeline, Client *client);
+void populateInterlacedPipeline(RenderPipeline *pipeline, Client *client);

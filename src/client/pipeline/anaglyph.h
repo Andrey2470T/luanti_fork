@@ -4,7 +4,8 @@
 // Copyright (C) 2017 numzero, Lobachevskiy Vitaliy <numzer0@yandex.ru>
 
 #pragma once
-#include "stereo.h"
+
+#include "base.h"
 
 /**
  * Set color mask when rendering the next steps

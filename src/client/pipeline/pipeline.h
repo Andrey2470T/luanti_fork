@@ -329,11 +329,10 @@ public:
      * @return RenderStep* value of the 'step' parameter.
      */
     template<typename T>
-    T *own(std::unique_ptr<T> &&object)
+    T *own(T *object)
     {
-    T* result = object.release();
-        m_objects.push_back(std::unique_ptr<RenderPipelineObject>(result));
-        return result;
+        m_objects.emplace_back(object);
+        return object;
     }
 
     /**
@@ -346,7 +345,7 @@ public:
      */
     template<typename T, typename... Args>
     T *createOwned(Args&&... args) {
-        return own(std::make_unique<T>(std::forward<Args>(args)...));
+        return own(new T(std::forward<Args>(args)...));
     }
 
     /**
@@ -360,7 +359,7 @@ public:
      */
     template<typename T, typename... Args>
     T *addStep(Args&&... args) {
-        T* result = own(std::make_unique<T>(std::forward<Args>(args)...));
+        T* result = own(new T(std::forward<Args>(args)...));
         addStep(result);
         return result;
     }

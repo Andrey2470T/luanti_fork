@@ -33,6 +33,8 @@ private:
  * UpscaleStep step performs rescaling of the image
  * in the source texture 0 to the size of the target.
  */
+class ScreenQuad;
+
 class UpscaleStep : public RenderStep
 {
 public:
@@ -44,12 +46,10 @@ public:
 private:
 	RenderSource *m_source;
 	RenderTarget *m_target;
+
+    std::unique_ptr<ScreenQuad> lowres_image;
 };
 
-std::unique_ptr<RenderStep> create3DStage(Client *client, v2f scale);
 RenderStep* addUpscaling(RenderPipeline *pipeline, RenderStep *previousStep, v2f downscale_factor, Client *client);
 
 void populatePlainPipeline(RenderPipeline *pipeline, Client *client);
-
-video::ECOLOR_FORMAT selectColorFormat(video::IVideoDriver *driver);
-video::ECOLOR_FORMAT selectDepthFormat(video::IVideoDriver *driver);

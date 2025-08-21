@@ -7,9 +7,10 @@
 #include "client/client.h"
 #include "client/hud.h"
 #include "client/camera.h"
+#include "client/render/rendersystem.h"
 
-DrawImageStep::DrawImageStep(u8 texture_index, v2f _offset) :
-	texture_index(texture_index), offset(_offset)
+DrawImageStep::DrawImageStep(u8 _texture_index, v2f _offset) :
+    texture_index(_texture_index), offset(_offset)
 {}
 
 void DrawImageStep::setRenderSource(RenderSource *_source)
@@ -26,10 +27,15 @@ void DrawImageStep::run(PipelineContext &context)
 	if (target)
 		target->activate(context);
 
-	auto texture = source->getTexture(texture_index);
-	core::dimension2du output_size = context.device->getVideoDriver()->getScreenSize();
-	v2s32 pos(offset.X * output_size.Width, offset.Y * output_size.Height);
-	context.device->getVideoDriver()->draw2DImage(texture, pos);
+    auto rnd_sys = context.client->getRenderSystem();
+    if (!screen_image) {
+        screen_image = std::make_unique<ScreenQuad>(rnd_sys, source);
+        screen_image->setTextureMap({texture_index});
+    }
+
+    auto wnd_size = rnd_sys->getWindowSize();
+    screen_image->updateQuad(v2u(offset.X * wnd_size.X, offset.Y * wnd_size.Y));
+    screen_image->render();
 }
 
 void populateSideBySidePipeline(RenderPipeline *pipeline, Client *client, bool horizontal, bool flipped, v2f &virtual_size_scale)
@@ -39,8 +45,8 @@ void populateSideBySidePipeline(RenderPipeline *pipeline, Client *client, bool h
 	static const u8 TEXTURE_DEPTH = 2;
 
 	auto driver = client->getSceneManager()->getVideoDriver();
-	video::ECOLOR_FORMAT color_format = selectColorFormat(driver);
-	video::ECOLOR_FORMAT depth_format = selectDepthFormat(driver);
+    img::PixelFormat color_format = selectColorFormat(driver);
+    img::PixelFormat depth_format = selectDepthFormat(driver);
 
 	v2f offset;
 	if (horizontal) {
@@ -66,8 +72,8 @@ void populateSideBySidePipeline(RenderPipeline *pipeline, Client *client, bool h
 				buffer, std::vector<u8> {right ? TEXTURE_RIGHT : TEXTURE_LEFT}, TEXTURE_DEPTH);
 		pipeline->addStep<SetRenderTargetStep>(step3D, output);
 		pipeline->addStep(step3D);
-		pipeline->addStep<DrawWield>();
-		pipeline->addStep<MapPostFxStep>();
+        //pipeline->addStep<DrawWield>();
+        //pipeline->addStep<MapPostFxStep>();
 		pipeline->addStep<DrawHUD>();
 	}
 

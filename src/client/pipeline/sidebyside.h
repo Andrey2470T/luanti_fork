@@ -4,12 +4,14 @@
 // Copyright (C) 2017 numzero, Lobachevskiy Vitaliy <numzer0@yandex.ru>
 
 #pragma once
-#include "stereo.h"
+#include "base.h"
+
+class MeshBuffer;
 
 class DrawImageStep : public RenderStep
 {
 public:
-	DrawImageStep(u8 texture_index, v2f offset);
+    DrawImageStep(u8 _texture_index, v2f _offset);
 
 	void setRenderSource(RenderSource *_source) override;
 	void setRenderTarget(RenderTarget *_target) override;
@@ -17,10 +19,12 @@ public:
 	void reset(PipelineContext &context) override {}
 	void run(PipelineContext &context) override;
 private:
-	u8 texture_index;
+    u8 texture_index;
 	v2f offset;
 	RenderSource *source;
 	RenderTarget *target;
+
+    std::unique_ptr<ScreenQuad> screen_image;
 };
 
 void populateSideBySidePipeline(RenderPipeline *pipeline, Client *client, bool horizontal, bool flipped, v2f &virtual_size_scale);

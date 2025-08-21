@@ -4,13 +4,9 @@
 // Copyright (C) 2017 numzero, Lobachevskiy Vitaliy <numzer0@yandex.ru>
 
 #include "plain.h"
-#include "secondstage.h"
-#include "client/camera.h"
-#include "client/client.h"
-#include "client/clientmap.h"
-#include "client/hud.h"
-#include "client/minimap.h"
+#include "postprocess.h"
 #include "client/shadows/dynamicshadowsrender.h"
+#include "base.h"
 
 /*void DrawWield::run(PipelineContext &context)
 {
@@ -39,11 +35,16 @@ void MapPostFxStep::run(PipelineContext &context)
 
 void UpscaleStep::run(PipelineContext &context)
 {
-	video::ITexture *lowres = m_source->getTexture(0);
-	m_target->activate(context);
-	context.device->getVideoDriver()->draw2DImage(lowres,
-			core::rect<s32>(0, 0, context.target_size.X, context.target_size.Y),
-			core::rect<s32>(0, 0, lowres->getSize().Width, lowres->getSize().Height));
+    auto rnd_sys = context.client->getRenderSystem();
+    if (!lowres_image) {
+        lowres_image = std::make_unique<ScreenQuad>(rnd_sys, m_source);
+         lowres_image->setTextureMap({0});
+    }
+    auto lowres = m_source->getTexture(0);
+    lowres_image->updateQuad(context.target_size, lowres->getSize());
+
+    m_target->activate(context);
+    lowres_image->render();
 }
 
 static v2f getDownscaleFactor()
@@ -64,9 +65,8 @@ RenderStep* addUpscaling(RenderPipeline *pipeline, RenderStep *previousStep, v2f
 	if (g_settings->getBool("enable_post_processing"))
 		return previousStep;
 
-	auto driver = client->getSceneManager()->getVideoDriver();
-	video::ECOLOR_FORMAT color_format = selectColorFormat(driver);
-	video::ECOLOR_FORMAT depth_format = selectDepthFormat(driver);
+    auto color_format = selectColorFormat();
+    auto depth_format = selectDepthFormat(32, false);
 
 	// Initialize buffer
 	TextureBuffer *buffer = pipeline->createOwned<TextureBuffer>();
@@ -91,8 +91,8 @@ void populatePlainPipeline(RenderPipeline *pipeline, Client *client)
 	auto downscale_factor = getDownscaleFactor();
 	auto step3D = pipeline->own(create3DStage(client, downscale_factor));
 	pipeline->addStep(step3D);
-	pipeline->addStep<DrawWield>();
-	pipeline->addStep<MapPostFxStep>();
+    //pipeline->addStep<DrawWield>();
+    //pipeline->addStep<MapPostFxStep>();
 
 	step3D = addUpscaling(pipeline, step3D, downscale_factor, client);
 

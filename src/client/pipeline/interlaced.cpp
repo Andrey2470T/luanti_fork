@@ -4,11 +4,12 @@
 // Copyright (C) 2017 numzero, Lobachevskiy Vitaliy <numzer0@yandex.ru>
 
 #include "interlaced.h"
-#include "secondstage.h"
+#include "postprocess.h"
 #include "client/client.h"
 #include "client/shader.h"
 #include "client/camera.h"
 #include "client/render/renderer.h"
+#include "client/media/resource.h"
 
 InitInterlacedMaskStep::InitInterlacedMaskStep(TextureBuffer *_buffer, u8 _index)	:
 	buffer(_buffer), index(_index)
@@ -33,7 +34,7 @@ void InitInterlacedMaskStep::run(PipelineContext &context)
 	}
 }
 
-void populateInterlacedPipeline(Pipeline *pipeline, Client *client)
+void populateInterlacedPipeline(RenderPipeline *pipeline, Client *client)
 {
 	// FIXME: "3d_mode = interlaced" is currently broken. Two options:
 	// 1. Remove it
@@ -61,19 +62,19 @@ void populateInterlacedPipeline(Pipeline *pipeline, Client *client)
 		auto output = pipeline->createOwned<TextureBufferOutput>(buffer, right ? TEXTURE_RIGHT : TEXTURE_LEFT);
 		pipeline->addStep<SetRenderTargetStep>(step3D, output);
 		pipeline->addStep(step3D);
-		pipeline->addStep<DrawWield>();
-		pipeline->addStep<MapPostFxStep>();
+        //pipeline->addStep<DrawWield>();
+        //pipeline->addStep<MapPostFxStep>();
 	}
 
 	pipeline->addStep<OffsetCameraStep>(0.0f);
 
-    /*IShaderSource *s = client->getShaderSource();
-	auto shader = s->getShaderRaw("3d_interlaced_merge");
-	video::E_MATERIAL_TYPE material = s->getShaderInfo(shader).material;
+    auto cache = client->getResourceCache();
+    auto shader = cache->getOrLoad<render::Shader>(ResourceType::SHADER, "3d_interlaced_merge");
+    shader->mapSamplers({"baseTexture", "normalTexture", "textureFlags"});
 	auto texture_map = { TEXTURE_LEFT, TEXTURE_RIGHT, TEXTURE_MASK };
 
-	auto merge = pipeline->addStep<PostProcessingStep>(material, texture_map);
+    auto merge = pipeline->addStep<PostProcessingStep>(shader, texture_map);
 	merge->setRenderSource(buffer);
 	merge->setRenderTarget(pipeline->createOwned<ScreenTarget>());
-    pipeline->addStep<DrawHUD>();*/
+    pipeline->addStep<DrawHUD>();
 }
