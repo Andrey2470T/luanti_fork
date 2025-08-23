@@ -13,6 +13,7 @@ struct TileLayer;
 struct LayeredMeshPart;
 class SelectionMesh;
 class BlockBounds;
+class Camera;
 
 typedef std::pair<std::shared_ptr<TileLayer>,
     std::vector<std::pair<LayeredMeshPart, LayeredMesh*>>> BatchedLayer;
@@ -48,6 +49,7 @@ struct DrawControl
 class DistanceSortedDrawList
 {
     Client *client;
+    Camera *camera;
 
     std::list<LayeredMesh *> meshes;
     std::list<LayeredMesh *> shadow_meshes;

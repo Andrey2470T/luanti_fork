@@ -34,12 +34,12 @@ OffsetCameraStep::OffsetCameraStep(bool right_eye)
 
 void OffsetCameraStep::reset(PipelineContext &context)
 {
-    base_transform = context.client->getCamera()->getWorldMatrix();
+    base_transform = context.client->getEnv().getLocalPlayer()->getCamera()->getWorldMatrix();
 }
 
 void OffsetCameraStep::run(PipelineContext &context)
 {
-	context.client->getCamera()->setPosition((base_transform * move).getTranslation());
+    context.client->getEnv().getLocalPlayer()->getCamera()->setPosition((base_transform * move).getTranslation());
 }
 
 /// Draw3D pipeline step
@@ -49,7 +49,7 @@ void Draw3D::run(PipelineContext &context)
         m_target->activate(context);
 
     auto rnd_sys = context.client->getRenderSystem();
-    auto camera = context.client->getCamera();
+    auto camera = context.client->getEnv().getLocalPlayer()->getCamera();
 
     rnd_sys->getSky()->render(camera);
     rnd_sys->getClouds()->render();
@@ -66,7 +66,7 @@ void DrawHUD::run(PipelineContext &context)
         auto rnd_sys = context.client->getRenderSystem();
         rnd_sys->getGameUI()->getHud()->render();
 
-        context.client->getCamera()->drawNametags();
+        context.client->getEnv().getLocalPlayer()->getCamera()->drawNametags();
     }
         /*context.hud->resizeHotbar();
 

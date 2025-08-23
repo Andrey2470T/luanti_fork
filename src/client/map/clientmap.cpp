@@ -87,7 +87,7 @@ void ClientMap::update()
 	}
     m_visible_mapblocks.clear();
 
-    const v3s16 cam_pos_nodes = floatToInt(m_client->getCamera()->getPosition(), BS);
+    const v3s16 cam_pos_nodes = floatToInt(m_client->getEnv().getLocalPlayer()->getCamera()->getPosition(), BS);
 
 	v3s16 p_blocks_min;
 	v3s16 p_blocks_max;
@@ -348,7 +348,7 @@ int ClientMap::getBackgroundBrightness(float max_d, u32 daylight_factor,
 	std::vector<int> values;
 	values.reserve(ARRLEN(z_directions));
 
-    v3f camera_dir = m_client->getCamera()->getDirection();
+    v3f camera_dir = m_client->getEnv().getLocalPlayer()->getCamera()->getDirection();
 	for (u32 i = 0; i < ARRLEN(z_directions); i++) {
 		v3f z_dir = z_directions[i];
         matrix4 a;

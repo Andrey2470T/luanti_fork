@@ -20,15 +20,6 @@ private:
 	RenderTarget *m_target {nullptr};
 };*/
 
-/*class MapPostFxStep : public TrivialRenderStep
-{
-public:
-	virtual void setRenderTarget(RenderTarget *) override;
-	virtual void run(PipelineContext &context) override;
-private:
-	RenderTarget *target;
-};
-
 /**
  * UpscaleStep step performs rescaling of the image
  * in the source texture 0 to the size of the target.

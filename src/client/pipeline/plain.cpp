@@ -5,7 +5,7 @@
 
 #include "plain.h"
 #include "postprocess.h"
-#include "client/shadows/dynamicshadowsrender.h"
+//#include "client/shadows/dynamicshadowsrender.h"
 #include "base.h"
 #include "settings.h"
 #include "client/client.h"
@@ -20,18 +20,6 @@
 }*/
 
 
-/*void MapPostFxStep::setRenderTarget(RenderTarget * _target)
-{
-	target = _target;
-}
-
-void MapPostFxStep::run(PipelineContext &context)
-{
-	if (target)
-		target->activate(context);
-
-	context.client->getEnv().getClientMap().renderPostFx(context.client->getCamera()->getCameraMode());
-}*/
 
 // class UpscaleStep
 

@@ -264,7 +264,7 @@ public:
 
 	// Returns true if the inventory of the local player has been
 	// updated from the server. If it is true, it is set to false.
-	bool updateWieldedItem();
+    //bool updateWieldedItem();
 
 	/* InventoryManager interface */
 	Inventory* getInventory(const InventoryLocation &loc) override;
@@ -280,9 +280,9 @@ public:
 
 	float getAnimationTime();
 
-	int getCrackLevel();
+    /*int getCrackLevel();
 	v3s16 getCrackPos();
-	void setCrack(int level, v3s16 pos);
+    void setCrack(int level, v3s16 pos);*/
 
 	u16 getHP();
 
@@ -297,10 +297,10 @@ public:
 
 	u64 getMapSeed(){ return m_map_seed; }
 
-	void addUpdateMeshTask(v3s16 blockpos, bool ack_to_server=false, bool urgent=false);
+    void addUpdateMeshTask(v3s16 blockpos, bool ack_to_server=false, bool urgent=false);
 	// Including blocks at appropriate edges
 	void addUpdateMeshTaskWithEdge(v3s16 blockpos, bool ack_to_server=false, bool urgent=false);
-	void addUpdateMeshTaskForNode(v3s16 nodepos, bool ack_to_server=false, bool urgent=false);
+    void addUpdateMeshTaskForNode(v3s16 nodepos, bool ack_to_server=false, bool urgent=false);
 
 	void updateCameraOffset(v3s16 camera_offset);
 
@@ -357,7 +357,7 @@ public:
     void setCamera(PlayerCamera* camera) { m_camera = camera; }
 
     PlayerCamera* getCamera() { return m_camera; }
-	scene::ISceneManager *getSceneManager();
+    //scene::ISceneManager *getSceneManager();
 
 	// IGameDef interface
 	IItemDefManager* getItemDefManager() override;

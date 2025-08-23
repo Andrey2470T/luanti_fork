@@ -67,7 +67,7 @@ public:
 	~PlayerCamera();
 
 	// Returns the absolute position of the head SceneNode in the world
-	inline v3f getHeadPosition() const
+    v3f getHeadPosition() const
 	{
         return m_playerbase_pos + m_head_offset;
 	}
@@ -107,13 +107,13 @@ public:
 	}
 
 	// Set the current camera mode
-	inline void setCameraMode(CameraMode mode)
+    void setCameraMode(CameraMode mode)
 	{
 		m_camera_mode = mode;
 	}
 
 	//read the current camera mode
-	inline CameraMode getCameraMode()
+    CameraMode getCameraMode()
 	{
 		return m_camera_mode;
 	}
@@ -126,7 +126,7 @@ public:
 
 	void drawNametags();
 
-	inline void addArmInertia(f32 player_yaw);
+    void addArmInertia(f32 player_yaw);
 
 private:
     //scene::ISceneManager *m_wieldmgr = nullptr;

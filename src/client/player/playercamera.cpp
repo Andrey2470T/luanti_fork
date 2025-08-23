@@ -26,6 +26,7 @@
 #include "client/render/rendersystem.h"
 #include "client/media/resource.h"
 #include "client/render/drawlist.h"
+#include "client/ao/renderCAO.h"
 
 #define CAMERA_OFFSET_STEP 200
 #define WIELDMESH_OFFSET_X 55.0f
@@ -38,7 +39,7 @@ Nametag::Nametag(Client *client,
         const img::color8 &textcolor,
         const std::optional<img::color8> &bgcolor,
         const v3f &pos)
-    : Waypoint(client, nullptr, client->getCamera()->getPosition()+pos*BS),
+    : Waypoint(client, nullptr, client->getEnv().getLocalPlayer()->getCamera()->getPosition()+pos*BS),
       text(text),
       textcolor(textcolor),
       bgcolor(bgcolor)
@@ -52,7 +53,7 @@ Nametag::Nametag(Client *client,
 
 void Nametag::updateBank(v3f newWorldPos)
 {
-    v3f camera_pos = client->getCamera()->getPosition();
+    v3f camera_pos = client->getEnv().getLocalPlayer()->getCamera()->getPosition();
 
     v2f screen_pos;
     worldPos = camera_pos + newWorldPos * BS;
@@ -119,7 +120,7 @@ PlayerCamera::PlayerCamera(DrawControl &draw_control, Client *client):
 
 PlayerCamera::~PlayerCamera()
 {
-	m_wieldmgr->drop();
+    //m_wieldmgr->drop();
 }
 
 void PlayerCamera::notifyFovChange()
@@ -462,7 +463,7 @@ void PlayerCamera::update(LocalPlayer* player, f32 frametime, f32 tool_reload_ra
                 my_cp.Y = m_position.Y + (m_direction.Y * -i);
 
 			// Prevent camera positioned inside nodes
-			const NodeDefManager *nodemgr = m_client->ndef();
+            /*const NodeDefManager *nodemgr = m_client->ndef();
 			MapNode n = m_client->getEnv().getClientMap()
 				.getNode(floatToInt(my_cp, BS));
 
@@ -473,7 +474,7 @@ void PlayerCamera::update(LocalPlayer* player, f32 frametime, f32 tool_reload_ra
                 my_cp.Y += m_direction.Y*-1*-BS/2;
 				abort = true;
 				break;
-			}
+            }*/
 		}
 
 		// If node blocks camera position don't move y to heigh
@@ -582,8 +583,8 @@ void PlayerCamera::update(LocalPlayer* player, f32 frametime, f32 tool_reload_ra
 		wield_position.X -= std::sin(bobfrac*M_PI*2.0) * 3.0;
 		wield_position.Y += std::sin(my_modf(bobfrac*2.0)*M_PI) * 3.0;
 	}
-	m_wieldnode->setPosition(wield_position);
-	m_wieldnode->setRotation(wield_rotation);
+    //m_wieldnode->setPosition(wield_position);
+    //m_wieldnode->setRotation(wield_rotation);
 
 	m_player_light_color = player->light_color;
 	m_wieldnode->setNodeLightColor(m_player_light_color);

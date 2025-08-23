@@ -151,9 +151,10 @@ void BlockBounds::updateMesh(Client *client, DistanceSortedDrawList *drawlist)
     Batcher3D::vType = B3DVT_SVT;
     u16 mesh_chunk_size = std::max<u16>(1, g_settings->getU16("client_mesh_chunk"));
 
-    v3s16 block_pos = getContainerPos(client->getEnv().getLocalPlayer()->getStandingNodePos(), MAP_BLOCKSIZE);
+    auto player = client->getEnv().getLocalPlayer();
+    v3s16 block_pos = getContainerPos(player->getStandingNodePos(), MAP_BLOCKSIZE);
 
-    v3f cam_offset = intToFloat(client->getCamera()->getOffset(), BS);
+    v3f cam_offset = intToFloat(player->getCamera()->getOffset(), BS);
 
     v3f half_node = v3f(BS, BS, BS) / 2.0f;
     v3f base_corner = intToFloat(block_pos * MAP_BLOCKSIZE, BS) - cam_offset - half_node;

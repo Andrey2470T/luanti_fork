@@ -7,7 +7,6 @@
 #include "environment.h"
 #include "util/numeric.h" // IntervalLimiter
 #include "activeobjectmgr.h" // client::ActiveObjectMgr
-//#include "irr_ptr.h"
 #include "config.h"
 #include <set>
 
@@ -21,7 +20,7 @@ class ClientScripting;
 class ClientActiveObject;
 class GenericCAO;
 class LocalPlayer;
-class TransformNodeManager;
+class ResourceCache;
 
 /*
 	The client-side environment.
@@ -54,7 +53,7 @@ typedef std::unordered_map<u16, ClientActiveObject*> ClientActiveObjectMap;
 class ClientEnvironment : public Environment
 {
 public:
-	ClientEnvironment(irr_ptr<ClientMap> map, ITextureSource *texturesource, Client *client);
+	ClientEnvironment(ClientMap *map, ResourceCache *cache, Client *client);
 	~ClientEnvironment();
 
 	Map & getMap();
@@ -72,7 +71,7 @@ public:
 		ClientSimpleObjects
 	*/
 
-	void addSimpleObject(ClientSimpleObject *simple);
+	//void addSimpleObject(ClientSimpleObject *simple);
 
 	/*
 		ActiveObjects
@@ -122,7 +121,7 @@ public:
 	ClientEnvEvent getClientEnvEvent();
 
 	virtual void getSelectedActiveObjects(
-		const core::line3d<f32> &shootline_on_map,
+		const line3df &shootline_on_map,
 		std::vector<PointedThing> &objects,
 		const std::optional<Pointabilities> &pointabilities
 	);
@@ -137,21 +136,14 @@ public:
 	void updateFrameTime(bool is_paused);
 	u64 getFrameTime() const { return m_frame_time; }
 	u64 getFrameTimeDelta() const { return m_frame_dtime; }
-
-    TransformNodeManager *getTransformNodeManager() const
-    {
-        return m_node_mgr.get();
-    }
-
 private:
-	irr_ptr<ClientMap> m_map;
-	LocalPlayer *m_local_player = nullptr;
-	ITextureSource *m_texturesource;
+	std::unique_ptr<ClientMap> m_map;
+	std::unique_ptr<LocalPlayer> m_local_player;
+	ResourceCache *m_rescache;
 	Client *m_client;
 	ClientScripting *m_script = nullptr;
 	client::ActiveObjectMgr m_ao_manager;
-    std::unique_ptr<TransformNodeManager> m_node_mgr;
-	std::vector<ClientSimpleObject*> m_simple_objects;
+	//std::vector<ClientSimpleObject*> m_simple_objects;
 	std::queue<ClientEnvEvent> m_client_event_queue;
 	IntervalLimiter m_active_object_light_update_interval;
 	std::set<std::string> m_player_names;

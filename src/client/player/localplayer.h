@@ -13,11 +13,15 @@
 class Client;
 class Environment;
 class GenericCAO;
+class RenderCAO;
 class ClientActiveObject;
 class ClientEnvironment;
 class IGameDef;
 struct CollisionInfo;
 struct collisionMoveResult;
+class Camera;
+class PlayerCamera;
+struct DrawControl;
 
 enum class LocalPlayerAnimation
 {
@@ -50,7 +54,7 @@ class LocalPlayer : public Player
 {
 public:
 
-	LocalPlayer(Client *client, const std::string &name);
+    LocalPlayer(Client *client, DrawControl &draw_ctrl, const std::string &name);
 	virtual ~LocalPlayer();
 
 	// Initialize hp to 0, so that no hearts will be shown if server
@@ -105,11 +109,11 @@ public:
 	float hurt_tilt_timer = 0.0f;
 	float hurt_tilt_strength = 0.0f;
 
-	GenericCAO *getCAO() const { return m_cao; }
+    RenderCAO *getCAO() const { return m_cao; }
 
-	ClientActiveObject *getParent() const;
+	GenericCAO *getParent() const;
 
-	void setCAO(GenericCAO *toset)
+	void setCAO(RenderCAO *toset)
 	{
 		assert(!m_cao); // Pre-condition
 		m_cao = toset;
@@ -128,12 +132,12 @@ public:
 	void setPitch(f32 pitch) { m_pitch = pitch; }
 	f32 getPitch() const { return m_pitch; }
 
-	inline void setPosition(const v3f &position)
+    void setPosition(const v3f &position)
 	{
 		m_position = position;
 		m_sneak_node_exists = false;
 	}
-	inline void addPosition(const v3f &added_pos)
+    void addPosition(const v3f &added_pos)
 	{
 		m_position += added_pos;
 		m_sneak_node_exists = false;
@@ -158,14 +162,16 @@ public:
 
 	bool isDead() const;
 
-	inline void addVelocity(const v3f &vel)
+    void addVelocity(const v3f &vel)
 	{
 		m_added_velocity += vel;
 	}
 
-	inline Lighting& getLighting() { return m_lighting; }
+    PlayerCamera *getCamera() const;
 
-	inline PlayerSettings &getPlayerSettings() { return m_player_settings; }
+    Lighting& getLighting() { return m_lighting; }
+
+    PlayerSettings &getPlayerSettings() { return m_player_settings; }
 
 private:
 	void accelerate(const v3f &target_speed, const f32 max_increase_H,
@@ -216,8 +222,10 @@ private:
 
 	v3f m_added_velocity = v3f(0.0f); // in BS-space; cleared on each move()
 
-	GenericCAO *m_cao = nullptr;
+	RenderCAO *m_cao = nullptr;
 	Client *m_client;
+
+    std::unique_ptr<PlayerCamera> m_camera;
 
 	PlayerSettings m_player_settings;
 	Lighting m_lighting;

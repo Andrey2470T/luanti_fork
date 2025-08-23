@@ -24,7 +24,7 @@ static const std::string ClientMap_settings[] = {
 };
 
 DistanceSortedDrawList::DistanceSortedDrawList(Client *_client)
-    : client(_client)
+    : client(_client), camera(client->getEnv().getLocalPlayer()->getCamera())
 {
     for (const auto &name : ClientMap_settings)
         g_settings->registerChangedCallback(name, on_settings_changed, this);
@@ -113,7 +113,7 @@ void DistanceSortedDrawList::updateList()
 
     //MeshGrid mesh_grid = client->getMeshGrid();
 
-    v3f cameraPos = client->getCamera()->getPosition();
+    v3f cameraPos = camera->getPosition();
 
     for (auto &mesh : meshes) {
         v3f center = mesh->getBoundingSphereCenter();
@@ -129,7 +129,7 @@ void DistanceSortedDrawList::updateList()
         // Only do coarse culling here, to account for fast camera movement.
         // This is needed because this function is not called every frame.
         f32 frustum_cull_extra_radius = 300.0f;
-        if (mesh->isFrustumCulled(client->getCamera(), frustum_cull_extra_radius)) {
+        if (mesh->isFrustumCulled(camera, frustum_cull_extra_radius)) {
             continue;
         }
 
@@ -212,7 +212,7 @@ void DistanceSortedDrawList::render()
     if (draw_control.show_wireframe)
         ctxt->setPolygonMode(render::CM_FRONT_AND_BACK, render::PM_LINE);
 
-    v3s16 cameraOffset = client->getCamera()->getOffset();
+    v3s16 cameraOffset = camera->getOffset();
 
     MutexAutoLock drawlist_lock(drawlist_mutex);
     for (auto &l : layers) {
@@ -238,7 +238,7 @@ void DistanceSortedDrawList::renderShadows(const TileLayer &override_layer)
     auto rnd = rndsys->getRenderer();
     auto ctxt = rnd->getContext();
 
-    v3s16 cameraOffset = client->getCamera()->getOffset();
+    v3s16 cameraOffset = camera->getOffset();
 
     MutexAutoLock list_lock(shadow_meshes_mutex);
     for (auto &m : shadow_meshes) {

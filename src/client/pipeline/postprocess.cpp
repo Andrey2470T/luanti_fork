@@ -260,7 +260,7 @@ void MapPostFxStep::run(PipelineContext &context)
         target->activate(context);
 
     Map *map = dynamic_cast<Map *>(&context.client->getEnv().getClientMap());
-    auto camera = context.client->getCamera();
+    auto camera = context.client->getEnv().getLocalPlayer()->getCamera();
 
     MapNode n = map->getNode(floatToInt(camera->getPosition(), BS));
 

@@ -34,8 +34,7 @@ ClientEnvironment::ClientEnvironment(irr_ptr<ClientMap> map,
 	Environment(client),
 	m_map(std::move(map)),
 	m_texturesource(texturesource),
-    m_client(client),
-    m_node_mgr(std::make_unique<TransformNodeManager>())
+    m_client(client)
 {
 }
 

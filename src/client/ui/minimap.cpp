@@ -615,7 +615,7 @@ void Minimap::updateActiveMarkers(recti rect)
     // Clear all ealier added markers
     clear();
 
-	v3f cam_offset = intToFloat(client->getCamera()->getOffset(), BS);
+    v3f cam_offset = intToFloat(client->getEnv().getLocalPlayer()->getCamera()->getOffset(), BS);
 	v3s16 pos_offset = data->pos - v3s16(data->mode.map_size / 2,
 			data->mode.scan_height / 2,
 			data->mode.map_size / 2);

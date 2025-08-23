@@ -8,7 +8,7 @@
 #include "client/client.h"
 #include "../hud.h"
 #include "util/numeric.h"
-#include "client/render/camera.h"
+#include "client/player/playercamera.h"
 #include <Utils/Quaternion.h>
 #include "minimap.h"
 #include "settings.h"
@@ -389,7 +389,7 @@ void HudCompass::update()
 
     // Angle according to camera view
     matrix4 rotation;
-    v3f dir = client->getCamera()->getDirection();
+    v3f dir = client->getEnv().getLocalPlayer()->getCamera()->getDirection();
     Quaternion(dir.X, dir.Y, dir.Z, 1.0f).getMatrix(rotation);
 
     v3f fore(0.0f, 0.0f, 1.0f);

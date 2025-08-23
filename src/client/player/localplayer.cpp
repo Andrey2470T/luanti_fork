@@ -10,8 +10,10 @@
 #include "settings.h"
 #include "environment.h"
 #include "map.h"
-#include "client.h"
-#include "content_cao.h"
+#include "client/client.h"
+#include "client/ao/renderCAO.h"
+#include "client/render/drawlist.h"
+#include "client/player/playercamera.h"
 
 /*
 	PlayerSettings
@@ -57,9 +59,9 @@ void PlayerSettings::settingsChangedCallback(const std::string &name, void *data
 	LocalPlayer
 */
 
-LocalPlayer::LocalPlayer(Client *client, const std::string &name):
-	Player(name, client->idef()),
-	m_client(client)
+LocalPlayer::LocalPlayer(Client *client, DrawControl &draw_ctrl, const std::string &name):
+    Player(name, client->idef()),
+    m_client(client), m_camera(std::make_unique<PlayerCamera>(draw_ctrl, client))
 {
 	m_player_settings.readGlobalSettings();
 	m_player_settings.registerSettingsCallback();
@@ -227,7 +229,7 @@ void LocalPlayer::move(f32 dtime, Environment *env,
 
 	// Copy parent position if local player is attached
 	if (getParent()) {
-		setPosition(m_cao->getPosition());
+        setPosition(m_cao->getPosition());
 		m_added_velocity = v3f(0.0f); // ignored
 		return;
 	}
@@ -760,15 +762,20 @@ v3f LocalPlayer::getEyeOffset() const
 	return v3f(0.0f, BS * m_eye_height, 0.0f);
 }
 
-ClientActiveObject *LocalPlayer::getParent() const
+GenericCAO *LocalPlayer::getParent() const
 {
-	return m_cao ? m_cao->getParent() : nullptr;
+    return m_cao ? m_cao->getParent() : nullptr;
 }
 
 bool LocalPlayer::isDead() const
 {
-	FATAL_ERROR_IF(!getCAO(), "LocalPlayer's CAO isn't initialized");
-	return !getCAO()->isImmortal() && hp == 0;
+    FATAL_ERROR_IF(!m_cao, "LocalPlayer's CAO isn't initialized");
+    return !m_cao->isImmortal() && hp == 0;
+}
+
+PlayerCamera *LocalPlayer::getCamera() const
+{
+    return m_camera.get();
 }
 
 // 3D acceleration
@@ -824,7 +831,7 @@ void LocalPlayer::old_move(f32 dtime, Environment *env,
 
 	// Copy parent position if local player is attached
 	if (getParent()) {
-		setPosition(m_cao->getPosition());
+        setPosition(m_cao->getPosition());
 		m_sneak_node_exists = false;
 		m_added_velocity = v3f(0.0f);
 		return;
