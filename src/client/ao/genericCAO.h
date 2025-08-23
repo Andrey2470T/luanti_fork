@@ -61,17 +61,6 @@ struct Attachment : public TransformNode
     }
 };
 
-enum class GenericCAOType
-{
-    DUMMY = 0,
-    RENDER_SPRITE,
-    RENDER_UPRIGHT_SPRITE,
-    RENDER_CUBE,
-    RENDER_MESH,
-    RENDER_WIELDITEM,
-    RENDER_TEST
-};
-
 // CAO able moving in the space and being attached to another one
 class GenericCAO : public ClientActiveObject
 {
@@ -84,8 +73,6 @@ protected:
     ObjectProperties m_prop;
 
     Client *m_client = nullptr;
-
-    GenericCAOType m_gcao_type;
 
     v3f m_position = v3f(0.0f, 10.0f * BS, 0);
     v3f m_velocity;
@@ -109,23 +96,14 @@ public:
 
     ~GenericCAO();
 
-    static std::unique_ptr<ClientActiveObject> create(Client *client, ClientEnvironment *env)
-    {
-        return std::make_unique<GenericCAO>(client, env);
-    }
-
     ActiveObjectType getType() const override
     {
         return ACTIVEOBJECT_TYPE_GENERIC;
     }
-    GenericCAOType getGenericCAOType() const
-    {
-        return m_gcao_type;
-    }
 
     void initialize(const std::string &data) override;
 
-    void processInitData(const std::string &data);
+    virtual void processInitData(const std::string &data);
 
     const v3f getPosition() const override final;
 

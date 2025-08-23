@@ -23,13 +23,13 @@
 
 RenderCAO::RenderCAO(Client *client, ClientEnvironment *env)
     : GenericCAO(client, env), m_rndsys(client->getRenderSystem()), m_cache(client->getResourceCache()),
-      m_anim_mgr(client->getRenderSystem()->getAnimationManager())
+      m_anim_mgr(client->getRenderSystem()->getAnimationManager()), m_camera(client->getEnv().getLocalPlayer()->getCamera())
 {
     initTileLayer();
 
     /* don't update while punch texture modifier is active */
-    if (m_reset_textures_timer < 0)
-        updateAppearance(m_current_texture_modifier);
+    /*if (m_reset_textures_timer < 0)
+        updateAppearance(m_current_texture_modifier);*/
 
     /*if (auto shadow = RenderingEngine::get_shadow_renderer())
             shadow->addNodeToShadowList(node);
@@ -46,7 +46,7 @@ RenderCAO::~RenderCAO()
     removeMesh();
 
     if (m_nametag) {
-        m_client->getCamera()->removeNametag(m_nametag);
+        m_client->getEnv().getLocalPlayer()->getCamera()->removeNametag(m_nametag);
         m_nametag = nullptr;
     }
 
@@ -101,12 +101,75 @@ void RenderCAO::setChildrenVisible(bool toset)
     }
 }
 
+Model *addSpriteModel(TileLayer &layer, v3f position, v3f visual_size);
+Model *addUprightSpriteModel(TileLayer &layer, v3f position, v3f visual_size, bool is_player);
+Model *addCubeModel(TileLayer &layer, v3f position, v3f visual_size);
+Model *addMeshModel(TileLayer &layer, v3f position, v3f visual_size, AnimationManager *anim_mgr,
+    std::string mesh, ResourceCache *cache);
+
+void RenderCAO::addMesh()
+{
+    removeMesh();
+
+    if (m_prop.visual == "sprite")
+        m_model = addSpriteModel(m_tile_layer, m_position, m_prop.visual_size);
+    else if (m_prop.visual == "upright_sprite")
+        m_model = addUprightSpriteModel(m_tile_layer, m_position, m_prop.visual_size, m_is_player);
+    else if (m_prop.visual == "cube")
+        m_model = addCubeModel(m_tile_layer, m_position, m_prop.visual_size);
+    else
+        m_model = addMeshModel(m_tile_layer, m_position, m_prop.visual_size, m_anim_mgr, m_prop.mesh, m_cache);
+
+    m_cache->cacheResource<Model>(ResourceType::MODEL, m_model);
+}
+
 void RenderCAO::removeMesh()
 {
     if (m_model)
         m_cache->clearResource<Model>(ResourceType::MODEL, m_model);
 
     m_model = nullptr;
+}
+
+void RenderCAO::updateAppearance(std::string mod)
+{
+    m_previous_texture_modifier = m_current_texture_modifier;
+    m_current_texture_modifier = mod;
+
+    u8 layers_n;
+
+    if (m_prop.visual == "sprite")
+        layers_n = 1;
+    else if (m_prop.visual == "upright_sprite")
+        layers_n = 2;
+    else if (m_prop.visual == "cube")
+        layers_n = 6;
+    else
+        layers_n = m_model->getMesh()->getBufferLayersCount(0);
+
+    for (u8 i = 0; i < layers_n; i++) {
+        std::string texturestring = "no_texture.png";
+        if (!m_prop.textures.empty())
+            texturestring = m_prop.textures.at(i);
+        texturestring += mod;
+
+        updateLayerUVs(texturestring, i);
+
+        if (m_prop.visual == "mesh") {
+            auto layer = m_model->getMesh()->getBufferLayer(0, i);
+
+            if (m_prop.backface_culling)
+                layer.first->material_flags |= MATERIAL_FLAG_BACKFACE_CULLING;
+            else
+                layer.first->material_flags &= ~MATERIAL_FLAG_BACKFACE_CULLING;
+        }
+    }
+
+    // Set mesh color (only if lighting is disabled)
+    if (m_prop.visual == "upright_sprite" && !m_prop.colors.empty() && m_prop.glow < 0) {
+        m_base_color = m_prop.colors[0];
+        updateVertexColor(false);
+    }
 }
 
 void RenderCAO::setAttachment(object_t parent_id, const std::string &bone,
@@ -121,7 +184,7 @@ void RenderCAO::setAttachment(object_t parent_id, const std::string &bone,
     } else if (!m_is_local_player) {
         // Objects attached to the local player should be hidden in first person
         m_is_visible = !node->AttachedToLocal ||
-            m_client->getCamera()->getCameraMode() != CAMERA_MODE_FIRST;
+            m_camera->getCameraMode() != CAMERA_MODE_FIRST;
         node->ForceVisible = false;
     } else {
         // Local players need to have this set,
@@ -148,7 +211,7 @@ void RenderCAO::step(float dtime, ClientEnvironment *env)
             float old_anim_speed = player->last_animation_speed;
             m_velocity = v3f(0,0,0);
             m_acceleration = v3f(0,0,0);
-            const PlayerControl &controls = player->getPlayerControl();
+            const PlayerControl &controls = dynamic_cast<Player *>(player)->getPlayerControl();
             f32 new_speed = player->local_animation_speed;
 
             bool walking = false;
@@ -237,7 +300,6 @@ void RenderCAO::step(float dtime, ClientEnvironment *env)
             }
         }*/
 
-        removeMesh();
         addMesh();
 
         // Attachments, part 2: Now that the parent has been refreshed, put its attachments back
@@ -424,7 +486,7 @@ void RenderCAO::updateNametag()
     if (m_prop.nametag.empty() || m_prop.nametag_color.A() == 0) {
         // Delete nametag
         if (m_nametag) {
-            m_client->getCamera()->removeNametag(m_nametag);
+            m_camera->removeNametag(m_nametag);
             m_nametag = nullptr;
         }
         return;
@@ -434,7 +496,7 @@ void RenderCAO::updateNametag()
     pos.Y = m_prop.selectionbox.MaxEdge.Y + 0.3f;
     if (!m_nametag) {
         // Add nametag
-        m_nametag = m_client->getCamera()->addNametag(
+        m_nametag = m_camera->addNametag(
             m_prop.nametag, m_prop.nametag_color,
             m_prop.nametag_bgcolor, pos);
     } else {
@@ -610,7 +672,7 @@ void RenderCAO::updateMeshCulling()
     if (!m_is_local_player)
         return;
 
-    bool hidden = m_client->getCamera()->getCameraMode() == CAMERA_MODE_FIRST;
+    bool hidden = m_camera->getCameraMode() == CAMERA_MODE_FIRST;
 
     setVisible(hidden);
 }
@@ -978,21 +1040,60 @@ std::string RenderCAO::debugInfoText()
     return os.str();
 }
 
-void SpriteRenderCAO::addMesh()
+void RenderCAO::processInitData(const std::string &data)
+{
+    std::istringstream is(data, std::ios::binary);
+    const u8 version = readU8(is);
+
+    if (version < 1) {
+        errorstream << "GenericCAO: Unsupported init data version"
+                << std::endl;
+        return;
+    }
+
+    // PROTOCOL_VERSION >= 37
+    m_name = deSerializeString16(is);
+    m_is_player = readU8(is);
+    m_id = readU16(is);
+    m_position = readV3F32(is);
+    m_rotation = readV3F32(is);
+    m_hp = readU16(is);
+
+    if (m_is_player) {
+        // Check if it's the current player
+        LocalPlayer *player = m_env->getLocalPlayer();
+        if (player && player->getName() == m_name) {
+            m_is_local_player = true;
+            player->setCAO(this);
+        }
+    }
+
+    const u8 num_messages = readU8(is);
+    for (u8 i = 0; i < num_messages; i++) {
+        std::string message = deSerializeString32(is);
+        processMessage(message);
+    }
+
+    m_rotation = wrapDegrees_0_360_v3f(m_rotation);
+    pos_translator.init(m_position);
+    rot_translator.init(m_rotation);
+    updateMatrices();
+}
+
+Model *addSpriteModel(TileLayer &layer, v3f position, v3f visual_size)
 {
     MeshBuffer *sprite = new MeshBuffer(4, 6);
     Batcher3D::appendUnitFace(sprite, {});
 
-    MeshOperations::scaleMesh(sprite, m_prop.visual_size * BS);
+    MeshOperations::scaleMesh(sprite, visual_size * BS);
 
     LayeredMeshPart mesh_p;
     mesh_p.count = 6;
 
     MeshLayer mesh_l;
-    mesh_l.first = std::make_shared<TileLayer>(m_tile_layer);
+    mesh_l.first = std::make_shared<TileLayer>(layer);
     mesh_l.second = mesh_p;
-    m_model = new Model(m_position, {mesh_l}, sprite);
-    m_cache->cacheResource<Model>(ResourceType::MODEL, m_model);
+    return new Model(position, {mesh_l}, sprite);
 }
 
 void RenderCAO::updateLayerUVs(std::string new_texture, u8 layer_id)
@@ -1011,28 +1112,15 @@ void RenderCAO::updateLayerUVs(std::string new_texture, u8 layer_id)
     layer.first->tile_ref = img;
 }
 
-void SpriteRenderCAO::updateAppearance(std::string mod)
-{
-    m_previous_texture_modifier = m_current_texture_modifier;
-    m_current_texture_modifier = mod;
-
-    std::string texturestring = "no_texture.png";
-    if (!m_prop.textures.empty())
-        texturestring = m_prop.textures[0];
-    texturestring += mod;
-
-    updateLayerUVs(texturestring, 0);
-}
-
-void UprightSpriteRenderCAO::addMesh()
+Model *addUprightSpriteModel(TileLayer &layer, v3f position, v3f visual_size, bool is_player)
 {
     MeshBuffer *sprite = new MeshBuffer(4, 6);
     Batcher3D::appendUnitFace(sprite, {});
 
-    MeshOperations::scaleMesh(sprite, m_prop.visual_size * BS);
+    MeshOperations::scaleMesh(sprite, visual_size * BS);
 
-    if (m_is_player) {
-        f32 dy = BS * m_prop.visual_size.Y / 2;
+    if (is_player) {
+        f32 dy = BS * visual_size.Y / 2;
         // Move minimal Y position to 0 (feet position)
         MeshOperations::translateMesh(sprite, v3f(0.0f, dy, 0.0f));
     }
@@ -1041,116 +1129,58 @@ void UprightSpriteRenderCAO::addMesh()
     mesh_p.count = 6;
 
     MeshLayer mesh_l;
-    mesh_l.first = std::make_shared<TileLayer>(m_tile_layer);
+    mesh_l.first = std::make_shared<TileLayer>(layer);
     mesh_l.second = mesh_p;
-    m_model = new Model(m_position, {mesh_l}, sprite);
-    m_cache->cacheResource<Model>(ResourceType::MODEL, m_model);
+    return new Model(position, {mesh_l}, sprite);
 }
 
-void UprightSpriteRenderCAO::updateAppearance(std::string mod)
-{
-    m_previous_texture_modifier = m_current_texture_modifier;
-    m_current_texture_modifier = mod;
-
-    std::string tname1 = "no_texture.png";
-    std::string tname2 = "no_texture.png";
-
-    if (!m_prop.textures.empty()) {
-        tname1 = m_prop.textures[0];
-        tname2 = m_prop.textures[1];
-    }
-    tname1 += mod;
-    tname2 += mod;
-
-    updateLayerUVs(tname1, 0);
-    updateLayerUVs(tname2, 1);
-
-    // Set mesh color (only if lighting is disabled)
-    if (!m_prop.colors.empty() && m_prop.glow < 0) {
-        m_base_color = m_prop.colors[0];
-        updateVertexColor(false);
-    }
-}
-
-void CubeRenderCAO::addMesh()
+Model *addCubeModel(TileLayer &layer, v3f position, v3f visual_size)
 {
     MeshBuffer *cube = new MeshBuffer(4 * 6, 6 * 6);
     Batcher3D::appendUnitBox(cube, {});
 
-    MeshOperations::scaleMesh(cube, m_prop.visual_size * BS);
+    MeshOperations::scaleMesh(cube, visual_size * BS);
 
     LayeredMeshPart mesh_p;
     mesh_p.count = 6 * 6;
 
     MeshLayer mesh_l;
-    mesh_l.first = std::make_shared<TileLayer>(m_tile_layer);
+    mesh_l.first = std::make_shared<TileLayer>(layer);
     mesh_l.second = mesh_p;
-    m_model = new Model(m_position, {mesh_l}, cube);
-    m_cache->cacheResource<Model>(ResourceType::MODEL, m_model);
-}
-void CubeRenderCAO::updateAppearance(std::string mod)
-{
-    for (u32 i = 0; i < 6; ++i)
-    {
-        std::string texturestring = "no_texture.png";
-        if(m_prop.textures.size() > i)
-            texturestring = m_prop.textures[i];
-        texturestring += mod;
-
-        updateLayerUVs(texturestring, i);
-    }
+    return new Model(position, {mesh_l}, cube);
 }
 
-void MeshRenderCAO::addMesh()
+Model *addMeshModel(TileLayer &layer, v3f position, v3f visual_size, AnimationManager *anim_mgr,
+    std::string mesh, ResourceCache *cache)
 {
     std::vector<std::shared_ptr<TileLayer>> layers;
 
     for (u8 i = 0; i < 6; i++)
-        layers.push_back(std::make_shared<TileLayer>(m_tile_layer));
-    m_model = Model::load(m_anim_mgr, m_position, layers, m_prop.mesh, m_cache);
+        layers.push_back(std::make_shared<TileLayer>(layer));
+    auto model = Model::load(anim_mgr, position, layers, mesh, cache);
 
-    if (m_model) {
-        auto mesh = m_model->getMesh();
+    if (model) {
+        auto mesh = model->getMesh();
 
         for (u8 i = 0; i < mesh->getBuffersCount(); i++) {
             auto buffer = mesh->getBuffer(i);
 
             if (!MeshOperations::checkMeshNormals(buffer)) {
                 infostream << "MeshRenderCAO: recalculating normals for mesh "
-                    << m_prop.mesh << std::endl;
+                    << mesh << std::endl;
                 MeshOperations::recalculateNormals(buffer, true, false);
             }
 
-            MeshOperations::scaleMesh(buffer, m_prop.visual_size);
+            MeshOperations::scaleMesh(buffer, visual_size);
         }
     }
-    m_base_color = img::white;
-    updateVertexColor(false);
-    m_cache->cacheResource<Model>(ResourceType::MODEL, m_model);
+
+    return model;
 }
 
-void MeshRenderCAO::updateAppearance(std::string mod)
+/*void WieldItemRenderCAO::addMesh()
 {
-    for (u32 i = 0; i < m_model->getMesh()->getBufferLayersCount(0); ++i) {
-        std::string texturestring = m_prop.textures[i];
-        if (texturestring.empty())
-            continue; // Empty texture string means don't modify that material
-        texturestring += mod;
-
-        updateLayerUVs(texturestring, i);
-
-        auto layer = m_model->getMesh()->getBufferLayer(0, i);
-
-        if (m_prop.backface_culling)
-            layer.first->material_flags |= MATERIAL_FLAG_BACKFACE_CULLING;
-        else
-            layer.first->material_flags &= ~MATERIAL_FLAG_BACKFACE_CULLING;
-    }
-}
-
-void WieldItemRenderCAO::addMesh()
-{
-    /*if (m_prop.visual == "wielditem" || m_prop.visual == "item") {
+    if (m_prop.visual == "wielditem" || m_prop.visual == "item") {
         grabMatrixNode();
         ItemStack item;
         if (m_prop.wield_item.empty()) {
@@ -1174,5 +1204,5 @@ void WieldItemRenderCAO::addMesh()
     } else {
         infostream<<"GenericCAO::addToScene(): \""<<m_prop.visual
                 <<"\" not supported"<<std::endl;
-    }*/
-}
+    }
+}*/

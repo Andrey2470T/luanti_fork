@@ -14,11 +14,10 @@
 #include "client/mesh/model.h"
 #include "client/mesh/layeredmesh.h"
 #include "client/ao/skeleton.h"
+#include "client/render/rendersystem.h"
 
 class Settings;
 struct ToolCapabilities;
-
-std::unordered_map<u16, ClientActiveObject::Factory> ClientActiveObject::m_types;
 
 template<typename T>
 void SmoothTranslator<T>::init(T current)
@@ -140,14 +139,9 @@ static bool logOnce(const std::ostringstream &from, std::ostream &log_to)
 */
 
 GenericCAO::GenericCAO(Client *client, ClientEnvironment *env):
-    ClientActiveObject(0, client, env), m_node_mgr(env->getTransformNodeManager())
-{
-	if (!client) {
-        ClientActiveObject::registerType(getType(), create);
-	} else {
-		m_client = client;
-	}
-}
+    ClientActiveObject(0, client, env),
+    m_node_mgr(client->getRenderSystem()->getNodeManager())
+{}
 
 void GenericCAO::initialize(const std::string &data)
 {
@@ -167,20 +161,11 @@ void GenericCAO::processInitData(const std::string &data)
 
 	// PROTOCOL_VERSION >= 37
 	m_name = deSerializeString16(is);
-	m_is_player = readU8(is);
+    readU8(is);
 	m_id = readU16(is);
 	m_position = readV3F32(is);
 	m_rotation = readV3F32(is);
 	m_hp = readU16(is);
-
-	if (m_is_player) {
-		// Check if it's the current player
-		LocalPlayer *player = m_env->getLocalPlayer();
-		if (player && player->getName() == m_name) {
-			m_is_local_player = true;
-			player->setCAO(this);
-		}
-	}
 
 	const u8 num_messages = readU8(is);
 	for (u8 i = 0; i < num_messages; i++) {

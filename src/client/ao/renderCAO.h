@@ -8,11 +8,12 @@ class ResourceCache;
 class Model;
 class AnimationManager;
 class BoneAnimation;
+class PlayerCamera;
 
 // CAO able to be rendered and animated
 class RenderCAO : public GenericCAO
 {
-protected:
+private:
     RenderSystem *m_rndsys;
     ResourceCache *m_cache;
 
@@ -25,12 +26,13 @@ protected:
     // last applied texture modifier
     std::string m_current_texture_modifier = "";
 
-    img::color8 m_base_color;
+    img::color8 m_base_color = img::white;
 
     void updateLayerUVs(std::string new_texture, u8 layer_id);
-private:
+
     aabbf m_selection_box = aabbf(-BS/3.,-BS/3.,-BS/3., BS/3.,BS/3.,BS/3.);
 
+    PlayerCamera *m_camera;
     Nametag *m_nametag = nullptr;
     std::optional<v3f> m_marker;
 
@@ -103,7 +105,7 @@ public:
 
 	void setChildrenVisible(bool toset);
 
-    virtual void addMesh() = 0;
+    void addMesh();
     void removeMesh();
 
     void expireVisuals()
@@ -133,7 +135,7 @@ public:
 
 	// ffs this HAS TO BE a string copy! See #5739 if you think otherwise
 	// Reason: updateTextures(m_previous_texture_modifier);
-    virtual void updateAppearance(std::string mod) = 0;
+    void updateAppearance(std::string mod);
 
     void setAnimation(v2i range, f32 speed, bool loop);
 
@@ -153,56 +155,7 @@ public:
     {
         return m_prop.infotext;
     }
-};
 
-class SpriteRenderCAO : public RenderCAO
-{
-public:
-    SpriteRenderCAO(Client *client, ClientEnvironment *env)
-        : RenderCAO(client, env)
-    {}
-
-    void addMesh() override;
-    void updateAppearance(std::string mod) override;
-};
-
-class UprightSpriteRenderCAO : public RenderCAO
-{
-    UprightSpriteRenderCAO(Client *client, ClientEnvironment *env)
-        : RenderCAO(client, env)
-    {}
-
-    void addMesh() override;
-    void updateAppearance(std::string mod) override;
-};
-
-class CubeRenderCAO : public RenderCAO
-{
-    CubeRenderCAO(Client *client, ClientEnvironment *env)
-        : RenderCAO(client, env)
-    {}
-
-    void addMesh() override;
-    void updateAppearance(std::string mod) override;
-};
-
-class MeshRenderCAO : public RenderCAO
-{
-    MeshRenderCAO(Client *client, ClientEnvironment *env)
-        : RenderCAO(client, env)
-    {}
-
-    void addMesh() override;
-    void updateAppearance(std::string mod) override;
-};
-
-class WieldItemRenderCAO : public RenderCAO
-{
-    WieldItemRenderCAO(Client *client, ClientEnvironment *env)
-        : RenderCAO(client, env)
-    {}
-
-    void addMesh() override;
-    void updateAppearance(std::string mod) override {};
+    void processInitData(const std::string &data) override;
 };
 

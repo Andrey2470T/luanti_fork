@@ -13,10 +13,7 @@
 class ClientEnvironment;
 class Client;
 class IGameDef;
-class LocalPlayer;
 struct ItemStack;
-class WieldMeshSceneNode;
-class ResourceCache;
 
 
 class ClientActiveObject : public ActiveObject
@@ -52,23 +49,13 @@ public:
 	*/
 	virtual void initialize(const std::string &data) {}
 
-	// Create a certain type of ClientActiveObject
-	static std::unique_ptr<ClientActiveObject> create(ActiveObjectType type,
-			Client *client, ClientEnvironment *env);
-
 	// If returns true, punch will not be sent to the server
     virtual bool directReportPunch(v3f dir, const ItemStack *punchitem = nullptr,
 		float time_from_last_punch = 1000000) { return false; }
 
 protected:
-	// Used for creating objects based on type
-	typedef std::unique_ptr<ClientActiveObject> (*Factory)(Client *client, ClientEnvironment *env);
-	static void registerType(u16 type, Factory f);
 	Client *m_client;
 	ClientEnvironment *m_env;
-private:
-	// Used for creating objects based on type
-	static std::unordered_map<u16, Factory> m_types;
 };
 
 class DistanceSortedActiveObject
