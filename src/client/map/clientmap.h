@@ -40,14 +40,12 @@ public:
 	// @brief Calculate statistics about the map and keep the blocks alive
 	void touchMapBlocks();
 
-    void addActiveObject(u16 id);
+    bool addActiveObject(u16 id);
     void updateMapBlocksActiveObjects();
     void removeActiveObject(u16 id);
 
     int getBackgroundBrightness(float max_d, u32 daylight_factor,
             int oldvalue, bool *sunlight_seen_result);
-
-    void renderPostFx(CameraMode cam_mode);
 
 	// For debug printing
 	void PrintInfo(std::ostream &out) override;
@@ -55,9 +53,6 @@ public:
 	void onSettingChanged(std::string_view name, bool all);
 
 protected:
-	// use drop() instead
-	virtual ~ClientMap();
-
 	void reportMetrics(u64 save_time_us, u32 saved_blocks, u32 all_blocks) override;
 private:
 	Client *m_client;
@@ -69,4 +64,6 @@ private:
 
     std::list<MapBlock*> m_visible_mapblocks;
     std::list<MapBlock*> m_visible_shadow_mapblocks;
+
+    std::list<u16> m_pending_to_add_caos;
 };

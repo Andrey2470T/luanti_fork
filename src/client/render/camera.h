@@ -17,8 +17,8 @@ protected:
     v3f m_up_vector = v3f(0,1,0);
     // Absolute camera rotation
     v3f m_rotation;
-	// Camera offset
-	v3s16 m_offset;
+    // Camera offset
+    v3s16 m_offset;
 
     v3f m_last_position;
     v3f m_last_direction;
@@ -136,11 +136,7 @@ public:
 		m_up_vector.normalize();
     }
 
-    void setOffset(const v3s16 &offset)
-	{
-        m_last_offset = m_offset;
-		m_offset = offset;
-	}
+    void updateOffset();
 
 	void setFovX(f32 fovx)
 	{
@@ -171,6 +167,7 @@ public:
     {
         return m_light_color;
     }
+
     void updateLightColor(const img::color8 &newColor)
     {
         m_light_color = newColor;

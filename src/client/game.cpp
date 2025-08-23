@@ -3800,21 +3800,6 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 	updateClouds(dtime);
 
 	/*
-		Update particles
-	*/
-	client->getParticleManager()->step(dtime);
-
-	/*
-		Damage camera tilt
-	*/
-	if (player->hurt_tilt_timer > 0.0f) {
-		player->hurt_tilt_timer -= dtime * 6.0f;
-
-		if (player->hurt_tilt_timer < 0.0f)
-			player->hurt_tilt_strength = 0.0f;
-	}
-
-	/*
 		Update minimap pos and rotation
 	*/
 	if (mapper && m_game_ui->m_flags.show_hud) {
@@ -3835,39 +3820,12 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 	if (player->getWieldIndex() != runData.new_playeritem)
 		client->setPlayerItem(runData.new_playeritem);
 
-	if (client->updateWieldedItem()) {
+    /*if (client->updateWieldedItem()) {
 		// Update wielded tool
 		ItemStack selected_item, hand_item;
 		ItemStack &tool_item = player->getWieldedItem(&selected_item, &hand_item);
 		camera->wield(tool_item);
-	}
-
-	/*
-		Update block draw list every 200ms or when camera direction has
-		changed much
-	*/
-	runData.update_draw_list_timer += dtime;
-	runData.touch_blocks_timer += dtime;
-
-	float update_draw_list_delta = 0.2f;
-
-	v3f camera_direction = camera->getDirection();
-
-	// call only one of updateDrawList, touchMapBlocks, or updateShadow per frame
-	// (the else-ifs below are intentional)
-	if (runData.update_draw_list_timer >= update_draw_list_delta
-			|| runData.update_draw_list_last_cam_dir.getDistanceFrom(camera_direction) > 0.2
-			|| m_camera_offset_changed
-			|| client->getEnv().getClientMap().needsUpdateDrawList()) {
-		runData.update_draw_list_timer = 0;
-		client->getEnv().getClientMap().updateDrawList();
-		runData.update_draw_list_last_cam_dir = camera_direction;
-	} else if (runData.touch_blocks_timer > update_draw_list_delta) {
-		client->getEnv().getClientMap().touchMapBlocks();
-		runData.touch_blocks_timer = 0;
-	} else if (RenderingEngine::get_shadow_renderer()) {
-		updateShadows();
-	}
+    }*/
 
 	m_game_ui->update(*stats, client, draw_control, cam, runData.pointed_old,
 			gui_chat_console.get(), dtime);

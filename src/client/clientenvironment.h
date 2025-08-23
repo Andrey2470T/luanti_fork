@@ -6,7 +6,7 @@
 
 #include "environment.h"
 #include "util/numeric.h" // IntervalLimiter
-#include "activeobjectmgr.h" // client::ActiveObjectMgr
+#include "client/ao/clientActiveObjectMgr.h" // client::ActiveObjectMgr
 #include "config.h"
 #include <set>
 
@@ -14,7 +14,8 @@
 #error Do not include in server builds
 #endif
 
-class ClientSimpleObject;
+//class ClientSimpleObject;
+class Client;
 class ClientMap;
 class ClientScripting;
 class ClientActiveObject;
@@ -53,7 +54,7 @@ typedef std::unordered_map<u16, ClientActiveObject*> ClientActiveObjectMap;
 class ClientEnvironment : public Environment
 {
 public:
-	ClientEnvironment(ClientMap *map, ResourceCache *cache, Client *client);
+    ClientEnvironment(ClientMap *map, Client *client);
 	~ClientEnvironment();
 
 	Map & getMap();
@@ -65,7 +66,7 @@ public:
 	void step(f32 dtime);
 
 	virtual void setLocalPlayer(LocalPlayer *player);
-	LocalPlayer *getLocalPlayer() const { return m_local_player; }
+    LocalPlayer *getLocalPlayer() const { return m_local_player.get(); }
 
 	/*
 		ClientSimpleObjects
@@ -91,18 +92,11 @@ public:
 		Returns the id of the object.
 		Returns 0 if not added and thus deleted.
 	*/
-	u16 addActiveObject(std::unique_ptr<ClientActiveObject> object);
-
 	void addActiveObject(u16 id, u8 type, const std::string &init_data);
 	void removeActiveObject(u16 id);
 
 	void processActiveObjectMessage(u16 id, const std::string &data);
 
-	/*
-		Callbacks for activeobjects
-	*/
-
-	void damageLocalPlayer(u16 damage, bool handle_hp=true);
 
 	/*
 		Client likes to call these
@@ -120,8 +114,10 @@ public:
 	// Get event from queue. If queue is empty, it triggers an assertion failure.
 	ClientEnvEvent getClientEnvEvent();
 
+    void pushDamageClientEnvEvent(u16 damage, bool handle_hp);
+
 	virtual void getSelectedActiveObjects(
-		const line3df &shootline_on_map,
+        const line3f &shootline_on_map,
 		std::vector<PointedThing> &objects,
 		const std::optional<Pointabilities> &pointabilities
 	);
@@ -139,16 +135,23 @@ public:
 private:
 	std::unique_ptr<ClientMap> m_map;
 	std::unique_ptr<LocalPlayer> m_local_player;
+
 	ResourceCache *m_rescache;
 	Client *m_client;
 	ClientScripting *m_script = nullptr;
+
 	client::ActiveObjectMgr m_ao_manager;
 	//std::vector<ClientSimpleObject*> m_simple_objects;
 	std::queue<ClientEnvEvent> m_client_event_queue;
 	IntervalLimiter m_active_object_light_update_interval;
 	std::set<std::string> m_player_names;
 	v3s16 m_camera_offset;
+
 	u64 m_frame_time = 0;
 	u64 m_frame_dtime = 0;
 	u64 m_frame_time_pause_accumulator = 0;
+
+    const f32 update_draw_list_delta = 0.2f;
+    f32 update_draw_list_timer = 0.0f;
+    f32 touch_blocks_timer = 0.0f;
 };

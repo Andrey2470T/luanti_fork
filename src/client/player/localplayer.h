@@ -173,6 +173,8 @@ public:
 
     PlayerSettings &getPlayerSettings() { return m_player_settings; }
 
+    void step(f32 dtime);
+
 private:
 	void accelerate(const v3f &target_speed, const f32 max_increase_H,
 		const f32 max_increase_V, const bool use_pitch);

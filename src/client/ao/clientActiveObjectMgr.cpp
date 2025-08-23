@@ -69,8 +69,6 @@ void ActiveObjectMgr::removeObject(u16 id)
 				<< "id=" << id << " not found" << std::endl;
 		return;
 	}
-
-	obj->removeFromScene(true);
 }
 
 void ActiveObjectMgr::getActiveObjects(const v3f &origin, f32 max_d,

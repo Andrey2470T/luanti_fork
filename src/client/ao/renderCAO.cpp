@@ -121,6 +121,8 @@ void RenderCAO::addMesh()
         m_model = addMeshModel(m_tile_layer, m_position, m_prop.visual_size, m_anim_mgr, m_prop.mesh, m_cache);
 
     m_cache->cacheResource<Model>(ResourceType::MODEL, m_model);
+
+    updateVertexColor(true);
 }
 
 void RenderCAO::removeMesh()

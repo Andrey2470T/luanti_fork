@@ -778,6 +778,171 @@ PlayerCamera *LocalPlayer::getCamera() const
     return m_camera.get();
 }
 
+void LocalPlayer::step(f32 dtime)
+{
+    // Get some settings
+    bool fly_allowed = m_client->checkLocalPrivilege("fly");
+    bool free_move = fly_allowed && g_settings->getBool("free_move");
+
+    // collision info queue
+    std::vector<CollisionInfo> player_collisions;
+
+    /*
+        Get the speed the player is going
+    */
+
+    f32 player_speed = getSpeed().getLength();
+
+    /*
+        Maximum position increment
+    */
+    f32 position_max_increment = 0.1*BS;
+
+    // Maximum time increment (for collision detection etc)
+    // time = distance / speed
+    f32 dtime_max_increment = 1;
+    if(player_speed > 0.001)
+        dtime_max_increment = position_max_increment / player_speed;
+
+    // Maximum time increment is 10ms or lower
+    if(dtime_max_increment > 0.01)
+        dtime_max_increment = 0.01;
+
+    // Don't allow overly huge dtime
+    if(dtime > 0.5)
+        dtime = 0.5;
+
+    /*
+        Stuff that has a maximum time increment
+    */
+
+    u32 steps = std::ceil(dtime / dtime_max_increment);
+    f32 dtime_part = dtime / steps;
+    for (; steps > 0; --steps) {
+        /*
+            Local player handling
+        */
+
+        // Control local player
+        applyControl(dtime_part, &m_client->getEnv());
+
+        // Apply physics
+        gravity = 0;
+        if (!free_move) {
+            // Gravity
+            if (!is_climbing && !in_liquid)
+                // HACK the factor 2 for gravity is arbitrary and should be removed eventually
+                gravity = 2 * movement_gravity * physics_override.gravity;
+
+            // Liquid floating / sinking
+            if (!is_climbing && in_liquid &&
+                    !swimming_vertical &&
+                    !swimming_pitch)
+                // HACK the factor 2 for gravity is arbitrary and should be removed eventually
+                gravity = 2 * movement_liquid_sink * physics_override.liquid_sink;
+
+            // Movement resistance
+            if (move_resistance > 0) {
+                v3f speed = getSpeed();
+
+                // How much the node's move_resistance blocks movement, ranges
+                // between 0 and 1. Should match the scale at which liquid_viscosity
+                // increase affects other liquid attributes.
+                static const f32 resistance_factor = 0.3f;
+                float fluidity = movement_liquid_fluidity;
+                fluidity *= MYMAX(1.0f, physics_override.liquid_fluidity);
+                fluidity = MYMAX(0.001f, fluidity); // prevent division by 0
+                float fluidity_smooth = movement_liquid_fluidity_smooth;
+                fluidity_smooth *= physics_override.liquid_fluidity_smooth;
+                fluidity_smooth = MYMAX(0.0f, fluidity_smooth);
+
+                v3f d_wanted;
+                bool in_liquid_stable = in_liquid_stable || in_liquid;
+                if (in_liquid_stable)
+                    d_wanted = -speed / fluidity;
+                else
+                    d_wanted = -speed / BS;
+                f32 dl = d_wanted.getLength();
+                if (in_liquid_stable)
+                    dl = MYMIN(dl, fluidity_smooth);
+                dl *= (move_resistance * resistance_factor) +
+                    (1 - resistance_factor);
+                v3f d = d_wanted.normalize() * (dl * dtime_part * 100.0f);
+                speed += d;
+
+                setSpeed(speed);
+            }
+        }
+
+        /*
+            Move the local player.
+            This also does collision detection.
+        */
+
+        move(dtime_part, this, &player_collisions);
+    }
+
+    bool player_immortal = false;
+    f32 player_fall_factor = 1.0f;
+
+    if (m_cao) {
+        player_immortal = m_cao->isImmortal();
+        int addp_p = itemgroup_get(m_cao->getGroups(),
+            "fall_damage_add_percent");
+        // convert armor group into an usable fall damage factor
+        player_fall_factor = 1.0f + (float)addp_p / 100.0f;
+    }
+
+    for (const CollisionInfo &info : player_collisions) {
+        v3f speed_diff = info.new_speed - info.old_speed;;
+        // Handle only fall damage
+        // (because otherwise walking against something in fast_move kills you)
+        if (speed_diff.Y < 0 || info.old_speed.Y >= 0)
+            continue;
+        // Get rid of other components
+        speed_diff.X = 0;
+        speed_diff.Z = 0;
+        f32 pre_factor = 1; // 1 hp per node/s
+        f32 tolerance = BS*14; // 5 without damage
+        if (info.type == COLLISION_NODE) {
+            const ContentFeatures &f = m_client->ndef()->
+                get(m_map->getNode(info.node_p));
+            // Determine fall damage modifier
+            int addp_n = itemgroup_get(f.groups, "fall_damage_add_percent");
+            // convert node group to an usable fall damage factor
+            f32 node_fall_factor = 1.0f + (float)addp_n / 100.0f;
+            // combine both player fall damage modifiers
+            pre_factor = node_fall_factor * player_fall_factor;
+        }
+        float speed = pre_factor * speed_diff.getLength();
+
+        if (speed > tolerance && !player_immortal && pre_factor > 0.0f) {
+            f32 damage_f = (speed - tolerance) / BS;
+            u16 damage = (u16)MYMIN(damage_f + 0.5, T_MAX(u16));
+            if (damage != 0) {
+                if (hp > damage)
+                    hp -= damage;
+                else
+                    hp = 0;
+
+                m_client->getEnv().pushDamageClientEnvEvent(damage, true);
+                m_client->getEventManager()->put(
+                    new SimpleTriggerEvent(MtEvent::PLAYER_FALLING_DAMAGE));
+            }
+        }
+    }
+
+    /*
+        Damage camera tilt
+    */
+    if (hurt_tilt_timer > 0.0f) {
+        hurt_tilt_timer -= dtime * 6.0f;
+
+        if (hurt_tilt_timer < 0.0f)
+            hurt_tilt_strength = 0.0f;
+    }
+}
+
 // 3D acceleration
 void LocalPlayer::accelerate(const v3f &target_speed, const f32 max_increase_H,
 	const f32 max_increase_V, const bool use_pitch)

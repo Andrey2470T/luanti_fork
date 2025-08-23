@@ -1,12 +1,27 @@
 #include "camera.h"
 #include "client/client.h"
 
+#define CAMERA_OFFSET_STEP 200
+
 Camera::Camera(const v2u &viewportSize,
             const v3f &position, const v3f &direction,
             bool isOrthogonal)
 	: m_position(position), m_direction(direction),
       m_frustum(viewportSize, isOrthogonal)
 {}
+
+void Camera::updateOffset()
+{
+    v3f cp = m_position / BS;
+
+    // Update offset if too far away from the center of the map
+    m_last_offset = m_offset;
+    m_offset = v3s16(
+        floorf(cp.X / CAMERA_OFFSET_STEP) * CAMERA_OFFSET_STEP,
+        floorf(cp.Y / CAMERA_OFFSET_STEP) * CAMERA_OFFSET_STEP,
+        floorf(cp.Z / CAMERA_OFFSET_STEP) * CAMERA_OFFSET_STEP
+    );
+}
 
 void Camera::recalculateProjectionMatrix()
 {
@@ -52,7 +67,7 @@ bool Camera::isNecessaryUpdateDrawList()
 
     f32 dir_diff = m_last_direction.getDistanceFrom(m_direction);
 
-    if (previous_block != current_block || dir_diff > 0.2f)
+    if (previous_block != current_block || dir_diff > 0.2f || m_last_offset != m_offset)
         return true;
 }
 

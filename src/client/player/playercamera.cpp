@@ -28,7 +28,6 @@
 #include "client/render/drawlist.h"
 #include "client/ao/renderCAO.h"
 
-#define CAMERA_OFFSET_STEP 200
 #define WIELDMESH_OFFSET_X 55.0f
 #define WIELDMESH_OFFSET_Y -35.0f
 #define WIELDMESH_AMPLITUDE_X 7.0f
@@ -482,13 +481,7 @@ void PlayerCamera::update(LocalPlayer* player, f32 frametime, f32 tool_reload_ra
 			my_cp.Y = player_position.Y+BS*2;
 	}
 
-	// Update offset if too far away from the center of the map
-    m_offset.X += CAMERA_OFFSET_STEP*
-            (((s16)(my_cp.X/BS) - m_offset.X)/CAMERA_OFFSET_STEP);
-    m_offset.Y += CAMERA_OFFSET_STEP*
-            (((s16)(my_cp.Y/BS) - m_offset.Y)/CAMERA_OFFSET_STEP);
-    m_offset.Z += CAMERA_OFFSET_STEP*
-            (((s16)(my_cp.Z/BS) - m_offset.Z)/CAMERA_OFFSET_STEP);
+    updateOffset();
 
     // Set camera node transformation
     m_position -= intToFloat(m_offset, BS);

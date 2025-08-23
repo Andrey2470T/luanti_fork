@@ -77,7 +77,7 @@ void ClientMap::getBlocksInViewRange(v3s16 cam_pos_nodes,
 
 void ClientMap::update()
 {
-	ScopeProfiler sp(g_profiler, "CM::updateDrawList()", SPT_AVG);
+    ScopeProfiler sp(g_profiler, "CM::update()", SPT_AVG);
 
     m_drawlist->lockMeshes();
 
@@ -136,7 +136,7 @@ void ClientMap::update()
 
 void ClientMap::updateShadowBlocks(const v3f &shadow_light_pos, const v3f &shadow_light_dir, f32 radius)
 {
-    ScopeProfiler sp(g_profiler, "CM::updateShadowDrawList()", SPT_AVG);
+    ScopeProfiler sp(g_profiler, "CM::updateShadowBlocks()", SPT_AVG);
 
     m_drawlist->lockMeshes(true);
 
@@ -200,23 +200,30 @@ void ClientMap::touchMapBlocks()
     }
 }
 
-void ClientMap::addActiveObject(u16 id)
+bool ClientMap::addActiveObject(u16 id)
 {
     auto cao = m_client->getEnv().getActiveObject(id);
 
     v3s16 blockpos = getContainerPos(floatToInt(cao->getPosition(), BS), BS);
     MapBlock *block = getBlockNoCreate(blockpos);
 
-    if (!block)
-        return;
+    if (!block || !block->mesh) {
+        m_pending_to_add_caos.push_back(id);
+        return false;
+    }
 
     block->mesh->addActiveObject(id);
 
-
+    return true;
 }
 
 void ClientMap::updateMapBlocksActiveObjects()
 {
+    auto it = m_pending_to_add_caos.begin();
+    while (it != m_pending_to_add_caos.end()) {
+        if (addActiveObject(*it))
+            m_pending_to_add_caos.erase(it);
+    }
     for (auto &sector_it : m_sectors) {
         MapBlockVect sectorblocks;
         sector_it.second->getBlocks(sectorblocks);
@@ -242,11 +249,12 @@ void ClientMap::removeActiveObject(u16 id)
     v3s16 blockpos = getContainerPos(floatToInt(cao->getPosition(), BS), BS);
     MapBlock *block = getBlockNoCreate(blockpos);
 
-    if (!block)
+    if (!block || !block->mesh)
         return;
 
     block->mesh->removeActiveObject(id);
 }
+
 static bool getVisibleBrightness(Map *map, const v3f &p0, v3f dir, float step,
 	float step_multiplier, float start_distance, float end_distance,
 	const NodeDefManager *ndef, u32 daylight_factor, float sunlight_min_d,
