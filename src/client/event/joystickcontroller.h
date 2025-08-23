@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include "Main/IEventReceiver.h"
+#include <Main/IEventReceiver.h>
 #include "keytype.h"
-#include "Main/Events.h"
+#include <Main/Events.h>
 #include <bitset>
 #include <vector>
 

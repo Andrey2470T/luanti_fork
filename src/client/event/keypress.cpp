@@ -258,7 +258,7 @@ static const table_key &lookup_keychar(wchar_t Char)
 	throw UnknownKeycode(os.str().c_str());
 }
 
-KeyPress::KeyPress(const char *name)
+MtKey::MtKey(const char *name)
 {
 	if (strlen(name) == 0) {
         Key = main::KEY_KEY_CODES_COUNT;
@@ -293,11 +293,11 @@ KeyPress::KeyPress(const char *name)
 	int chars_read = mbtowc(&Char, name, 1);
 	FATAL_ERROR_IF(chars_read != 1, "Unexpected multibyte character");
 	m_name = "";
-	warningstream << "KeyPress: Unknown key '" << name
+    warningstream << "MtKey: Unknown key '" << name
 		<< "', falling back to first char." << std::endl;
 }
 
-KeyPress::KeyPress(const main::Event::KeyInputEvent &in, bool prefer_character)
+MtKey::MtKey(const main::Event::KeyInputEvent &in, bool prefer_character)
 {
 	if (prefer_character)
         Key = main::KEY_KEY_CODES_COUNT;
@@ -315,12 +315,12 @@ KeyPress::KeyPress(const main::Event::KeyInputEvent &in, bool prefer_character)
 	};
 }
 
-const char *KeyPress::sym() const
+const char *MtKey::sym() const
 {
 	return m_name.c_str();
 }
 
-const char *KeyPress::name() const
+const char *MtKey::name() const
 {
 	if (m_name.empty())
 		return "";
@@ -332,20 +332,20 @@ const char *KeyPress::name() const
 	return ret ? ret : "<Unnamed key>";
 }
 
-const KeyPress EscapeKey("KEY_ESCAPE");
+const MtKey EscapeKey("KEY_ESCAPE");
 
-const KeyPress LMBKey("KEY_LBUTTON");
-const KeyPress MMBKey("KEY_MBUTTON");
-const KeyPress RMBKey("KEY_RBUTTON");
+const MtKey LMBKey("KEY_LBUTTON");
+const MtKey MMBKey("KEY_MBUTTON");
+const MtKey RMBKey("KEY_RBUTTON");
 
 /*
 	Key config
 */
 
 // A simple cache for quicker lookup
-static std::unordered_map<std::string, KeyPress> g_key_setting_cache;
+static std::unordered_map<std::string, MtKey> g_key_setting_cache;
 
-const KeyPress &getKeySetting(const char *settingname)
+const MtKey &getKeySetting(const char *settingname)
 {
 	auto n = g_key_setting_cache.find(settingname);
 	if (n != g_key_setting_cache.end())

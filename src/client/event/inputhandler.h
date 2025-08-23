@@ -26,17 +26,17 @@ public:
 
 	virtual bool isKeyDown(GameKeyType k) = 0;
 	virtual bool wasKeyDown(GameKeyType k) = 0;
-	virtual bool wasKeyPressed(GameKeyType k) = 0;
+    virtual bool wasMtKeyed(GameKeyType k) = 0;
 	virtual bool wasKeyReleased(GameKeyType k) = 0;
 	virtual bool cancelPressed() = 0;
 
 	virtual float getJoystickSpeed() = 0;
 	virtual float getJoystickDirection() = 0;
 
-	virtual void clearWasKeyPressed() {}
+    virtual void clearWasMtKeyed() {}
 	virtual void clearWasKeyReleased() {}
 
-	virtual void listenForKey(const KeyPress &keyCode) {}
+    virtual void listenForKey(const MtKey &keyCode) {}
 	virtual void dontListenForKeys() {}
 
     virtual v2i getMousePos() = 0;
@@ -60,7 +60,7 @@ public:
 class RealInputHandler final : public InputHandler
 {
 public:
-	RealInputHandler(MyEventReceiver *receiver) : m_receiver(receiver)
+    RealInputHandler(MtEventReceiver *receiver) : m_receiver(receiver)
 	{
 		m_receiver->joystick = &joystick;
 	}
@@ -78,9 +78,9 @@ public:
 	{
 		return m_receiver->WasKeyDown(keycache.key[k]) || joystick.wasKeyDown(k);
 	}
-	virtual bool wasKeyPressed(GameKeyType k)
+    virtual bool wasMtKeyed(GameKeyType k)
 	{
-		return m_receiver->WasKeyPressed(keycache.key[k]) || joystick.wasKeyPressed(k);
+        return m_receiver->WasMtKeyed(keycache.key[k]) || joystick.wasKeyPressed(k);
 	}
 	virtual bool wasKeyReleased(GameKeyType k)
 	{
@@ -96,16 +96,16 @@ public:
 		return wasKeyDown(KeyType::ESC);
 	}
 
-	virtual void clearWasKeyPressed()
+    virtual void clearWasMtKeyed()
 	{
-		m_receiver->clearWasKeyPressed();
+        m_receiver->clearWasMtKeyed();
 	}
 	virtual void clearWasKeyReleased()
 	{
 		m_receiver->clearWasKeyReleased();
 	}
 
-	virtual void listenForKey(const KeyPress &keyCode)
+    virtual void listenForKey(const MtKey &keyCode)
 	{
 		m_receiver->listenForKey(keyCode);
 	}
@@ -135,8 +135,7 @@ public:
 	}
 
 private:
-	MyEventReceiver *m_receiver = nullptr;
-    v2i m_mousepos;
+    MtEventReceiver *m_receiver = nullptr;
 };
 
 class RandomInputHandler final : public InputHandler
@@ -151,7 +150,7 @@ public:
 
 	virtual bool isKeyDown(GameKeyType k) { return keydown[keycache.key[k]]; }
 	virtual bool wasKeyDown(GameKeyType k) { return false; }
-	virtual bool wasKeyPressed(GameKeyType k) { return false; }
+    virtual bool wasMtKeyed(GameKeyType k) { return false; }
 	virtual bool wasKeyReleased(GameKeyType k) { return false; }
 	virtual bool cancelPressed() { return false; }
 	virtual float getJoystickSpeed() { return joystickSpeed; }

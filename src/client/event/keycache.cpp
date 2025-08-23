@@ -67,7 +67,7 @@ void KeyCache::populate()
 	if (handler) {
 		// First clear all keys, then re-add the ones we listen for
 		handler->dontListenForKeys();
-		for (const KeyPress &k : key) {
+        for (const MtKey &k : key) {
 			handler->listenForKey(k);
 		}
 		handler->listenForKey(EscapeKey);
@@ -75,7 +75,7 @@ void KeyCache::populate()
 }
 
 
-citer KeyList::find(const KeyPress &key) const
+citer KeyList::find(const MtKey &key) const
 {
 	citer f(begin());
 	citer e(end());
@@ -90,7 +90,7 @@ citer KeyList::find(const KeyPress &key) const
 	return e;
 }
 
-iter KeyList::find(const KeyPress &key)
+iter KeyList::find(const MtKey &key)
 {
 	iter f(begin());
 	iter e(end());

@@ -32,30 +32,30 @@ struct KeyCache
 	// Keys that are not settings dependent
 	void populate_nonchanging();
 
-	KeyPress key[KeyType::INTERNAL_ENUM_COUNT];
+    MtKey key[KeyType::INTERNAL_ENUM_COUNT];
 	InputHandler *handler;
 };
 
-typedef std::list<KeyPress> super;
+typedef std::list<MtKey> super;
 typedef super::iterator iter;
 typedef super::const_iterator citer;
 
-class KeyList : private std::list<KeyPress>
+class KeyList : private std::list<MtKey>
 {
-	virtual citer find(const KeyPress &key) const;
+    virtual citer find(const MtKey &key) const;
 
-	virtual iter find(const KeyPress &key);
+    virtual iter find(const MtKey &key);
 
 public:
 	void clear() { super::clear(); }
 
-	void set(const KeyPress &key)
+    void set(const MtKey &key)
 	{
 		if (find(key) == end())
 			push_back(key);
 	}
 
-	void unset(const KeyPress &key)
+    void unset(const MtKey &key)
 	{
 		iter p(find(key));
 
@@ -63,7 +63,7 @@ public:
 			erase(p);
 	}
 
-	void toggle(const KeyPress &key)
+    void toggle(const MtKey &key)
 	{
 		iter p(this->find(key));
 
@@ -75,10 +75,10 @@ public:
 
 	void append(const KeyList &other)
 	{
-		for (const KeyPress &key : other) {
+        for (const MtKey &key : other) {
 			set(key);
 		}
 	}
 
-	bool operator[](const KeyPress &key) const { return find(key) != end(); }
+    bool operator[](const MtKey &key) const { return find(key) != end(); }
 };

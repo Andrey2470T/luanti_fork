@@ -5,7 +5,7 @@
 #pragma once
 
 #include "exceptions.h"
-#include "Main/Events.h"
+#include <Main/Events.h>
 #include <string>
 
 class UnknownKeycode : public BaseException
@@ -18,16 +18,16 @@ public:
 /* A key press, consisting of either an Irrlicht keycode
    or an actual char */
 
-class KeyPress
+class MtKey
 {
 public:
-	KeyPress() = default;
+    MtKey() = default;
 
-	KeyPress(const char *name);
+    MtKey(const char *name);
 
-    KeyPress(const main::Event::KeyInputEvent &in, bool prefer_character = false);
+    MtKey(const main::Event::KeyInputEvent &in, bool prefer_character = false);
 
-	bool operator==(const KeyPress &o) const
+    bool operator==(const MtKey &o) const
 	{
 		return (Char > 0 && Char == o.Char) || (valid_kcode(Key) && Key == o.Key);
 	}
@@ -48,14 +48,14 @@ protected:
 
 // Global defines for convenience
 
-extern const KeyPress EscapeKey;
+extern const MtKey EscapeKey;
 
-extern const KeyPress LMBKey;
-extern const KeyPress MMBKey; // Middle Mouse Button
-extern const KeyPress RMBKey;
+extern const MtKey LMBKey;
+extern const MtKey MMBKey; // Middle Mouse Button
+extern const MtKey RMBKey;
 
 // Key configuration getter
-const KeyPress &getKeySetting(const char *settingname);
+const MtKey &getKeySetting(const char *settingname);
 
 // Clear fast lookup cache
 void clearKeyCache();

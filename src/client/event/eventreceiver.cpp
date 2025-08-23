@@ -6,7 +6,7 @@
 #include "gui/mainmenumanager.h"
 #include "gui/touchcontrols.h"
 
-bool MyEventReceiver::OnEvent(const Event &event)
+bool MtEventReceiver::OnEvent(const Event &event)
 {
     if (event.Type == ET_LOG_TEXT_EVENT) {
         assert(event.Log.Level < LL_MAX);
@@ -26,15 +26,13 @@ bool MyEventReceiver::OnEvent(const Event &event)
 
 	// This is separate from other keyboard handling so that it also works in menus.
     if (event.Type == ET_KEY_INPUT_EVENT) {
-		const KeyPress keyCode(event.KeyInput);
+        const MtKey keyCode(event.KeyInput);
 		if (keyCode == getKeySetting("keymap_fullscreen")) {
 			if (event.KeyInput.PressedDown && !fullscreen_is_down) {
-				IrrlichtDevice *device = RenderingEngine::get_raw_device();
-
-				bool new_fullscreen = !device->isFullscreen();
+                bool new_fullscreen = !main_wnd->isFullScreen();
 				// Only update the setting if toggling succeeds - it always fails
 				// if Minetest was built without SDL.
-				if (device->setFullscreen(new_fullscreen)) {
+                if (main_wnd->setFullscreen(new_fullscreen)) {
 					g_settings->setBool("fullscreen", new_fullscreen);
 				}
 			}
@@ -57,7 +55,7 @@ bool MyEventReceiver::OnEvent(const Event &event)
 
 	// Remember whether each key is down or up
     if (event.Type == ET_KEY_INPUT_EVENT) {
-		const KeyPress keyCode(event.KeyInput);
+        const MtKey keyCode(event.KeyInput);
 		if (keysListenedFor[keyCode]) {
 			if (event.KeyInput.PressedDown) {
 				if (!IsKeyDown(keyCode))

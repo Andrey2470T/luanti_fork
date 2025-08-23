@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "irrlichttypes.h"
+#include <BasicIncludes.h>
 
 class MtEvent
 {

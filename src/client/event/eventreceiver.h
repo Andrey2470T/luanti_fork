@@ -1,7 +1,8 @@
 #pragma once
 
 #include "keycache.h"
-#include "Main/IEventReceiver.h"
+#include <Main/MainWindow.h>
+#include <Main/IEventReceiver.h>
 
 class JoystickController;
 
@@ -12,16 +13,20 @@ enum class PointerType {
 
 using namespace main;
 
-class MyEventReceiver : public IEventReceiver
+class MtEventReceiver : public IEventReceiver
 {
 public:
+    MtEventReceiver(MainWindow *wnd)
+        : main_wnd(wnd)
+    {}
+
 	// This is the one method that we have to implement
     virtual bool OnEvent(const Event &event);
 
-	bool IsKeyDown(const KeyPress &keyCode) const { return keyIsDown[keyCode]; }
+    bool IsKeyDown(const MtKey &keyCode) const { return keyIsDown[keyCode]; }
 
 	// Checks whether a key was down and resets the state
-	bool WasKeyDown(const KeyPress &keyCode)
+    bool WasKeyDown(const MtKey &keyCode)
 	{
 		bool b = keyWasDown[keyCode];
 		if (b)
@@ -31,13 +36,13 @@ public:
 
 	// Checks whether a key was just pressed. State will be cleared
 	// in the subsequent iteration of Game::processPlayerInteraction
-	bool WasKeyPressed(const KeyPress &keycode) const { return keyWasPressed[keycode]; }
+    bool WasMtKeyed(const MtKey &keycode) const { return keyWasPressed[keycode]; }
 
 	// Checks whether a key was just released. State will be cleared
 	// in the subsequent iteration of Game::processPlayerInteraction
-	bool WasKeyReleased(const KeyPress &keycode) const { return keyWasReleased[keycode]; }
+    bool WasKeyReleased(const MtKey &keycode) const { return keyWasReleased[keycode]; }
 
-	void listenForKey(const KeyPress &keyCode)
+    void listenForKey(const MtKey &keyCode)
 	{
 		keysListenedFor.set(keyCode);
 	}
@@ -69,7 +74,7 @@ public:
 		keyIsDown.clear();
 	}
 
-	void clearWasKeyPressed()
+    void clearWasMtKeyed()
 	{
 		keyWasPressed.clear();
 	}
@@ -83,7 +88,9 @@ public:
 
 	PointerType getLastPointerType() { return last_pointer_type; }
 
+    MainWindow *main_wnd;
 private:
+
 	s32 mouse_wheel = 0;
 
 	// The current state of keys
