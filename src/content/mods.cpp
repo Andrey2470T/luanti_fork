@@ -64,12 +64,12 @@ bool parseModContents(ModSpec &spec)
 	spec.modpack_content.clear();
 
 	// Handle modpacks (defined by containing modpack.txt)
-	if (fs::IsFile(spec.path + DIR_DELIM + "modpack.txt") ||
-			fs::IsFile(spec.path + DIR_DELIM + "modpack.conf")) {
+    if (mt_fs::IsFile(spec.path + DIR_DELIM + "modpack.txt") ||
+            mt_fs::IsFile(spec.path + DIR_DELIM + "modpack.conf")) {
 		spec.is_modpack = true;
 		spec.modpack_content = getModsInPath(spec.path, spec.virtual_path, true);
 		return true;
-	} else if (!fs::IsFile(spec.path + DIR_DELIM + "init.lua")) {
+    } else if (!mt_fs::IsFile(spec.path + DIR_DELIM + "init.lua")) {
 		return false;
 	}
 
@@ -139,7 +139,7 @@ bool parseModContents(ModSpec &spec)
 
 	if (info.exists("description"))
 		spec.desc = info.get("description");
-	else if (fs::ReadFile(spec.path + DIR_DELIM + "description.txt", spec.desc))
+    else if (mt_fs::ReadFile(spec.path + DIR_DELIM + "description.txt", spec.desc))
 		spec.deprecation_msgs.push_back("description.txt is deprecated, please use mod.conf instead.");
 
 	return true;
@@ -151,11 +151,11 @@ std::map<std::string, ModSpec> getModsInPath(
 	// NOTE: this function works in mutual recursion with parseModContents
 
 	std::map<std::string, ModSpec> result;
-	std::vector<fs::DirListNode> dirlist = fs::GetDirListing(path);
+    std::vector<mt_fs::DirListNode> dirlist = mt_fs::GetDirListing(path);
 	std::string mod_path;
 	std::string mod_virtual_path;
 
-	for (const fs::DirListNode &dln : dirlist) {
+    for (const mt_fs::DirListNode &dln : dirlist) {
 		if (!dln.dir)
 			continue;
 
@@ -167,7 +167,7 @@ std::map<std::string, ModSpec> getModsInPath(
 
 		mod_path.clear();
 		mod_path.append(path).append(DIR_DELIM).append(modname);
-		mod_path = fs::AbsolutePath(mod_path);
+        mod_path = mt_fs::AbsolutePath(mod_path);
 
 		mod_virtual_path.clear();
 		// Intentionally uses / to keep paths same on different platforms

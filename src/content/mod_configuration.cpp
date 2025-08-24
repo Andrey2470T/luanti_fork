@@ -60,7 +60,7 @@ void ModConfiguration::addMods(const std::vector<ModSpec> &new_mods)
 				continue;
 
 			// unrelated to this code, but we want to assert it somewhere
-			assert(fs::IsPathAbsolute(mod.path));
+            assert(mt_fs::IsPathAbsolute(mod.path));
 
 			if (existing_mods.count(mod.name) == 0) {
 				// GOOD CASE: completely new mod.

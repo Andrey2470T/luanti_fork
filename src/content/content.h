@@ -3,8 +3,7 @@
 // Copyright (C) 2018 rubenwardy <rw@rubenwardy.com>
 
 #pragma once
-#include "irrlichttypes.h"
-#include <string>
+#include <BasicIncludes.h>
 
 enum class ContentType
 {

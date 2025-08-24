@@ -154,7 +154,7 @@ SubgameSpec findSubgame(const std::string &id)
 	bool user_game = true; // Game is in user's directory
 	for (const GameFindPath &find_path : find_paths) {
 		const std::string &try_path = find_path.path;
-		if (fs::PathExists(try_path)) {
+        if (mt_fs::PathExists(try_path)) {
 			game_path = try_path;
 			user_game = find_path.user_specific;
 			break;
@@ -171,7 +171,7 @@ SubgameSpec findSubgame(const std::string &id)
 		mods_paths["share"] = share + DIR_DELIM + "mods";
 
 	for (const std::string &mod_path : getEnvModPaths()) {
-		mods_paths[fs::AbsolutePath(mod_path)] = mod_path;
+        mods_paths[mt_fs::AbsolutePath(mod_path)] = mod_path;
 	}
 
 	return getSubgameSpec(id, game_path, mods_paths);
@@ -182,7 +182,7 @@ SubgameSpec findWorldSubgame(const std::string &world_path)
 	std::string world_gameid = getWorldGameId(world_path, true);
 	// See if world contains an embedded game; if so, use it.
 	std::string world_gamepath = world_path + DIR_DELIM + "game";
-	if (fs::PathExists(world_gamepath))
+    if (mt_fs::PathExists(world_gamepath))
 		return getSubgameSpec(world_gameid, world_gamepath, {});
 	return findSubgame(world_gameid);
 }
@@ -200,8 +200,8 @@ std::set<std::string> getAvailableGameIds()
 		gamespaths.insert(search_paths.next(PATH_DELIM));
 
 	for (const std::string &gamespath : gamespaths) {
-		std::vector<fs::DirListNode> dirlist = fs::GetDirListing(gamespath);
-		for (const fs::DirListNode &dln : dirlist) {
+        std::vector<mt_fs::DirListNode> dirlist = mt_fs::GetDirListing(gamespath);
+        for (const mt_fs::DirListNode &dln : dirlist) {
 			if (!dln.dir)
 				continue;
 
@@ -237,8 +237,8 @@ std::vector<SubgameSpec> getAvailableGames()
 bool getWorldExists(const std::string &world_path)
 {
 	// Note: very old worlds are valid without a world.mt
-	return (fs::PathExists(world_path + DIR_DELIM + "map_meta.txt") ||
-			fs::PathExists(world_path + DIR_DELIM + "world.mt"));
+    return (mt_fs::PathExists(world_path + DIR_DELIM + "map_meta.txt") ||
+            mt_fs::PathExists(world_path + DIR_DELIM + "world.mt"));
 }
 
 //! Try to get the displayed name of a world
@@ -264,7 +264,7 @@ std::string getWorldGameId(const std::string &world_path, bool can_be_legacy)
 	if (!succeeded) {
 		if (can_be_legacy) {
 			// If map_meta.txt exists, it is probably a very old world
-			if (fs::PathExists(world_path + DIR_DELIM + "map_meta.txt"))
+            if (mt_fs::PathExists(world_path + DIR_DELIM + "map_meta.txt"))
 				return LEGACY_GAMEID;
 		}
 		return "";
@@ -294,8 +294,8 @@ std::vector<WorldSpec> getAvailableWorlds()
 	infostream << "Searching worlds..." << std::endl;
 	for (const std::string &worldspath : worldspaths) {
 		infostream << "  In " << worldspath << ": ";
-		std::vector<fs::DirListNode> dirvector = fs::GetDirListing(worldspath);
-		for (const fs::DirListNode &dln : dirvector) {
+        std::vector<mt_fs::DirListNode> dirvector = mt_fs::GetDirListing(worldspath);
+        for (const mt_fs::DirListNode &dln : dirvector) {
 			if (!dln.dir)
 				continue;
 			std::string fullpath = worldspath + DIR_DELIM + dln.name;
@@ -316,7 +316,7 @@ std::vector<WorldSpec> getAvailableWorlds()
 	// Check old world location
 	do {
 		std::string fullpath = porting::path_user + DIR_DELIM + "world";
-		if (!fs::PathExists(fullpath))
+        if (!mt_fs::PathExists(fullpath))
 			break;
 		std::string name = "Old World";
 		std::string gameid = getWorldGameId(fullpath, true);
@@ -336,12 +336,12 @@ void loadGameConfAndInitWorld(const std::string &path, const std::string &name,
 	// If we're creating a new world, ensure that the path isn't already taken
 	if (create_world) {
 		int counter = 1;
-		while (fs::PathExists(final_path) && counter < MAX_WORLD_NAMES) {
+        while (mt_fs::PathExists(final_path) && counter < MAX_WORLD_NAMES) {
 			final_path = path + "_" + std::to_string(counter);
 			counter++;
 		}
 
-		if (fs::PathExists(final_path)) {
+        if (mt_fs::PathExists(final_path)) {
 			throw BaseException("Too many similar filenames");
 		}
 	}
@@ -359,11 +359,11 @@ void loadGameConfAndInitWorld(const std::string &path, const std::string &name,
 
 	infostream << "Initializing world at " << final_path << std::endl;
 
-	fs::CreateAllDirs(final_path);
+    mt_fs::CreateAllDirs(final_path);
 
 	// Create world.mt if does not already exist
 	std::string worldmt_path = final_path + DIR_DELIM "world.mt";
-	if (!fs::PathExists(worldmt_path)) {
+    if (!mt_fs::PathExists(worldmt_path)) {
 		Settings gameconf;
 		std::string gameconf_path = gamespec.path + DIR_DELIM "game.conf";
 		gameconf.readConfigFile(gameconf_path.c_str());
@@ -394,7 +394,7 @@ void loadGameConfAndInitWorld(const std::string &path, const std::string &name,
 
 	// Create map_meta.txt if does not already exist
 	std::string map_meta_path = final_path + DIR_DELIM + "map_meta.txt";
-	if (!fs::PathExists(map_meta_path)) {
+    if (!mt_fs::PathExists(map_meta_path)) {
 		MapSettingsManager mgr(map_meta_path);
 
 		mgr.setMapSetting("seed", g_settings->get("fixed_map_seed"));

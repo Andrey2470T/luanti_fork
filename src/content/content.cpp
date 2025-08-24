@@ -11,16 +11,16 @@
 
 ContentType getContentType(const std::string &path)
 {
-	if (fs::IsFile(path + DIR_DELIM "modpack.txt") || fs::IsFile(path + DIR_DELIM "modpack.conf"))
+    if (mt_fs::IsFile(path + DIR_DELIM "modpack.txt") || mt_fs::IsFile(path + DIR_DELIM "modpack.conf"))
 		return ContentType::MODPACK;
 
-	if (fs::IsFile(path + DIR_DELIM "init.lua"))
+    if (mt_fs::IsFile(path + DIR_DELIM "init.lua"))
 		return ContentType::MOD;
 
-	if (fs::IsFile(path + DIR_DELIM "game.conf"))
+    if (mt_fs::IsFile(path + DIR_DELIM "game.conf"))
 		return ContentType::GAME;
 
-	if (fs::IsFile(path + DIR_DELIM "texture_pack.conf"))
+    if (mt_fs::IsFile(path + DIR_DELIM "texture_pack.conf"))
 		return ContentType::TXP;
 
 	return ContentType::UNKNOWN;
@@ -85,12 +85,12 @@ void parseContentInfo(ContentSpec &spec)
 	}
 
 	if (spec.name.empty())
-		spec.name = fs::GetFilenameFromPath(spec.path.c_str());
+        spec.name = mt_fs::GetFilenameFromPath(spec.path.c_str());
 
 	if (spec.textdomain.empty())
 		spec.textdomain = spec.name;
 
 	if (spec.desc.empty()) {
-		fs::ReadFile(spec.path + DIR_DELIM + "description.txt", spec.desc);
+        mt_fs::ReadFile(spec.path + DIR_DELIM + "description.txt", spec.desc);
 	}
 }

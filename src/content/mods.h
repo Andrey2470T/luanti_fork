@@ -4,11 +4,9 @@
 
 #pragma once
 
-#include "irrlichttypes.h"
+#include <BasicIncludes.h>
 #include <list>
 #include <set>
-#include <vector>
-#include <string>
 #include <map>
 #include "json-forwards.h"
 #include <unordered_set>
