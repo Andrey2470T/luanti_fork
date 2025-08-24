@@ -6,7 +6,6 @@
 #include <algorithm>
 #include <sstream>
 #include <cmath>
-#include <IFileSystem.h>
 #include <json/json.h>
 #include "client.h"
 #include "network/clientopcodes.h"
@@ -14,13 +13,12 @@
 #include "network/networkpacket.h"
 #include "threading/mutex_auto_lock.h"
 #include "client/clientevent.h"
-#include "client/renderingengine.h"
-#include "client/sound.h"
-#include "client/texturepaths.h"
-#include "client/texturesource.h"
-#include "client/mesh_generator_thread.h"
-#include "client/particles.h"
-#include "client/localplayer.h"
+#include "client/render/rendersystem.h"
+#include "client/sound/sound.h"
+#include "client/media/resource.h"
+#include "client/map/meshgeneratorthread.h"
+#include "client/render/particles.h"
+#include "client/player/localplayer.h"
 #include "util/auth.h"
 #include "util/directiontables.h"
 #include "util/pointedthing.h"
@@ -28,24 +26,22 @@
 #include "util/string.h"
 #include "util/srp.h"
 #include "filesys.h"
-#include "mapblock_mesh.h"
+#include "client/map/mapblockmesh.h"
 #include "mapblock.h"
 #include "mapsector.h"
-#include "minimap.h"
+#include "client/ui/minimap.h"
 #include "modchannels.h"
 #include "content/mods.h"
 #include "profiler.h"
-#include "shader.h"
 #include "gettext.h"
 #include "gettime.h"
 #include "clientdynamicinfo.h"
-#include "clientmap.h"
-#include "clientmedia.h"
+#include "client/map/clientmap.h"
+#include "client/media/clientmedia.h"
 #include "version.h"
 #include "database/database-files.h"
 #include "database/database-sqlite3.h"
 #include "serialization.h"
-#include "guiscalingfilter.h"
 #include "script/scripting_client.h"
 #include "game.h"
 #include "chatmessage.h"
@@ -1540,7 +1536,7 @@ void Client::setPlayerItem(u16 item)
 
 // Returns true once after the inventory of the local player
 // has been updated from the server.
-bool Client::updateWieldedItem()
+/*bool Client::updateWieldedItem()
 {
 	if (!m_update_wielded_item)
 		return false;
@@ -1555,12 +1551,7 @@ bool Client::updateWieldedItem()
 		list->setModified(false);
 
 	return true;
-}
-
-scene::ISceneManager* Client::getSceneManager()
-{
-	return m_rendering_engine->get_scene_manager();
-}
+}*/
 
 Inventory* Client::getInventory(const InventoryLocation &loc)
 {
@@ -1627,7 +1618,7 @@ float Client::getAnimationTime()
 	return m_animation_time;
 }
 
-int Client::getCrackLevel()
+/*int Client::getCrackLevel()
 {
 	return m_crack_level;
 }
@@ -1655,7 +1646,7 @@ void Client::setCrack(int level, v3s16 pos)
 		// add new crack
 		addUpdateMeshTaskForNode(pos, false, true);
 	}
-}
+}*/
 
 u16 Client::getHP()
 {
@@ -1978,14 +1969,6 @@ ICraftDefManager* Client::getCraftDefManager()
 	return NULL;
 	//return m_craftdef;
 }
-ITextureSource* Client::getTextureSource()
-{
-	return m_tsrc;
-}
-IWritableShaderSource* Client::getShaderSource()
-{
-	return m_shsrc;
-}
 
 u16 Client::allocateUnknownNodeId(const std::string &name)
 {
@@ -2004,12 +1987,7 @@ MtEventManager* Client::getEventManager()
 	return m_event;
 }
 
-ParticleManager* Client::getParticleManager()
-{
-	return m_particle_manager.get();
-}
-
-scene::IAnimatedMesh* Client::getMesh(const std::string &filename, bool cache)
+/*scene::IAnimatedMesh* Client::getMesh(const std::string &filename, bool cache)
 {
 	StringMap::const_iterator it = m_mesh_data.find(filename);
 	if (it == m_mesh_data.end()) {
@@ -2033,7 +2011,7 @@ scene::IAnimatedMesh* Client::getMesh(const std::string &filename, bool cache)
 	if (!cache)
 		m_rendering_engine->removeMesh(mesh);
 	return mesh;
-}
+}*/
 
 const std::string* Client::getModFile(std::string filename)
 {

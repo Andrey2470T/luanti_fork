@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "irrlichttypes.h"
+#include <Types.h>
 #include "content/subgames.h"
 
 // Information provided from "main"

@@ -43,6 +43,15 @@ set(media_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/media/resource_loader.cpp
 )
 
+if (BUILD_CLIENT)
+	set(client_network_SRCS
+		${CMAKE_CURRENT_SOURCE_DIR}/network/cmdfuncs.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/network/cmdtable.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/network/packethandler.cpp
+		PARENT_SCOPE
+	)
+endif()
+
 set(pipeline_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/pipeline/anaglyph.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/pipeline/base.cpp

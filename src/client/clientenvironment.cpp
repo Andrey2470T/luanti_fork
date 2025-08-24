@@ -38,8 +38,6 @@ ClientEnvironment::~ClientEnvironment()
     //for (auto &simple_object : m_simple_objects) {
     //	delete simple_object;
     //}
-
-	m_map.reset();
 }
 
 Map &ClientEnvironment::getMap()
@@ -72,6 +70,9 @@ void ClientEnvironment::step(float dtime)
 	if (m_client->modsLoaded())
 		m_script->environment_step(dtime);
 
+    /* Step local player */
+    m_local_player->step(dtime);
+
 	// Update lighting on local player (used for wield item)
     /*u32 day_night_ratio = getDayNightRatio();
 	{
@@ -89,10 +90,7 @@ void ClientEnvironment::step(float dtime)
 		final_color_blend(&lplayer->light_color, light, day_night_ratio);
     }*/
 
-	/*
-		Step active objects and update lighting of them
-	*/
-
+    /* Step active objects and update lighting of them */
 	bool update_lighting = m_active_object_light_update_interval.step(dtime, 0.21);
     auto cb_state = [this, dtime, update_lighting] (ClientActiveObject *cao) {
         RenderCAO *rendercao = dynamic_cast<RenderCAO *>(cao);
@@ -109,9 +107,7 @@ void ClientEnvironment::step(float dtime)
     /* Step particle manager */
     m_client->getRenderSystem()->getParticleManager()->step(dtime);
 
-	/*
-		Step and handle simple objects
-	*/
+    /* Step and handle simple objects */
     /*g_profiler->avg("ClientEnv: CSO count [#]", m_simple_objects.size());
 	for (auto i = m_simple_objects.begin(); i != m_simple_objects.end();) {
 		ClientSimpleObject *simple = *i;

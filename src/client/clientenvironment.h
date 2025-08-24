@@ -97,7 +97,6 @@ public:
 
 	void processActiveObjectMessage(u16 id, const std::string &data);
 
-
 	/*
 		Client likes to call these
 	*/
