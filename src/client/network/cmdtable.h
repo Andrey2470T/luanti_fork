@@ -21,7 +21,7 @@ struct ToClientCommandHandler
 {
 	const char* name;
 	ToClientConnectionState state;
-	void (Client::*handler)(NetworkPacket* pkt);
+    void (ClientPacketHandler::*handler)(NetworkPacket* pkt);
 };
 
 struct ServerCommandFactory

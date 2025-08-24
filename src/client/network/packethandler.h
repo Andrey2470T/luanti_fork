@@ -9,6 +9,7 @@
 #include <memory>
 #include "serialization.h"
 #include "util/string.h"
+#include "script/common/c_types.h"
 
 class NetworkPacket;
 class Client;
