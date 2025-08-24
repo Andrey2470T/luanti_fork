@@ -41,7 +41,7 @@ LoadScreen::LoadScreen(ResourceCache *_cache, RenderSystem *_system, FontManager
         tex->getSize(), basicPool->getTileRect(progress_bg_img), progress_bg_img_size_f, {}, false);
 }
 
-void LoadScreen::updateText(v2u screensize, const std::wstring &text, f32 dtime, bool menu_clouds,
+void LoadScreen::draw(v2u screensize, const std::wstring &text, f32 dtime, bool menu_clouds,
     s32 percent, f32 scale_f, f32 *shutdown_progress)
 {
     if (percent == last_percent)
@@ -91,20 +91,25 @@ void LoadScreen::updateText(v2u screensize, const std::wstring &text, f32 dtime,
         progress_rect->getShape()->updateRectangle(1, new_progress_bg_size, {});
         progress_rect->updateMesh(true);
 
-        renderer->setClipRect(
-            recti(percent_min * img_size.X / 100, 0, percent_max * img_size.X / 100, img_size.Y));
+        progress_cliprect = recti(percent_min * img_size.X / 100, 0, percent_max * img_size.X / 100, img_size.Y);
     }
-}
 
-void LoadScreen::draw() const
-{
-    //driver->setFog(RenderingEngine::MENU_SKY_COLOR);
-    //driver->beginScene(true, true, RenderingEngine::MENU_SKY_COLOR);
+    FogType fogtype;
+    img::color8 fogcolor;
+    f32 fogstart, fogend, density;
+    renderer->getFogParams(fogtype, fogcolor, fogstart, fogend, density);
+    renderer->setFogParams(fogtype, Renderer::menu_sky_color, fogstart, fogend, density);
+
+    renderer->getContext()->clearBuffers(render::CBF_COLOR, Renderer::menu_sky_color);
 
     if (draw_clouds)
         g_menuclouds->render();
 
-    progress_rect->draw();
+    progress_rect->drawPart(0, 1);
+
+    progress_rect->setClipRect(progress_cliprect);
+    progress_rect->drawPart(1, 1);
+    progress_rect->setClipRect(recti());
 
     guitext->draw();
 }

@@ -19,23 +19,25 @@
 #include "batcher2d.h"
 #include "client/render/atlas.h"
 
-Hud::Hud(Client *_client, Inventory *_inventory)
-    : client(_client), inventory(_inventory), player(client->getEnv().getLocalPlayer())
+Hud::Hud(Client *_client)
+    : client(_client), player(client->getEnv().getLocalPlayer())
 {
     initCrosshair();
 
-    if (client->getProtoVersion() < 44) {
-        HudElement *minimap = new HudElement{HUD_ELEM_MINIMAP, v2f(1, 0), "", v2f(), "", 0 , 0, 0, v2f(-1, 1),
-            v2f(-10, 10), v3f(), v2i(256, 256), 0, "", 0};
-        u32 id = player->getFreeHudID();
-        hudsprites[id] =  std::unique_ptr<HudSprite>(new HudMinimap(client, minimap));
-        builtinMinimapID = id;
+    if (g_settings->getBool("enable_minimap")) {
+        if (client->getProtoVersion() < 44) {
+            HudElement *minimap = new HudElement{HUD_ELEM_MINIMAP, v2f(1, 0), "", v2f(), "", 0 , 0, 0, v2f(-1, 1),
+                v2f(-10, 10), v3f(), v2i(256, 256), 0, "", 0};
+            u32 id = player->getFreeHudID();
+            hudsprites[id] =  std::unique_ptr<HudSprite>(new HudMinimap(client, minimap));
+            builtinMinimapID = id;
+        }
     }
     if (client->getProtoVersion() < 46) {
         HudElement *hotbar = new HudElement{HUD_ELEM_HOTBAR, v2f(0.5, 1), "", v2f(), "", 0 , 0, 0, v2f(0, -1),
             v2f(0, -4), v3f(), v2i(), 0, "", 0};
         u32 id = player->getFreeHudID();
-        hudsprites[id] = std::unique_ptr<HudSprite>(new HudHotbar(client, hotbar, inventory));
+        hudsprites[id] = std::unique_ptr<HudSprite>(new HudHotbar(client, hotbar));
         builtinHotbarID = id;
     }
 }
@@ -81,10 +83,12 @@ void Hud::updateCrosshair()
 
 void Hud::updateBuiltinElements()
 {
-    if (client->getProtoVersion() < 44 && player->hud_flags & HUD_FLAG_MINIMAP_VISIBLE)
-        hudsprites[builtinMinimapID]->setVisible(true);
-    else
-        hudsprites[builtinMinimapID]->setVisible(false);
+    if (g_settings->getBool("enable_minimap")) {
+        if (client->getProtoVersion() < 44 && player->hud_flags & HUD_FLAG_MINIMAP_VISIBLE)
+            hudsprites[builtinMinimapID]->setVisible(true);
+        else
+            hudsprites[builtinMinimapID]->setVisible(false);
+    }
 
     if (client->getProtoVersion() < 46 && player->hud_flags & HUD_FLAG_HOTBAR_VISIBLE)
         hudsprites[builtinHotbarID]->setVisible(true);
@@ -140,7 +144,7 @@ void Hud::addHUDElement(u32 id, const HudElement *elem)
         hudsprites.emplace(std::unique_ptr<HudSprite>(new HudMinimap(client, elem)));
         break;
     case HUD_ELEM_HOTBAR:
-        hudsprites.emplace(std::unique_ptr<HudSprite>(new HudHotbar(client, elem, inventory)));
+        hudsprites.emplace(std::unique_ptr<HudSprite>(new HudHotbar(client, elem)));
         break;
     }
 }
@@ -163,6 +167,14 @@ void Hud::removeHUDElement(u32 id)
         return;
 
     hudsprites.erase(found_elem);
+}
+
+Minimap *Hud::getMinimap() const
+{
+    if (!g_settings->getBool("enable_minimap"))
+        return nullptr;
+
+    return dynamic_cast<HudMinimap *>(hudsprites[builtinMinimapID]->get())->getUnderlyingMinimap();
 }
 
 void Hud::render()

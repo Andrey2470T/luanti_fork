@@ -54,7 +54,7 @@ typedef std::unordered_map<u16, ClientActiveObject*> ClientActiveObjectMap;
 class ClientEnvironment : public Environment
 {
 public:
-    ClientEnvironment(ClientMap *map, Client *client);
+    ClientEnvironment(Client *client);
 	~ClientEnvironment();
 
 	Map & getMap();

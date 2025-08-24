@@ -1,5 +1,6 @@
 #include "BasicIncludes.h"
 #include <memory>
+#include <Utils/Rect.h>
 
 namespace render
 {
@@ -35,6 +36,8 @@ class LoadScreen
     img::Image *progress_bg_img;
     img::Image *progress_img;
 
+    recti progress_cliprect;
+
     bool draw_clouds;
     s32 last_percent = 0;
 public:
@@ -42,9 +45,8 @@ public:
 
     ~LoadScreen();
 
-    void updateText(v2u screensize, const std::wstring &text, f32 dtime, bool menu_clouds,
-                    s32 percent, f32 scale_f, f32 *shutdown_progress);
-    void draw() const;
+    void draw(v2u screensize, const std::wstring &text, f32 dtime, bool menu_clouds,
+        s32 percent, f32 scale_f, f32 *shutdown_progress=nullptr);
 private:
 	static void settingChangedCallback(const std::string &name, void *data);
 };

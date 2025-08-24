@@ -16,6 +16,7 @@ target_include_directories(${LIB_NAME}
 		${CMAKE_CURRENT_SOURCE_DIR}
 	PRIVATE
 		${ZLIB_INCLUDE_DIR}
+		${SDL2_INCLUDE_DIRS}
 )
 
 target_link_libraries(${LIB_NAME}

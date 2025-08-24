@@ -45,7 +45,7 @@ Model::Model(v3f pos, const std::vector<MeshLayer> &layers, MeshBuffer *buffer)
 }
 
 Model::Model(AnimationManager *_mgr, v3f pos, const std::vector<std::shared_ptr<TileLayer>> &layers,
-    const aiScene *scene, ResourceCache *cache)
+    const aiScene *scene)
     : mgr(_mgr)
 {
     // aka Material Groups
@@ -78,10 +78,16 @@ Model::Model(AnimationManager *_mgr, v3f pos, const std::vector<std::shared_ptr<
 }
 
 Model *Model::load(AnimationManager *_mgr, v3f pos, const std::vector<std::shared_ptr<TileLayer> > &layers,
-    const std::string &path, ResourceCache *cache)
+    const std::string &name, ResourceCache *cache)
 {
     Assimp::Importer importer;
 
+    std::string path = fallbackPathFinder(name);
+
+    if (path.empty()) {
+        warningstream << "Model::load() Couldn't find any path to the resource with name " << name << std::endl;
+        return nullptr;
+    }
     const aiScene *scene = importer.ReadFile(path,
         aiProcess_JoinIdenticalVertices |
         aiProcess_Triangulate |
@@ -95,7 +101,10 @@ Model *Model::load(AnimationManager *_mgr, v3f pos, const std::vector<std::share
         return nullptr;
     }
 
-    return new Model(_mgr, pos, layers, scene, cache);
+    auto model = new Model(_mgr, pos, layers, scene);
+    cache->cacheResource<Model>(ResourceType::MODEL, model);
+
+    return model;
 }
 
 void Model::processMesh(u8 mat_i, aiMesh *m, std::shared_ptr<TileLayer> layer)

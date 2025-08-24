@@ -14,7 +14,6 @@ class GUIEnvironment;
 class ShadowRenderer;
 class ResourceCache;
 class LoadScreen;
-class MyEventReceiver;
 class AtlasPool;
 class FontManager;
 class Renderer;
@@ -25,7 +24,6 @@ class ParticleManager;
 class Sky;
 class Clouds;
 class GameUI;
-class Inventory;
 class TransformNodeManager;
 class AnimationManager;
 	
@@ -57,14 +55,12 @@ class RenderSystem
     std::unique_ptr<AtlasPool> basePool;
     std::unique_ptr<AtlasPool> guiPool;
     std::unique_ptr<FontManager> fontManager;
-	
-    MyEventReceiver *receiver;
 
     f32 display_density;
     f32 gui_scaling;
     bool menu_clouds;
 public:
-    RenderSystem(Client *_client, ResourceCache *_cache, MyEventReceiver *_receiver, Inventory *inv);
+    RenderSystem(Client *_client, ResourceCache *_cache);
     ~RenderSystem();
 
     main::MainWindow *getWindow() const

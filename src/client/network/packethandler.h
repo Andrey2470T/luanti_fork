@@ -4,20 +4,22 @@
 #include "network/address.h"
 #include "network/networkprotocol.h" // multiple enums
 #include "network/peerhandler.h"
+#include "gameparams.h"
 #include <map>
 #include <memory>
+#include "serialization.h"
+#include "util/string.h"
 
 class NetworkPacket;
+class Client;
+class PointedThing;
+class InventoryAction;
+class ClientDynamicInfo;
+class ModChannelMgr;
 
 namespace con {
 class IConnection;
 }
-
-enum LocalClientState {
-    LC_Created,
-    LC_Init,
-    LC_Ready
-};
 
 /*
     Packet counter
@@ -52,14 +54,16 @@ private:
 
 class ClientPacketHandler : public con::PeerHandler
 {
+    Client *m_client;
     std::unique_ptr<con::IConnection> m_con;
 
     PacketCounter m_packetcounter;
 
     f32 m_packetcounter_timer = 0.0f;
     f32 m_connection_reinit_timer = 0.1f;
-    f32 m_avg_rtt_timer = 0.0f;
     f32 m_playerpos_send_timer = 0.0f;
+    // An interval for generally sending object positions and stuff
+    float m_recommended_send_interval = 0.1f;
 
     bool m_access_denied = false;
     bool m_access_denied_reconnect = false;
@@ -68,10 +72,25 @@ class ClientPacketHandler : public con::PeerHandler
     std::string m_address_name;
     ELoginRegister m_allow_login_or_register = ELoginRegister::Any;
 
-    // own state
-    LocalClientState m_state;
+    // Used version of the protocol with server
+    // Values smaller than 25 only mean they are smaller than 25,
+    // and aren't accurate. We simply just don't know, because
+    // the server didn't send the version back then.
+    // If 0, server init hasn't been received yet.
+    u16 m_proto_ver = 0;
+
+    // Server serialization version
+    u8 m_server_ser_ver = SER_FMT_VER_INVALID;
+
+    bool m_itemdef_received = false;
+    bool m_nodedef_received = false;
+    bool m_activeobjects_received = false;
+    bool m_mods_loaded = false;
 public:
-    ClientPacketHandler();
+    ClientPacketHandler(Client *client, ELoginRegister allow_login_or_register)
+        : m_client(client), m_allow_login_or_register(allow_login_or_register)
+    {}
+    ~ClientPacketHandler();
 
     void connect(const Address &address, const std::string &address_name,
         bool is_local_server);
@@ -143,11 +162,11 @@ public:
     void handleCommand_MinimapModes(NetworkPacket *pkt);
     void handleCommand_SetLighting(NetworkPacket *pkt);
 
-    void ProcessData(NetworkPacket *pkt);
+    void processData(NetworkPacket *pkt);
 
-    void Send(NetworkPacket* pkt);
+    void send(NetworkPacket* pkt);
 
-    void interact(InteractAction action, const PointedThing &pointed);
+    void interact(f32 range, InteractAction action, const PointedThing &pointed);
 
     void sendNodemetaFields(v3s16 p, const std::string &formname,
         const StringMap &fields);
@@ -155,13 +174,13 @@ public:
         const StringMap &fields);
     void sendInventoryAction(InventoryAction *a);
     void sendChatMessage(const std::wstring &message);
-    void sendChangePassword(const std::string &oldpassword,
-        const std::string &newpassword);
     void sendDamage(u16 damage);
     void sendRespawnLegacy();
     void sendReady();
     void sendHaveMedia(const std::vector<u32> &tokens);
     void sendUpdateClientInfo(const ClientDynamicInfo &info);
+    // Send the item number 'item' as player item to the server
+    void sendPlayerItem(u16 item);
 
     bool accessDenied() const { return m_access_denied; }
 
@@ -177,14 +196,22 @@ public:
         setFatalError(std::string("Lua: ") + e.what());
     }
 
+    bool itemdefReceived() const
+    { return m_itemdef_received; }
+    bool nodedefReceived() const
+    { return m_nodedef_received; }
+    bool activeObjectsReceived() const
+    { return m_activeobjects_received; }
+
     // Renaming accessDeniedReason to better name could be good as it's used to
     // disconnect client when CSM failed.
     const std::string &accessDeniedReason() const { return m_access_denied_reason; }
 
-    LocalClientState getState() { return m_state; }
-
     // IP and port we're connected to
     const Address getServerAddress();
+
+    float getRTT();
+    float getCurRate();
 
     // Hostname of the connected server (but can also be a numerical IP)
     const std::string &getAddressName() const
@@ -192,23 +219,35 @@ public:
         return m_address_name;
     }
 
+    u16 getProtoVersion() const
+    { return m_proto_ver; }
+
+    // has the server ever replied to us, used for connection retry/fallback
+    bool hasServerReplied() const {
+        return getProtoVersion() != 0; // (set in TOCLIENT_HELLO)
+    }
+
+    void printPacketCounter(f32 dtime);
+
     void peerAdded(con::IPeer *peer) override;
     void deletingPeer(con::IPeer *peer, bool timeout) override;
-private:
-    void initLocalMapSaving(const Address &address,
-        const std::string &hostname,
-        bool is_local_server);
 
-    void ReceiveAll();
+    void request_media(const std::vector<std::string> &file_requests);
 
-    void sendPlayerPos();
+    void receiveAll();
 
-    void sendInit(const std::string &playerName);
-    void startAuth(AuthMechanism chosen_auth_mechanism);
+    void sendPlayerPos(f32 range, f32 dtime);
+
+    void sendInit(f32 dtime);
+    void sendAuthFirstSRP(std::string verifier, std::string salt, bool pwd_empty);
+    void sendAuthSRPBytesA(char *bytes_A, size_t len_A, u8 based_on);
     void sendDeletedBlocks(std::vector<v3s16> &blocks);
     void sendGotBlocks(const std::vector<v3s16> &blocks);
     void sendRemovedSounds(const std::vector<s32> &soundList);
 
     bool canSendChatMessage() const;
 
+    bool joinModChannel(ModChannelMgr *mochannel, const std::string &channel);
+    bool leaveModChannel(ModChannelMgr *mochannel, const std::string &channel);
+    bool sendModChannelMessage(ModChannelMgr *mochannel, const std::string &channel, const std::string &message);
 };

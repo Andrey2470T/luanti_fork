@@ -63,7 +63,7 @@ enum CameraMode {
 class PlayerCamera : public Camera
 {
 public:
-	PlayerCamera(DrawControl &draw_control, Client *client);
+    PlayerCamera(Client *client);
 	~PlayerCamera();
 
 	// Returns the absolute position of the head SceneNode in the world

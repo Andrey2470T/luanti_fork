@@ -15,7 +15,6 @@
 class Client;
 class RenderSystem;
 class ResourceCache;
-class Inventory;
 class InventoryList;
 class LocalPlayer;
 struct ItemStack;
@@ -28,7 +27,6 @@ class Hud
 {
     Client *client;
 	RenderSystem *rnd_system;
-    Inventory *inventory;
     LocalPlayer *player;
     ResourceCache *cache;
 
@@ -58,7 +56,7 @@ public:
     const std::string object_crosshair_img = "object_crosshair.png";
     bool pointing_at_object;
 
-    Hud(Client *_client, Inventory *_inventory);
+    Hud(Client *_client);
 
 	bool hasElementOfType(HudElementType type);
 
@@ -69,6 +67,8 @@ public:
     void addHUDElement(u32 id, const HudElement *elem);
     void removeHUDElement(u32 id);
     void updateHUDElement(u32 id);
+
+    Minimap *getMinimap() const;
 
     void render();
 private:

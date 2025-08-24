@@ -35,8 +35,8 @@ inline static const char *yawToDirectionString(int yaw)
 	return direction[yaw];
 }
 
-GameUI::GameUI(Client *client, Inventory *inv)
-    : rndsys(client->getRenderSystem()), hud(std::make_unique<Hud>(client, inv))
+GameUI::GameUI(Client *client)
+    : rndsys(client->getRenderSystem()), hud(std::make_unique<Hud>(client))
 {
 	if (guienv && guienv->getSkin())
         statustext_initial_color = guienv->getSkin()->getColor(GUIDefaultColor::ButtonText);

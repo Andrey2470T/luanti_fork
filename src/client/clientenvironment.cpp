@@ -18,14 +18,15 @@
 #include "client/render/rendersystem.h"
 #include "client/media/resource.h"
 #include "client/render/particles.h"
+#include "client/render/drawlist.h"
 
 /*
 	ClientEnvironment
 */
 
-ClientEnvironment::ClientEnvironment(ClientMap *map, Client *client):
+ClientEnvironment::ClientEnvironment(Client *client):
 	Environment(client),
-	m_map(std::move(map)),
+    m_map(std::make_unique<ClientMap>(client, client->getRenderSystem()->getDrawList())),
     m_rescache(client->getResourceCache()),
     m_client(client)
 {

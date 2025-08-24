@@ -44,7 +44,7 @@
 #define LAST_OS_ERROR() strerror(errno)
 #endif
 
-namespace fs
+namespace mt_fs
 {
 
 #ifdef _WIN32
@@ -564,7 +564,7 @@ void GetRecursiveDirs(std::vector<std::string> &dirs, const std::string &dir)
 	if (dir.empty() || !IsDir(dir))
 		return;
 	dirs.push_back(dir);
-	fs::GetRecursiveSubPaths(dir, dirs, false, chars_to_ignore);
+    GetRecursiveSubPaths(dir, dirs, false, chars_to_ignore);
 }
 
 std::vector<std::string> GetRecursiveDirs(const std::string &dir)
@@ -630,21 +630,21 @@ bool CopyDir(const std::string &source, const std::string &target)
 {
 	if(PathExists(source)){
 		if(!PathExists(target)){
-			fs::CreateAllDirs(target);
+            CreateAllDirs(target);
 		}
 		bool retval = true;
-		std::vector<DirListNode> content = fs::GetDirListing(source);
+        std::vector<DirListNode> content = GetDirListing(source);
 
 		for (const auto &dln : content) {
 			std::string sourcechild = source + DIR_DELIM + dln.name;
 			std::string targetchild = target + DIR_DELIM + dln.name;
 			if(dln.dir){
-				if(!fs::CopyDir(sourcechild, targetchild)){
+                if(!CopyDir(sourcechild, targetchild)){
 					retval = false;
 				}
 			}
 			else {
-				if(!fs::CopyFileContents(sourcechild, targetchild)){
+                if(!CopyFileContents(sourcechild, targetchild)){
 					retval = false;
 				}
 			}
@@ -660,7 +660,7 @@ bool MoveDir(const std::string &source, const std::string &target)
 	infostream << "Moving \"" << source << "\" to \"" << target << "\"" << std::endl;
 
 	// If target exists as empty folder delete, otherwise error
-	if (fs::PathExists(target)) {
+    if (PathExists(target)) {
 		if (rmdir(target.c_str()) != 0) {
 			errorstream << "MoveDir: target \"" << target
 				<< "\" exists as file or non-empty folder" << std::endl;
@@ -669,13 +669,13 @@ bool MoveDir(const std::string &source, const std::string &target)
 	}
 
 	// Try renaming first which is instant
-	if (fs::Rename(source, target))
+    if (Rename(source, target))
 		return true;
 
 	infostream << "MoveDir: rename not possible, will copy instead" << std::endl;
-	bool retval = fs::CopyDir(source, target);
+    bool retval = CopyDir(source, target);
 	if (retval)
-		retval &= fs::RecursiveDelete(source);
+        retval &= RecursiveDelete(source);
 	return retval;
 }
 
@@ -849,7 +849,7 @@ std::string AbsolutePathPartial(const std::string &path)
 	if (path.empty())
 		return "";
 	// Try to determine absolute path
-	std::string abs_path = fs::AbsolutePath(path);
+    std::string abs_path = AbsolutePath(path);
 	if (!abs_path.empty())
 		return abs_path;
 	// Remove components until it works
@@ -959,78 +959,6 @@ bool safeWriteToFile(const std::string &path, std::string_view content)
 
 	return true;
 }
-
-#if CHECK_CLIENT_BUILD()
-bool extractZipFile(io::IFileSystem *fs, const char *filename, const std::string &destination)
-{
-	// Be careful here not to touch the global file hierarchy in Irrlicht
-	// since this function needs to be thread-safe!
-
-	io::IArchiveLoader *zip_loader = nullptr;
-	for (u32 i = 0; i < fs->getArchiveLoaderCount(); i++) {
-		if (fs->getArchiveLoader(i)->isALoadableFileFormat(io::EFAT_ZIP)) {
-			zip_loader = fs->getArchiveLoader(i);
-			break;
-		}
-	}
-	if (!zip_loader) {
-		warningstream << "fs::extractZipFile(): Irrlicht said it doesn't support ZIPs." << std::endl;
-		return false;
-	}
-
-	irr_ptr<io::IFileArchive> opened_zip(zip_loader->createArchive(filename, false, false));
-	if (!opened_zip)
-		return false;
-	const io::IFileList* files_in_zip = opened_zip->getFileList();
-
-	for (u32 i = 0; i < files_in_zip->getFileCount(); i++) {
-		if (files_in_zip->isDirectory(i))
-			continue; // ignore, we create dirs as necessary
-
-		const auto &filename = files_in_zip->getFullFileName(i);
-		std::string fullpath = destination + DIR_DELIM;
-		fullpath += filename.c_str();
-
-		fullpath = fs::RemoveRelativePathComponents(fullpath);
-		if (!fs::PathStartsWith(fullpath, destination)) {
-			warningstream << "fs::extractZipFile(): refusing to extract file \""
-				<< filename.c_str() << "\"" << std::endl;
-			continue;
-		}
-
-		std::string fullpath_dir = fs::RemoveLastPathComponent(fullpath);
-
-		if (!fs::PathExists(fullpath_dir) && !fs::CreateAllDirs(fullpath_dir))
-			return false;
-
-		irr_ptr<io::IReadFile> toread(opened_zip->createAndOpenFile(i));
-
-		auto os = open_ofstream(fullpath.c_str(), true);
-		if (!os.good())
-			return false;
-
-		char buffer[4096];
-		long total_read = 0;
-
-		while (total_read < toread->getSize()) {
-			long bytes_read = toread->read(buffer, sizeof(buffer));
-			bool error = true;
-			if (bytes_read != 0) {
-				os.write(buffer, bytes_read);
-				error = os.fail();
-			}
-			if (error) {
-				os.close();
-				remove(fullpath.c_str());
-				return false;
-			}
-			total_read += bytes_read;
-		}
-	}
-
-	return true;
-}
-#endif
 
 bool ReadFile(const std::string &path, std::string &out, bool log_error)
 {

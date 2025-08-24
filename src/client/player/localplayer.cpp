@@ -59,9 +59,9 @@ void PlayerSettings::settingsChangedCallback(const std::string &name, void *data
 	LocalPlayer
 */
 
-LocalPlayer::LocalPlayer(Client *client, DrawControl &draw_ctrl, const std::string &name):
+LocalPlayer::LocalPlayer(Client *client, const std::string &name):
     Player(name, client->idef()),
-    m_client(client), m_camera(std::make_unique<PlayerCamera>(draw_ctrl, client))
+    m_client(client), m_camera(std::make_unique<PlayerCamera>(client))
 {
 	m_player_settings.readGlobalSettings();
 	m_player_settings.registerSettingsCallback();
@@ -776,6 +776,18 @@ bool LocalPlayer::isDead() const
 PlayerCamera *LocalPlayer::getCamera() const
 {
     return m_camera.get();
+}
+
+// Returns true once after the inventory of the local player
+// has been updated from the server.
+bool LocalPlayer::updateWieldedItem()
+{
+    if (auto *list = inventory.getList("main"))
+        list->setModified(false);
+    if (auto *list = inventory.getList("hand"))
+        list->setModified(false);
+
+    return true;
 }
 
 void LocalPlayer::step(f32 dtime)

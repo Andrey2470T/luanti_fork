@@ -3,7 +3,7 @@
 #include "settings.h"
 #include "Image/ImageLoader.h"
 
-static std::vector<std::string> getTexturesDefaultPaths()
+std::vector<std::string> getTexturesDefaultPaths()
 {
     std::vector<std::string> paths;
     for (auto &entry : fs::recursive_directory_iterator(g_settings->get("texture_path")))
@@ -62,7 +62,7 @@ static std::string shaderPathFinder(const std::string &name)
     return "";
 }
 
-static std::string fallbackPathFinder(const std::string &name)
+std::string fallbackPathFinder(const std::string &name)
 {
     fs::path p = fs::absolute(name);
     fs::path fs_p = p / name;
@@ -72,8 +72,8 @@ static std::string fallbackPathFinder(const std::string &name)
     return "";
 }
 
-ResourceCache::ResourceCache(main::OpenGLVersion version)
-    : loader(std::make_unique<ResourceLoader>(version))
+ResourceCache::ResourceCache()
+    : loader(std::make_unique<ResourceLoader>())
 {
     auto texDefPaths = getTexturesDefaultPaths();
     auto shaderDefPaths = getShaderDefaultPaths();
@@ -105,11 +105,8 @@ ResourceCache::ResourceCache(main::OpenGLVersion version)
     ));
     models.reset(new ResourceSubCache<Model>(
         {},
-        &fallbackPathFinder,
-        [resLoader] (const std::string &name) -> Model*
-        {
-            return resLoader->loadModel(name);
-        }
+        nullptr,
+        nullptr
     ));
     palettes.reset(new ResourceSubCache<img::Palette>(
         {},

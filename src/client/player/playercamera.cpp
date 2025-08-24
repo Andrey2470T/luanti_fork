@@ -83,8 +83,8 @@ void Nametag::updateBank(v3f newWorldPos)
     text_sprite->updateBuffer(rectf(screen_pos-textsize_f/2.0f, textsize_f.X, textsize_f.Y));
 }
 
-PlayerCamera::PlayerCamera(DrawControl &draw_control, Client *client):
-	Camera(), m_draw_control(draw_control),
+PlayerCamera::PlayerCamera(Client *client):
+    Camera(), m_draw_control(client->getRenderSystem()->getDrawList()->getDrawControl()),
     m_client(client), m_player_light_color(img::colorU32NumberToObject(0xFFFFFFFF))
 {
     //auto smgr = rendering_engine->get_scene_manager();

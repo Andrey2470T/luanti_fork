@@ -98,7 +98,7 @@ public:
     LayeredMeshSorter mesh_sorter;
     DrawControl draw_control;
 
-    const DrawControl &getDrawControl() const
+    DrawControl &getDrawControl()
     {
         return draw_control;
     }

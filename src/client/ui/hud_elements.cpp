@@ -729,10 +729,11 @@ rectf HudInventoryList::getSlotRect(u32 n) const
    return slotrect;
 }
 
-HudHotbar::HudHotbar(Client *client, const HudElement *elem, Inventory *inv)
+HudHotbar::HudHotbar(Client *client, const HudElement *elem)
     : HudInventoryList(client, elem)
 {
-    InventoryList *mainlist = inv->getList("main");
+    auto inv = client->getEnv().getLocalPlayer()->inventory;
+    InventoryList *mainlist = inv.getList("main");
     if (!mainlist) {
         // Silently ignore this. We may not be initialized completely.
         return;

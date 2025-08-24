@@ -230,7 +230,7 @@ private:
 class HudHotbar : public HudInventoryList
 {
 public:
-    HudHotbar(Client *client, const HudElement *elem, Inventory *inv);
+    HudHotbar(Client *client, const HudElement *elem);
     
     void updateSelectedSlot();
     void update() override;

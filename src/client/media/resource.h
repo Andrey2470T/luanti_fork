@@ -20,6 +20,8 @@ enum class ResourceType
     FONT
 };
 
+std::vector<std::string> getTexturesDefaultPaths();
+std::string fallbackPathFinder(const std::string &name);
 
 template <class T>
 struct ResourceInfo
@@ -71,7 +73,7 @@ class ResourceCache
 
     std::mutex resource_mutex;
 public:
-    ResourceCache(main::OpenGLVersion version);
+    ResourceCache();
 
     template <class T>
     T *get(ResourceType _type, const std::string &_name);

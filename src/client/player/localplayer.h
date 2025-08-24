@@ -54,7 +54,7 @@ class LocalPlayer : public Player
 {
 public:
 
-    LocalPlayer(Client *client, DrawControl &draw_ctrl, const std::string &name);
+    LocalPlayer(Client *client, const std::string &name);
 	virtual ~LocalPlayer();
 
 	// Initialize hp to 0, so that no hearts will be shown if server
@@ -172,6 +172,10 @@ public:
     Lighting& getLighting() { return m_lighting; }
 
     PlayerSettings &getPlayerSettings() { return m_player_settings; }
+
+    // Returns true if the inventory of the local player has been
+    // updated from the server. If it is true, it is set to false.
+    bool updateWieldedItem();
 
     void step(f32 dtime);
 

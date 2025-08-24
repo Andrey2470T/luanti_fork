@@ -9,8 +9,7 @@
 #include "log.h"
 #include "porting.h"
 
-ResourceLoader::ResourceLoader(main::OpenGLVersion version)
-	: gl_version(version)
+ResourceLoader::ResourceLoader()
 {
     enableGUIFiltering = g_settings->getBool("gui_scaling_filter");
 
@@ -95,8 +94,7 @@ render::Shader *ResourceLoader::loadShader(const std::string &path)
 
 	header << std::noboolalpha << std::showpoint;
 
-	header << "#version ";
-	header << gl_version.Major << gl_version.Minor << "0 core\n";
+    header << "#version 330 core\n";
 
 	header << "#define ENABLE_WAVING_WATER " << (u8)enable_waving_water << "\n";
 	if (enable_waving_water) {
@@ -166,11 +164,6 @@ render::Shader *ResourceLoader::loadShader(const std::string &path)
          geometry_code = header.str() + final_header + gs_code;
 
     return new render::Shader(vertex_code, fragment_code, geometry_code);
-}
-
-Model *ResourceLoader::loadModel(const std::string &path)
-{
-    return Model::load(path);
 }
 
 img::Palette *ResourceLoader::loadPalette(const std::string &path)

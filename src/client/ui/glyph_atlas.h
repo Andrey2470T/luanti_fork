@@ -57,7 +57,7 @@ public:
     render::TTFont *getFontOrCreate(render::FontMode mode, render::FontStyle style, std::optional<u32> size=std::nullopt);
     AtlasPool *getPoolOrCreate(render::FontMode mode, render::FontStyle style, std::optional<u32> size=std::nullopt);
 
-    void addFont(render::FontMode mode, render::FontStyle style, std::optional<u32> size=std::nullopt);
+    bool addFont(render::FontMode mode, render::FontStyle style, std::optional<u32> size=std::nullopt);
     void addFontInSkin(GUISkin *skin, render::FontMode mode, render::FontStyle style,
         std::optional<u32> size=std::nullopt, GUIDefaultFont which=GUIDefaultFont::Default);
 

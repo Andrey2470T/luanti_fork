@@ -17,7 +17,6 @@ struct CameraOrientation;
 class Hud;
 class RenderSystem;
 class ResourceCache;
-class Inventory;
 
 /*
  * This object intend to contain the core UI elements
@@ -47,7 +46,7 @@ class GameUI
 	friend class TestGameUI;
 
 public:
-    GameUI(Client *client, Inventory *inv);
+    GameUI(Client *client);
 
 	// Flags that can, or may, change during main game loop
     enum Flags
@@ -74,20 +73,20 @@ public:
         return hud.get();
     }
 
-    inline void setInfoText(const std::wstring &str) {
+    void setInfoText(const std::wstring &str) {
         infotext->setText(str);
     }
-    inline void clearInfoText() {
+    void clearInfoText() {
         infotext->setText(L"");
     }
 
-	inline void showStatusText(const std::wstring &str)
+    void showStatusText(const std::wstring &str)
 	{
         statustext->setText(str);
         statustext_time = 0.0f;
 	}
 	void showTranslatedStatusText(const char *str);
-    inline void clearStatusText() {
+    void clearStatusText() {
         statustext->setText(L"");
     }
 

@@ -33,10 +33,10 @@ public:
     {}
     Model(v3f pos, const std::vector<MeshLayer> &layers, MeshBuffer *buffer);
     Model(AnimationManager *_mgr, v3f pos, const std::vector<std::shared_ptr<TileLayer>> &layers,
-        const aiScene *scene, ResourceCache *cache);
+        const aiScene *scene);
 
     static Model *load(AnimationManager *_mgr, v3f pos, const std::vector<std::shared_ptr<TileLayer>> &layers,
-        const std::string &path, ResourceCache *cache);
+        const std::string &name, ResourceCache *cache);
 
     LayeredMesh *getMesh() const
     {

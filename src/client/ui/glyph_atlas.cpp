@@ -162,8 +162,10 @@ render::TTFont *FontManager::getFontOrCreate(render::FontMode mode, render::Font
     auto font = getFont(mode, style, size);
 
     if (!font) {
-        addFont(mode, style, size);
-        font = fonts[render::TTFont::hash(size.value(), true, style, mode)].first;
+        bool added = addFont(mode, style, size);
+
+        if (added)
+            font = fonts[render::TTFont::hash(size.value(), true, style, mode)].first;
     }
 
     return font;
@@ -174,14 +176,16 @@ AtlasPool *FontManager::getPoolOrCreate(render::FontMode mode, render::FontStyle
     auto pool = getPool(mode, style, size);
 
     if (!pool) {
-        addFont(mode, style, size);
-        pool = fonts[render::TTFont::hash(size.value(), true, style, mode)].second.get();
+        bool added = addFont(mode, style, size);
+
+        if (added)
+            pool = fonts[render::TTFont::hash(size.value(), true, style, mode)].second.get();
     }
 
     return pool;
 }
 
-void FontManager::addFont(render::FontMode mode, render::FontStyle style, std::optional<u32> size)
+bool FontManager::addFont(render::FontMode mode, render::FontStyle style, std::optional<u32> size)
 {
     if (!size.has_value())
         size = defaultSizes[(u8)mode];
@@ -226,10 +230,12 @@ void FontManager::addFont(render::FontMode mode, render::FontStyle style, std::o
         Settings::getLayer(SL_DEFAULTS)->get(path_setting)
     };
 
+    bool path_found = false;
     for (auto &path : paths) {
         if (!fs::exists(path))
             continue;
 
+        path_found = true;
         auto font = render::TTFont::load(path, size.value(), 0, true, true, font_shadow, font_shadow_alpha);
 
         if (!font)
@@ -250,12 +256,21 @@ void FontManager::addFont(render::FontMode mode, render::FontStyle style, std::o
         cache->cacheResource<render::TTFont>(ResourceType::FONT, font);
         fonts[hash].second->buildGlyphAtlas(font);
     }
+
+    if (!path_found) {
+        warningstream << "FontManager::addFont() Couldn't find any path to the resource with name " << path_setting << std::endl;
+        return false;
+    }
+    return true;
 }
 
 void FontManager::addFontInSkin(GUISkin *skin, render::FontMode mode, render::FontStyle style,
     std::optional<u32> size, GUIDefaultFont which)
 {
-    addFont(mode, style, size);
+    bool added = addFont(mode, style, size);
+
+    if (!added)
+        return;
     u64 hash = render::TTFont::hash(size.value(), true, style, mode);
     skin->setFont(fonts[hash].first, which);
 }

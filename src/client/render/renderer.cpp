@@ -10,6 +10,8 @@
 
 img::ImageModifier *g_imgmodifier = new img::ImageModifier();
 
+const img::color8 Renderer::menu_sky_color = img::color8(img::PF_RGBA8, 140, 186, 250, 255);
+
 void Renderer::setRenderState(bool mode3d)
 {
     use3DMode = mode3d;

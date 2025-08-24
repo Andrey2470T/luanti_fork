@@ -27,7 +27,7 @@ namespace irr::io {
 class IFileSystem;
 }
 
-namespace fs
+namespace mt_fs
 {
 
 struct DirListNode
@@ -146,10 +146,6 @@ const char *GetFilenameFromPath(const char *path);
 // logs and returns false on error
 bool safeWriteToFile(const std::string &path, std::string_view content);
 
-#if IS_CLIENT_BUILD
-bool extractZipFile(irr::io::IFileSystem *fs, const char *filename, const std::string &destination);
-#endif
-
 bool ReadFile(const std::string &path, std::string &out, bool log_error = false);
 
 bool Rename(const std::string &from, const std::string &to);
@@ -188,7 +184,7 @@ inline std::ofstream open_ofstream(const char *name, bool log,
 	if (!(mode & std::ios::app))
 		mode |= std::ios::trunc;
 	std::ofstream ofs;
-	if (!fs::OpenStream(*ofs.rdbuf(), name, mode, log, false))
+    if (!mt_fs::OpenStream(*ofs.rdbuf(), name, mode, log, false))
 		ofs.setstate(std::ios::failbit);
 	return ofs;
 }
@@ -208,7 +204,7 @@ inline std::ifstream open_ifstream(const char *name, bool log,
 {
 	mode |= std::ios::in | std::ios::binary;
 	std::ifstream ifs;
-	if (!fs::OpenStream(*ifs.rdbuf(), name, mode, log, false))
+    if (!mt_fs::OpenStream(*ifs.rdbuf(), name, mode, log, false))
 		ifs.setstate(std::ios::failbit);
 	return ifs;
 }

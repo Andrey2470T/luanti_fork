@@ -17,6 +17,7 @@
 #include "util/numeric.h"
 #include "util/string.h" // StringMap
 #include "config.h"
+#include "network/networkprotocol.h"
 
 #if !IS_CLIENT_BUILD
 #error Do not include in server builds
@@ -48,6 +49,13 @@ struct PlayerControl;
 struct PointedThing;
 class RenderSystem;
 class ResourceCache;
+class ClientPacketHandler;
+
+enum LocalClientState {
+    LC_Created,
+    LC_Init,
+    LC_Ready
+};
 
 using sound_handle_t = int;
 
@@ -66,8 +74,7 @@ public:
 			IWritableItemDefManager *itemdef,
 			NodeDefManager *nodedef,
 			ISoundManager *sound,
-			MtEventManager *event,
-			ELoginRegister allow_login_or_register
+            MtEventManager *event
 	);
 
 	~Client();
@@ -95,7 +102,9 @@ public:
 		If this throws a PeerNotFoundException, the connection has
 		timed out.
 	*/
-	void step(f32 dtime);
+    void step(f32 dtime);
+
+    LocalClientState getState() { return m_state; }
 
 	ClientEnvironment& getEnv() { return m_env; }
 	ISoundManager *sound() { return getSoundManager(); }
@@ -117,16 +126,9 @@ public:
 
 	void setPlayerControl(PlayerControl &control);
 
-	// Returns true if the inventory of the local player has been
-	// updated from the server. If it is true, it is set to false.
-    //bool updateWieldedItem();
-
 	/* InventoryManager interface */
 	Inventory* getInventory(const InventoryLocation &loc) override;
 	void inventoryAction(InventoryAction *a) override;
-
-	// Send the item number 'item' as player item to the server
-	void setPlayerItem(u16 item);
 
 	const std::set<std::string> &getConnectedPlayerNames()
 	{
@@ -163,32 +165,16 @@ public:
 	// Get event from queue. If queue is empty, it triggers an assertion failure.
 	ClientEvent * getClientEvent();
 
-	bool itemdefReceived() const
-	{ return m_itemdef_received; }
-	bool nodedefReceived() const
-	{ return m_nodedef_received; }
-	bool mediaReceived() const
-	{ return !m_media_downloader; }
-	bool activeObjectsReceived() const
-	{ return m_activeobjects_received; }
-
-	u16 getProtoVersion() const
-	{ return m_proto_ver; }
-
 	bool m_simple_singleplayer_mode;
 
 	float mediaReceiveProgress();
 
-	void drawLoadScreen(const std::wstring &text, float dtime, int percent);
+    //void drawLoadScreen(const std::wstring &text, float dtime, int percent);
 	void afterContentReceived();
 	void showUpdateProgressTexture(void *args, u32 progress, u32 max_progress);
 
 	float getRTT();
 	float getCurRate();
-	// has the server ever replied to us, used for connection retry/fallback
-	bool hasServerReplied() const {
-		return getProtoVersion() != 0; // (set in TOCLIENT_HELLO)
-	}
 
 	// IGameDef interface
 	IItemDefManager* getItemDefManager() override;
@@ -213,7 +199,7 @@ public:
 	// Send a request for conventional media transfer
 	void request_media(const std::vector<std::string> &file_requests);
 
-	void makeScreenshot();
+    //void makeScreenshot();
 
 	inline void pushToChatQueue(ChatMessage *cec)
 	{
@@ -235,10 +221,6 @@ public:
 		return m_csm_restriction_flags & flag;
 	}
 
-	bool joinModChannel(const std::string &channel) override;
-	bool leaveModChannel(const std::string &channel) override;
-	bool sendModChannelMessage(const std::string &channel,
-			const std::string &message) override;
 	ModChannel *getModChannel(const std::string &channel) override;
 
 	const std::string &getFormspecPrepend() const;
@@ -261,11 +243,28 @@ public:
 	bool inhibit_inventory_revert = false;
 
 private:
+    void initLocalMapSaving(u16 port, const std::string &hostname,
+        bool is_local_server);
+
 	void loadMods();
 
 	void deleteAuthData();
 	// helper method shared with clientpackethandler
 	static AuthMechanism choseAuthMech(const u32 mechs);
+
+    void startAuth(AuthMechanism chosen_auth_mechanism);
+
+    bool canSendChatMessage() const;
+
+    void sendChatMessage(const std::wstring &message);
+
+    void clearOutChatQueue();
+
+    void sendChangePassword(const std::string &oldpassword,
+        const std::string &newpassword);
+
+    // own state
+    LocalClientState m_state = LC_Created;
 
 	IntervalLimiter m_map_timer_and_unload_interval;
 
@@ -273,21 +272,13 @@ private:
 	NodeDefManager *m_nodedef;
 	ISoundManager *m_sound;
 	MtEventManager *m_event;
-    std::unique_ptr<RenderSystem> m_render_system;
     std::unique_ptr<ResourceCache> m_resource_cache;
+    std::unique_ptr<RenderSystem> m_render_system;
+
+    std::unique_ptr<ClientPacketHandler> m_packet_handler;
 
 	std::unique_ptr<MeshUpdateManager> m_mesh_update_manager;
 	ClientEnvironment m_env;
-
-	// Server serialization version
-	u8 m_server_ser_ver;
-
-	// Used version of the protocol with server
-	// Values smaller than 25 only mean they are smaller than 25,
-	// and aren't accurate. We simply just don't know, because
-	// the server didn't send the version back then.
-	// If 0, server init hasn't been received yet.
-	u16 m_proto_ver = 0;
 
 	bool m_update_wielded_item = false;
 	Inventory *m_inventory_from_server = nullptr;
@@ -304,6 +295,8 @@ private:
 	u32 m_last_chat_message_sent;
 	float m_chat_message_allowance = 5.0f;
 	std::queue<ChatMessage *> m_chat_queue;
+
+    float m_avg_rtt_timer = 0.0f;
 
 	// The authentication methods we can use to enter sudo mode (=change password)
 	u32 m_sudo_auth_methods;
@@ -336,9 +329,6 @@ private:
 	bool m_time_of_day_set = false;
 	float m_last_time_of_day_f = -1.0f;
 	float m_time_of_day_update_timer = 0.0f;
-
-	// An interval for generally sending object positions and stuff
-	float m_recommended_send_interval = 0.1f;
 
 	// Sounds
 	float m_removed_sounds_check_timer = 0.0f;
@@ -378,7 +368,7 @@ private:
 	u64 m_csm_restriction_flags = CSMRestrictionFlags::CSM_RF_NONE;
 	u32 m_csm_restriction_noderange = 8;
 
-	std::unique_ptr<ModChannelMgr> m_modchannel_mgr;
+    std::unique_ptr<ModChannelMgr> m_modchannel_mgr;
 
 	// The number of blocks the client will combine for mesh generation.
 	MeshGrid m_mesh_grid;
