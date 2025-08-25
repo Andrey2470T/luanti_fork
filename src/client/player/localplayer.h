@@ -187,11 +187,12 @@ public:
     bool checkPrivilege(const std::string &priv) const
     { return (m_privileges.count(priv) != 0); }
 
-    const std::unordered_set<std::string> &getPrivilegeList() const
+    std::unordered_set<std::string> &getPrivilegeList()
     { return m_privileges; }
 
     bool checkLocalPrivilege(const std::string &priv)
     { return checkPrivilege(priv); }
+
 private:
 	void accelerate(const v3f &target_speed, const f32 max_increase_H,
 		const f32 max_increase_V, const bool use_pitch);

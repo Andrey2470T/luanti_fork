@@ -132,9 +132,9 @@ public:
     void setCrack(int level, v3s16 pos);*/
 
 	bool getChatMessage(std::wstring &message);
-	void typeChatMessage(const std::wstring& message);
+    void typeChatMessage(const std::wstring& message);
 
-	u64 getMapSeed(){ return m_map_seed; }
+    u64 getMapSeed(){ return m_map_seed; }
 
 	bool hasClientEvents() const { return !m_client_event_queue.empty(); }
 	// Get event from queue. If queue is empty, it triggers an assertion failure.
@@ -210,17 +210,11 @@ public:
     u16 getProtoVersion() const
     { return m_proto_ver; }
 
-	bool inhibit_inventory_revert = false;
+    void loadMods();
 
-private:
-    void initLocalMapSaving(u16 port, const std::string &hostname,
-        bool is_local_server);
-
-	void loadMods();
-
-	void deleteAuthData();
-	// helper method shared with clientpackethandler
-	static AuthMechanism choseAuthMech(const u32 mechs);
+    void deleteAuthData();
+    // helper method shared with clientpackethandler
+    static AuthMechanism choseAuthMech(const u32 mechs);
 
     void startAuth(AuthMechanism chosen_auth_mechanism);
 
@@ -230,6 +224,13 @@ private:
 
     void sendChangePassword(const std::string &oldpassword,
         const std::string &newpassword);
+
+
+	bool inhibit_inventory_revert = false;
+
+private:
+    void initLocalMapSaving(u16 port, const std::string &hostname,
+        bool is_local_server);
 
     // own state
     LocalClientState m_state = LC_Created;
@@ -279,10 +280,10 @@ private:
 	std::string m_playername;
 	std::string m_password;
 	// If set, this will be sent (and cleared) upon a TOCLIENT_ACCEPT_SUDO_MODE
-	std::string m_new_password;
-	// Usable by auth mechanisms.
-	AuthMechanism m_chosen_auth_mech;
-	void *m_auth_data = nullptr;
+    std::string m_new_password;
+    // Usable by auth mechanisms.
+    AuthMechanism m_chosen_auth_mech;
+    void *m_auth_data = nullptr;
 
 	std::queue<ClientEvent *> m_client_event_queue;
 
@@ -329,4 +330,6 @@ private:
 	u32 m_csm_restriction_noderange = 8;
 
     std::unique_ptr<ModChannelMgr> m_modchannel_mgr;
+
+    friend ClientPacketHandler;
 };

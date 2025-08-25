@@ -140,6 +140,11 @@ public:
     }
 
     Inventory* getInventory(const InventoryLocation &loc);
+
+    std::unordered_map<std::string, Inventory*> getDetachedInventories()
+    {
+        return m_detached_inventories;
+    }
 private:
 	std::unique_ptr<ClientMap> m_map;
 	std::unique_ptr<LocalPlayer> m_local_player;

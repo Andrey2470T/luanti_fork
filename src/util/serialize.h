@@ -212,7 +212,11 @@ inline f32 readF32(const u8 *data)
 
 inline img::color8 readARGB8(const u8 *data)
 {
-    img::color8 p(img::PF_RGBA8, readU32(data));
+	u8 a = readU8(&data[0]);
+	u8 r = readU8(&data[1]);
+	u8 g = readU8(&data[2]);
+	u8 b = readU8(&data[3]);
+    img::color8 p(img::PF_RGBA8, r, g, b, a);
 	return p;
 }
 
