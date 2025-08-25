@@ -1,13 +1,18 @@
-uniform sampler2D mBaseTexture;
+#define baseTexture mTexture0
+
+uniform sampler2D baseTexture;
 uniform int mAlphaDiscard;
 uniform vec3 mDayLight;
 
 #ifdef ENABLE_DYNAMIC_SHADOWS
-	uniform sampler2D mShadowMapSampler;
+#define shadowMapSampler mTexture1
+	uniform sampler2D shadowMapSampler;
 #endif
 
 #include <fog>
+#ifdef ENABLE_DYNAMIC_SHADOWS
 #include <shadows>
+#endif
 
 // The cameraOffset is the current center of the visible world.
 uniform highp vec3 mCameraOffset;
@@ -406,7 +411,7 @@ out vec4 outColor;
 
 void main(void)
 {
-	vec4 base = texture2D(mBaseTexture, vTexCoord).rgba;
+	vec4 base = texture2D(baseTexture, vTexCoord).rgba;
 	base.rgb *= vHWColor;
 	// If alpha is zero, we can just discard the pixel. This fixes transparency
 	// on GPUs like GC7000L, where GL_ALPHA_TEST is not implemented in mesa,
@@ -437,14 +442,14 @@ void main(void)
 #ifdef COLORED_SHADOWS
 			vec4 visibility;
 			if (vCosLight > 0.0 || vFNormalLength < 1e-3)
-				visibility = getShadowColor(mShadowMapSampler, posLightSpace.xy, posLightSpace.z);
+				visibility = getShadowColor(shadowMapSampler, posLightSpace.xy, posLightSpace.z);
 			else
 				visibility = vec4(1.0, 0.0, 0.0, 0.0);
 			shadow_int = visibility.r;
 			shadow_color = visibility.gba;
 #else
 			if (vCosLight > 0.0 || vFNormalLength < 1e-3)
-				shadow_int = getShadow(mShadowMapSampler, posLightSpace.xy, posLightSpace.z);
+				shadow_int = getShadow(shadowMapSampler, posLightSpace.xy, posLightSpace.z);
 			else
 				shadow_int = 1.0;
 #endif

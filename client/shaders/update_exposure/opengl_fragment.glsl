@@ -1,7 +1,7 @@
-#define exposure texture0
-#define screen texture1
+#define exposure mTexture0
+#define screen mTexture1
 
-struct ExposureParams {
+struct mExposureParams {
 	float luminanceMin;
 	float luminanceMax;
 	float exposureCorrection;
@@ -16,12 +16,12 @@ uniform sampler2D exposure;
 uniform sampler2D screen;
 
 #ifdef ENABLE_BLOOM
-uniform float bloomStrength;
+uniform float mBloomStrength;
 #else
-const float bloomStrength = 1.0;
+const float mBloomStrength = 1.0;
 #endif
-uniform ExposureParams exposureParams;
-uniform float animationTimerDelta;
+uniform mExposureParams mExposureParams;
+uniform float mAnimationTimerDelta;
 
 
 const vec3 luminanceFactors = vec3(0.213, 0.715, 0.072);
@@ -40,9 +40,9 @@ void main(void)
 
 	// Scan the screen with center-weighting and sample average color
 	for (float _x = 0.1; _x < 0.9; _x += 0.17) {
-		float x = pow(_x, exposureParams.centerWeightPower);
+		float x = pow(_x, mExposureParams.centerWeightPower);
 		for (float _y = 0.1; _y < 0.9; _y += 0.17) {
-			float y = pow(_y, exposureParams.centerWeightPower);
+			float y = pow(_y, mExposureParams.centerWeightPower);
 			averageColor += texture2D(screen, vec2(0.5 + 0.5 * x, 0.5 + 0.5 * y)).rgb;
 			averageColor += texture2D(screen, vec2(0.5 + 0.5 * x, 0.5 - 0.5 * y)).rgb;
 			averageColor += texture2D(screen, vec2(0.5 - 0.5 * x, 0.5 + 0.5 * y)).rgb;
@@ -54,9 +54,9 @@ void main(void)
 	float luminance = getLuminance(averageColor);
 	luminance /= n;
 
-	luminance /= pow(2., previousExposure) * bloomStrength * exposureParams.compensationFactor; // compensate for the configurable factors
+	luminance /= pow(2., previousExposure) * mBloomStrength * mExposureParams.compensationFactor; // compensate for the configurable factors
 
-	luminance = clamp(luminance, exposureParams.luminanceMin, exposureParams.luminanceMax);
+	luminance = clamp(luminance, mExposureParams.luminanceMin, mExposureParams.luminanceMax);
 
 	// From https://media.contentapi.ea.com/content/dam/eacom/frostbite/files/course-notes-moving-frostbite-to-pbr-v2.pdf
 	// 1. EV100 = log2(luminance * S / K) where S = 100, K = 0.125 = log2(luminance) + 3
@@ -64,12 +64,12 @@ void main(void)
 	//    => Lmax = 1.2 * 2^3 * luminance / 2^EC = 9.6 * luminance / 2^EC
 	// 3. exposure = 1 / Lmax
 	//    => exposure = 2^EC / (9.6 * luminance)
-	float wantedExposure = exposureParams.exposureCorrection - log(luminance)/0.693147180559945 - 3.263034405833794;
+	float wantedExposure = mExposureParams.exposureCorrection - log(luminance)/0.693147180559945 - 3.263034405833794;
 
 	if (wantedExposure < previousExposure)
-		wantedExposure = mix(wantedExposure, previousExposure, exp(-animationTimerDelta * exposureParams.speedDarkBright)); // dark -> bright
+		wantedExposure = mix(wantedExposure, previousExposure, exp(-mAnimationTimerDelta * mExposureParams.speedDarkBright)); // dark -> bright
 	else
-		wantedExposure = mix(wantedExposure, previousExposure, exp(-animationTimerDelta * exposureParams.speedBrightDark)); // bright -> dark
+		wantedExposure = mix(wantedExposure, previousExposure, exp(-mAnimationTimerDelta * mExposureParams.speedBrightDark)); // bright -> dark
 
 	gl_FragColor = vec4(vec3(wantedExposure), 1.);
 }

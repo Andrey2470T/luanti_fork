@@ -546,7 +546,7 @@ void Minimap::drawMinimap(recti rect)
     matrix.makeIdentity();
 
     if (data->mode.type == MINIMAP_TYPE_SURFACE) {
-        ctxt->setShader(m_minimap_shader);
+        renderer->setShader(m_minimap_shader);
         m_minimap_shader->setUniform3Float("mYawVec", getYawVec());
         m_minimap_shader->setUniformInt("mBaseTexture", 0);
         m_minimap_shader->setUniformInt("mHeightmap", 1);

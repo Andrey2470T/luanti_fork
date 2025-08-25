@@ -3,7 +3,7 @@ layout (location = 1) in vec4 color;
 layout (location = 2) in vec2 uv;
 
 #ifdef ENABLE_AUTO_EXPOSURE
-#define exposureMap texture2
+#define exposureMap mTexture2
 
 uniform sampler2D exposureMap;
 

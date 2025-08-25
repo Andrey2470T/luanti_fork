@@ -158,7 +158,6 @@ RenderStep *addPostProcessing(RenderPipeline *pipeline, RenderStep *previousStep
 
                 // get bright spots
                 auto shader = cache->getOrLoad<render::Shader>(ResourceType::SHADER, "extract_bloom");
-                shader->mapSamplers({"rendered", "exposureMap"});
                 RenderStep *extract_bloom = pipeline->addStep<PostProcessingStep>(shader, std::vector<u8> { source, TEXTURE_EXPOSURE_1 });
                 extract_bloom->setRenderSource(buffer);
                 extract_bloom->setRenderTarget(pipeline->createOwned<TextureBufferOutput>(buffer, TEXTURE_BLOOM));
@@ -169,7 +168,6 @@ RenderStep *addPostProcessing(RenderPipeline *pipeline, RenderStep *previousStep
                 buffer->setTexture(TEXTURE_VOLUME, scale, "volume", bloom_format);
 
                 shader = cache->getOrLoad<render::Shader>(ResourceType::SHADER, "volumetric_light");
-                shader->mapSamplers({"rendered", "depthmap"});
                 auto volume = pipeline->addStep<PostProcessingStep>(shader, std::vector<u8> { source, TEXTURE_DEPTH });
                 volume->setRenderSource(buffer);
                 volume->setRenderTarget(pipeline->createOwned<TextureBufferOutput>(buffer, TEXTURE_VOLUME));
@@ -178,7 +176,6 @@ RenderStep *addPostProcessing(RenderPipeline *pipeline, RenderStep *previousStep
 
             // downsample
             shader = cache->getOrLoad<render::Shader>(ResourceType::SHADER, "bloom_downsample");
-            shader->mapSamplers({"rendered"});
             for (u8 i = 0; i < MIPMAP_LEVELS; i++) {
                 auto step = pipeline->addStep<PostProcessingStep>(shader, std::vector<u8> { source });
                 step->setRenderSource(buffer);
@@ -192,7 +189,6 @@ RenderStep *addPostProcessing(RenderPipeline *pipeline, RenderStep *previousStep
         if (enable_bloom) {
             // upsample
             shader = cache->getOrLoad<render::Shader>(ResourceType::SHADER, "bloom_upsample");
-            shader->mapSamplers({"current", "previous"});
             for (u8 i = MIPMAP_LEVELS - 1; i > 0; i--) {
                 auto step = pipeline->addStep<PostProcessingStep>(shader, std::vector<u8> { u8(TEXTURE_SCALE_DOWN + i - 1), source });
                 step->setRenderSource(buffer);
@@ -206,7 +202,6 @@ RenderStep *addPostProcessing(RenderPipeline *pipeline, RenderStep *previousStep
         // Dynamic Exposure pt2
         if (enable_auto_exposure) {
             shader = cache->getOrLoad<render::Shader>(ResourceType::SHADER, "update_exposure");
-            shader->mapSamplers({"exposure", "screen"});
             auto update_exposure = pipeline->addStep<PostProcessingStep>(shader, std::vector<u8> { TEXTURE_EXPOSURE_1, u8(TEXTURE_SCALE_DOWN + MIPMAP_LEVELS - 1) });
             update_exposure->getQuad()->setBilinearFilter(1, true);
             update_exposure->setRenderSource(buffer);
@@ -219,7 +214,6 @@ RenderStep *addPostProcessing(RenderPipeline *pipeline, RenderStep *previousStep
 
             buffer->setTexture(TEXTURE_FXAA, scale, "fxaa", color_format);
             shader = cache->getOrLoad<render::Shader>(ResourceType::SHADER, "fxaa");
-            shader->mapSamplers({"rendered"});
             PostProcessingStep *effect = pipeline->createOwned<PostProcessingStep>(shader, std::vector<u8> { TEXTURE_COLOR });
             pipeline->addStep(effect);
             effect->getQuad()->setBilinearFilter(0, true);
@@ -230,7 +224,6 @@ RenderStep *addPostProcessing(RenderPipeline *pipeline, RenderStep *previousStep
 
 	// final merge
     shader = cache->getOrLoad<render::Shader>(ResourceType::SHADER, "second_stage");
-    shader->mapSamplers({"texture0", "texture1", "exposureMap"});
     PostProcessingStep *effect = pipeline->createOwned<PostProcessingStep>(shader, std::vector<u8> { final_stage_source, TEXTURE_SCALE_UP, TEXTURE_EXPOSURE_2 });
 	pipeline->addStep(effect);
 

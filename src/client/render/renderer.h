@@ -17,6 +17,7 @@ extern img::ImageModifier *g_imgmodifier;
 
 class MeshBuffer;
 class ResourceCache;
+class DataTexture;
 
 using namespace render;
 
@@ -77,6 +78,7 @@ public:
     void setDefaultShader(bool transparent=false, bool glBlend=true);
 
     void setTexture(Texture2D *tex);
+    void setShader(Shader *shd);
     void setDefaultUniforms(f32 thickness=1.0f, u8 alphaDiscard=0, f32 alphaRef=0.5f, img::BlendMode blendMode=img::BM_COUNT);
 
     void setUniformBlocks();
@@ -92,6 +94,9 @@ public:
     // Transformation matrices UBO settings
     matrix4 getTransformMatrix(TMatrix type) const;
     void setTransformMatrix(TMatrix type, const matrix4 &mat);
+
+    // Data texture parameters
+    void setDataTexParams(DataTexture *tex);
 
     void draw(MeshBuffer *buffer, PrimitiveType type=PT_TRIANGLES,
         u32 offset=0, std::optional<u32> count=std::nullopt);

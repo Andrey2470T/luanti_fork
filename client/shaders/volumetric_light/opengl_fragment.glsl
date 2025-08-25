@@ -1,21 +1,24 @@
-#define rendered texture0
-#define depthmap texture1
+#define rendered mTexture0
+#define depthmap mTexture1
 
 uniform sampler2D rendered;
 uniform sampler2D depthmap;
 
-uniform vec3 sunPositionScreen;
-uniform float sunBrightness;
-uniform vec3 moonPositionScreen;
-uniform float moonBrightness;
+uniform vec3 mSunPositionScreen;
+uniform float mSunBrightness;
+uniform vec3 mMoonPositionScreen;
+uniform float mMoonBrightness;
 
-uniform lowp float volumetricLightStrength;
+uniform lowp float mVolumetricLightStrength;
 
-uniform vec3 dayLight;
+uniform vec3 mDayLight;
 #ifdef ENABLE_DYNAMIC_SHADOWS
-uniform vec3 v_LightDirection;
+#ifdef ENABLE_DYNAMIC_SHADOWS
+#include <shadows>
+#define lightDirection mFogParams.lightDirection
+#endif
 #else
-const vec3 v_LightDirection = vec3(0.0, -1.0, 0.0);
+const vec3 lightDirection = vec3(0.0, -1.0, 0.0);
 #endif
 
 #ifdef GL_ES
@@ -51,7 +54,7 @@ float sampleVolumetricLight(vec2 uv, vec3 lightVec, float rawDepth)
 	return result / samples * pow(texture2D(depthmap, uv).r, 128.0);
 }
 
-vec3 getDirectLightScatteringAtGround(vec3 v_LightDirection)
+vec3 getDirectLightScatteringAtGround(vec3 lightDirection)
 {
 	// Based on talk at 2002 Game Developers Conference by Naty Hoffman and Arcot J. Preetham
 	const float beta_r0 = 1e-5; // Rayleigh scattering beta
@@ -62,7 +65,7 @@ vec3 getDirectLightScatteringAtGround(vec3 v_LightDirection)
 
 	const float atmosphere_height = 15000.; // height of the atmosphere in meters
 	// sun/moon light at the ground level, after going through the atmosphere
-	return exp(-beta_r0_l * atmosphere_height / (1e-5 - dot(v_LightDirection, vec3(0., 1., 0.))));
+	return exp(-beta_r0_l * atmosphere_height / (1e-5 - dot(lightDirection, vec3(0., 1., 0.))));
 }
 
 vec3 applyVolumetricLight(vec3 color, vec2 uv, float rawDepth)
@@ -73,13 +76,13 @@ vec3 applyVolumetricLight(vec3 color, vec2 uv, float rawDepth)
 	float brightness = 0.;
 	vec3 sourcePosition = vec3(-1., -1., -1);
 
-	if (sunPositionScreen.z > 0. && sunBrightness > 0.) {
-		brightness = sunBrightness;
-		sourcePosition = sunPositionScreen;
+	if (mSunPositionScreen.z > 0. && mSunBrightness > 0.) {
+		brightness = mSunBrightness;
+		sourcePosition = mSunPositionScreen;
 	}
-	else if (moonPositionScreen.z > 0. && moonBrightness > 0.) {
-		brightness = moonBrightness * 0.05;
-		sourcePosition = moonPositionScreen;
+	else if (mMoonPositionScreen.z > 0. && mMoonBrightness > 0.) {
+		brightness = mMoonBrightness * 0.05;
+		sourcePosition = mMoonPositionScreen;
 	}
 
 	float cameraDirectionFactor = pow(clamp(dot(sourcePosition, vec3(0., 0., 1.)), 0.0, 0.7), 2.5);
@@ -88,15 +91,15 @@ vec3 applyVolumetricLight(vec3 color, vec2 uv, float rawDepth)
 	float lightFactor = brightness * sampleVolumetricLight(uv, sourcePosition, rawDepth) *
 			(0.05 * cameraDirectionFactor + 0.95 * viewAngleFactor);
 
-	color = mix(color, boost * getDirectLightScatteringAtGround(v_LightDirection) * dayLight, lightFactor);
+	color = mix(color, boost * getDirectLightScatteringAtGround(lightDirection) * mDayLight, lightFactor);
 
 	// a factor of 5 tested well
 	color *= volumetricLightStrength * 5.0;
 
-	// if (sunPositionScreen.z < 0.)
-	// 	color.rg += 1. - clamp(abs((2. * uv.xy - 1.) - sunPositionScreen.xy / sunPositionScreen.z) * 1000., 0., 1.);
-	// if (moonPositionScreen.z < 0.)
-	// 	color.rg += 1. - clamp(abs((2. * uv.xy - 1.) - moonPositionScreen.xy / moonPositionScreen.z) * 1000., 0., 1.);
+	// if (mSunPositionScreen.z < 0.)
+	// 	color.rg += 1. - clamp(abs((2. * uv.xy - 1.) - mSunPositionScreen.xy / mSunPositionScreen.z) * 1000., 0., 1.);
+	// if (mMoonPositionScreen.z < 0.)
+	// 	color.rg += 1. - clamp(abs((2. * uv.xy - 1.) - mMoonPositionScreen.xy / mMoonPositionScreen.z) * 1000., 0., 1.);
 	return color;
 }
 

@@ -172,7 +172,7 @@ void ScreenQuad::render()
     if (use_default)
         rnd->setDefaultShader(true);
     else {
-        ctxt->setShader(shader);
+        rnd->setShader(shader);
         rnd->setBlending(true);
     }
 

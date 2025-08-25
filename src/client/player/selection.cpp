@@ -67,6 +67,7 @@ void SelectionMesh::updateMesh(const v3f &new_pos, const v3s16 &camera_offset,
     Batcher3D::vType = B3DVT_SVT;
 
     std::shared_ptr<TileLayer> layer = std::make_shared<TileLayer>();
+    layer->thing = RenderThing::BOX;
     layer->alpha_discard = 1;
     layer->material_flags = MATERIAL_FLAG_TRANSPARENT;
     layer->use_default_shader = true;
@@ -201,6 +202,7 @@ void BlockBounds::updateMesh(Client *client, DistanceSortedDrawList *drawlist)
         }
 
     std::shared_ptr<TileLayer> layer = std::make_shared<TileLayer>();
+    layer->thing = RenderThing::BOX;
     layer->alpha_discard = 1;
     layer->material_flags = MATERIAL_FLAG_TRANSPARENT;
     layer->use_default_shader = true;

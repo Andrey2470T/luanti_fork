@@ -1,7 +1,7 @@
-#define rendered texture0
+#define rendered mTexture0
 
 uniform sampler2D rendered;
-uniform vec2 texelSize0;
+uniform vec2 mTexelSize;
 
 in vec2 sampleNW;
 in vec2 sampleNE;
@@ -111,6 +111,6 @@ out vec4 outColor;
 
 void main(void)
 {
-	outColor = fxaa(rendered, vUV, texelSize0,
+	outColor = fxaa(rendered, vUV, mTexelSize,
 		sampleNW, sampleNE, sampleSW, sampleSE, vUV);
 }

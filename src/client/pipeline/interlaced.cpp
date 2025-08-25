@@ -69,7 +69,6 @@ void populateInterlacedPipeline(RenderPipeline *pipeline, Client *client)
 
     auto cache = client->getResourceCache();
     auto shader = cache->getOrLoad<render::Shader>(ResourceType::SHADER, "3d_interlaced_merge");
-    shader->mapSamplers({"baseTexture", "normalTexture", "textureFlags"});
 	auto texture_map = { TEXTURE_LEFT, TEXTURE_RIGHT, TEXTURE_MASK };
 
     auto merge = pipeline->addStep<PostProcessingStep>(shader, texture_map);

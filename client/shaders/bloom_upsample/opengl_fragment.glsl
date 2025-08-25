@@ -1,10 +1,10 @@
-#define current texture0
-#define previous texture1
+#define current mTexture0
+#define previous mTexture1
 
 uniform sampler2D current;
 uniform sampler2D previous;
-uniform vec2 texelSize0;
-uniform mediump float bloomRadius;
+uniform vec2 mTexelSize;
+uniform mediump float mBloomRadius;
 
 #ifdef GL_ES
 in mediump vec2 vUV;
@@ -16,7 +16,7 @@ out vec4 outColor;
 
 void main(void)
 {
-	vec2 offset = bloomRadius * texelSize0;
+	vec2 offset = mBloomRadius * mTexelSize;
 
 	vec3 a = texture2D(previous, vUV + vec2(-1., -1.) * offset).rgb;
 	vec3 b = texture2D(previous, vUV + vec2(0., -1.) * offset).rgb;

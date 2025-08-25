@@ -3,6 +3,7 @@
 #include <Image/ImageModifier.h>
 #include "client/mesh/meshbuffer.h"
 #include "client/media/resource.h"
+#include "datatexture.h"
 
 // These binding points are reserved and can't be used for other UBOs
 #define MATRIX_UBO_BINDING_POINT 0
@@ -56,14 +57,19 @@ void Renderer::setDefaultShader(bool transparent, bool glBlend)
         }
     }
 
-    context->setShader(defaultShaders[name]);
-    curShader = defaultShaders[name];
+    setShader(defaultShaders[name]);
 }
 
 void Renderer::setTexture(Texture2D *tex)
 {
     context->setActiveUnit(0, tex);
     curTexture = tex;
+}
+
+void Renderer::setShader(Shader *shd)
+{
+    context->setShader(shd);
+    curShader = shd;
 }
 
 void Renderer::setDefaultUniforms(f32 thickness, u8 alphaDiscard, f32 alphaRef, img::BlendMode blendMode)
@@ -225,6 +231,13 @@ void Renderer::setTransformMatrix(TMatrix type, const matrix4 &mat)
     };
 }
 
+void Renderer::setDataTexParams(DataTexture *tex)
+{
+    curShader->setUniformInt("mSampleCount", tex->sampleCount);
+    curShader->setUniformInt("mSampleDim", tex->sampleDim);
+    curShader->setUniformInt("mDataTexDim", tex->texDim);
+}
+
 void Renderer::draw(MeshBuffer *buffer, PrimitiveType type,
     u32 offset, std::optional<u32> count)
 {
@@ -257,11 +270,6 @@ void Renderer::createDefaultShaders()
     auto solid3d = resCache->getOrLoad<render::Shader>(ResourceType::SHADER, "solid3D");
     auto transparent3d = resCache->getOrLoad<render::Shader>(ResourceType::SHADER, "transparent3D");
     auto textureBlend3d = resCache->getOrLoad<render::Shader>(ResourceType::SHADER, "textureBlend3D");
-
-    standard2d->mapSamplers({"mTexture0"});
-    solid3d->mapSamplers({"mTexture0"});
-    transparent3d->mapSamplers({"mTexture0"});
-    textureBlend3d->mapSamplers({"mTexture0", "mFramebuffer"});
 
     defaultShaders["standard2D"] = standard2d;
     defaultShaders["solid3D"] = solid3d;

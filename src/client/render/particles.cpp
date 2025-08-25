@@ -5,7 +5,7 @@
 #include "particles.h"
 #include "collision.h"
 #include "client/ao/genericCAO.h"
-#include "client/clientevent.h"
+#include "client/event/clientevent.h"
 #include "util/numeric.h"
 #include "light.h"
 #include "client/player/localplayer.h"
@@ -601,7 +601,6 @@ ParticleManager::ParticleManager(RenderSystem *rnd_sys, ResourceCache *cache, Cl
     m_rnd_sys(rnd_sys), m_cache(cache), m_env(env)
 {
     m_shader = m_cache->getOrLoad<render::Shader>(ResourceType::SHADER, "particles");
-    m_shader->mapSamplers({"mTexture", "mDataTex", "mFramebuffer"});
 
     m_datatex = std::make_unique<DataTexture>("ParticlesData", sizeof(ParticleSampleData), 0, 4*4 + 4 + 2*2 + 2*2 + 4);
     m_unit_quad_mesh = std::make_unique<MeshBuffer>(4, 6);
@@ -775,18 +774,14 @@ void ParticleManager::renderParticles()
     auto rnd = m_rnd_sys->getRenderer();
 
     rnd->setRenderState(true);
-
-    auto ctxt = rnd->getContext();
-    ctxt->setShader(m_shader);
-
+    rnd->setShader(m_shader);
     rnd->setTexture(dynamic_cast<render::Texture2D *>(m_rnd_sys->getPool(true)->getAtlas(0)->getTexture()));
 
-    m_shader->setUniformInt("mParticleCount", m_datatex->sampleCount);
-    m_shader->setUniformInt("mSampleDim", m_datatex->sampleDim);
-    m_shader->setUniformInt("mDataTexDim", m_datatex->texDim);
+    rnd->setDataTexParams(m_datatex.get());
 
     rnd->setUniformBlocks();
 
+    auto ctxt = rnd->getContext();
     ctxt->setActiveUnit(1, dynamic_cast<render::Texture *>(m_datatex->getGLTexture()));
 
     // Before rendering particles, it is necessary to render the previous frame to the framebuffer

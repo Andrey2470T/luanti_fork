@@ -2,6 +2,7 @@
 #include "client/render/datatexture.h"
 #include "client/mesh/layeredmesh.h"
 #include "client/mesh/meshbuffer.h"
+#include "client/render/tilelayer.h"
 
 
 void Bone::addWeights(std::vector<std::pair<u32, f32> > weights)
@@ -74,13 +75,12 @@ std::vector<Bone *> Skeleton::getAllBones() const
     return bones;
 }
 
-void Skeleton::updateShader(render::Shader *shader)
+void Skeleton::updateTileLayer(std::shared_ptr<TileLayer> layer)
 {
-    shader->setUniformInt("mBonesCount", getNodesCount());
-    shader->setUniformInt("mBonesOffset", BoneOffset);
-    shader->setUniformInt("mSampleDim", BonesDataTexture->sampleDim);
-    shader->setUniformInt("mDataTexDim", BonesDataTexture->texDim);
-    shader->setUniformInt("mAnimateNormals", (s32)AnimateNormals);
+    layer->bone_offset = BoneOffset;
+    layer->animate_normals = (s32)AnimateNormals;
+    //shader->setUniformInt("mBonesOffset", BoneOffset);
+    //shader->setUniformInt("mAnimateNormals", (s32)AnimateNormals);
 }
 
 void Skeleton::updateDataTexture()

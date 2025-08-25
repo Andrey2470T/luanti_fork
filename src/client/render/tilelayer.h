@@ -41,7 +41,13 @@ enum class TileRotation: u8 {
 	R270,
 };
 
-class RenderSystem;
+enum class RenderThing : u8 {
+    NODE,
+    OBJECT,
+    BOX
+};
+
+class Client;
 class Atlas;
 
 //! Defines a layer of a tile.
@@ -62,7 +68,7 @@ struct TileLayer
 		return !(*this == other);
 	}
 
-    void setupRenderState(RenderSystem *rndsys) const;
+    void setupRenderState(Client *client) const;
 
     // '0' = alpha discard, '1' = alpha discard ref, '2' = no discard (solid)
     s32 alpha_discard = 2;
@@ -103,4 +109,11 @@ struct TileLayer
 	TileRotation rotation = TileRotation::None;
 	//! This much light does the tile emit.
 	u8 emissive_light = 0;
+
+    //! NOTE: this is a dirty workaround to handle uniforms setting in the drawlist
+    //! When the custom materials support is done, it will be removed
+    RenderThing thing;
+
+    s32 bone_offset;
+    s32 animate_normals;
 };

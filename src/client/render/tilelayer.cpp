@@ -3,8 +3,13 @@
 // Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "tilelayer.h"
+#include "client/client.h"
 #include "rendersystem.h"
 #include "renderer.h"
+#include "client/mesh/lighting.h"
+#include "client/player/localplayer.h"
+#include "client/player/playercamera.h"
+#include "client/ao/animation.h"
 
 /*!
  * Two layers are equal if they can be merged.
@@ -23,8 +28,9 @@ bool TileLayer::operator==(const TileLayer &other) const
         emissive_light == other.emissive_light;
 }
 
-void TileLayer::setupRenderState(RenderSystem *rndsys) const
+void TileLayer::setupRenderState(Client *client) const
 {
+    auto rndsys = client->getRenderSystem();
     auto rnd = rndsys->getRenderer();
     rnd->setRenderState(true);
 
@@ -36,7 +42,7 @@ void TileLayer::setupRenderState(RenderSystem *rndsys) const
 
     if (!use_default_shader) {
         rnd->setBlending(material_flags & MATERIAL_FLAG_TRANSPARENT);
-        ctxt->setShader(shader);
+        rnd->setShader(shader);
         shader->setUniformInt("mAlphaDiscard", alpha_discard);
         rnd->setUniformBlocks();
     }
@@ -49,4 +55,32 @@ void TileLayer::setupRenderState(RenderSystem *rndsys) const
         rndsys->activateAtlas(tile_ref);
     for (u8 i = 0; i < textures.size(); i++)
         ctxt->setActiveUnit(i+1, textures.at(i));
+
+    // Workaround
+    if (thing == RenderThing::NODE || thing == RenderThing::OBJECT) {
+        u32 daynight_ratio = (f32)client->getEnv().getDayNightRatio();
+        img::colorf sunlight_f;
+        get_sunlight_color(&sunlight_f, daynight_ratio);
+        shader->setUniform3Float("mDayLight", v3f(sunlight_f.R(), sunlight_f.G(), sunlight_f.B()));
+
+        u32 animation_timer = client->getEnv().getFrameTime() % 1000000;
+        f32 animation_timer_f = (f32)animation_timer / 100000.f;
+        shader->setUniformFloat("mAnimationTimer", animation_timer_f);
+
+        auto camera = client->getEnv().getLocalPlayer()->getCamera();
+        v3f offset = intToFloat(camera->getOffset(), BS);
+        shader->setUniform3Float("mCameraOffset", offset);
+
+        if (thing == RenderThing::NODE) {
+            v3f camera_position = camera->getPosition();
+            shader->setUniform3Float("mCameraPosition", camera_position);
+        }
+        else {
+            shader->setUniformInt("mBonesOffset", bone_offset);
+            shader->setUniformInt("mAnimateNormals", (s32)animate_normals);
+
+            auto bonetex = rndsys->getAnimationManager()->getBonesTexture();
+            rnd->setDataTexParams(bonetex);
+        }
+    }
 }

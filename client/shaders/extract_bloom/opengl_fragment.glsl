@@ -1,12 +1,12 @@
-#define rendered texture0
+#define rendered mTexture0
 
 struct ExposureParams {
 	float compensationFactor;
 };
 
 uniform sampler2D rendered;
-uniform mediump float bloomStrength;
-uniform ExposureParams exposureParams;
+uniform mediump float mBloomStrength;
+uniform ExposureParams mExposureParams;
 
 #ifdef GL_ES
 in mediump vec2 vUV;
@@ -31,7 +31,7 @@ void main(void)
 	color = pow(color, vec3(2.2));
 #endif
 
-	color *= exposureParams.compensationFactor * bloomStrength;
+	color *= mExposureParams.compensationFactor * mBloomStrength;
 
 #ifdef ENABLE_AUTO_EXPOSURE
 	color *= exposure;

@@ -5,7 +5,9 @@ layout (location = 3) in vec2 uv;
 layout (location = 4) in int materialType;
 
 #include <matrices>
+#ifdef ENABLE_DYNAMIC_SHADOWS
 #include <shadows>
+#endif
 
 uniform vec3 mDayLight;
 uniform float mAnimationTimer;

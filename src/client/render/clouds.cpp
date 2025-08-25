@@ -328,12 +328,8 @@ void Clouds::render()
     translate.setTranslation(rel);
 
     rnd->setTransformMatrix(TMatrix::World, translate);
-
-    auto ctxt = rnd->getContext();
-    ctxt->setShader(m_shader);
-
+    rnd->setShader(m_shader);
     rnd->setUniformBlocks();
-
     rnd->enableFog(true);
 
     rnd->draw(m_mesh.get());

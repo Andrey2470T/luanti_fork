@@ -1,9 +1,9 @@
 // based on Phys.Bloom OpenGL tutorial https://learnopengl.com/Guest-Articles/2022/Phys.-Based-Bloom
 // and ACM Siggraph talk in 2014 by Jorge Jimenez for Call of Duty: Advanced Warfare.
-#define rendered texture0
+#define rendered mTexture0
 
 uniform sampler2D rendered;
-uniform vec2 texelSize0;
+uniform vec2 mTexelSize;
 
 #ifdef GL_ES
 in mediump vec2 vUV;
@@ -15,7 +15,7 @@ out vec4 outColor;
 
 void main(void)
 {
-	vec2 tx = 2.0 * texelSize0;
+	vec2 tx = 2.0 * mTexelSize;
 	vec3 a = texture2D(rendered, vUV + vec2(-1., -1.) * tx).rgb;
 	vec3 b = texture2D(rendered, vUV + vec2(0., -1.) * tx).rgb;
 	vec3 c = texture2D(rendered, vUV + vec2(1., -1.) * tx).rgb;

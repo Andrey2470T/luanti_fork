@@ -166,7 +166,7 @@ void DistanceSortedDrawList::updateList()
             auto find_layer = std::find(layers.begin(), layers.end(), layer.first.get());
             
             if (find_layer == layers.end()) {
-                layers.emplace_back(layer.first, {});
+                layers.emplace_back(layer.first, std::vector<std::pair<LayeredMeshPart, LayeredMesh *>>());
                 find_layer = std::prev(layers.end());
             }
             find_layer->second.emplace_back(layer.second, mesh);
@@ -184,7 +184,10 @@ void DistanceSortedDrawList::updateList()
 
             for (auto &partial_layer : partial_layers) {
             	auto buf_layer = mesh->getBufferLayer(partial_layer.buffer_id, partial_layer.layer_id);
-                layers.emplace_back(buf_layer.first, {partial_layer, mesh});
+
+                std::vector<std::pair<LayeredMeshPart, LayeredMesh *>> mesh_parts;
+                mesh_parts.emplace_back(partial_layer, mesh);
+                layers.emplace_back(buf_layer.first, mesh_parts);
             }
         }
     }
@@ -232,7 +235,7 @@ void DistanceSortedDrawList::render()
     }
 }
 
-void DistanceSortedDrawList::renderShadows(const TileLayer &override_layer)
+void DistanceSortedDrawList::renderShadows(TileLayer &override_layer)
 {
     auto rndsys = client->getRenderSystem();
     auto rnd = rndsys->getRenderer();
@@ -264,7 +267,7 @@ void *DrawListUpdateThread::run()
     BEGIN_DEBUG_EXCEPTION_HANDLER
 
     while (!stopRequested()) {
-        drawlist->resortShadowList();
+        //drawlist->resortShadowList();
         drawlist->updateList();
         sleep_ms(50);
     }

@@ -6,7 +6,9 @@ layout (location = 4) in int materialType;
 layout (location = 5) in vec3 hwcolor;
 
 #include <matrices>
+#ifdef ENABLE_DYNAMIC_SHADOWS
 #include <shadows>
+#endif
 
 // Color of the light emitted by the sun.
 uniform vec3 mDayLight;
@@ -166,7 +168,7 @@ void main(void)
 		// wave-fronts along the x-axis.
 		wavePos.x /= WATER_WAVE_LENGTH * 3.0;
 		wavePos.z /= WATER_WAVE_LENGTH * 2.0;
-		wavePos.z += animationTimer * WATER_WAVE_SPEED * 10.0;
+		wavePos.z += mAnimationTimer * WATER_WAVE_SPEED * 10.0;
 		cpos.y += (snoise(wavePos) - 1.0) * WATER_WAVE_HEIGHT * 5.0;
 	}
 	else if (materialType == TILE_MATERIAL_WAVING_LEAVES && ENABLE_WAVING_LEAVES) {

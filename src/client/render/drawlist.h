@@ -147,7 +147,7 @@ public:
     void resortShadowList();
 
     void render();
-    void renderShadows(const TileLayer &override_layer);
+    void renderShadows(TileLayer &override_layer);
 
     void onSettingChanged(std::string_view name, bool all);
 private:

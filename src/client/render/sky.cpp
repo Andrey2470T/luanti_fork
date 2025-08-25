@@ -351,8 +351,7 @@ void Stars::setCount(u16 count)
 void Stars::draw()
 {
     auto rnd = m_rndsys->getRenderer();
-    auto ctxt = rnd->getContext();
-    ctxt->setShader(m_shader);
+    rnd->setShader(m_shader);
     rnd->setUniformBlocks();
     rnd->setBlending(true);
 

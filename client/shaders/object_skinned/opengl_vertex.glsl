@@ -12,11 +12,14 @@ layout (location = 6) in vec2i weights; // packed weights (8 u8 numbers)
 #define BONES_IDS_MAX 8 // per a vertex
 
 #include <matrices>
+#ifdef ENABLE_DYNAMIC_SHADOWS
 #include <shadows>
+#endif
 
 // Absolute bones transformations
-uniform sampler2D mDataTex;
-uniform int mBonesCount;
+#define dataTex mTexture1
+uniform sampler2D dataTex;
+uniform int mSampleCount;
 uniform int mBonesOffset; // all the skeleton bones ids are relatively to this offset
 uniform int mSampleDim;
 uniform int mDataTexDim;
@@ -120,8 +123,8 @@ void main(void)
 		int weight_n = weights[i % 4];
 		float weight = float((weight_n >> (shift_n * 8)) & 0xffffffff) / 127.0;
 
-		ivec2 sampleCoords = getSampleCoords(mDataTex, mBonesCount, mSampleDim, mDataTexDim, mBonesOffset+bone_id);
-		mat4 bone_transform = unpackFloatMat4x4(mDataTex, sampleCoords);
+		ivec2 sampleCoords = getSampleCoords(dataTex, mSampleCount, mSampleDim, mDataTexDim, mBonesOffset+bone_id);
+		mat4 bone_transform = unpackFloatMat4x4(dataTex, sampleCoords);
 
 		skinnedPos += weight * bone_transform * vec4(skinnedPos, 1.0);
 

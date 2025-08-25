@@ -227,11 +227,11 @@ void RenderCAO::step(float dtime, ClientEnvironment *env)
 
             // increase speed if using fast or flying fast
             if((g_settings->getBool("fast_move") &&
-                    m_client->checkLocalPrivilege("fast")) &&
+                    player->checkLocalPrivilege("fast")) &&
                     (controls.aux1 ||
                     (!player->touching_ground &&
                     g_settings->getBool("free_move") &&
-                    m_client->checkLocalPrivilege("fly"))))
+                    player->checkLocalPrivilege("fly"))))
                     new_speed *= 1.5;
             // slowdown speed if sneaking
             if (controls.sneak && walking)
@@ -310,6 +310,14 @@ void RenderCAO::step(float dtime, ClientEnvironment *env)
             if (obj)
                 obj->updateAttachments();
         }*/
+    }
+
+    // Update the data texture info
+    auto skeleton = m_model->getSkeleton();
+
+    if (skeleton) {
+        for (u8 i = 0; i < m_model->getMesh()->getBufferLayersCount(0); i++)
+            skeleton->updateTileLayer(m_model->getMesh()->getBufferLayer(0, i).first);
     }
 
     // Make sure m_is_visible is always applied
@@ -464,12 +472,13 @@ u16 RenderCAO::getLightPosition(v3s16 *pos)
 
 void RenderCAO::updateMarker()
 {
-    if (!m_client->getMinimap())
+    auto minimap = m_client->getRenderSystem()->getDefaultMinimap();
+    if (!minimap)
         return;
 
     if (!m_prop.show_on_minimap) {
         if (m_marker.has_value())
-            m_client->getMinimap()->removeMarker(m_marker.value());
+            minimap->removeMarker(m_marker.value());
         return;
     }
 
@@ -477,7 +486,7 @@ void RenderCAO::updateMarker()
         return;
 
     m_marker = getPosition();
-    m_client->getMinimap()->addMarker(m_marker.value());
+    minimap->addMarker(m_marker.value());
 }
 
 void RenderCAO::updateNametag()
@@ -652,6 +661,7 @@ bool RenderCAO::visualExpiryRequired(const ObjectProperties &newprops)
 
 void RenderCAO::initTileLayer()
 {
+    m_tile_layer.thing = RenderThing::OBJECT;
     m_tile_layer.alpha_discard = 1;
     m_tile_layer.material_flags = MATERIAL_FLAG_TRANSPARENT;
 
@@ -665,7 +675,6 @@ void RenderCAO::initTileLayer()
 
     std::string shadername = m_model->getSkeleton() ? "object_skinned" : "object";
     m_tile_layer.shader = m_cache->getOrLoad<render::Shader>(ResourceType::SHADER, shadername);
-    m_tile_layer.shader->mapSamplers({"mTexture0", "mDataTex"});
     m_tile_layer.textures.push_back(dynamic_cast<render::Texture *>(m_anim_mgr->getBonesTexture()->getGLTexture()));
 }
 

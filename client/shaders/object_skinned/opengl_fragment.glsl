@@ -1,13 +1,17 @@
-uniform sampler2D mTexture0;
+#define baseTexture mTexture0
+uniform sampler2D baseTexture;
 
 #ifdef ENABLE_DYNAMIC_SHADOWS
-	uniform sampler2D mShadowMapSampler;
+#define shadowMapSampler mTexture2
+	uniform sampler2D shadowMapSampler;
 #endif
 uniform vec3 mDayLight;
 uniform int mAlphaDiscard;
 
 #include <fog>
+#ifdef ENABLE_DYNAMIC_SHADOWS
 #include <shadows>
+#endif
 
 // The cameraOffset is the current center of the visible world.
 uniform highp vec3 mCameraOffset;
@@ -354,7 +358,7 @@ out vec4 outColor;
 
 void main(void)
 {
-	vec4 base = texture2D(mTexture0, vUV0).rgba;
+	vec4 base = texture2D(baseTexture, vUV0).rgba;
 	// If alpha is zero, we can just discard the pixel. This fixes transparency
 	// on GPUs like GC7000L, where GL_ALPHA_TEST is not implemented in mesa,
 	// and also on GLES 2, where GL_ALPHA_TEST is missing entirely.
@@ -382,14 +386,14 @@ void main(void)
 #ifdef COLORED_SHADOWS
 			vec4 visibility;
 			if (vCosLight > 0.0 || vNormalLength < 1e-3)
-				visibility = getShadowColor(mShadowMapSampler, posLightSpace.xy, posLightSpace.z);
+				visibility = getShadowColor(shadowMapSampler, posLightSpace.xy, posLightSpace.z);
 			else
 				visibility = vec4(1.0, 0.0, 0.0, 0.0);
 			shadow_int = visibility.r;
 			shadow_color = visibility.gba;
 #else
 			if (vCosLight > 0.0 || vNormalLength < 1e-3)
-				shadow_int = getShadow(mShadowMapSampler, posLightSpace.xy, posLightSpace.z);
+				shadow_int = getShadow(shadowMapSampler, posLightSpace.xy, posLightSpace.z);
 			else
 				shadow_int = 1.0;
 #endif
@@ -418,7 +422,7 @@ void main(void)
 				adjusted_night_ratio * col.rgb + // artificial light
 				(1.0 - adjusted_night_ratio) * ( // natural light
 						col.rgb * (1.0 - shadow_int * (1.0 - shadow_color) * (1.0 - mShadowParams.shadowTint)) +  // filtered texture color
-						mDayLight * shadow_color * shadow_int);                 // reflected filtered sunlight/moonlight
+						mmDayLight * shadow_color * shadow_int);                 // reflected filtered sunlight/moonlight
 	}
 #endif
 

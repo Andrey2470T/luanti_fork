@@ -1,11 +1,15 @@
+layout (location = 0) in vec2 pos;
+layout (location = 1) in vec4 color;
+layout (location = 2) in vec2 uv;
+
 #ifdef GL_ES
-varying mediump vec2 varTexCoord;
+out mediump vec2 vUV;
 #else
-centroid varying vec2 varTexCoord;
+centroid out vec2 vUV;
 #endif
 
 void main(void)
 {
-	varTexCoord.st = inTexCoord0.st;
-	gl_Position = inVertexPosition;
+	vUV = uv;
+	gl_Position = vec4(pos, 0.0, 1.0);
 }

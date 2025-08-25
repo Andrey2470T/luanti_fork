@@ -1,9 +1,8 @@
-#define rendered texture0
+#define rendered mTexture0
 
 uniform sampler2D rendered;
-uniform vec2 texelSize0;
-uniform mediump float bloomRadius;
-uniform mat3 bloomBlurWeights;
+uniform vec2 mTexelSize;
+uniform mediump float mBloomRadius;
 
 #ifdef GL_ES
 in mediump vec2 vUV;
@@ -23,16 +22,16 @@ out vec4 outColor;
 void main(void)
 {
 	// kernel distance and linear size
-	mediump float n = 2. * bloomRadius + 1.;
+	mediump float n = 2. * mBloomRadius + 1.;
 
-	vec2 uv = vUV - vec2(0., bloomRadius * texelSize0.y);
+	vec2 uv = vUV - vec2(0., mBloomRadius * mTexelSize.y);
 	vec4 color = vec4(0.);
 	mediump float sum = 0.;
 	for (mediump float i = 0.; i < n; i++) {
-		mediump float weight = smstsq(1. - (abs(i / bloomRadius - 1.)));
+		mediump float weight = smstsq(1. - (abs(i / mBloomRadius - 1.)));
 		color.rgb += texture2D(rendered, uv).rgb * weight;
 		sum += weight;
-		uv += vec2(0., texelSize0.y);
+		uv += vec2(0., mTexelSize.y);
 	}
 	color /= sum;
 	outColor = vec4(color.rgb, 1.0); // force full alpha to avoid holes in the image.

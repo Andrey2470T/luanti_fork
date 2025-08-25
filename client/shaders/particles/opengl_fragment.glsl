@@ -1,5 +1,7 @@
-uniform sampler2D mTexture;
-uniform sampler2D mFramebuffer;
+#define baseTexture mTexture0
+#define framebuffer mTexture2
+uniform sampler2D baseTexture;
+uniform sampler2D framebuffer;
 
 #include <blending>
 
@@ -20,7 +22,7 @@ void main(void)
 	int atlas_x = vTileCoords.x + vUV.x * vTileSize.x;
 	int atlas_y = vTileCoords.y + vUV.y * vTileCoords.y;
 
-	vec4 base = texelFetch(mBaseTexture, vec2(atlas_x, atlas_y), 0).rgba;
+	vec4 base = texelFetch(baseTexture, vec2(atlas_x, atlas_y), 0).rgba;
 
 	vec4 col = vec4(base.rgb * vColor.rgb, 1.0);
 
@@ -32,7 +34,7 @@ void main(void)
 		col = mix(FogColor, col, FogFactor);
 	}
 
-	col = DoBlend(col, texelFetch(mFramebuffer, gl_FragCoord.xy, 0), vBlendMode);
+	col = DoBlend(col, texelFetch(framebuffer, gl_FragCoord.xy, 0), vBlendMode);
 
 	outColor = col;
 }

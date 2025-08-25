@@ -1,5 +1,5 @@
-#define rendered texture0
-#define bloom texture1
+#define rendered mTexture0
+#define bloom mTexture1
 
 #ifdef GL_ES
 // Dithering requires sufficient floating-point precision
@@ -15,11 +15,11 @@ struct ExposureParams {
 uniform sampler2D rendered;
 uniform sampler2D bloom;
 
-uniform vec2 texelSize0;
+uniform vec2 mTexelSize;
 
-uniform ExposureParams exposureParams;
-uniform lowp float bloomIntensity;
-uniform lowp float saturation;
+uniform ExposureParams mExposureParams;
+uniform lowp float mBloomIntensity;
+uniform lowp float mSaturation;
 
 #ifdef GL_ES
 in mediump vec2 vUV;
@@ -42,7 +42,7 @@ vec4 applyBloom(vec4 color, vec2 uv)
 	if (uv.x < 0.5)
 		return color;
 #endif
-	color.rgb = mix(color.rgb, light, bloomIntensity);
+	color.rgb = mix(color.rgb, light, mBloomIntensity);
 	return color;
 }
 
@@ -124,7 +124,7 @@ void main(void)
 	if (vUV.x > 0.5 || vUV.y > 0.5)
 #endif
 	{
-		color.rgb *= exposureParams.compensationFactor;
+		color.rgb *= mExposureParams.compensationFactor;
 #ifdef ENABLE_AUTO_EXPOSURE
 		color.rgb *= exposure;
 #endif
@@ -148,7 +148,7 @@ void main(void)
 		color = applyToneMapping(color);
 #endif
 
-		color.rgb = applySaturation(color.rgb, saturation);
+		color.rgb = applySaturation(color.rgb, mSaturation);
 	}
 
 #ifdef ENABLE_DITHERING
