@@ -9,6 +9,7 @@
 #include "constants.h"
 #include "lighting.h"
 #include "Utils/AABB.h"
+#include <unordered_set>
 
 class Client;
 class Environment;
@@ -177,8 +178,20 @@ public:
     // updated from the server. If it is true, it is set to false.
     bool updateWieldedItem();
 
+    void setPlayerControl(PlayerControl &_control);
+
+    u16 getHP();
+
     void step(f32 dtime);
 
+    bool checkPrivilege(const std::string &priv) const
+    { return (m_privileges.count(priv) != 0); }
+
+    const std::unordered_set<std::string> &getPrivilegeList() const
+    { return m_privileges; }
+
+    bool checkLocalPrivilege(const std::string &priv)
+    { return checkPrivilege(priv); }
 private:
 	void accelerate(const v3f &target_speed, const f32 max_increase_H,
 		const f32 max_increase_V, const bool use_pitch);
@@ -235,4 +248,7 @@ private:
 
 	PlayerSettings m_player_settings;
 	Lighting m_lighting;
+
+    // Privileges
+    std::unordered_set<std::string> m_privileges;
 };

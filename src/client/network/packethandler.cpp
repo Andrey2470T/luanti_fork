@@ -50,7 +50,7 @@ void ClientPacketHandler::connect(const Address &address, const std::string &add
 {
     if (m_con) {
         // can't do this if the connection has entered auth phase
-        sanity_check(m_client->getState() == LC_Created && m_proto_ver == 0);
+        sanity_check(m_client->getState() == LC_Created && m_client->getProtoVersion() == 0);
         infostream << "Client connection will be recreated" << std::endl;
 
         m_access_denied = false;
@@ -345,6 +345,10 @@ float ClientPacketHandler::getCurRate()
     assert(m_con);
     return (m_con->getLocalStat(con::CUR_INC_RATE) +
             m_con->getLocalStat(con::CUR_DL_RATE));
+}
+
+bool ClientPacketHandler::hasServerReplied() const {
+    return m_client->getProtoVersion() != 0; // (set in TOCLIENT_HELLO)
 }
 
 void ClientPacketHandler::printPacketCounter(f32 dtime)

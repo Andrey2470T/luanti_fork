@@ -22,6 +22,8 @@ class ClientActiveObject;
 class GenericCAO;
 class LocalPlayer;
 class ResourceCache;
+class Inventory;
+struct InventoryLocation;
 
 /*
 	The client-side environment.
@@ -131,6 +133,13 @@ public:
 	void updateFrameTime(bool is_paused);
 	u64 getFrameTime() const { return m_frame_time; }
 	u64 getFrameTimeDelta() const { return m_frame_dtime; }
+
+    float getAnimationTime()
+    {
+        return m_animation_time;
+    }
+
+    Inventory* getInventory(const InventoryLocation &loc);
 private:
 	std::unique_ptr<ClientMap> m_map;
 	std::unique_ptr<LocalPlayer> m_local_player;
@@ -150,7 +159,10 @@ private:
 	u64 m_frame_dtime = 0;
 	u64 m_frame_time_pause_accumulator = 0;
 
-    const f32 update_draw_list_delta = 0.2f;
-    f32 update_draw_list_timer = 0.0f;
-    f32 touch_blocks_timer = 0.0f;
+    // Block mesh animation parameters
+    float m_animation_time = 0.0f;
+
+    // Detached inventories
+    // key = name
+    std::unordered_map<std::string, Inventory*> m_detached_inventories;
 };

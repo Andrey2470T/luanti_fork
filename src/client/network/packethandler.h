@@ -73,20 +73,12 @@ class ClientPacketHandler : public con::PeerHandler
     std::string m_address_name;
     ELoginRegister m_allow_login_or_register = ELoginRegister::Any;
 
-    // Used version of the protocol with server
-    // Values smaller than 25 only mean they are smaller than 25,
-    // and aren't accurate. We simply just don't know, because
-    // the server didn't send the version back then.
-    // If 0, server init hasn't been received yet.
-    u16 m_proto_ver = 0;
-
     // Server serialization version
     u8 m_server_ser_ver = SER_FMT_VER_INVALID;
 
     bool m_itemdef_received = false;
     bool m_nodedef_received = false;
     bool m_activeobjects_received = false;
-    bool m_mods_loaded = false;
 public:
     ClientPacketHandler(Client *client, ELoginRegister allow_login_or_register)
         : m_client(client), m_allow_login_or_register(allow_login_or_register)
@@ -220,13 +212,8 @@ public:
         return m_address_name;
     }
 
-    u16 getProtoVersion() const
-    { return m_proto_ver; }
-
     // has the server ever replied to us, used for connection retry/fallback
-    bool hasServerReplied() const {
-        return getProtoVersion() != 0; // (set in TOCLIENT_HELLO)
-    }
+    bool hasServerReplied() const;
 
     void printPacketCounter(f32 dtime);
 

@@ -790,6 +790,16 @@ bool LocalPlayer::updateWieldedItem()
     return true;
 }
 
+void LocalPlayer::setPlayerControl(PlayerControl &_control)
+{
+    control = control;
+}
+
+u16 LocalPlayer::getHP()
+{
+    return hp;
+}
+
 void LocalPlayer::step(f32 dtime)
 {
     // Get some settings

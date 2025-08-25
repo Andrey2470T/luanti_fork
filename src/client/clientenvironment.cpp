@@ -10,7 +10,7 @@
 #include "client/map/clientmap.h"
 #include "client/player/localplayer.h"
 #include "scripting_client.h"
-#include "client/map/mapblock_mesh.h"
+#include "client/map/mapblockmesh.h"
 #include "raycast.h"
 #include "client/ao/renderCAO.h"
 #include "porting.h"
@@ -19,6 +19,7 @@
 #include "client/media/resource.h"
 #include "client/render/particles.h"
 #include "client/render/drawlist.h"
+#include "inventorymanager.h"
 
 /*
 	ClientEnvironment
@@ -35,6 +36,11 @@ ClientEnvironment::ClientEnvironment(Client *client):
 ClientEnvironment::~ClientEnvironment()
 {
 	m_ao_manager.clear();
+
+    // Delete detached inventories
+    for (auto &m_detached_inventorie : m_detached_inventories) {
+        delete m_detached_inventorie.second;
+    }
 
     //for (auto &simple_object : m_simple_objects) {
     //	delete simple_object;
@@ -64,6 +70,9 @@ void ClientEnvironment::setLocalPlayer(LocalPlayer *player)
 
 void ClientEnvironment::step(float dtime)
 {
+    m_animation_time += dtime;
+    if(m_animation_time > 60.0) m_animation_time -= 60.0;
+
 	/* Step time of day */
 	stepTimeOfDay(dtime);
 
@@ -123,30 +132,8 @@ void ClientEnvironment::step(float dtime)
 		}
     }*/
 
-    m_map->updateMapBlocksActiveObjects();
-
-    /*
-        Update block draw list every 200ms or when camera direction has
-        changed much
-    */
-    update_draw_list_timer += dtime;
-    touch_blocks_timer += dtime;
-
-    auto camera = m_local_player->getCamera();
-
-    // call only one of updateDrawList, touchMapBlocks, or updateShadow per frame
-    // (the else-ifs below are intentional)
-    if (update_draw_list_timer >= update_draw_list_delta
-            || camera->isNecessaryUpdateDrawList()
-    ) {
-        update_draw_list_timer = 0;
-        m_map->update();
-    } else if (touch_blocks_timer > update_draw_list_delta) {
-        m_map->touchMapBlocks();
-        touch_blocks_timer = 0;
-    }/* else if (RenderingEngine::get_shadow_renderer()) {
-        updateShadows();
-    }*/
+    /* Update ClientMap */
+    m_map->step(dtime);
 }
 
 /*void ClientEnvironment::addSimpleObject(ClientSimpleObject *simple)
@@ -319,4 +306,48 @@ void ClientEnvironment::updateFrameTime(bool is_paused)
 		m_frame_dtime = new_frame_time - MYMAX(m_frame_time, m_frame_time_pause_accumulator);
 		m_frame_time = new_frame_time;
 	}
+}
+
+Inventory* ClientEnvironment::getInventory(const InventoryLocation &loc)
+{
+    switch(loc.type){
+    case InventoryLocation::UNDEFINED:
+    {}
+    break;
+    case InventoryLocation::CURRENT_PLAYER:
+    {
+
+        assert(m_local_player);
+        return &m_local_player->inventory;
+    }
+    break;
+    case InventoryLocation::PLAYER:
+    {
+        // Check if we are working with local player inventory
+        LocalPlayer *player = getLocalPlayer();
+        if (!player || player->getName() != loc.name)
+            return NULL;
+        return &player->inventory;
+    }
+    break;
+    case InventoryLocation::NODEMETA:
+    {
+        NodeMetadata *meta = m_map->getNodeMetadata(loc.p);
+        if(!meta)
+            return NULL;
+        return meta->getInventory();
+    }
+    break;
+    case InventoryLocation::DETACHED:
+    {
+        if (m_detached_inventories.count(loc.name) == 0)
+            return NULL;
+        return m_detached_inventories[loc.name];
+    }
+    break;
+    default:
+        FATAL_ERROR("Invalid inventory location type.");
+        break;
+    }
+    return NULL;
 }

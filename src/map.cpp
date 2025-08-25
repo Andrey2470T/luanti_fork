@@ -16,7 +16,7 @@
 #include "util/directiontables.h"
 #include "rollback_interface.h"
 #include "environment.h"
-#include "irrlicht_changes/printing.h"
+#include "irrlicht_gui/printing.h"
 
 /*
 	Map
@@ -586,7 +586,7 @@ void Map::removeNodeTimer(v3s16 p)
 }
 
 bool Map::determineAdditionalOcclusionCheck(const v3s16 pos_camera,
-	const core::aabbox3d<s16> &block_bounds, v3s16 &check)
+    const AABB<s16> &block_bounds, v3s16 &check)
 {
 	/*
 		This functions determines the node inside the target block that is

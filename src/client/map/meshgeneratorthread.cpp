@@ -11,6 +11,9 @@
 #include "util/directiontables.h"
 #include "porting.h"
 #include "nodedef.h"
+#include "clientmap.h"
+#include "client/render/rendersystem.h"
+#include "client/ui/minimap.h"
 
 // Data placeholder used for copying from non-existent blocks
 static struct BlockPlaceholder {
@@ -56,7 +59,7 @@ MeshUpdateQueue::~MeshUpdateQueue()
 	}
 }
 
-bool MeshUpdateQueue::addBlock(Map *map, v3s16 p, bool ack_block_to_server, bool urgent)
+bool MeshUpdateQueue::addBlock(ClientMap *map, v3s16 p, bool ack_block_to_server, bool urgent)
 {
 	MapBlock *main_block = map->getBlockNoCreateNoEx(p);
 	if (!main_block)
@@ -64,7 +67,7 @@ bool MeshUpdateQueue::addBlock(Map *map, v3s16 p, bool ack_block_to_server, bool
 
 	MutexAutoLock lock(m_mutex);
 
-	MeshGrid mesh_grid = m_client->getMeshGrid();
+    MeshGrid mesh_grid = map->getMeshGrid();
 
 	// Mesh is placed at the corner block of a chunk
 	// (where all coordinate are divisible by the chunk size)
@@ -173,7 +176,7 @@ void MeshUpdateQueue::done(v3s16 pos)
 
 void MeshUpdateQueue::fillDataFromMapBlocks(QueuedMeshUpdate *q)
 {
-	auto mesh_grid = m_client->getMeshGrid();
+    auto mesh_grid = m_client->getEnv().getClientMap().getMeshGrid();
 	MeshMakeData *data = new MeshMakeData(m_client->ndef(),
 			MAP_BLOCKSIZE * mesh_grid.cell_size, mesh_grid);
 	q->data = data;
@@ -189,7 +192,7 @@ void MeshUpdateQueue::fillDataFromMapBlocks(QueuedMeshUpdate *q)
 		data->fillBlockData(pos, block ? block->getData() : block_placeholder.data);
 	}
 
-	data->m_generate_minimap = !!m_client->getMinimap();
+    data->m_generate_minimap = !!m_client->getRenderSystem()->getDefaultMinimap();
 	data->m_smooth_lighting = m_cache_smooth_lighting;
 	data->m_enable_water_reflections = m_cache_enable_water_reflections;
 }
@@ -199,7 +202,7 @@ void MeshUpdateQueue::fillDataFromMapBlocks(QueuedMeshUpdate *q)
 */
 
 MeshUpdateWorkerThread::MeshUpdateWorkerThread(Client *client, MeshUpdateQueue *queue_in, MeshUpdateManager *manager, v3s16 *camera_offset) :
-		UpdateThread("Mesh"), m_client(client), m_queue_in(queue_in), m_manager(manager), m_camera_offset(camera_offset)
+        UpdateThread("Mesh"), m_client(client), m_queue_in(queue_in), m_manager(manager)
 {
 	m_generation_interval = g_settings->getU16("mesh_generation_interval");
 	m_generation_interval = rangelim(m_generation_interval, 0, 50);
@@ -250,10 +253,10 @@ MeshUpdateManager::MeshUpdateManager(Client *client):
 	infostream << "MeshUpdateManager: using " << number_of_threads << " threads" << std::endl;
 
 	for (int i = 0; i < number_of_threads; i++)
-		m_workers.push_back(std::make_unique<MeshUpdateWorkerThread>(client, &m_queue_in, this, &m_camera_offset));
+        m_workers.push_back(std::make_unique<MeshUpdateWorkerThread>(client, &m_queue_in, this));
 }
 
-void MeshUpdateManager::updateBlock(Map *map, v3s16 p, bool ack_block_to_server,
+void MeshUpdateManager::updateBlock(ClientMap *map, v3s16 p, bool ack_block_to_server,
 		bool urgent, bool update_neighbors)
 {
 	static thread_local const bool many_neighbors =

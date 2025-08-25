@@ -12,6 +12,8 @@
 #include "util/thread.h"
 #include <memory>
 
+class ClientMap;
+
 struct QueuedMeshUpdate
 {
 	v3s16 p = v3s16(-1337, -1337, -1337);
@@ -44,7 +46,7 @@ public:
 
 	// Caches the block at p and its neighbors (if needed) and queues a mesh
 	// update for the block at p
-	bool addBlock(Map *map, v3s16 p, bool ack_block_to_server, bool urgent);
+    bool addBlock(ClientMap *map, v3s16 p, bool ack_block_to_server, bool urgent);
 
 	// Returned pointer must be deleted
 	// Returns NULL if queue is empty
@@ -99,7 +101,6 @@ private:
 	Client *m_client;
 	MeshUpdateQueue *m_queue_in;
 	MeshUpdateManager *m_manager;
-	v3s16 *m_camera_offset;
 
 	// TODO: Add callback to update these when g_settings changes
 	int m_generation_interval;
@@ -112,13 +113,10 @@ public:
 
 	// Caches the block at p and its neighbors (if needed) and queues a mesh
 	// update for the block at p
-	void updateBlock(Map *map, v3s16 p, bool ack_block_to_server, bool urgent,
+    void updateBlock(ClientMap *map, v3s16 p, bool ack_block_to_server, bool urgent,
 			bool update_neighbors = false);
 	void putResult(const MeshUpdateResult &r);
 	bool getNextResult(MeshUpdateResult &r);
-
-
-	v3s16 m_camera_offset;
 
 	void start();
 	void stop();

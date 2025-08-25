@@ -23,10 +23,6 @@
 #define PATH_DELIM ":"
 #endif
 
-namespace irr::io {
-class IFileSystem;
-}
-
 namespace mt_fs
 {
 

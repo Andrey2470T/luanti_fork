@@ -17,7 +17,7 @@ extern "C" {
 #include <lualib.h>
 }
 
-#include "irrlichttypes.h"
+#include <BasicIncludes.h>
 #include "common/c_types.h"
 #include "common/c_internal.h"
 #include "debug.h"

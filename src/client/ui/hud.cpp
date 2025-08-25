@@ -11,7 +11,7 @@
 #include "inventory.h"
 #include "client/player/localplayer.h"
 #include "client/player/playercamera.h"
-#include "client/render/wieldmesh.h"
+//#include "client/render/wieldmesh.h"
 #include "minimap.h"
 #include "util/enriched_string.h"
 #include "client/render/rendersystem.h"

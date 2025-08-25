@@ -5,17 +5,15 @@
 #include "game.h"
 
 #include <cmath>
-#include "IAttributes.h"
-#include "client/renderingengine.h"
-#include "camera.h"
+#include "client/render/rendersystem.h"
+#include "client/player/playercamera.h"
 #include "client.h"
-#include "client/clientevent.h"
-#include "client/gameui.h"
-#include "client/game_formspec.h"
-#include "client/inputhandler.h"
-#include "client/texturepaths.h"
+#include "client/event/clientevent.h"
+#include "client/ui/gameui.h"
+#include "client/ui/gameformspec.h"
+#include "client/event/inputhandler.h"
 #include "client/keys.h"
-#include "client/joystick_controller.h"
+#include "client/event/joystickcontroller.h"
 #include "client/mapblock_mesh.h"
 #include "client/sound.h"
 #include "clientmap.h"
@@ -60,128 +58,11 @@
 #include "clientdynamicinfo.h"
 #include <IAnimatedMeshSceneNode.h>
 #include "util/tracy_wrapper.h"
+#include "client/sound/soundmaker.h"
 
 #if USE_SOUND
 	#include "client/sound/sound_openal.h"
 #endif
-
-class NodeDugEvent : public MtEvent
-{
-public:
-	v3s16 p;
-	MapNode n;
-
-	NodeDugEvent(v3s16 p, MapNode n):
-		p(p),
-		n(n)
-	{}
-	Type getType() const { return NODE_DUG; }
-};
-
-class SoundMaker
-{
-	ISoundManager *m_sound;
-	const NodeDefManager *m_ndef;
-
-public:
-	bool makes_footstep_sound = true;
-	float m_player_step_timer = 0.0f;
-	float m_player_jump_timer = 0.0f;
-
-	SoundSpec m_player_step_sound;
-	SoundSpec m_player_leftpunch_sound;
-	// Second sound made on left punch, currently used for item 'use' sound
-	SoundSpec m_player_leftpunch_sound2;
-	SoundSpec m_player_rightpunch_sound;
-
-	SoundMaker(ISoundManager *sound, const NodeDefManager *ndef) :
-		m_sound(sound), m_ndef(ndef) {}
-
-	void playPlayerStep()
-	{
-		if (m_player_step_timer <= 0 && m_player_step_sound.exists()) {
-			m_player_step_timer = 0.03;
-			if (makes_footstep_sound)
-				m_sound->playSound(0, m_player_step_sound);
-		}
-	}
-
-	void playPlayerJump()
-	{
-		if (m_player_jump_timer <= 0.0f) {
-			m_player_jump_timer = 0.2f;
-			m_sound->playSound(0, SoundSpec("player_jump", 0.5f));
-		}
-	}
-
-	static void viewBobbingStep(MtEvent *e, void *data)
-	{
-		SoundMaker *sm = (SoundMaker *)data;
-		sm->playPlayerStep();
-	}
-
-	static void playerRegainGround(MtEvent *e, void *data)
-	{
-		SoundMaker *sm = (SoundMaker *)data;
-		sm->playPlayerStep();
-	}
-
-	static void playerJump(MtEvent *e, void *data)
-	{
-		SoundMaker *sm = (SoundMaker *)data;
-		sm->playPlayerJump();
-	}
-
-	static void cameraPunchLeft(MtEvent *e, void *data)
-	{
-		SoundMaker *sm = (SoundMaker *)data;
-		sm->m_sound->playSound(0, sm->m_player_leftpunch_sound);
-		sm->m_sound->playSound(0, sm->m_player_leftpunch_sound2);
-	}
-
-	static void cameraPunchRight(MtEvent *e, void *data)
-	{
-		SoundMaker *sm = (SoundMaker *)data;
-		sm->m_sound->playSound(0, sm->m_player_rightpunch_sound);
-	}
-
-	static void nodeDug(MtEvent *e, void *data)
-	{
-		SoundMaker *sm = (SoundMaker *)data;
-		NodeDugEvent *nde = (NodeDugEvent *)e;
-		sm->m_sound->playSound(0, sm->m_ndef->get(nde->n).sound_dug);
-	}
-
-	static void playerDamage(MtEvent *e, void *data)
-	{
-		SoundMaker *sm = (SoundMaker *)data;
-		sm->m_sound->playSound(0, SoundSpec("player_damage", 0.5));
-	}
-
-	static void playerFallingDamage(MtEvent *e, void *data)
-	{
-		SoundMaker *sm = (SoundMaker *)data;
-		sm->m_sound->playSound(0, SoundSpec("player_falling_damage", 0.5));
-	}
-
-	void registerReceiver(MtEventManager *mgr)
-	{
-		mgr->reg(MtEvent::VIEW_BOBBING_STEP, SoundMaker::viewBobbingStep, this);
-		mgr->reg(MtEvent::PLAYER_REGAIN_GROUND, SoundMaker::playerRegainGround, this);
-		mgr->reg(MtEvent::PLAYER_JUMP, SoundMaker::playerJump, this);
-		mgr->reg(MtEvent::CAMERA_PUNCH_LEFT, SoundMaker::cameraPunchLeft, this);
-		mgr->reg(MtEvent::CAMERA_PUNCH_RIGHT, SoundMaker::cameraPunchRight, this);
-		mgr->reg(MtEvent::NODE_DUG, SoundMaker::nodeDug, this);
-		mgr->reg(MtEvent::PLAYER_DAMAGE, SoundMaker::playerDamage, this);
-		mgr->reg(MtEvent::PLAYER_FALLING_DAMAGE, SoundMaker::playerFallingDamage, this);
-	}
-
-	void step(float dtime)
-	{
-		m_player_step_timer -= dtime;
-		m_player_jump_timer -= dtime;
-	}
-};
 
 
 typedef s32 SamplerLayer_t;

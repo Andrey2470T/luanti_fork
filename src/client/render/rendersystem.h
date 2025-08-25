@@ -26,6 +26,7 @@ class Clouds;
 class GameUI;
 class TransformNodeManager;
 class AnimationManager;
+class Minimap;
 	
 class RenderSystem
 {
@@ -49,7 +50,7 @@ class RenderSystem
     std::unique_ptr<AnimationManager> anim_mgr;
 
     std::unique_ptr<GameUI> gameui;
-	//std::unique_ptr<GUIEnvironment> guienv;
+    std::unique_ptr<GUIEnvironment> guienv;
 	std::unique_ptr<ShadowRenderer> shadow_renderer;
 
     std::unique_ptr<AtlasPool> basePool;
@@ -107,10 +108,10 @@ public:
     {
         return gameui.get();
     }
-    /*GUIEnvironment *getGUIEnvironment() const
+    GUIEnvironment *getGUIEnvironment() const
     {
         return guienv.get();
-    }*/
+    }
     ShadowRenderer *getShadowRenderer() const
     {
         return shadow_renderer.get();
@@ -121,6 +122,7 @@ public:
     {
         return fontManager.get();
     }
+    Minimap *getDefaultMinimap() const;
 
     v2u getWindowSize() const
     {

@@ -14,7 +14,6 @@
 #include "client/render/rendersystem.h"
 #include "client/sound/sound.h"
 #include "client/media/resource.h"
-#include "client/map/meshgeneratorthread.h"
 #include "client/player/localplayer.h"
 #include "util/auth.h"
 #include "util/string.h"
@@ -64,7 +63,6 @@ Client::Client(
 	m_event(event),
     m_resource_cache(std::make_unique<ResourceCache>()),
     m_render_system(std::make_unique<RenderSystem>(this, m_resource_cache.get())),
-	m_mesh_update_manager(std::make_unique<MeshUpdateManager>(this)),
 	m_env(this),
 	m_last_chat_message_sent(time(NULL)),
 	m_password(password),
@@ -81,7 +79,6 @@ Client::Client(
 	m_mod_storage_database->beginSave();
 
 	m_cache_save_interval = g_settings->getU16("server_map_save_interval");
-	m_mesh_grid = { g_settings->getU16("client_mesh_chunk") };
 }
 
 void Client::migrateModStorage()
@@ -250,7 +247,7 @@ void Client::Stop()
 	if (m_mods_loaded)
 		m_script->on_shutdown();
 	//request all client managed threads to stop
-	m_mesh_update_manager->stop();
+    m_env.getClientMap().stopMeshUpdate();
 	// Save local server map
 	if (m_localdb) {
 		infostream << "Local map saving ended." << std::endl;
@@ -263,7 +260,7 @@ void Client::Stop()
 
 bool Client::isShutdown()
 {
-	return m_shutdown || !m_mesh_update_manager->isRunning();
+    return m_shutdown || !m_env.getClientMap().isMeshUpdateRunning();
 }
 
 Client::~Client()
@@ -272,23 +269,7 @@ Client::~Client()
 
 	deleteAuthData();
 
-	m_mesh_update_manager->stop();
-	m_mesh_update_manager->wait();
-
-	MeshUpdateResult r;
-	while (m_mesh_update_manager->getNextResult(r)) {
-		for (auto block : r.map_blocks)
-			if (block)
-				block->refDrop();
-		delete r.mesh;
-	}
-
 	delete m_inventory_from_server;
-
-	// Delete detached inventories
-	for (auto &m_detached_inventorie : m_detached_inventories) {
-		delete m_detached_inventorie.second;
-	}
 
 	delete m_media_downloader;
 
@@ -308,10 +289,6 @@ void Client::step(float dtime)
 	// Limit a bit
 	if (dtime > DTIME_LIMIT)
 		dtime = DTIME_LIMIT;
-
-	m_animation_time += dtime;
-	if(m_animation_time > 60.0)
-		m_animation_time -= 60.0;
 
 	m_time_of_day_update_timer += dtime;
 
@@ -334,49 +311,6 @@ void Client::step(float dtime)
 	/*
 		Do stuff if connected
 	*/
-
-	/*
-		Run Map's timers and unload unused data
-	*/
-	const float map_timer_and_unload_dtime = 5.25;
-	if(m_map_timer_and_unload_interval.step(dtime, map_timer_and_unload_dtime)) {
-		std::vector<v3s16> deleted_blocks;
-		m_env.getMap().timerUpdate(map_timer_and_unload_dtime,
-			std::max(g_settings->getFloat("client_unload_unused_data_timeout"), 0.0f),
-			g_settings->getS32("client_mapblock_limit"),
-			&deleted_blocks);
-
-		/*
-			Send info to server
-			NOTE: This loop is intentionally iterated the way it is.
-		*/
-
-		std::vector<v3s16>::iterator i = deleted_blocks.begin();
-		std::vector<v3s16> sendlist;
-		for(;;) {
-			if(sendlist.size() == 255 || i == deleted_blocks.end()) {
-				if(sendlist.empty())
-					break;
-				/*
-					[0] u16 command
-					[2] u8 count
-					[3] v3s16 pos_0
-					[3+6] v3s16 pos_1
-					...
-				*/
-
-                m_packet_handler->sendDeletedBlocks(sendlist);
-
-				if(i == deleted_blocks.end())
-					break;
-
-				sendlist.clear();
-			}
-
-			sendlist.push_back(*i);
-			++i;
-		}
-	}
 
 	/*
 		Send pending messages on out chat queue
@@ -424,7 +358,7 @@ void Client::step(float dtime)
 	if(counter >= 10) {
 		counter = 0.0;
 		// connectedAndInitialized() is true, peer exists.
-		float avg_rtt = getRTT();
+        float avg_rtt = m_packet_handler->getRTT();
 		infostream << "Client: avg_rtt=" << avg_rtt << std::endl;
 	}
 
@@ -432,103 +366,6 @@ void Client::step(float dtime)
 		Send player position to server
 	*/
     m_packet_handler->sendPlayerPos(m_render_system->getDrawList()->getDrawControl().wanted_range, dtime);
-
-    auto minimap = m_render_system->getGameUI()->getHud()->getMinimap();
-	/*
-		Replace updated meshes
-	*/
-	{
-		int num_processed_meshes = 0;
-		std::vector<v3s16> blocks_to_ack;
-		bool force_update_shadows = false;
-		MeshUpdateResult r;
-		while (m_mesh_update_manager->getNextResult(r))
-		{
-			num_processed_meshes++;
-
-			std::vector<MinimapMapblock*> minimap_mapblocks;
-			bool do_mapper_update = true;
-
-			ClientMap &map = m_env.getClientMap();
-			MapSector *sector = map.emergeSector(v2s16(r.p.X, r.p.Z));
-
-			MapBlock *block = sector->getBlockNoCreateNoEx(r.p.Y);
-
-			// The block in question is not visible (perhaps it is culled at the server),
-			// create a blank block just to hold the chunk's mesh.
-			// If the block becomes visible later it will replace the blank block.
-			if (!block && r.mesh)
-				block = sector->createBlankBlock(r.p.Y);
-
-			if (block) {
-				// Delete the old mesh
-				if (block->mesh)
-					map.invalidateMapBlockMesh(block->mesh);
-				delete block->mesh;
-				block->mesh = nullptr;
-				block->solid_sides = r.solid_sides;
-
-				if (r.mesh) {
-					minimap_mapblocks = r.mesh->moveMinimapMapblocks();
-					if (minimap_mapblocks.empty())
-						do_mapper_update = false;
-
-					bool is_empty = true;
-					for (int l = 0; l < MAX_TILE_LAYERS; l++)
-						if (r.mesh->getMesh(l)->getMeshBufferCount() != 0)
-							is_empty = false;
-
-					if (is_empty) {
-						delete r.mesh;
-					} else {
-						// Replace with the new mesh
-						block->mesh = r.mesh;
-						if (r.urgent)
-							force_update_shadows = true;
-					}
-				}
-			} else {
-				delete r.mesh;
-			}
-
-            if (minimap && do_mapper_update) {
-				v3s16 ofs;
-
-				// See also mapblock_mesh.cpp for the code that creates the array of minimap blocks.
-				for (ofs.Z = 0; ofs.Z < m_mesh_grid.cell_size; ofs.Z++)
-				for (ofs.Y = 0; ofs.Y < m_mesh_grid.cell_size; ofs.Y++)
-				for (ofs.X = 0; ofs.X < m_mesh_grid.cell_size; ofs.X++) {
-					size_t i = m_mesh_grid.getOffsetIndex(ofs);
-					if (i < minimap_mapblocks.size() && minimap_mapblocks[i])
-                        minimap->addBlock(r.p + ofs, minimap_mapblocks[i]);
-				}
-			}
-
-			for (auto p : r.ack_list) {
-				if (blocks_to_ack.size() == 255) {
-                    m_packet_handler->sendGotBlocks(blocks_to_ack);
-					blocks_to_ack.clear();
-				}
-
-				blocks_to_ack.emplace_back(p);
-			}
-
-			for (auto block : r.map_blocks)
-				if (block)
-					block->refDrop();
-		}
-		if (blocks_to_ack.size() > 0) {
-				// Acknowledge block(s)
-                m_packet_handler->sendGotBlocks(blocks_to_ack);
-		}
-
-		if (num_processed_meshes > 0)
-			g_profiler->graphAdd("num_processed_meshes", num_processed_meshes);
-
-        /*auto shadow_renderer = RenderingEngine::get_shadow_renderer();
-		if (shadow_renderer && force_update_shadows)
-            shadow_renderer->setForceUpdateShadowMap();*/
-	}
 
 	/*
 		Load fetched media
@@ -581,7 +418,7 @@ void Client::step(float dtime)
 			// Do this every <interval> seconds after TOCLIENT_INVENTORY
 			// Reset the locally changed inventory to the authoritative inventory
 			player->inventory = *m_inventory_from_server;
-			m_update_wielded_item = true;
+            player->updateWieldedItem();
 		}
 	}
 
@@ -895,21 +732,6 @@ void Client::sendChangePassword(const std::string &oldpassword,
 	startAuth(choseAuthMech(m_sudo_auth_methods));
 }
 
-void Client::removeNode(v3s16 p)
-{
-	std::map<v3s16, MapBlock*> modified_blocks;
-
-	try {
-		m_env.getMap().removeNodeAndUpdate(p, modified_blocks);
-	}
-	catch(InvalidPositionException &e) {
-	}
-
-	for (const auto &modified_block : modified_blocks) {
-		addUpdateMeshTaskWithEdge(modified_block.first, false, true);
-	}
-}
-
 /**
  * Helper function for Client Side Modding
  * CSM restrictions are applied there, this should not be used for core engine
@@ -954,75 +776,6 @@ v3s16 Client::CSMClampPos(v3s16 pos)
 	);
 }
 
-void Client::addNode(v3s16 p, MapNode n, bool remove_metadata)
-{
-	//TimeTaker timer1("Client::addNode()");
-
-	std::map<v3s16, MapBlock*> modified_blocks;
-
-	try {
-		//TimeTaker timer3("Client::addNode(): addNodeAndUpdate");
-		m_env.getMap().addNodeAndUpdate(p, n, modified_blocks, remove_metadata);
-	}
-	catch(InvalidPositionException &e) {
-	}
-
-	for (const auto &modified_block : modified_blocks) {
-		addUpdateMeshTaskWithEdge(modified_block.first, false, true);
-	}
-}
-
-void Client::setPlayerControl(PlayerControl &control)
-{
-	LocalPlayer *player = m_env.getLocalPlayer();
-	assert(player);
-	player->control = control;
-}
-
-Inventory* Client::getInventory(const InventoryLocation &loc)
-{
-	switch(loc.type){
-	case InventoryLocation::UNDEFINED:
-	{}
-	break;
-	case InventoryLocation::CURRENT_PLAYER:
-	{
-		LocalPlayer *player = m_env.getLocalPlayer();
-		assert(player);
-		return &player->inventory;
-	}
-	break;
-	case InventoryLocation::PLAYER:
-	{
-		// Check if we are working with local player inventory
-		LocalPlayer *player = m_env.getLocalPlayer();
-		if (!player || player->getName() != loc.name)
-			return NULL;
-		return &player->inventory;
-	}
-	break;
-	case InventoryLocation::NODEMETA:
-	{
-		NodeMetadata *meta = m_env.getMap().getNodeMetadata(loc.p);
-		if(!meta)
-			return NULL;
-		return meta->getInventory();
-	}
-	break;
-	case InventoryLocation::DETACHED:
-	{
-		if (m_detached_inventories.count(loc.name) == 0)
-			return NULL;
-		return m_detached_inventories[loc.name];
-	}
-	break;
-	default:
-		FATAL_ERROR("Invalid inventory location type.");
-		break;
-	}
-	return NULL;
-}
-
 void Client::inventoryAction(InventoryAction *a)
 {
 	/*
@@ -1037,11 +790,6 @@ void Client::inventoryAction(InventoryAction *a)
 
 	// Remove it
 	delete a;
-}
-
-float Client::getAnimationTime()
-{
-	return m_animation_time;
 }
 
 /*int Client::getCrackLevel()
@@ -1073,13 +821,6 @@ void Client::setCrack(int level, v3s16 pos)
 		addUpdateMeshTaskForNode(pos, false, true);
 	}
 }*/
-
-u16 Client::getHP()
-{
-	LocalPlayer *player = m_env.getLocalPlayer();
-	assert(player);
-	return player->hp;
-}
 
 bool Client::getChatMessage(std::wstring &res)
 {
@@ -1127,49 +868,6 @@ void Client::typeChatMessage(const std::wstring &message)
 
 	// Send to others
 	sendChatMessage(message);
-}
-
-void Client::addUpdateMeshTask(v3s16 p, bool ack_to_server, bool urgent)
-{
-	// Check if the block exists to begin with. In the case when a non-existing
-	// neighbor is automatically added, it may not. In that case we don't want
-	// to tell the mesh update thread about it.
-	MapBlock *b = m_env.getMap().getBlockNoCreateNoEx(p);
-	if (b == NULL)
-		return;
-
-	m_mesh_update_manager->updateBlock(&m_env.getMap(), p, ack_to_server, urgent);
-}
-
-void Client::addUpdateMeshTaskWithEdge(v3s16 blockpos, bool ack_to_server, bool urgent)
-{
-	m_mesh_update_manager->updateBlock(&m_env.getMap(), blockpos, ack_to_server, urgent, true);
-}
-
-void Client::addUpdateMeshTaskForNode(v3s16 nodepos, bool ack_to_server, bool urgent)
-{
-	{
-		v3s16 p = nodepos;
-		infostream<<"Client::addUpdateMeshTaskForNode(): "
-				<<"("<<p.X<<","<<p.Y<<","<<p.Z<<")"
-				<<std::endl;
-	}
-
-	v3s16 blockpos = getNodeBlockPos(nodepos);
-	v3s16 blockpos_relative = blockpos * MAP_BLOCKSIZE;
-	m_mesh_update_manager->updateBlock(&m_env.getMap(), blockpos, ack_to_server, urgent, false);
-	// Leading edge
-	if (nodepos.X == blockpos_relative.X)
-		addUpdateMeshTask(blockpos + v3s16(-1, 0, 0), false, urgent);
-	if (nodepos.Y == blockpos_relative.Y)
-		addUpdateMeshTask(blockpos + v3s16(0, -1, 0), false, urgent);
-	if (nodepos.Z == blockpos_relative.Z)
-		addUpdateMeshTask(blockpos + v3s16(0, 0, -1), false, urgent);
-}
-
-void Client::updateCameraOffset(v3s16 camera_offset)
-{
-	m_mesh_update_manager->m_camera_offset = camera_offset;
 }
 
 ClientEvent *Client::getClientEvent()
@@ -1231,8 +929,8 @@ void Client::showUpdateProgressTexture(void *args, u32 progress, u32 max_progres
 void Client::afterContentReceived()
 {
 	infostream<<"Client::afterContentReceived() started"<<std::endl;
-	assert(m_itemdef_received); // pre-condition
-	assert(m_nodedef_received); // pre-condition
+    assert(m_packet_handler->itemdefReceived()); // pre-condition
+    assert(m_packet_handler->nodedefReceived()); // pre-condition
 
 	// Rebuild inherited images and recreate textures
     /*infostream<<"- Rebuilding images and textures"<<std::endl;
@@ -1280,7 +978,7 @@ void Client::afterContentReceived()
 
 	// Start mesh update thread after setting up content definitions
 	infostream<<"- Starting mesh update thread"<<std::endl;
-	m_mesh_update_manager->start();
+    m_env.getClientMap().startMeshUpdate();
 
 	m_state = LC_Ready;
     m_packet_handler->sendReady();

@@ -18,6 +18,8 @@
 #include "client/render/clouds.h"
 #include "client/ao/transformNode.h"
 #include "client/ao/animation.h"
+#include "client/ui/hud.h"
+#include "client/ui/minimap.h"
 
 const img::color8 RenderSystem::menu_sky_color = img::color8(img::PF_RGBA8, 140, 186, 250, 255);
 
@@ -76,6 +78,11 @@ void RenderSystem::setWindowIcon()
     }
 
     window->setIcon(std::shared_ptr<img::Image>(icon), g_imgmodifier);
+}
+
+Minimap *RenderSystem::getDefaultMinimap() const
+{
+    return gameui->getHud()->getMinimap();
 }
 
 void RenderSystem::activateAtlas(img::Image *img, bool basic_pool)

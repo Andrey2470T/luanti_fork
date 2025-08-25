@@ -85,7 +85,7 @@ void read_item_definition(lua_State* L, int index,
 	if (lua_istable(L, -1)) {
 		def.wear_bar_params = read_wear_bar_params(L, -1);
 	} else if (lua_isstring(L, -1)) {
-		video::SColor color;
+        img::color8 color;
 		read_color(L, -1, &color);
 		def.wear_bar_params = WearBarParams({{0.0, color}},
 				WearBarParams::BLEND_MODE_CONSTANT);
@@ -375,7 +375,7 @@ void read_object_properties(lua_State *L, int index,
 		int table = lua_gettop(L);
 		prop->colors.clear();
 		for (lua_pushnil(L); lua_next(L, table); lua_pop(L, 1)) {
-			video::SColor color(255, 255, 255, 255);
+            img::color8 color(255, 255, 255, 255);
 			read_color(L, -1, &color);
 			prop->colors.push_back(color);
 		}
@@ -417,7 +417,7 @@ void read_object_properties(lua_State *L, int index,
 	getstringfield(L, -1, "nametag", prop->nametag);
 	lua_getfield(L, -1, "nametag_color");
 	if (!lua_isnil(L, -1)) {
-		video::SColor color = prop->nametag_color;
+        img::color8 color = prop->nametag_color;
 		if (read_color(L, -1, &color))
 			prop->nametag_color = color;
 	}
@@ -425,7 +425,7 @@ void read_object_properties(lua_State *L, int index,
 	lua_getfield(L, -1, "nametag_bgcolor");
 	if (!lua_isnil(L, -1)) {
 		if (lua_toboolean(L, -1)) {
-			video::SColor color;
+            img::color8 color;
 			if (read_color(L, -1, &color))
 				prop->nametag_bgcolor = color;
 		} else {
@@ -490,7 +490,7 @@ void push_object_properties(lua_State *L, const ObjectProperties *prop)
 
 	lua_createtable(L, prop->colors.size(), 0);
 	i = 1;
-	for (const video::SColor &color : prop->colors) {
+    for (const img::color8 &color : prop->colors) {
 		push_ARGB8(L, color);
 		lua_rawseti(L, -2, i++);
 	}
@@ -1139,12 +1139,12 @@ void push_nodebox(lua_State *L, const NodeBox &box)
 }
 
 /******************************************************************************/
-void push_palette(lua_State *L, const std::vector<video::SColor> *palette)
+void push_palette(lua_State *L, const std::vector<img::color8> *palette)
 {
 	lua_createtable(L, palette->size(), 0);
 	int newTable = lua_gettop(L);
 	int index = 1;
-	std::vector<video::SColor>::const_iterator iter;
+    std::vector<img::color8>::const_iterator iter;
 	for (iter = palette->begin(); iter != palette->end(); ++iter) {
 		push_ARGB8(L, (*iter));
 		lua_rawseti(L, newTable, index);
@@ -1459,7 +1459,7 @@ void push_wear_bar_params(lua_State *L,
 	setstringfield(L, -1, "blend", WearBarParams::es_BlendMode[params.blend].str);
 
 	lua_newtable(L);
-	for (const std::pair<const f32, const video::SColor> item: params.colorStops) {
+    for (const std::pair<const f32, const img::color8> item: params.colorStops) {
 		lua_pushnumber(L, item.first); // key
 		push_ARGB8(L, item.second);
 		lua_rawset(L, -3);
@@ -1750,7 +1750,7 @@ WearBarParams read_wear_bar_params(
 		lua_State *L, int stack_idx)
 {
 	if (lua_isstring(L, stack_idx)) {
-		video::SColor color;
+        img::color8 color;
 		read_color(L, stack_idx, &color);
 		return WearBarParams(color);
 	}
@@ -1762,7 +1762,7 @@ WearBarParams read_wear_bar_params(
 	if (!check_field_or_nil(L, -1, LUA_TTABLE, "color_stops"))
 		throw LuaError("color_stops must be a table");
 
-	std::map<f32, video::SColor> colorStops;
+    std::map<f32, img::color8> colorStops;
 	// color stops table is on the stack
 	int table_values = lua_gettop(L);
 	lua_pushnil(L);
@@ -1771,7 +1771,7 @@ WearBarParams read_wear_bar_params(
 		f32 point = luaL_checknumber(L, -2);
 		if (point < 0 || point > 1)
 			throw LuaError("Wear bar color stop key out of range");
-		video::SColor color;
+        img::color8 color;
 		read_color(L, -1, &color);
 		colorStops.emplace(point, color);
 

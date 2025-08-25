@@ -11,7 +11,7 @@
 #include "client/map/clientmap.h"
 #include "client/ao/genericCAO.h"
 #include "settings.h"
-#include "client/render/wieldmesh.h"
+//#include "client/render/wieldmesh.h"
 #include "noise.h"         // easeCurve
 #include "client/event/eventsystem.h"
 #include "nodedef.h"
