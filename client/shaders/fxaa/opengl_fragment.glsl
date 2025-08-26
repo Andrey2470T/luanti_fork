@@ -1,8 +1,3 @@
-#define rendered mTexture0
-
-uniform sampler2D rendered;
-uniform vec2 mTexelSize;
-
 in vec2 sampleNW;
 in vec2 sampleNE;
 in vec2 sampleSW;
@@ -10,8 +5,10 @@ in vec2 sampleSE;
 
 #ifdef GL_ES
 in mediump vec2 vUV;
+in mediump vec2 vTexelSize;
 #else
 centroid in vec2 vUV;
+centroid in vec2 vTexelSize;
 #endif
 
 /**
@@ -111,6 +108,6 @@ out vec4 outColor;
 
 void main(void)
 {
-	outColor = fxaa(rendered, vUV, mTexelSize,
+	outColor = fxaa(rendered, vUV, vTexelSize,
 		sampleNW, sampleNE, sampleSW, sampleSE, vUV);
 }

@@ -426,6 +426,9 @@ void UISprite::draw()
 
 void UISprite::drawPart(u32 pOffset, u32 pCount)
 {
+    if (!visible)
+        return;
+
     auto vao = mesh->getVAO();
 
     u32 startVCount = 0;

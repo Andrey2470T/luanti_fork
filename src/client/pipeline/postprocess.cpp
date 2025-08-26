@@ -12,8 +12,8 @@
 #include <Render/FrameBuffer.h>
 #include "client/map/clientmap.h"
 #include "client/player/playercamera.h"
-#include "nodedef.h"
 #include "client/render/drawlist.h"
+#include "nodedef.h"
 
 PostProcessingStep::PostProcessingStep(RenderSystem *_rnd_sys, RenderSource *_source, render::Shader *shader, const std::vector<u8> &_texture_map)
     : rnd_sys(_rnd_sys)
@@ -23,6 +23,7 @@ PostProcessingStep::PostProcessingStep(RenderSystem *_rnd_sys, RenderSource *_so
     quad->setTextureMap(_texture_map);
     quad->setShader(false, shader);
     quad->configureTexturesSettings();
+    quad->set_postprocess_uniforms = true;
 }
 
 void PostProcessingStep::setRenderSource(RenderSource *_source)
@@ -44,7 +45,7 @@ void PostProcessingStep::run(PipelineContext &context)
 	if (target)
 		target->activate(context);
 
-    quad->render();
+    quad->render(context.client);
 }
 
 RenderStep *addPostProcessing(RenderPipeline *pipeline, RenderStep *previousStep, v2f scale, Client *client)
@@ -287,7 +288,7 @@ void MapPostFxStep::run(PipelineContext &context)
 
         quad->updateQuad();
         // Draw a full-screen rectangle
-        quad->render();
+        quad->render(context.client);
     }
 }
 

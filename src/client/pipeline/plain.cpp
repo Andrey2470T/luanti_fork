@@ -34,7 +34,7 @@ void UpscaleStep::run(PipelineContext &context)
     lowres_image->updateQuad(context.target_size, lowres->getSize());
 
     m_target->activate(context);
-    lowres_image->render();
+    lowres_image->render(context.client);
 }
 
 static v2f getDownscaleFactor()

@@ -6,8 +6,6 @@
 #include "interlaced.h"
 #include "postprocess.h"
 #include "client/client.h"
-#include "client/shader.h"
-#include "client/camera.h"
 #include "client/render/renderer.h"
 #include "client/media/resource.h"
 

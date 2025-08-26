@@ -35,7 +35,7 @@ void DrawImageStep::run(PipelineContext &context)
 
     auto wnd_size = rnd_sys->getWindowSize();
     screen_image->updateQuad(v2u(offset.X * wnd_size.X, offset.Y * wnd_size.Y));
-    screen_image->render();
+    screen_image->render(context.client);
 }
 
 void populateSideBySidePipeline(RenderPipeline *pipeline, Client *client, bool horizontal, bool flipped, v2f &virtual_size_scale)
@@ -44,9 +44,8 @@ void populateSideBySidePipeline(RenderPipeline *pipeline, Client *client, bool h
 	static const u8 TEXTURE_RIGHT = 1;
 	static const u8 TEXTURE_DEPTH = 2;
 
-	auto driver = client->getSceneManager()->getVideoDriver();
-    img::PixelFormat color_format = selectColorFormat(driver);
-    img::PixelFormat depth_format = selectDepthFormat(driver);
+    img::PixelFormat color_format = selectColorFormat();
+    img::PixelFormat depth_format = selectDepthFormat(32, false);
 
 	v2f offset;
 	if (horizontal) {

@@ -57,7 +57,8 @@ void GameUI::init()
         rndsys->getRenderer(), cache);
 	u16 chat_font_size = g_settings->getU16("chat_font_size");
 	if (chat_font_size != 0) {
-        chattext->setOverrideFont(font_mgr->getFont(render::FontMode::GRAY, render::FontStyle::NORMAL, std::clamp<u16>(chat_font_size, 5, 72)));
+        chattext->setOverrideFont(font_mgr->getFont(
+            render::FontMode::GRAY, render::FontStyle::NORMAL, std::clamp<u16>(chat_font_size, 5, 72)));
 	}
 
 	// Infotext of nodes and objects.
@@ -211,6 +212,8 @@ void GameUI::update(const RunStats &stats, Client *client, MapDrawControl *draw_
 
 	// Hide chat when disabled by server or when console is visible
     chattext->setVisible(isChatVisible() && !chat_console->isVisible() && (player->hud_flags & HUD_FLAG_CHAT_VISIBLE));
+
+    hud->setHudVisible(flags & GUIF_SHOW_HUD);
 }
 
 void GameUI::showTranslatedStatusText(const char *str)
@@ -314,4 +317,15 @@ void GameUI::clearText()
     statustext->setText(L"");
     chattext->setText(L"");
     profilertext->setText(L"");
+}
+
+void GameUI::render()
+{
+    debugtext->drawBank();
+    infotext->draw();
+    statustext->draw();
+    chattext->draw();
+    profilertext->draw();
+
+    hud->render();
 }

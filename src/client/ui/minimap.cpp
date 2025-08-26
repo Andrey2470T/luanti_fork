@@ -6,7 +6,7 @@
 #include <cmath>
 #include "client/client.h"
 #include "nodedef.h"
-#include "clientmap.h"
+#include "client/map/clientmap.h"
 #include "settings.h"
 #include "mapblock.h"
 #include "gettext.h"
@@ -539,21 +539,19 @@ void Minimap::drawMinimap(recti rect)
 
     renderer->setRenderState(false);
 
-    ctxt->setActiveUnit(0, minimap_texture);
-    ctxt->setActiveUnit(1, data->heightmap_texture);
-
     matrix4 matrix;
     matrix.makeIdentity();
 
     if (data->mode.type == MINIMAP_TYPE_SURFACE) {
         renderer->setShader(m_minimap_shader);
         m_minimap_shader->setUniform3Float("mYawVec", getYawVec());
-        m_minimap_shader->setUniformInt("mBaseTexture", 0);
-        m_minimap_shader->setUniformInt("mHeightmap", 1);
 	} else {
         renderer->setDefaultShader(true, false);
         renderer->setDefaultUniforms(1.0f, 1, 0.5f, img::BM_COUNT);
 	}
+	
+	ctxt->setActiveUnit(0, minimap_texture);
+    ctxt->setActiveUnit(1, data->heightmap_texture);
 
 	if (data->minimap_shape_round)
         matrix.setRotationDegrees(v3f(0, 0, 360 - m_angle));
@@ -568,9 +566,9 @@ void Minimap::drawMinimap(recti rect)
 	// Draw overlay
     render::Texture2D *minimap_overlay = data->minimap_shape_round ?
 		data->minimap_overlay_round : data->minimap_overlay_square;
-    ctxt->setActiveUnit(0, minimap_overlay);
     renderer->setDefaultShader(true, false);
     renderer->setDefaultUniforms(1.0f, 1, 0.5f, img::BM_COUNT);
+    ctxt->setActiveUnit(0, minimap_overlay);
     drawPart();
 
 	// Draw player marker on minimap

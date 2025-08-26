@@ -3,7 +3,6 @@
 
 uniform sampler2D current;
 uniform sampler2D previous;
-uniform vec2 mTexelSize;
 uniform mediump float mBloomRadius;
 
 #ifdef GL_ES
@@ -16,7 +15,8 @@ out vec4 outColor;
 
 void main(void)
 {
-	vec2 offset = mBloomRadius * mTexelSize;
+    vec2 texelSize = 1.0f / textureSize(rendered, 0);
+	vec2 offset = mBloomRadius * texelSize;
 
 	vec3 a = texture2D(previous, vUV + vec2(-1., -1.) * offset).rgb;
 	vec3 b = texture2D(previous, vUV + vec2(0., -1.) * offset).rgb;

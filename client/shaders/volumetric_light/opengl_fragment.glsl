@@ -13,10 +13,8 @@ uniform lowp float mVolumetricLightStrength;
 
 uniform vec3 mDayLight;
 #ifdef ENABLE_DYNAMIC_SHADOWS
-#ifdef ENABLE_DYNAMIC_SHADOWS
 #include <shadows>
 #define lightDirection mFogParams.lightDirection
-#endif
 #else
 const vec3 lightDirection = vec3(0.0, -1.0, 0.0);
 #endif

@@ -5,6 +5,7 @@
 
 #include "base.h"
 #include "client/client.h"
+#include "client/mesh/lighting.h"
 #include "client/player/playercamera.h"
 #include "constants.h"
 #include "settings.h"
@@ -20,6 +21,7 @@
 #include "client/ui/batcher2d.h"
 #include "client/mesh/meshbuffer.h"
 #include "client/render/renderer.h"
+#include "client/render/sky.h"
 
 OffsetCameraStep::OffsetCameraStep(f32 eye_offset)
 {
@@ -64,7 +66,7 @@ void DrawHUD::run(PipelineContext &context)
         //    context.shadow_renderer->drawDebug();
 
         auto rnd_sys = context.client->getRenderSystem();
-        rnd_sys->getGameUI()->getHud()->render();
+        rnd_sys->getGameUI()->render();
 
         context.client->getEnv().getLocalPlayer()->getCamera()->drawNametags();
     }
@@ -101,6 +103,10 @@ ScreenQuad::ScreenQuad(RenderSystem *_rndsys, RenderSource *_textures)
     quad->uploadVertexData();
 
     prev_size = wnd_size;
+
+    user_exposure_compensation = g_settings->getFloat("exposure_compensation", -1.0f, 1.0f);
+    bloom_enabled = g_settings->getBool("enable_bloom");
+    volumetric_light_enabled = g_settings->getBool("enable_volumetric_lighting");
 }
 
 void ScreenQuad::updateQuad(std::optional<v2u> offset, std::optional<v2u> size)
@@ -163,7 +169,90 @@ void ScreenQuad::setBilinearFilter(u8 index, bool value)
     texture->updateParameters(settings, false, false);
 }
 
-void ScreenQuad::render()
+void ScreenQuad::setPostprocessUniforms(Client *client)
+{
+    auto rnd = rndsys->getRenderer();
+    Shader *curshader = rnd->getShader();
+
+    u32 daynight_ratio = (f32)client->getEnv().getDayNightRatio();
+    img::colorf sunlight;
+    get_sunlight_color(&sunlight, daynight_ratio);
+    curshader->setUniform3Float("mDayLight", v3f(sunlight.R(), sunlight.G(), sunlight.B()));
+
+    f32 animation_timer_delta_f = (f32)client->getEnv().getFrameTimeDelta() / 100000.f;
+    curshader->setUniformFloat("mAnimationTimerDelta", animation_timer_delta_f);
+
+    auto player = client->getEnv().getLocalPlayer();
+    const auto &lighting = player->getLighting();
+
+    const AutoExposure &exposure_params = lighting.exposure;
+    curshader->setUniformFloat("mExposureParams.luminanceMin", std::pow(2.0f, exposure_params.luminance_min));
+    curshader->setUniformFloat("mExposureParams.luminanceMax", std::pow(2.0f, exposure_params.luminance_max));
+    curshader->setUniformFloat("mExposureParams.exposureCorrection", exposure_params.exposure_correction);
+    curshader->setUniformFloat("mExposureParams.speedDarkBright", exposure_params.speed_dark_bright);
+    curshader->setUniformFloat("mExposureParams.speedBrightDark", exposure_params.speed_bright_dark);
+    curshader->setUniformFloat("mExposureParams.centerWeightPower", exposure_params.center_weight_power);
+    curshader->setUniformFloat("mExposureParams.compensationFactor", powf(2.f, user_exposure_compensation));
+
+    if (bloom_enabled) {
+        f32 intensity = std::max(lighting.bloom_intensity, 0.0f);
+        curshader->setUniformFloat("mBloomIntensity", intensity);
+
+        f32 strength_factor = std::max(lighting.bloom_strength_factor, 0.0f);
+        curshader->setUniformFloat("mBloomStrength", strength_factor);
+        f32 radius = std::max(lighting.bloom_radius, 0.0f);
+        curshader->setUniformFloat("mBloomRadius", radius);
+    }
+
+    f32 saturation = lighting.saturation;
+    curshader->setUniformFloat("mSaturation", saturation);
+
+    if (volumetric_light_enabled) {
+        // Map directional light to screen space
+        auto camera = player->getCamera();
+        matrix4 transform = camera->getProjectionMatrix();
+        transform *= camera->getViewMatrix();
+
+        auto sky = rndsys->getSky();
+        auto skyparams = sky->getSkyParams();
+        auto sun = sky->getSun();
+        if (sun->getVisible()) {
+            v3f sun_direction = sun->getDirection(sky->getTimeOfDay(), skyparams.body_orbit_tilt);
+            v3f sun_position = camera->getPosition() + sun_direction * 10000.f;
+            transform.transformVect(sun_position);
+            sun_position.normalize();
+
+            curshader->setUniform3Float("mSunPositionScreen", sun_position);
+
+            f32 sun_brightness = std::clamp(107.143f * sun_direction.Y, 0.f, 1.f);
+            curshader->setUniformFloat("mSunBrightness", sun_brightness);
+        } else {
+            curshader->setUniform3Float("mSunPositionScreen", v3f(0.f, 0.f, -1.f));
+            curshader->setUniformFloat("mSunBrightness", 0.0f);
+        }
+
+        auto moon = sky->getMoon();
+        if (moon->getVisible()) {
+            v3f moon_direction = moon->getDirection(sky->getTimeOfDay(), skyparams.body_orbit_tilt);
+            v3f moon_position = camera->getPosition() + moon_direction * 10000.f;
+            transform.transformVect(moon_position);
+            moon_position.normalize();
+
+            curshader->setUniform3Float("mMoonPositionScreen", moon_position);
+
+            f32 moon_brightness = std::clamp(107.143f * moon_direction.Y, 0.f, 1.f);
+            curshader->setUniformFloat("mMoonBrightness", moon_brightness);
+        } else {
+            curshader->setUniform3Float("mMoonPositionScreen", v3f(0.f, 0.f, -1.f));
+            curshader->setUniformFloat("mMoonBrightness", 0.0f);
+        }
+
+        f32 volumetric_light_strength = lighting.volumetric_light_strength;
+        curshader->setUniformFloat("mVolumetricLightStrength", volumetric_light_strength);
+    }
+}
+
+void ScreenQuad::render(Client *client)
 {
     auto rnd = rndsys->getRenderer();
     rnd->setRenderState(false);
@@ -180,6 +269,9 @@ void ScreenQuad::render()
         ctxt->setActiveUnit(i, textures->getTexture(texture_map.at(i)));
 
     rnd->setDefaultUniforms(1.0f, 1);
+
+    if (set_postprocess_uniforms)
+        setPostprocessUniforms(client);
 
     rnd->draw(quad.get());
 }

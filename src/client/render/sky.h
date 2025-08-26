@@ -186,6 +186,28 @@ public:
 		return getBgColor();
 	}
 
+    f32 getTimeOfDay() const
+    {
+        return m_time_of_day;
+    }
+
+    Sun *getSun() const
+    {
+        return m_sun.get();
+    }
+    Moon *getMoon() const
+    {
+        return m_moon.get();
+    }
+    Stars *getStars() const
+    {
+        return m_stars.get();
+    }
+    const SkyboxParams &getSkyParams() const
+    {
+        return m_sky_params;
+    }
+
 private:
     RenderSystem *m_rndsys;
     ResourceCache *m_cache;

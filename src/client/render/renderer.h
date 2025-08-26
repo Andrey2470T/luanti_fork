@@ -79,6 +79,10 @@ public:
 
     void setTexture(Texture2D *tex);
     void setShader(Shader *shd);
+    Shader *getShader() const
+    {
+        return curShader;
+    }
     void setDefaultUniforms(f32 thickness=1.0f, u8 alphaDiscard=0, f32 alphaRef=0.5f, img::BlendMode blendMode=img::BM_COUNT);
 
     void setUniformBlocks();

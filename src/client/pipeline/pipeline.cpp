@@ -4,7 +4,7 @@
 
 #include "pipeline.h"
 #include "client/client.h"
-#include "client/hud.h"
+#include "client/ui/hud.h"
 #include <Render/Texture2D.h>
 #include <Render/TextureCubeMap.h>
 #include <Render/FrameBuffer.h>
@@ -131,7 +131,7 @@ bool TextureBuffer::ensureTexture(render::Texture **texture, const TextureDefini
             if (!definition.clear)
                 *texture = (render::Texture *)new render::Texture2D(definition.name, size.X, size.Y, definition.format, definition.msaa);
             else
-                *texture = (render::Texture *)new render::Texture2D(definition.name, std::make_unique<img::Image>(definition.format, size.X, size.Y)));
+                *texture = (render::Texture *)new render::Texture2D(definition.name, std::make_unique<img::Image>(definition.format, size.X, size.Y));
         }
         else {
             if (!definition.clear)
@@ -188,7 +188,7 @@ void TextureBufferOutput::activate(PipelineContext &context)
 	}
 
     render::Texture *depth_texture = nullptr;
-    render::CubeMapFace depth_face;
+    render::CubeMapFace depth_face = render::CMF_COUNT;
     if (depth_stencil.first != NO_DEPTH_TEXTURE) {
         depth_texture = buffer->getTexture(depth_stencil.first);
         depth_face = (render::CubeMapFace)depth_stencil.second;

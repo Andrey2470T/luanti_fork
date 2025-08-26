@@ -68,7 +68,9 @@ public:
     void removeHUDElement(u32 id);
     void updateHUDElement(u32 id);
 
-    Minimap *getMinimap() const;
+    Minimap *getMinimap();
+
+    void setHudVisible(bool visible);
 
     void render();
 private:

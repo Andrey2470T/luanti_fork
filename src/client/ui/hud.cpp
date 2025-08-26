@@ -169,12 +169,20 @@ void Hud::removeHUDElement(u32 id)
     hudsprites.erase(found_elem);
 }
 
-Minimap *Hud::getMinimap() const
+Minimap *Hud::getMinimap()
 {
     if (!g_settings->getBool("enable_minimap"))
         return nullptr;
 
-    return dynamic_cast<HudMinimap *>(hudsprites[builtinMinimapID]->get())->getUnderlyingMinimap();
+    return dynamic_cast<HudMinimap *>(hudsprites[builtinMinimapID].get())->getUnderlyingMinimap();
+}
+
+void Hud::setHudVisible(bool visible)
+{
+    crosshair_hidden = !visible;
+
+    for (auto &sprite : hudsprites)
+        sprite.second->setVisible(visible);
 }
 
 void Hud::render()

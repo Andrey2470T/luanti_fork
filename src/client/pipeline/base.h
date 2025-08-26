@@ -74,7 +74,13 @@ class ScreenQuad
     bool use_default = true;
 
     v2u prev_size;
+
+    f32 user_exposure_compensation;
+    bool bloom_enabled;
+    bool volumetric_light_enabled;
 public:
+    bool set_postprocess_uniforms = false;
+
     ScreenQuad(RenderSystem *_rndsys, RenderSource *_textures);
 
     void updateQuad(std::optional<v2u> offset=std::nullopt, std::optional<v2u> size=std::nullopt);
@@ -88,7 +94,9 @@ public:
     void configureTexturesSettings();
     void setBilinearFilter(u8 index, bool value);
 
-    void render();
+    void setPostprocessUniforms(Client *client);
+
+    void render(Client *client);
 };
 
 RenderStep *create3DStage(Client *client, v2f scale);

@@ -69,6 +69,8 @@ bool Camera::isNecessaryUpdateDrawList()
 
     if (previous_block != current_block || dir_diff > 0.2f || m_last_offset != m_offset)
         return true;
+
+    return false;
 }
 
 void Camera::updateMatrices()

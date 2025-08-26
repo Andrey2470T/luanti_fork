@@ -15,8 +15,6 @@ struct ExposureParams {
 uniform sampler2D rendered;
 uniform sampler2D bloom;
 
-uniform vec2 mTexelSize;
-
 uniform ExposureParams mExposureParams;
 uniform lowp float mBloomIntensity;
 uniform lowp float mSaturation;
@@ -108,10 +106,11 @@ out vec4 outColor;
 void main(void)
 {
 #ifdef ENABLE_SSAA
+    vec2 texelSize = 1.0f / textureSize(rendered, 0);
 	vec4 color = vec4(0.);
 	for (float dx = 1.; dx < SSAA_SCALE; dx += 2.)
 	for (float dy = 1.; dy < SSAA_SCALE; dy += 2.)
-		color += texture2D(rendered, vUV + texelSize0 * vec2(dx, dy)).rgba;
+		color += texture2D(rendered, vUV + texelSize * vec2(dx, dy)).rgba;
 	color /= SSAA_SCALE * SSAA_SCALE / 4.;
 #else
 	vec4 color = texture2D(rendered, vUV).rgba;

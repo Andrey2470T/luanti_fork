@@ -109,6 +109,9 @@ void UITextSprite::setText(const EnrichedString &_text)
 
 void UITextSprite::draw()
 {
+    if (!visible)
+        return;
+
     renderer->setRenderState(false);
     renderer->setDefaultShader(true, true);
     renderer->setDefaultUniforms(1.0f, 1, 0.5f, img::BM_COUNT);

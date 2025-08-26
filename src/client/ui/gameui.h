@@ -105,6 +105,8 @@ public:
 
 	void clearText();
 
+    void render();
+
 private:
     void toggleFlag(GameUIFlags flag)
     {
