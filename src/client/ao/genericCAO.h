@@ -121,7 +121,7 @@ public:
 
     const matrix4 &getAbsoluteMatrix() const;
 
-    void updateMatrices();
+    virtual void updateMatrices();
 
     bool isLocalPlayer() const override
     {

@@ -118,6 +118,7 @@ public:
 
     void step(float dtime, ClientEnvironment *env) override;
 
+    void updateMatrices() override;
     void updateVertexColor(bool update_light);
 
 	/* Get light position(s).

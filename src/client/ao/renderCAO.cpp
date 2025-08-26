@@ -50,8 +50,9 @@ RenderCAO::~RenderCAO()
         m_nametag = nullptr;
     }
 
-    if (m_marker.has_value() && m_client->getMinimap())
-        m_client->getMinimap()->removeMarker(m_marker.value());
+    auto minimap = m_rndsys->getDefaultMinimap();
+    if (m_marker.has_value() && minimap)
+        minimap->removeMarker(m_marker.value());
 }
 
 bool RenderCAO::getCollisionBox(aabbf *toset) const
@@ -197,9 +198,7 @@ void RenderCAO::setAttachment(object_t parent_id, const std::string &bone,
 
 void RenderCAO::step(float dtime, ClientEnvironment *env)
 {
-    // Handle model animations and update positions instantly to prevent lags
-
-    // MOVE TO RENDER_CAO.H/CPP (OR PLAYER_CAO.H/CPP)
+    /* Handle model animations and update positions instantly to prevent lags */
 
     if (m_is_local_player) {
         LocalPlayer *player = m_env->getLocalPlayer();
@@ -286,6 +285,8 @@ void RenderCAO::step(float dtime, ClientEnvironment *env)
         }
     }
 
+    /* Update model */
+
     if (m_visuals_expired) {
         m_visuals_expired = false;
 
@@ -312,7 +313,8 @@ void RenderCAO::step(float dtime, ClientEnvironment *env)
         }*/
     }
 
-    // Update the data texture info
+    /* Update the data texture info */
+
     auto skeleton = m_model->getSkeleton();
 
     if (skeleton) {
@@ -320,9 +322,12 @@ void RenderCAO::step(float dtime, ClientEnvironment *env)
             skeleton->updateTileLayer(m_model->getMesh()->getBufferLayer(0, i).first);
     }
 
-    // Make sure m_is_visible is always applied
+    /* Update visibility */
 
     setVisible(m_is_visible);
+
+
+    /* Movement and collision */
 
     if(getParent()) // Attachments should be glued to their parent by Irrlicht
     {
@@ -393,7 +398,9 @@ void RenderCAO::step(float dtime, ClientEnvironment *env)
             m_anim_frame = 0;
     }*/
 
-    updateTexturePos();
+    //updateTexturePos();
+
+    /* Update the model textures */
 
     if(m_reset_textures_timer >= 0)
     {
@@ -403,6 +410,8 @@ void RenderCAO::step(float dtime, ClientEnvironment *env)
             updateAppearance(m_previous_texture_modifier);
         }
     }
+
+    /* Automatic rotation update */
 
     if (std::abs(m_prop.automatic_rotate) > 0.001f) {
         // This is the child node's rotation. It is only used for automatic_rotate.
@@ -431,9 +440,60 @@ void RenderCAO::step(float dtime, ClientEnvironment *env)
         updateMatrices();
     }
 
+    /* Make the local player model invisible in the first-person view */
+
     updateMeshCulling();
 
+    /* Update bones transformations */
+
     updateBones(dtime);
+}
+
+void RenderCAO::updateMatrices()
+{
+    v3f pos = pos_translator.val_current - intToFloat(m_env->getCameraOffset(), BS);
+    v3f rot = m_is_local_player ? -m_rotation : -rot_translator.val_current;
+    auto camera = m_client->getEnv().getLocalPlayer()->getCamera();
+    v3f cam_dir = camera->getDirection();
+    Quaternion cam_q(cam_dir);
+
+    auto node = getAttachmentNode();
+    if (!node) {
+        m_rel_transform.setTranslation(pos);
+
+        if (m_prop.visual == "sprite")
+            rot = camera->getRotation();
+
+        matrix4 R;
+        R.setRotationDegrees(rot);
+        R = R.getTransposed();
+
+        m_rel_transform *= R;
+
+        m_abs_transform = m_rel_transform;
+    }
+    else {
+        node->Position = pos;
+
+        if (m_prop.visual != "sprite") {
+            Quaternion rot_q;
+            rot_q.fromEuler(rot);
+            node->Rotation = rot_q;
+        }
+        else {
+            v3f cam_dir = camera->getDirection();
+            Quaternion cam_q(cam_dir);
+
+            auto parent = node->getParent();
+
+            Quaternion parent_q = parent->Rotation;
+            parent_q.makeInverse();
+
+            node->Rotation = cam_q * parent_q;
+        }
+
+        node->updateNodeAndChildren();
+    }
 }
 
 

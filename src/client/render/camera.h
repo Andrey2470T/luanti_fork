@@ -68,6 +68,10 @@ public:
     {
         return m_up_vector;
     }
+    v3f getRotation() const
+    {
+        return m_rotation;
+    }
 
     v3s16 getOffset() const
 	{
