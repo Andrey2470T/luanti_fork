@@ -1,4 +1,5 @@
 #include "resource.h"
+#include "client/render/renderer.h"
 #include "porting.h"
 #include "settings.h"
 #include "Image/ImageLoader.h"
@@ -19,7 +20,7 @@ std::vector<std::string> getTexturesDefaultPaths()
     return paths;
 }
 
-static std::vector<std::string> getShaderDefaultPaths()
+std::vector<std::string> getShaderDefaultPaths()
 {
     std::vector<std::string> paths;
     paths.push_back(g_settings->get("shader_path"));
@@ -33,7 +34,7 @@ static std::vector<std::string> getShaderDefaultPaths()
     return paths;
 }
 
-static std::string texturePathFinder(const std::string &name)
+std::string texturePathFinder(const std::string &name)
 {
     auto defpaths = getTexturesDefaultPaths();
 
@@ -47,7 +48,7 @@ static std::string texturePathFinder(const std::string &name)
     return "";
 }
 
-static std::string shaderPathFinder(const std::string &name)
+std::string shaderPathFinder(const std::string &name)
 {
     auto defpaths = getShaderDefaultPaths();
 
@@ -73,7 +74,8 @@ std::string fallbackPathFinder(const std::string &name)
 }
 
 ResourceCache::ResourceCache()
-    : loader(std::make_unique<ResourceLoader>())
+    : loader(std::make_unique<ResourceLoader>()),
+      texgen(std::make_unique<TextureGenerator>(this, g_imgmodifier))
 {
     auto texDefPaths = getTexturesDefaultPaths();
     auto shaderDefPaths = getShaderDefaultPaths();

@@ -3,6 +3,7 @@
 #include "util/string.h"
 #include "log.h"
 #include "settings.h"
+#include "resource.h"
 
 bool TexModParser::determineModifier(TextureGenerator *texgen, img::Image *dest, const std::string &mod)
 {
@@ -197,7 +198,7 @@ bool TextureGenerator::generatePart(const std::string &texmod_str_part, img::Ima
 
     // This is either an image or invalid name
     if (texmod_str_part[0] != '[') {
-        img::Image *img = resCache->getOrLoad<img::Image>(ResourceType::IMAGE, texmod_str_part);
+        img::Image *img = resCache->getOrLoad<img::Image>(ResourceType::IMAGE, texmod_str_part, true);
 
         if (!img) {
             if (texmod_str_part.empty())
@@ -206,8 +207,6 @@ bool TextureGenerator::generatePart(const std::string &texmod_str_part, img::Ima
             errorstream << "TextureGenerator::generatePart(): Could not load image \""
 			    << texmod_str_part << "\" while building texture; "
 			    "Creating a dummy image" << std::endl;
-
-            img = createDummyImage();
         }
 
         if (!base_img) {
@@ -336,15 +335,6 @@ img::Image *TextureGenerator::createInventoryCubeImage(
                 });
 
     return res_img;
-}
-
-img::Image *TextureGenerator::createDummyImage()
-{
-    img::color8 randomColor(img::PF_RGBA8,
-        myrand()%256, myrand()%256,myrand()%256
-    );
-
-    return new img::Image(img::PF_RGBA8, 1, 1, randomColor);
 }
 
 img::Image *TextureGenerator::createCrack(img::Image *img, s32 frame_index,

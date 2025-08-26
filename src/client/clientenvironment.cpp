@@ -20,6 +20,7 @@
 #include "client/render/particles.h"
 #include "client/render/drawlist.h"
 #include "inventorymanager.h"
+#include "client/render/atlas.h"
 
 /*
 	ClientEnvironment
@@ -73,6 +74,12 @@ void ClientEnvironment::step(float dtime)
     m_animation_time += dtime;
     if(m_animation_time > 60.0) m_animation_time -= 60.0;
 
+    auto rnd_sys = m_client->getRenderSystem();
+
+    /* Animate both GUI and 3D atlases */
+    rnd_sys->getPool(false)->updateAnimatedTiles(m_animation_time);
+    rnd_sys->getPool(true)->updateAnimatedTiles(m_animation_time);
+
 	/* Step time of day */
 	stepTimeOfDay(dtime);
 
@@ -115,7 +122,7 @@ void ClientEnvironment::step(float dtime)
 	m_ao_manager.step(dtime, cb_state);
 
     /* Step particle manager */
-    m_client->getRenderSystem()->getParticleManager()->step(dtime);
+    rnd_sys->getParticleManager()->step(dtime);
 
     /* Step and handle simple objects */
     /*g_profiler->avg("ClientEnv: CSO count [#]", m_simple_objects.size());

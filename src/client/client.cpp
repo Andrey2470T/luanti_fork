@@ -932,18 +932,6 @@ void Client::afterContentReceived()
     assert(m_packet_handler->itemdefReceived()); // pre-condition
     assert(m_packet_handler->nodedefReceived()); // pre-condition
 
-	// Rebuild inherited images and recreate textures
-    /*infostream<<"- Rebuilding images and textures"<<std::endl;
-	m_rendering_engine->draw_load_screen(wstrgettext("Loading textures..."),
-			guienv, m_tsrc, 0, 70);
-    m_tsrc->rebuildImagesAndTextures();
-
-	// Rebuild shaders
-	infostream<<"- Rebuilding shaders"<<std::endl;
-	m_rendering_engine->draw_load_screen(wstrgettext("Rebuilding shaders..."),
-			guienv, m_tsrc, 0, 71);
-    m_shsrc->rebuildShaders();*/
-
     auto loadscreen = m_render_system->getLoadScreen();
     v2u wndsize = m_render_system->getWindowSize();
     bool enable_clouds = g_settings->getBool("menu_clouds");

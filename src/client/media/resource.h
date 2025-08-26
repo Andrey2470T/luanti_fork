@@ -8,6 +8,9 @@
 #include "FilesystemVersions.h"
 #include "threading/mutex_auto_lock.h"
 #include <Render/TTFont.h>
+#include "util/numeric.h"
+#include <Render/Texture2D.h>
+#include "texture_modifiers.h"
 
 enum class ResourceType
 {
@@ -21,6 +24,9 @@ enum class ResourceType
 };
 
 std::vector<std::string> getTexturesDefaultPaths();
+std::vector<std::string> getShaderDefaultPaths();
+std::string texturePathFinder(const std::string &name);
+std::string shaderPathFinder(const std::string &name);
 std::string fallbackPathFinder(const std::string &name);
 
 template <class T>
@@ -72,6 +78,8 @@ class ResourceCache
     std::unique_ptr<ResourceLoader> loader;
 
     std::mutex resource_mutex;
+
+    std::unique_ptr<TextureGenerator> texgen;
 public:
     ResourceCache();
 
@@ -80,7 +88,8 @@ public:
     template <class T>
     T *getByID(ResourceType _type, u32 _id);
     template<class T>
-    T *getOrLoad(ResourceType _type, const std::string &_name);
+    T *getOrLoad(ResourceType _type, const std::string &_name,
+        bool apply_modifiers=false, bool load_for_mesh=false, bool apply_fallback=false);
 
     template<class T>
     u32 cacheResource(ResourceType _type, T *res, const std::string &name="");
@@ -89,6 +98,20 @@ public:
     void clearResource(ResourceType _type, u32 id);
     template<class T>
     void clearResource(ResourceType _type, T *res);
+
+    img::Image *createDummyImage()
+    {
+        img::color8 randomColor(img::PF_RGBA8,
+            myrand()%256, myrand()%256,myrand()%256
+        );
+
+        return new img::Image(img::PF_RGBA8, 1, 1, randomColor);
+    }
+    render::Texture2D *createDummyTexture()
+    {
+        auto dummyImg = createDummyImage();
+        return new render::Texture2D("Unknown", std::unique_ptr<img::Image>(dummyImg));
+    }
 };
 
 
@@ -246,14 +269,33 @@ T *ResourceCache::getByID(ResourceType _type, u32 _id)
 }
 
 template <class T>
-T *ResourceCache::getOrLoad(ResourceType _type, const std::string &_name)
+T *ResourceCache::getOrLoad(ResourceType _type, const std::string &_name,
+    bool apply_modifiers, bool load_for_mesh, bool apply_fallback)
 {
     MutexAutoLock lock(resource_mutex);
     switch (_type) {
-    case ResourceType::IMAGE:
-        return images->getOrLoad(_name);
-    case ResourceType::TEXTURE:
-        return textures->getOrLoad(_name);
+    case ResourceType::IMAGE: {
+        img::Image *img = nullptr;
+        if (!apply_modifiers)
+            img = images->getOrLoad(_name);
+        else {
+            if (load_for_mesh)
+                img = texgen->generateForMesh(_name);
+            else
+                img = texgen->generate(_name);
+        }
+
+        if (!img && apply_fallback)
+            img = createDummyImage();
+        return img;
+    }
+    case ResourceType::TEXTURE: {
+        auto tex = textures->getOrLoad(_name);
+
+        if (!tex && apply_fallback)
+            tex = createDummyTexture();
+        return tex;
+    }
     case ResourceType::SHADER:
         return shaders->getOrLoad(_name);
     case ResourceType::MODEL:

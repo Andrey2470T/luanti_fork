@@ -21,8 +21,6 @@ class Client;
 #include "util/pointabilities.h"
 
 class IItemDefManager;
-class ITextureSource;
-class IShaderSource;
 class IGameDef;
 class NodeResolver;
 #if BUILD_UNITTESTS
@@ -165,7 +163,7 @@ enum WorldAlignMode : u8 {
 	WORLDALIGN_FORCE_NODEBOX,
 };
 
-class TextureSettings {
+class ImageSettings {
 public:
 	LeavesStyle leaves_style;
 	WorldAlignMode world_aligned_mode;
@@ -175,7 +173,7 @@ public:
 	bool connected_glass;
 	bool enable_minimap;
 
-	TextureSettings() = default;
+    ImageSettings() = default;
 
 	void readSettings();
 };
@@ -356,7 +354,7 @@ struct ContentFeatures
 	// The color of the node.
     img::color8 color;
 	std::string palette_name;
-    std::vector<img::color8> *palette;
+    img::Palette *palette;
 	// Used for waving leaves/plants
 	u8 waving;
 	// for NDT_CONNECTED pairing
@@ -453,7 +451,6 @@ struct ContentFeatures
 	*/
 
 	ContentFeatures();
-	~ContentFeatures();
 	void reset();
 	void serialize(std::ostream &os, u16 protocol_version) const;
 	void deSerialize(std::istream &is, u16 protocol_version);
@@ -508,8 +505,7 @@ struct ContentFeatures
 	}
 
 #if CHECK_CLIENT_BUILD()
-	void updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc,
-        Client *client, const TextureSettings &tsettings);
+    void updateTextures(Client *client, const ImageSettings &tsettings);
 #endif
 
 private:
@@ -537,7 +533,6 @@ public:
 	 * \ref CONTENT_AIR, \ref CONTENT_UNKNOWN and \ref CONTENT_IGNORE.
 	 */
 	NodeDefManager();
-	~NodeDefManager();
 
 	/*!
 	 * Returns the properties for the given content type.

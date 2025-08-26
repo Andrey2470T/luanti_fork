@@ -1,12 +1,13 @@
 #pragma once
 
-#include "Image/ImageModifier.h"
-#include "resource.h"
+#include <Image/ImageModifier.h>
+
 
 #define PARSE_FUNC(MODIFIER_NAME) \
     static bool parse##MODIFIER_NAME(TextureGenerator *texgen, img::Image *dest, const std::string &mod)
 
 class TextureGenerator;
+class ResourceCache;
 
 class TexModParser
 {
@@ -71,8 +72,6 @@ private:
 
     img::Image *createInventoryCubeImage(
         img::Image *img1, img::Image *img2, img::Image *img3);
-    
-    img::Image *createDummyImage();
 
     img::Image *createCrack(img::Image *img, s32 frame_index,
 		v2u size, u8 tiles);

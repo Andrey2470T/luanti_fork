@@ -158,16 +158,12 @@ img::Image *AtlasPool::addTile(const std::string &name)
 {
     if (type != AtlasType::RECTPACK2D)
         return nullptr;
-    auto img = cache->getOrLoad<img::Image>(ResourceType::IMAGE, name);
+    auto img = cache->getOrLoad<img::Image>(ResourceType::IMAGE, name, true, true, true);
     auto imgIt = std::find(images.begin(), images.end(), img);
 
     // Add only unique tiles
     if (imgIt != images.end())
         return *imgIt;
-
-    // Don't allow to add new tiles if the atlas building was before
-    if (!atlases.empty())
-        return nullptr;
 
     images.emplace_back(img);
 
