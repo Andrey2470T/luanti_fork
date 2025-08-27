@@ -3,10 +3,10 @@
 // This file is part of the "Irrlicht Engine".
 // For conditions of distribution and use, see copyright notice in irrlicht.h
 
-#include "CGUIEnvironment.h"
+#include "guiEnvironment.h"
 
 #include "GUISkin.h"
-#include "CGUIButton.h"
+#include "guiButton.h"
 #include "CGUIScrollBar.h"
 #include <Render/TTFont.h>
 #include "CGUISpriteBank.h"

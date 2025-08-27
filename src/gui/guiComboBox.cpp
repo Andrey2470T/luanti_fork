@@ -2,13 +2,13 @@
 // This file is part of the "Irrlicht Engine".
 // For conditions of distribution and use, see copyright notice in irrlicht.h
 
-#include "CGUIComboBox.h"
+#include "guiComboBox.h"
 
 #include "IGUIEnvironment.h"
 #include "GUISkin.h"
 #include "IGUIEnvironment.h"
 #include "IGUIButton.h"
-#include "CGUIListBox.h"
+#include "guiListBox.h"
 #include "client/render/rendersystem.h"
 #include <Utils/TypeConverter.h>
 

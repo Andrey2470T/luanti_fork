@@ -4,14 +4,9 @@
 
 #pragma once
 
-#include "irrlichttypes.h"
 #include "IGUIEditBox.h"
-#include "IOSOperator.h"
 #include "guiScrollBar.h"
-#include <vector>
-
-using namespace irr;
-using namespace irr::gui;
+#include <Render/TTFont.h>
 
 class GUIEditBox : public IGUIEditBox
 {

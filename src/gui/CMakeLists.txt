@@ -6,19 +6,28 @@ set(gui_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/guiButtonImage.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/guiButtonItemImage.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/guiChatConsole.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/guiCheckBox.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/guiComboBox.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/guiEditBox.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/guiEditBoxWithScrollbar.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/guiEngine.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/guiEnvironment.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/guiFileOpenDialog.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/guiFormSpecMenu.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/guiImage.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/guiInventoryList.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/guiItemImage.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/guiKeyChangeMenu.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/guiListBox.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/guiOpenURL.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/guiPasswordChange.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/guiPathSelectMenu.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/guiScene.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/guiScrollBar.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/guiScrollContainer.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/guiSpriteBank.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/guiStaticText.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/guiTabControl.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/guiTable.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/guiHyperText.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/guiVolumeChange.cpp
