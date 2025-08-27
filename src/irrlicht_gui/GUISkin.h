@@ -10,9 +10,7 @@
 #include <Utils/Rect.h>
 #include <Render/TTFont.h>
 
-
-class IGUIFont;
-class UIAnimatedSprite;
+class UISprite;
 class IGUIElement;
 class Renderer;
 
@@ -20,7 +18,7 @@ class Renderer;
 /** To set one of the skins, use the following code, for example to set
 the Windows classic skin:
 \code
-gui::IGUISkin* newskin = environment->createSkin(gui::EGST_WINDOWS_CLASSIC);
+gui::GUISkin* newskin = environment->createSkin(gui::EGST_WINDOWS_CLASSIC);
 environment->setSkin(newskin);
 newskin->drop();
 \endcode
@@ -98,6 +96,35 @@ enum class GUIDefaultColor : u8
     Count
 };
 
+#define EGUI_DEFAULT_COLOR GUIDefaultColor
+
+#define EGDC_3D_DARK_SHADOW GUIDefaultColor::DarkShadows3D
+#define EGDC_3D_SHADOW GUIDefaultColor::Shadow3D
+#define EGDC_3D_FACE GUIDefaultColor::Face3D
+#define EGDC_3D_HIGH_LIGHT GUIDefaultColor::HighLight3D
+#define EGDC_3D_LIGHT GUIDefaultColor::Light3D
+#define EGDC_ACTIVE_BORDER GUIDefaultColor::ActiveBorder
+#define EGDC_ACTIVE_CAPTION GUIDefaultColor::ActiveCaption
+#define EGDC_APP_WORKSPACE GUIDefaultColor::AppWorkspace
+#define EGDC_BUTTON_TEXT GUIDefaultColor::ButtonText
+#define EGDC_GRAY_TEXT GUIDefaultColor::GrayText
+#define EGDC_HIGH_LIGHT GUIDefaultColor::HighLight
+#define EGDC_HIGH_LIGHT_TEXT GUIDefaultColor::HighLightText
+#define EGDC_INACTIVE_BORDER GUIDefaultColor::InactiveBorder
+#define EGDC_INACTIVE_CAPTION GUIDefaultColor::InactiveCaption
+#define EGDC_TOOLTIP GUIDefaultColor::Tooltip
+#define EGDC_TOOLTIP_BACKGROUND GUIDefaultColor::TooltipBackground
+#define EGDC_SCROLLBAR GUIDefaultColor::Scrollbar
+#define EGDC_WINDOW GUIDefaultColor::Window
+#define EGDC_WINDOW_SYMBOL GUIDefaultColor::WindowSymbol
+#define EGDC_ICON GUIDefaultColor::Icon
+#define EGDC_ICON_HIGH_LIGHT GUIDefaultColor::IconHighLight
+#define EGDC_GRAY_WINDOW_SYMBOL GUIDefaultColor::GrayWindowSymbol
+#define EGDC_EDITABLE GUIDefaultColor::Editable
+#define EGDC_GRAY_EDITABLE GUIDefaultColor::GrayEditable
+#define EGDC_FOCUSED_EDITABLE GUIDefaultColor::FocusedEditable
+#define EGDC_COUNT GUIDefaultColor::Count
+
 //! Enumeration for default sizes.
 enum class GUIDefaultSize : u8
 {
@@ -153,6 +180,34 @@ enum class GUIDefaultSize : u8
     Count
 };
 
+#define EGUI_DEFAULT_SIZE GUIDefaultSize
+
+#define EGDS_SCROLLBAR_SIZE GUIDefaultSize::ScrollbarSize
+#define EGDS_MENU_HEIGHT GUIDefaultSize::MenuHeight
+#define EGDS_WINDOW_BUTTON_WIDTH GUIDefaultSize::WindowButtonWidth
+#define EGDS_CHECK_BOX_WIDTH GUIDefaultSize::CheckBoxWidth
+#define EGDS_MESSAGE_BOX_WIDTH GUIDefaultSize::MessageBoxWidth
+#define EGDS_MESSAGE_BOX_HEIGHT GUIDefaultSize::MessageBoxHeight
+#define EGDS_BUTTON_WIDTH GUIDefaultSize::ButtonWidth
+#define EGDS_BUTTON_HEIGHT GUIDefaultSize::ButtonHeight
+#define EGDS_TEXT_DISTANCE_X GUIDefaultSize::TextDistanceX
+#define EGDS_TEXT_DISTANCE_Y GUIDefaultSize::TextDistanceY
+#define EGDS_TITLEBARTEXT_DISTANCE_X GUIDefaultSize::TitlebartextDistanceX
+#define EGDS_TITLEBARTEXT_DISTANCE_Y GUIDefaultSize::TitlebartextDistanceY
+#define EGDS_MESSAGE_BOX_GAP_SPACE GUIDefaultSize::MessageBoxGapSpace
+#define EGDS_MESSAGE_BOX_MIN_TEXT_WIDTH GUIDefaultSize::MessageBoxMinTextWidth
+#define EGDS_MESSAGE_BOX_MAX_TEXT_WIDTH GUIDefaultSize::MessageBoxMaxTextWidth
+#define EGDS_MESSAGE_BOX_MIN_TEXT_HEIGHT GUIDefaultSize::MessageBoxMinTextHeight
+#define EGDS_MESSAGE_BOX_MAX_TEXT_HEIGHT GUIDefaultSize::MessageBoxMaxTextHeight
+#define EGDS_BUTTON_PRESSED_IMAGE_OFFSET_X GUIDefaultSize::ButtonPressedImageOffsetX
+#define EGDS_BUTTON_PRESSED_IMAGE_OFFSET_Y GUIDefaultSize::ButtonPressedImageOffsetY
+#define EGDS_BUTTON_PRESSED_TEXT_OFFSET_X GUIDefaultSize::ButtonPressedTextOffsetX
+#define EGDS_BUTTON_PRESSED_TEXT_OFFSET_Y GUIDefaultSize::ButtonPressedTextOffsetY
+#define EGDS_BUTTON_PRESSED_SPRITE_OFFSET_X GUIDefaultSize::ButtonPressedSpriteOffsetX
+#define EGDS_BUTTON_PRESSED_SPRITE_OFFSET_Y GUIDefaultSize::ButtonPressedSpriteOffsetY
+#define EGDS_COUNT GUIDefaultSize::Count
+
+
 enum class GUIDefaultText : u8
 {
     //! Text for the OK button on a message box
@@ -175,6 +230,18 @@ enum class GUIDefaultText : u8
     //! this value is not used, it only specifies the number of default texts
     Count
 };
+
+#define EGUI_DEFAULT_TEXT GUIDefaultText
+
+#define EGDT_MSG_BOX_OK GUIDefaultText::MsgBoxOk
+#define EGDT_MSG_BOX_CANCEL GUIDefaultText::MsgBoxCancel
+#define EGDT_MSG_BOX_YES GUIDefaultText::MsgBoxYes
+#define EGDT_MSG_BOX_NO GUIDefaultText::MsgBoxNo
+#define EGDT_WINDOW_CLOSE GUIDefaultText::WindowClose
+#define EGDT_WINDOW_MAXIMIZE GUIDefaultText::WindowMaximize
+#define EGDT_WINDOW_MINIMIZE GUIDefaultText::WindowMaximize
+#define EGDT_WINDOW_RESTORE GUIDefaultText::WindowRestore
+#define EGDT_COUNT GUIDefaultText::Count
 
 //! Customizable symbols for GUI
 enum class GUIDefaultIcon : u8
@@ -231,6 +298,33 @@ enum class GUIDefaultIcon : u8
     Count
 };
 
+#define EGUI_DEFAULT_ICON GUIDefaultIcon
+
+#define EGDI_WINDOW_MAXIMIZE GUIDefaultIcon::WindowMaximize
+#define EGDI_WINDOW_RESTORE GUIDefaultIcon::WindowRestore
+#define EGDI_WINDOW_CLOSE GUIDefaultIcon::WindowClose
+#define EGDI_WINDOW_MINIMIZE GUIDefaultIcon::WindowMinimize
+#define EGDI_WINDOW_RESIZE GUIDefaultIcon::WindowResize
+#define EGDI_CURSOR_UP GUIDefaultIcon::CursorUp
+#define EGDI_CURSOR_DOWN GUIDefaultIcon::CursorDown
+#define EGDI_CURSOR_LEFT GUIDefaultIcon::CursorLeft
+#define EGDI_CURSOR_RIGHT GUIDefaultIcon::CursorRight
+#define EGDI_MENU_MORE GUIDefaultIcon::MenuMore
+#define EGDI_CHECK_BOX_CHECKED GUIDefaultIcon::CheckBoxChecked
+#define EGDI_DROP_DOWN GUIDefaultIcon::Dropdown
+#define EGDI_SMALL_CURSOR_UP GUIDefaultIcon::SmallCursorUp
+#define EGDI_SMALL_CURSOR_DOWN GUIDefaultIcon::SmallCursorDown
+#define EGDI_RADIO_BUTTON_CHECKED GUIDefaultIcon::RadioButtonChecked
+#define EGDI_MORE_LEFT GUIDefaultIcon::MoreLeft
+#define EGDI_MORE_RIGHT GUIDefaultIcon::MoreRight
+#define EGDI_MORE_UP GUIDefaultIcon::MoreUp
+#define EGDI_MORE_DOWN GUIDefaultIcon::MoreDown
+#define EGDI_EXPAND GUIDefaultIcon::Expand
+#define EGDI_COLLAPSE GUIDefaultIcon::Collapse
+#define EGDI_FILE GUIDefaultIcon::File
+#define EGDI_DIRECTORY GUIDefaultIcon::Directory
+#define EGDI_COUNT GUIDefaultIcon::Count
+
 // Customizable fonts
 enum class GUIDefaultFont : u8
 {
@@ -248,6 +342,13 @@ enum class GUIDefaultFont : u8
     //! available.
     Count
 };
+
+#define EGDF_DEFAULT GUIDefaultFont::Default
+#define EGDF_BUTTON GUIDefaultFont::Button
+#define EGDF_WINDOW GUIDefaultFont::Window
+#define EGDF_MENU GUIDefaultFont::Menu
+#define EGDF_TOOLTIP GUIDefaultFont::Tooltip
+#define EGDF_COUNT GUIDefaultFont::Count
 
 class GUISkin
 {
@@ -282,10 +383,10 @@ public:
     void setFont(render::TTFont *font, GUIDefaultFont which=GUIDefaultFont::Default);
 
     //! sets the sprite used for drawing icons
-    void setSprite(UIAnimatedSprite *bank);
+    void setSprite(UISprite *bank);
 
     //! gets the sprite used for drawing icons
-    UIAnimatedSprite *getSprite() const;
+    UISprite *getSprite() const;
 
     //! Returns a default icon
     /** Returns the sprite index within the sprite */
@@ -477,29 +578,6 @@ public:
         const rectf& rect, s32 tabHeight=-1, GUIAlignment alignment=GUIAlignment::UpperLeft,
         const img::color8 *colors=nullptr);
 
-    //! draws an icon, usually from the skin's sprite bank
-    /** \param element: Pointer to the element which wishes to draw this icon.
-    This parameter is usually not used by IGUISkin, but can be used for example
-    by more complex implementations to find out how to draw the part exactly.
-    \param icon: Specifies the icon to be drawn.
-    \param position: The position to draw the icon
-    \param starttime: The time at the start of the animation
-    \param currenttime: The present time, used to calculate the frame number
-    \param loop: Whether the animation should loop or not
-    \param clip: Clip area.	*/
-    void updateIcon(
-        const rectf &rect,
-        u32 starttime=0, u32 currenttime=0,
-        bool loop=false)
-    {
-        updateColoredIcon(rect, starttime, currenttime, loop);
-    }
-
-    void updateColoredIcon(const rectf &rect, bool gray,
-                           u32 starttime=0, u32 currenttime=0,
-                           bool loop=false,
-                           const img::color8 *colors=nullptr);
-
     //! get the type of this skin
     GUISkinType getType() const;
 
@@ -514,7 +592,7 @@ private:
     std::array<s32, (u8)GUIDefaultSize::Count>              Sizes;
     std::array<u32, (u8)GUIDefaultIcon::Count>              Icons;
     std::array<render::TTFont *, (u8)GUIDefaultFont::Count> Fonts;
-    std::unique_ptr<UIAnimatedSprite>                       Sprite;
+    std::unique_ptr<UISprite>                               Sprite;
     std::array<std::wstring, (u8)GUIDefaultText::Count>     Texts;
 
     bool UseGradient;
@@ -523,7 +601,6 @@ private:
 
     inline void updateRect(UISprite *sprite, const std::array<img::color8, 4> &newColors, const rectf &newRect, u32 &rectN)
     {
-        auto shape = sprite->getShape();
         sprite->getShape()->updateRectangle(rectN, newRect, newColors);
         rectN++;
     }

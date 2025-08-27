@@ -6,12 +6,6 @@
 
 #include "IGUIEnvironment.h"
 #include "IGUIElement.h"
-#include "irrArray.h"
-#include "IFileSystem.h"
-#include "IOSOperator.h"
-
-namespace irr
-{
 
 namespace gui
 {
@@ -20,7 +14,7 @@ class CGUIEnvironment : public IGUIEnvironment, public IGUIElement
 {
 public:
 	//! constructor
-	CGUIEnvironment(io::IFileSystem *fs, video::IVideoDriver *driver, IOSOperator *op);
+    CGUIEnvironment();
 
 	//! destructor
 	virtual ~CGUIEnvironment();
@@ -28,108 +22,99 @@ public:
 	//! draws all gui elements
 	void drawAll(bool useScreenSize) override;
 
-	//! returns the current video driver
-	video::IVideoDriver *getVideoDriver() const override;
-
-	//! returns pointer to the filesystem
-	io::IFileSystem *getFileSystem() const override;
-
-	//! returns a pointer to the OS operator
-	IOSOperator *getOSOperator() const override;
-
 	//! posts an input event to the environment
-	bool postEventFromUser(const SEvent &event) override;
+	bool postEventFromUser(const main::Event &event) override;
 
 	//! This sets a new event receiver for gui events. Usually you do not have to
 	//! use this method, it is used by the internal engine.
-	void setUserEventReceiver(IEventReceiver *evr) override;
+    void setUserEventReceiver(main::IEventReceiver *evr) override;
 
 	//! removes all elements from the environment
 	void clear() override;
 
 	//! called if an event happened.
-	bool OnEvent(const SEvent &event) override;
+	bool OnEvent(const main::Event &event) override;
 
 	//! returns the current gui skin
-	IGUISkin *getSkin() const override;
+    GUISkin *getSkin() const override;
 
 	//! Sets a new GUI Skin
-	void setSkin(IGUISkin *skin) override;
+    void setSkin(GUISkin *skin) override;
 
-	//! Creates a new GUI Skin based on a template.
+	//! Creates a new GUI Skin.
 	/** \return Returns a pointer to the created skin.
-	If you no longer need the skin, you should call IGUISkin::drop().
+    If you no longer need the skin, you should call GUISkin::drop().
 	See IReferenceCounted::drop() for more information. */
-	IGUISkin *createSkin(EGUI_SKIN_TYPE type) override;
+    GUISkin *createSkin() override;
 
 	//! Creates the image list from the given texture.
-    virtual IGUIImageList *createImageList(render::Texture2D *texture,
+	virtual IGUIImageList *createImageList(img::Image *texture,
             v2i imageSize, bool useAlphaChannel) override;
 
 	//! returns the font
-	IGUIFont *getFont(const io::path &filename) override;
+    render::TTFont *getFont(const std::string &filename) override;
 
 	//! add an externally loaded font
-	IGUIFont *addFont(const io::path &name, IGUIFont *font) override;
+    render::TTFont *addFont(const std::string &name, render::TTFont *font) override;
 
 	//! remove loaded font
-	void removeFont(IGUIFont *font) override;
+	void removeFont(render::TTFont *font) override;
 
 	//! returns default font
-	IGUIFont *getBuiltInFont() const override;
+	render::TTFont *getBuiltInFont() const override;
 
 	//! returns the sprite bank
-	IGUISpriteBank *getSpriteBank(const io::path &filename) override;
+    IGUISpriteBank *getSpriteBank(const std::string &filename) override;
 
 	//! returns the sprite bank
-	IGUISpriteBank *addEmptySpriteBank(const io::path &name) override;
+    IGUISpriteBank *addEmptySpriteBank(const std::string &name) override;
 
 	//! adds an button. The returned pointer must not be dropped.
-    IGUIButton *addButton(const recti &rectangle, IGUIElement *parent = 0, s32 id = -1, const wchar_t *text = 0, const wchar_t *tooltiptext = 0) override;
+	IGUIButton *addButton(const recti &rectangle, IGUIElement *parent = 0, s32 id = -1, const wchar_t *text = 0, const wchar_t *tooltiptext = 0) override;
 
 	//! adds a scrollbar. The returned pointer must not be dropped.
-    virtual IGUIScrollBar *addScrollBar(bool horizontal, const recti &rectangle,
+	virtual IGUIScrollBar *addScrollBar(bool horizontal, const recti &rectangle,
 			IGUIElement *parent = 0, s32 id = -1) override;
 
 	//! Adds an image element.
-    virtual IGUIImage *addImage(render::Texture2D *image, v2i pos,
+	virtual IGUIImage *addImage(img::Image *image, v2i pos,
 			bool useAlphaChannel = true, IGUIElement *parent = 0, s32 id = -1, const wchar_t *text = 0) override;
 
 	//! adds an image. The returned pointer must not be dropped.
-    virtual IGUIImage *addImage(const recti &rectangle,
+	virtual IGUIImage *addImage(const recti &rectangle,
 			IGUIElement *parent = 0, s32 id = -1, const wchar_t *text = 0, bool useAlphaChannel = true) override;
 
 	//! adds a checkbox
-    virtual IGUICheckBox *addCheckBox(bool checked, const recti &rectangle,
+	virtual IGUICheckBox *addCheckBox(bool checked, const recti &rectangle,
 			IGUIElement *parent = 0, s32 id = -1, const wchar_t *text = 0) override;
 
 	//! adds a list box
-    virtual IGUIListBox *addListBox(const recti &rectangle,
+	virtual IGUIListBox *addListBox(const recti &rectangle,
 			IGUIElement *parent = 0, s32 id = -1, bool drawBackground = false) override;
 
 	//! Adds a file open dialog.
 	virtual IGUIFileOpenDialog *addFileOpenDialog(const wchar_t *title = 0,
 			bool modal = true, IGUIElement *parent = 0, s32 id = -1,
-			bool restoreCWD = false, io::path::char_type *startDir = 0) override;
+            bool restoreCWD = false, std::string *startDir = 0) override;
 
 	//! adds a static text. The returned pointer must not be dropped.
-    virtual IGUIStaticText *addStaticText(const wchar_t *text, const recti &rectangle,
+	virtual IGUIStaticText *addStaticText(const wchar_t *text, const recti &rectangle,
 			bool border = false, bool wordWrap = true, IGUIElement *parent = 0, s32 id = -1, bool drawBackground = false) override;
 
 	//! Adds an edit box. The returned pointer must not be dropped.
-    virtual IGUIEditBox *addEditBox(const wchar_t *text, const recti &rectangle,
+	virtual IGUIEditBox *addEditBox(const wchar_t *text, const recti &rectangle,
 			bool border = false, IGUIElement *parent = 0, s32 id = -1) override;
 
 	//! Adds a tab control to the environment.
-    virtual IGUITabControl *addTabControl(const recti &rectangle,
+	virtual IGUITabControl *addTabControl(const recti &rectangle,
 			IGUIElement *parent = 0, bool fillbackground = false, bool border = true, s32 id = -1) override;
 
 	//! Adds tab to the environment.
-    virtual IGUITab *addTab(const recti &rectangle,
+	virtual IGUITab *addTab(const recti &rectangle,
 			IGUIElement *parent = 0, s32 id = -1) override;
 
 	//! Adds a combo box to the environment.
-    virtual IGUIComboBox *addComboBox(const recti &rectangle,
+	virtual IGUIComboBox *addComboBox(const recti &rectangle,
 			IGUIElement *parent = 0, s32 id = -1) override;
 
 	//! sets the focus to an element
@@ -168,14 +153,14 @@ private:
 	//! clears the deletion queue
 	void clearDeletionQueue();
 
-    void updateHoveredElement(v2i mousePos);
+	void updateHoveredElement(v2i mousePos);
 
 	void loadBuiltInFont();
 
 	struct SFont
 	{
-		io::SNamedPath NamedPath;
-		IGUIFont *Font;
+        std::string NamedPath;
+		render::TTFont *Font;
 
 		bool operator<(const SFont &other) const
 		{
@@ -185,7 +170,7 @@ private:
 
 	struct SSpriteBank
 	{
-		io::SNamedPath NamedPath;
+        std::string NamedPath;
 		IGUISpriteBank *Bank;
 
 		bool operator<(const SSpriteBank &other) const
@@ -205,22 +190,18 @@ private:
 
 	SToolTip ToolTip;
 
-    std::vector<SFont> Fonts;
-    std::vector<SSpriteBank> Banks;
-	video::IVideoDriver *Driver;
+	std::vector<SFont> Fonts;
+	std::vector<SSpriteBank> Banks;
 	IGUIElement *Hovered;
 	IGUIElement *HoveredNoSubelement; // subelements replaced by their parent, so you only have 'real' elements here
 	IGUIElement *Focus;
-    v2i LastHoveredMousePos;
-	IGUISkin *CurrentSkin;
-	io::IFileSystem *FileSystem;
-	IEventReceiver *UserReceiver;
-	IOSOperator *Operator;
+	v2i LastHoveredMousePos;
+    GUISkin *CurrentSkin;
+    main::IEventReceiver *UserReceiver;
 	u32 FocusFlags;
-    std::vector<IGUIElement *> DeletionQueue;
+	std::vector<IGUIElement *> DeletionQueue;
 
-	static const io::path DefaultFontName;
+    static const std::string DefaultFontName;
 };
 
 } // end namespace gui
-} // end namespace irr

@@ -5,31 +5,33 @@
 #pragma once
 
 #include "IGUIElement.h"
-#include "Image/Color.h"
+#include <Image/Color.h>
+#include <Render/Texture2D.h>
 
-namespace render
+namespace video
 {
-    class Texture2D;
+class ITexture;
 }
-
+namespace gui
+{
 //! GUI element displaying an image.
 class IGUIImage : public IGUIElement
 {
 public:
 	//! constructor
-    IGUIImage(IGUIEnvironment *environment, std::shared_ptr<IGUIElement> parent, s32 id, recti rectangle) :
-            IGUIElement(GUIElementType::Image, environment, parent, id, rectangle) {}
+	IGUIImage(IGUIEnvironment *environment, IGUIElement *parent, s32 id, recti rectangle) :
+			IGUIElement(EGUIET_IMAGE, environment, parent, id, rectangle) {}
 
 	//! Sets an image texture
-    virtual void setImage(render::Texture2D *image) = 0;
+	virtual void setImage(img::Image *image) = 0;
 
 	//! Gets the image texture
-    virtual render::Texture2D *getImage() const = 0;
+	virtual img::Image *getImage() const = 0;
 
 	//! Sets the color of the image
 	/** \param color Color with which the image is drawn. If the color
 	equals Color(255,255,255,255) it is ignored. */
-    virtual void setColor(img::color8 color) = 0;
+	virtual void setColor(img::color8 color) = 0;
 
 	//! Sets if the image should scale to fit the element
 	virtual void setScaleImage(bool scale) = 0;
@@ -38,7 +40,7 @@ public:
 	virtual void setUseAlphaChannel(bool use) = 0;
 
 	//! Gets the color of the image
-    virtual img::color8 getColor() const = 0;
+	virtual img::color8 getColor() const = 0;
 
 	//! Returns true if the image is scaled to fit, false if not
 	virtual bool isImageScaled() const = 0;
@@ -48,11 +50,11 @@ public:
 
 	//! Sets the source rectangle of the image. By default the full image is used.
 	/** \param sourceRect coordinates inside the image or an area with size 0 for using the full image (default). */
-    virtual void setSourceRect(const recti &sourceRect) = 0;
+	virtual void setSourceRect(const recti &sourceRect) = 0;
 
 	//! Returns the customized source rectangle of the image to be used.
 	/** By default an empty rectangle of width and height 0 is returned which means the full image is used. */
-    virtual recti getSourceRect() const = 0;
+	virtual recti getSourceRect() const = 0;
 
 	//! Restrict drawing-area.
 	/** This allows for example to use the image as a progress bar.
@@ -62,10 +64,10 @@ public:
 		Unlike normal clipping this does not affect the gui-children.
 		\param drawBoundUVs: Coordinates between 0 and 1 where 0 are for left+top and 1 for right+bottom
 	*/
-    virtual void setDrawBounds(const rectf &drawBoundUVs = rectf(0.f, 0.f, 1.f, 1.f)) = 0;
+	virtual void setDrawBounds(const rectf &drawBoundUVs = rectf(0.f, 0.f, 1.f, 1.f)) = 0;
 
 	//! Get drawing-area restrictions.
-    virtual rectf getDrawBounds() const = 0;
+	virtual rectf getDrawBounds() const = 0;
 
 	//! Sets whether to draw a background color (EGDC_3D_DARK_SHADOW) when no texture is set
 	/** By default it's enabled */
@@ -75,3 +77,5 @@ public:
 	/** \return true if background drawing is enabled, false otherwise */
 	virtual bool isDrawBackgroundEnabled() const = 0;
 };
+
+} // end namespace gui

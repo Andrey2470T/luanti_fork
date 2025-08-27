@@ -4,23 +4,19 @@
 
 #include "CGUIButton.h"
 
-#include "IGUISkin.h"
+#include "GUISkin.h"
 #include "IGUIEnvironment.h"
-#include "IVideoDriver.h"
-#include "IGUIFont.h"
-#include "os.h"
+#include <Main/TimeCounter.h>
 
-namespace irr
-{
 namespace gui
 {
 
 //! constructor
 CGUIButton::CGUIButton(IGUIEnvironment *environment, IGUIElement *parent,
-		s32 id, recti rectangle, bool noclip) :
+        s32 id, recti rectangle, bool noclip) :
 		IGUIButton(environment, parent, id, rectangle),
 		SpriteBank(0), OverrideFont(0),
-		OverrideColorEnabled(false), OverrideColor(img::color8(101, 255, 255, 255)),
+        OverrideColorEnabled(false), OverrideColor(img::color8(img::PF_RGBA8, 255, 255, 255, 101)),
 		ClickTime(0), HoverTime(0), FocusTime(0),
 		ClickShiftState(false), ClickControlState(false),
 		IsPushButton(false), Pressed(false),
@@ -36,9 +32,6 @@ CGUIButton::CGUIButton(IGUIEnvironment *environment, IGUIElement *parent,
 //! destructor
 CGUIButton::~CGUIButton()
 {
-	if (OverrideFont)
-		OverrideFont->drop();
-
 	if (SpriteBank)
 		SpriteBank->drop();
 }
@@ -98,12 +91,12 @@ bool CGUIButton::getSpriteLoop(EGUI_BUTTON_STATE state) const
 }
 
 //! called if an event happened.
-bool CGUIButton::OnEvent(const SEvent &event)
+bool CGUIButton::OnEvent(const main::Event &event)
 {
 	if (!isEnabled())
 		return IGUIElement::OnEvent(event);
 
-	switch (event.EventType) {
+    switch (event.Type) {
 	case EET_KEY_INPUT_EVENT:
 		if (event.KeyInput.PressedDown &&
 				(event.KeyInput.Key == KEY_RETURN || event.KeyInput.Key == KEY_SPACE)) {
@@ -127,39 +120,39 @@ bool CGUIButton::OnEvent(const SEvent &event)
 				ClickShiftState = event.KeyInput.Shift;
 				ClickControlState = event.KeyInput.Control;
 
-				SEvent newEvent;
-				newEvent.EventType = EET_GUI_EVENT;
-				newEvent.GUIEvent.Caller = this;
-				newEvent.GUIEvent.Element = 0;
-				newEvent.GUIEvent.EventType = EGET_BUTTON_CLICKED;
+                main::Event newEvent;
+                newEvent.Type = EET_GUI_EVENT;
+                newEvent.GUI.Caller = getID();
+                newEvent.GUI.Element = 0;
+                newEvent.GUI.Type = EGET_BUTTON_CLICKED;
 				Parent->OnEvent(newEvent);
 			}
 			return true;
 		}
 		break;
 	case EET_GUI_EVENT:
-		if (event.GUIEvent.Caller == this) {
-			if (event.GUIEvent.EventType == EGET_ELEMENT_FOCUS_LOST) {
+        if (event.GUI.Caller == getID()) {
+            if (event.GUI.Type == EGET_ELEMENT_FOCUS_LOST) {
 				if (!IsPushButton)
 					setPressed(false);
-				FocusTime = os::Timer::getTime();
-			} else if (event.GUIEvent.EventType == EGET_ELEMENT_FOCUSED) {
-				FocusTime = os::Timer::getTime();
-			} else if (event.GUIEvent.EventType == EGET_ELEMENT_HOVERED || event.GUIEvent.EventType == EGET_ELEMENT_LEFT) {
-				HoverTime = os::Timer::getTime();
+                FocusTime = main::TimeCounter::getRealTime();
+            } else if (event.GUI.Type == EGET_ELEMENT_FOCUSED) {
+                FocusTime = main::TimeCounter::getRealTime();
+            } else if (event.GUI.Type == EGET_ELEMENT_HOVERED || event.GUI.Type == EGET_ELEMENT_LEFT) {
+                HoverTime = main::TimeCounter::getRealTime();
 			}
 		}
 		break;
 	case EET_MOUSE_INPUT_EVENT:
-		if (event.MouseInput.Event == EMIE_LMOUSE_PRESSED_DOWN) {
+        if (event.MouseInput.Type == EMIE_LMOUSE_PRESSED_DOWN) {
 			if (!IsPushButton)
 				setPressed(true);
 
 			return true;
-		} else if (event.MouseInput.Event == EMIE_LMOUSE_LEFT_UP) {
+        } else if (event.MouseInput.Type == EMIE_LMOUSE_LEFT_UP) {
 			bool wasPressed = Pressed;
 
-			if (!AbsoluteClippingRect.isPointInside(v2i(event.MouseInput.X, event.MouseInput.Y))) {
+            if (!AbsoluteClippingRect.isPointInside(v2i(event.MouseInput.X, event.MouseInput.Y))) {
 				if (!IsPushButton)
 					setPressed(false);
 				return true;
@@ -176,11 +169,11 @@ bool CGUIButton::OnEvent(const SEvent &event)
 				ClickShiftState = event.MouseInput.Shift;
 				ClickControlState = event.MouseInput.Control;
 
-				SEvent newEvent;
-				newEvent.EventType = EET_GUI_EVENT;
-				newEvent.GUIEvent.Caller = this;
-				newEvent.GUIEvent.Element = 0;
-				newEvent.GUIEvent.EventType = EGET_BUTTON_CLICKED;
+                main::Event newEvent;
+                newEvent.Type = EET_GUI_EVENT;
+                newEvent.GUI.Caller = getID();
+                newEvent.GUI.Element = 0;
+                newEvent.GUI.Type = EGET_BUTTON_CLICKED;
 				Parent->OnEvent(newEvent);
 			}
 
@@ -200,8 +193,7 @@ void CGUIButton::draw()
 	if (!IsVisible)
 		return;
 
-	IGUISkin *skin = Environment->getSkin();
-	video::IVideoDriver *driver = Environment->getVideoDriver();
+	GUISkin *skin = Environment->getSkin();
 
 	if (DrawBorder) {
 		if (!Pressed) {
@@ -211,14 +203,16 @@ void CGUIButton::draw()
 		}
 	}
 
-	const v2i buttonCenter(AbsoluteRect.getCenter());
+    const v2i buttonCenter(AbsoluteRect.getCenter());
 
 	EGUI_BUTTON_IMAGE_STATE imageState = getImageState(Pressed);
 	if (ButtonImages[(u32)imageState].Texture) {
-		v2i pos(buttonCenter);
-		recti sourceRect(ButtonImages[(u32)imageState].SourceRect);
-		if (sourceRect.getWidth() == 0 && sourceRect.getHeight() == 0)
-			sourceRect = recti(v2i(0, 0), ButtonImages[(u32)imageState].Texture->getOriginalSize());
+        v2i pos(buttonCenter);
+        recti sourceRect(ButtonImages[(u32)imageState].SourceRect);
+        if (sourceRect.getWidth() == 0 && sourceRect.getHeight() == 0) {
+            v2u imgsize = ButtonImages[(u32)imageState].Texture->getSize();
+            sourceRect = recti(v2i(0, 0), v2i(imgsize.X, imgsize.Y));
+        }
 
 		pos.X -= sourceRect.getWidth() / 2;
 		pos.Y -= sourceRect.getHeight() / 2;
@@ -233,13 +227,13 @@ void CGUIButton::draw()
 		}
 
 		driver->draw2DImage(ButtonImages[(u32)imageState].Texture,
-				ScaleImage ? AbsoluteRect : recti(pos, sourceRect.getSize()),
+                ScaleImage ? AbsoluteRect : recti(pos, sourceRect.getSize()),
 				sourceRect, &AbsoluteClippingRect,
 				0, UseAlphaChannel);
 	}
 
 	if (SpriteBank) {
-		v2i pos(buttonCenter);
+        v2i pos(buttonCenter);
 		if (Pressed) {
 			pos.X += skin->getSize(EGDS_BUTTON_PRESSED_SPRITE_OFFSET_X);
 			pos.Y += skin->getSize(EGDS_BUTTON_PRESSED_SPRITE_OFFSET_Y);
@@ -264,12 +258,12 @@ void CGUIButton::draw()
 	}
 
 	if (Text.size()) {
-		IGUIFont *font = getActiveFont();
+        render::TTFont *font = getActiveFont();
 
-		recti rect = AbsoluteRect;
+        recti rect = AbsoluteRect;
 		if (Pressed) {
-			rect.UpperLeftCorner.X += skin->getSize(EGDS_BUTTON_PRESSED_TEXT_OFFSET_X);
-			rect.UpperLeftCorner.Y += skin->getSize(EGDS_BUTTON_PRESSED_TEXT_OFFSET_Y);
+            rect.ULC.X += skin->getSize(EGDS_BUTTON_PRESSED_TEXT_OFFSET_X);
+            rect.ULC.Y += skin->getSize(EGDS_BUTTON_PRESSED_TEXT_OFFSET_Y);
 		}
 
 		if (font)
@@ -289,21 +283,21 @@ void CGUIButton::drawSprite(EGUI_BUTTON_STATE state, u32 startTime, const v2i &c
 		return;
 
 	u32 rectIdx = SpriteBank->getSprites()[spriteIdx].Frames[0].rectNumber;
-	recti srcRect = SpriteBank->getPositions()[rectIdx];
+    recti srcRect = SpriteBank->getPositions()[rectIdx];
 
-	IGUISkin *skin = Environment->getSkin();
+	GUISkin *skin = Environment->getSkin();
 	s32 scale = std::max(std::floor(skin->getScale()), 1.0f);
-	recti rect(center, srcRect.getSize() * scale);
+    recti rect(center, srcRect.getSize() * scale);
 	rect -= rect.getSize() / 2;
 
-	const img::color8 colors[] = {
+    const img::color8 colors[] = {
 		ButtonSprites[stateIdx].Color,
 		ButtonSprites[stateIdx].Color,
 		ButtonSprites[stateIdx].Color,
 		ButtonSprites[stateIdx].Color,
 	};
 	SpriteBank->draw2DSprite(spriteIdx, rect, &AbsoluteClippingRect, colors,
-			os::Timer::getTime() - startTime, ButtonSprites[stateIdx].Loop);
+            main::TimeCounter::getRealTime() - startTime, ButtonSprites[stateIdx].Loop);
 }
 
 EGUI_BUTTON_IMAGE_STATE CGUIButton::getImageState(bool pressed) const
@@ -368,32 +362,26 @@ EGUI_BUTTON_IMAGE_STATE CGUIButton::getImageState(bool pressed) const
 }
 
 //! sets another skin independent font. if this is set to zero, the button uses the font of the skin.
-void CGUIButton::setOverrideFont(IGUIFont *font)
+void CGUIButton::setOverrideFont(render::TTFont *font)
 {
 	if (OverrideFont == font)
 		return;
 
-	if (OverrideFont)
-		OverrideFont->drop();
-
 	OverrideFont = font;
-
-	if (OverrideFont)
-		OverrideFont->grab();
 }
 
 //! Gets the override font (if any)
-IGUIFont *CGUIButton::getOverrideFont() const
+render::TTFont *CGUIButton::getOverrideFont() const
 {
 	return OverrideFont;
 }
 
 //! Get the font which is used right now for drawing
-IGUIFont *CGUIButton::getActiveFont() const
+render::TTFont *CGUIButton::getActiveFont() const
 {
 	if (OverrideFont)
 		return OverrideFont;
-	IGUISkin *skin = Environment->getSkin();
+	GUISkin *skin = Environment->getSkin();
 	if (skin)
 		return skin->getFont(EGDF_BUTTON);
 	return 0;
@@ -411,11 +399,11 @@ img::color8 CGUIButton::getOverrideColor() const
 	return OverrideColor;
 }
 
-irr::img::color8 CGUIButton::getActiveColor() const
+img::color8 CGUIButton::getActiveColor() const
 {
 	if (OverrideColorEnabled)
 		return OverrideColor;
-	IGUISkin *skin = Environment->getSkin();
+	GUISkin *skin = Environment->getSkin();
 	if (skin)
 		return OverrideColorEnabled ? OverrideColor : skin->getColor(isEnabled() ? EGDC_BUTTON_TEXT : EGDC_GRAY_TEXT);
 	return OverrideColor;
@@ -431,17 +419,12 @@ bool CGUIButton::isOverrideColorEnabled() const
 	return OverrideColorEnabled;
 }
 
-void CGUIButton::setImage(EGUI_BUTTON_IMAGE_STATE state, render::Texture2D *image, const recti &sourceRect)
+void CGUIButton::setImage(EGUI_BUTTON_IMAGE_STATE state, img::Image *image, const recti &sourceRect)
 {
 	if (state >= EGBIS_COUNT)
 		return;
 
-	if (image)
-		image->grab();
-
 	u32 stateIdx = (u32)state;
-	if (ButtonImages[stateIdx].Texture)
-		ButtonImages[stateIdx].Texture->drop();
 
 	ButtonImages[stateIdx].Texture = image;
 	ButtonImages[stateIdx].SourceRect = sourceRect;
@@ -465,7 +448,7 @@ bool CGUIButton::isPressed() const
 void CGUIButton::setPressed(bool pressed)
 {
 	if (Pressed != pressed) {
-		ClickTime = os::Timer::getTime();
+        ClickTime = main::TimeCounter::getRealTime();
 		Pressed = pressed;
 	}
 }
@@ -494,4 +477,3 @@ bool CGUIButton::isDrawingBorder() const
 }
 
 } // end namespace gui
-} // end namespace irr

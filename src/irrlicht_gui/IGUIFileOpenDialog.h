@@ -5,7 +5,9 @@
 #pragma once
 
 #include "IGUIElement.h"
-#include "FilesystemVersions.h"
+
+namespace gui
+{
 
 //! Standard file chooser dialog.
 /** \warning When the user selects a folder this does change the current working directory
@@ -19,18 +21,20 @@ class IGUIFileOpenDialog : public IGUIElement
 {
 public:
 	//! constructor
-    IGUIFileOpenDialog(IGUIEnvironment *environment, std::shared_ptr<IGUIElement> parent, s32 id, recti rectangle) :
-            IGUIElement(GUIElementType::FileOpenDialog, environment, parent, id, rectangle) {}
+	IGUIFileOpenDialog(IGUIEnvironment *environment, IGUIElement *parent, s32 id, recti rectangle) :
+			IGUIElement(EGUIET_FILE_OPEN_DIALOG, environment, parent, id, rectangle) {}
 
 	//! Returns the filename of the selected file converted to wide characters. Returns NULL if no file was selected.
 	virtual const wchar_t *getFileName() const = 0;
 
 	//! Returns the filename of the selected file. Is empty if no file was selected.
-    virtual const fs::path &getFileNameP() const = 0;
+	virtual const std::string &getFileNameP() const = 0;
 
 	//! Returns the directory of the selected file. Empty if no directory was selected.
-    virtual const fs::path &getDirectoryName() const = 0;
+	virtual const std::string &getDirectoryName() const = 0;
 
 	//! Returns the directory of the selected file converted to wide characters. Returns NULL if no directory was selected.
 	virtual const wchar_t *getDirectoryNameW() const = 0;
 };
+
+} // end namespace gui

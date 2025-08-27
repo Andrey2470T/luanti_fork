@@ -5,15 +5,10 @@
 #include "CGUITabControl.h"
 
 #include "CGUIButton.h"
-#include "IGUISkin.h"
+#include "GUISkin.h"
 #include "IGUIEnvironment.h"
-#include "IGUIFont.h"
-#include "IVideoDriver.h"
-#include "Utils/Rect.h"
-#include "os.h"
+#include <Utils/Rect.h>
 
-namespace irr
-{
 namespace gui
 {
 
@@ -26,10 +21,10 @@ CGUITab::CGUITab(IGUIEnvironment *environment,
 		IGUIElement *parent, const recti &rectangle,
 		s32 id) :
 		IGUITab(environment, parent, id, rectangle),
-		BackColor(0, 0, 0, 0), OverrideTextColorEnabled(false), TextColor(255, 0, 0, 0),
+        BackColor(img::black), OverrideTextColorEnabled(false), TextColor(img::black),
 		DrawBackground(false)
 {
-	const IGUISkin *const skin = environment->getSkin();
+	const GUISkin *const skin = environment->getSkin();
 	if (skin)
 		TextColor = skin->getColor(EGDC_BUTTON_TEXT);
 }
@@ -40,7 +35,7 @@ void CGUITab::draw()
 	if (!IsVisible)
 		return;
 
-	IGUISkin *skin = Environment->getSkin();
+	GUISkin *skin = Environment->getSkin();
 
 	if (skin && DrawBackground)
 		skin->draw2DRectangle(this, BackColor, AbsoluteRect, &AbsoluteClippingRect);
@@ -97,17 +92,17 @@ CGUITabControl::CGUITabControl(IGUIEnvironment *environment,
 		bool fillbackground, bool border, s32 id) :
 		IGUITabControl(environment, parent, id, rectangle),
 		ActiveTabIndex(-1),
-		Border(border), FillBackground(fillbackground), ScrollControl(false), TabHeight(0), VerticalAlignment(EGUIA_UPPERLEFT),
+        Border(border), FillBackground(fillbackground), ScrollControl(false), TabHeight(0), VerticalAlignment(GUIAlignment::UpperLeft),
 		UpButton(0), DownButton(0), TabMaxWidth(0), CurrentScrollTabIndex(0), TabExtraWidth(20)
 {
-	IGUISkin *skin = Environment->getSkin();
+	GUISkin *skin = Environment->getSkin();
 	IGUISpriteBank *sprites = 0;
 
 	TabHeight = 32;
 
 	if (skin) {
 		sprites = skin->getSpriteBank();
-		TabHeight = skin->getSize(gui::EGDS_BUTTON_HEIGHT) + 2;
+        TabHeight = skin->getSize(EGDS_BUTTON_HEIGHT) + 2;
 	}
 
 	UpButton = Environment->addButton(recti(0, 0, 10, 10), this);
@@ -116,7 +111,7 @@ CGUITabControl::CGUITabControl(IGUIEnvironment *environment,
 		UpButton->setSpriteBank(sprites);
 		UpButton->setVisible(false);
 		UpButton->setSubElement(true);
-		UpButton->setAlignment(EGUIA_LOWERRIGHT, EGUIA_LOWERRIGHT, EGUIA_UPPERLEFT, EGUIA_UPPERLEFT);
+        UpButton->setAlignment(EGUIA_LOWERRIGHT, EGUIA_LOWERRIGHT, GUIAlignment::UpperLeft, GUIAlignment::UpperLeft);
 		UpButton->setOverrideFont(Environment->getBuiltInFont());
 		UpButton->grab();
 	}
@@ -127,12 +122,12 @@ CGUITabControl::CGUITabControl(IGUIEnvironment *environment,
 		DownButton->setSpriteBank(sprites);
 		DownButton->setVisible(false);
 		DownButton->setSubElement(true);
-		DownButton->setAlignment(EGUIA_LOWERRIGHT, EGUIA_LOWERRIGHT, EGUIA_UPPERLEFT, EGUIA_UPPERLEFT);
+        DownButton->setAlignment(EGUIA_LOWERRIGHT, EGUIA_LOWERRIGHT, GUIAlignment::UpperLeft, GUIAlignment::UpperLeft);
 		DownButton->setOverrideFont(Environment->getBuiltInFont());
 		DownButton->grab();
 	}
 
-	setTabVerticalAlignment(EGUIA_UPPERLEFT);
+    setTabVerticalAlignment(GUIAlignment::UpperLeft);
 	refreshSprites();
 }
 
@@ -153,8 +148,8 @@ CGUITabControl::~CGUITabControl()
 
 void CGUITabControl::refreshSprites()
 {
-	img::color8 color(255, 255, 255, 255);
-	IGUISkin *skin = Environment->getSkin();
+    img::color8 color(img::white);
+	GUISkin *skin = Environment->getSkin();
 	if (skin) {
 		color = skin->getColor(isEnabled() ? EGDC_WINDOW_SYMBOL : EGDC_GRAY_WINDOW_SYMBOL);
 
@@ -176,7 +171,7 @@ IGUITab *CGUITabControl::addTab(const wchar_t *caption, s32 id)
 	CGUITab *tab = new CGUITab(Environment, this, calcTabPos(), id);
 
 	tab->setText(caption);
-	tab->setAlignment(EGUIA_UPPERLEFT, EGUIA_LOWERRIGHT, EGUIA_UPPERLEFT, EGUIA_LOWERRIGHT);
+    tab->setAlignment(GUIAlignment::UpperLeft, EGUIA_LOWERRIGHT, GUIAlignment::UpperLeft, EGUIA_LOWERRIGHT);
 	tab->setVisible(false);
 	Tabs.push_back(tab); // no grab as new already creates a reference
 
@@ -205,9 +200,9 @@ IGUITab *CGUITabControl::insertTab(s32 idx, const wchar_t *caption, s32 id)
 	CGUITab *tab = new CGUITab(Environment, this, calcTabPos(), id);
 
 	tab->setText(caption);
-	tab->setAlignment(EGUIA_UPPERLEFT, EGUIA_LOWERRIGHT, EGUIA_UPPERLEFT, EGUIA_LOWERRIGHT);
+    tab->setAlignment(GUIAlignment::UpperLeft, EGUIA_LOWERRIGHT, GUIAlignment::UpperLeft, EGUIA_LOWERRIGHT);
 	tab->setVisible(false);
-	Tabs.insert(tab, (u32)idx);
+    Tabs.insert(Tabs.begin()+(u32)idx, tab);
 
 	if (ActiveTabIndex == -1) {
 		ActiveTabIndex = (u32)idx;
@@ -253,7 +248,7 @@ s32 CGUITabControl::insertTab(s32 idx, IGUITab *tab, bool serializationMode)
 			tab->setVisible(true);
 		}
 	} else {
-		Tabs.insert(tab, (u32)idx);
+        Tabs.insert(Tabs.begin()+(u32)idx, tab);
 
 		if (ActiveTabIndex == -1) {
 			ActiveTabIndex = idx;
@@ -297,7 +292,7 @@ void CGUITabControl::removeTabButNotChild(s32 idx)
 		return;
 
 	Tabs[(u32)idx]->drop();
-	Tabs.erase((u32)idx);
+    Tabs.erase(Tabs.begin()+(u32)idx);
 
 	if (idx < ActiveTabIndex) {
 		--ActiveTabIndex;
@@ -339,17 +334,17 @@ IGUITab *CGUITabControl::getTab(s32 idx) const
 }
 
 //! called if an event happened.
-bool CGUITabControl::OnEvent(const SEvent &event)
+bool CGUITabControl::OnEvent(const main::Event &event)
 {
 	if (isEnabled()) {
-		switch (event.EventType) {
+		switch (event.Type) {
 		case EET_GUI_EVENT:
-			switch (event.GUIEvent.EventType) {
+			switch (event.GUI.Type) {
 			case EGET_BUTTON_CLICKED:
-				if (event.GUIEvent.Caller == UpButton) {
+                if (event.GUI.Caller == UpButton->getID()) {
 					scrollLeft();
 					return true;
-				} else if (event.GUIEvent.Caller == DownButton) {
+                } else if (event.GUI.Caller == DownButton->getID()) {
 					scrollRight();
 					return true;
 				}
@@ -360,7 +355,7 @@ bool CGUITabControl::OnEvent(const SEvent &event)
 			}
 			break;
 		case EET_MOUSE_INPUT_EVENT:
-			switch (event.MouseInput.Event) {
+			switch (event.MouseInput.Type) {
 			// case EMIE_LMOUSE_PRESSED_DOWN:
 			//	// todo: dragging tabs around
 			//	return true;
@@ -400,12 +395,12 @@ void CGUITabControl::scrollRight()
 	recalculateScrollBar();
 }
 
-s32 CGUITabControl::calcTabWidth(IGUIFont *font, const wchar_t *text) const
+s32 CGUITabControl::calcTabWidth(render::TTFont *font, const wchar_t *text) const
 {
 	if (!font)
 		return 0;
 
-	s32 len = font->getDimension(text).Width + TabExtraWidth;
+    s32 len = font->getTextWidth(text) + TabExtraWidth;
 	if (TabMaxWidth > 0 && len > TabMaxWidth)
 		len = TabMaxWidth;
 
@@ -417,11 +412,11 @@ bool CGUITabControl::needScrollControl(s32 startIndex, bool withScrollControl, s
 	if (startIndex < 0)
 		startIndex = 0;
 
-	IGUISkin *skin = Environment->getSkin();
+	GUISkin *skin = Environment->getSkin();
 	if (!skin)
 		return false;
 
-	IGUIFont *font = skin->getFont();
+	render::TTFont *font = skin->getFont();
 
 	if (Tabs.empty())
 		return false;
@@ -429,8 +424,8 @@ bool CGUITabControl::needScrollControl(s32 startIndex, bool withScrollControl, s
 	if (!font)
 		return false;
 
-	s32 pos = AbsoluteRect.UpperLeftCorner.X + 2;
-	const s32 pos_right = withScrollControl ? UpButton->getAbsolutePosition().UpperLeftCorner.X - 2 : AbsoluteRect.LowerRightCorner.X;
+	s32 pos = AbsoluteRect.ULC.X + 2;
+	const s32 pos_right = withScrollControl ? UpButton->getAbsolutePosition().ULC.X - 2 : AbsoluteRect.LRC.X;
 
 	for (s32 i = startIndex; i < (s32)Tabs.size(); ++i) {
 		// get Text
@@ -457,16 +452,16 @@ s32 CGUITabControl::calculateScrollIndexFromActive()
 	if (!ScrollControl || Tabs.empty())
 		return 0;
 
-	IGUISkin *skin = Environment->getSkin();
+	GUISkin *skin = Environment->getSkin();
 	if (!skin)
 		return false;
 
-	IGUIFont *font = skin->getFont();
+	render::TTFont *font = skin->getFont();
 	if (!font)
 		return false;
 
-	const s32 pos_left = AbsoluteRect.UpperLeftCorner.X + 2;
-	const s32 pos_right = UpButton->getAbsolutePosition().UpperLeftCorner.X - 2;
+	const s32 pos_left = AbsoluteRect.ULC.X + 2;
+	const s32 pos_right = UpButton->getAbsolutePosition().ULC.X - 2;
 
 	// Move from center to the left border left until it is reached
 	s32 pos_cl = (pos_left + pos_right) / 2;
@@ -506,24 +501,24 @@ s32 CGUITabControl::calculateScrollIndexFromActive()
 recti CGUITabControl::calcTabPos()
 {
 	recti r;
-	r.UpperLeftCorner.X = 0;
-	r.LowerRightCorner.X = AbsoluteRect.getWidth();
+	r.ULC.X = 0;
+	r.LRC.X = AbsoluteRect.getWidth();
 	if (Border) {
-		++r.UpperLeftCorner.X;
-		--r.LowerRightCorner.X;
+		++r.ULC.X;
+		--r.LRC.X;
 	}
 
-	if (VerticalAlignment == EGUIA_UPPERLEFT) {
-		r.UpperLeftCorner.Y = TabHeight + 2;
-		r.LowerRightCorner.Y = AbsoluteRect.getHeight() - 1;
+    if (VerticalAlignment == GUIAlignment::UpperLeft) {
+		r.ULC.Y = TabHeight + 2;
+		r.LRC.Y = AbsoluteRect.getHeight() - 1;
 		if (Border) {
-			--r.LowerRightCorner.Y;
+			--r.LRC.Y;
 		}
 	} else {
-		r.UpperLeftCorner.Y = 0;
-		r.LowerRightCorner.Y = AbsoluteRect.getHeight() - (TabHeight + 2);
+		r.ULC.Y = 0;
+		r.LRC.Y = AbsoluteRect.getHeight() - (TabHeight + 2);
 		if (Border) {
-			++r.UpperLeftCorner.Y;
+			++r.ULC.Y;
 		}
 	}
 
@@ -536,12 +531,11 @@ void CGUITabControl::draw()
 	if (!IsVisible)
 		return;
 
-	IGUISkin *skin = Environment->getSkin();
+	GUISkin *skin = Environment->getSkin();
 	if (!skin)
 		return;
 
-	IGUIFont *font = skin->getFont();
-	video::IVideoDriver *driver = Environment->getVideoDriver();
+	render::TTFont *font = skin->getFont();
 
 	recti frameRect(AbsoluteRect);
 
@@ -553,16 +547,16 @@ void CGUITabControl::draw()
 		return;
 
 	// tab button bar can be above or below the tabs
-	if (VerticalAlignment == EGUIA_UPPERLEFT) {
-		frameRect.UpperLeftCorner.Y += 2;
-		frameRect.LowerRightCorner.Y = frameRect.UpperLeftCorner.Y + TabHeight;
+    if (VerticalAlignment == GUIAlignment::UpperLeft) {
+		frameRect.ULC.Y += 2;
+		frameRect.LRC.Y = frameRect.ULC.Y + TabHeight;
 	} else {
-		frameRect.UpperLeftCorner.Y = frameRect.LowerRightCorner.Y - TabHeight - 1;
-		frameRect.LowerRightCorner.Y -= 2;
+		frameRect.ULC.Y = frameRect.LRC.Y - TabHeight - 1;
+		frameRect.LRC.Y -= 2;
 	}
 
 	recti tr;
-	s32 pos = frameRect.UpperLeftCorner.X + 2;
+	s32 pos = frameRect.ULC.X + 2;
 
 	bool needLeftScroll = CurrentScrollTabIndex > 0;
 	bool needRightScroll = false;
@@ -584,23 +578,23 @@ void CGUITabControl::draw()
 		// get text length
 		s32 len = calcTabWidth(font, text);
 		if (ScrollControl) {
-			s32 space = UpButton->getAbsolutePosition().UpperLeftCorner.X - 2 - pos;
+			s32 space = UpButton->getAbsolutePosition().ULC.X - 2 - pos;
 			if (space < len) {
 				needRightScroll = true;
 				len = space;
 			}
 		}
 
-		frameRect.LowerRightCorner.X += len;
-		frameRect.UpperLeftCorner.X = pos;
-		frameRect.LowerRightCorner.X = frameRect.UpperLeftCorner.X + len;
+		frameRect.LRC.X += len;
+		frameRect.ULC.X = pos;
+		frameRect.LRC.X = frameRect.ULC.X + len;
 
 		pos += len;
 
 		if ((s32)i == ActiveTabIndex) {
 			// for active button just remember values
-			left = frameRect.UpperLeftCorner.X;
-			right = frameRect.LowerRightCorner.X;
+			left = frameRect.ULC.X;
+			right = frameRect.LRC.X;
 			// activetext = text;
 			activeTab = Tabs[i];
 		} else {
@@ -618,10 +612,10 @@ void CGUITabControl::draw()
 	// Drawn later than other buttons because it draw over the buttons before/after it.
 	if (left != 0 && right != 0 && activeTab != 0) {
 		// draw upper highlight frame
-		if (VerticalAlignment == EGUIA_UPPERLEFT) {
-			frameRect.UpperLeftCorner.X = left - 2;
-			frameRect.LowerRightCorner.X = right + 2;
-			frameRect.UpperLeftCorner.Y -= 2;
+        if (VerticalAlignment == GUIAlignment::UpperLeft) {
+			frameRect.ULC.X = left - 2;
+			frameRect.LRC.X = right + 2;
+			frameRect.ULC.Y -= 2;
 
 			skin->draw3DTabButton(this, true, frameRect, &AbsoluteClippingRect, VerticalAlignment);
 
@@ -631,19 +625,19 @@ void CGUITabControl::draw()
 			font->draw(activeTab->getText(), frameRect, activeTab->getTextColor(),
 					true, true, &textClipRect);
 
-			tr.UpperLeftCorner.X = AbsoluteRect.UpperLeftCorner.X;
-			tr.LowerRightCorner.X = left - 1;
-			tr.UpperLeftCorner.Y = frameRect.LowerRightCorner.Y - 1;
-			tr.LowerRightCorner.Y = frameRect.LowerRightCorner.Y;
+			tr.ULC.X = AbsoluteRect.ULC.X;
+			tr.LRC.X = left - 1;
+			tr.ULC.Y = frameRect.LRC.Y - 1;
+			tr.LRC.Y = frameRect.LRC.Y;
 			driver->draw2DRectangle(skin->getColor(EGDC_3D_HIGH_LIGHT), tr, &AbsoluteClippingRect);
 
-			tr.UpperLeftCorner.X = right;
-			tr.LowerRightCorner.X = AbsoluteRect.LowerRightCorner.X;
+			tr.ULC.X = right;
+			tr.LRC.X = AbsoluteRect.LRC.X;
 			driver->draw2DRectangle(skin->getColor(EGDC_3D_HIGH_LIGHT), tr, &AbsoluteClippingRect);
 		} else {
-			frameRect.UpperLeftCorner.X = left - 2;
-			frameRect.LowerRightCorner.X = right + 2;
-			frameRect.LowerRightCorner.Y += 2;
+			frameRect.ULC.X = left - 2;
+			frameRect.LRC.X = right + 2;
+			frameRect.LRC.Y += 2;
 
 			skin->draw3DTabButton(this, true, frameRect, &AbsoluteClippingRect, VerticalAlignment);
 
@@ -651,29 +645,29 @@ void CGUITabControl::draw()
 			font->draw(activeTab->getText(), frameRect, activeTab->getTextColor(),
 					true, true, &frameRect);
 
-			tr.UpperLeftCorner.X = AbsoluteRect.UpperLeftCorner.X;
-			tr.LowerRightCorner.X = left - 1;
-			tr.UpperLeftCorner.Y = frameRect.UpperLeftCorner.Y - 1;
-			tr.LowerRightCorner.Y = frameRect.UpperLeftCorner.Y;
+			tr.ULC.X = AbsoluteRect.ULC.X;
+			tr.LRC.X = left - 1;
+			tr.ULC.Y = frameRect.ULC.Y - 1;
+			tr.LRC.Y = frameRect.ULC.Y;
 			driver->draw2DRectangle(skin->getColor(EGDC_3D_DARK_SHADOW), tr, &AbsoluteClippingRect);
 
-			tr.UpperLeftCorner.X = right;
-			tr.LowerRightCorner.X = AbsoluteRect.LowerRightCorner.X;
+			tr.ULC.X = right;
+			tr.LRC.X = AbsoluteRect.LRC.X;
 			driver->draw2DRectangle(skin->getColor(EGDC_3D_DARK_SHADOW), tr, &AbsoluteClippingRect);
 		}
 	} else {
 		// No active tab
 		// Draw a line separating button bar from tab area
-		tr.UpperLeftCorner.X = AbsoluteRect.UpperLeftCorner.X;
-		tr.LowerRightCorner.X = AbsoluteRect.LowerRightCorner.X;
-		tr.UpperLeftCorner.Y = frameRect.LowerRightCorner.Y - 1;
-		tr.LowerRightCorner.Y = frameRect.LowerRightCorner.Y;
+		tr.ULC.X = AbsoluteRect.ULC.X;
+		tr.LRC.X = AbsoluteRect.LRC.X;
+		tr.ULC.Y = frameRect.LRC.Y - 1;
+		tr.LRC.Y = frameRect.LRC.Y;
 
-		if (VerticalAlignment == EGUIA_UPPERLEFT) {
+        if (VerticalAlignment == GUIAlignment::UpperLeft) {
 			driver->draw2DRectangle(skin->getColor(EGDC_3D_HIGH_LIGHT), tr, &AbsoluteClippingRect);
 		} else {
-			tr.UpperLeftCorner.Y = frameRect.UpperLeftCorner.Y - 1;
-			tr.LowerRightCorner.Y = frameRect.UpperLeftCorner.Y;
+			tr.ULC.Y = frameRect.ULC.Y - 1;
+			tr.LRC.Y = frameRect.ULC.Y;
 			driver->draw2DRectangle(skin->getColor(EGDC_3D_DARK_SHADOW), tr, &AbsoluteClippingRect);
 		}
 	}
@@ -774,7 +768,7 @@ void CGUITabControl::setTabVerticalAlignment(EGUI_ALIGNMENT alignment)
 
 void CGUITabControl::recalculateScrollButtonPlacement()
 {
-	IGUISkin *skin = Environment->getSkin();
+	GUISkin *skin = Environment->getSkin();
 	s32 ButtonSize = 16;
 	s32 ButtonHeight = TabHeight - 2;
 	if (ButtonHeight < 0)
@@ -788,10 +782,10 @@ void CGUITabControl::recalculateScrollButtonPlacement()
 	s32 ButtonX = RelativeRect.getWidth() - (s32)(2.5f * (f32)ButtonSize) - 1;
 	s32 ButtonY = 0;
 
-	if (VerticalAlignment == EGUIA_UPPERLEFT) {
+    if (VerticalAlignment == GUIAlignment::UpperLeft) {
 		ButtonY = 2 + (TabHeight / 2) - (ButtonHeight / 2);
-		UpButton->setAlignment(EGUIA_LOWERRIGHT, EGUIA_LOWERRIGHT, EGUIA_UPPERLEFT, EGUIA_UPPERLEFT);
-		DownButton->setAlignment(EGUIA_LOWERRIGHT, EGUIA_LOWERRIGHT, EGUIA_UPPERLEFT, EGUIA_UPPERLEFT);
+        UpButton->setAlignment(EGUIA_LOWERRIGHT, EGUIA_LOWERRIGHT, GUIAlignment::UpperLeft, GUIAlignment::UpperLeft);
+        DownButton->setAlignment(EGUIA_LOWERRIGHT, EGUIA_LOWERRIGHT, GUIAlignment::UpperLeft, GUIAlignment::UpperLeft);
 	} else {
 		ButtonY = RelativeRect.getHeight() - (TabHeight / 2) - (ButtonHeight / 2) - 2;
 		UpButton->setAlignment(EGUIA_LOWERRIGHT, EGUIA_LOWERRIGHT, EGUIA_LOWERRIGHT, EGUIA_LOWERRIGHT);
@@ -812,19 +806,19 @@ EGUI_ALIGNMENT CGUITabControl::getTabVerticalAlignment() const
 s32 CGUITabControl::getTabAt(s32 xpos, s32 ypos) const
 {
 	v2i p(xpos, ypos);
-	IGUISkin *skin = Environment->getSkin();
-	IGUIFont *font = skin->getFont();
+	GUISkin *skin = Environment->getSkin();
+	render::TTFont *font = skin->getFont();
 
 	recti frameRect(AbsoluteRect);
 
-	if (VerticalAlignment == EGUIA_UPPERLEFT) {
-		frameRect.UpperLeftCorner.Y += 2;
-		frameRect.LowerRightCorner.Y = frameRect.UpperLeftCorner.Y + TabHeight;
+    if (VerticalAlignment == GUIAlignment::UpperLeft) {
+		frameRect.ULC.Y += 2;
+		frameRect.LRC.Y = frameRect.ULC.Y + TabHeight;
 	} else {
-		frameRect.UpperLeftCorner.Y = frameRect.LowerRightCorner.Y - TabHeight;
+		frameRect.ULC.Y = frameRect.LRC.Y - TabHeight;
 	}
 
-	s32 pos = frameRect.UpperLeftCorner.X + 2;
+	s32 pos = frameRect.ULC.X + 2;
 
 	if (!frameRect.isPointInside(p))
 		return -1;
@@ -840,15 +834,15 @@ s32 CGUITabControl::getTabAt(s32 xpos, s32 ypos) const
 		s32 len = calcTabWidth(font, text);
 		if (ScrollControl) {
 			// TODO: merge this with draw() ?
-			s32 space = UpButton->getAbsolutePosition().UpperLeftCorner.X - 2 - pos;
+			s32 space = UpButton->getAbsolutePosition().ULC.X - 2 - pos;
 			if (space < len) {
 				abort = true;
 				len = space;
 			}
 		}
 
-		frameRect.UpperLeftCorner.X = pos;
-		frameRect.LowerRightCorner.X = frameRect.UpperLeftCorner.X + len;
+		frameRect.ULC.X = pos;
+		frameRect.LRC.X = frameRect.ULC.X + len;
 
 		pos += len;
 
@@ -878,11 +872,11 @@ bool CGUITabControl::setActiveTab(s32 idx)
 	setVisibleTab(ActiveTabIndex);
 
 	if (changed && Parent) {
-		SEvent event;
-		event.EventType = EET_GUI_EVENT;
-		event.GUIEvent.Caller = this;
-		event.GUIEvent.Element = 0;
-		event.GUIEvent.EventType = EGET_TAB_CHANGED;
+		main::Event event;
+		event.Type = EET_GUI_EVENT;
+        event.GUI.Caller = getID();
+		event.GUI.Element = 0;
+		event.GUI.Type = EGET_TAB_CHANGED;
 		Parent->OnEvent(event);
 	}
 
@@ -922,5 +916,4 @@ void CGUITabControl::updateAbsolutePosition()
 	recalculateScrollBar();
 }
 
-} // end namespace irr
 } // end namespace gui

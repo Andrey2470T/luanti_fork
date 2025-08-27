@@ -8,10 +8,8 @@
 #include "IGUIButton.h"
 #include "IGUIListBox.h"
 #include "IGUIEditBox.h"
-#include "IFileSystem.h"
+#include <Main/Events.h>
 
-namespace irr
-{
 namespace gui
 {
 
@@ -21,7 +19,7 @@ public:
 	//! constructor
 	CGUIFileOpenDialog(const wchar_t *title, IGUIEnvironment *environment,
 			IGUIElement *parent, s32 id, bool restoreCWD = false,
-			io::path::char_type *startDir = 0);
+            std::string *startDir = 0);
 
 	//! destructor
 	virtual ~CGUIFileOpenDialog();
@@ -30,26 +28,26 @@ public:
 	const wchar_t *getFileName() const override;
 
 	//! Returns the filename of the selected file. Is empty if no file was selected.
-	const io::path &getFileNameP() const override;
+	const std::string &getFileNameP() const override;
 
 	//! Returns the directory of the selected file. Returns NULL, if no directory was selected.
-	const io::path &getDirectoryName() const override;
+	const std::string &getDirectoryName() const override;
 
 	//! Returns the directory of the selected file converted to wide characters. Returns NULL if no directory was selected.
 	const wchar_t *getDirectoryNameW() const override;
 
 	//! called if an event happened.
-	bool OnEvent(const SEvent &event) override;
+	bool OnEvent(const main::Event &event) override;
 
 	//! draws the element and its children
 	void draw() override;
 
 protected:
-	void setFileName(const irr::io::path &name);
-	void setDirectoryName(const irr::io::path &name);
+	void setFileName(const std::string &name);
+	void setDirectoryName(const std::string &name);
 
 	//! Ensure filenames are converted correct depending on wide-char settings
-    void pathToStringW(irr::std::wstring &result, const irr::io::path &p);
+	void pathToStringW(std::wstring &result, const std::string &p);
 
 	//! fills the listbox with files.
 	void fillListBox();
@@ -60,14 +58,14 @@ protected:
 	//! sends the event that the file choose process has been canceld
 	void sendCancelEvent();
 
-    v2i DragStart;
-	io::path FileName;
-    std::wstring FileNameW;
-	io::path FileDirectory;
-	io::path FileDirectoryFlat;
-    std::wstring FileDirectoryFlatW;
-	io::path RestoreDirectory;
-	io::path StartDirectory;
+	v2i DragStart;
+	std::string FileName;
+	std::wstring FileNameW;
+	std::string FileDirectory;
+	std::string FileDirectoryFlat;
+	std::wstring FileDirectoryFlatW;
+	std::string RestoreDirectory;
+	std::string StartDirectory;
 
 	IGUIButton *CloseButton;
 	IGUIButton *OKButton;
@@ -75,10 +73,7 @@ protected:
 	IGUIListBox *FileBox;
 	IGUIEditBox *FileNameText;
 	IGUIElement *EventParent;
-	io::IFileSystem *FileSystem;
-	io::IFileList *FileList;
 	bool Dragging;
 };
 
 } // end namespace gui
-} // end namespace irr

@@ -4,14 +4,10 @@
 
 #include "CGUICheckBox.h"
 
-#include "IGUISkin.h"
+#include "GUISkin.h"
 #include "IGUIEnvironment.h"
-#include "IVideoDriver.h"
-#include "IGUIFont.h"
-#include "os.h"
+#include <Main/TimeCounter.h>
 
-namespace irr
-{
 namespace gui
 {
 
@@ -25,10 +21,10 @@ CGUICheckBox::CGUICheckBox(bool checked, IGUIEnvironment *environment, IGUIEleme
 }
 
 //! called if an event happened.
-bool CGUICheckBox::OnEvent(const SEvent &event)
+bool CGUICheckBox::OnEvent(const main::Event &event)
 {
 	if (isEnabled()) {
-		switch (event.EventType) {
+		switch (event.Type) {
 		case EET_KEY_INPUT_EVENT:
 			if (event.KeyInput.PressedDown &&
 					(event.KeyInput.Key == KEY_RETURN || event.KeyInput.Key == KEY_SPACE)) {
@@ -41,29 +37,29 @@ bool CGUICheckBox::OnEvent(const SEvent &event)
 					   (event.KeyInput.Key == KEY_RETURN || event.KeyInput.Key == KEY_SPACE)) {
 				Pressed = false;
 				if (Parent) {
-					SEvent newEvent;
-					newEvent.EventType = EET_GUI_EVENT;
-					newEvent.GUIEvent.Caller = this;
-					newEvent.GUIEvent.Element = 0;
+					main::Event newEvent;
+					newEvent.Type = EET_GUI_EVENT;
+                    newEvent.GUI.Caller = getID();
+					newEvent.GUI.Element = 0;
 					Checked = !Checked;
-					newEvent.GUIEvent.EventType = EGET_CHECKBOX_CHANGED;
+					newEvent.GUI.Type = EGET_CHECKBOX_CHANGED;
 					Parent->OnEvent(newEvent);
 				}
 				return true;
 			}
 			break;
 		case EET_GUI_EVENT:
-			if (event.GUIEvent.EventType == EGET_ELEMENT_FOCUS_LOST) {
-				if (event.GUIEvent.Caller == this)
+			if (event.GUI.Type == EGET_ELEMENT_FOCUS_LOST) {
+                if (event.GUI.Caller == getID())
 					Pressed = false;
 			}
 			break;
 		case EET_MOUSE_INPUT_EVENT:
-			if (event.MouseInput.Event == EMIE_LMOUSE_PRESSED_DOWN) {
+			if (event.MouseInput.Type == EMIE_LMOUSE_PRESSED_DOWN) {
 				Pressed = true;
-				CheckTime = os::Timer::getTime();
+				CheckTime = main::TimeCounter::getRealTime();
 				return true;
-			} else if (event.MouseInput.Event == EMIE_LMOUSE_LEFT_UP) {
+			} else if (event.MouseInput.Type == EMIE_LMOUSE_LEFT_UP) {
 				bool wasPressed = Pressed;
 				Pressed = false;
 
@@ -73,12 +69,12 @@ bool CGUICheckBox::OnEvent(const SEvent &event)
 						return true;
 					}
 
-					SEvent newEvent;
-					newEvent.EventType = EET_GUI_EVENT;
-					newEvent.GUIEvent.Caller = this;
-					newEvent.GUIEvent.Element = 0;
+					main::Event newEvent;
+					newEvent.Type = EET_GUI_EVENT;
+                    newEvent.GUI.Caller = getID();
+					newEvent.GUI.Element = 0;
 					Checked = !Checked;
-					newEvent.GUIEvent.EventType = EGET_CHECKBOX_CHANGED;
+					newEvent.GUI.Type = EGET_CHECKBOX_CHANGED;
 					Parent->OnEvent(newEvent);
 				}
 
@@ -99,33 +95,32 @@ void CGUICheckBox::draw()
 	if (!IsVisible)
 		return;
 
-	IGUISkin *skin = Environment->getSkin();
+	GUISkin *skin = Environment->getSkin();
 	if (skin) {
-		video::IVideoDriver *driver = Environment->getVideoDriver();
 		recti frameRect(AbsoluteRect);
 
 		// draw background
 		if (Background) {
-			img::color8 bgColor = skin->getColor(gui::EGDC_3D_FACE);
+            img::color8 bgColor = skin->getColor(EGDC_3D_FACE);
 			driver->draw2DRectangle(bgColor, frameRect, &AbsoluteClippingRect);
 		}
 
 		// draw the border
 		if (Border) {
 			skin->draw3DSunkenPane(this, 0, true, false, frameRect, &AbsoluteClippingRect);
-			frameRect.UpperLeftCorner.X += skin->getSize(EGDS_TEXT_DISTANCE_X);
-			frameRect.LowerRightCorner.X -= skin->getSize(EGDS_TEXT_DISTANCE_X);
+			frameRect.ULC.X += skin->getSize(EGDS_TEXT_DISTANCE_X);
+			frameRect.LRC.X -= skin->getSize(EGDS_TEXT_DISTANCE_X);
 		}
 
 		const s32 height = skin->getSize(EGDS_CHECK_BOX_WIDTH);
 
 		// the rectangle around the "checked" area.
-		recti checkRect(frameRect.UpperLeftCorner.X,
-				((frameRect.getHeight() - height) / 2) + frameRect.UpperLeftCorner.Y,
+		recti checkRect(frameRect.ULC.X,
+				((frameRect.getHeight() - height) / 2) + frameRect.ULC.Y,
 				0, 0);
 
-		checkRect.LowerRightCorner.X = checkRect.UpperLeftCorner.X + height;
-		checkRect.LowerRightCorner.Y = checkRect.UpperLeftCorner.Y + height;
+		checkRect.LRC.X = checkRect.ULC.X + height;
+		checkRect.LRC.Y = checkRect.ULC.Y + height;
 
 		EGUI_DEFAULT_COLOR col = EGDC_GRAY_EDITABLE;
 		if (isEnabled())
@@ -136,15 +131,15 @@ void CGUICheckBox::draw()
 		// the checked icon
 		if (Checked) {
 			skin->drawIcon(this, EGDI_CHECK_BOX_CHECKED, checkRect.getCenter(),
-					CheckTime, os::Timer::getTime(), false, &AbsoluteClippingRect);
+					CheckTime, main::TimeCounter::getRealTime(), false, &AbsoluteClippingRect);
 		}
 
 		// associated text
 		if (Text.size()) {
 			checkRect = frameRect;
-			checkRect.UpperLeftCorner.X += height + 5;
+			checkRect.ULC.X += height + 5;
 
-			IGUIFont *font = skin->getFont();
+			render::TTFont *font = skin->getFont();
 			if (font) {
 				font->draw(Text.c_str(), checkRect,
 						skin->getColor(isEnabled() ? EGDC_BUTTON_TEXT : EGDC_GRAY_TEXT), false, true, &AbsoluteClippingRect);
@@ -191,4 +186,3 @@ bool CGUICheckBox::isDrawBorderEnabled() const
 }
 
 } // end namespace gui
-} // end namespace irr

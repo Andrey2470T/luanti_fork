@@ -4,13 +4,17 @@
 
 #pragma once
 
-#include "IGUISkin.h"
-#include "Utils/Rect.h"
-#include "EFocusFlags.h" // IWYU pragma: export
-#include "Main/IEventReceiver.h"
+#include "IReferenceCounted.h"
+#include "GUISkin.h"
+#include <Utils/Rect.h>
+#include "GUIEnums.h"
+#include <Main/IEventReceiver.h>
+#include <Main/Events.h>
+
+namespace gui
+{
 
 class IGUIElement;
-class IGUIFont;
 class IGUISpriteBank;
 class IGUIScrollBar;
 class IGUIImage;
@@ -24,12 +28,6 @@ class IGUITabControl;
 class IGUITab;
 class IGUIComboBox;
 class IGUIButton;
-class IGUIWindow;
-
-namespace render
-{
-    class Texture2D;
-};
 
 //! GUI Environment. Used as factory and manager of all other GUI elements.
 /** \par This element can create the following events of type EGUI_EVENT_TYPE (which are passed on to focused sub-elements):
@@ -38,7 +36,7 @@ namespace render
 \li EGET_ELEMENT_LEFT
 \li EGET_ELEMENT_HOVERED
 */
-class IGUIEnvironment
+class IGUIEnvironment : public virtual IReferenceCounted
 {
 public:
 	//! Draws all gui elements by traversing the GUI environment starting at the root node.
@@ -52,11 +50,11 @@ public:
 	then the focus will not be changed.
 	\param element Pointer to the element which shall get the focus.
 	\return True on success, false on failure */
-    virtual bool setFocus(std::shared_ptr<IGUIElement> element) = 0;
+	virtual bool setFocus(IGUIElement *element) = 0;
 
 	//! Returns the element which holds the focus.
 	/** \return Pointer to the element with focus. */
-    virtual std::shared_ptr<IGUIElement> getFocus() const = 0;
+	virtual IGUIElement *getFocus() const = 0;
 
 	//! Returns the element which was last under the mouse cursor
 	/** NOTE: This information is updated _after_ the user-eventreceiver
@@ -64,32 +62,20 @@ public:
 	mouse events you have to use instead:
 	IGUIEnvironment::getRootGUIElement()->getElementFromPoint(mousePos);
 	\return Pointer to the element under the mouse. */
-    virtual std::shared_ptr<IGUIElement> getHovered() const = 0;
+	virtual IGUIElement *getHovered() const = 0;
 
 	//! Removes the focus from an element.
 	/** Causes a EGET_ELEMENT_FOCUS_LOST event. If the event is absorbed
 	then the focus will not be changed.
 	\param element Pointer to the element which shall lose the focus.
 	\return True on success, false on failure */
-    virtual bool removeFocus(std::shared_ptr<IGUIElement> element) = 0;
+	virtual bool removeFocus(IGUIElement *element) = 0;
 
 	//! Returns whether the element has focus
 	/** \param element Pointer to the element which is tested.
 	\param checkSubElements When true and focus is on a sub-element of element then it will still count as focused and return true
 	\return True if the element has focus, else false. */
-    virtual bool hasFocus(const std::shared_ptr<IGUIElement> element, bool checkSubElements = false) const = 0;
-
-	//! Returns the current video driver.
-	/** \return Pointer to the video driver. */
-    //virtual video::IVideoDriver *getVideoDriver() const = 0;
-
-	//! Returns the file system.
-	/** \return Pointer to the file system. */
-    //virtual io::IFileSystem *getFileSystem() const = 0;
-
-	//! returns a pointer to the OS operator
-	/** \return Pointer to the OS operator. */
-    //virtual IOSOperator *getOSOperator() const = 0;
+	virtual bool hasFocus(const IGUIElement *element, bool checkSubElements = false) const = 0;
 
 	//! Removes all elements from the environment.
 	virtual void clear() = 0;
@@ -99,40 +85,32 @@ public:
 	use this method, it is used by the engine internally.
 	\param event The event to post.
 	\return True if succeeded, else false. */
-    virtual bool postEventFromUser(const Event &event) = 0;
+	virtual bool postEventFromUser(const main::Event &event) = 0;
 
 	//! This sets a new event receiver for gui events.
 	/** Usually you do not have to
 	use this method, it is used by the engine internally.
 	\param evr Pointer to the new receiver. */
-	virtual void setUserEventReceiver(IEventReceiver *evr) = 0;
+    virtual void setUserEventReceiver(main::IEventReceiver *evr) = 0;
 
 	//! Returns pointer to the current gui skin.
 	/** \return Pointer to the GUI skin. */
-	virtual IGUISkin *getSkin() const = 0;
+    virtual GUISkin *getSkin() const = 0;
 
 	//! Sets a new GUI Skin
 	/** You can use this to change the appearance of the whole GUI
-	Environment. You can set one of the built-in skins or implement your
-	own class derived from IGUISkin and enable it using this method.
-	To set for example the built-in Windows classic skin, use the following
-	code:
-	\code
-	gui::IGUISkin* newskin = environment->createSkin(gui::EGST_WINDOWS_CLASSIC);
-	environment->setSkin(newskin);
-	newskin->drop();
-	\endcode
+	Environment.
 	\param skin New skin to use.
 	*/
-	virtual void setSkin(IGUISkin *skin) = 0;
+    virtual void setSkin(GUISkin *skin) = 0;
 
-	//! Creates a new GUI Skin based on a template.
+	//! Creates a new GUI Skin.
 	/** Use setSkin() to set the created skin.
 	\param type The type of the new skin.
 	\return Pointer to the created skin.
-	If you no longer need it, you should call IGUISkin::drop().
+    If you no longer need it, you should call GUISkin::drop().
 	See IReferenceCounted::drop() for more information. */
-    virtual IGUISkin *createSkin(GUISkinType type) = 0;
+    virtual GUISkin *createSkin() = 0;
 
 	//! Creates the image list from the given texture.
 	/** \param texture Texture to split into images
@@ -141,7 +119,7 @@ public:
 	\return Pointer to the font. Returns 0 if the font could not be loaded.
 	This pointer should not be dropped. See IReferenceCounted::drop() for
 	more information. */
-    virtual IGUIImageList *createImageList(render::Texture2D *texture,
+	virtual IGUIImageList *createImageList(img::Image *texture,
             v2i imageSize,
 			bool useAlphaChannel) = 0;
 
@@ -151,7 +129,7 @@ public:
 	\return Pointer to the font. Returns 0 if the font could not be loaded.
 	This pointer should not be dropped. See IReferenceCounted::drop() for
 	more information. */
-    virtual IGUIFont *getFont(const std::string &filename) = 0;
+    virtual render::TTFont *getFont(const std::string &filename) = 0;
 
 	//! Adds an externally loaded font to the font list.
 	/** This method allows to attach an already loaded font to the list of
@@ -159,16 +137,16 @@ public:
 	\param name Name the font should be stored as.
 	\param font Pointer to font to add.
 	\return Pointer to the font stored. This can differ from given parameter if the name previously existed. */
-    virtual IGUIFont *addFont(const std::string &name, IGUIFont *font) = 0;
+    virtual render::TTFont *addFont(const std::string &name, render::TTFont *font) = 0;
 
 	//! remove loaded font
-	virtual void removeFont(IGUIFont *font) = 0;
+	virtual void removeFont(render::TTFont *font) = 0;
 
 	//! Returns the default built-in font.
 	/** \return Pointer to the default built-in font.
 	This pointer should not be dropped. See IReferenceCounted::drop() for
 	more information. */
-	virtual IGUIFont *getBuiltInFont() const = 0;
+	virtual render::TTFont *getBuiltInFont() const = 0;
 
 	//! Returns pointer to the sprite bank which was added with addEmptySpriteBank
 	/** TODO: This should load files in the future, but not implemented so far.
@@ -190,7 +168,7 @@ public:
 	\return Pointer to the root element of the GUI. The returned pointer
 	should not be dropped. See IReferenceCounted::drop() for more
 	information. */
-    virtual std::shared_ptr<IGUIElement> getRootGUIElement() = 0;
+	virtual IGUIElement *getRootGUIElement() = 0;
 
 	//! Adds a button element.
 	/** \param rectangle Rectangle specifying the borders of the button.
@@ -201,8 +179,8 @@ public:
 	\return Pointer to the created button. Returns 0 if an error occurred.
 	This pointer should not be dropped. See IReferenceCounted::drop() for
 	more information. */
-    virtual IGUIButton *addButton(const recti &rectangle,
-            std::shared_ptr<IGUIElement> parent = 0, s32 id = -1, const wchar_t *text = 0, const wchar_t *tooltiptext = 0) = 0;
+	virtual IGUIButton *addButton(const recti &rectangle,
+			IGUIElement *parent = 0, s32 id = -1, const wchar_t *text = 0, const wchar_t *tooltiptext = 0) = 0;
 
 	//! Adds a scrollbar.
 	/** \param horizontal Specifies if the scroll bar is drawn horizontal
@@ -213,8 +191,8 @@ public:
 	\return Pointer to the created scrollbar. Returns 0 if an error
 	occurred. This pointer should not be dropped. See
 	IReferenceCounted::drop() for more information. */
-    virtual IGUIScrollBar *addScrollBar(bool horizontal, const recti &rectangle,
-            std::shared_ptr<IGUIElement> parent = 0, s32 id = -1) = 0;
+	virtual IGUIScrollBar *addScrollBar(bool horizontal, const recti &rectangle,
+			IGUIElement *parent = 0, s32 id = -1) = 0;
 
 	//! Adds an image element.
 	/** \param image Image to be displayed.
@@ -228,8 +206,8 @@ public:
 	\return Pointer to the created image element. Returns 0 if an error
 	occurred. This pointer should not be dropped. See
 	IReferenceCounted::drop() for more information. */
-    virtual IGUIImage *addImage(render::Texture2D *image, v2i pos,
-            bool useAlphaChannel = true, std::shared_ptr<IGUIElement> parent = 0, s32 id = -1, const wchar_t *text = 0) = 0;
+	virtual IGUIImage *addImage(img::Image *image, v2i pos,
+			bool useAlphaChannel = true, IGUIElement *parent = 0, s32 id = -1, const wchar_t *text = 0) = 0;
 
 	//! Adds an image element.
 	/** Use IGUIImage::setImage later to set the image to be displayed.
@@ -242,8 +220,8 @@ public:
 	\return Pointer to the created image element. Returns 0 if an error
 	occurred. This pointer should not be dropped. See
 	IReferenceCounted::drop() for more information. */
-    virtual IGUIImage *addImage(const recti &rectangle,
-            std::shared_ptr<IGUIElement> parent = 0, s32 id = -1, const wchar_t *text = 0, bool useAlphaChannel = true) = 0;
+	virtual IGUIImage *addImage(const recti &rectangle,
+			IGUIElement *parent = 0, s32 id = -1, const wchar_t *text = 0, bool useAlphaChannel = true) = 0;
 
 	//! Adds a checkbox element.
 	/** \param checked Define the initial state of the check box.
@@ -254,8 +232,8 @@ public:
 	\return Pointer to the created check box. Returns 0 if an error
 	occurred. This pointer should not be dropped. See
 	IReferenceCounted::drop() for more information. */
-    virtual IGUICheckBox *addCheckBox(bool checked, const recti &rectangle,
-            std::shared_ptr<IGUIElement> parent = 0, s32 id = -1, const wchar_t *text = 0) = 0;
+	virtual IGUICheckBox *addCheckBox(bool checked, const recti &rectangle,
+			IGUIElement *parent = 0, s32 id = -1, const wchar_t *text = 0) = 0;
 
 	//! Adds a list box element.
 	/** \param rectangle Rectangle specifying the borders of the list box.
@@ -265,8 +243,8 @@ public:
 	\return Pointer to the created list box. Returns 0 if an error occurred.
 	This pointer should not be dropped. See IReferenceCounted::drop() for
 	more information. */
-    virtual IGUIListBox *addListBox(const recti &rectangle,
-            std::shared_ptr<IGUIElement> parent = 0, s32 id = -1, bool drawBackground = false) = 0;
+	virtual IGUIListBox *addListBox(const recti &rectangle,
+			IGUIElement *parent = 0, s32 id = -1, bool drawBackground = false) = 0;
 
 	//! Adds a file open dialog.
 	/** \param title Text to be displayed as the title of the dialog.
@@ -283,7 +261,7 @@ public:
 	occurred. This pointer should not be dropped. See
 	IReferenceCounted::drop() for more information. */
 	virtual IGUIFileOpenDialog *addFileOpenDialog(const wchar_t *title = 0,
-            bool modal = true, std::shared_ptr<IGUIElement> parent = 0, s32 id = -1,
+			bool modal = true, IGUIElement *parent = 0, s32 id = -1,
             bool restoreCWD = false, std::string *startDir = 0) = 0;
 
 	//! Adds a static text.
@@ -298,8 +276,8 @@ public:
 	\return Pointer to the created static text. Returns 0 if an error
 	occurred. This pointer should not be dropped. See
 	IReferenceCounted::drop() for more information. */
-    virtual IGUIStaticText *addStaticText(const wchar_t *text, const recti &rectangle,
-            bool border = false, bool wordWrap = true, std::shared_ptr<IGUIElement> parent = 0, s32 id = -1,
+	virtual IGUIStaticText *addStaticText(const wchar_t *text, const recti &rectangle,
+			bool border = false, bool wordWrap = true, IGUIElement *parent = 0, s32 id = -1,
 			bool fillBackground = false) = 0;
 
 	//! Adds an edit box.
@@ -317,8 +295,8 @@ public:
 	\return Pointer to the created edit box. Returns 0 if an error occurred.
 	This pointer should not be dropped. See IReferenceCounted::drop() for
 	more information. */
-    virtual IGUIEditBox *addEditBox(const wchar_t *text, const recti &rectangle,
-            bool border = true, std::shared_ptr<IGUIElement> parent = 0, s32 id = -1) = 0;
+	virtual IGUIEditBox *addEditBox(const wchar_t *text, const recti &rectangle,
+			bool border = true, IGUIElement *parent = 0, s32 id = -1) = 0;
 
 	//! Adds a tab control to the environment.
 	/** \param rectangle Rectangle specifying the borders of the tab control.
@@ -333,8 +311,8 @@ public:
 	\return Pointer to the created tab control element. Returns 0 if an
 	error occurred. This pointer should not be dropped. See
 	IReferenceCounted::drop() for more information. */
-    virtual IGUITabControl *addTabControl(const recti &rectangle,
-            std::shared_ptr<IGUIElement> parent = 0, bool fillbackground = false,
+	virtual IGUITabControl *addTabControl(const recti &rectangle,
+			IGUIElement *parent = 0, bool fillbackground = false,
 			bool border = true, s32 id = -1) = 0;
 
 	//! Adds tab to the environment.
@@ -348,8 +326,8 @@ public:
 	\return Pointer to the created tab. Returns 0 if an
 	error occurred. This pointer should not be dropped. See
 	IReferenceCounted::drop() for more information. */
-    virtual IGUITab *addTab(const recti &rectangle,
-            std::shared_ptr<IGUIElement> parent = 0, s32 id = -1) = 0;
+	virtual IGUITab *addTab(const recti &rectangle,
+			IGUIElement *parent = 0, s32 id = -1) = 0;
 
 	//! Adds a combo box to the environment.
 	/** \param rectangle Rectangle specifying the borders of the combo box.
@@ -359,8 +337,8 @@ public:
 	\return Pointer to the created combo box. Returns 0 if an
 	error occurred. This pointer should not be dropped. See
 	IReferenceCounted::drop() for more information. */
-    virtual IGUIComboBox *addComboBox(const recti &rectangle,
-            std::shared_ptr<IGUIElement> parent = 0, s32 id = -1) = 0;
+	virtual IGUIComboBox *addComboBox(const recti &rectangle,
+			IGUIElement *parent = 0, s32 id = -1) = 0;
 
 	//! Find the next element which would be selected when pressing the tab-key
 	/** If you set the focus for the result you can manually force focus-changes like they
@@ -368,7 +346,7 @@ public:
 	\param reverse When true it will search backward (toward lower TabOrder numbers, like shift+tab)
 	\param group When true it will search for the next tab-group (like ctrl+tab)
 	*/
-    virtual std::shared_ptr<IGUIElement> getNextElement(bool reverse = false, bool group = false) = 0;
+	virtual IGUIElement *getNextElement(bool reverse = false, bool group = false) = 0;
 
 	//! Set the way the gui will handle automatic focus changes
 	/** The default is (EFF_SET_ON_LMOUSE_DOWN | EFF_SET_ON_TAB).
@@ -390,5 +368,7 @@ public:
 	Note that in general just calling IGUIElement::remove() is enough.
 	Unless you create your own GUI elements removing themselves you won't need it.
 	\param element: Element to remove */
-    virtual void addToDeletionQueue(std::shared_ptr<IGUIElement> element) = 0;
+	virtual void addToDeletionQueue(IGUIElement *element) = 0;
 };
+
+} // end namespace gui

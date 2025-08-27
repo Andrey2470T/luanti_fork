@@ -5,10 +5,11 @@
 #pragma once
 
 #include "IGUIElement.h"
-#include "Image/Color.h"
+#include <Image/Color.h>
+#include <Render/TTFont.h>
 
-class IGUIFont;
-
+namespace gui
+{
 //! Single line edit box for editing simple text.
 /** \par This element can create the following events of type EGUI_EVENT_TYPE:
 \li EGET_EDITBOX_ENTER
@@ -19,22 +20,22 @@ class IGUIEditBox : public IGUIElement
 {
 public:
 	//! constructor
-    IGUIEditBox(IGUIEnvironment *environment, std::shared_ptr<IGUIElement> parent, s32 id, recti rectangle) :
-            IGUIElement(GUIElementType::EditBox, environment, parent, id, rectangle) {}
+	IGUIEditBox(IGUIEnvironment *environment, IGUIElement *parent, s32 id, recti rectangle) :
+			IGUIElement(EGUIET_EDIT_BOX, environment, parent, id, rectangle) {}
 
 	//! Sets another skin independent font.
 	/** If this is set to zero, the button uses the font of the skin.
 	\param font: New font to set. */
-	virtual void setOverrideFont(IGUIFont *font = 0) = 0;
+	virtual void setOverrideFont(render::TTFont *font = 0) = 0;
 
 	//! Gets the override font (if any)
 	/** \return The override font (may be 0) */
-	virtual IGUIFont *getOverrideFont() const = 0;
+	virtual render::TTFont *getOverrideFont() const = 0;
 
 	//! Get the font which is used right now for drawing
 	/** Currently this is the override font when one is set and the
 	font of the active skin otherwise */
-	virtual IGUIFont *getActiveFont() const = 0;
+	virtual render::TTFont *getActiveFont() const = 0;
 
 	//! Sets another color for the text.
 	/** If set, the edit box does not use the EGDC_BUTTON_TEXT color defined
@@ -44,10 +45,10 @@ public:
 	If you set a color, and you want the text displayed with the color
 	of the skin again, call IGUIEditBox::enableOverrideColor(false);
 	\param color: New color of the text. */
-    virtual void setOverrideColor(img::color8 color) = 0;
+	virtual void setOverrideColor(img::color8 color) = 0;
 
 	//! Gets the override color
-    virtual img::color8 getOverrideColor() const = 0;
+	virtual img::color8 getOverrideColor() const = 0;
 
 	//! Sets if the text should use the override color or the color in the gui skin.
 	/** \param enable: If set to true, the override color, which can be set
@@ -75,11 +76,11 @@ public:
 	virtual bool isDrawBorderEnabled() const = 0;
 
 	//! Sets text justification mode
-	/** \param horizontal: EGUIA_UPPERLEFT for left justified (default),
+	/** \param horizontal: (u8)GUIAlignment::UpperLeft for left justified (default),
 	EGUIA_LOWERRIGHT for right justified, or EGUIA_CENTER for centered text.
-	\param vertical: EGUIA_UPPERLEFT to align with top edge,
+	\param vertical: (u8)GUIAlignment::UpperLeft to align with top edge,
 	EGUIA_LOWERRIGHT for bottom edge, or EGUIA_CENTER for centered text (default). */
-    virtual void setTextAlignment(GUIAlignment horizontal, GUIAlignment vertical) = 0;
+	virtual void setTextAlignment(EGUI_ALIGNMENT horizontal, EGUI_ALIGNMENT vertical) = 0;
 
 	//! Enables or disables word wrap.
 	/** \param enable: If set to true, words going over one line are
@@ -118,7 +119,7 @@ public:
 
 	//! Gets the size area of the text in the edit box
 	/** \return The size in pixels of the text */
-    virtual v2u getTextDimension() = 0;
+	virtual v2u getTextDimension() = 0;
 
 	//! Sets the maximum amount of characters which may be entered in the box.
 	/** \param max: Maximum amount of characters. If 0, the character amount is
@@ -137,8 +138,10 @@ public:
 
 	//! Set the blinktime for the cursor. 2x blinktime is one full cycle.
 	//** \param timeMs Blinktime in milliseconds. When set to 0 the cursor is constantly on without blinking */
-    virtual void setCursorBlinkTime(u32 timeMs) = 0;
+	virtual void setCursorBlinkTime(u32 timeMs) = 0;
 
 	//! Get the cursor blinktime
-    virtual u32 getCursorBlinkTime() const = 0;
+	virtual u32 getCursorBlinkTime() const = 0;
 };
+
+} // end namespace gui

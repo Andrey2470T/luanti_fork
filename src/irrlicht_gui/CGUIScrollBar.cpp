@@ -4,16 +4,10 @@
 
 #include "CGUIScrollBar.h"
 
-#include "IGUISkin.h"
+#include "GUISkin.h"
 #include "IGUIEnvironment.h"
-#include "IVideoDriver.h"
 #include "CGUIButton.h"
-#include "IGUIFont.h"
-#include "IGUIFontBitmap.h"
-#include "os.h"
 
-namespace irr
-{
 namespace gui
 {
 
@@ -50,11 +44,11 @@ CGUIScrollBar::~CGUIScrollBar()
 }
 
 //! called if an event happened.
-bool CGUIScrollBar::OnEvent(const SEvent &event)
+bool CGUIScrollBar::OnEvent(const main::Event &event)
 {
 	if (isEnabled()) {
 
-		switch (event.EventType) {
+		switch (event.Type) {
 		case EET_KEY_INPUT_EVENT:
 			if (event.KeyInput.PressedDown) {
 				const s32 oldPos = Pos;
@@ -85,11 +79,11 @@ bool CGUIScrollBar::OnEvent(const SEvent &event)
 				}
 
 				if (Pos != oldPos) {
-					SEvent newEvent;
-					newEvent.EventType = EET_GUI_EVENT;
-					newEvent.GUIEvent.Caller = this;
-					newEvent.GUIEvent.Element = 0;
-					newEvent.GUIEvent.EventType = EGET_SCROLL_BAR_CHANGED;
+					main::Event newEvent;
+					newEvent.Type = EET_GUI_EVENT;
+                    newEvent.GUI.Caller = getID();
+					newEvent.GUI.Element = 0;
+					newEvent.GUI.Type = EGET_SCROLL_BAR_CHANGED;
 					Parent->OnEvent(newEvent);
 				}
 				if (absorb)
@@ -97,42 +91,42 @@ bool CGUIScrollBar::OnEvent(const SEvent &event)
 			}
 			break;
 		case EET_GUI_EVENT:
-			if (event.GUIEvent.EventType == EGET_BUTTON_CLICKED) {
-				if (event.GUIEvent.Caller == UpButton)
+			if (event.GUI.Type == EGET_BUTTON_CLICKED) {
+                if (event.GUI.Caller == UpButton->getID())
 					setPos(Pos - SmallStep);
-				else if (event.GUIEvent.Caller == DownButton)
+                else if (event.GUI.Caller == DownButton->getID())
 					setPos(Pos + SmallStep);
 
-				SEvent newEvent;
-				newEvent.EventType = EET_GUI_EVENT;
-				newEvent.GUIEvent.Caller = this;
-				newEvent.GUIEvent.Element = 0;
-				newEvent.GUIEvent.EventType = EGET_SCROLL_BAR_CHANGED;
+				main::Event newEvent;
+				newEvent.Type = EET_GUI_EVENT;
+                newEvent.GUI.Caller = getID();
+				newEvent.GUI.Element = 0;
+				newEvent.GUI.Type = EGET_SCROLL_BAR_CHANGED;
 				Parent->OnEvent(newEvent);
 
 				return true;
-			} else if (event.GUIEvent.EventType == EGET_ELEMENT_FOCUS_LOST) {
-				if (event.GUIEvent.Caller == this)
+			} else if (event.GUI.Type == EGET_ELEMENT_FOCUS_LOST) {
+                if (event.GUI.Caller == getID())
 					Dragging = false;
 			}
 			break;
 		case EET_MOUSE_INPUT_EVENT: {
 			const v2i p(event.MouseInput.X, event.MouseInput.Y);
 			bool isInside = isPointInside(p);
-			switch (event.MouseInput.Event) {
+			switch (event.MouseInput.Type) {
 			case EMIE_MOUSE_WHEEL:
 				if (Environment->hasFocus(this)) {
 					// thanks to a bug report by REAPER
 					// thanks to tommi by tommi for another bugfix
 					// everybody needs a little thanking. hallo niko!;-)
 					setPos(getPos() +
-							((event.MouseInput.Wheel < 0 ? -1 : 1) * SmallStep * (Horizontal ? 1 : -1)));
+							((event.MouseInput.WheelDelta < 0 ? -1 : 1) * SmallStep * (Horizontal ? 1 : -1)));
 
-					SEvent newEvent;
-					newEvent.EventType = EET_GUI_EVENT;
-					newEvent.GUIEvent.Caller = this;
-					newEvent.GUIEvent.Element = 0;
-					newEvent.GUIEvent.EventType = EGET_SCROLL_BAR_CHANGED;
+					main::Event newEvent;
+					newEvent.Type = EET_GUI_EVENT;
+                    newEvent.GUI.Caller = getID();
+                    newEvent.GUI.Element = std::nullopt;
+					newEvent.GUI.Type = EGET_SCROLL_BAR_CHANGED;
 					Parent->OnEvent(newEvent);
 					return true;
 				}
@@ -153,12 +147,12 @@ bool CGUIScrollBar::OnEvent(const SEvent &event)
 					Dragging = false;
 
 				if (!Dragging) {
-					if (event.MouseInput.Event == EMIE_MOUSE_MOVED)
+					if (event.MouseInput.Type == EMIE_MOUSE_MOVED)
 						break;
 					return isInside;
 				}
 
-				if (event.MouseInput.Event == EMIE_LMOUSE_LEFT_UP)
+				if (event.MouseInput.Type == EMIE_LMOUSE_LEFT_UP)
 					Dragging = false;
 
 				const s32 newPos = getPosFromMousePos(p);
@@ -174,7 +168,7 @@ bool CGUIScrollBar::OnEvent(const SEvent &event)
 						setPos(newPos);
 					} else {
 						TrayClick = false;
-						if (event.MouseInput.Event == EMIE_MOUSE_MOVED)
+						if (event.MouseInput.Type == EMIE_MOUSE_MOVED)
 							return isInside;
 					}
 				}
@@ -186,11 +180,11 @@ bool CGUIScrollBar::OnEvent(const SEvent &event)
 				}
 
 				if (Pos != oldPos && Parent) {
-					SEvent newEvent;
-					newEvent.EventType = EET_GUI_EVENT;
-					newEvent.GUIEvent.Caller = this;
-					newEvent.GUIEvent.Element = 0;
-					newEvent.GUIEvent.EventType = EGET_SCROLL_BAR_CHANGED;
+					main::Event newEvent;
+					newEvent.Type = EET_GUI_EVENT;
+                    newEvent.GUI.Caller = getID();
+                    newEvent.GUI.Element = std::nullopt;
+					newEvent.GUI.Type = EGET_SCROLL_BAR_CHANGED;
 					Parent->OnEvent(newEvent);
 				}
 				return isInside;
@@ -223,11 +217,11 @@ void CGUIScrollBar::OnPostRender(u32 timeMs)
 			setPos(DesiredPos);
 
 		if (Pos != oldPos && Parent) {
-			SEvent newEvent;
-			newEvent.EventType = EET_GUI_EVENT;
-			newEvent.GUIEvent.Caller = this;
-			newEvent.GUIEvent.Element = 0;
-			newEvent.GUIEvent.EventType = EGET_SCROLL_BAR_CHANGED;
+			main::Event newEvent;
+			newEvent.Type = EET_GUI_EVENT;
+            newEvent.GUI.Caller = getID();
+            newEvent.GUI.Element = std::nullopt;
+			newEvent.GUI.Type = EGET_SCROLL_BAR_CHANGED;
 			Parent->OnEvent(newEvent);
 		}
 	}
@@ -239,7 +233,7 @@ void CGUIScrollBar::draw()
 	if (!IsVisible)
 		return;
 
-	IGUISkin *skin = Environment->getSkin();
+	GUISkin *skin = Environment->getSkin();
 	if (!skin)
 		return;
 
@@ -253,14 +247,14 @@ void CGUIScrollBar::draw()
 	// draws the background
 	skin->draw2DRectangle(this, skin->getColor(EGDC_SCROLLBAR), SliderRect, &AbsoluteClippingRect);
 
-	if (core::isnotzero(range())) {
+    if (!equals(range(), 0)) {
 		// recalculate slider rectangle
 		if (Horizontal) {
-			SliderRect.UpperLeftCorner.X = AbsoluteRect.UpperLeftCorner.X + DrawPos + RelativeRect.getHeight() - DrawHeight / 2;
-			SliderRect.LowerRightCorner.X = SliderRect.UpperLeftCorner.X + DrawHeight;
+			SliderRect.ULC.X = AbsoluteRect.ULC.X + DrawPos + RelativeRect.getHeight() - DrawHeight / 2;
+			SliderRect.LRC.X = SliderRect.ULC.X + DrawHeight;
 		} else {
-			SliderRect.UpperLeftCorner.Y = AbsoluteRect.UpperLeftCorner.Y + DrawPos + RelativeRect.getWidth() - DrawHeight / 2;
-			SliderRect.LowerRightCorner.Y = SliderRect.UpperLeftCorner.Y + DrawHeight;
+			SliderRect.ULC.Y = AbsoluteRect.ULC.Y + DrawPos + RelativeRect.getWidth() - DrawHeight / 2;
+			SliderRect.LRC.Y = SliderRect.ULC.Y + DrawHeight;
 		}
 
 		skin->draw3DButtonPaneStandard(this, SliderRect, &AbsoluteClippingRect);
@@ -284,10 +278,10 @@ s32 CGUIScrollBar::getPosFromMousePos(const v2i &pos) const
 	f32 w, p;
 	if (Horizontal) {
 		w = RelativeRect.getWidth() - f32(RelativeRect.getHeight()) * 3.0f;
-		p = pos.X - AbsoluteRect.UpperLeftCorner.X - RelativeRect.getHeight() * 1.5f;
+		p = pos.X - AbsoluteRect.ULC.X - RelativeRect.getHeight() * 1.5f;
 	} else {
 		w = RelativeRect.getHeight() - f32(RelativeRect.getWidth()) * 3.0f;
-		p = pos.Y - AbsoluteRect.UpperLeftCorner.Y - RelativeRect.getWidth() * 1.5f;
+		p = pos.Y - AbsoluteRect.ULC.Y - RelativeRect.getWidth() * 1.5f;
 	}
 	return (s32)(p / w * range()) + Min;
 }
@@ -295,9 +289,9 @@ s32 CGUIScrollBar::getPosFromMousePos(const v2i &pos) const
 //! sets the position of the scrollbar
 void CGUIScrollBar::setPos(s32 pos)
 {
-	Pos = core::s32_clamp(pos, Min, Max);
+    Pos = std::clamp(pos, Min, Max);
 
-	if (core::isnotzero(range())) {
+    if (!equals(range(), 0)) {
 		if (Horizontal) {
 			f32 f = (RelativeRect.getWidth() - ((f32)RelativeRect.getHeight() * 3.0f)) / range();
 			DrawPos = (s32)(((Pos - Min) * f) + ((f32)RelativeRect.getHeight() * 0.5f));
@@ -354,7 +348,7 @@ void CGUIScrollBar::setMax(s32 max)
 	if (Min > Max)
 		Min = Max;
 
-	bool enable = core::isnotzero(range());
+    bool enable = !equals(range(), 0);
 	UpButton->setEnabled(enable);
 	DownButton->setEnabled(enable);
 	setPos(Pos);
@@ -373,7 +367,7 @@ void CGUIScrollBar::setMin(s32 min)
 	if (Max < Min)
 		Max = Min;
 
-	bool enable = core::isnotzero(range());
+    bool enable = !equals(range(), 0);
 	UpButton->setEnabled(enable);
 	DownButton->setEnabled(enable);
 	setPos(Pos);
@@ -388,9 +382,9 @@ s32 CGUIScrollBar::getPos() const
 //! refreshes the position and text on child buttons
 void CGUIScrollBar::refreshControls()
 {
-	CurrentIconColor = img::color8(255, 255, 255, 255);
+    CurrentIconColor = img::color8(img::white);
 
-	IGUISkin *skin = Environment->getSkin();
+	GUISkin *skin = Environment->getSkin();
 	IGUISpriteBank *sprites = 0;
 
 	if (skin) {
@@ -412,7 +406,7 @@ void CGUIScrollBar::refreshControls()
 			UpButton->setSprite(EGBS_BUTTON_DOWN, skin->getIcon(EGDI_CURSOR_LEFT), CurrentIconColor);
 		}
 		UpButton->setRelativePosition(recti(0, 0, w, h));
-		UpButton->setAlignment(EGUIA_UPPERLEFT, EGUIA_UPPERLEFT, EGUIA_UPPERLEFT, EGUIA_LOWERRIGHT);
+        UpButton->setAlignment(GUIAlignment::UpperLeft, GUIAlignment::UpperLeft, GUIAlignment::UpperLeft, EGUIA_LOWERRIGHT);
 		if (!DownButton) {
 			DownButton = new CGUIButton(Environment, this, -1, recti(RelativeRect.getWidth() - w, 0, RelativeRect.getWidth(), h), NoClip);
 			DownButton->setSubElement(true);
@@ -424,7 +418,7 @@ void CGUIScrollBar::refreshControls()
 			DownButton->setSprite(EGBS_BUTTON_DOWN, skin->getIcon(EGDI_CURSOR_RIGHT), CurrentIconColor);
 		}
 		DownButton->setRelativePosition(recti(RelativeRect.getWidth() - w, 0, RelativeRect.getWidth(), h));
-		DownButton->setAlignment(EGUIA_LOWERRIGHT, EGUIA_LOWERRIGHT, EGUIA_UPPERLEFT, EGUIA_LOWERRIGHT);
+        DownButton->setAlignment(EGUIA_LOWERRIGHT, EGUIA_LOWERRIGHT, GUIAlignment::UpperLeft, EGUIA_LOWERRIGHT);
 	} else {
 		const s32 w = RelativeRect.getWidth();
 		const s32 h = (w < RelativeRect.getHeight() / 2) ? w : RelativeRect.getHeight() / 2;
@@ -439,7 +433,7 @@ void CGUIScrollBar::refreshControls()
 			UpButton->setSprite(EGBS_BUTTON_DOWN, skin->getIcon(EGDI_CURSOR_UP), CurrentIconColor);
 		}
 		UpButton->setRelativePosition(recti(0, 0, w, h));
-		UpButton->setAlignment(EGUIA_UPPERLEFT, EGUIA_LOWERRIGHT, EGUIA_UPPERLEFT, EGUIA_UPPERLEFT);
+        UpButton->setAlignment(GUIAlignment::UpperLeft, EGUIA_LOWERRIGHT, GUIAlignment::UpperLeft, GUIAlignment::UpperLeft);
 		if (!DownButton) {
 			DownButton = new CGUIButton(Environment, this, -1, recti(0, RelativeRect.getHeight() - h, w, RelativeRect.getHeight()), NoClip);
 			DownButton->setSubElement(true);
@@ -451,9 +445,8 @@ void CGUIScrollBar::refreshControls()
 			DownButton->setSprite(EGBS_BUTTON_DOWN, skin->getIcon(EGDI_CURSOR_DOWN), CurrentIconColor);
 		}
 		DownButton->setRelativePosition(recti(0, RelativeRect.getHeight() - h, w, RelativeRect.getHeight()));
-		DownButton->setAlignment(EGUIA_UPPERLEFT, EGUIA_LOWERRIGHT, EGUIA_LOWERRIGHT, EGUIA_LOWERRIGHT);
+        DownButton->setAlignment(GUIAlignment::UpperLeft, EGUIA_LOWERRIGHT, EGUIA_LOWERRIGHT, EGUIA_LOWERRIGHT);
 	}
 }
 
 } // end namespace gui
-} // end namespace irr

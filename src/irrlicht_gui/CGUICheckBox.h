@@ -6,8 +6,6 @@
 
 #include "IGUICheckBox.h"
 
-namespace irr
-{
 namespace gui
 {
 
@@ -15,7 +13,7 @@ class CGUICheckBox : public IGUICheckBox
 {
 public:
 	//! constructor
-    CGUICheckBox(bool checked, IGUIEnvironment *environment, IGUIElement *parent, s32 id, recti rectangle);
+	CGUICheckBox(bool checked, IGUIEnvironment *environment, IGUIElement *parent, s32 id, recti rectangle);
 
 	//! set if box is checked
 	void setChecked(bool checked) override;
@@ -38,7 +36,7 @@ public:
 	bool isDrawBorderEnabled() const override;
 
 	//! called if an event happened.
-	bool OnEvent(const SEvent &event) override;
+	bool OnEvent(const main::Event &event) override;
 
 	//! draws the element and its children
 	void draw() override;
@@ -52,4 +50,3 @@ private:
 };
 
 } // end namespace gui
-} // end namespace irr

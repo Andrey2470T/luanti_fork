@@ -5,8 +5,10 @@
 #pragma once
 
 #include "IGUIElement.h"
-#include "Image/Color.h"
+#include <Image/Color.h>
 
+namespace gui
+{
 class IGUITab;
 
 //! A standard tab control
@@ -17,8 +19,8 @@ class IGUITabControl : public IGUIElement
 {
 public:
 	//! constructor
-    IGUITabControl(IGUIEnvironment *environment, std::shared_ptr<IGUIElement>parent, s32 id, recti rectangle) :
-            IGUIElement(GUIElementType::TabControl, environment, parent, id, rectangle) {}
+	IGUITabControl(IGUIEnvironment *environment, IGUIElement *parent, s32 id, recti rectangle) :
+			IGUIElement(EGUIET_TAB_CONTROL, environment, parent, id, rectangle) {}
 
 	//! Adds a tab
 	virtual IGUITab *addTab(const wchar_t *caption, s32 id = -1) = 0;
@@ -64,7 +66,7 @@ public:
 				  those can be tabs, but we allow looking for any kind of IGUIElement* as there are some
 				  use-cases for that even if it just returns 0. For example this way you can check for
 				  all children of this gui-element if they are tabs or some non-tab children.*/
-    virtual s32 getTabIndex(const std::shared_ptr<IGUIElement>tab) const = 0;
+	virtual s32 getTabIndex(const IGUIElement *tab) const = 0;
 
 	//! Brings a tab to front.
 	/** \param idx: number of the tab.
@@ -97,12 +99,12 @@ public:
 	virtual s32 getTabMaxWidth() const = 0;
 
 	//! Set the alignment of the tabs
-	/** Use EGUIA_UPPERLEFT or EGUIA_LOWERRIGHT */
-    virtual void setTabVerticalAlignment(GUIAlignment alignment) = 0;
+	/** Use (u8)GUIAlignment::UpperLeft or EGUIA_LOWERRIGHT */
+    virtual void setTabVerticalAlignment(EGUI_ALIGNMENT alignment) = 0;
 
 	//! Get the alignment of the tabs
 	/** return Returns the alignment of the tabs */
-    virtual GUIAlignment getTabVerticalAlignment() const = 0;
+    virtual EGUI_ALIGNMENT getTabVerticalAlignment() const = 0;
 
 	//! Set the extra width added to tabs on each side of the text
 	virtual void setTabExtraWidth(s32 extraWidth) = 0;
@@ -118,24 +120,26 @@ class IGUITab : public IGUIElement
 {
 public:
 	//! constructor
-    IGUITab(IGUIEnvironment *environment, std::shared_ptr<IGUIElement>parent, s32 id, recti rectangle) :
-            IGUIElement(GUIElementType::Tab, environment, parent, id, rectangle) {}
+	IGUITab(IGUIEnvironment *environment, IGUIElement *parent, s32 id, recti rectangle) :
+			IGUIElement(EGUIET_TAB, environment, parent, id, rectangle) {}
 
 	//! sets if the tab should draw its background
 	virtual void setDrawBackground(bool draw = true) = 0;
 
 	//! sets the color of the background, if it should be drawn.
-    virtual void setBackgroundColor(img::color8 c) = 0;
+	virtual void setBackgroundColor(img::color8 c) = 0;
 
 	//! returns true if the tab is drawing its background, false if not
 	virtual bool isDrawingBackground() const = 0;
 
 	//! returns the color of the background
-    virtual img::color8 getBackgroundColor() const = 0;
+	virtual img::color8 getBackgroundColor() const = 0;
 
 	//! sets the color of it's text in  the tab-bar
-    virtual void setTextColor(img::color8 c) = 0;
+	virtual void setTextColor(img::color8 c) = 0;
 
 	//! gets the color of the text
-    virtual img::color8 getTextColor() const = 0;
+	virtual img::color8 getTextColor() const = 0;
 };
+
+} // end namespace gui

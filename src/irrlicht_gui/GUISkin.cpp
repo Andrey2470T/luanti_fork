@@ -213,14 +213,14 @@ void GUISkin::setFont(render::TTFont *font, GUIDefaultFont which)
 
 
 //! gets the sprite stored
-UIAnimatedSprite *GUISkin::getSprite() const
+UISprite *GUISkin::getSprite() const
 {
     return Sprite.get();
 }
 
 
 //! set a new sprite or remove one by passing 0
-void GUISkin::setSprite(UIAnimatedSprite *bank)
+void GUISkin::setSprite(UISprite *bank)
 {
     if (bank)
         Sprite.reset(bank);
@@ -905,36 +905,6 @@ void GUISkin::updateColored3DTabBody(UISprite *sprite, bool border, bool backgro
             updateRect(sprite, {c1, c1, c2, c2}, tr, rectN);
 		}
 	}
-}
-// END PATCH
-
-
-//! draws an icon, usually from the skin's sprite bank
-/**	\param parent: Pointer to the element which wishes to draw this icon.
-This parameter is usually not used by IGUISkin, but can be used for example
-by more complex implementations to find out how to draw the part exactly.
-\param icon: Specifies the icon to be drawn.
-\param position: The position to draw the icon
-\param starttime: The time at the start of the animation
-\param currenttime: The present time, used to calculate the frame number
-\param loop: Whether the animation should loop or not
-\param clip: Clip area.	*/
-// PATCH
-void GUISkin::updateColoredIcon(
-    const rectf &rect, bool gray,
-    u32 starttime, u32 currenttime,
-    bool loop,
-    const img::color8* colors)
-{
-    if (!Sprite)
-		return;
-
-	if (!colors)
-        colors = Colors.data();
-
-    u32 rectN = 0;
-    updateRect(Sprite.get(), colors[gray ? (u8)GUIDefaultColor::GrayWindowSymbol : (u8)GUIDefaultColor::WindowSymbol], rect, rectN);
-    Sprite->drawFrame(currenttime, loop);
 }
 // END PATCH
 

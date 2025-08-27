@@ -6,8 +6,6 @@
 
 #include "IGUIImage.h"
 
-namespace irr
-{
 namespace gui
 {
 
@@ -15,19 +13,19 @@ class CGUIImage : public IGUIImage
 {
 public:
 	//! constructor
-    CGUIImage(IGUIEnvironment *environment, IGUIElement *parent, s32 id, recti rectangle);
+	CGUIImage(IGUIEnvironment *environment, IGUIElement *parent, s32 id, recti rectangle);
 
 	//! destructor
 	virtual ~CGUIImage();
 
 	//! sets an image
-    void setImage(render::Texture2D *image) override;
+	void setImage(img::Image *image) override;
 
 	//! Gets the image texture
-    render::Texture2D *getImage() const override;
+	img::Image *getImage() const override;
 
 	//! sets the color of the image
-    void setColor(img::color8 color) override;
+	void setColor(img::color8 color) override;
 
 	//! sets if the image should scale to fit the element
 	void setScaleImage(bool scale) override;
@@ -39,7 +37,7 @@ public:
 	void setUseAlphaChannel(bool use) override;
 
 	//! Gets the color of the image
-    img::color8 getColor() const override;
+	img::color8 getColor() const override;
 
 	//! Returns true if the image is scaled to fit, false if not
 	bool isImageScaled() const override;
@@ -48,16 +46,16 @@ public:
 	bool isAlphaChannelUsed() const override;
 
 	//! Sets the source rectangle of the image. By default the full image is used.
-    void setSourceRect(const recti &sourceRect) override;
+	void setSourceRect(const recti &sourceRect) override;
 
 	//! Returns the customized source rectangle of the image to be used.
-    recti getSourceRect() const override;
+	recti getSourceRect() const override;
 
 	//! Restrict drawing-area.
-    void setDrawBounds(const rectf &drawBoundUVs) override;
+	void setDrawBounds(const rectf &drawBoundUVs) override;
 
 	//! Get drawing-area restrictions.
-    rectf getDrawBounds() const override;
+	rectf getDrawBounds() const override;
 
 	//! Sets whether to draw a background color (EGDC_3D_DARK_SHADOW) when no texture is set
 	void setDrawBackground(bool draw) override
@@ -72,26 +70,25 @@ public:
 	}
 
 protected:
-    void checkBounds(recti &rect)
+	void checkBounds(recti &rect)
 	{
 		f32 clipWidth = (f32)rect.getWidth();
 		f32 clipHeight = (f32)rect.getHeight();
 
-		rect.UpperLeftCorner.X += core::round32(DrawBounds.UpperLeftCorner.X * clipWidth);
-		rect.UpperLeftCorner.Y += core::round32(DrawBounds.UpperLeftCorner.Y * clipHeight);
-		rect.LowerRightCorner.X -= core::round32((1.f - DrawBounds.LowerRightCorner.X) * clipWidth);
-		rect.LowerRightCorner.Y -= core::round32((1.f - DrawBounds.LowerRightCorner.Y) * clipHeight);
+		rect.ULC.X += round32(DrawBounds.ULC.X * clipWidth);
+		rect.ULC.Y += round32(DrawBounds.ULC.Y * clipHeight);
+		rect.LRC.X -= round32((1.f - DrawBounds.LRC.X) * clipWidth);
+		rect.LRC.Y -= round32((1.f - DrawBounds.LRC.Y) * clipHeight);
 	}
 
 private:
-    render::Texture2D *Texture;
-    img::color8 Color;
+	img::Image *Texture;
+	img::color8 Color;
 	bool UseAlphaChannel;
 	bool ScaleImage;
-    recti SourceRect;
-    rectf DrawBounds;
+	recti SourceRect;
+	rectf DrawBounds;
 	bool DrawBackground;
 };
 
 } // end namespace gui
-} // end namespace irr

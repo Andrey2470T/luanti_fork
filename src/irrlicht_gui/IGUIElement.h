@@ -4,44 +4,51 @@
 
 #pragma once
 
-#include "Utils/Rect.h"
+#include "IReferenceCounted.h"
+#include <BasicIncludes.h>
+#include <Utils/Rect.h>
+#include <Main/IEventReceiver.h>
 #include "GUIEnums.h"
-#include "Main/IEventReceiver.h"
 #include <cassert>
 #include <list>
-#include <memory>
 
+namespace gui
+{
 class IGUIEnvironment;
 
 //! Base class of all GUI elements.
-class IGUIElement : virtual public main::IEventReceiver
+class IGUIElement : virtual public IReferenceCounted, public main::IEventReceiver
 {
 public:
 	//! Constructor
-    IGUIElement(GUIElementType type, IGUIEnvironment *environment, std::shared_ptr<IGUIElement> parent,
+    IGUIElement(GUIElementType type, IGUIEnvironment *environment, IGUIElement *parent,
             s32 id, const recti &rectangle) :
 			Parent(0),
 			RelativeRect(rectangle), AbsoluteRect(rectangle),
 			AbsoluteClippingRect(rectangle), DesiredRect(rectangle),
 			MaxSize(0, 0), MinSize(1, 1), IsVisible(true), IsEnabled(true),
 			IsSubElement(false), NoClip(false), ID(id), IsTabStop(false), TabOrder(-1), IsTabGroup(false),
-            AlignLeft(GUIAlignment::UpperLeft), AlignRight(GUIAlignment::UpperLeft),
-            AlignTop(GUIAlignment::UpperLeft), AlignBottom(GUIAlignment::UpperLeft),
+            AlignLeft(GUIAlignment::UpperLeft), AlignRight(GUIAlignment::UpperLeft), AlignTop(GUIAlignment::UpperLeft), AlignBottom(GUIAlignment::UpperLeft),
 			Environment(environment), Type(type)
 	{
 		// if we were given a parent to attach to
 		if (parent) {
-            parent->addChildToEnd(std::make_shared<IGUIElement>(this));
+			parent->addChildToEnd(this);
 			recalculateAbsolutePosition(true);
 		}
 	}
 
 	//! Destructor
 	virtual ~IGUIElement()
-    {}
+	{
+		for (auto child : Children) {
+			child->Parent = nullptr;
+			child->drop();
+		}
+	}
 
 	//! Returns parent of this element.
-    std::shared_ptr<IGUIElement> getParent() const
+	IGUIElement *getParent() const
 	{
 		return Parent;
 	}
@@ -59,15 +66,15 @@ public:
 		if (Parent) {
             const recti &r2 = Parent->getAbsolutePosition();
 
-            v2f d((f32)(r2.getWidth()), (f32)(r2.getHeight()));
+            v2f d((f32)(r2.getSize().X), (f32)(r2.getSize().Y));
 
-            if (AlignLeft == GUIAlignment::Scale)
+			if (AlignLeft == EGUIA_SCALE)
                 ScaleRect.ULC.X = (f32)r.ULC.X / d.X;
-            if (AlignRight == GUIAlignment::Scale)
+			if (AlignRight == EGUIA_SCALE)
                 ScaleRect.LRC.X = (f32)r.LRC.X / d.X;
-            if (AlignTop == GUIAlignment::Scale)
+			if (AlignTop == EGUIA_SCALE)
                 ScaleRect.ULC.Y = (f32)r.ULC.Y / d.Y;
-            if (AlignBottom == GUIAlignment::Scale)
+			if (AlignBottom == EGUIA_SCALE)
                 ScaleRect.LRC.Y = (f32)r.LRC.Y / d.Y;
 		}
 
@@ -155,7 +162,7 @@ public:
 	}
 
 	//! The alignment defines how the borders of this element will be positioned when the parent element is resized.
-    void setAlignment(GUIAlignment left, GUIAlignment right, GUIAlignment top, GUIAlignment bottom)
+	void setAlignment(EGUI_ALIGNMENT left, EGUI_ALIGNMENT right, EGUI_ALIGNMENT top, EGUI_ALIGNMENT bottom)
 	{
 		AlignLeft = left;
 		AlignRight = right;
@@ -165,39 +172,39 @@ public:
 		if (Parent) {
             recti r(Parent->getAbsolutePosition());
 
-            v2f d((f32)r.getWidth(), (f32)r.getHeight());
+            v2f d((f32)r.getSize().X, (f32)r.getSize().Y);
 
-            if (AlignLeft == GUIAlignment::Scale)
+			if (AlignLeft == EGUIA_SCALE)
                 ScaleRect.ULC.X = (f32)DesiredRect.ULC.X / d.X;
-            if (AlignRight == GUIAlignment::Scale)
+			if (AlignRight == EGUIA_SCALE)
                 ScaleRect.LRC.X = (f32)DesiredRect.LRC.X / d.X;
-            if (AlignTop == GUIAlignment::Scale)
+			if (AlignTop == EGUIA_SCALE)
                 ScaleRect.ULC.Y = (f32)DesiredRect.ULC.Y / d.Y;
-            if (AlignBottom == GUIAlignment::Scale)
+			if (AlignBottom == EGUIA_SCALE)
                 ScaleRect.LRC.Y = (f32)DesiredRect.LRC.Y / d.Y;
 		}
 	}
 
 	//! How left element border is aligned when parent is resized
-    GUIAlignment getAlignLeft() const
+	EGUI_ALIGNMENT getAlignLeft() const
 	{
 		return AlignLeft;
 	}
 
 	//! How right element border is aligned when parent is resized
-    GUIAlignment getAlignRight() const
+	EGUI_ALIGNMENT getAlignRight() const
 	{
 		return AlignRight;
 	}
 
 	//! How top element border is aligned when parent is resized
-    GUIAlignment getAlignTop() const
+	EGUI_ALIGNMENT getAlignTop() const
 	{
 		return AlignTop;
 	}
 
 	//! How bottom element border is aligned when parent is resized
-    GUIAlignment getAlignBottom() const
+	EGUI_ALIGNMENT getAlignBottom() const
 	{
 		return AlignBottom;
 	}
@@ -208,7 +215,7 @@ public:
 		recalculateAbsolutePosition(false);
 
 		// update all children
-        for (auto &child : Children) {
+		for (auto child : Children) {
 			child->updateAbsolutePosition();
 		}
 	}
@@ -225,9 +232,9 @@ public:
 	\return The topmost GUI element at that point, or 0 if there are
 	no candidate elements at this point.
 	*/
-    virtual std::shared_ptr<IGUIElement> getElementFromPoint(const v2i &point)
+    virtual IGUIElement *getElementFromPoint(const v2i &point)
 	{
-        std::shared_ptr<IGUIElement> target;
+		IGUIElement *target = 0;
 
 		if (isVisible()) {
 			// we have to search from back to front, because later children
@@ -244,7 +251,7 @@ public:
 		}
 
 		if (isVisible() && isPointInside(point))
-            target = std::make_shared<IGUIElement>(this);
+			target = this;
 
 		return target;
 	}
@@ -257,40 +264,44 @@ public:
 	}
 
 	//! Adds a GUI element as new child of this element.
-    virtual void addChild(std::shared_ptr<IGUIElement> child)
+	virtual void addChild(IGUIElement *child)
 	{
-        if (child && child.get() != this) {
+		if (child && child != this) {
 			addChildToEnd(child);
 			child->updateAbsolutePosition();
 		}
 	}
 
 	//! Removes a child.
-    virtual void removeChild(std::list<std::shared_ptr<IGUIElement>>::iterator child_it)
+	virtual void removeChild(IGUIElement *child)
 	{
-        assert((*child_it)->Parent.get() == this);
-        Children.erase(child_it);
+		assert(child->Parent == this);
+		Children.erase(child->ParentPos);
+		child->Parent = nullptr;
+		child->drop();
 	}
 
 	//! Removes all children.
 	virtual void removeAllChildren()
 	{
-        while (!Children.empty())
-            removeChild(std::prev(Children.end()));
+		while (!Children.empty()) {
+			auto child = Children.back();
+			child->remove();
+		}
 	}
 
 	//! Removes this element from its parent.
 	virtual void remove()
 	{
 		if (Parent)
-            Parent->removeChild(ParentPos);
+			Parent->removeChild(this);
 	}
 
 	//! Draws the element and its children.
 	virtual void draw()
 	{
 		if (isVisible()) {
-            for (auto &child : Children)
+			for (auto child : Children)
 				child->draw();
 		}
 	}
@@ -299,7 +310,7 @@ public:
 	virtual void OnPostRender(u32 timeMs)
 	{
 		if (isVisible()) {
-            for (auto &child : Children)
+			for (auto child : Children)
 				child->OnPostRender(timeMs);
 		}
 	}
@@ -372,11 +383,11 @@ public:
 		// negative = autonumber
 		if (index < 0) {
 			TabOrder = 0;
-            std::shared_ptr<IGUIElement> el = getTabGroup();
+			IGUIElement *el = getTabGroup();
 			while (IsTabGroup && el && el->Parent)
 				el = el->Parent;
 
-            std::shared_ptr<IGUIElement> first, closest;
+			IGUIElement *first = 0, *closest = 0;
 			if (el) {
 				// find the highest element number
 				el->getNextElement(-1, true, IsTabGroup, first, closest, true, true);
@@ -410,9 +421,9 @@ public:
 	}
 
 	//! Returns the container element which holds all elements in this element's tab group.
-    std::shared_ptr<IGUIElement> getTabGroup()
+	IGUIElement *getTabGroup()
 	{
-        std::shared_ptr<IGUIElement> ret(this);
+		IGUIElement *ret = this;
 
 		while (ret && !ret->isTabGroup())
 			ret = ret->getParent();
@@ -483,32 +494,32 @@ public:
 
 	//! Brings a child to front
 	/** \return True if successful, false if not. */
-    virtual bool bringToFront(std::shared_ptr<IGUIElement> child)
+	virtual bool bringToFront(IGUIElement *child)
 	{
-        if (child->Parent.get() != this)
+		if (child->Parent != this)
 			return false;
 		if (std::next(child->ParentPos) == Children.end()) // already there
 			return true;
 		Children.erase(child->ParentPos);
-        child->ParentPos = Children.insert(Children.end(), child);
+		child->ParentPos = Children.insert(Children.end(), child);
 		return true;
 	}
 
 	//! Moves a child to the back, so it's siblings are drawn on top of it
 	/** \return True if successful, false if not. */
-    virtual bool sendToBack(std::shared_ptr<IGUIElement> child)
+	virtual bool sendToBack(IGUIElement *child)
 	{
-        if (child->Parent.get() != this)
+		if (child->Parent != this)
 			return false;
 		if (child->ParentPos == Children.begin()) // already there
 			return true;
 		Children.erase(child->ParentPos);
-        child->ParentPos = Children.insert(Children.begin(), child);
+		child->ParentPos = Children.insert(Children.begin(), child);
 		return true;
 	}
 
 	//! Returns list with children of this element
-    virtual const std::list<std::shared_ptr<IGUIElement>> &getChildren() const
+	virtual const std::list<IGUIElement *> &getChildren() const
 	{
 		return Children;
 	}
@@ -520,13 +531,13 @@ public:
 	should be searched too.
 	\return Returns the first element with the given id. If no element
 	with this id was found, 0 is returned. */
-    virtual std::shared_ptr<IGUIElement> getElementFromId(s32 id, bool searchchildren = false) const
+	virtual IGUIElement *getElementFromId(s32 id, bool searchchildren = false) const
 	{
-        std::shared_ptr<IGUIElement> e;
+		IGUIElement *e = 0;
 
-        for (auto &child : Children) {
+		for (auto child : Children) {
 			if (child->getID() == id)
-                return child;
+				return child;
 
 			if (searchchildren)
 				e = child->getElementFromId(id, true);
@@ -540,7 +551,7 @@ public:
 
 	//! returns true if the given element is a child of this one.
 	//! \param child: The child element to check
-    bool isMyChild(std::shared_ptr<IGUIElement> child) const
+	bool isMyChild(IGUIElement *child) const
 	{
 		if (!child)
 			return false;
@@ -548,9 +559,9 @@ public:
 			if (child->Parent)
 				child = child->Parent;
 
-        } while (child->Parent && child.get() != this);
+		} while (child->Parent && child != this);
 
-        return child.get() == this;
+		return child == this;
 	}
 
 	//! searches elements to find the closest next element to tab to
@@ -563,7 +574,7 @@ public:
 	\param includeDisabled: includes disabled elements in the search (default=false)
 	\return true if successfully found an element, false to continue searching/fail */
 	bool getNextElement(s32 startOrder, bool reverse, bool group,
-            std::shared_ptr<IGUIElement> &first, std::shared_ptr<IGUIElement> &closest, bool includeInvisible = false,
+			IGUIElement *&first, IGUIElement *&closest, bool includeInvisible = false,
 			bool includeDisabled = false) const
 	{
 		// we'll stop searching if we find this number
@@ -587,7 +598,7 @@ public:
 
 						// is this what we're looking for?
 						if (currentOrder == wanted) {
-                            closest = *it;
+							closest = *it;
 							return true;
 						}
 
@@ -595,10 +606,10 @@ public:
 						if (closest) {
 							closestOrder = closest->getTabOrder();
 							if ((reverse && currentOrder > closestOrder && currentOrder < startOrder) || (!reverse && currentOrder < closestOrder && currentOrder > startOrder)) {
-                                closest = *it;
+								closest = *it;
 							}
 						} else if ((reverse && currentOrder < startOrder) || (!reverse && currentOrder > startOrder)) {
-                            closest = *it;
+							closest = *it;
 						}
 
 						// is it before the current first?
@@ -606,10 +617,10 @@ public:
 							closestOrder = first->getTabOrder();
 
 							if ((reverse && closestOrder < currentOrder) || (!reverse && closestOrder > currentOrder)) {
-                                first = *it;
+								first = *it;
 							}
 						} else {
-                            first = *it;
+							first = *it;
 						}
 					}
 				}
@@ -676,12 +687,13 @@ public:
 
 protected:
 	// not virtual because needed in constructor
-    void addChildToEnd(std::shared_ptr<IGUIElement> child)
+	void addChildToEnd(IGUIElement *child)
 	{
 		if (child) {
+			child->grab();   // prevent destruction when removed
 			child->remove(); // remove from old parent
 			child->LastParentRect = getAbsolutePosition();
-            child->Parent = std::make_shared<IGUIElement>(this);
+			child->Parent = this;
 			child->ParentPos = Children.insert(Children.end(), child);
 		}
 	}
@@ -702,9 +714,9 @@ protected:
 
 	// Reorder children [from, to) to the order given by `neworder`
 	void reorderChildren(
-            std::list<std::shared_ptr<IGUIElement>>::iterator from,
-            std::list<std::shared_ptr<IGUIElement>>::iterator to,
-            const std::vector<std::shared_ptr<IGUIElement>> &neworder)
+			std::list<IGUIElement *>::iterator from,
+			std::list<IGUIElement *>::iterator to,
+			const std::vector<IGUIElement *> &neworder)
 	{
 		assert(_fastSetChecksum(from, to) == _fastSetChecksum(neworder.begin(), neworder.end()));
 		for (auto e : neworder) {
@@ -726,7 +738,7 @@ protected:
 			parentAbsolute = Parent->AbsoluteRect;
 
 			if (NoClip) {
-                std::shared_ptr<IGUIElement> p(this);
+				IGUIElement *p = this;
 				while (p->Parent)
 					p = p->Parent;
 				parentAbsoluteClip = p->AbsoluteClippingRect;
@@ -737,22 +749,22 @@ protected:
 		const s32 diffx = parentAbsolute.getWidth() - LastParentRect.getWidth();
 		const s32 diffy = parentAbsolute.getHeight() - LastParentRect.getHeight();
 
-        if (AlignLeft == GUIAlignment::Scale || AlignRight == GUIAlignment::Scale)
+		if (AlignLeft == EGUIA_SCALE || AlignRight == EGUIA_SCALE)
 			fw = (f32)parentAbsolute.getWidth();
 
-        if (AlignTop == GUIAlignment::Scale || AlignBottom == GUIAlignment::Scale)
+		if (AlignTop == EGUIA_SCALE || AlignBottom == EGUIA_SCALE)
 			fh = (f32)parentAbsolute.getHeight();
 
 		switch (AlignLeft) {
         case GUIAlignment::UpperLeft:
 			break;
-        case GUIAlignment::LowerRight:
+		case EGUIA_LOWERRIGHT:
             DesiredRect.ULC.X += diffx;
 			break;
-        case GUIAlignment::Center:
+		case EGUIA_CENTER:
             DesiredRect.ULC.X += diffx / 2;
 			break;
-        case GUIAlignment::Scale:
+		case EGUIA_SCALE:
             DesiredRect.ULC.X = round32(ScaleRect.ULC.X * fw);
 			break;
 		}
@@ -760,13 +772,13 @@ protected:
 		switch (AlignRight) {
         case GUIAlignment::UpperLeft:
 			break;
-        case GUIAlignment::LowerRight:
+		case EGUIA_LOWERRIGHT:
             DesiredRect.LRC.X += diffx;
 			break;
-        case GUIAlignment::Center:
+		case EGUIA_CENTER:
             DesiredRect.LRC.X += diffx / 2;
 			break;
-        case GUIAlignment::Scale:
+		case EGUIA_SCALE:
             DesiredRect.LRC.X = round32(ScaleRect.LRC.X * fw);
 			break;
 		}
@@ -774,13 +786,13 @@ protected:
 		switch (AlignTop) {
         case GUIAlignment::UpperLeft:
 			break;
-        case GUIAlignment::LowerRight:
+		case EGUIA_LOWERRIGHT:
             DesiredRect.ULC.Y += diffy;
 			break;
-        case GUIAlignment::Center:
+		case EGUIA_CENTER:
             DesiredRect.ULC.Y += diffy / 2;
 			break;
-        case GUIAlignment::Scale:
+		case EGUIA_SCALE:
             DesiredRect.ULC.Y = round32(ScaleRect.ULC.Y * fh);
 			break;
 		}
@@ -788,13 +800,13 @@ protected:
 		switch (AlignBottom) {
         case GUIAlignment::UpperLeft:
 			break;
-        case GUIAlignment::LowerRight:
+		case EGUIA_LOWERRIGHT:
             DesiredRect.LRC.Y += diffy;
 			break;
-        case GUIAlignment::Center:
+		case EGUIA_CENTER:
             DesiredRect.LRC.Y += diffy / 2;
 			break;
-        case GUIAlignment::Scale:
+		case EGUIA_SCALE:
             DesiredRect.LRC.Y = round32(ScaleRect.LRC.Y * fh);
 			break;
 		}
@@ -836,13 +848,13 @@ protected:
 
 protected:
 	//! List of all children of this element
-    std::list<std::shared_ptr<IGUIElement>> Children;
+	std::list<IGUIElement *> Children;
 
 	//! Pointer to the parent
-    std::shared_ptr<IGUIElement> Parent;
+	IGUIElement *Parent;
 
 	//! Our position in the parent list. Only valid when Parent != nullptr
-    std::list<std::shared_ptr<IGUIElement>>::iterator ParentPos;
+	std::list<IGUIElement *>::iterator ParentPos;
 
 	//! relative rect of element
     recti RelativeRect;
@@ -900,7 +912,7 @@ protected:
 	bool IsTabGroup;
 
 	//! tells the element how to act when its parent is resized
-    GUIAlignment AlignLeft, AlignRight, AlignTop, AlignBottom;
+	EGUI_ALIGNMENT AlignLeft, AlignRight, AlignTop, AlignBottom;
 
 	//! GUI Environment
 	IGUIEnvironment *Environment;
@@ -908,3 +920,5 @@ protected:
 	//! type of element
     GUIElementType Type;
 };
+
+} // end namespace gui

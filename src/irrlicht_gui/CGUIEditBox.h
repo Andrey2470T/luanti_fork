@@ -5,11 +5,8 @@
 #pragma once
 
 #include "IGUIEditBox.h"
-#include "irrArray.h"
-#include "IOSOperator.h"
+#include <Main/Events.h>
 
-namespace irr
-{
 namespace gui
 {
 class CGUIEditBox : public IGUIEditBox
@@ -17,28 +14,28 @@ class CGUIEditBox : public IGUIEditBox
 public:
 	//! constructor
 	CGUIEditBox(const wchar_t *text, bool border, IGUIEnvironment *environment,
-            IGUIElement *parent, s32 id, const recti &rectangle);
+			IGUIElement *parent, s32 id, const recti &rectangle);
 
 	//! destructor
-	virtual ~CGUIEditBox();
+    virtual ~CGUIEditBox() {}
 
 	//! Sets another skin independent font.
-	void setOverrideFont(IGUIFont *font = 0) override;
+    void setOverrideFont(render::TTFont *font = 0) override;
 
 	//! Gets the override font (if any)
 	/** \return The override font (may be 0) */
-	IGUIFont *getOverrideFont() const override;
+    render::TTFont *getOverrideFont() const override;
 
 	//! Get the font which is used right now for drawing
 	/** Currently this is the override font when one is set and the
 	font of the active skin otherwise */
-	IGUIFont *getActiveFont() const override;
+    render::TTFont *getActiveFont() const override;
 
 	//! Sets another color for the text.
-    void setOverrideColor(img::color8 color) override;
+	void setOverrideColor(img::color8 color) override;
 
 	//! Gets the override color
-    img::color8 getOverrideColor() const override;
+	img::color8 getOverrideColor() const override;
 
 	//! Sets if the text should use the override color or the
 	//! color in the gui skin.
@@ -86,13 +83,13 @@ public:
 
 	//! Gets the size area of the text in the edit box
 	//! \return Returns the size in pixels of the text
-    v2u getTextDimension() override;
+	v2u getTextDimension() override;
 
 	//! Sets text justification
 	void setTextAlignment(EGUI_ALIGNMENT horizontal, EGUI_ALIGNMENT vertical) override;
 
 	//! called if an event happened.
-	bool OnEvent(const SEvent &event) override;
+	bool OnEvent(const main::Event &event) override;
 
 	//! draws the element and its children
 	void draw() override;
@@ -117,10 +114,10 @@ public:
 
 	//! Set the blinktime for the cursor. 2x blinktime is one full cycle.
 	//** \param timeMs Blinktime in milliseconds. When set to 0 the cursor is constantly on without blinking */
-	void setCursorBlinkTime(irr::u32 timeMs) override;
+	void setCursorBlinkTime(u32 timeMs) override;
 
 	//! Get the cursor blinktime
-	irr::u32 getCursorBlinkTime() const override;
+	u32 getCursorBlinkTime() const override;
 
 	//! Sets whether the edit box is a password box. Setting this to true will
 	/** disable MultiLine, WordWrap and the ability to copy with ctrl+c or ctrl+x
@@ -147,20 +144,20 @@ protected:
 	//! adds a letter to the edit box
 	void inputChar(wchar_t c);
 	//! adds a string to the edit box
-    void inputString(const std::wstring &str);
+	void inputString(const std::wstring &str);
 	//! calculates the current scroll position
 	void calculateScrollPos();
 	//! calculated the FrameRect
 	void calculateFrameRect();
 	//! send some gui event to parent
-	void sendGuiEvent(EGUI_EVENT_TYPE type);
+    void sendGuiEvent(EGUI_EVENT_TYPE type);
 	//! set text markers
 	void setTextMarkers(s32 begin, s32 end);
 	//! delete current selection or next char
 	bool keyDelete();
 
-	bool processKey(const SEvent &event);
-	bool processMouse(const SEvent &event);
+	bool processKey(const main::Event &event);
+	bool processMouse(const main::Event &event);
 	s32 getCursorPos(s32 x, s32 y);
 
 	bool OverwriteMode;
@@ -171,13 +168,12 @@ protected:
 	s32 MarkBegin;
 	s32 MarkEnd;
 
-    img::color8 OverrideColor;
-	gui::IGUIFont *OverrideFont, *LastBreakFont;
-	IOSOperator *Operator;
+	img::color8 OverrideColor;
+    render::TTFont *OverrideFont, *LastBreakFont;
 
 	u32 BlinkStartTime;
-	irr::u32 CursorBlinkTime;
-    std::wstring CursorChar; // IGUIFont::draw needs stringw instead of wchar_t
+	u32 CursorBlinkTime;
+    std::wstring CursorChar; // render::TTFont::draw needs stringw instead of wchar_t
 	s32 CursorPos;
 	s32 HScrollPos, VScrollPos; // scroll position in characters
 	u32 Max;
@@ -186,11 +182,10 @@ protected:
 	wchar_t PasswordChar;
 	EGUI_ALIGNMENT HAlign, VAlign;
 
-    std::vector<std::wstring> BrokenText;
-    std::vector<s32> BrokenTextPositions;
+	std::vector<std::wstring> BrokenText;
+	std::vector<s32> BrokenTextPositions;
 
-    recti CurrentTextRect, FrameRect; // temporary values
+	recti CurrentTextRect, FrameRect; // temporary values
 };
 
 } // end namespace gui
-} // end namespace irr

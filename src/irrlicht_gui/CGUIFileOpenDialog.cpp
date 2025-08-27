@@ -4,18 +4,11 @@
 
 #include "CGUIFileOpenDialog.h"
 
-#include "IGUISkin.h"
+#include "GUISkin.h"
 #include "IGUIEnvironment.h"
-#include "IVideoDriver.h"
 #include "IGUIButton.h"
 #include "IGUIStaticText.h"
-#include "IGUIFont.h"
-#include "IGUIFontBitmap.h"
-#include "IFileList.h"
-#include "os.h"
 
-namespace irr
-{
 namespace gui
 {
 
@@ -25,13 +18,13 @@ const s32 FOD_HEIGHT = 250;
 //! constructor
 CGUIFileOpenDialog::CGUIFileOpenDialog(const wchar_t *title,
 		IGUIEnvironment *environment, IGUIElement *parent, s32 id,
-		bool restoreCWD, io::path::char_type *startDir) :
+        bool restoreCWD, std::string *startDir) :
 		IGUIFileOpenDialog(environment, parent, id,
 				recti((parent->getAbsolutePosition().getWidth() - FOD_WIDTH) / 2,
 						(parent->getAbsolutePosition().getHeight() - FOD_HEIGHT) / 2,
 						(parent->getAbsolutePosition().getWidth() - FOD_WIDTH) / 2 + FOD_WIDTH,
 						(parent->getAbsolutePosition().getHeight() - FOD_HEIGHT) / 2 + FOD_HEIGHT)),
-		FileNameText(0), FileList(0), Dragging(false)
+        FileNameText(0), Dragging(false)
 {
 	Text = title;
 
@@ -50,8 +43,8 @@ CGUIFileOpenDialog::CGUIFileOpenDialog(const wchar_t *title,
 		return;
 
 	IGUISpriteBank *sprites = 0;
-	img::color8 color(255, 255, 255, 255);
-	IGUISkin *skin = Environment->getSkin();
+    img::color8 color(img::white);
+	GUISkin *skin = Environment->getSkin();
 	if (skin) {
 		sprites = skin->getSpriteBank();
 		color = skin->getColor(EGDC_WINDOW_SYMBOL);
@@ -61,7 +54,7 @@ CGUIFileOpenDialog::CGUIFileOpenDialog(const wchar_t *title,
 	const s32 posx = RelativeRect.getWidth() - buttonw - 4;
 
 	CloseButton = Environment->addButton(recti(posx, 3, posx + buttonw, 3 + buttonw), this, -1,
-			L"", skin ? skin->getDefaultText(EGDT_WINDOW_CLOSE) : L"Close");
+            L"", skin ? skin->getDefaultText(EGDT_WINDOW_CLOSE).c_str() : L"Close");
 	CloseButton->setSubElement(true);
 	CloseButton->setTabStop(false);
 	if (sprites && skin) {
@@ -69,31 +62,31 @@ CGUIFileOpenDialog::CGUIFileOpenDialog(const wchar_t *title,
 		CloseButton->setSprite(EGBS_BUTTON_UP, skin->getIcon(EGDI_WINDOW_CLOSE), color);
 		CloseButton->setSprite(EGBS_BUTTON_DOWN, skin->getIcon(EGDI_WINDOW_CLOSE), color);
 	}
-	CloseButton->setAlignment(EGUIA_LOWERRIGHT, EGUIA_LOWERRIGHT, EGUIA_UPPERLEFT, EGUIA_UPPERLEFT);
+    CloseButton->setAlignment(EGUIA_LOWERRIGHT, EGUIA_LOWERRIGHT, GUIAlignment::UpperLeft, GUIAlignment::UpperLeft);
 	CloseButton->grab();
 
 	OKButton = Environment->addButton(
 			recti(RelativeRect.getWidth() - 80, 30, RelativeRect.getWidth() - 10, 50),
-			this, -1, skin ? skin->getDefaultText(EGDT_MSG_BOX_OK) : L"OK");
+            this, -1, skin ? skin->getDefaultText(EGDT_MSG_BOX_OK).c_str() : L"OK");
 	OKButton->setSubElement(true);
-	OKButton->setAlignment(EGUIA_LOWERRIGHT, EGUIA_LOWERRIGHT, EGUIA_UPPERLEFT, EGUIA_UPPERLEFT);
+    OKButton->setAlignment(EGUIA_LOWERRIGHT, EGUIA_LOWERRIGHT, GUIAlignment::UpperLeft, GUIAlignment::UpperLeft);
 	OKButton->grab();
 
 	CancelButton = Environment->addButton(
 			recti(RelativeRect.getWidth() - 80, 55, RelativeRect.getWidth() - 10, 75),
-			this, -1, skin ? skin->getDefaultText(EGDT_MSG_BOX_CANCEL) : L"Cancel");
+            this, -1, skin ? skin->getDefaultText(EGDT_MSG_BOX_CANCEL).c_str() : L"Cancel");
 	CancelButton->setSubElement(true);
-	CancelButton->setAlignment(EGUIA_LOWERRIGHT, EGUIA_LOWERRIGHT, EGUIA_UPPERLEFT, EGUIA_UPPERLEFT);
+    CancelButton->setAlignment(EGUIA_LOWERRIGHT, EGUIA_LOWERRIGHT, GUIAlignment::UpperLeft, GUIAlignment::UpperLeft);
 	CancelButton->grab();
 
 	FileBox = Environment->addListBox(recti(10, 55, RelativeRect.getWidth() - 90, 230), this, -1, true);
 	FileBox->setSubElement(true);
-	FileBox->setAlignment(EGUIA_UPPERLEFT, EGUIA_LOWERRIGHT, EGUIA_UPPERLEFT, EGUIA_LOWERRIGHT);
+    FileBox->setAlignment(GUIAlignment::UpperLeft, EGUIA_LOWERRIGHT, GUIAlignment::UpperLeft, EGUIA_LOWERRIGHT);
 	FileBox->grab();
 
 	FileNameText = Environment->addEditBox(0, recti(10, 30, RelativeRect.getWidth() - 90, 50), true, this);
 	FileNameText->setSubElement(true);
-	FileNameText->setAlignment(EGUIA_UPPERLEFT, EGUIA_LOWERRIGHT, EGUIA_UPPERLEFT, EGUIA_UPPERLEFT);
+    FileNameText->setAlignment(GUIAlignment::UpperLeft, EGUIA_LOWERRIGHT, GUIAlignment::UpperLeft, GUIAlignment::UpperLeft);
 	FileNameText->grab();
 
 	setTabGroup(true);
@@ -125,9 +118,6 @@ CGUIFileOpenDialog::~CGUIFileOpenDialog()
 			FileSystem->changeWorkingDirectoryTo(RestoreDirectory);
 		FileSystem->drop();
 	}
-
-	if (FileList)
-		FileList->drop();
 }
 
 //! returns the filename of the selected file. Returns NULL, if no file was selected.
@@ -136,13 +126,13 @@ const wchar_t *CGUIFileOpenDialog::getFileName() const
 	return FileNameW.c_str();
 }
 
-const io::path &CGUIFileOpenDialog::getFileNameP() const
+const std::string &CGUIFileOpenDialog::getFileNameP() const
 {
 	return FileName;
 }
 
 //! Returns the directory of the selected file. Returns NULL, if no directory was selected.
-const io::path &CGUIFileOpenDialog::getDirectoryName() const
+const std::string &CGUIFileOpenDialog::getDirectoryName() const
 {
 	return FileDirectoryFlat;
 }
@@ -152,13 +142,13 @@ const wchar_t *CGUIFileOpenDialog::getDirectoryNameW() const
 	return FileDirectoryFlatW.c_str();
 }
 
-void CGUIFileOpenDialog::setFileName(const irr::io::path &name)
+void CGUIFileOpenDialog::setFileName(const std::string &name)
 {
 	FileName = name;
 	pathToStringW(FileNameW, FileName);
 }
 
-void CGUIFileOpenDialog::setDirectoryName(const irr::io::path &name)
+void CGUIFileOpenDialog::setDirectoryName(const std::string &name)
 {
 	FileDirectory = name;
 	FileDirectoryFlat = name;
@@ -167,22 +157,22 @@ void CGUIFileOpenDialog::setDirectoryName(const irr::io::path &name)
 }
 
 //! called if an event happened.
-bool CGUIFileOpenDialog::OnEvent(const SEvent &event)
+bool CGUIFileOpenDialog::OnEvent(const main::Event &event)
 {
 	if (isEnabled()) {
-		switch (event.EventType) {
+		switch (event.Type) {
 		case EET_GUI_EVENT:
-			switch (event.GUIEvent.EventType) {
+			switch (event.GUI.Type) {
 			case EGET_ELEMENT_FOCUS_LOST:
 				Dragging = false;
 				break;
 			case EGET_BUTTON_CLICKED:
-				if (event.GUIEvent.Caller == CloseButton ||
-						event.GUIEvent.Caller == CancelButton) {
+                if (event.GUI.Caller == CloseButton->getID() ||
+                        event.GUI.Caller == CancelButton->getID()) {
 					sendCancelEvent();
 					remove();
 					return true;
-				} else if (event.GUIEvent.Caller == OKButton) {
+                } else if (event.GUI.Caller == OKButton->getID()) {
 					if (FileDirectory != L"") {
 						sendSelectedEvent(EGET_DIRECTORY_SELECTED);
 					}
@@ -223,8 +213,8 @@ bool CGUIFileOpenDialog::OnEvent(const SEvent &event)
 				}
 			} break;
 			case EGET_EDITBOX_ENTER:
-				if (event.GUIEvent.Caller == FileNameText) {
-					io::path dir(FileNameText->getText());
+                if (event.GUI.Caller == FileNameText->getID()) {
+					std::string dir(FileNameText->getText());
 					if (FileSystem->changeWorkingDirectoryTo(dir)) {
 						fillListBox();
 						setFileName("");
@@ -237,7 +227,7 @@ bool CGUIFileOpenDialog::OnEvent(const SEvent &event)
 			}
 			break;
 		case EET_MOUSE_INPUT_EVENT:
-			switch (event.MouseInput.Event) {
+			switch (event.MouseInput.Type) {
 			case EMIE_MOUSE_WHEEL:
 				return FileBox->OnEvent(event);
 			case EMIE_LMOUSE_PRESSED_DOWN:
@@ -256,10 +246,10 @@ bool CGUIFileOpenDialog::OnEvent(const SEvent &event)
 				if (Dragging) {
 					// gui window should not be dragged outside its parent
 					if (Parent)
-						if (event.MouseInput.X < Parent->getAbsolutePosition().UpperLeftCorner.X + 1 ||
-								event.MouseInput.Y < Parent->getAbsolutePosition().UpperLeftCorner.Y + 1 ||
-								event.MouseInput.X > Parent->getAbsolutePosition().LowerRightCorner.X - 1 ||
-								event.MouseInput.Y > Parent->getAbsolutePosition().LowerRightCorner.Y - 1)
+						if (event.MouseInput.X < Parent->getAbsolutePosition().ULC.X + 1 ||
+								event.MouseInput.Y < Parent->getAbsolutePosition().ULC.Y + 1 ||
+								event.MouseInput.X > Parent->getAbsolutePosition().LRC.X - 1 ||
+								event.MouseInput.Y > Parent->getAbsolutePosition().LRC.Y - 1)
 
 							return true;
 
@@ -286,7 +276,7 @@ void CGUIFileOpenDialog::draw()
 	if (!IsVisible)
 		return;
 
-	IGUISkin *skin = Environment->getSkin();
+	GUISkin *skin = Environment->getSkin();
 
 	recti rect = AbsoluteRect;
 
@@ -294,10 +284,10 @@ void CGUIFileOpenDialog::draw()
 			rect, &AbsoluteClippingRect);
 
 	if (Text.size()) {
-		rect.UpperLeftCorner.X += 2;
-		rect.LowerRightCorner.X -= skin->getSize(EGDS_WINDOW_BUTTON_WIDTH) + 5;
+		rect.ULC.X += 2;
+		rect.LRC.X -= skin->getSize(EGDS_WINDOW_BUTTON_WIDTH) + 5;
 
-		IGUIFont *font = skin->getFont(EGDF_WINDOW);
+        render::TTFont *font = skin->getFont(EGDF_WINDOW);
 		if (font)
 			font->draw(Text.c_str(), rect,
 					skin->getColor(EGDC_ACTIVE_CAPTION),
@@ -307,7 +297,7 @@ void CGUIFileOpenDialog::draw()
 	IGUIElement::draw();
 }
 
-void CGUIFileOpenDialog::pathToStringW(irr::std::wstring &result, const irr::io::path &p)
+void CGUIFileOpenDialog::pathToStringW(std::wstring &result, const std::string &p)
 {
 	core::multibyteToWString(result, p);
 }
@@ -315,7 +305,7 @@ void CGUIFileOpenDialog::pathToStringW(irr::std::wstring &result, const irr::io:
 //! fills the listbox with files.
 void CGUIFileOpenDialog::fillListBox()
 {
-	IGUISkin *skin = Environment->getSkin();
+	GUISkin *skin = Environment->getSkin();
 
 	if (!FileSystem || !FileBox || !skin)
 		return;
@@ -345,24 +335,23 @@ void CGUIFileOpenDialog::fillListBox()
 //! sends the event that the file has been selected.
 void CGUIFileOpenDialog::sendSelectedEvent(EGUI_EVENT_TYPE type)
 {
-	SEvent event;
-	event.EventType = EET_GUI_EVENT;
-	event.GUIEvent.Caller = this;
-	event.GUIEvent.Element = 0;
-	event.GUIEvent.EventType = type;
+	main::Event event;
+	event.Type = EET_GUI_EVENT;
+    event.GUI.Caller = getID();
+	event.GUI.Element = 0;
+	event.GUI.Type = type;
 	Parent->OnEvent(event);
 }
 
 //! sends the event that the file choose process has been cancelled
 void CGUIFileOpenDialog::sendCancelEvent()
 {
-	SEvent event;
-	event.EventType = EET_GUI_EVENT;
-	event.GUIEvent.Caller = this;
-	event.GUIEvent.Element = 0;
-	event.GUIEvent.EventType = EGET_FILE_CHOOSE_DIALOG_CANCELLED;
+	main::Event event;
+	event.Type = EET_GUI_EVENT;
+    event.GUI.Caller = getID();
+	event.GUI.Element = 0;
+	event.GUI.Type = EGET_FILE_CHOOSE_DIALOG_CANCELLED;
 	Parent->OnEvent(event);
 }
 
 } // end namespace gui
-} // end namespace irr

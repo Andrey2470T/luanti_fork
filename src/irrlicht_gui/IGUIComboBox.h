@@ -6,6 +6,9 @@
 
 #include "IGUIElement.h"
 
+namespace gui
+{
+
 //! Combobox widget
 /** \par This element can create the following events of type EGUI_EVENT_TYPE:
 \li EGET_COMBO_BOX_CHANGED
@@ -14,8 +17,8 @@ class IGUIComboBox : public IGUIElement
 {
 public:
 	//! constructor
-    IGUIComboBox(IGUIEnvironment *environment, std::shared_ptr<IGUIElement> parent, s32 id, recti rectangle) :
-            IGUIElement(GUIElementType::ComboBox, environment, parent, id, rectangle) {}
+	IGUIComboBox(IGUIEnvironment *environment, IGUIElement *parent, s32 id, recti rectangle) :
+			IGUIElement(EGUIET_COMBO_BOX, environment, parent, id, rectangle) {}
 
 	//! Returns amount of items in box
 	virtual u32 getItemCount() const = 0;
@@ -50,11 +53,11 @@ public:
 	virtual void setAndSendSelected(s32 idx) = 0;
 
 	//! Sets text justification of the text area
-	/** \param horizontal: EGUIA_UPPERLEFT for left justified (default),
+	/** \param horizontal: (u8)GUIAlignment::UpperLeft for left justified (default),
 	EGUIA_LOWERRIGHT for right justified, or EGUIA_CENTER for centered text.
-	\param vertical: EGUIA_UPPERLEFT to align with top edge,
+	\param vertical: (u8)GUIAlignment::UpperLeft to align with top edge,
 	EGUIA_LOWERRIGHT for bottom edge, or EGUIA_CENTER for centered text (default). */
-    virtual void setTextAlignment(GUIAlignment horizontal, GUIAlignment vertical) = 0;
+	virtual void setTextAlignment(EGUI_ALIGNMENT horizontal, EGUI_ALIGNMENT vertical) = 0;
 
 	//! Set the maximal number of rows for the selection listbox
 	virtual void setMaxSelectionRows(u32 max) = 0;
@@ -62,3 +65,5 @@ public:
 	//! Get the maximal number of rows for the selection listbox
 	virtual u32 getMaxSelectionRows() const = 0;
 };
+
+} // end namespace gui

@@ -4,45 +4,29 @@
 
 #include "CGUIImage.h"
 
-#include "IGUISkin.h"
+#include "GUISkin.h"
 #include "IGUIEnvironment.h"
-#include "IVideoDriver.h"
 
-namespace irr
-{
 namespace gui
 {
 
 //! constructor
 CGUIImage::CGUIImage(IGUIEnvironment *environment, IGUIElement *parent, s32 id, recti rectangle) :
-		IGUIImage(environment, parent, id, rectangle), Texture(0), Color(255, 255, 255, 255),
+        IGUIImage(environment, parent, id, rectangle), Texture(0), Color(img::white),
 		UseAlphaChannel(false), ScaleImage(false), DrawBounds(0.f, 0.f, 1.f, 1.f), DrawBackground(true)
 {}
 
-//! destructor
-CGUIImage::~CGUIImage()
-{
-	if (Texture)
-		Texture->drop();
-}
-
 //! sets an image
-void CGUIImage::setImage(render::Texture2D *image)
+void CGUIImage::setImage(img::Image *image)
 {
 	if (image == Texture)
 		return;
 
-	if (Texture)
-		Texture->drop();
-
 	Texture = image;
-
-	if (Texture)
-		Texture->grab();
 }
 
 //! Gets the image texture
-render::Texture2D *CGUIImage::getImage() const
+img::Image *CGUIImage::getImage() const
 {
 	return Texture;
 }
@@ -65,13 +49,12 @@ void CGUIImage::draw()
 	if (!IsVisible)
 		return;
 
-	IGUISkin *skin = Environment->getSkin();
-	video::IVideoDriver *driver = Environment->getVideoDriver();
+	GUISkin *skin = Environment->getSkin();
 
 	if (Texture) {
 		recti sourceRect(SourceRect);
 		if (sourceRect.getWidth() == 0 || sourceRect.getHeight() == 0) {
-			sourceRect = recti(core::dimension2di(Texture->getOriginalSize()));
+            sourceRect = recti(v2i(Texture->getSize().X ,Texture->getSize().Y));
 		}
 
 		if (ScaleImage) {
@@ -83,11 +66,11 @@ void CGUIImage::draw()
 			driver->draw2DImage(Texture, AbsoluteRect, sourceRect,
 					&clippingRect, Colors, UseAlphaChannel);
 		} else {
-			recti clippingRect(AbsoluteRect.UpperLeftCorner, sourceRect.getSize());
+			recti clippingRect(AbsoluteRect.ULC, sourceRect.getSize());
 			checkBounds(clippingRect);
 			clippingRect.clipAgainst(AbsoluteClippingRect);
 
-			driver->draw2DImage(Texture, AbsoluteRect.UpperLeftCorner, sourceRect,
+			driver->draw2DImage(Texture, AbsoluteRect.ULC, sourceRect,
 					&clippingRect, Color, UseAlphaChannel);
 		}
 	} else if (DrawBackground) {
@@ -140,14 +123,14 @@ recti CGUIImage::getSourceRect() const
 void CGUIImage::setDrawBounds(const rectf &drawBoundUVs)
 {
 	DrawBounds = drawBoundUVs;
-	DrawBounds.UpperLeftCorner.X = core::clamp(DrawBounds.UpperLeftCorner.X, 0.f, 1.f);
-	DrawBounds.UpperLeftCorner.Y = core::clamp(DrawBounds.UpperLeftCorner.Y, 0.f, 1.f);
-	DrawBounds.LowerRightCorner.X = core::clamp(DrawBounds.LowerRightCorner.X, 0.f, 1.f);
-	DrawBounds.LowerRightCorner.X = core::clamp(DrawBounds.LowerRightCorner.X, 0.f, 1.f);
-	if (DrawBounds.UpperLeftCorner.X > DrawBounds.LowerRightCorner.X)
-		DrawBounds.UpperLeftCorner.X = DrawBounds.LowerRightCorner.X;
-	if (DrawBounds.UpperLeftCorner.Y > DrawBounds.LowerRightCorner.Y)
-		DrawBounds.UpperLeftCorner.Y = DrawBounds.LowerRightCorner.Y;
+    DrawBounds.ULC.X = std::clamp(DrawBounds.ULC.X, 0.f, 1.f);
+    DrawBounds.ULC.Y = std::clamp(DrawBounds.ULC.Y, 0.f, 1.f);
+    DrawBounds.LRC.X = std::clamp(DrawBounds.LRC.X, 0.f, 1.f);
+    DrawBounds.LRC.X = std::clamp(DrawBounds.LRC.X, 0.f, 1.f);
+	if (DrawBounds.ULC.X > DrawBounds.LRC.X)
+		DrawBounds.ULC.X = DrawBounds.LRC.X;
+	if (DrawBounds.ULC.Y > DrawBounds.LRC.Y)
+		DrawBounds.ULC.Y = DrawBounds.LRC.Y;
 }
 
 //! Get target drawing-area restrictions.
@@ -157,4 +140,3 @@ rectf CGUIImage::getDrawBounds() const
 }
 
 } // end namespace gui
-} // end namespace irr

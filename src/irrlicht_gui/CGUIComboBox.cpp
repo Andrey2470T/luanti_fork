@@ -5,16 +5,11 @@
 #include "CGUIComboBox.h"
 
 #include "IGUIEnvironment.h"
-#include "IVideoDriver.h"
-#include "IGUISkin.h"
+#include "GUISkin.h"
 #include "IGUIEnvironment.h"
-#include "IGUIFont.h"
 #include "IGUIButton.h"
 #include "CGUIListBox.h"
-#include "os.h"
 
-namespace irr
-{
 namespace gui
 {
 
@@ -23,25 +18,25 @@ CGUIComboBox::CGUIComboBox(IGUIEnvironment *environment, IGUIElement *parent,
 		s32 id, recti rectangle) :
 		IGUIComboBox(environment, parent, id, rectangle),
 		ListButton(nullptr), SelectedText(nullptr), ListBox(nullptr), LastFocus(nullptr),
-		Selected(-1), HAlign(EGUIA_UPPERLEFT), VAlign(EGUIA_CENTER), MaxSelectionRows(5), HasFocus(false),
+        Selected(-1), HAlign(GUIAlignment::UpperLeft), VAlign(EGUIA_CENTER), MaxSelectionRows(5), HasFocus(false),
 		ActiveFont(nullptr)
 {
-	IGUISkin *skin = Environment->getSkin();
+	GUISkin *skin = Environment->getSkin();
 
-	ListButton = Environment->addButton(core::recti(0, 0, 1, 1), this, -1, L"");
+    ListButton = Environment->addButton(recti(0, 0, 1, 1), this, -1, L"");
 	if (skin && skin->getSpriteBank()) {
 		ListButton->setSpriteBank(skin->getSpriteBank());
 		ListButton->setSprite(EGBS_BUTTON_UP, skin->getIcon(EGDI_CURSOR_DOWN), skin->getColor(EGDC_WINDOW_SYMBOL));
 		ListButton->setSprite(EGBS_BUTTON_DOWN, skin->getIcon(EGDI_CURSOR_DOWN), skin->getColor(EGDC_WINDOW_SYMBOL));
 	}
-	ListButton->setAlignment(EGUIA_LOWERRIGHT, EGUIA_LOWERRIGHT, EGUIA_UPPERLEFT, EGUIA_LOWERRIGHT);
+    ListButton->setAlignment(EGUIA_LOWERRIGHT, EGUIA_LOWERRIGHT, GUIAlignment::UpperLeft, EGUIA_LOWERRIGHT);
 	ListButton->setSubElement(true);
 	ListButton->setTabStop(false);
 
-	SelectedText = Environment->addStaticText(L"", core::recti(0, 0, 1, 1), false, false, this, -1, false);
+    SelectedText = Environment->addStaticText(L"", recti(0, 0, 1, 1), false, false, this, -1, false);
 	SelectedText->setSubElement(true);
-	SelectedText->setAlignment(EGUIA_UPPERLEFT, EGUIA_LOWERRIGHT, EGUIA_UPPERLEFT, EGUIA_LOWERRIGHT);
-	SelectedText->setTextAlignment(EGUIA_UPPERLEFT, EGUIA_CENTER);
+    SelectedText->setAlignment(GUIAlignment::UpperLeft, EGUIA_LOWERRIGHT, GUIAlignment::UpperLeft, EGUIA_LOWERRIGHT);
+    SelectedText->setTextAlignment(GUIAlignment::UpperLeft, EGUIA_CENTER);
 	if (skin)
 		SelectedText->setOverrideColor(skin->getColor(EGDC_BUTTON_TEXT));
 	SelectedText->enableOverrideColor(true);
@@ -176,10 +171,10 @@ void CGUIComboBox::setAndSendSelected(s32 idx)
 }
 
 //! called if an event happened.
-bool CGUIComboBox::OnEvent(const SEvent &event)
+bool CGUIComboBox::OnEvent(const main::Event &event)
 {
 	if (isEnabled()) {
-		switch (event.EventType) {
+		switch (event.Type) {
 
 		case EET_KEY_INPUT_EVENT:
 			if (ListBox && event.KeyInput.PressedDown && event.KeyInput.Key == KEY_ESCAPE) {
@@ -234,25 +229,25 @@ bool CGUIComboBox::OnEvent(const SEvent &event)
 
 		case EET_GUI_EVENT:
 
-			switch (event.GUIEvent.EventType) {
+			switch (event.GUI.Type) {
 			case EGET_ELEMENT_FOCUS_LOST:
 				if (ListBox &&
-						(Environment->hasFocus(ListBox) || ListBox->isMyChild(event.GUIEvent.Caller)) &&
-						event.GUIEvent.Element != this &&
-						!isMyChild(event.GUIEvent.Element) &&
-						!ListBox->isMyChild(event.GUIEvent.Element)) {
+                        (Environment->hasFocus(ListBox) || ListBox->isMyChild(getElementFromId(event.GUI.Caller.value(), true))) &&
+                        event.GUI.Element != getID() &&
+                        !isMyChild(getElementFromId(event.GUI.Element.value(), true)) &&
+                        !ListBox->isMyChild(getElementFromId(event.GUI.Element.value(), true))) {
 					openCloseMenu();
 				}
 				break;
 			case EGET_BUTTON_CLICKED:
-				if (event.GUIEvent.Caller == ListButton) {
+                if (event.GUI.Caller == ListButton->getID()) {
 					openCloseMenu();
 					return true;
 				}
 				break;
 			case EGET_LISTBOX_SELECTED_AGAIN:
 			case EGET_LISTBOX_CHANGED:
-				if (event.GUIEvent.Caller == ListBox) {
+                if (event.GUI.Caller == ListBox->getID()) {
 					setSelected(ListBox->getSelected());
 					if (Selected < 0 || Selected >= (s32)Items.size())
 						setSelected(-1);
@@ -267,7 +262,7 @@ bool CGUIComboBox::OnEvent(const SEvent &event)
 			break;
 		case EET_MOUSE_INPUT_EVENT:
 
-			switch (event.MouseInput.Event) {
+			switch (event.MouseInput.Type) {
 			case EMIE_LMOUSE_PRESSED_DOWN: {
 				v2i p(event.MouseInput.X, event.MouseInput.Y);
 
@@ -288,13 +283,13 @@ bool CGUIComboBox::OnEvent(const SEvent &event)
 				}
 				return true;
 			}
-			case EMIE_MOUSE_WHEEL: {
+            case EMIE_MOUSE_WHEEL: {
 				// Try scrolling parent first
 				if (IGUIElement::OnEvent(event))
 					return true;
 
 				s32 oldSelected = Selected;
-				setSelected(Selected + ((event.MouseInput.Wheel < 0) ? 1 : -1));
+                setSelected(Selected + ((event.MouseInput.WheelDelta < 0) ? 1 : -1));
 
 				if (Selected < 0)
 					setSelected(0);
@@ -324,12 +319,12 @@ bool CGUIComboBox::OnEvent(const SEvent &event)
 void CGUIComboBox::sendSelectionChangedEvent()
 {
 	if (Parent) {
-		SEvent event;
+		main::Event event;
 
-		event.EventType = EET_GUI_EVENT;
-		event.GUIEvent.Caller = this;
-		event.GUIEvent.Element = nullptr;
-		event.GUIEvent.EventType = EGET_COMBO_BOX_CHANGED;
+		event.Type = EET_GUI_EVENT;
+        event.GUI.Caller = getID();
+        event.GUI.Element = std::nullopt;
+		event.GUI.Type = EGET_COMBO_BOX_CHANGED;
 		Parent->OnEvent(event);
 	}
 }
@@ -338,16 +333,16 @@ void CGUIComboBox::updateListButtonWidth(s32 width)
 {
 	if (ListButton->getRelativePosition().getWidth() != width) {
 		recti r;
-		r.UpperLeftCorner.X = RelativeRect.getWidth() - width - 2;
-		r.LowerRightCorner.X = RelativeRect.getWidth() - 2;
-		r.UpperLeftCorner.Y = 2;
-		r.LowerRightCorner.Y = RelativeRect.getHeight() - 2;
+		r.ULC.X = RelativeRect.getWidth() - width - 2;
+		r.LRC.X = RelativeRect.getWidth() - 2;
+		r.ULC.Y = 2;
+		r.LRC.Y = RelativeRect.getHeight() - 2;
 		ListButton->setRelativePosition(r);
 
-		r.UpperLeftCorner.X = 2;
-		r.UpperLeftCorner.Y = 2;
-		r.LowerRightCorner.X = RelativeRect.getWidth() - (width + 2);
-		r.LowerRightCorner.Y = RelativeRect.getHeight() - 2;
+		r.ULC.X = 2;
+		r.ULC.Y = 2;
+		r.LRC.X = RelativeRect.getWidth() - (width + 2);
+		r.LRC.Y = RelativeRect.getHeight() - 2;
 		SelectedText->setRelativePosition(r);
 	}
 }
@@ -358,7 +353,7 @@ void CGUIComboBox::draw()
 	if (!IsVisible)
 		return;
 
-	IGUISkin *skin = Environment->getSkin();
+	GUISkin *skin = Environment->getSkin();
 
 	updateListButtonWidth(skin->getSize(EGDS_SCROLLBAR_SIZE));
 
@@ -407,11 +402,11 @@ void CGUIComboBox::openCloseMenu()
 		ListBox = nullptr;
 	} else {
 		if (Parent) {
-			SEvent event;
-			event.EventType = EET_GUI_EVENT;
-			event.GUIEvent.Caller = this;
-			event.GUIEvent.Element = nullptr;
-			event.GUIEvent.EventType = EGET_LISTBOX_OPENED;
+			main::Event event;
+			event.Type = EET_GUI_EVENT;
+            event.GUI.Caller = getID();
+            event.GUI.Element = std::nullopt;
+			event.GUI.Type = EGET_LISTBOX_OPENED;
 
 			// Allow to prevent the listbox from opening.
 			if (Parent->OnEvent(event))
@@ -420,7 +415,7 @@ void CGUIComboBox::openCloseMenu()
 			Parent->bringToFront(this);
 		}
 
-		IGUISkin *skin = Environment->getSkin();
+		GUISkin *skin = Environment->getSkin();
 		u32 h = Items.size();
 
 		if (h > getMaxSelectionRows())
@@ -430,7 +425,7 @@ void CGUIComboBox::openCloseMenu()
 
 		ActiveFont = skin->getFont();
 		if (ActiveFont)
-			h *= (ActiveFont->getDimension(L"A").Height + 4);
+            h *= (ActiveFont->getFontHeight() + 4);
 
 		// open list box
 		recti r(0, AbsoluteRect.getHeight(),
@@ -442,7 +437,7 @@ void CGUIComboBox::openCloseMenu()
 		ListBox->drop();
 
 		// ensure that list box is always completely visible
-		if (ListBox->getAbsolutePosition().LowerRightCorner.Y > Environment->getRootGUIElement()->getAbsolutePosition().getHeight())
+		if (ListBox->getAbsolutePosition().LRC.Y > Environment->getRootGUIElement()->getAbsolutePosition().getHeight())
 			ListBox->setRelativePosition(recti(0, -ListBox->getAbsolutePosition().getHeight(), AbsoluteRect.getWidth(), 0));
 
 		for (s32 i = 0; i < (s32)Items.size(); ++i)
@@ -456,4 +451,3 @@ void CGUIComboBox::openCloseMenu()
 }
 
 } // end namespace gui
-} // end namespace irr

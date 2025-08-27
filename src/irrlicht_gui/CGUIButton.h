@@ -6,11 +6,8 @@
 
 #include "IGUIButton.h"
 #include "IGUISpriteBank.h"
-#include "ITexture.h"
-#include "Image/Color.h"
+#include <Image/Image.h>
 
-namespace irr
-{
 namespace gui
 {
 
@@ -25,19 +22,19 @@ public:
 	virtual ~CGUIButton();
 
 	//! called if an event happened.
-	bool OnEvent(const SEvent &event) override;
+    bool OnEvent(const main::Event &event) override;
 
 	//! draws the element and its children
 	void draw() override;
 
 	//! sets another skin independent font. if this is set to zero, the button uses the font of the skin.
-	void setOverrideFont(IGUIFont *font = 0) override;
+    void setOverrideFont(render::TTFont *font = 0) override;
 
 	//! Gets the override font (if any)
-	IGUIFont *getOverrideFont() const override;
+    render::TTFont *getOverrideFont() const override;
 
 	//! Get the font which is used right now for drawing
-	IGUIFont *getActiveFont() const override;
+    render::TTFont *getActiveFont() const override;
 
 	//! Sets another color for the button text.
     void setOverrideColor(img::color8 color) override;
@@ -55,28 +52,28 @@ public:
 	bool isOverrideColorEnabled(void) const override;
 
 	//! Sets an image which should be displayed on the button when it is in the given state.
-    void setImage(EGUI_BUTTON_IMAGE_STATE state, render::Texture2D *image = 0, const recti &sourceRect = recti(0, 0, 0, 0)) override;
+    void setImage(EGUI_BUTTON_IMAGE_STATE state, img::Image *image = 0, const recti &sourceRect = recti(0, 0, 0, 0)) override;
 
 	//! Sets an image which should be displayed on the button when it is in normal state.
-    void setImage(render::Texture2D *image = 0) override
+    void setImage(img::Image *image = 0) override
 	{
 		setImage(EGBIS_IMAGE_UP, image);
 	}
 
 	//! Sets an image which should be displayed on the button when it is in normal state.
-    void setImage(render::Texture2D *image, const recti &pos) override
+    void setImage(img::Image *image, const recti &pos) override
 	{
 		setImage(EGBIS_IMAGE_UP, image, pos);
 	}
 
 	//! Sets an image which should be displayed on the button when it is in pressed state.
-    void setPressedImage(render::Texture2D *image = 0) override
+    void setPressedImage(img::Image *image = 0) override
 	{
 		setImage(EGBIS_IMAGE_DOWN, image);
 	}
 
 	//! Sets an image which should be displayed on the button when it is in pressed state.
-    void setPressedImage(render::Texture2D *image, const recti &pos) override
+    void setPressedImage(img::Image *image, const recti &pos) override
 	{
 		setImage(EGBIS_IMAGE_DOWN, image, pos);
 	}
@@ -91,7 +88,7 @@ public:
 	\param color: The color of the sprite
 	*/
 	virtual void setSprite(EGUI_BUTTON_STATE state, s32 index,
-            img::color8 color = img::color8(255, 255, 255, 255),
+            img::color8 color = img::white,
 			bool loop = false) override;
 
 	//! Get the sprite-index for the given state or -1 when no sprite is set
@@ -169,7 +166,7 @@ private:
 		bool Loop;
 	};
 
-	ButtonSprite ButtonSprites[EGBS_COUNT];
+    ButtonSprite ButtonSprites[(u8)EGBS_COUNT];
 	IGUISpriteBank *SpriteBank;
 
 	struct ButtonImage
@@ -185,21 +182,11 @@ private:
 			*this = other;
 		}
 
-		~ButtonImage()
-		{
-			if (Texture)
-				Texture->drop();
-		}
-
 		ButtonImage &operator=(const ButtonImage &other)
 		{
 			if (this == &other)
 				return *this;
 
-			if (other.Texture)
-				other.Texture->grab();
-			if (Texture)
-				Texture->drop();
 			Texture = other.Texture;
 			SourceRect = other.SourceRect;
 			return *this;
@@ -210,13 +197,13 @@ private:
 			return Texture == other.Texture && SourceRect == other.SourceRect;
 		}
 
-        render::Texture2D *Texture;
+        img::Image *Texture;
         recti SourceRect;
 	};
 
-	ButtonImage ButtonImages[EGBIS_COUNT];
+    ButtonImage ButtonImages[(u8)EGBIS_COUNT];
 
-	IGUIFont *OverrideFont;
+    render::TTFont *OverrideFont;
 
 	bool OverrideColorEnabled;
     img::color8 OverrideColor;
@@ -234,4 +221,3 @@ private:
 };
 
 } // end namespace gui
-} // end namespace irr

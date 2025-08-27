@@ -5,14 +5,11 @@
 #pragma once
 
 #include "IGUIListBox.h"
-#include "irrArray.h"
+#include <Render/TTFont.h>
 
-namespace irr
-{
 namespace gui
 {
 
-class IGUIFont;
 class IGUIScrollBar;
 
 class CGUIListBox : public IGUIListBox
@@ -48,7 +45,7 @@ public:
 	void setSelected(const wchar_t *item) override;
 
 	//! called if an event happened.
-	bool OnEvent(const SEvent &event) override;
+	bool OnEvent(const main::Event &event) override;
 
 	//! draws the element and its children
 	void draw() override;
@@ -136,7 +133,7 @@ private:
 			bool Use = false;
 			img::color8 Color;
 		};
-		ListItemOverrideColor OverrideColors[EGUI_LBC_COUNT]{};
+        ListItemOverrideColor OverrideColors[(u8)EGUI_LBC_COUNT]{};
 	};
 
 	void recalculateItemHeight();
@@ -148,7 +145,7 @@ private:
 	void recalculateItemWidth(s32 icon);
 
 	// get labels used for serialization
-	bool getSerializationLabels(EGUI_LISTBOX_COLOR colorType, core::stringc &useColorLabel, core::stringc &colorLabel) const;
+	bool getSerializationLabels(EGUI_LISTBOX_COLOR colorType, std::string &useColorLabel, std::string &colorLabel) const;
 
 	std::vector<ListItem> Items;
 	s32 Selected;
@@ -156,7 +153,7 @@ private:
 	s32 ItemHeightOverride;
 	s32 TotalItemHeight;
 	s32 ItemsIconWidth;
-	gui::IGUIFont *Font;
+	render::TTFont *Font;
 	gui::IGUISpriteBank *IconBank;
 	gui::IGUIScrollBar *ScrollBar;
 	u32 selectTime;
@@ -170,4 +167,3 @@ private:
 };
 
 } // end namespace gui
-} // end namespace irr

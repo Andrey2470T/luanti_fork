@@ -6,11 +6,7 @@
 
 #include "IGUIComboBox.h"
 #include "IGUIStaticText.h"
-#include "irrString.h"
-#include "irrArray.h"
 
-namespace irr
-{
 namespace gui
 {
 class IGUIButton;
@@ -22,7 +18,7 @@ class CGUIComboBox : public IGUIComboBox
 public:
 	//! constructor
 	CGUIComboBox(IGUIEnvironment *environment, IGUIElement *parent,
-            s32 id, recti rectangle);
+			s32 id, recti rectangle);
 
 	//! Returns amount of items in box
 	u32 getItemCount() const override;
@@ -68,7 +64,7 @@ public:
 	u32 getMaxSelectionRows() const override;
 
 	//! called if an event happened.
-	bool OnEvent(const SEvent &event) override;
+	bool OnEvent(const main::Event &event) override;
 
 	//! draws the element and its children
 	void draw() override;
@@ -88,17 +84,16 @@ private:
 		SComboData(const wchar_t *text, u32 data) :
 				Name(text), Data(data) {}
 
-        std::wstring Name;
+		std::wstring Name;
 		u32 Data;
 	};
-    std::vector<SComboData> Items;
+	std::vector<SComboData> Items;
 
 	s32 Selected;
 	EGUI_ALIGNMENT HAlign, VAlign;
 	u32 MaxSelectionRows;
 	bool HasFocus;
-	IGUIFont *ActiveFont;
+	render::TTFont *ActiveFont;
 };
 
 } // end namespace gui
-} // end namespace irr

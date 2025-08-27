@@ -5,12 +5,10 @@
 
 #include "CGUIEnvironment.h"
 
-#include "IVideoDriver.h"
-
-#include "CGUISkin.h"
+#include "GUISkin.h"
 #include "CGUIButton.h"
 #include "CGUIScrollBar.h"
-#include "CGUIFont.h"
+#include <Render/TTFont.h>
 #include "CGUISpriteBank.h"
 #include "CGUIImage.h"
 #include "CGUICheckBox.h"
@@ -21,40 +19,24 @@
 #include "CGUIEditBox.h"
 #include "CGUITabControl.h"
 #include "CGUIComboBox.h"
+#include <Main/TimeCounter.h>
 
-#include "IWriteFile.h"
-#ifdef IRR_ENABLE_BUILTIN_FONT
-#include "BuiltInFont.h"
-#endif
-#include "os.h"
-
-namespace irr
-{
 namespace gui
 {
 
-const io::path CGUIEnvironment::DefaultFontName = "#DefaultFont";
+const std::string CGUIEnvironment::DefaultFontName = "#DefaultFont";
 
 //! constructor
-CGUIEnvironment::CGUIEnvironment(io::IFileSystem *fs, video::IVideoDriver *driver, IOSOperator *op) :
-		IGUIElement(EGUIET_ROOT, 0, 0, 0, recti(driver ? v2i(driver->getScreenSize()) : v2i(0, 0))),
-		Driver(driver), Hovered(0), HoveredNoSubelement(0), Focus(0), LastHoveredMousePos(0, 0), CurrentSkin(0),
-		FileSystem(fs), UserReceiver(0), Operator(op), FocusFlags(EFF_SET_ON_LMOUSE_DOWN | EFF_SET_ON_TAB)
+CGUIEnvironment::CGUIEnvironment() :
+        IGUIElement(EGUIET_ROOT, 0, 0, 0, recti(driver ? v2i(driver->getScreenSize()) : v2i(0, 0))),
+        Hovered(0), HoveredNoSubelement(0), Focus(0), LastHoveredMousePos(0, 0), CurrentSkin(0),
+        UserReceiver(0), Operator(op), FocusFlags(EFF_SET_ON_LMOUSE_DOWN | EFF_SET_ON_TAB)
 {
-	if (Driver)
-		Driver->grab();
-
-	if (FileSystem)
-		FileSystem->grab();
-
-	if (Operator)
-		Operator->grab();
-
 	loadBuiltInFont();
 
-	IGUISkin *skin = createSkin(gui::EGST_WINDOWS_METALLIC);
+    GUISkin *skin = createSkin();
 	setSkin(skin);
-	skin->drop();
+    delete skin;
 
 	// set tooltip default
 	ToolTip.LastTime = 0;
@@ -95,8 +77,7 @@ CGUIEnvironment::~CGUIEnvironment()
 
 	// drop skin
 	if (CurrentSkin) {
-		CurrentSkin->drop();
-		CurrentSkin = 0;
+        delete CurrentSkin;
 	}
 
 	u32 i;
@@ -109,56 +90,18 @@ CGUIEnvironment::~CGUIEnvironment()
 	// delete all fonts
 	for (i = 0; i < Fonts.size(); ++i)
 		Fonts[i].Font->drop();
-
-	if (Operator) {
-		Operator->drop();
-		Operator = 0;
-	}
-
-	if (FileSystem) {
-		FileSystem->drop();
-		FileSystem = 0;
-	}
-
-	if (Driver) {
-		Driver->drop();
-		Driver = 0;
-	}
-}
-
-void CGUIEnvironment::loadBuiltInFont()
-{
-#ifdef IRR_ENABLE_BUILTIN_FONT
-	io::IReadFile *file = FileSystem->createMemoryReadFile(BuiltInFontData,
-			BuiltInFontDataSize, DefaultFontName, false);
-
-	CGUIFont *font = new CGUIFont(this, DefaultFontName);
-	if (!font->load(file)) {
-		os::Printer::log("Error: Could not load built-in Font.", ELL_ERROR);
-		font->drop();
-		file->drop();
-		return;
-	}
-
-	SFont f;
-	f.NamedPath.setPath(DefaultFontName);
-	f.Font = font;
-	Fonts.push_back(f);
-
-	file->drop();
-#endif
 }
 
 //! draws all gui elements
 void CGUIEnvironment::drawAll(bool useScreenSize)
 {
-	if (useScreenSize && Driver) {
-		v2i dim(Driver->getScreenSize());
-		if (AbsoluteRect.LowerRightCorner.X != dim.Width ||
-				AbsoluteRect.UpperLeftCorner.X != 0 ||
-				AbsoluteRect.LowerRightCorner.Y != dim.Height ||
-				AbsoluteRect.UpperLeftCorner.Y != 0) {
-			setRelativePosition(core::recti(0, 0, dim.Width, dim.Height));
+    if (useScreenSize) {
+        v2i dim(Driver->getScreenSize());
+        if (AbsoluteRect.LRC.X != dim.X ||
+				AbsoluteRect.ULC.X != 0 ||
+                AbsoluteRect.LRC.Y != dim.Y ||
+				AbsoluteRect.ULC.Y != 0) {
+            setRelativePosition(recti(0, 0, dim.X, dim.Y));
 		}
 	}
 
@@ -167,7 +110,7 @@ void CGUIEnvironment::drawAll(bool useScreenSize)
 		bringToFront(ToolTip.Element);
 
 	draw();
-	OnPostRender(os::Timer::getTime());
+	OnPostRender(main::TimeCounter::getRealTime());
 
 	clearDeletionQueue();
 }
@@ -192,11 +135,11 @@ bool CGUIEnvironment::setFocus(IGUIElement *element)
 	if (Focus) {
 		currentFocus = Focus;
 		currentFocus->grab();
-		SEvent e;
-		e.EventType = EET_GUI_EVENT;
-		e.GUIEvent.Caller = Focus;
-		e.GUIEvent.Element = element;
-		e.GUIEvent.EventType = EGET_ELEMENT_FOCUS_LOST;
+		main::Event e;
+		e.Type = EET_GUI_EVENT;
+        e.GUI.Caller = Focus->getID();
+        e.GUI.Element = element->getID();
+		e.GUI.Type = EGET_ELEMENT_FOCUS_LOST;
 		if (Focus->OnEvent(e)) {
 			if (element)
 				element->drop();
@@ -213,11 +156,11 @@ bool CGUIEnvironment::setFocus(IGUIElement *element)
 			currentFocus->grab();
 
 		// send focused event
-		SEvent e;
-		e.EventType = EET_GUI_EVENT;
-		e.GUIEvent.Caller = element;
-		e.GUIEvent.Element = Focus;
-		e.GUIEvent.EventType = EGET_ELEMENT_FOCUSED;
+		main::Event e;
+		e.Type = EET_GUI_EVENT;
+        e.GUI.Caller = element->getID();
+        e.GUI.Element = Focus->getID();
+		e.GUI.Type = EGET_ELEMENT_FOCUSED;
 		if (element->OnEvent(e)) {
 			if (element)
 				element->drop();
@@ -255,11 +198,11 @@ IGUIElement *CGUIEnvironment::getHovered() const
 bool CGUIEnvironment::removeFocus(IGUIElement *element)
 {
 	if (Focus && Focus == element) {
-		SEvent e;
-		e.EventType = EET_GUI_EVENT;
-		e.GUIEvent.Caller = Focus;
-		e.GUIEvent.Element = 0;
-		e.GUIEvent.EventType = EGET_ELEMENT_FOCUS_LOST;
+		main::Event e;
+		e.Type = EET_GUI_EVENT;
+        e.GUI.Caller = Focus->getID();
+        e.GUI.Element = std::nullopt;
+		e.GUI.Type = EGET_ELEMENT_FOCUS_LOST;
 		if (Focus->OnEvent(e)) {
 			return false;
 		}
@@ -290,24 +233,6 @@ bool CGUIEnvironment::hasFocus(const IGUIElement *element, bool checkSubElements
 	return false;
 }
 
-//! returns the current video driver
-video::IVideoDriver *CGUIEnvironment::getVideoDriver() const
-{
-	return Driver;
-}
-
-//! returns the current file system
-io::IFileSystem *CGUIEnvironment::getFileSystem() const
-{
-	return FileSystem;
-}
-
-//! returns a pointer to the OS operator
-IOSOperator *CGUIEnvironment::getOSOperator() const
-{
-	return Operator;
-}
-
 //! clear all GUI elements
 void CGUIEnvironment::clear()
 {
@@ -330,11 +255,11 @@ void CGUIEnvironment::clear()
 }
 
 //! called by ui if an event happened.
-bool CGUIEnvironment::OnEvent(const SEvent &event)
+bool CGUIEnvironment::OnEvent(const main::Event &event)
 {
 
 	bool ret = false;
-	if (UserReceiver && (event.EventType != EET_MOUSE_INPUT_EVENT) && (event.EventType != EET_KEY_INPUT_EVENT) && (event.EventType != EET_GUI_EVENT || event.GUIEvent.Caller != this)) {
+    if (UserReceiver && (event.Type != EET_MOUSE_INPUT_EVENT) && (event.Type != EET_KEY_INPUT_EVENT) && (event.Type != EET_GUI_EVENT || event.GUI.Caller != getID())) {
 		ret = UserReceiver->OnEvent(event);
 	}
 
@@ -353,14 +278,14 @@ void CGUIEnvironment::OnPostRender(u32 time)
 			getSkin()->getFont(EGDF_TOOLTIP)) {
 		recti pos;
 
-		pos.UpperLeftCorner = LastHoveredMousePos;
-		v2u dim = getSkin()->getFont(EGDF_TOOLTIP)->getDimension(HoveredNoSubelement->getToolTipText().c_str());
-		dim.Width += getSkin()->getSize(EGDS_TEXT_DISTANCE_X) * 2;
-		dim.Height += getSkin()->getSize(EGDS_TEXT_DISTANCE_Y) * 2;
+		pos.ULC = LastHoveredMousePos;
+        v2u dim = getSkin()->getFont(EGDF_TOOLTIP)->getTextSize(HoveredNoSubelement->getToolTipText().c_str());
+        dim.X += getSkin()->getSize(EGDS_TEXT_DISTANCE_X) * 2;
+        dim.Y += getSkin()->getSize(EGDS_TEXT_DISTANCE_Y) * 2;
 
-		pos.UpperLeftCorner.Y -= dim.Height + 1;
-		pos.LowerRightCorner.Y = pos.UpperLeftCorner.Y + dim.Height - 1;
-		pos.LowerRightCorner.X = pos.UpperLeftCorner.X + dim.Width;
+        pos.ULC.Y -= dim.Y + 1;
+        pos.LRC.Y = pos.ULC.Y + dim.Y - 1;
+        pos.LRC.X = pos.ULC.X + dim.X;
 
 		pos.constrainTo(getAbsolutePosition());
 
@@ -373,7 +298,7 @@ void CGUIEnvironment::OnPostRender(u32 time)
 
 		s32 textHeight = ToolTip.Element->getTextHeight();
 		pos = ToolTip.Element->getRelativePosition();
-		pos.LowerRightCorner.Y = pos.UpperLeftCorner.Y + textHeight;
+		pos.LRC.Y = pos.ULC.Y + textHeight;
 		ToolTip.Element->setRelativePosition(pos);
 	}
 
@@ -448,20 +373,20 @@ void CGUIEnvironment::updateHoveredElement(v2i mousePos)
 		HoveredNoSubelement->grab();
 
 	if (Hovered != lastHovered) {
-		SEvent event;
-		event.EventType = EET_GUI_EVENT;
+		main::Event event;
+		event.Type = EET_GUI_EVENT;
 
 		if (lastHovered) {
-			event.GUIEvent.Caller = lastHovered;
-			event.GUIEvent.Element = 0;
-			event.GUIEvent.EventType = EGET_ELEMENT_LEFT;
+            event.GUI.Caller = lastHovered->getID();
+            event.GUI.Element = std::nullopt;
+			event.GUI.Type = EGET_ELEMENT_LEFT;
 			lastHovered->OnEvent(event);
 		}
 
 		if (Hovered) {
-			event.GUIEvent.Caller = Hovered;
-			event.GUIEvent.Element = Hovered;
-			event.GUIEvent.EventType = EGET_ELEMENT_HOVERED;
+            event.GUI.Caller = Hovered->getID();
+            event.GUI.Element = Hovered->getID();
+			event.GUI.Type = EGET_ELEMENT_HOVERED;
 			Hovered->OnEvent(event);
 		}
 	}
@@ -474,7 +399,7 @@ void CGUIEnvironment::updateHoveredElement(v2i mousePos)
 		}
 
 		if (HoveredNoSubelement) {
-			u32 now = os::Timer::getTime();
+			u32 now = main::TimeCounter::getRealTime();
 			ToolTip.EnterTime = now;
 		}
 	}
@@ -487,15 +412,15 @@ void CGUIEnvironment::updateHoveredElement(v2i mousePos)
 
 //! This sets a new event receiver for gui events. Usually you do not have to
 //! use this method, it is used by the internal engine.
-void CGUIEnvironment::setUserEventReceiver(IEventReceiver *evr)
+void CGUIEnvironment::setUserEventReceiver(main::IEventReceiver *evr)
 {
 	UserReceiver = evr;
 }
 
 //! posts an input event to the environment
-bool CGUIEnvironment::postEventFromUser(const SEvent &event)
+bool CGUIEnvironment::postEventFromUser(const main::Event &event)
 {
-	switch (event.EventType) {
+	switch (event.Type) {
 	case EET_GUI_EVENT: {
 		// hey, why is the user sending gui events..?
 	}
@@ -509,18 +434,18 @@ bool CGUIEnvironment::postEventFromUser(const SEvent &event)
 			IGUIElement *focusCandidate = Hovered;
 
 			// Only allow enabled elements to be focused (unless EFF_CAN_FOCUS_DISABLED is set)
-			if (Hovered && !Hovered->isEnabled() && !(FocusFlags & EFF_CAN_FOCUS_DISABLED))
+            if (Hovered && !Hovered->isEnabled() && !(FocusFlags & (u32)EFF_CAN_FOCUS_DISABLED))
 				focusCandidate = NULL; // we still remove focus from the active element
 
 			// Please don't merge this into a single if clause, it's easier to debug the way it is
-			if (FocusFlags & EFF_SET_ON_LMOUSE_DOWN &&
-					event.MouseInput.Event == EMIE_LMOUSE_PRESSED_DOWN) {
+            if (FocusFlags & (u32)EFF_SET_ON_LMOUSE_DOWN &&
+					event.MouseInput.Type == EMIE_LMOUSE_PRESSED_DOWN) {
 				setFocus(focusCandidate);
-			} else if (FocusFlags & EFF_SET_ON_RMOUSE_DOWN &&
-					   event.MouseInput.Event == EMIE_RMOUSE_PRESSED_DOWN) {
+            } else if (FocusFlags & (u32)EFF_SET_ON_RMOUSE_DOWN &&
+					   event.MouseInput.Type == EMIE_RMOUSE_PRESSED_DOWN) {
 				setFocus(focusCandidate);
-			} else if (FocusFlags & EFF_SET_ON_MOUSE_OVER &&
-					   event.MouseInput.Event == EMIE_MOUSE_MOVED) {
+            } else if (FocusFlags & (u32)EFF_SET_ON_MOUSE_OVER &&
+					   event.MouseInput.Type == EMIE_MOUSE_MOVED) {
 				setFocus(focusCandidate);
 			}
 		}
@@ -542,7 +467,7 @@ bool CGUIEnvironment::postEventFromUser(const SEvent &event)
 		// For keys we handle the event before changing focus to give elements the chance for catching the TAB
 		// Send focus changing event
 		// CAREFUL when changing - there's an identical check in CGUIModalScreen::OnEvent
-		if (FocusFlags & EFF_SET_ON_TAB &&
+        if (FocusFlags & (u32)EFF_SET_ON_TAB &&
 				event.KeyInput.PressedDown &&
 				event.KeyInput.Key == KEY_TAB) {
 			IGUIElement *next = getNextElement(event.KeyInput.Shift, event.KeyInput.Control);
@@ -564,38 +489,34 @@ bool CGUIEnvironment::postEventFromUser(const SEvent &event)
 }
 
 //! returns the current gui skin
-IGUISkin *CGUIEnvironment::getSkin() const
+GUISkin *CGUIEnvironment::getSkin() const
 {
 	return CurrentSkin;
 }
 
 //! Sets a new GUI Skin
-void CGUIEnvironment::setSkin(IGUISkin *skin)
+void CGUIEnvironment::setSkin(GUISkin *skin)
 {
 	if (CurrentSkin == skin)
 		return;
 
-	if (CurrentSkin)
-		CurrentSkin->drop();
+    delete CurrentSkin;
 
 	CurrentSkin = skin;
-
-	if (CurrentSkin)
-		CurrentSkin->grab();
 }
 
-//! Creates a new GUI Skin based on a template.
+//! Creates a new GUI Skin.
 /** \return Returns a pointer to the created skin.
-If you no longer need the skin, you should call IGUISkin::drop().
+If you no longer need the skin, you should call GUISkin::drop().
 See IReferenceCounted::drop() for more information. */
-IGUISkin *CGUIEnvironment::createSkin(EGUI_SKIN_TYPE type)
+GUISkin *CGUIEnvironment::createSkin()
 {
-	IGUISkin *skin = new CGUISkin(type, Driver);
+    GUISkin *skin = new GUISkin();
 
-	IGUIFont *builtinfont = getBuiltInFont();
-	IGUIFontBitmap *bitfont = 0;
+	render::TTFont *builtinfont = getBuiltInFont();
+	render::TTFontBitmap *bitfont = 0;
 	if (builtinfont && builtinfont->getType() == EGFT_BITMAP)
-		bitfont = (IGUIFontBitmap *)builtinfont;
+		bitfont = (render::TTFontBitmap *)builtinfont;
 
 	IGUISpriteBank *bank = 0;
 	skin->setFont(builtinfont);
@@ -631,12 +552,12 @@ IGUIScrollBar *CGUIEnvironment::addScrollBar(bool horizontal, const recti &recta
 }
 
 //! Adds an image element.
-IGUIImage *CGUIEnvironment::addImage(render::Texture2D *image, v2i pos,
+IGUIImage *CGUIEnvironment::addImage(img::Image *image, v2i pos,
 		bool useAlphaChannel, IGUIElement *parent, s32 id, const wchar_t *text)
 {
-	v2i sz(0, 0);
+    v2i sz(0, 0);
 	if (image)
-		sz = v2i(image->getOriginalSize());
+        sz = v2i(image->getSize().X, image->getSize().Y);
 
 	IGUIImage *img = new CGUIImage(this, parent ? parent : this,
 			id, recti(pos, sz));
@@ -693,7 +614,7 @@ IGUIListBox *CGUIEnvironment::addListBox(const recti &rectangle,
 	if (CurrentSkin && CurrentSkin->getSpriteBank()) {
 		b->setSpriteBank(CurrentSkin->getSpriteBank());
 	} else if (getBuiltInFont() && getBuiltInFont()->getType() == EGFT_BITMAP) {
-		b->setSpriteBank(((IGUIFontBitmap *)getBuiltInFont())->getSpriteBank());
+		b->setSpriteBank(((render::TTFontBitmap *)getBuiltInFont())->getSpriteBank());
 	}
 
 	b->drop();
@@ -702,8 +623,8 @@ IGUIListBox *CGUIEnvironment::addListBox(const recti &rectangle,
 
 //! adds a file open dialog. The returned pointer must not be dropped.
 IGUIFileOpenDialog *CGUIEnvironment::addFileOpenDialog(const wchar_t *title,
-		bool modal, IGUIElement *parent, s32 id,
-		bool restoreCWD, io::path::char_type *startDir)
+        bool modal, IGUIElement *parent, s32 id,
+        bool restoreCWD, std::string *startDir)
 {
 	parent = parent ? parent : this;
 
@@ -775,7 +696,7 @@ IGUIComboBox *CGUIEnvironment::addComboBox(const recti &rectangle,
 }
 
 //! returns the font
-IGUIFont *CGUIEnvironment::getFont(const io::path &filename)
+render::TTFont *CGUIEnvironment::getFont(const std::string &filename)
 {
 	// search existing font
 
@@ -795,14 +716,14 @@ IGUIFont *CGUIEnvironment::getFont(const io::path &filename)
 		return 0;
 	}
 
-	IGUIFont *ifont = 0;
+	render::TTFont *ifont = 0;
 #if 0
 		{
 			CGUIFont* font = new CGUIFont(this, filename);
-			ifont = (IGUIFont*)font;
+			ifont = (render::TTFont*)font;
 
 			// load the font
-			io::path directory;
+            std::string directory;
 			core::splitFilename(filename, &directory);
 			if (!font->load(xml, directory))
 			{
@@ -816,7 +737,7 @@ IGUIFont *CGUIEnvironment::getFont(const io::path &filename)
 	if (!ifont) {
 
 		CGUIFont *font = new CGUIFont(this, f.NamedPath.getPath());
-		ifont = (IGUIFont *)font;
+		ifont = (render::TTFont *)font;
 		if (!font->load(f.NamedPath.getPath())) {
 			font->drop();
 			return 0;
@@ -832,7 +753,7 @@ IGUIFont *CGUIEnvironment::getFont(const io::path &filename)
 }
 
 //! add an externally loaded font
-IGUIFont *CGUIEnvironment::addFont(const io::path &name, IGUIFont *font)
+render::TTFont *CGUIEnvironment::addFont(const std::string &name, render::TTFont *font)
 {
 	if (font) {
 		SFont f;
@@ -848,7 +769,7 @@ IGUIFont *CGUIEnvironment::addFont(const io::path &name, IGUIFont *font)
 }
 
 //! remove loaded font
-void CGUIEnvironment::removeFont(IGUIFont *font)
+void CGUIEnvironment::removeFont(render::TTFont *font)
 {
 	if (!font)
 		return;
@@ -862,7 +783,7 @@ void CGUIEnvironment::removeFont(IGUIFont *font)
 }
 
 //! returns default font
-IGUIFont *CGUIEnvironment::getBuiltInFont() const
+render::TTFont *CGUIEnvironment::getBuiltInFont() const
 {
 	if (Fonts.empty())
 		return 0;
@@ -870,7 +791,7 @@ IGUIFont *CGUIEnvironment::getBuiltInFont() const
 	return Fonts[0].Font;
 }
 
-IGUISpriteBank *CGUIEnvironment::getSpriteBank(const io::path &filename)
+IGUISpriteBank *CGUIEnvironment::getSpriteBank(const std::string &filename)
 {
 	// search for the file name
 
@@ -894,7 +815,7 @@ IGUISpriteBank *CGUIEnvironment::getSpriteBank(const io::path &filename)
 	return 0;
 }
 
-IGUISpriteBank *CGUIEnvironment::addEmptySpriteBank(const io::path &name)
+IGUISpriteBank *CGUIEnvironment::addEmptySpriteBank(const std::string &name)
 {
 	// no duplicate names allowed
 
@@ -914,8 +835,8 @@ IGUISpriteBank *CGUIEnvironment::addEmptySpriteBank(const io::path &name)
 }
 
 //! Creates the image list from the given texture.
-IGUIImageList *CGUIEnvironment::createImageList(render::Texture2D *texture,
-		v2i imageSize, bool useAlphaChannel)
+IGUIImageList *CGUIEnvironment::createImageList(img::Image *texture,
+        v2i imageSize, bool useAlphaChannel)
 {
 	CGUIImageList *imageList = new CGUIImageList(Driver);
 	if (!imageList->createImageList(texture, imageSize, useAlphaChannel)) {
@@ -992,4 +913,3 @@ IGUIEnvironment *createGUIEnvironment(io::IFileSystem *fs,
 }
 
 } // end namespace gui
-} // end namespace irr

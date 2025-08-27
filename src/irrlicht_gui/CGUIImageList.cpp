@@ -4,39 +4,20 @@
 
 #include "CGUIImageList.h"
 
-namespace irr
-{
 namespace gui
 {
 
 //! constructor
-CGUIImageList::CGUIImageList(video::IVideoDriver *driver) :
-		Driver(driver),
+CGUIImageList::CGUIImageList() :
 		Texture(0),
 		ImageCount(0),
 		ImageSize(0, 0),
 		ImagesPerRow(0),
 		UseAlphaChannel(false)
-{
-	if (Driver) {
-		Driver->grab();
-	}
-}
-
-//! destructor
-CGUIImageList::~CGUIImageList()
-{
-	if (Driver) {
-		Driver->drop();
-	}
-
-	if (Texture) {
-		Texture->drop();
-	}
-}
+{}
 
 //! Creates the image list from texture.
-bool CGUIImageList::createImageList(render::Texture2D *texture,
+bool CGUIImageList::createImageList(img::Image *texture,
 		v2i imageSize,
 		bool useAlphaChannel)
 {
@@ -44,13 +25,10 @@ bool CGUIImageList::createImageList(render::Texture2D *texture,
 		return false;
 	}
 
-	Texture = texture;
-	Texture->grab();
-
 	ImageSize = imageSize;
 
-	ImagesPerRow = Texture->getSize().Width / ImageSize.Width;
-	ImageCount = ImagesPerRow * Texture->getSize().Height / ImageSize.Height;
+    ImagesPerRow = Texture->getSize().X / ImageSize.X;
+    ImageCount = ImagesPerRow * Texture->getSize().Y / ImageSize.Y;
 
 	UseAlphaChannel = useAlphaChannel;
 
@@ -63,18 +41,17 @@ void CGUIImageList::draw(s32 index, const v2i &destPos,
 {
 	recti sourceRect;
 
-	if (!Driver || index < 0 || index >= ImageCount) {
+    if (index < 0 || index >= ImageCount) {
 		return;
 	}
 
-	sourceRect.UpperLeftCorner.X = (index % ImagesPerRow) * ImageSize.Width;
-	sourceRect.UpperLeftCorner.Y = (index / ImagesPerRow) * ImageSize.Height;
-	sourceRect.LowerRightCorner.X = sourceRect.UpperLeftCorner.X + ImageSize.Width;
-	sourceRect.LowerRightCorner.Y = sourceRect.UpperLeftCorner.Y + ImageSize.Height;
+    sourceRect.ULC.X = (index % ImagesPerRow) * ImageSize.X;
+    sourceRect.ULC.Y = (index / ImagesPerRow) * ImageSize.Y;
+    sourceRect.LRC.X = sourceRect.ULC.X + ImageSize.X;
+    sourceRect.LRC.Y = sourceRect.ULC.Y + ImageSize.Y;
 
 	Driver->draw2DImage(Texture, destPos, sourceRect, clip,
-			img::color8(255, 255, 255, 255), UseAlphaChannel);
+            img::color8(img::white), UseAlphaChannel);
 }
 
 } // end namespace gui
-} // end namespace irr

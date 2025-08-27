@@ -5,11 +5,8 @@
 #pragma once
 
 #include "IGUITabControl.h"
-#include "irrArray.h"
-#include "IGUISkin.h"
+#include "GUISkin.h"
 
-namespace irr
-{
 namespace gui
 {
 class CGUITabControl;
@@ -21,7 +18,7 @@ class CGUITab : public IGUITab
 public:
 	//! constructor
 	CGUITab(IGUIEnvironment *environment,
-            IGUIElement *parent, const recti &rectangle,
+			IGUIElement *parent, const recti &rectangle,
 			s32 id);
 
 	//! draws the element and its children
@@ -31,23 +28,23 @@ public:
 	void setDrawBackground(bool draw = true) override;
 
 	//! sets the color of the background, if it should be drawn.
-    void setBackgroundColor(img::color8 c) override;
+	void setBackgroundColor(img::color8 c) override;
 
 	//! sets the color of the text
-    void setTextColor(img::color8 c) override;
+	void setTextColor(img::color8 c) override;
 
 	//! returns true if the tab is drawing its background, false if not
 	bool isDrawingBackground() const override;
 
 	//! returns the color of the background
-    img::color8 getBackgroundColor() const override;
+	img::color8 getBackgroundColor() const override;
 
-    img::color8 getTextColor() const override;
+	img::color8 getTextColor() const override;
 
 private:
-    img::color8 BackColor;
+	img::color8 BackColor;
 	bool OverrideTextColorEnabled;
-    img::color8 TextColor;
+	img::color8 TextColor;
 	bool DrawBackground;
 };
 
@@ -57,7 +54,7 @@ class CGUITabControl : public IGUITabControl
 public:
 	//! destructor
 	CGUITabControl(IGUIEnvironment *environment,
-            IGUIElement *parent, const recti &rectangle,
+			IGUIElement *parent, const recti &rectangle,
 			bool fillbackground = true, bool border = true, s32 id = -1);
 
 	//! destructor
@@ -105,7 +102,7 @@ public:
 	s32 getTabAt(s32 xpos, s32 ypos) const override;
 
 	//! called if an event happened.
-	bool OnEvent(const SEvent &event) override;
+	bool OnEvent(const main::Event &event) override;
 
 	//! draws the element and its children
 	void draw() override;
@@ -127,10 +124,10 @@ public:
 
 	//! Set the alignment of the tabs
 	//! note: EGUIA_CENTER is not an option
-	void setTabVerticalAlignment(gui::EGUI_ALIGNMENT alignment) override;
+    void setTabVerticalAlignment(EGUI_ALIGNMENT alignment) override;
 
 	//! Get the alignment of the tabs
-	gui::EGUI_ALIGNMENT getTabVerticalAlignment() const override;
+    EGUI_ALIGNMENT getTabVerticalAlignment() const override;
 
 	//! Set the extra width added to tabs on each side of the text
 	void setTabExtraWidth(s32 extraWidth) override;
@@ -148,8 +145,8 @@ private:
 	bool needScrollControl(s32 startIndex = 0, bool withScrollControl = false, s32 *pos_rightmost = nullptr);
 	//! Left index calculation based on the selected tab
 	s32 calculateScrollIndexFromActive();
-	s32 calcTabWidth(IGUIFont *font, const wchar_t *text) const;
-    recti calcTabPos();
+	s32 calcTabWidth(render::TTFont *font, const wchar_t *text) const;
+	recti calcTabPos();
 	void setVisibleTab(s32 idx);
 	void removeTabButNotChild(s32 idx);
 
@@ -157,13 +154,13 @@ private:
 	void recalculateScrollBar();
 	void refreshSprites();
 
-    std::vector<IGUITab *> Tabs;
+	std::vector<IGUITab *> Tabs;
 	s32 ActiveTabIndex;
 	bool Border;
 	bool FillBackground;
 	bool ScrollControl;
 	s32 TabHeight;
-	gui::EGUI_ALIGNMENT VerticalAlignment;
+    EGUI_ALIGNMENT VerticalAlignment;
 	IGUIButton *UpButton;
 	IGUIButton *DownButton;
 	s32 TabMaxWidth;
@@ -172,4 +169,3 @@ private:
 };
 
 } // end namespace gui
-} // end namespace irr

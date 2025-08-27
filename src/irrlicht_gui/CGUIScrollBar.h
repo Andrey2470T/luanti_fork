@@ -7,8 +7,6 @@
 #include "IGUIScrollBar.h"
 #include "IGUIButton.h"
 
-namespace irr
-{
 namespace gui
 {
 
@@ -17,14 +15,14 @@ class CGUIScrollBar : public IGUIScrollBar
 public:
 	//! constructor
 	CGUIScrollBar(bool horizontal, IGUIEnvironment *environment,
-            IGUIElement *parent, s32 id, recti rectangle,
+			IGUIElement *parent, s32 id, recti rectangle,
 			bool noclip = false);
 
 	//! destructor
 	virtual ~CGUIScrollBar();
 
 	//! called if an event happened.
-	bool OnEvent(const SEvent &event) override;
+	bool OnEvent(const main::Event &event) override;
 
 	//! draws the element and its children
 	void draw() override;
@@ -66,12 +64,12 @@ public:
 
 private:
 	void refreshControls();
-    s32 getPosFromMousePos(const v2i &p) const;
+	s32 getPosFromMousePos(const v2i &p) const;
 
 	IGUIButton *UpButton;
 	IGUIButton *DownButton;
 
-    recti SliderRect;
+	recti SliderRect;
 
 	bool Dragging;
 	bool Horizontal;
@@ -86,10 +84,9 @@ private:
 	s32 LargeStep;
 	s32 DesiredPos;
 	u32 LastChange;
-    img::color8 CurrentIconColor;
+	img::color8 CurrentIconColor;
 
 	f32 range() const { return (f32)(Max - Min); }
 };
 
 } // end namespace gui
-} // end namespace irr
