@@ -10,8 +10,11 @@
 #include <Utils/Rect.h>
 #include <Render/TTFont.h>
 
-class UISprite;
+namespace gui
+{
 class IGUIElement;
+class IGUISpriteBank;
+}
 class Renderer;
 
 //! Enumeration of available default skins.
@@ -353,7 +356,7 @@ enum class GUIDefaultFont : u8
 class GUISkin
 {
 public:
-    GUISkin(GUISkinType type, Renderer *_renderer);
+    GUISkin(Renderer *_renderer, GUISkinType type=GUISkinType::WindowsClassic);
 
     //! destructor
     ~GUISkin();
@@ -383,10 +386,10 @@ public:
     void setFont(render::TTFont *font, GUIDefaultFont which=GUIDefaultFont::Default);
 
     //! sets the sprite used for drawing icons
-    void setSprite(UISprite *bank);
+    void setSprite(gui::IGUISpriteBank *bank);
 
     //! gets the sprite used for drawing icons
-    UISprite *getSprite() const;
+    gui::IGUISpriteBank *getSprite() const;
 
     //! Returns a default icon
     /** Returns the sprite index within the sprite */
@@ -578,6 +581,30 @@ public:
         const rectf& rect, s32 tabHeight=-1, GUIAlignment alignment=GUIAlignment::UpperLeft,
         const img::color8 *colors=nullptr);
 
+    //! draws an icon, usually from the skin's sprite bank
+    /** \param element: Pointer to the element which wishes to draw this icon.
+    This parameter is usually not used by IGUISkin, but can be used for example
+    by more complex implementations to find out how to draw the part exactly.
+    \param icon: Specifies the icon to be drawn.
+    \param position: The position to draw the icon
+    \param starttime: The time at the start of the animation
+    \param currenttime: The present time, used to calculate the frame number
+    \param loop: Whether the animation should loop or not
+    \param clip: Clip area.	*/
+    virtual void drawIcon(gui::IGUIElement* element, EGUI_DEFAULT_ICON icon,
+        const v2i &position,
+        u32 starttime=0, u32 currenttime=0,
+        bool loop=false, const recti* clip=0)
+    {
+        drawColoredIcon(element, icon, position, starttime, currenttime, loop, clip);
+    }
+
+    virtual void drawColoredIcon(gui::IGUIElement* element, EGUI_DEFAULT_ICON icon,
+        const v2i &position,
+        u32 starttime=0, u32 currenttime=0,
+        bool loop=false, const recti* clip=0,
+        const img::color8* colors=0);
+
     //! get the type of this skin
     GUISkinType getType() const;
 
@@ -592,7 +619,7 @@ private:
     std::array<s32, (u8)GUIDefaultSize::Count>              Sizes;
     std::array<u32, (u8)GUIDefaultIcon::Count>              Icons;
     std::array<render::TTFont *, (u8)GUIDefaultFont::Count> Fonts;
-    std::unique_ptr<UISprite>                               Sprite;
+    gui::IGUISpriteBank                                     *Sprite;
     std::array<std::wstring, (u8)GUIDefaultText::Count>     Texts;
 
     bool UseGradient;

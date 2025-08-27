@@ -14,11 +14,19 @@ class CGUIEnvironment : public IGUIEnvironment, public IGUIElement
 {
 public:
 	//! constructor
-    CGUIEnvironment();
+    CGUIEnvironment(RenderSystem *rndsys, v2u wnd_size, ResourceCache *rescache);
 
 	//! destructor
 	virtual ~CGUIEnvironment();
 
+    RenderSystem *getRenderSystem() const override
+    {
+        return RndSys;
+    }
+    ResourceCache *getResourceCache() const override
+    {
+        return ResCache;
+    }
 	//! draws all gui elements
 	void drawAll(bool useScreenSize) override;
 
@@ -196,12 +204,15 @@ private:
 	IGUIElement *HoveredNoSubelement; // subelements replaced by their parent, so you only have 'real' elements here
 	IGUIElement *Focus;
 	v2i LastHoveredMousePos;
-    GUISkin *CurrentSkin;
+    std::unique_ptr<GUISkin> CurrentSkin;
     main::IEventReceiver *UserReceiver;
 	u32 FocusFlags;
 	std::vector<IGUIElement *> DeletionQueue;
 
     static const std::string DefaultFontName;
+
+    RenderSystem *RndSys;
+    ResourceCache *ResCache;
 };
 
 } // end namespace gui

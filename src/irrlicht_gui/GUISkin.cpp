@@ -12,8 +12,10 @@
 #include "client/ui/sprite.h"
 #include "client/render/renderer.h"
 #include <Render/DrawContext.h>
+#include "IGUISpriteBank.h"
+#include "irrlicht_gui/IGUIElement.h"
 
-GUISkin::GUISkin(GUISkinType type, Renderer *_renderer)
+GUISkin::GUISkin(Renderer *_renderer, GUISkinType type)
     : renderer(_renderer), Type(type)
 {
     if ((Type == GUISkinType::WindowsClassic) || (Type == GUISkinType::WindowsMetallic))
@@ -213,17 +215,20 @@ void GUISkin::setFont(render::TTFont *font, GUIDefaultFont which)
 
 
 //! gets the sprite stored
-UISprite *GUISkin::getSprite() const
+gui::IGUISpriteBank *GUISkin::getSprite() const
 {
-    return Sprite.get();
+    return Sprite;
 }
 
 
 //! set a new sprite or remove one by passing 0
-void GUISkin::setSprite(UISprite *bank)
+void GUISkin::setSprite(gui::IGUISpriteBank *bank)
 {
-    if (bank)
-        Sprite.reset(bank);
+    if (bank) {
+        if (Sprite)
+            Sprite->drop();
+        Sprite = bank;
+    }
 }
 
 
@@ -908,6 +913,34 @@ void GUISkin::updateColored3DTabBody(UISprite *sprite, bool border, bool backgro
 }
 // END PATCH
 
+//! draws an icon, usually from the skin's sprite bank
+/**	\param parent: Pointer to the element which wishes to draw this icon.
+This parameter is usually not used by IGUISkin, but can be used for example
+by more complex implementations to find out how to draw the part exactly.
+\param icon: Specifies the icon to be drawn.
+\param position: The position to draw the icon
+\param starttime: The time at the start of the animation
+\param currenttime: The present time, used to calculate the frame number
+\param loop: Whether the animation should loop or not
+\param clip: Clip area.	*/
+// PATCH
+void GUISkin::drawColoredIcon(gui::IGUIElement* element, EGUI_DEFAULT_ICON icon,
+            const v2i &position,
+            u32 starttime, u32 currenttime,
+            bool loop, const recti* clip,
+            const img::color8* colors)
+{
+    if (!Sprite)
+        return;
+
+    if (!colors)
+        colors = Colors.data();
+
+    bool gray = element && !element->isEnabled();
+    Sprite->draw2DSprite(Icons[(u8)icon], position, clip,
+            colors[gray? (u8)EGDC_GRAY_WINDOW_SYMBOL : (u8)EGDC_WINDOW_SYMBOL], starttime, currenttime, loop, true);
+}
+// END PATCH
 
 GUISkinType GUISkin::getType() const
 {

@@ -11,6 +11,9 @@
 #include <Main/IEventReceiver.h>
 #include <Main/Events.h>
 
+class RenderSystem;
+class ResourceCache;
+
 namespace gui
 {
 
@@ -39,6 +42,9 @@ class IGUIButton;
 class IGUIEnvironment : public virtual IReferenceCounted
 {
 public:
+    virtual RenderSystem *getRenderSystem() const = 0;
+    virtual ResourceCache *getResourceCache() const = 0;
+
 	//! Draws all gui elements by traversing the GUI environment starting at the root node.
 	/** \param  When true ensure the GuiEnvironment (aka the RootGUIElement) has the same size as the current driver screensize.
 				Can be set to false to control that size yourself, p.E when not the full size should be used for UI. */

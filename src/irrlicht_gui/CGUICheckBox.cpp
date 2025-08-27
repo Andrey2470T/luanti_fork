@@ -7,13 +7,19 @@
 #include "GUISkin.h"
 #include "IGUIEnvironment.h"
 #include <Main/TimeCounter.h>
+#include "client/ui/text_sprite.h"
+#include "client/render/rendersystem.h"
+#include <Utils/TypeConverter.h>
 
 namespace gui
 {
 
 //! constructor
 CGUICheckBox::CGUICheckBox(bool checked, IGUIEnvironment *environment, IGUIElement *parent, s32 id, recti rectangle) :
-		IGUICheckBox(environment, parent, id, rectangle), CheckTime(0), Pressed(false), Checked(checked), Border(false), Background(false)
+        IGUICheckBox(environment, parent, id, rectangle), CheckTime(0), Pressed(false), Checked(checked), Border(false), Background(false),
+        Sprite(std::make_unique<UISprite>(nullptr, Environment->getRenderSystem()->getRenderer(), environment->getResourceCache())),
+        Text(std::make_unique<UITextSprite>(environment->getRenderSystem()->getFontManager(), EnrichedString(),
+            environment->getRenderSystem()->getRenderer(), environment->getResourceCache()))
 {
 	// this element can be tabbed into
 	setTabStop(true);
@@ -97,19 +103,27 @@ void CGUICheckBox::draw()
 
 	GUISkin *skin = Environment->getSkin();
 	if (skin) {
+        Sprite->clear();
+
 		recti frameRect(AbsoluteRect);
 
+        auto shape = Sprite->getShape();
+
+        u32 rectN = 0;
 		// draw background
 		if (Background) {
             img::color8 bgColor = skin->getColor(EGDC_3D_FACE);
-			driver->draw2DRectangle(bgColor, frameRect, &AbsoluteClippingRect);
+            shape->addRectangle(toRectf(frameRect), {bgColor, bgColor, bgColor, bgColor});
+            rectN++;
 		}
 
 		// draw the border
 		if (Border) {
-			skin->draw3DSunkenPane(this, 0, true, false, frameRect, &AbsoluteClippingRect);
+            shape->addRectangle(toRectf(frameRect), {});
+            skin->update3DSunkenPane(Sprite.get(), img::white, true, false, toRectf(frameRect), rectN);
 			frameRect.ULC.X += skin->getSize(EGDS_TEXT_DISTANCE_X);
 			frameRect.LRC.X -= skin->getSize(EGDS_TEXT_DISTANCE_X);
+            rectN++;
 		}
 
 		const s32 height = skin->getSize(EGDS_CHECK_BOX_WIDTH);
@@ -125,24 +139,35 @@ void CGUICheckBox::draw()
 		EGUI_DEFAULT_COLOR col = EGDC_GRAY_EDITABLE;
 		if (isEnabled())
 			col = Pressed ? EGDC_FOCUSED_EDITABLE : EGDC_EDITABLE;
-		skin->draw3DSunkenPane(this, skin->getColor(col),
-				false, true, checkRect, &AbsoluteClippingRect);
+
+        shape->addRectangle(toRectf(checkRect), {skin->getColor(col), skin->getColor(col), skin->getColor(col), skin->getColor(col)});
+        skin->update3DSunkenPane(Sprite.get(), skin->getColor(col),
+                false, true, toRectf(checkRect), rectN);
+        rectN++;
+
+        Sprite->rebuildMesh();
+
+        Sprite->setClipRect(AbsoluteClippingRect);
+        Sprite->draw();
 
 		// the checked icon
 		if (Checked) {
+            shape->addRectangle(toRectf(frameRect), {});
 			skin->drawIcon(this, EGDI_CHECK_BOX_CHECKED, checkRect.getCenter(),
 					CheckTime, main::TimeCounter::getRealTime(), false, &AbsoluteClippingRect);
 		}
 
 		// associated text
-		if (Text.size()) {
+        if (Text->getText().size()) {
 			checkRect = frameRect;
 			checkRect.ULC.X += height + 5;
 
 			render::TTFont *font = skin->getFont();
 			if (font) {
-				font->draw(Text.c_str(), checkRect,
-						skin->getColor(isEnabled() ? EGDC_BUTTON_TEXT : EGDC_GRAY_TEXT), false, true, &AbsoluteClippingRect);
+                Text->setOverrideFont(font);
+                Text->setColor(skin->getColor(isEnabled() ? EGDC_BUTTON_TEXT : EGDC_GRAY_TEXT));
+                Text->updateBuffer(toRectf(checkRect));
+                Text->draw();
 			}
 		}
 	}

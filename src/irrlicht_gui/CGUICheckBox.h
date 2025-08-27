@@ -5,6 +5,10 @@
 #pragma once
 
 #include "IGUICheckBox.h"
+#include <memory>
+
+class UISprite;
+class UITextSprite;
 
 namespace gui
 {
@@ -47,6 +51,9 @@ private:
 	bool Checked;
 	bool Border;
 	bool Background;
+
+    std::unique_ptr<UISprite> Sprite;
+    std::unique_ptr<UITextSprite> Text;
 };
 
 } // end namespace gui

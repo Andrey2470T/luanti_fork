@@ -6,6 +6,7 @@
 
 #include "IGUISpriteBank.h"
 
+class UISprite;
 
 namespace gui
 {
@@ -59,6 +60,8 @@ protected:
     std::vector<recti> Rectangles;
     std::vector<img::Image *> Textures;
 	IGUIEnvironment *Environment;
+
+    std::unique_ptr<UISprite> SpriteBank;
 };
 
 } // end namespace gui

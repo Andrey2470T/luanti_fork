@@ -20,6 +20,9 @@
 #include "CGUITabControl.h"
 #include "CGUIComboBox.h"
 #include <Main/TimeCounter.h>
+#include "client/render/rendersystem.h"
+#include "client/ui/glyph_atlas.h"
+#include "client/media/resource.h"
 
 namespace gui
 {
@@ -27,16 +30,16 @@ namespace gui
 const std::string CGUIEnvironment::DefaultFontName = "#DefaultFont";
 
 //! constructor
-CGUIEnvironment::CGUIEnvironment() :
-        IGUIElement(EGUIET_ROOT, 0, 0, 0, recti(driver ? v2i(driver->getScreenSize()) : v2i(0, 0))),
-        Hovered(0), HoveredNoSubelement(0), Focus(0), LastHoveredMousePos(0, 0), CurrentSkin(0),
-        UserReceiver(0), Operator(op), FocusFlags(EFF_SET_ON_LMOUSE_DOWN | EFF_SET_ON_TAB)
+CGUIEnvironment::CGUIEnvironment(RenderSystem *rndsys, v2u wnd_size, ResourceCache *rescache) :
+        IGUIElement(EGUIET_ROOT, 0, 0, 0, recti(0, 0, wnd_size.X, wnd_size.Y)),
+        Hovered(0), HoveredNoSubelement(0), Focus(0), LastHoveredMousePos(0, 0),
+        UserReceiver(0), FocusFlags((u8)EFF_SET_ON_LMOUSE_DOWN | (u8)EFF_SET_ON_TAB),
+        RndSys(rndsys), ResCache(rescache)
 {
 	loadBuiltInFont();
 
     GUISkin *skin = createSkin();
 	setSkin(skin);
-    delete skin;
 
 	// set tooltip default
 	ToolTip.LastTime = 0;
@@ -75,32 +78,23 @@ CGUIEnvironment::~CGUIEnvironment()
 		ToolTip.Element = 0;
 	}
 
-	// drop skin
-	if (CurrentSkin) {
-        delete CurrentSkin;
-	}
-
 	u32 i;
 
 	// delete all sprite banks
 	for (i = 0; i < Banks.size(); ++i)
 		if (Banks[i].Bank)
 			Banks[i].Bank->drop();
-
-	// delete all fonts
-	for (i = 0; i < Fonts.size(); ++i)
-		Fonts[i].Font->drop();
 }
 
 //! draws all gui elements
 void CGUIEnvironment::drawAll(bool useScreenSize)
 {
     if (useScreenSize) {
-        v2i dim(Driver->getScreenSize());
-        if (AbsoluteRect.LRC.X != dim.X ||
-				AbsoluteRect.ULC.X != 0 ||
-                AbsoluteRect.LRC.Y != dim.Y ||
-				AbsoluteRect.ULC.Y != 0) {
+        v2u dim(RndSys->getWindowSize());
+        if ((u32)AbsoluteRect.LRC.X != dim.X ||
+            (u32)AbsoluteRect.ULC.X != 0 ||
+            (u32)AbsoluteRect.LRC.Y != dim.Y ||
+            AbsoluteRect.ULC.Y != 0) {
             setRelativePosition(recti(0, 0, dim.X, dim.Y));
 		}
 	}
@@ -491,18 +485,16 @@ bool CGUIEnvironment::postEventFromUser(const main::Event &event)
 //! returns the current gui skin
 GUISkin *CGUIEnvironment::getSkin() const
 {
-	return CurrentSkin;
+    return CurrentSkin.get();
 }
 
 //! Sets a new GUI Skin
 void CGUIEnvironment::setSkin(GUISkin *skin)
 {
-	if (CurrentSkin == skin)
+    if (CurrentSkin.get() == skin)
 		return;
 
-    delete CurrentSkin;
-
-	CurrentSkin = skin;
+    CurrentSkin.reset(skin);
 }
 
 //! Creates a new GUI Skin.
@@ -511,15 +503,14 @@ If you no longer need the skin, you should call GUISkin::drop().
 See IReferenceCounted::drop() for more information. */
 GUISkin *CGUIEnvironment::createSkin()
 {
-    GUISkin *skin = new GUISkin();
+    GUISkin *skin = new GUISkin(RndSys->getRenderer());
 
-	render::TTFont *builtinfont = getBuiltInFont();
-	render::TTFontBitmap *bitfont = 0;
-	if (builtinfont && builtinfont->getType() == EGFT_BITMAP)
-		bitfont = (render::TTFontBitmap *)builtinfont;
+    auto font_mgr = RndSys->getFontManager();
+    render::TTFont *defaultfont = font_mgr->getFontOrCreate(
+        render::FontMode::MONO, render::FontStyle::NORMAL);
 
 	IGUISpriteBank *bank = 0;
-	skin->setFont(builtinfont);
+    skin->setFont(defaultfont);
 
 	if (bitfont)
 		bank = bitfont->getSpriteBank();

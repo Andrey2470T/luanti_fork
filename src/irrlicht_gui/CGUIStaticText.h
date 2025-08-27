@@ -6,6 +6,8 @@
 
 #include "IGUIStaticText.h"
 
+class UITextSprite;
+
 namespace gui
 {
 class CGUIStaticText : public IGUIStaticText
@@ -105,23 +107,7 @@ public:
 	bool isRightToLeft() const override;
 
 private:
-	//! Breaks the single text line.
-	void breakText();
-
-	EGUI_ALIGNMENT HAlign, VAlign;
-	bool Border;
-	bool OverrideColorEnabled;
-	bool OverrideBGColorEnabled;
-	bool WordWrap;
-	bool Background;
-	bool RestrainTextInside;
-	bool RightToLeft;
-
-	img::color8 OverrideColor, BGColor;
-	render::TTFont *OverrideFont;
-	render::TTFont *LastBreakFont; // stored because: if skin changes, line break must be recalculated.
-
-	std::vector<std::wstring> BrokenText;
+    std::unique_ptr<UITextSprite> Text;
 };
 
 } // end namespace gui
