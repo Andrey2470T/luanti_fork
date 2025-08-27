@@ -4,7 +4,7 @@
 // Copyright (C) 2017 numzero, Lobachevskiy Vitaliy <numzer0@yandex.ru>
 
 #include "base.h"
-#include "client/client.h"
+#include "client/core/client.h"
 #include "client/mesh/lighting.h"
 #include "client/player/playercamera.h"
 #include "constants.h"

@@ -5,6 +5,7 @@
 
 #include "gameui.h"
 #include <gettext.h>
+#include "client/map/clientmap.h"
 #include "gui/mainmenumanager.h"
 #include "gui/guiChatConsole.h"
 #include "gui/touchcontrols.h"
@@ -17,7 +18,7 @@
 #include "nodedef.h"
 #include "profiler.h"
 #include "game.h"
-#include "client/client.h"
+#include "client/core/client.h"
 #include "client/render/rendersystem.h"
 #include "client/media/resource.h"
 #include "glyph_atlas.h"

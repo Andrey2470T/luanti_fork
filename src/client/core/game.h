@@ -6,20 +6,23 @@
 
 #include <BasicIncludes.h>
 #include "config.h"
-#include "gui/profilergraph.h"
-#include "inventory.h"
-#include "util/pointedthing.h"
+//#include "gui/profilergraph.h"
+//#include "inventory.h"
+//#include "util/pointedthing.h"
 #include <string>
+#include <memory>
+//#include <Main/MainWindow.h>
 
 #if !IS_CLIENT_BUILD
 #error Do not include in server builds
 #endif
 
-class InputHandler;
-class ChatBackend;
-class RenderingEngine;
 struct SubgameSpec;
 struct GameStartData;
+class Client;
+class Server;
+class IWritableItemDefManager;
+class NodeDefManager;
 
 struct Jitter {
 	f32 max, min, avg, counter, max_sample, min_sample, max_fraction;
@@ -82,13 +85,6 @@ struct GameRunData {
     float time_of_day_smooth;
 };
 
-class Game;
-
-struct ClientEventHandler
-{
-    void (Game::*handler)(ClientEvent *, CameraOrientation *);
-};
-
 /****************************************************************************
  THE GAME
  ****************************************************************************/
@@ -106,12 +102,9 @@ public:
     ~Game();
 
     bool startup(bool *kill,
-            InputHandler *input,
-            RenderingEngine *rendering_engine,
             const GameStartData &game_params,
             std::string &error_message,
-            bool *reconnect,
-            ChatBackend *chat_backend);
+            bool *reconnect);
 
     void run();
     void shutdown();
@@ -145,42 +138,6 @@ protected:
     void updateStats(RunStats *stats, const FpsControl &draw_times, f32 dtime);
     void updateProfilerGraphs(ProfilerGraph *graph);
 
-    // Input related
-    void processUserInput(f32 dtime);
-    void processKeyInput();
-    void processItemSelection(u16 *new_playeritem);
-    bool shouldShowTouchControls();
-
-    void dropSelectedItem(bool single_item = false);
-    void openConsole(float scale, const wchar_t *line=NULL);
-    void toggleFreeMove();
-    void toggleFreeMoveAlt();
-    void togglePitchMove();
-    void toggleFast();
-    void toggleNoClip();
-    void toggleCinematic();
-    void toggleBlockBounds();
-    void toggleAutoforward();
-
-    void toggleMinimap(bool shift_pressed);
-    void toggleFog();
-    void toggleDebug();
-    void toggleUpdateCamera();
-
-    void increaseViewRange();
-    void decreaseViewRange();
-    void toggleFullViewRange();
-    void checkZoomEnabled();
-
-    void updateCameraDirection(CameraOrientation *cam, float dtime);
-    void updateCameraOrientation(CameraOrientation *cam, float dtime);
-    void updatePlayerControl(const CameraOrientation &cam);
-    void updatePauseState();
-    void step(f32 dtime);
-    void processClientEvents(CameraOrientation *cam);
-    void updateCamera(f32 dtime);
-    void updateSound(f32 dtime);
-    void processPlayerInteraction(f32 dtime, bool show_hud);
     /*!
      * Returns the object or node the player is pointing at.
      * Also updates the selected thing in the Hud.
@@ -227,23 +184,6 @@ protected:
     static void settingChangedCallback(const std::string &setting_name, void *data);
     void readSettings();
 
-    inline bool isKeyDown(GameKeyType k)
-    {
-        return input->isKeyDown(k);
-    }
-    inline bool wasKeyDown(GameKeyType k)
-    {
-        return input->wasKeyDown(k);
-    }
-    inline bool wasKeyPressed(GameKeyType k)
-    {
-        return input->wasKeyPressed(k);
-    }
-    inline bool wasKeyReleased(GameKeyType k)
-    {
-        return input->wasKeyReleased(k);
-    }
-
 #ifdef __ANDROID__
     void handleAndroidChatInput();
 #endif
@@ -258,25 +198,6 @@ private:
     void pauseAnimation();
     void resumeAnimation();
 
-    // ClientEvent handlers
-    void handleClientEvent_None(ClientEvent *event, CameraOrientation *cam);
-    void handleClientEvent_PlayerDamage(ClientEvent *event, CameraOrientation *cam);
-    void handleClientEvent_PlayerForceMove(ClientEvent *event, CameraOrientation *cam);
-    void handleClientEvent_DeathscreenLegacy(ClientEvent *event, CameraOrientation *cam);
-    void handleClientEvent_ShowFormSpec(ClientEvent *event, CameraOrientation *cam);
-    void handleClientEvent_ShowLocalFormSpec(ClientEvent *event, CameraOrientation *cam);
-    void handleClientEvent_HandleParticleEvent(ClientEvent *event,
-        CameraOrientation *cam);
-    void handleClientEvent_HudAdd(ClientEvent *event, CameraOrientation *cam);
-    void handleClientEvent_HudRemove(ClientEvent *event, CameraOrientation *cam);
-    void handleClientEvent_HudChange(ClientEvent *event, CameraOrientation *cam);
-    void handleClientEvent_SetSky(ClientEvent *event, CameraOrientation *cam);
-    void handleClientEvent_SetSun(ClientEvent *event, CameraOrientation *cam);
-    void handleClientEvent_SetMoon(ClientEvent *event, CameraOrientation *cam);
-    void handleClientEvent_SetStars(ClientEvent *event, CameraOrientation *cam);
-    void handleClientEvent_OverrideDayNigthRatio(ClientEvent *event,
-        CameraOrientation *cam);
-    void handleClientEvent_CloudParams(ClientEvent *event, CameraOrientation *cam);
 
     void updateChat(f32 dtime);
 
@@ -287,39 +208,19 @@ private:
 
     f32 getSensitivityScaleFactor() const;
 
-    InputHandler *input = nullptr;
-
-    Client *client = nullptr;
-    Server *server = nullptr;
+    std::unique_ptr<Client> client;
+    std::unique_ptr<Server> server;
 
     ClientDynamicInfo client_display_info{};
     float dynamic_info_send_timer = 0;
 
-    IWritableTextureSource *texture_src = nullptr;
-    IWritableShaderSource *shader_src = nullptr;
-
     // When created, these will be filled with data received from the server
-    IWritableItemDefManager *itemdef_manager = nullptr;
-    NodeDefManager *nodedef_manager = nullptr;
+    std::unique_ptr<IWritableItemDefManager> itemdef_manager;
+    std::unique_ptr<NodeDefManager> nodedef_manager;
 
-    std::unique_ptr<ISoundManager> sound_manager;
-    SoundMaker *soundmaker = nullptr;
-
-    ChatBackend *chat_backend = nullptr;
-    CaptureLogOutput m_chat_log_buf;
-
-    EventManager *eventmgr = nullptr;
     QuicktuneShortcutter *quicktune = nullptr;
 
-    std::unique_ptr<GameUI> m_game_ui;
-    irr_ptr<GUIChatConsole> gui_chat_console;
-    MapDrawControl *draw_control = nullptr;
-    Camera *camera = nullptr;
-    irr_ptr<Clouds> clouds;
-    irr_ptr<Sky> sky;
-    Hud *hud = nullptr;
-    Minimap *mapper = nullptr;
-    GameFormSpec m_game_formspec;
+    //GameFormSpec m_game_formspec;
 
     // Map server hud ids to client hud ids
     std::unordered_map<u32, u32> m_hud_server_to_client;
@@ -331,23 +232,15 @@ private:
        This class does take ownership/responsibily for cleaning up etc of any of
        these items (e.g. device)
     */
-    IrrlichtDevice *device;
-    RenderingEngine *m_rendering_engine;
-    video::IVideoDriver *driver;
-    scene::ISceneManager *smgr;
     bool *kill;
     std::string *error_message;
     bool *reconnect_requested;
-    PausedNodesList paused_animated_nodes;
+    //PausedNodesList paused_animated_nodes;
 
     bool simple_singleplayer_mode;
     /* End 'cache' */
 
-    /* Pre-calculated values
-     */
-    int crack_animation_length;
-
-    IntervalLimiter profiler_interval;
+    //IntervalLimiter profiler_interval;
 
     /*
      * TODO: Local caching of settings is not optimal and should at some stage
@@ -393,9 +286,6 @@ private:
 };
 
 void the_game(bool *kill,
-		InputHandler *input,
-		RenderingEngine *rendering_engine,
 		const GameStartData &start_data,
 		std::string &error_message,
-		ChatBackend &chat_backend,
 		bool *reconnect_requested);

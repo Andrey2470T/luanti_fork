@@ -2,10 +2,10 @@
 
 #include "sprite.h"
 #include "util/enriched_string.h"
-#include "irrlicht_gui/GUIEnums.h"
+#include "gui/GUIEnums.h"
 #include <Render/TTFont.h>
 #include <Render/StreamTexture2D.h>
-#include "irrlicht_gui/GUISkin.h"
+#include "gui/GUISkin.h"
 
 class FontManager;
 

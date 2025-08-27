@@ -2,7 +2,7 @@
 #include "client/render/renderer.h"
 #include "porting.h"
 #include "settings.h"
-#include "Image/ImageLoader.h"
+#include <Image/ImageLoader.h>
 
 std::vector<std::string> getTexturesDefaultPaths()
 {

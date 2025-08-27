@@ -32,7 +32,7 @@ class RenderSystem
 {
 	static const img::color8 menu_sky_color;
 
-	Client *client;
+    Client *client = nullptr;
 	ResourceCache *cache;
 
     std::unique_ptr<Renderer> renderer;
@@ -61,8 +61,10 @@ class RenderSystem
     f32 gui_scaling;
     bool menu_clouds;
 public:
-    RenderSystem(Client *_client, ResourceCache *_cache);
+    RenderSystem(ResourceCache *_cache);
     ~RenderSystem();
+
+    void initRenderEnvironment(Client *_client);
 
     main::MainWindow *getWindow() const
     {
@@ -160,6 +162,11 @@ public:
     void setWindowIcon();
 
     void activateAtlas(img::Image *img, bool basic_pool=true);
+
+    bool run()
+    {
+        return window->pollEventsFromQueue();
+    }
 private:
     void initWindow();
 

@@ -5,7 +5,7 @@
 #include "text_sprite.h"
 #include "client/media/resource.h"
 #include "batcher2d.h"
-#include "client/client.h"
+#include "client/core/client.h"
 #include "../hud.h"
 #include "util/numeric.h"
 #include "client/player/playercamera.h"

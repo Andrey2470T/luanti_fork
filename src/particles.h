@@ -8,7 +8,7 @@
 #include <sstream>
 #include <vector>
 #include <type_traits>
-#include "irrlicht_gui/printing.h"
+#include <Utils/Printing.h>
 #include "tileanimation.h"
 #include "mapnode.h"
 #include "util/serialize.h"

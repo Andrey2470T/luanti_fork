@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 // Copyright (C) 2015 nerzhul, Loic Blot <loic.blot@unix-experience.fr>
 
-#include "client/client.h"
+#include "client/core/client.h"
 #include "packethandler.h"
 #include "cmdtable.h"
 

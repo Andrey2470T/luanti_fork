@@ -92,7 +92,7 @@ bool ProxySoundManager::loadSoundFile(const std::string &name,
 		return false;
 
 	// coarse check
-	if (!fs::IsFile(filepath))
+    if (!mt_fs::IsFile(filepath))
 		return false;
 
 	send(sound_manager_messages_to_mgr::LoadSoundFile{name, filepath});

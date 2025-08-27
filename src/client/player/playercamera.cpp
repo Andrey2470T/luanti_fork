@@ -7,7 +7,7 @@
 #include "config.h"
 #include "map.h"
 #include <cmath>
-#include "client/client.h"
+#include "client/core/client.h"
 #include "client/map/clientmap.h"
 #include "client/ao/genericCAO.h"
 #include "settings.h"
@@ -166,13 +166,13 @@ void PlayerCamera::step(f32 dtime)
 			m_view_bobbing_fall = -1; // Mark the effect as finished
 	}
 
-	bool was_under_zero = m_wield_change_timer < 0;
-	m_wield_change_timer = MYMIN(m_wield_change_timer + dtime, 0.125);
+    /*bool was_under_zero = m_wield_change_timer < 0;
+    m_wield_change_timer = MYMIN(m_wield_change_timer + dtime, 0.125);
 
 	if (m_wield_change_timer >= 0 && was_under_zero) {
 		m_wieldnode->setItem(m_wield_item_next, m_client);
 		m_wieldnode->setNodeLightColor(m_player_light_color);
-	}
+    }*/
 
 	if (m_view_bobbing_state != 0)
 	{
@@ -580,7 +580,7 @@ void PlayerCamera::update(LocalPlayer* player, f32 frametime, f32 tool_reload_ra
     //m_wieldnode->setRotation(wield_rotation);
 
 	m_player_light_color = player->light_color;
-	m_wieldnode->setNodeLightColor(m_player_light_color);
+    //m_wieldnode->setNodeLightColor(m_player_light_color);
 
 	// Set render distance
 	updateViewingRange();
@@ -596,7 +596,7 @@ void PlayerCamera::update(LocalPlayer* player, f32 frametime, f32 tool_reload_ra
 	const bool swimming = (movement_XZ || player->swimming_vertical) && player->in_liquid;
 	const bool climbing = movement_Y && player->is_climbing;
 	const bool flying = g_settings->getBool("free_move")
-		&& m_client->checkLocalPrivilege("fly");
+        && player->checkLocalPrivilege("fly");
 	if ((walking || swimming || climbing) && !flying) {
 		// Start animation
 		m_view_bobbing_state = 1;

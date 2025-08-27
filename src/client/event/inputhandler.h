@@ -80,7 +80,7 @@ public:
 	}
     virtual bool wasMtKeyed(GameKeyType k)
 	{
-        return m_receiver->WasMtKeyed(keycache.key[k]) || joystick.wasKeyPressed(k);
+        return m_receiver->WasKeyPressed(keycache.key[k]) || joystick.wasKeyPressed(k);
 	}
 	virtual bool wasKeyReleased(GameKeyType k)
 	{
@@ -98,7 +98,7 @@ public:
 
     virtual void clearWasMtKeyed()
 	{
-        m_receiver->clearWasMtKeyed();
+        m_receiver->clearWasKeyPressed();
 	}
 	virtual void clearWasKeyReleased()
 	{

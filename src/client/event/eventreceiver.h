@@ -36,7 +36,7 @@ public:
 
 	// Checks whether a key was just pressed. State will be cleared
 	// in the subsequent iteration of Game::processPlayerInteraction
-    bool WasMtKeyed(const MtKey &keycode) const { return keyWasPressed[keycode]; }
+    bool WasKeyPressed(const MtKey &keycode) const { return keyWasPressed[keycode]; }
 
 	// Checks whether a key was just released. State will be cleared
 	// in the subsequent iteration of Game::processPlayerInteraction
@@ -74,7 +74,7 @@ public:
 		keyIsDown.clear();
 	}
 
-    void clearWasMtKeyed()
+    void clearWasKeyPressed()
 	{
 		keyWasPressed.clear();
 	}

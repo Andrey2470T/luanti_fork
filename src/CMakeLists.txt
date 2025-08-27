@@ -541,7 +541,6 @@ endif()
 if (BUILD_CLIENT)
 	add_subdirectory(client)
 	add_subdirectory(gui)
-	add_subdirectory(irrlicht_gui)
 endif(BUILD_CLIENT)
 
 list(APPEND client_SRCS

@@ -1,5 +1,5 @@
 #include "camera.h"
-#include "client/client.h"
+#include "client/core/client.h"
 
 #define CAMERA_OFFSET_STEP 200
 

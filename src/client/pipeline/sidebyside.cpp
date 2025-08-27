@@ -4,9 +4,9 @@
 // Copyright (C) 2017 numzero, Lobachevskiy Vitaliy <numzer0@yandex.ru>
 
 #include "sidebyside.h"
-#include "client/client.h"
-#include "client/hud.h"
-#include "client/camera.h"
+#include "client/core/client.h"
+#include "client/ui/hud.h"
+#include "client/player/playercamera.h"
 #include "client/render/rendersystem.h"
 
 DrawImageStep::DrawImageStep(u8 _texture_index, v2f _offset) :

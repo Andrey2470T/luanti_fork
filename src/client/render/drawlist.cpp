@@ -1,5 +1,5 @@
 #include "drawlist.h"
-#include "client/client.h"
+#include "client/core/client.h"
 #include "client/mesh/layeredmesh.h"
 #include "client/player/playercamera.h"
 #include "client/render/tilelayer.h"
@@ -219,7 +219,7 @@ void DistanceSortedDrawList::render()
 
     MutexAutoLock drawlist_lock(drawlist_mutex);
     for (auto &l : layers) {
-        l.first->setupRenderState(rndsys);
+        l.first->setupRenderState(client);
 
         for (auto &mesh_l : l.second) {
             matrix4 t;
@@ -252,7 +252,7 @@ void DistanceSortedDrawList::renderShadows(TileLayer &override_layer)
 
         for (auto &l : m->getAllLayers()) {
             override_layer.material_type = l.first->material_type;
-            override_layer.setupRenderState(rndsys);
+            override_layer.setupRenderState(client);
 
             if (translucent_foliage && l.first->material_type & TILE_MATERIAL_WAVING_LEAVES)
                 ctxt->setCullMode(render::CM_FRONT);
@@ -273,8 +273,11 @@ void *DrawListUpdateThread::run()
     }
 
     END_DEBUG_EXCEPTION_HANDLER
+
+    return nullptr;
 }
 
 bool DistanceSortedDrawList::isMeshOccluded(LayeredMesh *mesh, u16 mesh_size)
 {
+    return false;
 }

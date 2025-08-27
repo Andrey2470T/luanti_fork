@@ -5,7 +5,7 @@
 #include "clientmedia.h"
 #include "gettext.h"
 #include "httpfetch.h"
-#include "client.h"
+#include "client/core/client.h"
 #include "log.h"
 #include "porting.h"
 #include "settings.h"
@@ -14,7 +14,7 @@
 #include "util/hashing.h"
 #include "util/string.h"
 #include <sstream>
-#include "FilesystemVersions.h"
+#include <FilesystemVersions.h>
 #include "network/networkprotocol.h"
 
 static fs::path getMediaCacheDir()

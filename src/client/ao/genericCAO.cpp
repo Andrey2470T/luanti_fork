@@ -4,7 +4,7 @@
 
 #include "genericCAO.h"
 #include "renderCAO.h"
-#include "client/client.h"
+#include "client/core/client.h"
 #include "util/numeric.h"
 #include "util/serialize.h"
 #include "client/player/localplayer.h"

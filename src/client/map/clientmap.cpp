@@ -3,7 +3,7 @@
 // Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "clientmap.h"
-#include "client/client.h"
+#include "client/core/client.h"
 #include "client/mesh/meshoperations.h"
 #include "mapblockmesh.h"
 #include "mapsector.h"

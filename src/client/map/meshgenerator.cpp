@@ -13,7 +13,7 @@
 #include "nodedef.h"
 #include "client/render/tilelayer.h"
 #include "client/mesh/meshoperations.h"
-#include "client/client.h"
+#include "client/core/client.h"
 #include "noise.h"
 #include "client/mesh/layeredmesh.h"
 #include "client/render/batcher3d.h"

@@ -6,7 +6,7 @@
 #include "client/mesh/meshoperations.h"
 #include "util/numeric.h"
 #include "client/render/batcher3d.h"
-#include "client/client.h"
+#include "client/core/client.h"
 #include "client/player/localplayer.h"
 #include "client/player/playercamera.h"
 #include "client/mesh/layeredmesh.h"

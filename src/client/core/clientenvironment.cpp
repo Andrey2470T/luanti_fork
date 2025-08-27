@@ -4,7 +4,7 @@
 
 #include "util/serialize.h"
 #include "util/pointedthing.h"
-#include "client/client.h"
+#include "client/core/client.h"
 #include "clientenvironment.h"
 //#include "clientsimpleobject.h"
 #include "client/map/clientmap.h"

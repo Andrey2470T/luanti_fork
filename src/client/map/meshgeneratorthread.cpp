@@ -5,7 +5,7 @@
 #include "meshgeneratorthread.h"
 #include "settings.h"
 #include "profiler.h"
-#include "client/client.h"
+#include "client/core/client.h"
 #include "mapblock.h"
 #include "map.h"
 #include "util/directiontables.h"
@@ -40,8 +40,8 @@ QueuedMeshUpdate::~QueuedMeshUpdate()
 	MeshUpdateQueue
 */
 
-MeshUpdateQueue::MeshUpdateQueue(Client *client):
-	m_client(client)
+MeshUpdateQueue::MeshUpdateQueue(Client *client)
+    : m_client(client)
 {
 	m_cache_smooth_lighting = g_settings->getBool("smooth_lighting");
 	m_cache_enable_water_reflections = g_settings->getBool("enable_water_reflections");
@@ -201,7 +201,7 @@ void MeshUpdateQueue::fillDataFromMapBlocks(QueuedMeshUpdate *q)
 	MeshUpdateWorkerThread
 */
 
-MeshUpdateWorkerThread::MeshUpdateWorkerThread(Client *client, MeshUpdateQueue *queue_in, MeshUpdateManager *manager, v3s16 *camera_offset) :
+MeshUpdateWorkerThread::MeshUpdateWorkerThread(Client *client, MeshUpdateQueue *queue_in, MeshUpdateManager *manager) :
         UpdateThread("Mesh"), m_client(client), m_queue_in(queue_in), m_manager(manager)
 {
 	m_generation_interval = g_settings->getU16("mesh_generation_interval");

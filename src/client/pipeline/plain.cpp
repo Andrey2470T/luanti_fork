@@ -8,7 +8,7 @@
 //#include "client/shadows/dynamicshadowsrender.h"
 #include "base.h"
 #include "settings.h"
-#include "client/client.h"
+#include "client/core/client.h"
 
 /*void DrawWield::run(PipelineContext &context)
 {

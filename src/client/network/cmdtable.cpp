@@ -4,6 +4,7 @@
 // Copyright (C) 2015 nerzhul, Loic Blot <loic.blot@unix-experience.fr>
 
 #include "cmdtable.h"
+#include "client/core/client.h"
 #include "packethandler.h"
 
 const static ToClientCommandHandler null_command_handler =

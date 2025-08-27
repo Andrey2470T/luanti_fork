@@ -9,7 +9,7 @@
 #include "porting.h"
 #include "client/media/resource.h"
 #include <FilesystemVersions.h>
-#include "client/client.h"
+#include "client/core/client.h"
 #include "client/pipeline/core.h"
 #include "client/ui/gameui.h"
 #include "client/render/drawlist.h"
@@ -23,31 +23,17 @@
 
 const img::color8 RenderSystem::menu_sky_color = img::color8(img::PF_RGBA8, 140, 186, 250, 255);
 
-RenderSystem::RenderSystem(Client *_client, ResourceCache *_cache)
-    : client(_client), cache(_cache)
+RenderSystem::RenderSystem(ResourceCache *_cache)
+    : cache(_cache)
 {
     initWindow();
-    FontManager *fmgr = new FontManager(cache);
+    fontManager = std::make_unique<FontManager>(cache);
 
     v2u viewport = window->getViewportSize();
     auto glParams = window->getGLParams();
     renderer = std::make_unique<Renderer>(cache, recti(0, 0, viewport.X, viewport.Y), glParams.maxTextureUnits);
-    load_screen = std::make_unique<LoadScreen>(cache, this, fmgr);
-    pp_core = std::make_unique<PipelineCore>(client, g_settings->getBool("enable_dynamic_shadows"));
-
-    drawlist = std::make_unique<DistanceSortedDrawList>(client);
-    particle_manager = std::make_unique<ParticleManager>(this, cache, &client->getEnv());
     sky = std::make_unique<Sky>(this, cache);
     clouds = std::make_unique<Clouds>(this, cache, -1, myrand());
-
-    node_mgr = std::make_unique<TransformNodeManager>();
-    anim_mgr = std::make_unique<AnimationManager>(node_mgr.get());
-
-    gameui = std::make_unique<GameUI>(client);
-
-    basePool = std::make_unique<AtlasPool>(AtlasType::RECTPACK2D, "Basic", cache, glParams.maxTextureSize, true);
-    guiPool = std::make_unique<AtlasPool>(AtlasType::RECTPACK2D, "GUI", cache, glParams.maxTextureSize, false);
-    fontManager = std::unique_ptr<FontManager>(fmgr);
 
     g_settings->registerChangedCallback("fullscreen", settingChangedCallback, this);
     g_settings->registerChangedCallback("window_maximized", settingChangedCallback, this);
@@ -57,6 +43,24 @@ RenderSystem::RenderSystem(Client *_client, ResourceCache *_cache)
 RenderSystem::~RenderSystem()
 {
     g_settings->deregisterAllChangedCallbacks(this);
+}
+
+void RenderSystem::initRenderEnvironment(Client *_client)
+{
+    client = _client;
+    load_screen = std::make_unique<LoadScreen>(cache, this, fontManager.get());
+    pp_core = std::make_unique<PipelineCore>(client, g_settings->getBool("enable_dynamic_shadows"));
+
+    drawlist = std::make_unique<DistanceSortedDrawList>(client);
+    particle_manager = std::make_unique<ParticleManager>(this, cache, &client->getEnv());
+
+    node_mgr = std::make_unique<TransformNodeManager>();
+    anim_mgr = std::make_unique<AnimationManager>(node_mgr.get());
+
+    gameui = std::make_unique<GameUI>(client);
+
+    basePool = std::make_unique<AtlasPool>(AtlasType::RECTPACK2D, "Basic", cache, window->getGLParams().maxTextureSize, true);
+    guiPool = std::make_unique<AtlasPool>(AtlasType::RECTPACK2D, "GUI", cache, window->getGLParams().maxTextureSize, false);
 }
 
 AtlasPool *RenderSystem::getPool(bool basic) const

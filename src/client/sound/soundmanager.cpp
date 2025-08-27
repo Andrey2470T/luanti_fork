@@ -351,7 +351,7 @@ bool OpenALSoundManager::loadSoundFile(const std::string &name, const std::strin
 		return false;
 
 	// coarse check
-	if (!fs::IsFile(filepath))
+    if (!mt_fs::IsFile(filepath))
 		return false;
 
 	loadSoundFileNoCheck(name, filepath);

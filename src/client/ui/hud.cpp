@@ -7,7 +7,7 @@
 #include "hud.h"
 #include "settings.h"
 #include "util/numeric.h"
-#include "client/client.h"
+#include "client/core/client.h"
 #include "inventory.h"
 #include "client/player/localplayer.h"
 #include "client/player/playercamera.h"

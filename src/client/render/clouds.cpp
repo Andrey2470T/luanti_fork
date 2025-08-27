@@ -5,7 +5,7 @@
 #include "clouds.h"
 #include "constants.h"
 #include "debug.h"
-#include "irrlicht_gui/printing.h"
+#include <Utils/Printing.h>
 #include "noise.h"
 #include "profiler.h"
 #include "settings.h"

@@ -5,7 +5,7 @@
 
 #include "anaglyph.h"
 #include <Render/DrawContext.h>
-#include "client/client.h"
+#include "client/core/client.h"
 #include "client/render/rendersystem.h"
 #include "client/render/renderer.h"
 

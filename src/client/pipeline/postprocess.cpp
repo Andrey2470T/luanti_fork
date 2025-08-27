@@ -5,7 +5,7 @@
 // Copyright (C) 2020 appgurueu, Lars Mueller <appgurulars@gmx.de>
 
 #include "postprocess.h"
-#include "client/client.h"
+#include "client/core/client.h"
 #include "client/media/resource.h"
 #include "client/render/rendersystem.h"
 #include "settings.h"

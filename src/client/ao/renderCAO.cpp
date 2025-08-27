@@ -1,5 +1,5 @@
 #include "renderCAO.h"
-#include "client/client.h"
+#include "client/core/client.h"
 #include "client/player/playercamera.h"
 #include "client/ui/minimap.h"
 #include "itemgroup.h"

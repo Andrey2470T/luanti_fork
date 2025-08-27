@@ -13,7 +13,7 @@
 #include "client/map/clientmap.h"
 #include "mapnode.h"
 #include "nodedef.h"
-#include "client/client.h"
+#include "client/core/client.h"
 #include "settings.h"
 #include "profiler.h"
 #include "rendersystem.h"
@@ -499,7 +499,7 @@ void ParticleSpawner::spawnParticle(ClientEnvironment *env, float radius,
 			return;
 	} else {
         if (p.texpool.size() == 0)
-        //	return;
+            return;
         u32 pool = p.texpool.size() == 1 ? 0
                 : myrand_range(0, p.texpool.size()-1);
 		texpos = v2f(0.0f, 0.0f);
@@ -806,19 +806,18 @@ bool ParticleManager::getNodeParticleParams(const MapNode &n,
 		texid = tilenum - 1;
 	else
 		texid = myrand_range(0,5);
-    const TileLayer &tile = f.tiles[texid].first;
+    auto tile = f.tiles[texid][0];
 	p.animation.type = TAT_NONE;
 
 	float size = (myrand_range(0,8)) / 64.0f;
 	p.size = BS * size;
-	if (tile.scale)
-		size /= tile.scale;
+    if (tile->scale) size /= tile->scale;
 	texsize = v2f(size * 2.0f, size * 2.0f);
 	texpos.X = (myrand_range(0,64)) / 64.0f - texsize.X;
 	texpos.Y = (myrand_range(0,64)) / 64.0f - texsize.Y;
 
-    if (tile.material_flags & MATERIAL_FLAG_HARDWARE_COLORIZED)
-		*color = tile.color;
+    if (tile->material_flags & MATERIAL_FLAG_HARDWARE_COLORIZED)
+        *color = tile->color;
 	else
 		n.getColor(f, color);
 

@@ -3,7 +3,7 @@
 // Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "mapblockmesh.h"
-#include "client/client.h"
+#include "client/core/client.h"
 #include "mapblock.h"
 #include "map.h"
 #include "profiler.h"

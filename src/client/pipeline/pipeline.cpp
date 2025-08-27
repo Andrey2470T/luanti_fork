@@ -3,7 +3,7 @@
 // Copyright (C) 2022 x2048, Dmitry Kostenko <codeforsmile@gmail.com>
 
 #include "pipeline.h"
-#include "client/client.h"
+#include "client/core/client.h"
 #include "client/ui/hud.h"
 #include <Render/Texture2D.h>
 #include <Render/TextureCubeMap.h>

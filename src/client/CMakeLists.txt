@@ -10,6 +10,15 @@ set(ao_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/ao/transformNode.cpp
 )
 
+set(core_SRCS
+	${CMAKE_CURRENT_SOURCE_DIR}/core/client.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/core/clientenvironment.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/core/clienteventhandler.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/core/clientlauncher.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/core/game.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/core/gameinputhandler.cpp
+)
+
 set(event_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/event/eventreceiver.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/event/inputhandler.cpp
@@ -131,6 +140,7 @@ set(ui_SRCS
 
 set(client_SRCS
 	${ao_SRCS}
+	${core_SRCS}
 	${event_SRCS}
 	${map_SRCS}
 	${mesh_SRCS}
@@ -141,9 +151,5 @@ set(client_SRCS
 	${shadows_SRCS}
 	${sound_SRCS}
 	${ui_SRCS}
-	${CMAKE_CURRENT_SOURCE_DIR}/client.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/clientenvironment.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/clientlauncher.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/game.cpp
 	PARENT_SCOPE
 )

@@ -8,10 +8,10 @@
 #include "nodemetadata.h"
 #include "client/render/rendersystem.h"
 #include "client/event/inputhandler.h"
-#include "client/client.h"
+#include "client/core/client.h"
 #include "client/player/localplayer.h"
 #include "scripting_client.h"
-#include "clientmap.h"
+#include "client/map/clientmap.h"
 #include "gui/guiFormSpecMenu.h"
 #include "gui/mainmenumanager.h"
 #include "gui/touchcontrols.h"
@@ -23,6 +23,7 @@
 #include "gui/guiVolumeChange.h"
 #include "settings.h"
 #include "client/map/clientmap.h"
+#include "client/network/packethandler.h"
 
 /*
 	Text input system
@@ -43,11 +44,11 @@ struct TextDestNodeMetadata : public TextDest
 			   << m_p.Y << "," << m_p.Z << "): " << ntext << std::endl;
 		StringMap fields;
 		fields["text"] = ntext;
-		m_client->sendNodemetaFields(m_p, "", fields);
+        m_client->getPacketHandler()->sendNodemetaFields(m_p, "", fields);
 	}
 	void gotText(const StringMap &fields)
 	{
-		m_client->sendNodemetaFields(m_p, "", fields);
+        m_client->getPacketHandler()->sendNodemetaFields(m_p, "", fields);
 	}
 
 	v3s16 m_p;
@@ -68,7 +69,7 @@ struct TextDestPlayerInventory : public TextDest
 	}
 	void gotText(const StringMap &fields)
 	{
-		m_client->sendInventoryFields(m_formname, fields);
+        m_client->getPacketHandler()->sendInventoryFields(m_formname, fields);
 	}
 
 	Client *m_client;
@@ -130,7 +131,7 @@ struct LocalFormspecHandler : public TextDest
 			assert(m_client != nullptr);
 
 			if (fields.find("quit") != fields.end())
-				m_client->sendRespawnLegacy();
+                m_client->getPacketHandler()->sendRespawnLegacy();
 
 			return;
 		}
@@ -359,7 +360,7 @@ void GameFormSpec::showPauseMenu()
 	os		<< "textarea[0.4,0.25;3.9,6.25;;" << PROJECT_NAME_C " " VERSION_STRING "\n"
 		<< "\n"
 		<<  strgettext("Game info:") << "\n";
-    const std::string &address = client->getAddressName();
+    const std::string &address = client->getPacketHandler()->getAddressName();
 	os << strgettext("- Mode: ");
 	if (!simple_singleplayer_mode) {
 		if (address.empty())
@@ -470,7 +471,7 @@ void GameFormSpec::disableDebugView()
  */
 bool GameFormSpec::handleCallbacks()
 {
-    auto texture_src = client->getTextureSource();
+    auto cache = client->getResourceCache();
 
 	if (g_gamecallback->disconnect_requested) {
 		g_gamecallback->disconnect_requested = false;
@@ -479,31 +480,31 @@ bool GameFormSpec::handleCallbacks()
 
 	if (g_gamecallback->changepassword_requested) {
 		(void)make_irr<GUIPasswordChange>(guienv, guiroot, -1,
-                       &g_menumgr, client, texture_src);
+                       &g_menumgr, client, cache);
 		g_gamecallback->changepassword_requested = false;
 	}
 
 	if (g_gamecallback->changevolume_requested) {
 		(void)make_irr<GUIVolumeChange>(guienv, guiroot, -1,
-				     &g_menumgr, texture_src);
+                     &g_menumgr, cache);
 		g_gamecallback->changevolume_requested = false;
 	}
 
 	if (g_gamecallback->keyconfig_requested) {
 		(void)make_irr<GUIKeyChangeMenu>(guienv, guiroot, -1,
-				      &g_menumgr, texture_src);
+                      &g_menumgr, cache);
 		g_gamecallback->keyconfig_requested = false;
 	}
 
 	if (g_gamecallback->touchscreenlayout_requested) {
 		(new GUITouchscreenLayout(guienv, guiroot, -1,
-				     &g_menumgr, texture_src))->drop();
+                     &g_menumgr, cache))->drop();
 		g_gamecallback->touchscreenlayout_requested = false;
 	}
 
 	if (!g_gamecallback->show_open_url_dialog.empty()) {
 		(void)make_irr<GUIOpenURLMenu>(guienv, guiroot, -1,
-				 &g_menumgr, texture_src, g_gamecallback->show_open_url_dialog);
+                 &g_menumgr, cache, g_gamecallback->show_open_url_dialog);
 		g_gamecallback->show_open_url_dialog.clear();
 	}
 

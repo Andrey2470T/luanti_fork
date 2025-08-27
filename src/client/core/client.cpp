@@ -10,7 +10,7 @@
 #include "client.h"
 #include "client/ui/gameui.h"
 #include "client/ui/hud.h"
-#include "client/event/clientevent.h"
+#include "client/core/clientevent.h"
 #include "client/render/rendersystem.h"
 #include "client/sound/sound.h"
 #include "client/media/resource.h"
@@ -42,6 +42,45 @@
 #include "client/render/loadscreen.h"
 #include "nodedef.h"
 #include "database/database-sqlite3.h"
+#include "client/core/clienteventhandler.h"
+
+void FpsControl::reset()
+{
+    last_time = porting::getTimeUs();
+}
+
+void FpsControl::limit(main::MainWindow *wnd, f32 *dtime)
+{
+    const float fps_limit = wnd->isFocused()
+            ? g_settings->getFloat("fps_max")
+            : g_settings->getFloat("fps_max_unfocused");
+    const u64 frametime_min = 1000000.0f / std::max(fps_limit, 1.0f);
+
+    u64 time = porting::getTimeUs();
+
+    if (time > last_time) // Make sure time hasn't overflowed
+        busy_time = time - last_time;
+    else
+        busy_time = 0;
+
+    if (busy_time < frametime_min) {
+        sleep_time = frametime_min - busy_time;
+        porting::preciseSleepUs(sleep_time);
+    } else {
+        sleep_time = 0;
+    }
+
+    // Read the timer again to accurately determine how long we actually slept,
+    // rather than calculating it by adding sleep_time to time.
+    time = porting::getTimeUs();
+
+    if (time > last_time) // Make sure last_time hasn't overflowed
+        *dtime = (time - last_time) / 1000000.0f;
+    else
+        *dtime = 0;
+
+    last_time = time;
+}
 
 extern gui::IGUIEnvironment* guienv;
 
@@ -346,7 +385,7 @@ void Client::step(float dtime)
 			event->type = CE_PLAYER_DAMAGE;
 			event->player_damage.amount = damage;
 			event->player_damage.effect = true;
-			m_client_event_queue.push(event);
+            m_clientevent_handler->pushToEventQueue(event);
 		}
 	}
 
@@ -870,16 +909,6 @@ void Client::typeChatMessage(const std::wstring &message)
 	sendChatMessage(message);
 }
 
-ClientEvent *Client::getClientEvent()
-{
-	FATAL_ERROR_IF(m_client_event_queue.empty(),
-			"Cannot getClientEvent, queue is empty.");
-
-	ClientEvent *event = m_client_event_queue.front();
-	m_client_event_queue.pop();
-	return event;
-}
-
 float Client::mediaReceiveProgress()
 {
 	if (m_media_downloader)
@@ -1047,11 +1076,6 @@ void Client::afterContentReceived()
 
 	raw_image->drop();
 }*/
-
-void Client::pushToEventQueue(ClientEvent *event)
-{
-	m_client_event_queue.push(event);
-}
 
 // IGameDef interface
 // Under envlock

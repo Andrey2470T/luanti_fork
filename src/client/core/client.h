@@ -18,6 +18,7 @@
 #include "util/string.h" // StringMap
 #include "config.h"
 #include "network/networkprotocol.h"
+#include <Main/MainWindow.h>
 
 #if !IS_CLIENT_BUILD
 #error Do not include in server builds
@@ -50,11 +51,27 @@ struct PointedThing;
 class RenderSystem;
 class ResourceCache;
 class ClientPacketHandler;
+class ClientEventHandler;
+class ChatBackend;
+class CaptureLogOutput;
 
 enum LocalClientState {
     LC_Created,
     LC_Init,
     LC_Ready
+};
+
+struct FpsControl {
+    FpsControl() : last_time(0), busy_time(0), sleep_time(0) {}
+
+    void reset();
+
+    void limit(main::MainWindow *wnd, f32 *dtime);
+
+    u32 getBusyMs() const { return busy_time / 1000; }
+
+    // all values in microseconds (us)
+    u64 last_time, busy_time, sleep_time;
 };
 
 using sound_handle_t = int;
@@ -136,10 +153,6 @@ public:
 
     u64 getMapSeed(){ return m_map_seed; }
 
-	bool hasClientEvents() const { return !m_client_event_queue.empty(); }
-	// Get event from queue. If queue is empty, it triggers an assertion failure.
-	ClientEvent * getClientEvent();
-
 	bool m_simple_singleplayer_mode;
 
 	float mediaReceiveProgress();
@@ -175,8 +188,6 @@ public:
 
 	ClientScripting *getScript() { return m_script; }
 	bool modsLoaded() const { return m_mods_loaded; }
-
-	void pushToEventQueue(ClientEvent *event);
 
 	inline u64 getCSMRestrictionFlags() const
 	{
@@ -235,6 +246,10 @@ private:
     // own state
     LocalClientState m_state = LC_Created;
 
+    std::unique_ptr<ISoundManager> sound_manager;
+    std::unique_ptr<SoundMaker> soundmaker;
+    std::unique_ptr<EventManager> eventmgr;
+
 	IWritableItemDefManager *m_itemdef;
 	NodeDefManager *m_nodedef;
 	ISoundManager *m_sound;
@@ -243,6 +258,7 @@ private:
     std::unique_ptr<RenderSystem> m_render_system;
 
     std::unique_ptr<ClientPacketHandler> m_packet_handler;
+    std::unique_ptr<ClientEventHandler> m_clientevent_handler;
 
 	ClientEnvironment m_env;
 
@@ -254,6 +270,10 @@ private:
 	// 0 <= m_daynight_i < DAYNIGHT_CACHE_COUNT
 	//s32 m_daynight_i;
 	//u32 m_daynight_ratio;
+    std::unique_ptr<ChatBackend> m_chat_backend;
+    CaptureLogOutput m_chat_log_buf;
+    std::unique_ptr<GUIChatConsole> gui_chat_console;
+
 	std::queue<std::wstring> m_out_chat_queue;
 	u32 m_last_chat_message_sent;
 	float m_chat_message_allowance = 5.0f;
@@ -284,8 +304,6 @@ private:
     // Usable by auth mechanisms.
     AuthMechanism m_chosen_auth_mech;
     void *m_auth_data = nullptr;
-
-	std::queue<ClientEvent *> m_client_event_queue;
 
 	std::vector<std::string> m_remote_media_servers;
 	// Media downloader, only exists during init

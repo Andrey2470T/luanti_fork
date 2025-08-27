@@ -10,7 +10,7 @@
 #include "settings.h"
 #include "environment.h"
 #include "map.h"
-#include "client/client.h"
+#include "client/core/client.h"
 #include "client/ao/renderCAO.h"
 #include "client/render/drawlist.h"
 #include "client/player/playercamera.h"
@@ -237,8 +237,8 @@ void LocalPlayer::move(f32 dtime, Environment *env,
 	PlayerSettings &player_settings = getPlayerSettings();
 
 	// Skip collision detection if noclip mode is used
-	bool fly_allowed = m_client->checkLocalPrivilege("fly");
-	bool noclip = m_client->checkLocalPrivilege("noclip") && player_settings.noclip;
+    bool fly_allowed = checkLocalPrivilege("fly");
+    bool noclip = checkLocalPrivilege("noclip") && player_settings.noclip;
 	bool free_move = player_settings.free_move && fly_allowed;
 
 	if (noclip && free_move) {
@@ -547,8 +547,8 @@ void LocalPlayer::applyControl(float dtime, Environment *env)
 	// and will be rotated at the end
 	v3f speedH, speedV; // Horizontal (X, Z) and Vertical (Y)
 
-	bool fly_allowed = m_client->checkLocalPrivilege("fly");
-	bool fast_allowed = m_client->checkLocalPrivilege("fast");
+    bool fly_allowed = checkLocalPrivilege("fly");
+    bool fast_allowed = checkLocalPrivilege("fast");
 
 	bool free_move = fly_allowed && player_settings.free_move;
 	bool fast_move = fast_allowed && player_settings.fast_move;
@@ -803,7 +803,7 @@ u16 LocalPlayer::getHP()
 void LocalPlayer::step(f32 dtime)
 {
     // Get some settings
-    bool fly_allowed = m_client->checkLocalPrivilege("fly");
+    bool fly_allowed = checkLocalPrivilege("fly");
     bool free_move = fly_allowed && g_settings->getBool("free_move");
 
     // collision info queue
@@ -901,7 +901,7 @@ void LocalPlayer::step(f32 dtime)
             This also does collision detection.
         */
 
-        move(dtime_part, this, &player_collisions);
+        move(dtime_part, &m_client->getEnv(), &player_collisions);
     }
 
     bool player_immortal = false;
@@ -928,7 +928,7 @@ void LocalPlayer::step(f32 dtime)
         f32 tolerance = BS*14; // 5 without damage
         if (info.type == COLLISION_NODE) {
             const ContentFeatures &f = m_client->ndef()->
-                get(m_map->getNode(info.node_p));
+                get(m_client->getEnv().getMap().getNode(info.node_p));
             // Determine fall damage modifier
             int addp_n = itemgroup_get(f.groups, "fall_damage_add_percent");
             // convert node group to an usable fall damage factor
@@ -1027,8 +1027,8 @@ void LocalPlayer::old_move(f32 dtime, Environment *env,
 	PlayerSettings &player_settings = getPlayerSettings();
 
 	// Skip collision detection if noclip mode is used
-	bool fly_allowed = m_client->checkLocalPrivilege("fly");
-	bool noclip = m_client->checkLocalPrivilege("noclip") && player_settings.noclip;
+    bool fly_allowed = checkLocalPrivilege("fly");
+    bool noclip = checkLocalPrivilege("noclip") && player_settings.noclip;
 	bool free_move = noclip && fly_allowed && player_settings.free_move;
 	if (free_move) {
 		position += m_speed * dtime;

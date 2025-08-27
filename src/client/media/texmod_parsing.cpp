@@ -3,8 +3,8 @@
 #include "util/string.h"
 #include "util/base64.h"
 #include "log.h"
-#include "Image/ImageLoader.h"
-#include "Image/Converting.h"
+#include <Image/ImageLoader.h>
+#include <Image/Converting.h>
 
 #define COMPLAIN_INVALID(description, mod) \
 do { \

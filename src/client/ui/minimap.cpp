@@ -4,7 +4,7 @@
 
 #include "minimap.h"
 #include <cmath>
-#include "client/client.h"
+#include "client/core/client.h"
 #include "nodedef.h"
 #include "client/map/clientmap.h"
 #include "settings.h"

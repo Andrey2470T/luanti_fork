@@ -2,7 +2,7 @@
 
 #include "client/render/atlas.h"
 #include <Render/TTFont.h>
-#include "irrlicht_gui/GUISkin.h"
+#include "gui/GUISkin.h"
 
 #define MAX_GLYPHS_COUNT 0xFFFF
 

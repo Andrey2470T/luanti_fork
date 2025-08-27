@@ -5,10 +5,11 @@
 
 #pragma once
 
-#include "client/client.h"
 #include "network/networkprotocol.h"
 
 class NetworkPacket;
+class ClientPacketHandler;
+
 // Note: don't forward-declare Client here (#14324)
 
 enum ToClientConnectionState {

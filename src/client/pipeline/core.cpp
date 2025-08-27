@@ -8,7 +8,7 @@
 #include "postprocess.h"
 //#include "client/shadows/dynamicShadowsRender.h"
 #include "log.h"
-#include "client/client.h"
+#include "client/core/client.h"
 #include "client/ui/gameui.h"
 
 PipelineCore::PipelineCore(Client *_client, bool enable_shadows)
