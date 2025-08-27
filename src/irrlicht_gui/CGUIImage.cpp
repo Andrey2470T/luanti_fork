@@ -6,6 +6,10 @@
 
 #include "GUISkin.h"
 #include "IGUIEnvironment.h"
+#include "client/ui/extra_images.h"
+#include "client/render/rendersystem.h"
+#include "client/render/atlas.h"
+#include <Utils/TypeConverter.h>
 
 namespace gui
 {
@@ -13,7 +17,9 @@ namespace gui
 //! constructor
 CGUIImage::CGUIImage(IGUIEnvironment *environment, IGUIElement *parent, s32 id, recti rectangle) :
         IGUIImage(environment, parent, id, rectangle), Texture(0), Color(img::white),
-		UseAlphaChannel(false), ScaleImage(false), DrawBounds(0.f, 0.f, 1.f, 1.f), DrawBackground(true)
+        UseAlphaChannel(false), ScaleImage(false), DrawBounds(0.f, 0.f, 1.f, 1.f), DrawBackground(true),
+        Image(std::make_unique<ImageSprite>(Environment->getRenderSystem(),
+            Environment->getResourceCache()))
 {}
 
 //! sets an image
@@ -58,26 +64,27 @@ void CGUIImage::draw()
 		}
 
 		if (ScaleImage) {
-			const img::color8 Colors[] = {Color, Color, Color, Color};
+            const std::array<img::color8, 4> Colors = {Color, Color, Color, Color};
 
 			recti clippingRect(AbsoluteClippingRect);
 			checkBounds(clippingRect);
 
-			driver->draw2DImage(Texture, AbsoluteRect, sourceRect,
-					&clippingRect, Colors, UseAlphaChannel);
+            Image->update(Texture, toRectf(AbsoluteRect), Colors, &clippingRect);
+            Image->draw();
 		} else {
 			recti clippingRect(AbsoluteRect.ULC, sourceRect.getSize());
 			checkBounds(clippingRect);
 			clippingRect.clipAgainst(AbsoluteClippingRect);
 
-			driver->draw2DImage(Texture, AbsoluteRect.ULC, sourceRect,
-					&clippingRect, Color, UseAlphaChannel);
+            Image->update(Texture, toRectf(AbsoluteRect), Color, &clippingRect);
+            Image->draw();
 		}
 	} else if (DrawBackground) {
 		recti clippingRect(AbsoluteClippingRect);
 		checkBounds(clippingRect);
 
-		skin->draw2DRectangle(this, skin->getColor(EGDC_3D_DARK_SHADOW), AbsoluteRect, &clippingRect);
+        Image->update(nullptr, toRectf(AbsoluteRect), skin->getColor(EGDC_3D_DARK_SHADOW), &clippingRect);
+        Image->draw();
 	}
 
 	IGUIElement::draw();

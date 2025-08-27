@@ -333,7 +333,6 @@ UISprite::UISprite(render::Texture2D *tex, Renderer *_renderer,
     shape(std::make_unique<UIShape>()), texture(tex), streamTex(streamTexture)
 {
     shape->addRectangle(posRect, colors, uvRect);
-    Batcher2D::appendImageRectangle(mesh.get(), tex->getSize(), uvRect, posRect, colors, false);
     rebuildMesh();
 }
 

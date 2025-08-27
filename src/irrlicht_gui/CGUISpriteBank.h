@@ -6,7 +6,7 @@
 
 #include "IGUISpriteBank.h"
 
-class UISprite;
+class ImageSprite;
 
 namespace gui
 {
@@ -61,7 +61,7 @@ protected:
     std::vector<img::Image *> Textures;
 	IGUIEnvironment *Environment;
 
-    std::unique_ptr<UISprite> SpriteBank;
+    std::unique_ptr<ImageSprite> SpriteBank;
 };
 
 } // end namespace gui

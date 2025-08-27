@@ -109,21 +109,17 @@ void CGUICheckBox::draw()
 
         auto shape = Sprite->getShape();
 
-        u32 rectN = 0;
 		// draw background
 		if (Background) {
             img::color8 bgColor = skin->getColor(EGDC_3D_FACE);
             shape->addRectangle(toRectf(frameRect), {bgColor, bgColor, bgColor, bgColor});
-            rectN++;
 		}
 
 		// draw the border
 		if (Border) {
-            shape->addRectangle(toRectf(frameRect), {});
-            skin->update3DSunkenPane(Sprite.get(), img::white, true, false, toRectf(frameRect), rectN);
+            skin->add3DSunkenPane(Sprite.get(), img::white, true, false, toRectf(frameRect));
 			frameRect.ULC.X += skin->getSize(EGDS_TEXT_DISTANCE_X);
 			frameRect.LRC.X -= skin->getSize(EGDS_TEXT_DISTANCE_X);
-            rectN++;
 		}
 
 		const s32 height = skin->getSize(EGDS_CHECK_BOX_WIDTH);
@@ -140,10 +136,8 @@ void CGUICheckBox::draw()
 		if (isEnabled())
 			col = Pressed ? EGDC_FOCUSED_EDITABLE : EGDC_EDITABLE;
 
-        shape->addRectangle(toRectf(checkRect), {skin->getColor(col), skin->getColor(col), skin->getColor(col), skin->getColor(col)});
-        skin->update3DSunkenPane(Sprite.get(), skin->getColor(col),
-                false, true, toRectf(checkRect), rectN);
-        rectN++;
+        skin->add3DSunkenPane(Sprite.get(), skin->getColor(col),
+                false, true, toRectf(checkRect));
 
         Sprite->rebuildMesh();
 

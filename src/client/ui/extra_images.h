@@ -13,6 +13,8 @@ namespace render
 class MeshBuffer;
 class Renderer;
 class UISprite;
+class AtlasPool;
+class RenderSystem;
 
 class Image2D9Slice : public UISprite
 {
@@ -26,5 +28,18 @@ public:
 private:
     void createSlice(u8 x, u8 y);
     void createSlices();
+};
+
+class ImageSprite : public UISprite
+{
+    AtlasPool *pool;
+    img::Image *image = nullptr;
+public:
+    ImageSprite(RenderSystem *rndsys, ResourceCache *cache);
+
+    void update(img::Image *newImage, const rectf &rect, const std::array<img::color8, 4> &colors, const recti *cliprect=nullptr);
+    void update(img::Image *newImage, const rectf &rect, const img::color8 &color, const recti *cliprect=nullptr);
+
+    void draw() override;
 };
 

@@ -1,6 +1,8 @@
 #include "extra_images.h"
 #include "Render/Texture2D.h"
 #include "batcher2d.h"
+#include "client/render/atlas.h"
+#include "client/render/rendersystem.h"
 #include "sprite.h"
 #include "client/render/renderer.h"
 
@@ -63,8 +65,7 @@ void Image2D9Slice::createSlice(u8 x, u8 y)
         break;
     };
 
-    shape->addRectangle(destRect, rectColors);
-    Batcher2D::appendImageRectangle(mesh.get(), texture->getSize(), srcRect, destRect, rectColors, false);
+    shape->updateRectangle(y*3+x, destRect, rectColors, srcRect);
 }
 
 void Image2D9Slice::createSlices()
@@ -73,5 +74,33 @@ void Image2D9Slice::createSlices()
         for (u8 y = 0; y < 3; y++)
             createSlice(x, y);
 
-    flush();
+    updateMesh(true);
+    updateMesh(false);
+}
+
+
+ImageSprite::ImageSprite(RenderSystem *rndsys, ResourceCache *cache)
+    : UISprite(nullptr, rndsys->getRenderer(), cache, {UIPrimitiveType::RECTANGLE}),
+      pool(rndsys->getPool(false))
+{}
+
+void ImageSprite::update(img::Image *newImage, const rectf &rect, const std::array<img::color8, 4> &colors, const recti *cliprect)
+{
+    rectf tile_rect;
+
+    if (newImage) {
+        image = newImage;
+        setTexture(pool->getAtlasByTile(image, true)->getTexture());
+        tile_rect = pool->getTileRect(image, false, true);
+    }
+    getShape()->updateRectangle(0, rect, colors, tile_rect);
+    updateMesh(true);
+    updateMesh(false);
+
+    setClipRect(*cliprect);
+}
+
+void ImageSprite::update(img::Image *newImage, const rectf &rect, const img::color8 &color, const recti *cliprect)
+{
+    update(newImage, rect, {color, color, color, color}, cliprect);
 }

@@ -4,7 +4,7 @@
 
 #include "CGUISpriteBank.h"
 #include "IGUIEnvironment.h"
-#include "client/ui/sprite.h"
+#include "client/ui/extra_images.h"
 #include "client/render/rendersystem.h"
 #include "client/render/atlas.h"
 #include <Utils/TypeConverter.h>
@@ -14,8 +14,8 @@ namespace gui
 
 CGUISpriteBank::CGUISpriteBank(IGUIEnvironment *env) :
         Environment(env),
-        SpriteBank(std::make_unique<UISprite>(nullptr, Environment->getRenderSystem()->getRenderer(),
-        Environment->getResourceCache(), rectf(), rectf(), std::array<img::color8, 4>{}))
+        SpriteBank(std::make_unique<ImageSprite>(Environment->getRenderSystem(),
+        Environment->getResourceCache()))
 {}
 
 CGUISpriteBank::~CGUISpriteBank()
@@ -137,18 +137,7 @@ void CGUISpriteBank::draw2DSprite(u32 index, const v2i &pos,
 		p -= r.getSize() / 2;
 	}
 
-    auto rndsys = Environment->getRenderSystem();
-    auto atlas = rndsys->getPool(false)->getAtlasByTile(tex, true);
-    auto tilerect = rndsys->getPool(false)->getTileRect(tex, false, true);
-
-    SpriteBank->setTexture(atlas->getTexture());
-
-    auto shape = SpriteBank->getShape();
-    shape->updateRectangle(0, toRectf(r), {color, color, color, color}, tilerect);
-    SpriteBank->updateMesh(true);
-    SpriteBank->updateMesh(false);
-
-    SpriteBank->setClipRect(*clip);
+    SpriteBank->update(tex, toRectf(r), color, clip);
     SpriteBank->draw();
 }
 
@@ -168,18 +157,7 @@ void CGUISpriteBank::draw2DSprite(u32 index, const recti &destRect,
 	if (rn >= Rectangles.size())
 		return;
 
-    auto rndsys = Environment->getRenderSystem();
-    auto atlas = rndsys->getPool(false)->getAtlasByTile(tex, true);
-    auto tilerect = rndsys->getPool(false)->getTileRect(tex, false, true);
-
-    SpriteBank->setTexture(atlas->getTexture());
-
-    auto shape = SpriteBank->getShape();
-    shape->updateRectangle(0, toRectf(destRect), {colors[0], colors[1], colors[2], colors[3]}, tilerect);
-    SpriteBank->updateMesh(true);
-    SpriteBank->updateMesh(false);
-
-    SpriteBank->setClipRect(*clip);
+    SpriteBank->update(tex, toRectf(destRect), {colors[0], colors[1], colors[2], colors[3]}, clip);
     SpriteBank->draw();
 }
 

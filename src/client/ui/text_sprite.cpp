@@ -139,20 +139,13 @@ void UITextSprite::updateBuffer(rectf &&r)
 {
     clear();
 
-    u32 rectN = 0;
     if (drawBackground) {
-        ++rectN;
         auto bg_color = getBackgroundColor();
         shape->addRectangle(r, {bg_color, bg_color, bg_color, bg_color});
     }
 
-    if (drawBorder) {
-        std::array<img::color8, 4> colors;
-        for (u32 i = 0; i < 4; i++)
-            shape->addRectangle(r, colors);
-
-        skin->update3DSunkenPane(this, img::color8(), true, false, r, rectN);
-    }
+    if (drawBorder)
+        skin->add3DSunkenPane(this, img::color8(), true, false, r);
 
     render::TTFont *font = getActiveFont();
 

@@ -215,14 +215,14 @@ void GUISkin::setFont(render::TTFont *font, GUIDefaultFont which)
 
 
 //! gets the sprite stored
-gui::IGUISpriteBank *GUISkin::getSprite() const
+gui::IGUISpriteBank *GUISkin::getSpriteBank() const
 {
     return Sprite;
 }
 
 
 //! set a new sprite or remove one by passing 0
-void GUISkin::setSprite(gui::IGUISpriteBank *bank)
+void GUISkin::setSpriteBank(gui::IGUISpriteBank *bank)
 {
     if (bank) {
         if (Sprite)
@@ -280,9 +280,8 @@ GUIDefaultColor::Face3D for this. See GUIDefaultColor for details.
 is usually not used by ISkin, but can be used for example by more complex
 implementations to find out how to draw the part exactly. */
 // PATCH
-void GUISkin::updateColored3DButtonPaneStandard(UISprite *sprite,
+void GUISkin::addColored3DButtonPaneStandard(UISprite *sprite,
     const rectf& r,
-    u32 &rectN,
     const img::color8 *colors)
 {
     if (!colors)
@@ -297,31 +296,31 @@ void GUISkin::updateColored3DButtonPaneStandard(UISprite *sprite,
         rect.LRC.X += 1.0f;
         rect.LRC.Y += 1.0f;
         img::color8 whiteC(img::PF_RGBA8, 255, 255, 255, 255);
-        update3DSunkenPane(sprite, colors[ (u8)GUIDefaultColor::Window ].linInterp(whiteC, 0.9f ),
-            false, true, rect, rectN);
+        add3DSunkenPane(sprite, colors[ (u8)GUIDefaultColor::Window ].linInterp(whiteC, 0.9f ),
+            false, true, rect);
 		return;
 	}
 
-    updateRect(sprite, colors[(u8)GUIDefaultColor::DarkShadows3D], rect, rectN);
+    addRect(sprite, colors[(u8)GUIDefaultColor::DarkShadows3D], rect);
 
     rect.LRC.X -= 1.0f;
     rect.LRC.Y -= 1.0f;
-    updateRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], rect, rectN);
+    addRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], rect);
 
     rect.ULC.X += 1.0f;
     rect.ULC.Y += 1.0f;
-    updateRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], rect, rectN);
+    addRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], rect);
 
     rect.LRC.X -= 1.0f;
     rect.LRC.Y -= 1.0f;
 
 	if (!UseGradient)
-        updateRect(sprite, colors[(u8)GUIDefaultColor::Face3D], rect, rectN);
+        addRect(sprite, colors[(u8)GUIDefaultColor::Face3D], rect);
 	else
 	{
         const img::color8 c1 = colors[(u8)GUIDefaultColor::Face3D];
         const img::color8 c2 = c1.linInterp(colors[(u8)GUIDefaultColor::DarkShadows3D], 0.4f);
-        updateRect(sprite, {c1, c1, c2, c2}, rect, rectN);
+        addRect(sprite, {c1, c1, c2, c2}, rect);
     }
 }
 // END PATCH
@@ -337,35 +336,34 @@ GUIDefaultColor::Face3D for this. See GUIDefaultColor for details.
 is usually not used by ISkin, but can be used for example by more complex
 implementations to find out how to draw the part exactly. */
 // PATCH
-void GUISkin::updateColored3DButtonPanePressed(UISprite *sprite,
+void GUISkin::addColored3DButtonPanePressed(UISprite *sprite,
     const rectf& r,
-    u32 &rectN,
     const img::color8* colors)
 {
 	if (!colors)
         colors = Colors.data();
 
     rectf rect = r;
-    updateRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], rect, rectN);
+    addRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], rect);
 
     rect.LRC.X -= 1;
     rect.LRC.Y -= 1;
-    updateRect(sprite, colors[(u8)GUIDefaultColor::DarkShadows3D], rect, rectN);
+    addRect(sprite, colors[(u8)GUIDefaultColor::DarkShadows3D], rect);
 
     rect.ULC.X += 1;
     rect.ULC.Y += 1;
-    updateRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], rect, rectN);
+    addRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], rect);
 
     rect.ULC.X += 1;
     rect.ULC.Y += 1;
 
     if (!UseGradient)
-        updateRect(sprite, colors[(u8)GUIDefaultColor::Face3D], rect, rectN);
+        addRect(sprite, colors[(u8)GUIDefaultColor::Face3D], rect);
     else
     {
         const img::color8 c1 = colors[(u8)GUIDefaultColor::Face3D];
         const img::color8 c2 = c1.linInterp(colors[(u8)GUIDefaultColor::DarkShadows3D], 0.4f);
-        updateRect(sprite, {c1, c1, c2, c2}, rect, rectN);
+        addRect(sprite, {c1, c1, c2, c2}, rect);
     }
 }
 // END PATCH
@@ -382,10 +380,9 @@ deep into the ground.
 \param rect: Defining area where to draw.
 \param clip: Clip area.	*/
 // PATCH
-void GUISkin::updateColored3DSunkenPane(UISprite *sprite, img::color8 bgcolor,
+void GUISkin::addColored3DSunkenPane(UISprite *sprite, img::color8 bgcolor,
     bool flat, bool fillBackGround,
     const rectf& r,
-    u32 &rectN,
     const img::color8* colors)
 {
 	if (!colors)
@@ -394,7 +391,7 @@ void GUISkin::updateColored3DSunkenPane(UISprite *sprite, img::color8 bgcolor,
     rectf rect = r;
 
     if (fillBackGround) {
-        updateRect(sprite, bgcolor, rect, rectN);
+        addRect(sprite, bgcolor, rect);
     }
 
 	if (flat)
@@ -403,26 +400,26 @@ void GUISkin::updateColored3DSunkenPane(UISprite *sprite, img::color8 bgcolor,
 
         // top
         rect.LRC.Y = rect.ULC.Y + 1;
-        updateRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], rect, rectN);
+        addRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], rect);
 
         // left
         ++rect.ULC.Y;
         rect.LRC.Y = r.LRC.Y;
         rect.LRC.X = rect.ULC.X + 1;
-        updateRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], rect, rectN);
+        addRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], rect);
 
         // right
 		rect = r;
         ++rect.ULC.Y;
         rect.ULC.X = rect.LRC.X - 1;
-        updateRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], rect, rectN);
+        addRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], rect);
 
         // bottom
 		rect = r;
         ++rect.ULC.X;
         rect.ULC.Y = r.LRC.Y - 1;
         --rect.LRC.X;
-        updateRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], rect, rectN);
+        addRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], rect);
 	}
 	else
 	{
@@ -430,47 +427,47 @@ void GUISkin::updateColored3DSunkenPane(UISprite *sprite, img::color8 bgcolor,
 
         // top
         rect.LRC.Y = rect.ULC.Y + 1;
-        updateRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], rect, rectN);
+        addRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], rect);
         ++rect.ULC.X;
         ++rect.ULC.Y;
         --rect.LRC.X;
         ++rect.LRC.Y;
-        updateRect(sprite, colors[(u8)GUIDefaultColor::DarkShadows3D], rect, rectN);
+        addRect(sprite, colors[(u8)GUIDefaultColor::DarkShadows3D], rect);
 
         // left
         rect.ULC.X = r.ULC.X;
         rect.ULC.Y = r.ULC.Y+1;
         rect.LRC.X = rect.ULC.X + 1;
         rect.LRC.Y = r.LRC.Y;
-        updateRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], rect, rectN);
+        addRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], rect);
         ++rect.ULC.X;
         ++rect.ULC.Y;
         ++rect.LRC.X;
         --rect.LRC.Y;
-        updateRect(sprite, colors[(u8)GUIDefaultColor::DarkShadows3D], rect, rectN);
+        addRect(sprite, colors[(u8)GUIDefaultColor::DarkShadows3D], rect);
 
         // right
 		rect = r;
         rect.ULC.X = rect.LRC.X - 1;
         ++rect.ULC.Y;
-        updateRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], rect, rectN);
+        addRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], rect);
         --rect.ULC.X;
         ++rect.ULC.Y;
         --rect.LRC.X;
         --rect.LRC.Y;
-        updateRect(sprite, colors[(u8)GUIDefaultColor::Light3D], rect, rectN);
+        addRect(sprite, colors[(u8)GUIDefaultColor::Light3D], rect);
 
         // bottom
 		rect = r;
         ++rect.ULC.X;
         rect.ULC.Y = r.LRC.Y - 1;
         --rect.LRC.X;
-        updateRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], rect, rectN);
+        addRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], rect);
         ++rect.ULC.X;
         --rect.ULC.Y;
         --rect.LRC.X;
         --rect.LRC.Y;
-        updateRect(sprite, colors[(u8)GUIDefaultColor::Light3D], rect, rectN);
+        addRect(sprite, colors[(u8)GUIDefaultColor::Light3D], rect);
 	}
 }
 // END PATCH
@@ -478,7 +475,7 @@ void GUISkin::updateColored3DSunkenPane(UISprite *sprite, img::color8 bgcolor,
 //! draws a window background
 // return where to draw title bar text.
 // PATCH
-rectf GUISkin::updateColored3DWindowBackground(UISprite *sprite,
+rectf GUISkin::addColored3DWindowBackground(UISprite *sprite,
     bool drawTitleBar, img::color8 titleBarColor,
     const rectf& r,
     rectf* checkClientArea,
@@ -487,19 +484,18 @@ rectf GUISkin::updateColored3DWindowBackground(UISprite *sprite,
 	if (!colors)
         colors = Colors.data();
 
-    u32 rectN = 0;
     rectf rect = r;
 
 	// top border
     rect.LRC.Y = rect.ULC.Y + 1;
 	if ( !checkClientArea )
-        updateRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], rect, rectN);
+        addRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], rect);
 
 	// left border
     rect.LRC.Y = r.LRC.Y;
     rect.LRC.X = rect.ULC.X + 1;
 	if ( !checkClientArea )
-        updateRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], rect, rectN);
+        addRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], rect);
 
 	// right border dark outer line
     rect.ULC.X = r.LRC.X - 1;
@@ -507,7 +503,7 @@ rectf GUISkin::updateColored3DWindowBackground(UISprite *sprite,
     rect.ULC.Y = r.ULC.Y;
     rect.LRC.Y = r.LRC.Y;
 	if ( !checkClientArea )
-        updateRect(sprite, colors[(u8)GUIDefaultColor::DarkShadows3D], rect, rectN);
+        addRect(sprite, colors[(u8)GUIDefaultColor::DarkShadows3D], rect);
 
 	// right border bright innner line
     rect.ULC.X -= 1;
@@ -515,7 +511,7 @@ rectf GUISkin::updateColored3DWindowBackground(UISprite *sprite,
     rect.ULC.Y += 1;
     rect.LRC.Y -= 1;
 	if ( !checkClientArea )
-        updateRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], rect, rectN);
+        addRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], rect);
 
 	// bottom border dark outer line
     rect.ULC.X = r.ULC.X;
@@ -523,7 +519,7 @@ rectf GUISkin::updateColored3DWindowBackground(UISprite *sprite,
     rect.LRC.Y = r.LRC.Y;
     rect.LRC.X = r.LRC.X;
 	if ( !checkClientArea )
-        updateRect(sprite, colors[(u8)GUIDefaultColor::DarkShadows3D], rect, rectN);
+        addRect(sprite, colors[(u8)GUIDefaultColor::DarkShadows3D], rect);
 
 	// bottom border bright inner line
     rect.ULC.X += 1;
@@ -531,7 +527,7 @@ rectf GUISkin::updateColored3DWindowBackground(UISprite *sprite,
     rect.ULC.Y -= 1;
     rect.LRC.Y -= 1;
 	if ( !checkClientArea )
-        updateRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], rect, rectN);
+        addRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], rect);
 
 	// client area for background
 	rect = r;
@@ -548,20 +544,20 @@ rectf GUISkin::updateColored3DWindowBackground(UISprite *sprite,
 	{
 		if (!UseGradient)
 		{
-            updateRect(sprite, colors[(u8)GUIDefaultColor::Face3D], rect, rectN);
+            addRect(sprite, colors[(u8)GUIDefaultColor::Face3D], rect);
 		}
         else if ( Type == GUISkinType::BurningSkin )
 		{
             const img::color8 c1 = colors[(u8)GUIDefaultColor::Window].linInterp ( img::color8(img::PF_RGBA8, 255, 255, 255, 255), 0.9f );
             const img::color8 c2 = colors[(u8)GUIDefaultColor::Window].linInterp ( img::color8(img::PF_RGBA8, 255, 255, 255, 255), 0.8f );
 
-            updateRect(sprite, {c1, c1, c2, c2}, rect, rectN);
+            addRect(sprite, {c1, c1, c2, c2}, rect);
 		}
 		else
 		{
             const img::color8 c2 = colors[(u8)GUIDefaultColor::Shadow3D];
             const img::color8 c1 = colors[(u8)GUIDefaultColor::Face3D];
-            updateRect(sprite, {c1, c1, c2, c2}, rect, rectN);
+            addRect(sprite, {c1, c1, c2, c2}, rect);
 		}
 	}
 
@@ -587,12 +583,12 @@ rectf GUISkin::updateColored3DWindowBackground(UISprite *sprite,
             if ( Type == GUISkinType::BurningSkin )
 			{
                 const img::color8 c = titleBarColor.linInterp(img::color8(img::PF_RGBA8, titleBarColor.A(),255,255,255), 0.8f);
-                updateRect(sprite, {titleBarColor, titleBarColor, c, c}, rect, rectN);
+                addRect(sprite, {titleBarColor, titleBarColor, c, c}, rect);
 			}
 			else
 			{
                 const img::color8 c = titleBarColor.linInterp(img::color8(img::PF_RGBA8, titleBarColor.A(),0,0,0), 0.2f);
-                updateRect(sprite, {titleBarColor, c, titleBarColor, c}, rect, rectN);
+                addRect(sprite, {titleBarColor, c, titleBarColor, c}, rect);
 			}
 		}
 	}
@@ -612,20 +608,19 @@ implementations to find out how to draw the part exactly.
 \param rect: Defining area where to draw.
 \param clip: Clip area.	*/
 // PATCH
-void GUISkin::updateColored3DMenuPane(UISprite *sprite,
+void GUISkin::addColored3DMenuPane(UISprite *sprite,
     const rectf& r,
     const img::color8* colors)
 {
 	if (!colors)
         colors = Colors.data();
 
-    u32 rectN = 0;
     rectf rect = r;
 
     if ( Type == GUISkinType::BurningSkin )
 	{
         rect.ULC.Y -= 3;
-        update3DButtonPaneStandard(sprite, rect, rectN);
+        add3DButtonPaneStandard(sprite, rect);
 		return;
 	}
 
@@ -638,35 +633,35 @@ void GUISkin::updateColored3DMenuPane(UISprite *sprite,
 	// but there aren't that much menus visible anyway.
 
     rect.LRC.Y = rect.ULC.Y + 1;
-    updateRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], rect, rectN);
+    addRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], rect);
 
     rect.LRC.Y = r.LRC.Y;
     rect.LRC.X = rect.ULC.X + 1;
-    updateRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], rect, rectN);
+    addRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], rect);
 
     rect.ULC.X = r.LRC.X - 1;
     rect.LRC.X = r.LRC.X;
     rect.ULC.Y = r.ULC.Y;
     rect.LRC.Y = r.LRC.Y;
-    updateRect(sprite, colors[(u8)GUIDefaultColor::DarkShadows3D], rect, rectN);
+    addRect(sprite, colors[(u8)GUIDefaultColor::DarkShadows3D], rect);
 
     rect.ULC.X -= 1;
     rect.LRC.X -= 1;
     rect.ULC.Y += 1;
     rect.LRC.Y -= 1;
-    updateRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], rect, rectN);
+    addRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], rect);
 
     rect.ULC.X = r.ULC.X;
     rect.ULC.Y = r.LRC.Y - 1;
     rect.LRC.Y = r.LRC.Y;
     rect.LRC.X = r.LRC.X;
-    updateRect(sprite, colors[(u8)GUIDefaultColor::DarkShadows3D], rect, rectN);
+    addRect(sprite, colors[(u8)GUIDefaultColor::DarkShadows3D], rect);
 
     rect.ULC.X += 1;
     rect.LRC.X -= 1;
     rect.ULC.Y -= 1;
     rect.LRC.Y -= 1;
-    updateRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], rect, rectN);
+    addRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], rect);
 
 	rect = r;
     rect.ULC.X +=1;
@@ -675,12 +670,12 @@ void GUISkin::updateColored3DMenuPane(UISprite *sprite,
     rect.LRC.Y -= 2;
 
 	if (!UseGradient)
-        updateRect(sprite, colors[(u8)GUIDefaultColor::Face3D], rect, rectN);
+        addRect(sprite, colors[(u8)GUIDefaultColor::Face3D], rect);
 	else
 	{
         const img::color8 c1 = colors[(u8)GUIDefaultColor::Face3D];
         const img::color8 c2 = colors[(u8)GUIDefaultColor::Shadow3D];
-        updateRect(sprite, {c1, c1, c2, c2}, rect, rectN);
+        addRect(sprite, {c1, c1, c2, c2}, rect);
 	}
 }
 // END PATCH
@@ -694,28 +689,27 @@ implementations to find out how to draw the part exactly.
 \param rect: Defining area where to draw.
 \param clip: Clip area.	*/
 // PATCH
-void GUISkin::updateColored3DToolBar(UISprite *sprite,
+void GUISkin::addColored3DToolBar(UISprite *sprite,
     const rectf& r,
     const img::color8* colors)
 {
 	if (!colors)
         colors = Colors.data();
 
-    u32 rectN = 0;
     rectf rect = r;
 
     rect.ULC.X = r.ULC.X;
     rect.ULC.Y = r.LRC.Y - 1;
     rect.LRC.Y = r.LRC.Y;
     rect.LRC.X = r.LRC.X;
-    updateRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], rect, rectN);
+    addRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], rect);
 
 	rect = r;
     rect.LRC.Y -= 1;
 
 	if (!UseGradient)
 	{
-        updateRect(sprite, colors[(u8)GUIDefaultColor::Face3D], rect, rectN);
+        addRect(sprite, colors[(u8)GUIDefaultColor::Face3D], rect);
 	}
 	else
     if ( Type == GUISkinType::BurningSkin )
@@ -724,13 +718,13 @@ void GUISkin::updateColored3DToolBar(UISprite *sprite,
         const img::color8 c2 = img::colorU32NumberToObject(0xF0000000 | img::colorObjectToU32Number(colors[(u8)GUIDefaultColor::Shadow3D]));
 
         rect.LRC.Y += 1;
-        updateRect(sprite, {c1, c2, c1, c2}, rect, rectN);
+        addRect(sprite, {c1, c2, c1, c2}, rect);
 	}
 	else
 	{
         const img::color8 c1 = colors[(u8)GUIDefaultColor::Face3D];
         const img::color8 c2 = colors[(u8)GUIDefaultColor::Shadow3D];
-        updateRect(sprite, {c1, c1, c2, c2}, rect, rectN);
+        addRect(sprite, {c1, c1, c2, c2}, rect);
 	}
 }
 // END PATCH
@@ -744,14 +738,13 @@ implementations to find out how to draw the part exactly.
 \param rect: Defining area where to draw.
 \param clip: Clip area.	*/
 // PATCH
-void GUISkin::updateColored3DTabButton(UISprite *sprite, bool active,
+void GUISkin::addColored3DTabButton(UISprite *sprite, bool active,
     const rectf& frameRect, GUIAlignment alignment,
 	const img::color8* colors)
 {
 	if (!colors)
         colors = Colors.data();
 
-    u32 rectN = 0;
     rectf tr = frameRect;
 
     if ( alignment == GUIAlignment::UpperLeft )
@@ -759,43 +752,43 @@ void GUISkin::updateColored3DTabButton(UISprite *sprite, bool active,
         tr.LRC.X -= 2;
         tr.LRC.Y = tr.ULC.Y + 1;
         tr.ULC.X += 1;
-        updateRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], tr, rectN);
+        addRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], tr);
 
 		// draw left highlight
 		tr = frameRect;
         tr.LRC.X = tr.ULC.X + 1;
         tr.ULC.Y += 1;
-        updateRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], tr, rectN);
+        addRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], tr);
 
 		// draw grey background
 		tr = frameRect;
         tr.ULC.X += 1;
         tr.ULC.Y += 1;
         tr.LRC.X -= 2;
-        updateRect(sprite, colors[(u8)GUIDefaultColor::Face3D], tr, rectN);
+        addRect(sprite, colors[(u8)GUIDefaultColor::Face3D], tr);
 
 		// draw right middle gray shadow
         tr.LRC.X += 1;
         tr.ULC.X = tr.LRC.X - 1;
-        updateRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], tr, rectN);
+        addRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], tr);
 
         tr.LRC.X += 1;
         tr.ULC.X += 1;
         tr.ULC.Y += 1;
-        updateRect(sprite, colors[(u8)GUIDefaultColor::DarkShadows3D], tr, rectN);
+        addRect(sprite, colors[(u8)GUIDefaultColor::DarkShadows3D], tr);
 	}
 	else
 	{
         tr.LRC.X -= 2;
         tr.ULC.Y = tr.LRC.Y - 1;
         tr.ULC.X += 1;
-        updateRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], tr, rectN);
+        addRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], tr);
 
 		// draw left highlight
 		tr = frameRect;
         tr.LRC.X = tr.ULC.X + 1;
         tr.LRC.Y -= 1;
-        updateRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], tr, rectN);
+        addRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], tr);
 
 		// draw grey background
 		tr = frameRect;
@@ -803,18 +796,18 @@ void GUISkin::updateColored3DTabButton(UISprite *sprite, bool active,
         tr.ULC.Y -= 1;
         tr.LRC.X -= 2;
         tr.LRC.Y -= 1;
-        updateRect(sprite, colors[(u8)GUIDefaultColor::Face3D], tr, rectN);
+        addRect(sprite, colors[(u8)GUIDefaultColor::Face3D], tr);
 
 		// draw right middle gray shadow
         tr.LRC.X += 1;
         tr.ULC.X = tr.LRC.X - 1;
         //tr.LRC.Y -= 1;
-        updateRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], tr, rectN);
+        addRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], tr);
 
         tr.LRC.X += 1;
         tr.ULC.X += 1;
         tr.LRC.Y -= 1;
-        updateRect(sprite, colors[(u8)GUIDefaultColor::DarkShadows3D], tr, rectN);
+        addRect(sprite, colors[(u8)GUIDefaultColor::DarkShadows3D], tr);
 	}
 }
 // END PATCH
@@ -829,14 +822,13 @@ implementations to find out how to draw the part exactly.
 \param rect: Defining area where to draw.
 \param clip: Clip area.	*/
 // PATCH
-void GUISkin::updateColored3DTabBody(UISprite *sprite, bool border, bool background,
+void GUISkin::addColored3DTabBody(UISprite *sprite, bool border, bool background,
     const rectf& rect, s32 tabHeight, GUIAlignment alignment,
 	const img::color8* colors)
 {
 	if (!colors)
         colors = Colors.data();
 
-    u32 rectN = 0;
     rectf tr = rect;
 
 	if ( tabHeight == -1 )
@@ -850,34 +842,34 @@ void GUISkin::updateColored3DTabBody(UISprite *sprite, bool border, bool backgro
 			// draw left hightlight
             tr.ULC.Y += tabHeight + 2;
             tr.LRC.X = tr.ULC.X + 1;
-            updateRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], tr, rectN);
+            addRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], tr);
 
 			// draw right shadow
             tr.ULC.X = rect.LRC.X - 1;
             tr.LRC.X = tr.ULC.X + 1;
-            updateRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], tr, rectN);
+            addRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], tr);
 
 			// draw lower shadow
 			tr = rect;
             tr.ULC.Y = tr.LRC.Y - 1;
-            updateRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], tr, rectN);
+            addRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], tr);
 		}
 		else
 		{
 			// draw left hightlight
             tr.LRC.Y -= tabHeight + 2;
             tr.LRC.X = tr.ULC.X + 1;
-            updateRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], tr, rectN);
+            addRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], tr);
 
 			// draw right shadow
             tr.ULC.X = rect.LRC.X - 1;
             tr.LRC.X = tr.ULC.X + 1;
-            updateRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], tr, rectN);
+            addRect(sprite, colors[(u8)GUIDefaultColor::Shadow3D], tr);
 
 			// draw lower shadow
 			tr = rect;
             tr.LRC.Y = tr.ULC.Y + 1;
-            updateRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], tr, rectN);
+            addRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], tr);
 		}
 	}
 
@@ -902,12 +894,12 @@ void GUISkin::updateColored3DTabBody(UISprite *sprite, bool border, bool backgro
 		}
 
 		if (!UseGradient)
-            updateRect(sprite, colors[(u8)GUIDefaultColor::Face3D], tr, rectN);
+            addRect(sprite, colors[(u8)GUIDefaultColor::Face3D], tr);
 		else
 		{
             img::color8 c1 = colors[(u8)GUIDefaultColor::Face3D];
             img::color8 c2 = colors[(u8)GUIDefaultColor::Shadow3D];
-            updateRect(sprite, {c1, c1, c2, c2}, tr, rectN);
+            addRect(sprite, {c1, c1, c2, c2}, tr);
 		}
 	}
 }

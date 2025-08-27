@@ -9,6 +9,8 @@
 #include "IGUIEnvironment.h"
 #include "IGUIButton.h"
 #include "CGUIListBox.h"
+#include "client/render/rendersystem.h"
+#include <Utils/TypeConverter.h>
 
 namespace gui
 {
@@ -19,7 +21,8 @@ CGUIComboBox::CGUIComboBox(IGUIEnvironment *environment, IGUIElement *parent,
 		IGUIComboBox(environment, parent, id, rectangle),
 		ListButton(nullptr), SelectedText(nullptr), ListBox(nullptr), LastFocus(nullptr),
         Selected(-1), HAlign(GUIAlignment::UpperLeft), VAlign(EGUIA_CENTER), MaxSelectionRows(5), HasFocus(false),
-		ActiveFont(nullptr)
+        ActiveFont(nullptr),
+        Border(std::make_unique<UISprite>(nullptr, environment->getRenderSystem()->getRenderer(), environment->getResourceCache()))
 {
 	GUISkin *skin = Environment->getSkin();
 
@@ -116,7 +119,7 @@ void CGUIComboBox::removeItem(u32 idx)
 	if (Selected == (s32)idx)
 		setSelected(-1);
 
-	Items.erase(idx);
+    Items.erase(Items.begin()+idx);
 }
 
 //! Returns caption of this element.
@@ -386,8 +389,14 @@ void CGUIComboBox::draw()
 
 	// draw the border
 
-	skin->draw3DSunkenPane(this, skin->getColor(EGDC_3D_HIGH_LIGHT),
-			true, true, frameRect, &AbsoluteClippingRect);
+    Border->clear();
+    skin->add3DSunkenPane(Border.get(), skin->getColor(EGDC_3D_HIGH_LIGHT),
+            true, true, toRectf(frameRect));
+    Border->rebuildMesh();
+
+    Border->setClipRect(AbsoluteClippingRect);
+    Border->draw();
+
 
 	// draw children
 	IGUIElement::draw();

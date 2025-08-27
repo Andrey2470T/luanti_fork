@@ -6,6 +6,8 @@
 
 #include "IGUIImage.h"
 
+class ImageSprite;
+
 namespace gui
 {
 
@@ -89,6 +91,8 @@ private:
 	recti SourceRect;
 	rectf DrawBounds;
 	bool DrawBackground;
+
+    std::unique_ptr<ImageSprite> Image;
 };
 
 } // end namespace gui

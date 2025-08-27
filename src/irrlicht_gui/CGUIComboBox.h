@@ -7,6 +7,8 @@
 #include "IGUIComboBox.h"
 #include "IGUIStaticText.h"
 
+class UISprite;
+
 namespace gui
 {
 class IGUIButton;
@@ -94,6 +96,8 @@ private:
 	u32 MaxSelectionRows;
 	bool HasFocus;
 	render::TTFont *ActiveFont;
+
+    std::unique_ptr<UISprite> Border;
 };
 
 } // end namespace gui
