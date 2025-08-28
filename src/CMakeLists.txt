@@ -547,7 +547,6 @@ list(APPEND client_SRCS
 	${common_SRCS}
 	${gui_SRCS}
 	${client_network_SRCS}
-	${irrlicht_gui_SRCS}
 	${client_SCRIPT_SRCS}
 )
 
