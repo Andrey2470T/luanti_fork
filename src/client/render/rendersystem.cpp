@@ -20,6 +20,7 @@
 #include "client/ao/animation.h"
 #include "client/ui/hud.h"
 #include "client/ui/minimap.h"
+#include "gui/IGUIEnvironment.h"
 
 const img::color8 RenderSystem::menu_sky_color = img::color8(img::PF_RGBA8, 140, 186, 250, 255);
 
@@ -31,9 +32,9 @@ RenderSystem::RenderSystem(ResourceCache *_cache)
 
     v2u viewport = window->getViewportSize();
     auto glParams = window->getGLParams();
-    renderer = std::make_unique<Renderer>(cache, recti(0, 0, viewport.X, viewport.Y), glParams.maxTextureUnits);
-    sky = std::make_unique<Sky>(this, cache);
-    clouds = std::make_unique<Clouds>(this, cache, -1, myrand());
+    renderer = std::make_unique<Renderer>(cache, recti(0, 0, viewport.X, viewport.Y), glParams->maxTextureUnits);
+
+    guienv = std::make_unique<GUIEnvironment>(this, window->getWindowSize(), cache);
 
     g_settings->registerChangedCallback("fullscreen", settingChangedCallback, this);
     g_settings->registerChangedCallback("window_maximized", settingChangedCallback, this);
@@ -48,6 +49,9 @@ RenderSystem::~RenderSystem()
 void RenderSystem::initRenderEnvironment(Client *_client)
 {
     client = _client;
+    sky = std::make_unique<Sky>(this, cache);
+    clouds = std::make_unique<Clouds>(this, cache, myrand());
+
     load_screen = std::make_unique<LoadScreen>(cache, this, fontManager.get());
     pp_core = std::make_unique<PipelineCore>(client, g_settings->getBool("enable_dynamic_shadows"));
 
@@ -59,8 +63,8 @@ void RenderSystem::initRenderEnvironment(Client *_client)
 
     gameui = std::make_unique<GameUI>(client);
 
-    basePool = std::make_unique<AtlasPool>(AtlasType::RECTPACK2D, "Basic", cache, window->getGLParams().maxTextureSize, true);
-    guiPool = std::make_unique<AtlasPool>(AtlasType::RECTPACK2D, "GUI", cache, window->getGLParams().maxTextureSize, false);
+    basePool = std::make_unique<AtlasPool>(AtlasType::RECTPACK2D, "Basic", cache, window->getGLParams()->maxTextureSize, true);
+    guiPool = std::make_unique<AtlasPool>(AtlasType::RECTPACK2D, "GUI", cache, window->getGLParams()->maxTextureSize, false);
 }
 
 AtlasPool *RenderSystem::getPool(bool basic) const
@@ -129,16 +133,16 @@ void RenderSystem::initWindow()
     if (configured_name.empty())
         configured_name = "opengl3";
 
-    main::MainWindowParameters params;
+    core::MainWindowParameters params;
     params.Width = screen_w;
     params.Height = screen_h;
 
     if (configured_name == "opengl3")
-        params.GLType = main::OGL_TYPE_DESKTOP;
+        params.GLType = core::OGL_TYPE_DESKTOP;
     else if (configured_name == "gles2")
-        params.GLType = main::OGL_TYPE_ES;
+        params.GLType = core::OGL_TYPE_ES;
     else
-        params.GLType = main::OGL_TYPE_WEB;
+        params.GLType = core::OGL_TYPE_WEB;
 
     params.FullScreen = fullscreen;
     params.AntiAlias = fsaa;
@@ -149,7 +153,7 @@ void RenderSystem::initWindow()
 
     verbosestream << "Using the " << configured_name << " video driver" << std::endl;
 
-    window = std::make_unique<main::MainWindow>(params);
+    window = std::make_unique<core::MainWindow>(params);
 }
 
 void RenderSystem::settingChangedCallback(const std::string &name, void *data)

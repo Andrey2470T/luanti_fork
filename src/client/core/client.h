@@ -18,7 +18,7 @@
 #include "util/string.h" // StringMap
 #include "config.h"
 #include "network/networkprotocol.h"
-#include <Main/MainWindow.h>
+#include <Core/MainWindow.h>
 
 #if !IS_CLIENT_BUILD
 #error Do not include in server builds
@@ -66,7 +66,7 @@ struct FpsControl {
 
     void reset();
 
-    void limit(main::MainWindow *wnd, f32 *dtime);
+    void limit(core::MainWindow *wnd, f32 *dtime);
 
     u32 getBusyMs() const { return busy_time / 1000; }
 

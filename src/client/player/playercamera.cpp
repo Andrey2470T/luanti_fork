@@ -3,6 +3,7 @@
 // Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "playercamera.h"
+#include "client/render/renderer.h"
 #include "debug.h"
 #include "config.h"
 #include "map.h"
@@ -27,6 +28,7 @@
 #include "client/media/resource.h"
 #include "client/render/drawlist.h"
 #include "client/ao/renderCAO.h"
+#include <Utils/TypeConverter.h>
 
 #define WIELDMESH_OFFSET_X 55.0f
 #define WIELDMESH_OFFSET_Y -35.0f
@@ -84,7 +86,8 @@ void Nametag::updateBank(v3f newWorldPos)
 }
 
 PlayerCamera::PlayerCamera(Client *client):
-    Camera(), m_draw_control(client->getRenderSystem()->getDrawList()->getDrawControl()),
+    Camera(toV2u(client->getRenderSystem()->getRenderer()->getContext()->getViewportSize().getSize())),
+    m_draw_control(client->getRenderSystem()->getDrawList()->getDrawControl()),
     m_client(client), m_player_light_color(img::colorU32NumberToObject(0xFFFFFFFF))
 {
     //auto smgr = rendering_engine->get_scene_manager();

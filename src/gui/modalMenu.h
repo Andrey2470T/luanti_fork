@@ -4,20 +4,18 @@
 
 #pragma once
 
+#include <Core/Events.h>
 #include "IGUIElement.h"
-#include "irrlichttypes_bloated.h"
-#include "irr_ptr.h"
-
 #include "util/string.h"
 #ifdef __ANDROID__
 	#include <porting_android.h>
 #endif
 
 struct PointerAction {
-	v2s32 pos;
+    v2i pos;
 	u64 time; // ms
 
-	static PointerAction fromEvent(const SEvent &event);
+    static PointerAction fromEvent(const core::Event &event);
 	bool isRelated(PointerAction other);
 };
 
@@ -46,10 +44,10 @@ public:
 	void draw();
 	void quitMenu();
 
-	virtual void regenerateGui(v2u32 screensize) = 0;
+    virtual void regenerateGui(v2u screensize) = 0;
 	virtual void drawMenu() = 0;
-	virtual bool preprocessEvent(const SEvent &event);
-	virtual bool OnEvent(const SEvent &event) { return false; };
+    virtual bool preprocessEvent(const core::Event &event);
+    virtual bool OnEvent(const core::Event &event) { return false; };
 	virtual bool pausesGame() { return false; } // Used for pause menu
 #ifdef __ANDROID__
 	virtual void getAndroidUIInput() {};
@@ -63,10 +61,10 @@ protected:
 	// Stores the last known pointer position.
 	// If the last input event was a mouse event, it's the cursor position.
 	// If the last input event was a touch event, it's the finger position.
-	v2s32 m_pointer;
-	v2s32 m_old_pointer;  // Mouse position after previous mouse event
+    v2i m_pointer;
+    v2i m_old_pointer;  // Mouse position after previous mouse event
 
-	v2u32 m_screensize_old;
+    v2u m_screensize_old;
 	float m_gui_scale;
 #ifdef __ANDROID__
 	std::string m_jni_field_name;
@@ -74,9 +72,9 @@ protected:
 
 	struct ScalingInfo {
 		f32 scale;
-		core::rect<s32> rect;
+        recti rect;
 	};
-	ScalingInfo getScalingInfo(v2u32 screensize, v2u32 base_size);
+    ScalingInfo getScalingInfo(v2u screensize, v2u base_size);
 
 	// This is set to true if the menu is currently processing a second-touch event.
 	bool m_second_touch = false;
@@ -89,7 +87,7 @@ private:
 	 * the mainmenu to prevent Minetest from closing unexpectedly.
 	 */
 	bool m_remap_click_outside;
-	bool remapClickOutside(const SEvent &event);
+    bool remapClickOutside(const core::Event &event);
 	PointerAction m_last_click_outside{};
 
 	// This might be necessary to expose to the implementation if it
@@ -98,10 +96,10 @@ private:
 
 	// Stuff related to touchscreen input
 
-	irr_ptr<gui::IGUIElement> m_touch_hovered;
+    std::unique_ptr<gui::IGUIElement> m_touch_hovered;
 
 	// Converts touches into clicks.
-	bool simulateMouseEvent(ETOUCH_INPUT_EVENT touch_event, bool second_try=false);
+    bool simulateMouseEvent(core::ET_TOUCH_INPUT_EVENT touch_event, bool second_try=false);
 	void enter(gui::IGUIElement *element);
 	void leave();
 

@@ -10,10 +10,12 @@
 #include "modalMenu.h"
 #include <cassert>
 #include <list>
+#include "client/render/clouds.h"
+#include "client/render/camera.h"
 
 #include "IGUIEnvironment.h"
 
-namespace irr::gui {
+namespace gui {
 	class IGUIStaticText;
 }
 
@@ -38,6 +40,16 @@ extern gui::IGUIStaticText *guiroot;
 class MainMenuManager : public IMenuManager
 {
 public:
+    MainMenuManager(RenderSystem *rndsys, ResourceCache *rescache)
+        : m_menuclouds(std::make_unique<Clouds>(rndsys, rescache, rand())),
+          m_menucamera(std::make_unique<Camera>())
+    {
+        m_menuclouds->setHeight(100.0f);
+        m_menuclouds->update(v3f(0, 0, 0), img::color8(img::PF_RGBA8, 240, 240, 255, 255));
+        m_menucamera->setDirection(v3f(0, 60, 100));
+        m_menucamera->setFarValue(10000);
+    }
+
 	virtual void createdMenu(gui::IGUIElement *menu)
 	{
 		for (gui::IGUIElement *e : m_stack) {
@@ -95,9 +107,12 @@ public:
 
 private:
 	std::list<gui::IGUIElement*> m_stack;
+
+    std::unique_ptr<Clouds> m_menuclouds;
+    std::unique_ptr<Camera> m_menucamera;
 };
 
-extern MainMenuManager g_menumgr;
+extern std::unique_ptr<MainMenuManager> g_menumgr;
 
 static inline bool isMenuActive()
 {

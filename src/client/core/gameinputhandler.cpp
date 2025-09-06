@@ -2,7 +2,7 @@
 #include "client/event/inputhandler.h"
 #include "client/event/eventreceiver.h"
 #include "client/render/rendersystem.h"
-#include <Main/MainWindow.h>
+#include <Core/MainWindow.h>
 #include "settings.h"
 
 GameInputSystem::GameInputSystem(Client *_client, bool random_input)
@@ -14,8 +14,8 @@ GameInputSystem::GameInputSystem(Client *_client, bool random_input)
         input = std::make_unique<RealInputHandler>(receiver.get());
 
     if (g_settings->getBool("enable_joysticks")) {
-        std::vector<main::JoystickInfo> infos;
-        std::vector<main::JoystickInfo> joystick_infos;
+        std::vector<core::JoystickInfo> infos;
+        std::vector<core::JoystickInfo> joystick_infos;
 
         // Make sure this is called maximum once per
         // irrlicht device, otherwise it will give you

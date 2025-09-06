@@ -33,7 +33,7 @@ float RealInputHandler::getJoystickDirection()
 
 v2i RealInputHandler::getMousePos()
 {
-    auto control = m_receiver->main_wnd->getCursorControl();;
+    auto control = m_receiver->main_wnd->getCursorControl();
     return control.getPosition(false);
 }
 

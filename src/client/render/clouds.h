@@ -24,10 +24,7 @@ extern Clouds *g_menuclouds;
 class Clouds
 {
 public:
-	Clouds(RenderSystem *rndsys, ResourceCache *cache,
-			s32 id,
-			u32 seed
-	);
+    Clouds(RenderSystem *rndsys, ResourceCache *cache, u32 seed);
 
 	~Clouds();
 

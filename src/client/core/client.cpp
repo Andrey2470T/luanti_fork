@@ -49,7 +49,7 @@ void FpsControl::reset()
     last_time = porting::getTimeUs();
 }
 
-void FpsControl::limit(main::MainWindow *wnd, f32 *dtime)
+void FpsControl::limit(core::MainWindow *wnd, f32 *dtime)
 {
     const float fps_limit = wnd->isFocused()
             ? g_settings->getFloat("fps_max")

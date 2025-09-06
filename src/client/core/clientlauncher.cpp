@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 // Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
-#include "client/sound/soundopenal.h"
 #include "gui/mainmenumanager.h"
 #include "client/render/clouds.h"
 #include "gui/touchcontrols.h"
@@ -25,14 +24,12 @@
 #include "client/media/resource.h"
 
 #if USE_SOUND
-    #include "sound/sound_openal.h"
+    #include "client/sound/soundopenal.h"
 #endif
 
 /* mainmenumanager.h
  */
-gui::IGUIEnvironment *guienv = nullptr;
-gui::IGUIStaticText *guiroot = nullptr;
-MainMenuManager g_menumgr;
+std::unique_ptr<MainMenuManager> g_menumgr;
 
 // Passed to menus to allow disconnecting and exiting
 MainGameCallback *g_gamecallback = nullptr;
@@ -61,7 +58,11 @@ ClientLauncher::~ClientLauncher()
 
     guiroot = nullptr;
     guienv = nullptr;
-    assert(g_menumgr.menuCount() == 0);
+
+    if (g_menumgr)
+        assert(g_menumgr->menuCount() == 0);
+
+    g_menumgr.reset();
 
 #if USE_SOUND
     g_sound_manager_singleton.reset();
@@ -96,23 +97,13 @@ bool ClientLauncher::run(GameStartData &start_data, const Settings &cmd_args)
 
     init_input();
 
-    guienv = render_system->getGUIEnvironment();
     config_guienv();
+
     g_settings->registerChangedCallback("dpi_change_notifier", setting_changed_callback, this);
     g_settings->registerChangedCallback("display_density_factor", setting_changed_callback, this);
     g_settings->registerChangedCallback("gui_scaling", setting_changed_callback, this);
 
-    // Create the menu clouds
-    // This is only global so it can be used by RenderingEngine::draw_load_screen().
-    assert(!g_menucloudsmgr && !g_menuclouds);
-
-    g_menucloudsmgr = render_system->get_scene_manager()->createNewSceneManager();
-    g_menuclouds = new Clouds(g_menucloudsmgr, ssrc.get(), -1, rand());
-    g_menuclouds->setHeight(100.0f);
-    g_menuclouds->update(v3f(0, 0, 0), video::SColor(255, 240, 240, 255));
-    scene::ICameraSceneNode* camera;
-    camera = g_menucloudsmgr->addCameraSceneNode(NULL, v3f(0, 0, 0), v3f(0, 60, 100));
-    camera->setFarValue(10000);
+    g_menumgr = std::make_unique<MainMenuManager>(render_system.get(), resource_cache.get());
 
     /*
         GUI stuff
@@ -154,7 +145,7 @@ bool ClientLauncher::run(GameStartData &start_data, const Settings &cmd_args)
                 custom gui elements directly on the screen.
                 Otherwise they won't be automatically drawn.
             */
-            guiroot = render_system->get_gui_env()->addStaticText(L"",
+            render_system->get_gui_env()->addStaticText(L"",
                recti(0, 0, 10000, 10000));
 
             bool should_run_game = launch_game(error_message, reconnect_requested,
@@ -195,7 +186,7 @@ bool ClientLauncher::run(GameStartData &start_data, const Settings &cmd_args)
         }
 #endif
 
-        render_system->get_scene_manager()->clear();
+        //render_system->get_scene_manager()->clear();
 
         if (g_touchcontrols) {
             delete g_touchcontrols;
@@ -227,13 +218,6 @@ bool ClientLauncher::run(GameStartData &start_data, const Settings &cmd_args)
         g_profiler->clear();
     }
 
-    assert(g_menucloudsmgr->getReferenceCount() == 1);
-    g_menucloudsmgr->drop();
-    g_menucloudsmgr = nullptr;
-    assert(g_menuclouds->getReferenceCount() == 1);
-    g_menuclouds->drop();
-    g_menuclouds = nullptr;
-
     return retval;
 }
 
@@ -264,7 +248,7 @@ bool ClientLauncher::init_engine()
 {
     resource_cache = std::make_unique<ResourceCache>();
     try {
-        render_system = std::make_unique<RenderSystem>(receiver);
+        render_system = std::make_unique<RenderSystem>(resource_cache.get());
         receiver = std::make_unique<MtEventReceiver>(render_system->getWindow());
     } catch (std::exception &e) {
         errorstream << e.what() << std::endl;
@@ -286,8 +270,8 @@ void ClientLauncher::init_input()
 
 void ClientLauncher::init_joysticks()
 {
-    std::vector<main::JoystickInfo> infos;
-    std::vector<main::JoystickInfo> joystick_infos;
+    std::vector<core::JoystickInfo> infos;
+    std::vector<core::JoystickInfo> joystick_infos;
 
     // Make sure this is called maximum once per
     // irrlicht device, otherwise it will give you
@@ -348,8 +332,7 @@ void ClientLauncher::config_guienv()
             skin->setIcon(GUIDefaultIcon::CheckBoxChecked, cached_id->second);
         } else {
             gui::IGUISpriteBank *sprites = skin->getSpriteBank();
-            video::IVideoDriver *driver = render_system->get_video_driver();
-            video::ITexture *texture = driver->getTexture(path.c_str());
+            img::Image *texture = resource_cache->getOrLoad<img::Image>(ResourceType::IMAGE, path);
             s32 id = sprites->addTextureAsSprite(texture);
             if (id != -1) {
                 skin->setIcon(GUIDefaultIcon::CheckBoxChecked, id);
@@ -531,7 +514,7 @@ void ClientLauncher::main_menu(MainMenuData *menudata)
     framemarker.end();
     infostream << "Waited for other menus" << std::endl;
 
-    auto *cur_control = render_system->get_raw_device()->getCursorControl();
+    auto *cur_control = render_system->getWindow()->getCursorControl();
     if (cur_control) {
         // Cursor can be non-visible when coming from the game
         cur_control->setVisible(true);

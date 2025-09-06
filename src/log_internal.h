@@ -13,9 +13,9 @@
 #include "util/basic_macros.h"
 #include "util/stream.h"
 #include "log.h"
-#include "Main/LogStream.h"
+#include <Core/LogStream.h>
 
-using namespace main;
+using namespace core;
 
 class ILogOutput;
 

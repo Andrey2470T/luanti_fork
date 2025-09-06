@@ -5,7 +5,7 @@
 #pragma once
 
 #include "exceptions.h"
-#include <Main/Events.h>
+#include <Core/Events.h>
 #include <string>
 
 class UnknownKeycode : public BaseException
@@ -25,7 +25,7 @@ public:
 
     MtKey(const char *name);
 
-    MtKey(const main::Event::KeyInputEvent &in, bool prefer_character = false);
+    MtKey(const core::Event::KeyInputEvent &in, bool prefer_character = false);
 
     bool operator==(const MtKey &o) const
 	{
@@ -36,12 +36,12 @@ public:
 	const char *name() const;
 
 protected:
-    static bool valid_kcode(main::KEY_CODE k)
+    static bool valid_kcode(core::KEY_CODE k)
 	{
-        return k > 0 && k < main::KEY_KEY_CODES_COUNT;
+        return k > 0 && k < core::KEY_KEY_CODES_COUNT;
 	}
 
-    main::KEY_CODE Key = main::KEY_KEY_CODES_COUNT;
+    core::KEY_CODE Key = core::KEY_KEY_CODES_COUNT;
 	wchar_t Char = L'\0';
 	std::string m_name = "";
 };
@@ -60,4 +60,4 @@ const MtKey &getKeySetting(const char *settingname);
 // Clear fast lookup cache
 void clearKeyCache();
 
-main::KEY_CODE keyname_to_keycode(const char *name);
+core::KEY_CODE keyname_to_keycode(const char *name);

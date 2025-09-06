@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include <Main/IEventReceiver.h>
+#include <Core/IEventReceiver.h>
 #include "keytype.h"
-#include <Main/Events.h>
+#include <Core/Events.h>
 #include <bitset>
 #include <vector>
 
@@ -30,7 +30,7 @@ struct JoystickAxisLayout {
 
 struct JoystickCombination {
 
-    virtual bool isTriggered(const main::Event::JoystickEvent &ev) const=0;
+    virtual bool isTriggered(const core::Event::JoystickEvent &ev) const=0;
 
 	GameKeyType key;
 };
@@ -48,7 +48,7 @@ struct JoystickButtonCmb : public JoystickCombination {
 
 	virtual ~JoystickButtonCmb() = default;
 
-    virtual bool isTriggered(const main::Event::JoystickEvent &ev) const;
+    virtual bool isTriggered(const core::Event::JoystickEvent &ev) const;
 
 	u32 filter_mask;
 	u32 compare_mask;
@@ -68,7 +68,7 @@ struct JoystickAxisCmb : public JoystickCombination {
 
 	virtual ~JoystickAxisCmb() = default;
 
-    bool isTriggered(const main::Event::JoystickEvent &ev) const override;
+    bool isTriggered(const core::Event::JoystickEvent &ev) const override;
 
 	u16 axis_to_compare;
 
@@ -90,9 +90,9 @@ class JoystickController {
 public:
 	JoystickController();
 
-    void onJoystickConnect(const std::vector<main::JoystickInfo> &joystick_infos);
+    void onJoystickConnect(const std::vector<core::JoystickInfo> &joystick_infos);
 
-    bool handleEvent(const main::Event::JoystickEvent &ev);
+    bool handleEvent(const core::Event::JoystickEvent &ev);
 	void clear();
 
 	void releaseAllKeys()

@@ -3,7 +3,7 @@
 #include <memory>
 #include <Image/Color.h>
 #include <Render/UniformBuffer.h>
-#include <Main/MainWindow.h>
+#include <Core/MainWindow.h>
 #include <Utils/Matrix4.h>
 #include <Render/DrawContext.h>
 
@@ -11,7 +11,7 @@ class Client;
 class RenderPipeline;
 class Hud;
 class GUIEnvironment;
-class ShadowRenderer;
+//class ShadowRenderer;
 class ResourceCache;
 class LoadScreen;
 class AtlasPool;
@@ -39,7 +39,7 @@ class RenderSystem
 
     std::unique_ptr<LoadScreen> load_screen;
     std::unique_ptr<PipelineCore> pp_core;
-	std::unique_ptr<main::MainWindow> window;
+	std::unique_ptr<core::MainWindow> window;
 	
     std::unique_ptr<DistanceSortedDrawList> drawlist;
     std::unique_ptr<ParticleManager> particle_manager;
@@ -51,7 +51,7 @@ class RenderSystem
 
     std::unique_ptr<GameUI> gameui;
     std::unique_ptr<GUIEnvironment> guienv;
-	std::unique_ptr<ShadowRenderer> shadow_renderer;
+	//std::unique_ptr<ShadowRenderer> shadow_renderer;
 
     std::unique_ptr<AtlasPool> basePool;
     std::unique_ptr<AtlasPool> guiPool;
@@ -66,7 +66,7 @@ public:
 
     void initRenderEnvironment(Client *_client);
 
-    main::MainWindow *getWindow() const
+    core::MainWindow *getWindow() const
     {
         return window.get();
     }
@@ -114,10 +114,10 @@ public:
     {
         return guienv.get();
     }
-    ShadowRenderer *getShadowRenderer() const
+    /*ShadowRenderer *getShadowRenderer() const
     {
         return shadow_renderer.get();
-    }
+    }*/
     AtlasPool *getPool(bool basic) const;
 
     FontManager *getFontManager() const

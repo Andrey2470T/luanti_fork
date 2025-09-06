@@ -19,7 +19,7 @@ class Texture;
 class FrameBuffer;
 }
 
-namespace main
+namespace core
 {
 class MainWindow;
 }

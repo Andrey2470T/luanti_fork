@@ -13,7 +13,7 @@ namespace img
     class Image;
 }
 
-namespace main
+namespace core
 {
 	class MainWindow;
 };

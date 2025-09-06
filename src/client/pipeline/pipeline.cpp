@@ -10,7 +10,7 @@
 #include <Render/FrameBuffer.h>
 #include <Render/DrawContext.h>
 #include "log.h"
-#include <Main/MainWindow.h>
+#include <Core/MainWindow.h>
 #include "client/render/rendersystem.h"
 #include "client/render/renderer.h"
 

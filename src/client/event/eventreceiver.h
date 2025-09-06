@@ -1,8 +1,8 @@
 #pragma once
 
 #include "keycache.h"
-#include <Main/MainWindow.h>
-#include <Main/IEventReceiver.h>
+#include <Core/MainWindow.h>
+#include <Core/IEventReceiver.h>
 
 class JoystickController;
 
@@ -11,7 +11,7 @@ enum class PointerType {
 	Touch,
 };
 
-using namespace main;
+using namespace core;
 
 class MtEventReceiver : public IEventReceiver
 {

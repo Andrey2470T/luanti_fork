@@ -11,7 +11,7 @@
 //#include "util/pointedthing.h"
 #include <string>
 #include <memory>
-//#include <Main/MainWindow.h>
+//#include <Core/MainWindow.h>
 
 #if !IS_CLIENT_BUILD
 #error Do not include in server builds

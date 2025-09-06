@@ -29,11 +29,8 @@ static void cloud_3d_setting_changed(const std::string &settingname, void *data)
 	((Clouds *)data)->readSettings();
 }
 
-Clouds::Clouds(RenderSystem *rndsys, ResourceCache *cache,
-		s32 id,
-		u32 seed
-):
-    m_rndsys(rndsys), m_cache(cache), m_seed(seed)
+Clouds::Clouds(RenderSystem *rndsys, ResourceCache *cache, u32 seed)
+    : m_rndsys(rndsys), m_cache(cache), m_seed(seed)
 {
 	m_params = SkyboxDefaults::getCloudDefaults();
 
