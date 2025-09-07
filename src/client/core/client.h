@@ -19,6 +19,7 @@
 #include "config.h"
 #include "network/networkprotocol.h"
 #include <Core/MainWindow.h>
+#include "client/sound/soundmaker.h"
 
 #if !IS_CLIENT_BUILD
 #error Do not include in server builds
@@ -39,7 +40,6 @@ class MtEventManager;
 class NodeDefManager;
 class ParticleManager;
 class SingleMediaDownloader;
-struct ChatMessage;
 struct ClientDynamicInfo;
 struct ClientEvent;
 struct DrawControl;
@@ -52,26 +52,13 @@ class RenderSystem;
 class ResourceCache;
 class ClientPacketHandler;
 class ClientEventHandler;
-class ChatBackend;
-class CaptureLogOutput;
+class ChatMessanger;
+class QuicktuneShortcutter;
 
 enum LocalClientState {
     LC_Created,
     LC_Init,
     LC_Ready
-};
-
-struct FpsControl {
-    FpsControl() : last_time(0), busy_time(0), sleep_time(0) {}
-
-    void reset();
-
-    void limit(core::MainWindow *wnd, f32 *dtime);
-
-    u32 getBusyMs() const { return busy_time / 1000; }
-
-    // all values in microseconds (us)
-    u64 last_time, busy_time, sleep_time;
 };
 
 using sound_handle_t = int;
@@ -85,17 +72,19 @@ public:
 		NOTE: Nothing is thread-safe here.
 	*/
 
-	Client(
-			const char *playername,
-			const std::string &password,
-			IWritableItemDefManager *itemdef,
-			NodeDefManager *nodedef,
-			ISoundManager *sound,
-            MtEventManager *event
-	);
+    Client(ResourceCache *resource_cache,
+            RenderSystem *render_system,
+            const char *playername,
+            const std::string &password
+    );
 
 	~Client();
 	DISABLE_CLASS_COPY(Client);
+
+    bool initSound();
+
+    bool shouldShowTouchControls();
+    bool initGui();
 
 	// Load local mods into memory
 	void scanModSubfolder(const std::string &mod_name, const std::string &mod_path,
@@ -136,9 +125,6 @@ public:
 	int CSMClampRadius(v3s16 pos, int radius);
 	v3s16 CSMClampPos(v3s16 pos);
 
-	/* InventoryManager interface */
-	void inventoryAction(InventoryAction *a) override;
-
 	const std::set<std::string> &getConnectedPlayerNames()
 	{
 		return m_env.getPlayerNames();
@@ -148,16 +134,12 @@ public:
 	v3s16 getCrackPos();
     void setCrack(int level, v3s16 pos);*/
 
-	bool getChatMessage(std::wstring &message);
-    void typeChatMessage(const std::wstring& message);
-
     u64 getMapSeed(){ return m_map_seed; }
 
 	bool m_simple_singleplayer_mode;
 
 	float mediaReceiveProgress();
 
-    //void drawLoadScreen(const std::wstring &text, float dtime, int percent);
 	void afterContentReceived();
 	void showUpdateProgressTexture(void *args, u32 progress, u32 max_progress);
 
@@ -181,11 +163,6 @@ public:
 
     //void makeScreenshot();
 
-	inline void pushToChatQueue(ChatMessage *cec)
-	{
-		m_chat_queue.push(cec);
-	}
-
 	ClientScripting *getScript() { return m_script; }
 	bool modsLoaded() const { return m_mods_loaded; }
 
@@ -205,12 +182,12 @@ public:
 
     RenderSystem *getRenderSystem() const
     {
-        return m_render_system.get();
+        return m_render_system;
     }
 
     ResourceCache *getResourceCache() const
     {
-        return m_resource_cache.get();
+        return m_resource_cache;
     }
 
     ClientPacketHandler *getPacketHandler() const
@@ -229,10 +206,6 @@ public:
 
     void startAuth(AuthMechanism chosen_auth_mechanism);
 
-    bool canSendChatMessage() const;
-    void sendChatMessage(const std::wstring &message);
-    void clearOutChatQueue();
-
     void sendChangePassword(const std::string &oldpassword,
         const std::string &newpassword);
 
@@ -246,16 +219,15 @@ private:
     // own state
     LocalClientState m_state = LC_Created;
 
-    std::unique_ptr<ISoundManager> sound_manager;
-    std::unique_ptr<SoundMaker> soundmaker;
-    std::unique_ptr<EventManager> eventmgr;
+    std::unique_ptr<MtEventManager> m_eventmgr;
+    std::unique_ptr<IWritableItemDefManager> m_itemdef;
+    std::unique_ptr<NodeDefManager> m_nodedef;
+    std::unique_ptr<ISoundManager> m_sound;
+    std::unique_ptr<SoundMaker> m_soundmaker;
+    std::unique_ptr<QuicktuneShortcutter> m_quicktune;
 
-	IWritableItemDefManager *m_itemdef;
-	NodeDefManager *m_nodedef;
-	ISoundManager *m_sound;
-	MtEventManager *m_event;
-    std::unique_ptr<ResourceCache> m_resource_cache;
-    std::unique_ptr<RenderSystem> m_render_system;
+    ResourceCache *m_resource_cache;
+    RenderSystem *m_render_system;
 
     std::unique_ptr<ClientPacketHandler> m_packet_handler;
     std::unique_ptr<ClientEventHandler> m_clientevent_handler;
@@ -270,14 +242,7 @@ private:
 	// 0 <= m_daynight_i < DAYNIGHT_CACHE_COUNT
 	//s32 m_daynight_i;
 	//u32 m_daynight_ratio;
-    std::unique_ptr<ChatBackend> m_chat_backend;
-    CaptureLogOutput m_chat_log_buf;
-    std::unique_ptr<GUIChatConsole> gui_chat_console;
-
-	std::queue<std::wstring> m_out_chat_queue;
-	u32 m_last_chat_message_sent;
-	float m_chat_message_allowance = 5.0f;
-	std::queue<ChatMessage *> m_chat_queue;
+    std::unique_ptr<ChatMessanger> m_chat_msger;
 
     float m_avg_rtt_timer = 0.0f;
 
@@ -310,11 +275,6 @@ private:
 	ClientMediaDownloader *m_media_downloader;
 	// Pending downloads of dynamic media (key: token)
 	std::vector<std::pair<u32, std::shared_ptr<SingleMediaDownloader>>> m_pending_media_downloads;
-
-	// time_of_day speed approximation for old protocol
-	bool m_time_of_day_set = false;
-	float m_last_time_of_day_f = -1.0f;
-	float m_time_of_day_update_timer = 0.0f;
 
 	// Sounds
 	float m_removed_sounds_check_timer = 0.0f;

@@ -3,7 +3,7 @@
 #include "network/connection.h"
 #include "network/networkpacket.h"
 #include "cmdtable.h"
-#include "client/client.h"
+#include "client/core/client.h"
 #include "util/serialize.h"
 #include "porting.h"
 #include "profiler.h"
@@ -258,6 +258,11 @@ void ClientPacketHandler::sendInventoryAction(InventoryAction *a)
     pkt.putRawString(s.c_str(),s.size());
 
     send(&pkt);
+
+    a->clientApply(m_client, m_client);
+
+    // Remove it
+    delete a;
 }
 
 void ClientPacketHandler::sendChatMessage(const std::wstring &message)

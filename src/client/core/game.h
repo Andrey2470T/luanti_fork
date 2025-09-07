@@ -23,6 +23,9 @@ class Client;
 class Server;
 class IWritableItemDefManager;
 class NodeDefManager;
+class InputHandler;
+class ResourceCache;
+class RenderSystem;
 
 struct Jitter {
 	f32 max, min, avg, counter, max_sample, min_sample, max_fraction;
@@ -102,6 +105,9 @@ public:
     ~Game();
 
     bool startup(bool *kill,
+            InputHandler *input,
+            RenderSystem *rndsys,
+            ResourceCache *rescache,
             const GameStartData &game_params,
             std::string &error_message,
             bool *reconnect);
@@ -114,7 +120,6 @@ protected:
     // Basic initialisation
     bool init(const std::string &map_dir, const std::string &address,
             u16 port, const SubgameSpec &gamespec);
-    bool initSound();
     bool createSingleplayerServer(const std::string &map_dir,
             const SubgameSpec &gamespec, u16 port);
     void copyServerClientCache();
@@ -214,11 +219,10 @@ private:
     ClientDynamicInfo client_display_info{};
     float dynamic_info_send_timer = 0;
 
-    // When created, these will be filled with data received from the server
-    std::unique_ptr<IWritableItemDefManager> itemdef_manager;
-    std::unique_ptr<NodeDefManager> nodedef_manager;
+    RenderSystem *rndsys;
+    ResourceCache *rescache;
+    InputHandler *input;
 
-    QuicktuneShortcutter *quicktune = nullptr;
 
     //GameFormSpec m_game_formspec;
 
@@ -286,6 +290,9 @@ private:
 };
 
 void the_game(bool *kill,
+        InputHandler *input,
+        RenderSystem *rndsys,
+        ResourceCache *rescache,
 		const GameStartData &start_data,
 		std::string &error_message,
 		bool *reconnect_requested);

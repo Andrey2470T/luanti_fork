@@ -9,11 +9,11 @@
 #include "tool.h"
 #include "inventory.h"
 #if CHECK_CLIENT_BUILD()
-#include "client/mapblock_mesh.h"
-#include "client/mesh.h"
-#include "client/wieldmesh.h"
-#include "client/client.h"
-#include "client/texturesource.h"
+#include "client/map/mapblockmesh.h"
+#include "client/mesh/meshoperations.h"
+//#include "client/wieldmesh.h"
+#include "client/core/client.h"
+#include "client/media/resource.h"
 #endif
 #include "log.h"
 #include "settings.h"
@@ -166,7 +166,7 @@ void ItemDefinition::reset()
 	wield_image.clear();
 	wield_overlay.clear();
 	palette_image.clear();
-	color = video::SColor(0xFFFFFFFF);
+    color = img::white;
 	wield_scale = v3f(1.0, 1.0, 1.0);
 	stack_max = 99;
 	usable = false;
@@ -363,9 +363,9 @@ class CItemDefManager: public IWritableItemDefManager
 #if CHECK_CLIENT_BUILD()
 	struct ClientCached
 	{
-		video::ITexture *inventory_texture;
+        img::Image *inventory_texture;
 		ItemMesh wield_mesh;
-		Palette *palette;
+        img::Palette *palette;
 
 		ClientCached():
 			inventory_texture(NULL),
@@ -459,17 +459,17 @@ protected:
 		infostream << "Lazily creating item texture and mesh for \""
 				<< cache_key << "\"" << std::endl;
 
-		ITextureSource *tsrc = client->getTextureSource();
+        auto cache = client->getResourceCache();
 
 		// Create new ClientCached
 		auto cc = std::make_unique<ClientCached>();
 
 		cc->inventory_texture = NULL;
 		if (!inventory_image.empty())
-			cc->inventory_texture = tsrc->getTexture(inventory_image);
+            cc->inventory_texture = cache->getOrLoad<img::Image>(ResourceType::IMAGE, inventory_image);
 		getItemMesh(client, item, &(cc->wield_mesh));
 
-		cc->palette = tsrc->getPalette(def.palette_image);
+        cc->palette = cache->getOrLoad<img::Palette>(ResourceType::PALETTE, def.palette_image);
 
 		// Put in cache
 		ClientCached *ptr = cc.get();
@@ -479,7 +479,7 @@ protected:
 
 public:
 	// Get item inventory texture
-	virtual video::ITexture* getInventoryTexture(const ItemStack &item,
+    virtual img::Image* getInventoryTexture(const ItemStack &item,
 			Client *client) const
 	{
 		ClientCached *cc = createClientCachedDirect(item, client);
@@ -498,7 +498,7 @@ public:
 	}
 
 	// Get item palette
-	virtual Palette* getPalette(const ItemStack &item, Client *client) const
+    virtual img::Palette* getPalette(const ItemStack &item, Client *client) const
 	{
 		ClientCached *cc = createClientCachedDirect(item, client);
 		if (!cc)
@@ -506,19 +506,19 @@ public:
 		return cc->palette;
 	}
 
-	virtual video::SColor getItemstackColor(const ItemStack &stack,
+    virtual img::color8 getItemstackColor(const ItemStack &stack,
 		Client *client) const
 	{
 		// Look for direct color definition
 		const std::string &colorstring = stack.metadata.getString("color", 0);
-		video::SColor directcolor;
+        img::color8 directcolor;
 		if (!colorstring.empty() && parseColorString(colorstring, directcolor, true))
 			return directcolor;
 		// See if there is a palette
-		Palette *palette = getPalette(stack, client);
+        img::Palette *palette = getPalette(stack, client);
 		const std::string &index = stack.metadata.getString("palette_index", 0);
 		if (palette && !index.empty())
-			return (*palette)[mystoi(index, 0, 255)];
+            return palette->colors.at(mystoi(index, 0, 255));
 		// Fallback color
 		return get(stack.name).color;
 	}

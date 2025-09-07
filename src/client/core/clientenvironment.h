@@ -145,6 +145,11 @@ public:
     {
         return m_detached_inventories;
     }
+
+    // time_of_day speed approximation for old protocol
+    bool m_time_of_day_set = false;
+    f32 m_last_time_of_day_f = -1.0f;
+    f32 m_time_of_day_update_timer = 0.0f;
 private:
 	std::unique_ptr<ClientMap> m_map;
 	std::unique_ptr<LocalPlayer> m_local_player;

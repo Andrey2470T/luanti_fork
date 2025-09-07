@@ -3,6 +3,7 @@
 // Copyright (C) 2015 nerzhul, Loic Blot <loic.blot@unix-experience.fr>
 
 #include "client/core/client.h"
+#include "client/core/clientevent.h"
 #include "packethandler.h"
 #include "cmdtable.h"
 
@@ -271,7 +272,7 @@ void ClientPacketHandler::handleCommand_NodemetaChanged(NetworkPacket *pkt)
 	decompressZlib(is, sstr);
 
 	NodeMetadataList meta_updates_list(false);
-    meta_updates_list.deSerialize(sstr, m_client->m_itemdef, true);
+    meta_updates_list.deSerialize(sstr, m_client->getItemDefManager(), true);
 
     Map &map = m_client->m_env.getMap();
 	for (NodeMetadataMap::const_iterator i = meta_updates_list.begin();
@@ -373,16 +374,16 @@ void ClientPacketHandler::handleCommand_TimeOfDay(NetworkPacket* pkt)
 		float time_of_day_f = (float)time_of_day / 24000.0f;
 		float tod_diff_f = 0;
 
-        if (time_of_day_f < 0.2 && m_client->m_last_time_of_day_f > 0.8)
-            tod_diff_f = time_of_day_f - m_client->m_last_time_of_day_f + 1.0f;
+        if (time_of_day_f < 0.2 && m_client->getEnv().m_last_time_of_day_f > 0.8)
+            tod_diff_f = time_of_day_f - m_client->getEnv().m_last_time_of_day_f + 1.0f;
 		else
-            tod_diff_f = time_of_day_f - m_client->m_last_time_of_day_f;
+            tod_diff_f = time_of_day_f - m_client->getEnv().m_last_time_of_day_f;
 
-        m_client->m_last_time_of_day_f       = time_of_day_f;
-        float time_diff            = m_client->m_time_of_day_update_timer;
-        m_client->m_time_of_day_update_timer = 0;
+        m_client->getEnv().m_last_time_of_day_f       = time_of_day_f;
+        float time_diff            = m_client->getEnv().m_time_of_day_update_timer;
+        m_client->getEnv().m_time_of_day_update_timer = 0;
 
-        if (m_client->m_time_of_day_set) {
+        if (m_client->getEnv().m_time_of_day_set) {
 			time_speed = (3600.0f * 24.0f) * tod_diff_f / time_diff;
 			infostream << "Client: Measured time_of_day speed (old format): "
 					<< time_speed << " tod_diff_f=" << tod_diff_f
@@ -393,7 +394,7 @@ void ClientPacketHandler::handleCommand_TimeOfDay(NetworkPacket* pkt)
 	// Update environment
     m_client->m_env.setTimeOfDay(time_of_day);
     m_client->m_env.setTimeOfDaySpeed(time_speed);
-    m_client->m_time_of_day_set = true;
+    m_client->getEnv().m_time_of_day_set = true;
 
 	//u32 dr = m_env.getDayNightRatio();
 	//infostream << "Client: time_of_day=" << time_of_day

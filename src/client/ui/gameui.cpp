@@ -45,6 +45,11 @@ GameUI::GameUI(Client *client)
 }
 void GameUI::init()
 {
+    if (g_settings->getBool("show_debug")) {
+        m_flags.debug_state = 1;
+        m_game_ui->m_flags.show_minimal_debug = true;
+    }
+
     auto font_mgr = rndsys->getFontManager();
 
     debugtext = std::make_unique<UISpriteBank>(rndsys->getRenderer(), cache);
@@ -269,6 +274,11 @@ void GameUI::updateProfiler()
 	}
 
     profilertext->setVisible(profiler_current_page != 0);
+}
+
+void GameUI::toggleMinimalDebug()
+{
+    toggleFlag(GUIF_SHOW_MINIMAL_DEBUG);
 }
 
 void GameUI::toggleChat(Client *client)

@@ -13,10 +13,10 @@ enum class PointerType {
 
 using namespace core;
 
-class MtEventReceiver : public IEventReceiver
+class MyEventReceiver : public IEventReceiver
 {
 public:
-    MtEventReceiver(MainWindow *wnd)
+    MyEventReceiver(MainWindow *wnd)
         : main_wnd(wnd)
     {}
 

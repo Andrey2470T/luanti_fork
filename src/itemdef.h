@@ -8,21 +8,19 @@
 #include <iostream>
 #include <optional>
 #include <set>
+#include <Image/Image.h>
 #include "itemgroup.h"
 #include "sound.h"
-#include "texture_override.h" // TextureOverride
 #include "tool.h"
 #include "util/pointabilities.h"
 #include "util/pointedthing.h"
+#include "texture_override.h"
 
 class IGameDef;
 class Client;
 struct ToolCapabilities;
 struct ItemMesh;
 struct ItemStack;
-typedef std::vector<img::color8> Palette; // copied from src/client/texturesource.h
-namespace irr::video { class ITexture; }
-using namespace irr;
 
 /*
 	Base item definition
@@ -145,7 +143,7 @@ public:
 	// TODO: should be moved elsewhere in the future
 
 	// Get item inventory texture
-	virtual video::ITexture* getInventoryTexture(const ItemStack &item, Client *client) const
+    virtual img::Image* getInventoryTexture(const ItemStack &item, Client *client) const
 	{ return nullptr; }
 
 	/**
@@ -156,7 +154,7 @@ public:
 	{ return nullptr; }
 
 	// Get item palette
-	virtual Palette* getPalette(const ItemStack &item, Client *client) const
+    virtual img::Palette* getPalette(const ItemStack &item, Client *client) const
 	{ return nullptr; }
 
 	// Returns the base color of an item stack: the color of all

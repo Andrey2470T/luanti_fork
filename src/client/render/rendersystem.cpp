@@ -20,9 +20,45 @@
 #include "client/ao/animation.h"
 #include "client/ui/hud.h"
 #include "client/ui/minimap.h"
-#include "gui/IGUIEnvironment.h"
+#include "gui/guiEnvironment.h"
 
-const img::color8 RenderSystem::menu_sky_color = img::color8(img::PF_RGBA8, 140, 186, 250, 255);
+void FpsControl::reset()
+{
+    last_time = porting::getTimeUs();
+}
+
+void FpsControl::limit(core::MainWindow *wnd, f32 *dtime)
+{
+    const float fps_limit = wnd->isFocused()
+            ? g_settings->getFloat("fps_max")
+            : g_settings->getFloat("fps_max_unfocused");
+    const u64 frametime_min = 1000000.0f / std::max(fps_limit, 1.0f);
+
+    u64 time = porting::getTimeUs();
+
+    if (time > last_time) // Make sure time hasn't overflowed
+        busy_time = time - last_time;
+    else
+        busy_time = 0;
+
+    if (busy_time < frametime_min) {
+        sleep_time = frametime_min - busy_time;
+        porting::preciseSleepUs(sleep_time);
+    } else {
+        sleep_time = 0;
+    }
+
+    // Read the timer again to accurately determine how long we actually slept,
+    // rather than calculating it by adding sleep_time to time.
+    time = porting::getTimeUs();
+
+    if (time > last_time) // Make sure last_time hasn't overflowed
+        *dtime = (time - last_time) / 1000000.0f;
+    else
+        *dtime = 0;
+
+    last_time = time;
+}
 
 RenderSystem::RenderSystem(ResourceCache *_cache)
     : cache(_cache)
@@ -34,7 +70,9 @@ RenderSystem::RenderSystem(ResourceCache *_cache)
     auto glParams = window->getGLParams();
     renderer = std::make_unique<Renderer>(cache, recti(0, 0, viewport.X, viewport.Y), glParams->maxTextureUnits);
 
-    guienv = std::make_unique<GUIEnvironment>(this, window->getWindowSize(), cache);
+    guienv = std::make_unique<gui::CGUIEnvironment>(this, window->getWindowSize(), cache);
+
+    guiPool = std::make_unique<AtlasPool>(AtlasType::RECTPACK2D, "GUI", cache, window->getGLParams()->maxTextureSize, false);
 
     g_settings->registerChangedCallback("fullscreen", settingChangedCallback, this);
     g_settings->registerChangedCallback("window_maximized", settingChangedCallback, this);
@@ -64,7 +102,6 @@ void RenderSystem::initRenderEnvironment(Client *_client)
     gameui = std::make_unique<GameUI>(client);
 
     basePool = std::make_unique<AtlasPool>(AtlasType::RECTPACK2D, "Basic", cache, window->getGLParams()->maxTextureSize, true);
-    guiPool = std::make_unique<AtlasPool>(AtlasType::RECTPACK2D, "GUI", cache, window->getGLParams()->maxTextureSize, false);
 }
 
 AtlasPool *RenderSystem::getPool(bool basic) const
@@ -101,6 +138,18 @@ void RenderSystem::activateAtlas(img::Image *img, bool basic_pool)
     if (!texture)
         return;
     renderer->setTexture(texture);
+}
+
+void RenderSystem::buildGUIAtlas()
+{
+    auto texpaths = getTexturesDefaultPaths();
+
+    for (auto &path : texpaths) {
+        for (auto &entry : fs::directory_iterator(path))
+            guiPool->addTile(entry.path());
+    }
+
+    guiPool->buildRectpack2DAtlas();
 }
 
 void RenderSystem::initWindow()

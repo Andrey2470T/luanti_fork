@@ -6,7 +6,7 @@
 #include "gui/mainmenumanager.h"
 #include "gui/touchcontrols.h"
 
-bool MtEventReceiver::OnEvent(const Event &event)
+bool MyEventReceiver::OnEvent(const Event &event)
 {
     if (event.Type == ET_LOG_TEXT_EVENT) {
         assert(event.Log.Level < LL_MAX);
@@ -50,7 +50,7 @@ bool MtEventReceiver::OnEvent(const Event &event)
 	if (isMenuActive()) {
 		if (g_touchcontrols)
 			g_touchcontrols->setVisible(false);
-		return g_menumgr.preprocessEvent(event);
+        return g_menumgr->preprocessEvent(event);
 	}
 
 	// Remember whether each key is down or up

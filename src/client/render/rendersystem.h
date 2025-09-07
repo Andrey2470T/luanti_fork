@@ -10,7 +10,6 @@
 class Client;
 class RenderPipeline;
 class Hud;
-class GUIEnvironment;
 //class ShadowRenderer;
 class ResourceCache;
 class LoadScreen;
@@ -27,11 +26,27 @@ class GameUI;
 class TransformNodeManager;
 class AnimationManager;
 class Minimap;
-	
+
+namespace gui
+{
+class IGUIEnvironment;
+}
+
+struct FpsControl {
+    FpsControl() : last_time(0), busy_time(0), sleep_time(0) {}
+
+    void reset();
+
+    void limit(core::MainWindow *wnd, f32 *dtime);
+
+    u32 getBusyMs() const { return busy_time / 1000; }
+
+    // all values in microseconds (us)
+    u64 last_time, busy_time, sleep_time;
+};
+
 class RenderSystem
 {
-	static const img::color8 menu_sky_color;
-
     Client *client = nullptr;
 	ResourceCache *cache;
 
@@ -50,7 +65,7 @@ class RenderSystem
     std::unique_ptr<AnimationManager> anim_mgr;
 
     std::unique_ptr<GameUI> gameui;
-    std::unique_ptr<GUIEnvironment> guienv;
+    std::unique_ptr<gui::IGUIEnvironment> guienv;
 	//std::unique_ptr<ShadowRenderer> shadow_renderer;
 
     std::unique_ptr<AtlasPool> basePool;
@@ -110,7 +125,7 @@ public:
     {
         return gameui.get();
     }
-    GUIEnvironment *getGUIEnvironment() const
+    gui::IGUIEnvironment *getGUIEnvironment() const
     {
         return guienv.get();
     }
@@ -162,6 +177,8 @@ public:
     void setWindowIcon();
 
     void activateAtlas(img::Image *img, bool basic_pool=true);
+
+    void buildGUIAtlas();
 
     bool run()
     {

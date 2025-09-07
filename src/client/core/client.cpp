@@ -8,6 +8,7 @@
 #include <cmath>
 #include <json/json.h>
 #include "client.h"
+#include "client/sound/soundopenal.h"
 #include "client/ui/gameui.h"
 #include "client/ui/hud.h"
 #include "client/core/clientevent.h"
@@ -43,71 +44,30 @@
 #include "nodedef.h"
 #include "database/database-sqlite3.h"
 #include "client/core/clienteventhandler.h"
-
-void FpsControl::reset()
-{
-    last_time = porting::getTimeUs();
-}
-
-void FpsControl::limit(core::MainWindow *wnd, f32 *dtime)
-{
-    const float fps_limit = wnd->isFocused()
-            ? g_settings->getFloat("fps_max")
-            : g_settings->getFloat("fps_max_unfocused");
-    const u64 frametime_min = 1000000.0f / std::max(fps_limit, 1.0f);
-
-    u64 time = porting::getTimeUs();
-
-    if (time > last_time) // Make sure time hasn't overflowed
-        busy_time = time - last_time;
-    else
-        busy_time = 0;
-
-    if (busy_time < frametime_min) {
-        sleep_time = frametime_min - busy_time;
-        porting::preciseSleepUs(sleep_time);
-    } else {
-        sleep_time = 0;
-    }
-
-    // Read the timer again to accurately determine how long we actually slept,
-    // rather than calculating it by adding sleep_time to time.
-    time = porting::getTimeUs();
-
-    if (time > last_time) // Make sure last_time hasn't overflowed
-        *dtime = (time - last_time) / 1000000.0f;
-    else
-        *dtime = 0;
-
-    last_time = time;
-}
-
-extern gui::IGUIEnvironment* guienv;
+#include "chatmessanger.h"
+#include "itemdef.cpp"
+#include "client/event/eventmanager.h"
+#include "util/quicktune_shortcutter.h"
 
 /*
 	Client
 */
 
-Client::Client(
-		const char *playername,
-		const std::string &password,
-		IWritableItemDefManager *itemdef,
-		NodeDefManager *nodedef,
-		ISoundManager *sound,
-        MtEventManager *event
-):
-	m_itemdef(itemdef),
-	m_nodedef(nodedef),
-	m_sound(sound),
-	m_event(event),
-    m_resource_cache(std::make_unique<ResourceCache>()),
-    m_render_system(std::make_unique<RenderSystem>(this, m_resource_cache.get())),
+Client::Client(ResourceCache *resource_cache, RenderSystem *render_system,
+        const char *playername,
+        const std::string &password):
+    m_eventmgr(std::make_unique<EventManager>()),
+    m_itemdef(std::make_unique<CItemDefManager>()),
+    m_nodedef(std::make_unique<NodeDefManager>()),
+    m_quicktune(std::make_unique<QuicktuneShortcutter>()),
+    m_resource_cache(resource_cache),
+    m_render_system(render_system),
 	m_env(this),
-	m_last_chat_message_sent(time(NULL)),
 	m_password(password),
 	m_chosen_auth_mech(AUTH_MECHANISM_NONE),
 	m_media_downloader(new ClientMediaDownloader()),
-	m_modchannel_mgr(new ModChannelMgr())
+    m_modchannel_mgr(new ModChannelMgr()),
+    m_chat_msger(std::make_unique<ChatMessanger>(this))
 {
 	// Add local player
 	m_env.setLocalPlayer(new LocalPlayer(this, playername));
@@ -118,6 +78,58 @@ Client::Client(
 	m_mod_storage_database->beginSave();
 
 	m_cache_save_interval = g_settings->getU16("server_map_save_interval");
+
+    initSound();
+}
+
+bool Client::initSound()
+{
+#if USE_SOUND
+    if (g_sound_manager_singleton.get()) {
+        infostream << "Attempting to use OpenAL audio" << std::endl;
+        m_sound = createOpenALSoundManager(g_sound_manager_singleton.get(),
+                std::make_unique<SoundFallbackPathProvider>());
+        if (!m_sound)
+            infostream << "Failed to initialize OpenAL audio" << std::endl;
+    } else {
+        infostream << "Sound disabled." << std::endl;
+    }
+#endif
+
+    if (!m_sound) {
+        infostream << "Using dummy audio." << std::endl;
+        m_sound = std::make_unique<DummySoundManager>();
+    }
+
+    m_soundmaker = std::make_unique<SoundMaker>(m_sound.get(), m_nodedef.get());
+    if (!m_soundmaker)
+        return false;
+
+    m_soundmaker->registerReceiver(m_eventmgr.get());
+
+    return true;
+}
+
+bool Client::shouldShowTouchControls()
+{
+    const std::string &touch_controls = g_settings->get("touch_controls");
+    if (touch_controls == "auto")
+        return RenderingEngine::getLastPointerType() == PointerType::Touch;
+    return is_yes(touch_controls);
+}
+
+bool Client::initGui()
+{
+    m_render_system->getGameUI()->init();
+
+    m_chat_msger->init(m_render_system->getGUIEnvironment());
+
+    if (shouldShowTouchControls()) {
+        g_touchcontrols = new TouchControls(device, texture_src);
+        g_touchcontrols->setUseCrosshair(!isTouchCrosshairDisabled());
+    }
+
+    return true;
 }
 
 void Client::migrateModStorage()
@@ -329,8 +341,6 @@ void Client::step(float dtime)
 	if (dtime > DTIME_LIMIT)
 		dtime = DTIME_LIMIT;
 
-	m_time_of_day_update_timer += dtime;
-
     m_packet_handler->receiveAll();
 
 	/*
@@ -354,10 +364,7 @@ void Client::step(float dtime)
 	/*
 		Send pending messages on out chat queue
 	*/
-	if (!m_out_chat_queue.empty() && canSendChatMessage()) {
-		sendChatMessage(m_out_chat_queue.front());
-		m_out_chat_queue.pop();
-	}
+    m_chat_msger->sendFromQueue();
 
 	/*
 		Handle environment
@@ -716,48 +723,6 @@ void Client::startAuth(AuthMechanism chosen_auth_mechanism)
 	}
 }
 
-bool Client::canSendChatMessage() const
-{
-	u32 now = time(NULL);
-	float time_passed = now - m_last_chat_message_sent;
-
-	float virt_chat_message_allowance = m_chat_message_allowance + time_passed *
-			(CLIENT_CHAT_MESSAGE_LIMIT_PER_10S / 8.0f);
-
-	if (virt_chat_message_allowance < 1.0f)
-		return false;
-
-	return true;
-}
-
-void Client::sendChatMessage(const std::wstring &message)
-{
-	const s16 max_queue_size = g_settings->getS16("max_out_chat_queue_size");
-	if (canSendChatMessage()) {
-		u32 now = time(NULL);
-		float time_passed = now - m_last_chat_message_sent;
-		m_last_chat_message_sent = now;
-
-		m_chat_message_allowance += time_passed * (CLIENT_CHAT_MESSAGE_LIMIT_PER_10S / 8.0f);
-		if (m_chat_message_allowance > CLIENT_CHAT_MESSAGE_LIMIT_PER_10S)
-			m_chat_message_allowance = CLIENT_CHAT_MESSAGE_LIMIT_PER_10S;
-
-		m_chat_message_allowance -= 1.0f;
-
-        m_packet_handler->sendChatMessage(message);
-	} else if (m_out_chat_queue.size() < (u16) max_queue_size || max_queue_size < 0) {
-		m_out_chat_queue.push(message);
-	} else {
-		infostream << "Could not queue chat message because maximum out chat queue size ("
-				<< max_queue_size << ") is reached." << std::endl;
-	}
-}
-
-void Client::clearOutChatQueue()
-{
-	m_out_chat_queue = std::queue<std::wstring>();
-}
-
 void Client::sendChangePassword(const std::string &oldpassword,
 	const std::string &newpassword)
 {
@@ -815,22 +780,6 @@ v3s16 Client::CSMClampPos(v3s16 pos)
 	);
 }
 
-void Client::inventoryAction(InventoryAction *a)
-{
-	/*
-		Send it to the server
-	*/
-    m_packet_handler->sendInventoryAction(a);
-
-	/*
-		Predict some local inventory changes
-	*/
-	a->clientApply(this, this);
-
-	// Remove it
-	delete a;
-}
-
 /*int Client::getCrackLevel()
 {
 	return m_crack_level;
@@ -861,54 +810,6 @@ void Client::setCrack(int level, v3s16 pos)
 	}
 }*/
 
-bool Client::getChatMessage(std::wstring &res)
-{
-	if (m_chat_queue.empty())
-		return false;
-
-	ChatMessage *chatMessage = m_chat_queue.front();
-	m_chat_queue.pop();
-
-	res = L"";
-
-	switch (chatMessage->type) {
-		case CHATMESSAGE_TYPE_RAW:
-		case CHATMESSAGE_TYPE_ANNOUNCE:
-		case CHATMESSAGE_TYPE_SYSTEM:
-			res = chatMessage->message;
-			break;
-		case CHATMESSAGE_TYPE_NORMAL: {
-			if (!chatMessage->sender.empty())
-				res = L"<" + chatMessage->sender + L"> " + chatMessage->message;
-			else
-				res = chatMessage->message;
-			break;
-		}
-		default:
-			break;
-	}
-
-	delete chatMessage;
-	return true;
-}
-
-void Client::typeChatMessage(const std::wstring &message)
-{
-	// Discard empty line
-	if (message.empty())
-		return;
-
-	auto message_utf8 = wide_to_utf8(message);
-	infostream << "Typed chat message: \"" << message_utf8 << "\"" << std::endl;
-
-	// If message was consumed by script API, don't send it to server
-	if (m_mods_loaded && m_script->on_sending_message(message_utf8))
-		return;
-
-	// Send to others
-	sendChatMessage(message);
-}
-
 float Client::mediaReceiveProgress()
 {
 	if (m_media_downloader)
@@ -923,7 +824,7 @@ float Client::mediaReceiveProgress()
 }*/
 
 struct TextureUpdateArgs {
-	gui::IGUIEnvironment *guienv;
+    gui::IGUIEnvironment *guienv;
 	u64 last_time_ms;
 	u16 last_percent;
 	std::wstring text_base;
@@ -969,7 +870,7 @@ void Client::afterContentReceived()
 	// Update node aliases
 	infostream<<"- Updating node aliases"<<std::endl;
     loadscreen->draw(wndsize, wstrgettext("Initializing nodes..."), 0.0f, enable_clouds, 72, scale_factor);
-	m_nodedef->updateAliases(m_itemdef);
+    m_nodedef->updateAliases(m_itemdef.get());
 
     fs::path base_pack;
     base_pack /= fs::path("base") /= "pack";
@@ -986,11 +887,11 @@ void Client::afterContentReceived()
 	// Update node textures and assign shaders to each tile
 	infostream<<"- Updating node textures"<<std::endl;
 	TextureUpdateArgs tu_args;
-	tu_args.guienv = guienv;
+    tu_args.guienv = m_render_system->getGUIEnvironment();
 	tu_args.last_time_ms = porting::getTimeMs();
 	tu_args.last_percent = 0;
 	tu_args.text_base = wstrgettext("Initializing nodes");
-    tu_args.cache = m_resource_cache.get();
+    tu_args.cache = m_resource_cache;
 	m_nodedef->updateTextures(this, &tu_args);
 
 	// Start mesh update thread after setting up content definitions
@@ -1081,11 +982,11 @@ void Client::afterContentReceived()
 // Under envlock
 IItemDefManager* Client::getItemDefManager()
 {
-	return m_itemdef;
+    return m_itemdef.get();
 }
 const NodeDefManager* Client::getNodeDefManager()
 {
-	return m_nodedef;
+    return m_nodedef.get();
 }
 ICraftDefManager* Client::getCraftDefManager()
 {
@@ -1103,7 +1004,7 @@ u16 Client::allocateUnknownNodeId(const std::string &name)
 }
 ISoundManager* Client::getSoundManager()
 {
-	return m_sound;
+    return m_sound.get();
 }
 MtEventManager* Client::getEventManager()
 {

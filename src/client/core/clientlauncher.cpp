@@ -95,6 +95,8 @@ bool ClientLauncher::run(GameStartData &start_data, const Settings &cmd_args)
 
     render_system->setResizable(true);
 
+    render_system->buildGUIAtlas();
+
     init_input();
 
     config_guienv();
@@ -104,12 +106,6 @@ bool ClientLauncher::run(GameStartData &start_data, const Settings &cmd_args)
     g_settings->registerChangedCallback("gui_scaling", setting_changed_callback, this);
 
     g_menumgr = std::make_unique<MainMenuManager>(render_system.get(), resource_cache.get());
-
-    /*
-        GUI stuff
-    */
-
-    ChatBackend chat_backend;
 
     // If an error occurs, this is set to something by menu().
     // It is then displayed before the menu shows on the next call to menu()
@@ -138,14 +134,14 @@ bool ClientLauncher::run(GameStartData &start_data, const Settings &cmd_args)
 #ifdef NDEBUG
         try {
 #endif
-            render_system->get_gui_env()->clear();
+            render_system->getGUIEnvironment()->clear();
 
             /*
                 We need some kind of a root node to be able to add
                 custom gui elements directly on the screen.
                 Otherwise they won't be automatically drawn.
             */
-            render_system->get_gui_env()->addStaticText(L"",
+            render_system->getGUIEnvironment()->addStaticText(L"",
                recti(0, 0, 10000, 10000));
 
             bool should_run_game = launch_game(error_message, reconnect_requested,
@@ -171,11 +167,11 @@ bool ClientLauncher::run(GameStartData &start_data, const Settings &cmd_args)
 
             the_game(
                 kill,
-                input,
-                render_system,
+                input.get(),
+                render_system.get(),
+                resource_cache.get(),
                 start_data,
                 error_message,
-                chat_backend,
                 &reconnect_requested
             );
 #ifdef NDEBUG
@@ -249,7 +245,7 @@ bool ClientLauncher::init_engine()
     resource_cache = std::make_unique<ResourceCache>();
     try {
         render_system = std::make_unique<RenderSystem>(resource_cache.get());
-        receiver = std::make_unique<MtEventReceiver>(render_system->getWindow());
+        receiver = std::make_unique<MyEventReceiver>(render_system->getWindow());
     } catch (std::exception &e) {
         errorstream << e.what() << std::endl;
     }
@@ -504,7 +500,7 @@ void ClientLauncher::main_menu(MainMenuData *menudata)
     while (render_system->run() && !*kill) {
         if (!isMenuActive())
             break;
-        ctxt->clearBuffers(render::CBF_COLOR | render::CBF_DEPTH, img::color8(img::PF_RGBA8, 128, 128, 128, 255));
+        ctxt->clearBuffers(render::CBF_COLOR | render::CBF_DEPTH, img::gray);
         render_system->getGUIEnvironment()->drawAll();
         framemarker.end();
         // On some computers framerate doesn't seem to be automatically limited

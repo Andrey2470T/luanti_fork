@@ -11,6 +11,7 @@ set(ao_SRCS
 )
 
 set(core_SRCS
+	${CMAKE_CURRENT_SOURCE_DIR}/core/chatmessanger.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/core/client.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/core/clientenvironment.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/core/clienteventhandler.cpp

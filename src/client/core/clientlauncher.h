@@ -11,7 +11,7 @@ class Settings;
 struct GameStartData;
 struct MainMenuData;
 class RenderSystem;
-class MtEventReceiver;
+class MyEventReceiver;
 class InputHandler;
 class ResourceCache;
 
@@ -43,6 +43,6 @@ private:
 
     std::unique_ptr<ResourceCache> resource_cache;
     std::unique_ptr<RenderSystem> render_system;
-    std::unique_ptr<MtEventReceiver> receiver;
+    std::unique_ptr<MyEventReceiver> receiver;
     std::unique_ptr<InputHandler> input;
 };

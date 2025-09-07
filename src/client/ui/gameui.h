@@ -99,6 +99,7 @@ public:
 
 	void updateProfiler();
 
+    void toggleMinimalDebug();
 	void toggleChat(Client *client);
 	void toggleHud();
 	void toggleProfiler();

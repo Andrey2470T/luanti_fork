@@ -80,6 +80,8 @@ void ClientEnvironment::step(float dtime)
     rnd_sys->getPool(false)->updateAnimatedTiles(m_animation_time);
     rnd_sys->getPool(true)->updateAnimatedTiles(m_animation_time);
 
+    m_time_of_day_update_timer += dtime;
+
 	/* Step time of day */
 	stepTimeOfDay(dtime);
 
