@@ -118,6 +118,7 @@ PlayerCamera::PlayerCamera(Client *client):
 	m_arm_inertia               = g_settings->getBool("arm_inertia");
 	m_nametags.clear();
 	m_show_nametag_backgrounds  = g_settings->getBool("show_nametag_backgrounds");
+    m_touch_use_crosshair       = g_settings->getBool("touch_use_crosshair");
 }
 
 PlayerCamera::~PlayerCamera()

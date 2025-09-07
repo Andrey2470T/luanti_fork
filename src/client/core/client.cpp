@@ -16,6 +16,7 @@
 #include "client/sound/sound.h"
 #include "client/media/resource.h"
 #include "client/player/localplayer.h"
+#include "gui/touchcontrols.h"
 #include "util/auth.h"
 #include "util/string.h"
 #include "util/srp.h"
@@ -48,12 +49,15 @@
 #include "itemdef.cpp"
 #include "client/event/eventmanager.h"
 #include "util/quicktune_shortcutter.h"
+#include "client/event/inputhandler.h"
+#include "chat.h"
 
 /*
 	Client
 */
 
 Client::Client(ResourceCache *resource_cache, RenderSystem *render_system,
+        InputHandler *input,
         const char *playername,
         const std::string &password):
     m_eventmgr(std::make_unique<EventManager>()),
@@ -62,12 +66,13 @@ Client::Client(ResourceCache *resource_cache, RenderSystem *render_system,
     m_quicktune(std::make_unique<QuicktuneShortcutter>()),
     m_resource_cache(resource_cache),
     m_render_system(render_system),
+    m_input(input),
 	m_env(this),
-	m_password(password),
-	m_chosen_auth_mech(AUTH_MECHANISM_NONE),
-	m_media_downloader(new ClientMediaDownloader()),
-    m_modchannel_mgr(new ModChannelMgr()),
-    m_chat_msger(std::make_unique<ChatMessanger>(this))
+    m_chat_msger(std::make_unique<ChatMessanger>(this)),
+    m_password(password),
+    m_chosen_auth_mech(AUTH_MECHANISM_NONE),
+    m_media_downloader(new ClientMediaDownloader()),
+    m_modchannel_mgr(new ModChannelMgr())
 {
 	// Add local player
 	m_env.setLocalPlayer(new LocalPlayer(this, playername));
@@ -78,8 +83,6 @@ Client::Client(ResourceCache *resource_cache, RenderSystem *render_system,
 	m_mod_storage_database->beginSave();
 
 	m_cache_save_interval = g_settings->getU16("server_map_save_interval");
-
-    initSound();
 }
 
 bool Client::initSound()
@@ -114,7 +117,7 @@ bool Client::shouldShowTouchControls()
 {
     const std::string &touch_controls = g_settings->get("touch_controls");
     if (touch_controls == "auto")
-        return RenderingEngine::getLastPointerType() == PointerType::Touch;
+        return m_input->getReceiver()->getLastPointerType() == PointerType::Touch;
     return is_yes(touch_controls);
 }
 
@@ -316,6 +319,11 @@ bool Client::isShutdown()
 
 Client::~Client()
 {
+    m_chat_msger->getBackend()->addMessage(L"", L"# Disconnected.");
+    m_chat_msger->getBackend()->addMessage(L"", L"");
+
+    Stop();
+
 	m_shutdown = true;
 
 	deleteAuthData();

@@ -116,10 +116,6 @@ public:
     void shutdown();
 
 protected:
-
-    // Basic initialisation
-    bool init(const std::string &map_dir, const std::string &address,
-            u16 port, const SubgameSpec &gamespec);
     bool createSingleplayerServer(const std::string &map_dir,
             const SubgameSpec &gamespec, u16 port);
     void copyServerClientCache();
@@ -278,10 +274,6 @@ private:
     bool m_is_paused = false;
 
     bool m_touch_simulate_aux1 = false;
-    bool m_touch_use_crosshair;
-    inline bool isTouchCrosshairDisabled() {
-        return !m_touch_use_crosshair && camera->getCameraMode() == CAMERA_MODE_FIRST;
-    }
 #ifdef __ANDROID__
     bool m_android_chat_open;
 #endif

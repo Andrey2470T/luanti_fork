@@ -33,6 +33,11 @@ class ChatMessanger
 public:
 	ChatMessanger(Client *_client);
 
+    ChatBackend *getBackend() const
+    {
+        return chat_backend.get();
+    }
+
     void init(gui::IGUIEnvironment *guienv);
 
 	bool getChatMessage(std::wstring &message);

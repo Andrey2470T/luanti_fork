@@ -256,9 +256,9 @@ bool ClientLauncher::init_engine()
 void ClientLauncher::init_input()
 {
     if (random_input)
-        input = std::make_unique<RandomInputHandler>();
+        input = std::make_unique<RandomInputHandler>(receiver.get());
     else
-        input = std::make_unique<RealInputHandler>(receiver);
+        input = std::make_unique<RealInputHandler>(receiver.get());
 
     if (g_settings->getBool("enable_joysticks"))
         init_joysticks();

@@ -7,6 +7,7 @@
 #include "client/core/client.h"
 #include "nodedef.h"
 #include "client/map/clientmap.h"
+#include "scripting_client.h"
 #include "settings.h"
 #include "mapblock.h"
 #include "gettext.h"
@@ -194,6 +195,9 @@ Minimap::Minimap(Client *_client, Renderer *_renderer, ResourceCache *_cache)
     data->textures_initialised = true;
 
     m_minimap_shader = cache->getOrLoad<render::Shader>(ResourceType::SHADER, "minimap");
+
+    if (client->modsLoaded())
+        client->getScript()->on_minimap_ready(this);
 
 	// Initialize and start thread
 	m_minimap_update_thread = std::make_unique<MinimapUpdateThread>();

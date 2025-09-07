@@ -7,6 +7,7 @@
 #include "client/event/eventsystem.h"
 #include "collision.h"
 #include "nodedef.h"
+#include "scripting_client.h"
 #include "settings.h"
 #include "environment.h"
 #include "map.h"
@@ -63,6 +64,9 @@ LocalPlayer::LocalPlayer(Client *client, const std::string &name):
     Player(name, client->idef()),
     m_client(client), m_camera(std::make_unique<PlayerCamera>(client))
 {
+    if (client->modsLoaded())
+        client->getScript()->on_camera_ready(m_camera.get());
+
 	m_player_settings.readGlobalSettings();
 	m_player_settings.registerSettingsCallback();
 }

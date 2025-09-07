@@ -4,9 +4,9 @@
 
 #include "game.h"
 
+#include "client.h"
 #include <cmath>
 #include "client/player/playercamera.h"
-#include "client.h"
 #include "clientevent.h"
 #include "client/ui/gameui.h"
 #include "client/ui/gameformspec.h"
@@ -55,6 +55,8 @@
 #include "util/tracy_wrapper.h"
 #include "client/sound/soundmaker.h"
 #include "client/render/rendersystem.h"
+#include "client/network/packethandler.h"
+#include "client/render/loadscreen.h"
 
 #if USE_SOUND
 	#include "client/sound/sound_openal.h"
@@ -148,14 +150,17 @@ bool Game::startup(bool *kill, InputHandler *input, RenderSystem *rndsys, Resour
 
 	m_first_loop_after_window_activation = true;
 
-    //m_touch_use_crosshair = g_settings->getBool("touch_use_crosshair");
-
     //g_client_translations->clear();
 
-	// address can change if simple_singleplayer_mode
-	if (!init(start_data.world_spec.path, start_data.address,
-			start_data.socket_port, start_data.game_spec))
-		return false;
+    showOverlayMessage(N_("Loading..."), 0, 0);
+
+    // Create a server if not connecting to an existing one
+    // address can change if simple_singleplayer_mode
+    if (start_data.address.empty() && !createSingleplayerServer(
+                start_data.world_spec.path,
+                start_data.game_spec, start_data.socket_port)) {
+            return false;
+    }
 
 	if (!createClient(start_data))
 		return false;
@@ -278,9 +283,6 @@ void Game::run()
 
 void Game::shutdown()
 {
-	// Clear text when exiting.
-	m_game_ui->clearText();
-
 	if (g_touchcontrols)
 		g_touchcontrols->hide();
 
@@ -288,36 +290,10 @@ void Game::shutdown()
 	if (m_shutdown_progress == 0.0f)
 		showOverlayMessage(N_("Shutting down..."), 0, 0);
 
-	clouds.reset();
-
-	gui_chat_console.reset();
-
-	sky.reset();
-
 	/* cleanup menus */
 	while (g_menumgr.menuCount() > 0) {
 		g_menumgr.deleteFront();
 	}
-
-	chat_backend->addMessage(L"", L"# Disconnected.");
-	chat_backend->addMessage(L"", L"");
-
-	if (client) {
-		client->Stop();
-		while (!client->isShutdown()) {
-			assert(texture_src != NULL);
-			assert(shader_src != NULL);
-			texture_src->processQueue();
-			shader_src->processQueue();
-			sleep_ms(100);
-		}
-	}
-
-	delete client;
-	client = nullptr;
-	delete soundmaker;
-	soundmaker = nullptr;
-	sound_manager.reset();
 
 	auto stop_thread = runInThread([=] {
 		delete server;
@@ -345,23 +321,6 @@ void Game::shutdown()
  Startup
  ****************************************************************************/
 /****************************************************************************/
-
-bool Game::init(
-		const std::string &map_dir,
-		const std::string &address,
-		u16 port,
-		const SubgameSpec &gamespec)
-{
-	showOverlayMessage(N_("Loading..."), 0, 0);
-
-	// Create a server if not connecting to an existing one
-	if (address.empty()) {
-		if (!createSingleplayerServer(map_dir, gamespec, port))
-			return false;
-	}
-
-	return true;
-}
 
 bool Game::createSingleplayerServer(const std::string &map_dir,
 		const SubgameSpec &gamespec, u16 port)
@@ -477,38 +436,26 @@ bool Game::createClient(const GameStartData &start_data)
 	// Update cached textures, meshes and materials
 	client->afterContentReceived();
 
-	/* Camera
-	 */
-	camera = new Camera(*draw_control, client, m_rendering_engine);
-	if (client->modsLoaded())
-		client->getScript()->on_camera_ready(camera);
-	client->setCamera(camera);
-
-	/* Clouds
-	 */
-	clouds = make_irr<Clouds>(smgr, shader_src, -1, myrand());
-
-	/* Skybox
-	 */
-	sky = make_irr<Sky>(-1, m_rendering_engine, texture_src, shader_src);
-	scsf->setSky(sky.get());
-
 	/* Pre-calculated values
 	 */
-	video::ITexture *t = texture_src->getTexture("crack_anylength.png");
+    /*video::ITexture *t = texture_src->getTexture("crack_anylength.png");
 	if (t) {
 		v2u32 size = t->getOriginalSize();
 		crack_animation_length = size.Y / size.X;
 	} else {
 		crack_animation_length = 5;
-	}
+    }*/
 
-	if (!initGui())
-		return false;
+    if (!client->initGui())
+        return false;
+
+    if (!client->initSound())
+        return false;
 
 	/* Set window caption
 	 */
-	auto driver_name = driver->getName();
+    auto wnd = rndsys->getWindow();
+    auto driver_name = wnd->getGLVersion();
 	std::string str = std::string(PROJECT_NAME_C) +
 			" " + g_version_hash + " [";
 	str += simple_singleplayer_mode ? gettext("Singleplayer")
@@ -517,18 +464,7 @@ bool Game::createClient(const GameStartData &start_data)
 	str += driver_name;
 	str += "]";
 
-	device->setWindowCaption(utf8_to_wide(str).c_str());
-
-	LocalPlayer *player = client->getEnv().getLocalPlayer();
-	player->hurt_tilt_timer = 0;
-	player->hurt_tilt_strength = 0;
-
-	hud = new Hud(client, player, &player->inventory);
-
-	mapper = client->getMinimap();
-
-	if (mapper && client->modsLoaded())
-		client->getScript()->on_minimap_ready(mapper);
+    wnd->setCaption(utf8_to_wide(str));
 
 	return true;
 }
@@ -590,12 +526,12 @@ bool Game::connectToServer(const GameStartData &start_data,
 
 
 	try {
-		client = new Client(start_data.name.c_str(),
-				start_data.password,
-				*draw_control, texture_src, shader_src,
-				itemdef_manager, nodedef_manager, sound_manager.get(), eventmgr,
-				m_rendering_engine,
-				start_data.allow_login_or_register);
+        client = new Client(
+                rndsys,
+                rescache,
+                input,
+                start_data.name.c_str(),
+                start_data.password);
 	} catch (const BaseException &e) {
 		*error_message = fmtgettext("Error creating client: %s", e.what());
 		errorstream << *error_message << std::endl;
@@ -609,7 +545,9 @@ bool Game::connectToServer(const GameStartData &start_data,
 		Wait for server to accept connection
 	*/
 
-	client->connect(connect_address, address_name,
+    auto pkt_handler = client->getPacketHandler();
+
+    pkt_handler->connect(connect_address, address_name,
 		simple_singleplayer_mode || local_server_mode);
 
 	try {
@@ -624,10 +562,10 @@ bool Game::connectToServer(const GameStartData &start_data,
 
 		auto framemarker = FrameMarker("Game::connectToServer()-frame").started();
 
-		while (m_rendering_engine->run()) {
+        while (rndsys->run()) {
 
 			framemarker.end();
-			fps_control.limit(device, &dtime);
+            fps_control.limit(rndsys->getWindow(), &dtime);
 			framemarker.start();
 
 			// Update client and server
@@ -643,9 +581,9 @@ bool Game::connectToServer(const GameStartData &start_data,
 			if (*connection_aborted)
 				break;
 
-			if (client->accessDenied()) {
-				*error_message = fmtgettext("Access denied. Reason: %s", client->accessDeniedReason().c_str());
-				*reconnect_requested = client->reconnectRequested();
+            if (pkt_handler->accessDenied()) {
+                *error_message = fmtgettext("Access denied. Reason: %s", pkt_handler->accessDeniedReason().c_str());
+                *reconnect_requested = pkt_handler->reconnectRequested();
 				errorstream << *error_message << std::endl;
 				break;
 			}
@@ -660,8 +598,8 @@ bool Game::connectToServer(const GameStartData &start_data,
 			if (local_server_mode) {
 				// never time out
 			} else if (wait_time > GAME_FALLBACK_TIMEOUT && !did_fallback) {
-				if (!client->hasServerReplied() && fallback_address.isValid()) {
-					client->connect(fallback_address, address_name,
+                if (!pkt_handler->hasServerReplied() && fallback_address.isValid()) {
+                    pkt_handler->connect(fallback_address, address_name,
 						simple_singleplayer_mode || local_server_mode);
 				}
 				did_fallback = true;
@@ -693,17 +631,19 @@ bool Game::getServerContent(bool *aborted)
 	fps_control.reset();
 
 	auto framemarker = FrameMarker("Game::getServerContent()-frame").started();
-	while (m_rendering_engine->run()) {
+
+    auto pkt_handler = client->getPacketHandler();
+
+    while (rndsys->run()) {
 		framemarker.end();
-		fps_control.limit(device, &dtime);
+        fps_control.limit(rndsys->getWindow(), &dtime);
 		framemarker.start();
 
 		// Update client and server
 		step(dtime);
 
 		// End condition
-		if (client->mediaReceived() && client->itemdefReceived() &&
-				client->nodedefReceived()) {
+        if (pkt_handler->itemdefReceived() && pkt_handler->nodedefReceived()) {
 			return true;
 		}
 
@@ -726,14 +666,12 @@ bool Game::getServerContent(bool *aborted)
 		// Display status
 		int progress = 25;
 
-		if (!client->itemdefReceived()) {
+        if (!pkt_handler->itemdefReceived()) {
 			progress = 25;
-			m_rendering_engine->draw_load_screen(wstrgettext("Item definitions..."),
-					guienv, texture_src, dtime, progress);
-		} else if (!client->nodedefReceived()) {
+            showOverlayMessage(N_("Item definitions..."), dtime, progress);
+        } else if (!pkt_handler->nodedefReceived()) {
 			progress = 30;
-			m_rendering_engine->draw_load_screen(wstrgettext("Node definitions..."),
-					guienv, texture_src, dtime, progress);
+            showOverlayMessage(N_("Node definitions..."), dtime, progress);
 		} else {
 			std::ostringstream message;
 			std::fixed(message);
@@ -746,7 +684,7 @@ bool Game::getServerContent(bool *aborted)
 
 			if ((USE_CURL == 0) ||
 					(!g_settings->getBool("enable_remote_media_server"))) {
-				float cur = client->getCurRate();
+                float cur = pkt_handler->getCurRate();
 				std::string cur_unit = gettext("KiB/s");
 
 				if (cur > 900) {
@@ -758,8 +696,7 @@ bool Game::getServerContent(bool *aborted)
 			}
 
 			progress = 30 + client->mediaReceiveProgress() * 35 + 0.5;
-			m_rendering_engine->draw_load_screen(utf8_to_wide(message.str()), guienv,
-				texture_src, dtime, progress);
+            showOverlayMessage(N_(message.str().c_str()), dtime, progress);
 		}
 	}
 	framemarker.end();
@@ -2131,8 +2068,8 @@ void Game::drawScene(ProfilerGraph *graph, RunStats *stats)
 
 void Game::showOverlayMessage(const char *msg, float dtime, int percent, float *indef_pos)
 {
-	m_rendering_engine->draw_load_screen(wstrgettext(msg), guienv, texture_src,
-			dtime, percent, indef_pos);
+    rndsys->getLoadScreen()->draw(rndsys->getWindowSize(), wstrgettext(msg),
+        dtime, g_settings->getBool("menu_clouds"), percent, rndsys->getScaleFactor(), indef_pos);
 }
 
 void Game::settingChangedCallback(const std::string &setting_name, void *data)

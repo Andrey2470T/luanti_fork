@@ -11,7 +11,8 @@
 class InputHandler
 {
 public:
-	InputHandler()
+    InputHandler(MyEventReceiver *_receiver)
+        : receiver(_receiver)
 	{
 		keycache.handler = this;
 		keycache.populate();
@@ -49,8 +50,15 @@ public:
 	virtual void clear() {}
 	virtual void releaseAllKeys() {}
 
+    MyEventReceiver *getReceiver() const
+    {
+        return receiver;
+    }
+
 	JoystickController joystick;
 	KeyCache keycache;
+
+    MyEventReceiver *receiver;
 };
 
 /*
@@ -60,31 +68,32 @@ public:
 class RealInputHandler final : public InputHandler
 {
 public:
-    RealInputHandler(MtEventReceiver *receiver) : m_receiver(receiver)
+    RealInputHandler(MyEventReceiver *receiver)
+        : InputHandler(receiver)
 	{
-		m_receiver->joystick = &joystick;
+        receiver->joystick = &joystick;
 	}
 
 	virtual ~RealInputHandler()
 	{
-		m_receiver->joystick = nullptr;
+        receiver->joystick = nullptr;
 	}
 
 	virtual bool isKeyDown(GameKeyType k)
 	{
-		return m_receiver->IsKeyDown(keycache.key[k]) || joystick.isKeyDown(k);
+        return receiver->IsKeyDown(keycache.key[k]) || joystick.isKeyDown(k);
 	}
 	virtual bool wasKeyDown(GameKeyType k)
 	{
-		return m_receiver->WasKeyDown(keycache.key[k]) || joystick.wasKeyDown(k);
+        return receiver->WasKeyDown(keycache.key[k]) || joystick.wasKeyDown(k);
 	}
     virtual bool wasMtKeyed(GameKeyType k)
 	{
-        return m_receiver->WasKeyPressed(keycache.key[k]) || joystick.wasKeyPressed(k);
+        return receiver->WasKeyPressed(keycache.key[k]) || joystick.wasKeyPressed(k);
 	}
 	virtual bool wasKeyReleased(GameKeyType k)
 	{
-		return m_receiver->WasKeyReleased(keycache.key[k]) || joystick.wasKeyReleased(k);
+        return receiver->WasKeyReleased(keycache.key[k]) || joystick.wasKeyReleased(k);
 	}
 
 	virtual float getJoystickSpeed();
@@ -98,20 +107,20 @@ public:
 
     virtual void clearWasMtKeyed()
 	{
-        m_receiver->clearWasKeyPressed();
+        receiver->clearWasKeyPressed();
 	}
 	virtual void clearWasKeyReleased()
 	{
-		m_receiver->clearWasKeyReleased();
+        receiver->clearWasKeyReleased();
 	}
 
     virtual void listenForKey(const MtKey &keyCode)
 	{
-		m_receiver->listenForKey(keyCode);
+        receiver->listenForKey(keyCode);
 	}
 	virtual void dontListenForKeys()
 	{
-		m_receiver->dontListenForKeys();
+        receiver->dontListenForKeys();
 	}
 
     virtual v2i getMousePos();
@@ -119,29 +128,28 @@ public:
 
 	virtual s32 getMouseWheel()
 	{
-		return m_receiver->getMouseWheel();
+        return receiver->getMouseWheel();
 	}
 
 	void clear()
 	{
 		joystick.clear();
-		m_receiver->clearInput();
+        receiver->clearInput();
 	}
 
 	void releaseAllKeys()
 	{
 		joystick.releaseAllKeys();
-		m_receiver->releaseAllKeys();
+        receiver->releaseAllKeys();
 	}
-
-private:
-    MtEventReceiver *m_receiver = nullptr;
 };
 
 class RandomInputHandler final : public InputHandler
 {
 public:
-	RandomInputHandler() = default;
+    RandomInputHandler(MyEventReceiver *receiver)
+        : InputHandler(receiver)
+    {}
 
 	bool isRandom() const
 	{

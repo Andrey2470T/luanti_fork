@@ -54,6 +54,7 @@ class ClientPacketHandler;
 class ClientEventHandler;
 class ChatMessanger;
 class QuicktuneShortcutter;
+class InputHandler;
 
 enum LocalClientState {
     LC_Created,
@@ -72,8 +73,10 @@ public:
 		NOTE: Nothing is thread-safe here.
 	*/
 
-    Client(ResourceCache *resource_cache,
+    Client(
+            ResourceCache *resource_cache,
             RenderSystem *render_system,
+            InputHandler *input,
             const char *playername,
             const std::string &password
     );
@@ -228,6 +231,7 @@ private:
 
     ResourceCache *m_resource_cache;
     RenderSystem *m_render_system;
+    InputHandler *m_input;
 
     std::unique_ptr<ClientPacketHandler> m_packet_handler;
     std::unique_ptr<ClientEventHandler> m_clientevent_handler;

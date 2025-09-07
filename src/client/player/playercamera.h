@@ -129,6 +129,10 @@ public:
     void addArmInertia(f32 player_yaw);
 
 private:
+    bool m_touch_use_crosshair;
+    inline bool isTouchCrosshairDisabled() {
+        return !m_touch_use_crosshair && m_camera_mode == CAMERA_MODE_FIRST;
+    }
     //scene::ISceneManager *m_wieldmgr = nullptr;
     WieldMeshSceneNode *m_wieldnode = nullptr;
 
