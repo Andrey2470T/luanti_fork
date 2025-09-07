@@ -18,6 +18,7 @@ extern img::ImageModifier *g_imgmodifier;
 class MeshBuffer;
 class ResourceCache;
 class DataTexture;
+struct FpsControl;
 
 using namespace render;
 
@@ -36,6 +37,19 @@ enum class TMatrix : u8
     Texture0
 };
 
+struct Jitter {
+    f32 max, min, avg, counter, max_sample, min_sample, max_fraction;
+};
+
+struct DrawStats
+{
+    u32 drawcalls;
+    u32 drawn_primitives;
+    f32 drawtime; // in us
+
+    Jitter dtime_jitter, busy_time_jitter;
+};
+
 class Renderer
 {
     std::unique_ptr<DrawContext> context;
@@ -48,6 +62,8 @@ class Renderer
 
     std::unique_ptr<render::UniformBuffer> matrix_buffer;
     std::unique_ptr<render::UniformBuffer> fog_buffer;
+
+    DrawStats stats;
 
     // Necessary as the matrix_buffer saves combined matrices (e.g. projection * view)
     matrix4 projM, viewM, worldM;
@@ -71,6 +87,11 @@ public:
     DrawContext *getContext() const
     {
         return context.get();
+    }
+
+    DrawStats &getDrawStats()
+    {
+        return stats;
     }
 
     void setRenderState(bool mode3d);
@@ -104,7 +125,11 @@ public:
 
     void draw(MeshBuffer *buffer, PrimitiveType type=PT_TRIANGLES,
         u32 offset=0, std::optional<u32> count=std::nullopt);
+
+    void updateStats(const FpsControl &draw_times, f32 dtime);
 private:
     void createDefaultShaders();
     void createUBOs();
+
+    u32 calcPrimitiveCount(PrimitiveType type, u32 count);
 };

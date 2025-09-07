@@ -21,6 +21,7 @@
 #include "client/ui/hud.h"
 #include "client/ui/minimap.h"
 #include "gui/guiEnvironment.h"
+#include "client/ui/gameformspec.h"
 
 void FpsControl::reset()
 {
@@ -100,6 +101,7 @@ void RenderSystem::initRenderEnvironment(Client *_client)
     anim_mgr = std::make_unique<AnimationManager>(node_mgr.get());
 
     gameui = std::make_unique<GameUI>(client);
+    gameformspec = std::make_unique<GameFormSpec>();
 
     basePool = std::make_unique<AtlasPool>(AtlasType::RECTPACK2D, "Basic", cache, window->getGLParams()->maxTextureSize, true);
 }

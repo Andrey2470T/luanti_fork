@@ -189,6 +189,8 @@ public:
         setFatalError(std::string("Lua: ") + e.what());
     }
 
+    bool checkConnection(std::string *error_msg, bool *reconnect_requested);
+
     bool itemdefReceived() const
     { return m_itemdef_received; }
     bool nodedefReceived() const

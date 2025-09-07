@@ -1,5 +1,6 @@
 #include "packethandler.h"
 
+#include "gettext.h"
 #include "network/connection.h"
 #include "network/networkpacket.h"
 #include "cmdtable.h"
@@ -332,6 +333,18 @@ void ClientPacketHandler::sendPlayerItem(u16 item)
     NetworkPacket pkt(TOSERVER_PLAYERITEM, 2);
     pkt << item;
     send(&pkt);
+}
+
+bool ClientPacketHandler::checkConnection(std::string *error_msg, bool *reconnect_requested)
+{
+    if (accessDenied()) {
+        *error_msg = fmtgettext("Access denied. Reason: %s", accessDeniedReason().c_str());
+        *reconnect_requested = reconnectRequested();
+        errorstream << *error_msg << std::endl;
+        return false;
+    }
+
+    return true;
 }
 
 const Address ClientPacketHandler::getServerAddress()

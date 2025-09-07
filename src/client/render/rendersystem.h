@@ -26,6 +26,8 @@ class GameUI;
 class TransformNodeManager;
 class AnimationManager;
 class Minimap;
+class GameFormSpec;
+class InputHandler;
 
 namespace gui
 {
@@ -66,6 +68,7 @@ class RenderSystem
 
     std::unique_ptr<GameUI> gameui;
     std::unique_ptr<gui::IGUIEnvironment> guienv;
+    std::unique_ptr<GameFormSpec> gameformspec;
 	//std::unique_ptr<ShadowRenderer> shadow_renderer;
 
     std::unique_ptr<AtlasPool> basePool;
@@ -128,6 +131,10 @@ public:
     gui::IGUIEnvironment *getGUIEnvironment() const
     {
         return guienv.get();
+    }
+    GameFormSpec *getGameFormSpec() const
+    {
+        return gameformspec.get();
     }
     /*ShadowRenderer *getShadowRenderer() const
     {

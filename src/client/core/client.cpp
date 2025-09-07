@@ -9,6 +9,7 @@
 #include <json/json.h>
 #include "client.h"
 #include "client/sound/soundopenal.h"
+#include "client/ui/gameformspec.h"
 #include "client/ui/gameui.h"
 #include "client/ui/hud.h"
 #include "client/core/clientevent.h"
@@ -124,6 +125,7 @@ bool Client::shouldShowTouchControls()
 bool Client::initGui()
 {
     m_render_system->getGameUI()->init();
+    m_render_system->getGameFormSpec()->init(this, m_render_system, m_input);
 
     m_chat_msger->init(m_render_system->getGUIEnvironment());
 

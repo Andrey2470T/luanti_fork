@@ -3,6 +3,7 @@
 #include <Image/ImageModifier.h>
 #include "client/mesh/meshbuffer.h"
 #include "client/media/resource.h"
+#include "client/render/rendersystem.h"
 #include "datatexture.h"
 
 // These binding points are reserved and can't be used for other UBOs
@@ -262,6 +263,56 @@ void Renderer::draw(MeshBuffer *buffer, PrimitiveType type,
         }
     }
     vao->draw(type, count.value(), offset);
+
+    stats.drawcalls++;
+    stats.drawn_primitives += calcPrimitiveCount(type, count.value());
+}
+
+void Renderer::updateStats(const FpsControl &draw_times, f32 dtime)
+{
+    f32 jitter;
+    Jitter *jp;
+
+    /* Time average and jitter calculation
+     */
+    jp = &stats.dtime_jitter;
+    jp->avg = jp->avg * 0.96 + dtime * 0.04;
+
+    jitter = dtime - jp->avg;
+
+    if (jitter > jp->max)
+        jp->max = jitter;
+
+    jp->counter += dtime;
+
+    if (jp->counter > 0.0) {
+        jp->counter -= 3.0;
+        jp->max_sample = jp->max;
+        jp->max_fraction = jp->max_sample / (jp->avg + 0.001);
+        jp->max = 0.0;
+    }
+
+    /* Busytime average and jitter calculation
+     */
+    jp = &stats.busy_time_jitter;
+    jp->avg = jp->avg + draw_times.getBusyMs() * 0.02;
+
+    jitter = draw_times.getBusyMs() - jp->avg;
+
+    if (jitter > jp->max)
+        jp->max = jitter;
+    if (jitter < jp->min)
+        jp->min = jitter;
+
+    jp->counter += dtime;
+
+    if (jp->counter > 0.0) {
+        jp->counter -= 3.0;
+        jp->max_sample = jp->max;
+        jp->min_sample = jp->min;
+        jp->max = 0.0;
+        jp->min = 0.0;
+    }
 }
 
 void Renderer::createDefaultShaders()
@@ -284,4 +335,28 @@ void Renderer::createUBOs()
 
     ByteArray fog_ba(9, fog_buffer_size);
     fog_buffer = std::make_unique<UniformBuffer>(FOG_UBO_BINDING_POINT, fog_ba);
+}
+
+u32 Renderer::calcPrimitiveCount(PrimitiveType type, u32 count)
+{
+    switch (type) {
+    case render::PT_POINTS:
+        return count;
+    case render::PT_POINT_SPRITES:
+        return count;
+    case render::PT_LINE_STRIP:
+        return count - 1;
+    case render::PT_LINE_LOOP:
+        return count;
+    case render::PT_LINES:
+        return count / 2;
+    case render::PT_TRIANGLE_STRIP:
+        return count - 2;
+    case render::PT_TRIANGLE_FAN:
+        return count - 2;
+    case render::PT_TRIANGLES:
+        return count / 3;
+    default:
+        return 0;
+    }
 }

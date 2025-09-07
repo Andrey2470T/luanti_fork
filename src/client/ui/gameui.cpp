@@ -6,8 +6,11 @@
 #include "gameui.h"
 #include <gettext.h>
 #include "client/map/clientmap.h"
+#include "client/network/packethandler.h"
+#include "client/render/renderer.h"
 #include "gui/mainmenumanager.h"
 #include "gui/guiChatConsole.h"
+#include "gui/profilergraph.h"
 #include "gui/touchcontrols.h"
 #include "util/enriched_string.h"
 #include "util/pointedthing.h"
@@ -24,6 +27,9 @@
 #include "glyph_atlas.h"
 #include "version.h"
 #include "settings.h"
+#include "client/render/drawlist.h"
+#include "client/player/selection.h"
+#include "client/ui/gameformspec.h"
 
 inline static const char *yawToDirectionString(int yaw)
 {
@@ -42,14 +48,10 @@ GameUI::GameUI(Client *client)
 	if (guienv && guienv->getSkin())
         statustext_initial_color = guienv->getSkin()->getColor(GUIDefaultColor::ButtonText);
 
+    enable_noclip = g_settings->getBool("noclip");
 }
 void GameUI::init()
 {
-    if (g_settings->getBool("show_debug")) {
-        m_flags.debug_state = 1;
-        m_game_ui->m_flags.show_minimal_debug = true;
-    }
-
     auto font_mgr = rndsys->getFontManager();
 
     debugtext = std::make_unique<UISpriteBank>(rndsys->getRenderer(), cache);
@@ -94,7 +96,7 @@ void GameUI::init()
     profilertext->setVisible(false);
 }
 
-void GameUI::update(const RunStats &stats, Client *client, MapDrawControl *draw_control,
+void GameUI::update(Client *client,
 	const CameraOrientation &cam, const PointedThing &pointed_old,
 	const GUIChatConsole *chat_console, float dtime)
 {
@@ -104,12 +106,15 @@ void GameUI::update(const RunStats &stats, Client *client, MapDrawControl *draw_
 
 	s32 minimal_debug_height = 0;
 
+    auto drawstats = rndsys->getRenderer()->getDrawStats();
+    auto draw_control = rndsys->getDrawList()->getDrawControl();
+
 	// Minimal debug text must only contain info that can't give a gameplay advantage
     auto first_debug_line = dynamic_cast<UITextSprite *>(debugtext->getSprite(0));
     if (flags & GUIF_SHOW_MINIMAL_DEBUG) {
-		const u16 fps = 1.0 / stats.dtime_jitter.avg;
+        const u16 fps = 1.0 / drawstats.dtime_jitter.avg;
         drawtime_avg *= 0.95f;
-        drawtime_avg += 0.05f * (stats.drawtime / 1000);
+        drawtime_avg += 0.05f * (drawstats.drawtime / 1000);
 
 		std::ostringstream os(std::ios_base::binary);
 		os << std::fixed
@@ -119,12 +124,12 @@ void GameUI::update(const RunStats &stats, Client *client, MapDrawControl *draw_
             << " | drawtime: " << drawtime_avg << "ms"
 			<< std::setprecision(1)
 			<< " | dtime jitter: "
-			<< (stats.dtime_jitter.max_fraction * 100.0f) << "%"
+            << (drawstats.dtime_jitter.max_fraction * 100.0f) << "%"
 			<< std::setprecision(1)
 			<< " | view range: "
-			<< (draw_control->range_all ? "All" : itos(draw_control->wanted_range))
+            << (draw_control.range_all ? "All" : itos(draw_control.wanted_range))
 			<< std::setprecision(2)
-			<< " | RTT: " << (client->getRTT() * 1000.0f) << "ms";
+            << " | RTT: " << (client->getPacketHandler()->getRTT() * 1000.0f) << "ms";
 
         first_debug_line->setText(utf8_to_wide(os.str()));
         first_debug_line->getShape()->move(v2f(5, 5));
@@ -170,7 +175,7 @@ void GameUI::update(const RunStats &stats, Client *client, MapDrawControl *draw_
     second_debug_line->setVisible(flags & GUIF_SHOW_BASIC_DEBUG);
 
     // Info text
-    infotext->setVisible(flags & GUIF_SHOW_HUD && g_menumgr.menuCount() == 0);
+    infotext->setVisible(flags & GUIF_SHOW_HUD && g_menumgr->menuCount() == 0);
 
     // Status text
     static const f32 statustext_time_max = 1.5f;
@@ -339,4 +344,79 @@ void GameUI::render()
     profilertext->draw();
 
     hud->render();
+}
+
+void GameUI::updateDebugState(Client *client)
+{
+    LocalPlayer *player = client->getEnv().getLocalPlayer();
+
+    // debug UI and wireframe
+    bool has_debug = player->checkPrivilege("debug");
+    bool has_basic_debug = has_debug || (player->hud_flags & HUD_FLAG_BASIC_DEBUG);
+
+    if (flags & GUIF_SHOW_BASIC_DEBUG) {
+        if (!has_basic_debug)
+            toggleFlag(GUIF_SHOW_BASIC_DEBUG);
+    } else if (flags & GUIF_SHOW_MINIMAL_DEBUG) {
+        if (has_basic_debug)
+            flags |= GUIF_SHOW_BASIC_DEBUG;
+    }
+
+    auto drawlist = client->getRenderSystem()->getDrawList();
+    if (!has_basic_debug)
+        drawlist->getBlockBounds()->disable();
+    if (!has_debug) {
+        drawlist->getDrawControl().show_wireframe = false;
+        //m_flags.disable_camera_update = false;
+        client->getRenderSystem()->getGameFormSpec()->disableDebugView();
+    }
+
+    // noclip
+    drawlist->getDrawControl().allow_noclip = enable_noclip && player->checkPrivilege("noclip");
+}
+
+void GameUI::updateProfilers(const FpsControl &draw_times, f32 dtime)
+{
+    float profiler_print_interval =
+            g_settings->getFloat("profiler_print_interval");
+    bool print_to_log = true;
+
+    // Update game UI anyway but don't log
+    if (profiler_print_interval <= 0) {
+        print_to_log = false;
+        profiler_print_interval = 3;
+    }
+
+    if (profiler_interval.step(dtime, profiler_print_interval)) {
+        if (print_to_log) {
+            infostream << "Profiler:" << std::endl;
+            g_profiler->print(infostream);
+        }
+
+        updateProfiler();
+        g_profiler->clear();
+    }
+
+    auto drawstats = client->getRenderSystem()->getRenderer()->getDrawStats();
+    // Update graphs
+    g_profiler->graphAdd("Time non-rendering [us]",
+        draw_times.busy_time - stats.drawtime);
+    g_profiler->graphAdd("Sleep [us]", draw_times.sleep_time);
+
+    g_profiler->graphSet("FPS", 1.0f / dtime);
+
+    g_profiler->avg("Irr: drawcalls", stats.drawcalls);
+    if (stats.drawcalls > 0)
+        g_profiler->avg("Irr: primitives per drawcall",
+            stats.drawn_primitives / float(stats.drawcalls));
+    //g_profiler->avg("Irr: HW buffers uploaded", stats2.HWBuffersUploaded);
+    //g_profiler->avg("Irr: HW buffers active", stats2.HWBuffersActive);
+}
+
+/* Log times and stuff for visualization */
+void GameUI::updateProfilerGraphs(ProfilerGraph *graph)
+{
+    Profiler::GraphValues values;
+    g_profiler->graphPop(values);
+    graph->put(values);
 }

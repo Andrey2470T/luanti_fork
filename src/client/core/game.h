@@ -26,16 +26,7 @@ class NodeDefManager;
 class InputHandler;
 class ResourceCache;
 class RenderSystem;
-
-struct Jitter {
-	f32 max, min, avg, counter, max_sample, min_sample, max_fraction;
-};
-
-struct RunStats {
-	u64 drawtime; // (us)
-
-	Jitter dtime_jitter, busy_time_jitter;
-};
+struct FpsControl;
 
 struct CameraOrientation {
 	f32 camera_yaw;    // "right/left"
@@ -122,7 +113,6 @@ protected:
 
     // Client creation
     bool createClient(const GameStartData &start_data);
-    bool initGui();
 
     // Client connection
     bool connectToServer(const GameStartData &start_data,
@@ -132,12 +122,9 @@ protected:
     // Main loop
 
     void updateInteractTimers(f32 dtime);
-    bool checkConnection();
-    void processQueues();
-    void updateProfilers(const RunStats &stats, const FpsControl &draw_times, f32 dtime);
-    void updateDebugState();
-    void updateStats(RunStats *stats, const FpsControl &draw_times, f32 dtime);
     void updateProfilerGraphs(ProfilerGraph *graph);
+
+    void step(f32 dtime);
 
     /*!
      * Returns the object or node the player is pointing at.
@@ -167,7 +154,7 @@ protected:
     void updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
             const CameraOrientation &cam);
     void updateClouds(float dtime);
-    void updateShadows();
+    //void updateShadows();
     void drawScene(ProfilerGraph *graph, RunStats *stats);
 
     // Misc
@@ -199,7 +186,6 @@ private:
     void pauseAnimation();
     void resumeAnimation();
 
-
     void updateChat(f32 dtime);
 
     bool nodePlacement(const ItemDefinition &selected_def, const ItemStack &selected_item,
@@ -219,6 +205,8 @@ private:
     ResourceCache *rescache;
     InputHandler *input;
 
+    std::string *error_message = nullptr;
+    bool *reconnect_requested = nullptr;
 
     //GameFormSpec m_game_formspec;
 
@@ -233,14 +221,10 @@ private:
        these items (e.g. device)
     */
     bool *kill;
-    std::string *error_message;
-    bool *reconnect_requested;
     //PausedNodesList paused_animated_nodes;
 
     bool simple_singleplayer_mode;
     /* End 'cache' */
-
-    //IntervalLimiter profiler_interval;
 
     /*
      * TODO: Local caching of settings is not optimal and should at some stage

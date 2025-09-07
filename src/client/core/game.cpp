@@ -165,10 +165,6 @@ bool Game::startup(bool *kill, InputHandler *input, RenderSystem *rndsys, Resour
 	if (!createClient(start_data))
 		return false;
 
-	m_rendering_engine->initialize(client, hud);
-
-	m_game_formspec.init(client, m_rendering_engine, input);
-
 	return true;
 }
 
@@ -288,7 +284,7 @@ void Game::shutdown()
 
 	// only if the shutdown progress bar isn't shown yet
 	if (m_shutdown_progress == 0.0f)
-		showOverlayMessage(N_("Shutting down..."), 0, 0);
+        showOverlayMessage(N_("Shutting down..."), 0, 0);
 
 	/* cleanup menus */
 	while (g_menumgr.menuCount() > 0) {
@@ -296,17 +292,16 @@ void Game::shutdown()
 	}
 
 	auto stop_thread = runInThread([=] {
-		delete server;
-		server = nullptr;
+        server.reset();
 	}, "ServerStop");
 
 	FpsControl fps_control;
 	fps_control.reset();
 
 	while (stop_thread->isRunning()) {
-		m_rendering_engine->run();
+        rndsys->run();
 		f32 dtime;
-		fps_control.limit(device, &dtime);
+        fps_control.limit(rndsys->getWindow(), &dtime);
 		showOverlayMessage(N_("Shutting down..."), dtime, 0, &m_shutdown_progress);
 	}
 
@@ -445,6 +440,8 @@ bool Game::createClient(const GameStartData &start_data)
 	} else {
 		crack_animation_length = 5;
     }*/
+
+    client->getRenderSystem()->initRenderEnvironment(client.get());
 
     if (!client->initGui())
         return false;
@@ -648,7 +645,7 @@ bool Game::getServerContent(bool *aborted)
 		}
 
 		// Error conditions
-		if (!checkConnection())
+        if (!pkt_handler->checkConnection(error_message, reconnect_requested))
 			return false;
 
 		if (client->getState() < LC_Init) {
@@ -724,138 +721,6 @@ inline void Game::updateInteractTimers(f32 dtime)
 	runData.time_from_last_punch += dtime;
 }
 
-
-/* returns false if game should exit, otherwise true
- */
-inline bool Game::checkConnection()
-{
-	if (client->accessDenied()) {
-		*error_message = fmtgettext("Access denied. Reason: %s", client->accessDeniedReason().c_str());
-		*reconnect_requested = client->reconnectRequested();
-		errorstream << *error_message << std::endl;
-		return false;
-	}
-
-	return true;
-}
-
-void Game::updateDebugState()
-{
-	LocalPlayer *player = client->getEnv().getLocalPlayer();
-
-	// debug UI and wireframe
-	bool has_debug = client->checkPrivilege("debug");
-	bool has_basic_debug = has_debug || (player->hud_flags & HUD_FLAG_BASIC_DEBUG);
-
-	if (m_game_ui->m_flags.show_basic_debug) {
-		if (!has_basic_debug)
-			m_game_ui->m_flags.show_basic_debug = false;
-	} else if (m_game_ui->m_flags.show_minimal_debug) {
-		if (has_basic_debug)
-			m_game_ui->m_flags.show_basic_debug = true;
-	}
-	if (!has_basic_debug)
-		hud->disableBlockBounds();
-	if (!has_debug) {
-		draw_control->show_wireframe = false;
-		smgr->setGlobalDebugData(0, bbox_debug_flag);
-		m_flags.disable_camera_update = false;
-		m_game_formspec.disableDebugView();
-	}
-
-	// noclip
-	draw_control->allow_noclip = m_cache_enable_noclip && client->checkPrivilege("noclip");
-}
-
-void Game::updateProfilers(const RunStats &stats, const FpsControl &draw_times,
-		f32 dtime)
-{
-	float profiler_print_interval =
-			g_settings->getFloat("profiler_print_interval");
-	bool print_to_log = true;
-
-	// Update game UI anyway but don't log
-	if (profiler_print_interval <= 0) {
-		print_to_log = false;
-		profiler_print_interval = 3;
-	}
-
-	if (profiler_interval.step(dtime, profiler_print_interval)) {
-		if (print_to_log) {
-			infostream << "Profiler:" << std::endl;
-			g_profiler->print(infostream);
-		}
-
-		m_game_ui->updateProfiler();
-		g_profiler->clear();
-	}
-
-	// Update graphs
-	g_profiler->graphAdd("Time non-rendering [us]",
-		draw_times.busy_time - stats.drawtime);
-	g_profiler->graphAdd("Sleep [us]", draw_times.sleep_time);
-
-	g_profiler->graphSet("FPS", 1.0f / dtime);
-
-	auto stats2 = driver->getFrameStats();
-	g_profiler->avg("Irr: drawcalls", stats2.Drawcalls);
-	if (stats2.Drawcalls > 0)
-		g_profiler->avg("Irr: primitives per drawcall",
-			stats2.PrimitivesDrawn / float(stats2.Drawcalls));
-	g_profiler->avg("Irr: HW buffers uploaded", stats2.HWBuffersUploaded);
-	g_profiler->avg("Irr: HW buffers active", stats2.HWBuffersActive);
-}
-
-void Game::updateStats(RunStats *stats, const FpsControl &draw_times,
-		f32 dtime)
-{
-
-	f32 jitter;
-	Jitter *jp;
-
-	/* Time average and jitter calculation
-	 */
-	jp = &stats->dtime_jitter;
-	jp->avg = jp->avg * 0.96 + dtime * 0.04;
-
-	jitter = dtime - jp->avg;
-
-	if (jitter > jp->max)
-		jp->max = jitter;
-
-	jp->counter += dtime;
-
-	if (jp->counter > 0.0) {
-		jp->counter -= 3.0;
-		jp->max_sample = jp->max;
-		jp->max_fraction = jp->max_sample / (jp->avg + 0.001);
-		jp->max = 0.0;
-	}
-
-	/* Busytime average and jitter calculation
-	 */
-	jp = &stats->busy_time_jitter;
-	jp->avg = jp->avg + draw_times.getBusyMs() * 0.02;
-
-	jitter = draw_times.getBusyMs() - jp->avg;
-
-	if (jitter > jp->max)
-		jp->max = jitter;
-	if (jitter < jp->min)
-		jp->min = jitter;
-
-	jp->counter += dtime;
-
-	if (jp->counter > 0.0) {
-		jp->counter -= 3.0;
-		jp->max_sample = jp->max;
-		jp->min_sample = jp->min;
-		jp->max = 0.0;
-		jp->min = 0.0;
-	}
-}
-
-
 void Game::updatePauseState()
 {
 	bool was_paused = this->m_is_paused;
@@ -871,12 +736,12 @@ void Game::updatePauseState()
 }
 
 
-inline void Game::step(f32 dtime)
+void Game::step(f32 dtime)
 {
 	ZoneScoped;
 
 	if (server) {
-		float fps_max = (!device->isWindowFocused() || g_menumgr.pausesGame()) ?
+        float fps_max = (!rndsys->getWindow()->isFocused() || g_menumgr.pausesGame()) ?
 				g_settings->getFloat("fps_max_unfocused") :
 				g_settings->getFloat("fps_max");
 		fps_max = std::max(fps_max, 1.0f);
@@ -1946,18 +1811,10 @@ void Game::updateClouds(float dtime)
 	}
 }
 
-/* Log times and stuff for visualization */
-inline void Game::updateProfilerGraphs(ProfilerGraph *graph)
-{
-	Profiler::GraphValues values;
-	g_profiler->graphPop(values);
-	graph->put(values);
-}
-
 /****************************************************************************
  * Shadows
  *****************************************************************************/
-void Game::updateShadows()
+/*void Game::updateShadows()
 {
 	ShadowRenderer *shadow = RenderingEngine::get_shadow_renderer();
 	if (!shadow)
@@ -1983,7 +1840,7 @@ void Game::updateShadows()
 	shadow->setTimeOfDay(in_timeofday);
 
 	shadow->getDirectionalLight().update_frustum(camera, client, m_camera_offset_changed);
-}
+}*/
 
 void Game::drawScene(ProfilerGraph *graph, RunStats *stats)
 {
@@ -2094,7 +1951,6 @@ void Game::readSettings()
 	m_repeat_place_time                  = g_settings->getFloat("repeat_place_time", 0.16f, 2.0f);
 	m_repeat_dig_time                    = g_settings->getFloat("repeat_dig_time", 0.0f, 2.0f);
 
-	m_cache_enable_noclip                = g_settings->getBool("noclip");
 	m_cache_enable_free_move             = g_settings->getBool("free_move");
 
 	m_cache_cam_smoothing = 0;

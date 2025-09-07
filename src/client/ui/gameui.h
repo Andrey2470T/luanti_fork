@@ -6,17 +6,18 @@
 #pragma once
 
 #include "text_sprite.h"
+#include "util/numeric.h"
 
 class Client;
 class EnrichedString;
 class GUIChatConsole;
-struct MapDrawControl;
 struct PointedThing;
-struct RunStats;
 struct CameraOrientation;
 class Hud;
 class RenderSystem;
 class ResourceCache;
+struct FpsControl;
+class ProfilerGraph;
 
 /*
  * This object intend to contain the core UI elements
@@ -59,7 +60,7 @@ public:
 	};
 
 	void init();
-	void update(const RunStats &stats, Client *client, MapDrawControl *draw_control,
+    void update(Client *client,
 			const CameraOrientation &cam, const PointedThing &pointed_old,
 			const GUIChatConsole *chat_console, float dtime);
 
@@ -108,6 +109,10 @@ public:
 
     void render();
 
+    void updateDebugState(Client *client);
+    void updateProfilers(const FpsControl &draw_times, f32 dtime);
+    void updateProfilerGraphs(ProfilerGraph *graph);
+
 private:
     void toggleFlag(GameUIFlags flag)
     {
@@ -124,6 +129,10 @@ private:
     u8 flags = GUIF_SHOW_CHAT | GUIF_SHOW_HUD;
 
     float drawtime_avg = 0;
+
+    bool enable_noclip;
+
+    IntervalLimiter profiler_interval;
 
     std::unique_ptr<UISpriteBank> debugtext;  // First and second lines of debug text
     std::wstring first_debug_line;
