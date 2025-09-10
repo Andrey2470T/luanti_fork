@@ -601,6 +601,26 @@ void GameInputSystem::checkZoomEnabled()
         m_GameInputSystem_ui->showTranslatedStatusText("Zoom currently disabled by GameInputSystem or mod");
 }
 
+void GameInputSystem::updateCameraMode()
+{
+    if (wasKeyPressed(KeyType::CAMERA_MODE)) {
+        GenericCAO *playercao = player->getCAO();
+
+        // If playercao not loaded, don't change camera
+        if (!playercao)
+            return;
+
+        camera->toggleCameraMode();
+
+        if (g_touchcontrols)
+            g_touchcontrols->setUseCrosshair(!isTouchCrosshairDisabled());
+
+        // Make the player visible depending on camera mode.
+        playercao->updateMeshCulling();
+        playercao->setChildrenVisible(camera->getCameraMode() > CAMERA_MODE_FIRST);
+    }
+}
+
 void GameInputSystem::updateCameraDirection(CameraOrientation *cam, float dtime)
 {
     auto *cur_control = device->getCursorControl();

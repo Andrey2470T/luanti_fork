@@ -43,10 +43,10 @@ PipelineCore::PipelineCore(Client *_client, bool enable_shadows)
 void PipelineCore::run(img::color8 skycolor, bool show_hud)
 {
     Hud *hud = rndSystem->getGameUI()->getHud();
-	ShadowRenderer *shadow_renderer = rndSystem->getShadowRenderer();
+    //ShadowRenderer *shadow_renderer = rndSystem->getShadowRenderer();
 	v2u wndsize = rndSystem->getWindowSize();
 	
-    PipelineContext context(client, hud, shadow_renderer, skycolor, wndsize);
+    PipelineContext context(client, hud, nullptr, skycolor, wndsize);
     context.show_hud = show_hud;
 
     pipeline->reset(context);

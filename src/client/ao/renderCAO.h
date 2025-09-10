@@ -82,6 +82,11 @@ public:
     {
         return m_model;
     }
+    
+    Nametag *getNametag() const
+    {
+        return m_nametag;
+    }
 
     bool isLocalPlayer() const override
 	{

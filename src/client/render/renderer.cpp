@@ -5,6 +5,8 @@
 #include "client/media/resource.h"
 #include "client/render/rendersystem.h"
 #include "datatexture.h"
+#include "porting.h"
+#include "settings.h"
 
 // These binding points are reserved and can't be used for other UBOs
 #define MATRIX_UBO_BINDING_POINT 0
@@ -13,6 +15,51 @@
 img::ImageModifier *g_imgmodifier = new img::ImageModifier();
 
 const img::color8 Renderer::menu_sky_color = img::color8(img::PF_RGBA8, 140, 186, 250, 255);
+
+void FpsControl::reset()
+{
+    last_time = porting::getTimeUs();
+}
+
+void FpsControl::limit(core::MainWindow *wnd, f32 *dtime)
+{
+    const float fps_limit = wnd->isFocused()
+            ? g_settings->getFloat("fps_max")
+            : g_settings->getFloat("fps_max_unfocused");
+    const u64 frametime_min = 1000000.0f / std::max(fps_limit, 1.0f);
+
+    u64 time = porting::getTimeUs();
+
+    if (time > last_time) // Make sure time hasn't overflowed
+        busy_time = time - last_time;
+    else
+        busy_time = 0;
+
+    if (busy_time < frametime_min) {
+        sleep_time = frametime_min - busy_time;
+        porting::preciseSleepUs(sleep_time);
+    } else {
+        sleep_time = 0;
+    }
+
+    // Read the timer again to accurately determine how long we actually slept,
+    // rather than calculating it by adding sleep_time to time.
+    time = porting::getTimeUs();
+
+    if (time > last_time) // Make sure last_time hasn't overflowed
+        *dtime = (time - last_time) / 1000000.0f;
+    else
+        *dtime = 0;
+
+    last_time = time;
+}
+
+Renderer::Renderer(ResourceCache *res_cache, const recti &viewportSize, u32 maxTexUnits)
+    : context(std::make_unique<DrawContext>(viewportSize, maxTexUnits)), resCache(res_cache)
+{
+    createDefaultShaders();
+    createUBOs();
+}
 
 void Renderer::setRenderState(bool mode3d)
 {
@@ -268,7 +315,7 @@ void Renderer::draw(MeshBuffer *buffer, PrimitiveType type,
     stats.drawn_primitives += calcPrimitiveCount(type, count.value());
 }
 
-void Renderer::updateStats(const FpsControl &draw_times, f32 dtime)
+void Renderer::updateStats(f32 dtime)
 {
     f32 jitter;
     Jitter *jp;
@@ -295,9 +342,9 @@ void Renderer::updateStats(const FpsControl &draw_times, f32 dtime)
     /* Busytime average and jitter calculation
      */
     jp = &stats.busy_time_jitter;
-    jp->avg = jp->avg + draw_times.getBusyMs() * 0.02;
+    jp->avg = jp->avg + stats.fps.getBusyMs() * 0.02;
 
-    jitter = draw_times.getBusyMs() - jp->avg;
+    jitter = stats.fps.getBusyMs() - jp->avg;
 
     if (jitter > jp->max)
         jp->max = jitter;

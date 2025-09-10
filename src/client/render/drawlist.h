@@ -32,10 +32,13 @@ private:
     DistanceSortedDrawList *drawlist;
 };
 
+#define FOG_RANGE_ALL (100000 * BS)
+
 struct DrawControl
 {
     // Wanted drawing range
     f32 wanted_range = 0.0f;
+    f32 fog_range = 0.0f;
     // Overrides limits by drawing everything
     bool range_all = false;
     // Allow rendering out of bounds

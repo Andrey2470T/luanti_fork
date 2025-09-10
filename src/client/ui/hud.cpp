@@ -5,6 +5,7 @@
 // Copyright (C) 2010-2013 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
 
 #include "hud.h"
+#include "gui/touchcontrols.h"
 #include "settings.h"
 #include "util/numeric.h"
 #include "client/core/client.h"
@@ -187,6 +188,9 @@ void Hud::setHudVisible(bool visible)
 
 void Hud::render()
 {
+    if (g_touchcontrols && isTouchCrosshairDisabled())
+        crosshair_hidden = true;
+
     if (!crosshair_hidden)
         crosshair->draw();
 

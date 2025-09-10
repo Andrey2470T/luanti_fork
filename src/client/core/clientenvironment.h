@@ -24,6 +24,7 @@ class LocalPlayer;
 class ResourceCache;
 class Inventory;
 struct InventoryLocation;
+class ProfilerGraph;
 
 /*
 	The client-side environment.
@@ -65,7 +66,7 @@ public:
 	Client *getGameDef() { return m_client; }
 	void setScript(ClientScripting *script) { m_script = script; }
 
-	void step(f32 dtime);
+    void step(ProfilerGraph *graph, f32 dtime, bool paused);
 
 	virtual void setLocalPlayer(LocalPlayer *player);
     LocalPlayer *getLocalPlayer() const { return m_local_player.get(); }
@@ -126,9 +127,7 @@ public:
 	const std::set<std::string> &getPlayerNames() { return m_player_names; }
 	void addPlayerName(const std::string &name) { m_player_names.insert(name); }
 	void removePlayerName(const std::string &name) { m_player_names.erase(name); }
-	void updateCameraOffset(const v3s16 &camera_offset)
-	{ m_camera_offset = camera_offset; }
-	v3s16 getCameraOffset() const { return m_camera_offset; }
+    v3s16 getCameraOffset() const;
 
 	void updateFrameTime(bool is_paused);
 	u64 getFrameTime() const { return m_frame_time; }
@@ -146,11 +145,23 @@ public:
         return m_detached_inventories;
     }
 
+    void updateFog();
+    void updateTimeOfDay();
+
+    void updateFrame(ProfilerGraph *graph, f32 dtime, bool paused);
+
     // time_of_day speed approximation for old protocol
     bool m_time_of_day_set = false;
     f32 m_last_time_of_day_f = -1.0f;
     f32 m_time_of_day_update_timer = 0.0f;
+
+    f32 damage_flash;
+
+    u16 new_playeritem;
 private:
+    static void settingChangedCallback(const std::string &setting_name, void *data);
+    void readSettings();
+
 	std::unique_ptr<ClientMap> m_map;
 	std::unique_ptr<LocalPlayer> m_local_player;
 
@@ -163,16 +174,20 @@ private:
 	std::queue<ClientEnvEvent> m_client_event_queue;
 	IntervalLimiter m_active_object_light_update_interval;
 	std::set<std::string> m_player_names;
-	v3s16 m_camera_offset;
 
 	u64 m_frame_time = 0;
 	u64 m_frame_dtime = 0;
 	u64 m_frame_time_pause_accumulator = 0;
 
+    f32 time_of_day_smooth;
+
     // Block mesh animation parameters
-    float m_animation_time = 0.0f;
+    f32 m_animation_time = 0.0f;
 
     // Detached inventories
     // key = name
     std::unordered_map<std::string, Inventory*> m_detached_inventories;
+
+    bool m_cache_enable_fog;
+    bool m_cache_enable_free_move;
 };

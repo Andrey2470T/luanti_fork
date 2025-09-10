@@ -1,4 +1,5 @@
 #include "renderCAO.h"
+#include "client/ao/nametag.h"
 #include "client/core/client.h"
 #include "client/player/playercamera.h"
 #include "client/ui/minimap.h"
@@ -20,6 +21,7 @@
 #include "client/render/atlas.h"
 #include "client/mesh/defaultVertexTypes.h"
 #include "client/render/datatexture.h"
+#include "client/ui/gameui.h"
 
 RenderCAO::RenderCAO(Client *client, ClientEnvironment *env)
     : GenericCAO(client, env), m_rndsys(client->getRenderSystem()), m_cache(client->getResourceCache()),
@@ -46,7 +48,7 @@ RenderCAO::~RenderCAO()
     removeMesh();
 
     if (m_nametag) {
-        m_client->getEnv().getLocalPlayer()->getCamera()->removeNametag(m_nametag);
+        m_rndsys->getGameUI()->removeNametag(m_nametag);
         m_nametag = nullptr;
     }
 
@@ -557,7 +559,7 @@ void RenderCAO::updateNametag()
     if (m_prop.nametag.empty() || m_prop.nametag_color.A() == 0) {
         // Delete nametag
         if (m_nametag) {
-            m_camera->removeNametag(m_nametag);
+            m_rndsys->getGameUI()->removeNametag(m_nametag);
             m_nametag = nullptr;
         }
         return;
@@ -567,8 +569,8 @@ void RenderCAO::updateNametag()
     pos.Y = m_prop.selectionbox.MaxEdge.Y + 0.3f;
     if (!m_nametag) {
         // Add nametag
-        m_nametag = m_camera->addNametag(
-            m_prop.nametag, m_prop.nametag_color,
+        m_nametag = m_rndsys->getGameUI()->addNametag(
+            m_client, m_prop.nametag, m_prop.nametag_color,
             m_prop.nametag_bgcolor, pos);
     } else {
         // Update nametag

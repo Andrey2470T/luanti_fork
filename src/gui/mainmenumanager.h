@@ -116,7 +116,7 @@ extern std::unique_ptr<MainMenuManager> g_menumgr;
 
 static inline bool isMenuActive()
 {
-	return g_menumgr.menuCount() != 0;
+    return g_menumgr->menuCount() != 0;
 }
 
 class MainGameCallback : public IGameCallback

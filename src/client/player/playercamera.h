@@ -10,44 +10,11 @@
 #include "client/render/camera.h"
 #include <list>
 #include <optional>
-#include "client/ui/hud_elements.h"
 
 class LocalPlayer;
 struct DrawControl;
 class Client;
-class RenderingEngine;
 class WieldMeshSceneNode;
-
-class Nametag : public Waypoint
-{
-    bool show_backgrounds;
-public:
-    std::string text;
-    img::color8 textcolor;
-    std::optional<img::color8> bgcolor;
-
-    Nametag(Client *client,
-            const std::string &text,
-            const img::color8 &textcolor,
-            const std::optional<img::color8> &bgcolor,
-            const v3f &pos);
-
-    void updateBank(v3f newWorldPos) override;
-
-    img::color8 getBgColor(bool use_fallback) const
-	{
-		if (bgcolor)
-			return bgcolor.value();
-		else if (!use_fallback)
-            return img::color8();
-        else if (textcolor.getLuminance() > 186)
-			// Dark background for light text
-            return img::color8(img::PF_RGBA8, 50, 50, 50, 50);
-		else
-			// Light background for dark text
-            return img::color8(img::PF_RGBA8, 255, 255, 255, 50);
-	}
-};
 
 enum CameraMode {
     CAMERA_MODE_FIRST,
@@ -79,22 +46,23 @@ public:
 	void step(f32 dtime);
 
 	// Update the camera from the local player's position.
-	void update(LocalPlayer* player, f32 frametime, f32 tool_reload_ratio);
+    void update(f32 dtime);
 
 	// Update render distance
 	void updateViewingRange();
+	void updateCameraMode();
 
 	// Start digging animation
 	// Pass 0 for left click, 1 for right click
-	void setDigging(s32 button);
+	//void setDigging(s32 button);
 
 	// Replace the wielded item mesh
-	void wield(const ItemStack &item);
+	//void wield(const ItemStack &item);
 
 	// Draw the wielded tool.
 	// This has to happen *after* the main scene is drawn.
 	// Warning: This clears the Z buffer.
-    void drawWieldedTool(matrix4* translation=nullptr);
+    //void drawWieldedTool(matrix4* translation=nullptr);
 
 	// Toggle the current camera mode
 	void toggleCameraMode() {
@@ -118,23 +86,11 @@ public:
 		return m_camera_mode;
 	}
 
-    Nametag *addNametag(
-        const std::string &text, img::color8 textcolor,
-        std::optional<img::color8> bgcolor, const v3f &pos);
-
-	void removeNametag(Nametag *nametag);
-
-	void drawNametags();
-
-    void addArmInertia(f32 player_yaw);
+    //void addArmInertia(f32 player_yaw);
 
 private:
-    bool m_touch_use_crosshair;
-    inline bool isTouchCrosshairDisabled() {
-        return !m_touch_use_crosshair && m_camera_mode == CAMERA_MODE_FIRST;
-    }
     //scene::ISceneManager *m_wieldmgr = nullptr;
-    WieldMeshSceneNode *m_wieldnode = nullptr;
+    //WieldMeshSceneNode *m_wieldnode = nullptr;
 
 	// draw control
     DrawControl& m_draw_control;
@@ -191,10 +147,4 @@ private:
 	f32 m_cache_fall_bobbing_amount;
 	f32 m_cache_view_bobbing_amount;
 	bool m_arm_inertia;
-
-    std::list<std::unique_ptr<Nametag>> m_nametags;
-	bool m_show_nametag_backgrounds;
-
-	// Last known light color of the player
-    img::color8 m_player_light_color;
 };

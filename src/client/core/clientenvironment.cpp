@@ -2,6 +2,15 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 // Copyright (C) 2010-2017 celeron55, Perttu Ahola <celeron55@gmail.com>
 
+#include "client/core/chatmessanger.h"
+#include "client/network/packethandler.h"
+#include "client/render/clouds.h"
+#include "client/render/renderer.h"
+#include "client/render/sky.h"
+#include "client/ui/gameformspec.h"
+#include "client/ui/gameui.h"
+#include "client/ui/minimap.h"
+#include "profiler.h"
 #include "util/serialize.h"
 #include "util/pointedthing.h"
 #include "client/core/client.h"
@@ -21,6 +30,7 @@
 #include "client/render/drawlist.h"
 #include "inventorymanager.h"
 #include "client/render/atlas.h"
+#include "util/tracy_wrapper.h"
 
 /*
 	ClientEnvironment
@@ -32,6 +42,10 @@ ClientEnvironment::ClientEnvironment(Client *client):
     m_rescache(client->getResourceCache()),
     m_client(client)
 {
+    g_settings->registerChangedCallback("enable_fog",
+        &settingChangedCallback, this);
+    g_settings->registerChangedCallback("free_move",
+        &settingChangedCallback, this);
 }
 
 ClientEnvironment::~ClientEnvironment()
@@ -69,8 +83,9 @@ void ClientEnvironment::setLocalPlayer(LocalPlayer *player)
     m_local_player.reset(player);
 }
 
-void ClientEnvironment::step(float dtime)
+void ClientEnvironment::step(ProfilerGraph *graph, f32 dtime, bool paused)
 {
+    TimeTaker tt_update("ClientEnvironment::step()");
     m_animation_time += dtime;
     if(m_animation_time > 60.0) m_animation_time -= 60.0;
 
@@ -81,6 +96,8 @@ void ClientEnvironment::step(float dtime)
     rnd_sys->getPool(true)->updateAnimatedTiles(m_animation_time);
 
     m_time_of_day_update_timer += dtime;
+
+    updateFog();
 
 	/* Step time of day */
 	stepTimeOfDay(dtime);
@@ -123,9 +140,6 @@ void ClientEnvironment::step(float dtime)
 
 	m_ao_manager.step(dtime, cb_state);
 
-    /* Step particle manager */
-    rnd_sys->getParticleManager()->step(dtime);
-
     /* Step and handle simple objects */
     /*g_profiler->avg("ClientEnv: CSO count [#]", m_simple_objects.size());
 	for (auto i = m_simple_objects.begin(); i != m_simple_objects.end();) {
@@ -141,8 +155,18 @@ void ClientEnvironment::step(float dtime)
 		}
     }*/
 
-    /* Update ClientMap */
-    m_map->step(dtime);
+    /* Update GameUI */
+    auto gameui = rnd_sys->getGameUI();
+    gameui->clearInfoText();
+    gameui->updateProfilers(dtime);
+    gameui->updateDebugState(m_client);
+
+    /* Update Camera */
+    auto camera = m_local_player->getCamera();
+    camera->update(dtime);
+
+    // class PlayerInteraction
+    //processPlayerInteraction(dtime, m_game_ui->m_flags.show_hud);
 }
 
 /*void ClientEnvironment::addSimpleObject(ClientSimpleObject *simple)
@@ -302,6 +326,11 @@ void ClientEnvironment::pushDamageClientEnvEvent(u16 damage, bool handle_hp)
     m_client_event_queue.push(event);
 }
 
+v3s16 ClientEnvironment::getCameraOffset() const
+{
+    return m_local_player ? m_local_player->getCamera()->getOffset() : v3s16();
+}
+
 void ClientEnvironment::updateFrameTime(bool is_paused)
 {
 	// if paused, m_frame_time_pause_accumulator increases by dtime,
@@ -359,4 +388,175 @@ Inventory* ClientEnvironment::getInventory(const InventoryLocation &loc)
         break;
     }
     return NULL;
+}
+
+void ClientEnvironment::updateFog()
+{
+// Client setting only takes effect if fog distance unlimited or debug priv
+
+    auto rndsys = m_client->getRenderSystem();
+    bool enable_fog = rndsys->getSky()->getFogDistance() < 0 ||
+                      m_local_player->checkPrivilege("debug") ?
+                      m_cache_enable_fog : true;
+
+    rndsys->getRenderer()->enableFog(enable_fog);
+}
+
+void ClientEnvironment::updateTimeOfDay()
+{
+    u32 daynight_ratio = getDayNightRatio();
+    float time_brightness = decode_light_f((float)daynight_ratio / 1000.0);
+    float direct_brightness;
+    bool sunlight_seen;
+
+    auto draw_control = m_client->getRenderSystem()->getDrawList()->getDrawControl();
+    auto sky =  m_client->getRenderSystem()->getSky();
+    // When in noclip mode force same sky brightness as above ground so you
+    // can see properly
+    if (draw_control.allow_noclip && m_cache_enable_free_move &&
+        m_local_player->checkPrivilege("fly")) {
+        direct_brightness = time_brightness;
+        sunlight_seen = true;
+    } else {
+        float old_brightness = sky->getBrightness();
+        direct_brightness = m_map->getBackgroundBrightness(MYMIN(draw_control.fog_range * 1.2, 60 * BS),
+            daynight_ratio, (int)(old_brightness * 255.5), &sunlight_seen) / 255.0;
+    }
+
+    float time_of_day = getTimeOfDayF();
+
+    static const float maxsm = 0.05f;
+    static const float todsm = 0.05f;
+
+    if (std::fabs(time_of_day - time_of_day_smooth) > maxsm &&
+            std::fabs(time_of_day - time_of_day_smooth + 1.0) > maxsm &&
+            std::fabs(time_of_day - time_of_day_smooth - 1.0) > maxsm)
+        time_of_day_smooth = time_of_day;
+
+    if (time_of_day_smooth > 0.8 && time_of_day < 0.2)
+        time_of_day_smooth = time_of_day_smooth * (1.0 - todsm)
+                + (time_of_day + 1.0) * todsm;
+    else
+        time_of_day_smooth = time_of_day_smooth * (1.0 - todsm)
+                + time_of_day * todsm;
+
+    sky->update(time_of_day_smooth, time_brightness, direct_brightness,
+            sunlight_seen, m_local_player->getCamera()->getCameraMode(), m_local_player->getYaw(),
+            m_local_player->getPitch());
+}
+
+void ClientEnvironment::updateFrame(ProfilerGraph *graph, f32 dtime, bool paused)
+{
+    ZoneScoped;
+    TimeTaker tt_update("ClientEnvironment::updateFrame()");
+
+    auto rnd_sys = m_client->getRenderSystem();
+    /*
+        Frame time
+    */
+    updateFrameTime(paused);
+
+    /*
+        Fog range
+    */
+    auto sky = rnd_sys->getSky();
+    auto draw_control = rnd_sys->getDrawList()->getDrawControl();
+    if (sky->getFogDistance() >= 0) {
+        draw_control.wanted_range = MYMIN(draw_control.wanted_range, sky->getFogDistance());
+    }
+    if (draw_control.range_all && sky->getFogDistance() < 0) {
+        draw_control.fog_range = FOG_RANGE_ALL;
+    } else {
+        draw_control.fog_range = draw_control.wanted_range * BS;
+    }
+
+    /* Update time of day */
+    updateTimeOfDay();
+
+    auto camera = m_local_player->getCamera();
+    /*
+        Update clouds
+    */
+    rnd_sys->getClouds()->update(dtime, camera, sky, draw_control.fog_range);
+
+    /* Step particle manager */
+    rnd_sys->getParticleManager()->step(dtime);
+
+    /*
+        Damage camera tilt
+    */
+    if (m_local_player->hurt_tilt_timer > 0.0f) {
+        m_local_player->hurt_tilt_timer -= dtime * 6.0f;
+
+        if (m_local_player->hurt_tilt_timer < 0.0f)
+            m_local_player->hurt_tilt_strength = 0.0f;
+    }
+
+    /* Update profiler */
+    //gameui->updateProfilerGraphs(graph);
+
+    /*
+        Update minimap pos and rotation
+    */
+    auto gameui = rnd_sys->getGameUI();
+    auto minimap = rnd_sys->getDefaultMinimap();
+    if (minimap && gameui->getFlags() & GUIF_SHOW_HUD) {
+        minimap->setPos(floatToInt(m_local_player->getPosition(), BS));
+        minimap->setAngle(m_local_player->getYaw());
+    }
+
+    /*
+        Get chat messages from client
+    */
+    m_client->getChatMessanger()->updateChat(dtime);
+
+    /*
+        Inventory
+    */
+
+    if (m_local_player->getWieldIndex() != new_playeritem)
+        m_client->getPacketHandler()->sendPlayerItem(new_playeritem);
+
+    /*if (client->updateWieldedItem()) {
+        // Update wielded tool
+        ItemStack selected_item, hand_item;
+        ItemStack &tool_item = player->getWieldedItem(&selected_item, &hand_item);
+        camera->wield(tool_item);
+    }*/
+
+    /* Update ClientMap */
+    m_map->step(dtime);
+
+    //gameui->update(client, draw_control, cam, runData.pointed_old,
+     //       gui_chat_console.get(), dtime);
+
+    rnd_sys->getGameFormSpec()->update();
+
+    /*
+        ==================== Drawing begins ====================
+    */
+    if (rnd_sys->getWindow()->isVisible())
+        rnd_sys->render(graph);
+    /*
+        ==================== End scene ====================
+    */
+
+    // Damage flash is drawn in drawScene, but the timing update is done here to
+    // keep dtime out of the drawing code.
+    if (damage_flash > 0.0f) {
+        damage_flash -= 384.0f * dtime;
+    }
+
+    g_profiler->avg("ClientEnvironment::updateFrame(): update frame [ms]", tt_update.stop(true));
+}
+
+void ClientEnvironment::settingChangedCallback(const std::string &setting_name, void *data)
+{
+    ((ClientEnvironment *)data)->readSettings();
+}
+
+void ClientEnvironment::readSettings()
+{
+    m_cache_enable_fog = g_settings->getBool("enable_fog");
+    m_cache_enable_free_move = g_settings->getBool("free_move");
 }

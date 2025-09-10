@@ -88,6 +88,7 @@ public:
 
     bool shouldShowTouchControls();
     bool initGui();
+    void updateSound(f32 dtime);
 
 	// Load local mods into memory
 	void scanModSubfolder(const std::string &mod_name, const std::string &mod_path,
@@ -198,6 +199,11 @@ public:
         return m_packet_handler.get();
     }
 
+    ChatMessanger *getChatMessanger() const
+    {
+        return m_chat_msger.get();
+    }
+
     u16 getProtoVersion() const
     { return m_proto_ver; }
 
@@ -211,7 +217,6 @@ public:
 
     void sendChangePassword(const std::string &oldpassword,
         const std::string &newpassword);
-
 
 	bool inhibit_inventory_revert = false;
 
@@ -296,6 +301,7 @@ private:
 	// Used for saving server map to disk client-side
 	MapDatabase *m_localdb = nullptr;
 	IntervalLimiter m_localdb_save_interval;
+
 	u16 m_cache_save_interval;
 
 	// Client modding

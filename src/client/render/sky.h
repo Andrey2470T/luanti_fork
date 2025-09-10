@@ -231,7 +231,6 @@ private:
 
     // update simple and far cloudy fogs
     void updateCloudyFogColor();
-    void update_uv(MeshBuffer *buf, img::Image *img, u32 offset=0);
 
 	bool m_visible = true;
 	// Used when m_visible=false

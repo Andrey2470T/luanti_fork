@@ -30,6 +30,7 @@
 #include "client/render/drawlist.h"
 #include "client/player/selection.h"
 #include "client/ui/gameformspec.h"
+#include "client/ao/nametag.h"
 
 inline static const char *yawToDirectionString(int yaw)
 {
@@ -232,6 +233,14 @@ void GameUI::showTranslatedStatusText(const char *str)
 	showStatusText(wstrgettext(str));
 }
 
+void GameUI::showDebug()
+{
+    if (g_settings->getBool("show_debug")) {
+        debug_state = true;
+        this->rndsys->getGameUI()->toggleMinimalDebug();
+    }
+}
+
 void GameUI::setChatText(const EnrichedString &chat_text, u32 _recent_chat_count)
 {
     chattext->setText(chat_text);
@@ -344,6 +353,9 @@ void GameUI::render()
     profilertext->draw();
 
     hud->render();
+    
+    for (auto &nt : nametags)
+        nt->drawBank();
 }
 
 void GameUI::updateDebugState(Client *client)
@@ -367,7 +379,7 @@ void GameUI::updateDebugState(Client *client)
         drawlist->getBlockBounds()->disable();
     if (!has_debug) {
         drawlist->getDrawControl().show_wireframe = false;
-        //m_flags.disable_camera_update = false;
+        player->getCamera()->disable_update = false;
         client->getRenderSystem()->getGameFormSpec()->disableDebugView();
     }
 
@@ -375,7 +387,7 @@ void GameUI::updateDebugState(Client *client)
     drawlist->getDrawControl().allow_noclip = enable_noclip && player->checkPrivilege("noclip");
 }
 
-void GameUI::updateProfilers(const FpsControl &draw_times, f32 dtime)
+void GameUI::updateProfilers(f32 dtime)
 {
     float profiler_print_interval =
             g_settings->getFloat("profiler_print_interval");
@@ -400,15 +412,15 @@ void GameUI::updateProfilers(const FpsControl &draw_times, f32 dtime)
     auto drawstats = client->getRenderSystem()->getRenderer()->getDrawStats();
     // Update graphs
     g_profiler->graphAdd("Time non-rendering [us]",
-        draw_times.busy_time - stats.drawtime);
-    g_profiler->graphAdd("Sleep [us]", draw_times.sleep_time);
+        drawstats.fps.busy_time - drawstats.drawtime);
+    g_profiler->graphAdd("Sleep [us]", drawstats.fps.sleep_time);
 
     g_profiler->graphSet("FPS", 1.0f / dtime);
 
-    g_profiler->avg("Irr: drawcalls", stats.drawcalls);
-    if (stats.drawcalls > 0)
+    g_profiler->avg("Irr: drawcalls", drawstats.drawcalls);
+    if (drawstats.drawcalls > 0)
         g_profiler->avg("Irr: primitives per drawcall",
-            stats.drawn_primitives / float(stats.drawcalls));
+            drawstats.drawn_primitives / float(drawstats.drawcalls));
     //g_profiler->avg("Irr: HW buffers uploaded", stats2.HWBuffersUploaded);
     //g_profiler->avg("Irr: HW buffers active", stats2.HWBuffersActive);
 }
@@ -419,4 +431,26 @@ void GameUI::updateProfilerGraphs(ProfilerGraph *graph)
     Profiler::GraphValues values;
     g_profiler->graphPop(values);
     graph->put(values);
+}
+
+Nametag *GameUI::addNametag(
+            Client *client,
+            const std::string &text,
+            const img::color8 &textcolor,
+            const std::optional<img::color8> &bgcolor,
+            const v3f &pos)
+{
+	nametags.emplace_back(client, text, textcolor, bgcolor, pos);
+	return nametags.back().get();
+}
+void GameUI::removeNametag(Nametag *nt)
+{
+	auto found = std::find(nametags.begin(), nametags.end(),
+	    [nt] (const std::unique_ptr<Nametag> &cur_nt)
+	    {
+		    return nt == cur_nt.get();
+		});
+		
+	if (found != nametags.end())
+	    nametags.erase(found);
 }

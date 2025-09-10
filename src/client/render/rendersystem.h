@@ -28,24 +28,12 @@ class AnimationManager;
 class Minimap;
 class GameFormSpec;
 class InputHandler;
+class ProfilerGraph;
 
 namespace gui
 {
 class IGUIEnvironment;
 }
-
-struct FpsControl {
-    FpsControl() : last_time(0), busy_time(0), sleep_time(0) {}
-
-    void reset();
-
-    void limit(core::MainWindow *wnd, f32 *dtime);
-
-    u32 getBusyMs() const { return busy_time / 1000; }
-
-    // all values in microseconds (us)
-    u64 last_time, busy_time, sleep_time;
-};
 
 class RenderSystem
 {
@@ -191,6 +179,10 @@ public:
     {
         return window->pollEventsFromQueue();
     }
+
+    void render(ProfilerGraph *graph);
+
+    void autosaveScreensizeAndCo(v2u initial_screen_size, bool initial_wnd_maximized);
 private:
     void initWindow();
 

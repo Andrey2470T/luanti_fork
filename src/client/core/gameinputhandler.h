@@ -37,6 +37,7 @@ public:
     void toggleFullViewRange();
     void checkZoomEnabled();
 
+    void updateCameraMode();
     void updateCameraDirection(f32 dtime);
     void updateCameraOrientation(f32 dtime);
     void updatePlayerControl();

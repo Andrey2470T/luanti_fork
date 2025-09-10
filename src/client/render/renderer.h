@@ -2,6 +2,7 @@
 
 #include <Utils/Rect.h>
 #include <Render/DrawContext.h>
+#include <Core/MainWindow.h>
 
 namespace render
 {
@@ -37,6 +38,19 @@ enum class TMatrix : u8
     Texture0
 };
 
+struct FpsControl {
+    FpsControl() : last_time(0), busy_time(0), sleep_time(0) {}
+
+    void reset();
+
+    void limit(core::MainWindow *wnd, f32 *dtime);
+
+    u32 getBusyMs() const { return busy_time / 1000; }
+
+    // all values in microseconds (us)
+    u64 last_time, busy_time, sleep_time;
+};
+
 struct Jitter {
     f32 max, min, avg, counter, max_sample, min_sample, max_fraction;
 };
@@ -47,6 +61,7 @@ struct DrawStats
     u32 drawn_primitives;
     f32 drawtime; // in us
 
+    FpsControl fps;
     Jitter dtime_jitter, busy_time_jitter;
 };
 
@@ -77,12 +92,7 @@ class Renderer
 public:
     const static img::color8 menu_sky_color;
 
-    Renderer(ResourceCache *res_cache, const recti &viewportSize, u32 maxTexUnits)
-        : context(std::make_unique<DrawContext>(viewportSize, maxTexUnits)), resCache(res_cache)
-    {
-        createDefaultShaders();
-        createUBOs();
-    }
+    Renderer(ResourceCache *res_cache, const recti &viewportSize, u32 maxTexUnits);
 
     DrawContext *getContext() const
     {
@@ -126,7 +136,7 @@ public:
     void draw(MeshBuffer *buffer, PrimitiveType type=PT_TRIANGLES,
         u32 offset=0, std::optional<u32> count=std::nullopt);
 
-    void updateStats(const FpsControl &draw_times, f32 dtime);
+    void updateStats(f32 dtime);
 private:
     void createDefaultShaders();
     void createUBOs();

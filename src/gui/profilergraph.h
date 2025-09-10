@@ -4,15 +4,13 @@
 
 #pragma once
 
-#include <SColor.h>
+#include <BasicIncludes.h>
 #include <deque>
 #include <utility>
-#include <IGUIFont.h>
+#include <Render/TTFont.h>
 #include "profiler.h"
 
-namespace irr::video {
-	class IVideoDriver;
-}
+class RenderSystem;
 
 /* Profiler display */
 class ProfilerGraph
@@ -27,9 +25,9 @@ private:
 	{
 		float min;
 		float max;
-		video::SColor color;
+        img::color8 color;
 		Meta(float initial = 0,
-				video::SColor color = video::SColor(255, 255, 255, 255)) :
+                img::color8 color = img::white) :
 				min(initial),
 				max(initial), color(color)
 		{
@@ -44,6 +42,6 @@ public:
 
 	void put(const Profiler::GraphValues &values);
 
-	void draw(s32 x_left, s32 y_bottom, video::IVideoDriver *driver,
-			gui::IGUIFont *font) const;
+    void draw(s32 x_left, s32 y_bottom, RenderSystem *rndsys,
+            render::TTFont *font) const;
 };

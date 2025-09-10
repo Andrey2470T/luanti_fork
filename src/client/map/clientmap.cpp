@@ -5,6 +5,7 @@
 #include "clientmap.h"
 #include "client/core/client.h"
 #include "client/mesh/meshoperations.h"
+#include "client/ui/minimap.h"
 #include "mapblockmesh.h"
 #include "mapsector.h"
 #include "mapblock.h"

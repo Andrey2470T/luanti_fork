@@ -53,4 +53,9 @@ public:
     void clearOutChatQueue();
 
 	void sendFromQueue();
+	
+	void updateChat(f32 dtime);
+
+    static void settingChangedCallback(const std::string &setting_name, void *data);
+    void readSettings();
 };

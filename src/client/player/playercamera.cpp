@@ -35,60 +35,9 @@
 #define WIELDMESH_AMPLITUDE_X 7.0f
 #define WIELDMESH_AMPLITUDE_Y 10.0f
 
-Nametag::Nametag(Client *client,
-        const std::string &text,
-        const img::color8 &textcolor,
-        const std::optional<img::color8> &bgcolor,
-        const v3f &pos)
-    : Waypoint(client, nullptr, client->getEnv().getLocalPlayer()->getCamera()->getPosition()+pos*BS),
-      text(text),
-      textcolor(textcolor),
-      bgcolor(bgcolor)
-{
-    auto rndsys = client->getRenderSystem();
-    faceBank = std::make_unique<UISpriteBank>(rndsys->getRenderer(), client->getResourceCache());
-    faceBank->addTextSprite(rndsys->getFontManager(), EnrichedString(text), 0);
-
-    show_backgrounds = g_settings->getBool("show_nametag_backgrounds");
-}
-
-void Nametag::updateBank(v3f newWorldPos)
-{
-    v3f camera_pos = client->getEnv().getLocalPlayer()->getCamera()->getPosition();
-
-    v2f screen_pos;
-    worldPos = camera_pos + newWorldPos * BS;
-    calculateScreenPos(&screen_pos);
-    faceBank->setCenter(screen_pos);
-
-    std::wstring nametag_colorless = unescape_translate(utf8_to_wide(text));
-
-    auto font_mgr = client->getRenderSystem()->getFontManager();
-
-    auto font = font_mgr->getFont(render::FontMode::GRAY, render::FontStyle::NORMAL);
-    v2u textsize = font->getTextSize(nametag_colorless.c_str());
-
-    auto text_sprite = dynamic_cast<UITextSprite *>(faceBank->getSprite(0));
-    text_sprite->setOverrideFont(font);
-    text_sprite->setText(nametag_colorless);
-
-    v2f textsize_f(textsize.X, textsize.Y);
-
-    auto bgcolor = getBgColor(show_backgrounds);
-    if (bgcolor.A() != 0) {
-        screen_pos.X -= 2.0f;
-        textsize_f.X += 4.0f;
-    }
-
-    text_sprite->setBackgroundColor(bgcolor);
-    text_sprite->setColor(textcolor);
-    text_sprite->updateBuffer(rectf(screen_pos-textsize_f/2.0f, textsize_f.X, textsize_f.Y));
-}
-
 PlayerCamera::PlayerCamera(Client *client):
     Camera(toV2u(client->getRenderSystem()->getRenderer()->getContext()->getViewportSize().getSize())),
-    m_draw_control(client->getRenderSystem()->getDrawList()->getDrawControl()),
-    m_client(client), m_player_light_color(img::colorU32NumberToObject(0xFFFFFFFF))
+    m_draw_control(client->getRenderSystem()->getDrawList()->getDrawControl()), m_client(client)
 {
     //auto smgr = rendering_engine->get_scene_manager();
 
@@ -116,8 +65,6 @@ PlayerCamera::PlayerCamera(Client *client):
 	// as a zoom FOV and load world beyond the set server limits.
 	m_cache_fov                 = g_settings->getFloat("fov", 45.0f, 160.0f);
 	m_arm_inertia               = g_settings->getBool("arm_inertia");
-	m_nametags.clear();
-	m_show_nametag_backgrounds  = g_settings->getBool("show_nametag_backgrounds");
     m_touch_use_crosshair       = g_settings->getBool("touch_use_crosshair");
 }
 
@@ -216,7 +163,7 @@ void PlayerCamera::step(f32 dtime)
 		}
 	}
 
-	if (m_digging_button != -1) {
+    /*if (m_digging_button != -1) {
 		f32 offset = dtime * 3.5f;
 		float m_digging_anim_was = m_digging_anim;
 		m_digging_anim += offset;
@@ -234,10 +181,10 @@ void PlayerCamera::step(f32 dtime)
 				m_client->getEventManager()->put(new SimpleTriggerEvent(MtEvent::CAMERA_PUNCH_RIGHT));
 			}
 		}
-	}
+    }*/
 }
 
-static inline v2f dir(const v2f &pos_dist)
+/*static inline v2f dir(const v2f &pos_dist)
 {
 	f32 x = pos_dist.X - WIELDMESH_OFFSET_X;
 	f32 y = pos_dist.Y - WIELDMESH_OFFSET_Y;
@@ -272,7 +219,7 @@ void PlayerCamera::addArmInertia(f32 player_yaw)
 		    with an acceleration factor.
 		*/
 
-		if (m_cam_vel.X > 1.0f) {
+        /*if (m_cam_vel.X > 1.0f) {
 			if (m_cam_vel.X > m_cam_vel_old.X)
 				m_cam_vel_old.X = m_cam_vel.X;
 
@@ -304,13 +251,13 @@ void PlayerCamera::addArmInertia(f32 player_yaw)
 		}
 
 		m_arm_dir = dir(m_wieldmesh_offset);
-	} else {
+    } else {*/
 		/*
 		    Now the arm gets back to its default position when the camera stops,
 		    following a vector, with a smooth deceleration factor.
 		*/
 
-		f32 dec_X = 0.35f * (std::min(15.0f, m_cam_vel_old.X) * (1.0f +
+        /*f32 dec_X = 0.35f * (std::min(15.0f, m_cam_vel_old.X) * (1.0f +
 			(1.0f - m_arm_dir.X))) * (gap_X / 20.0f);
 
 		f32 dec_Y = 0.25f * (std::min(15.0f, m_cam_vel_old.Y) * (1.0f +
@@ -328,51 +275,74 @@ void PlayerCamera::addArmInertia(f32 player_yaw)
 		m_wieldmesh_offset.Y -=
 			m_wieldmesh_offset.Y > WIELDMESH_OFFSET_Y ? dec_Y : -dec_Y;
 	}
-}
+}*/
 
-void PlayerCamera::update(LocalPlayer* player, f32 frametime, f32 tool_reload_ratio)
+void PlayerCamera::update(f32 dtime)
 {
+    LocalPlayer *player = m_client->getEnv().getLocalPlayer();
+
+    /*
+        For interaction purposes, get info about the held item
+        - What item is it?
+        - Is it a usable item?
+        - Can it point to liquids?
+    */
+    /*ItemStack playeritem;
+    {
+        ItemStack selected, hand;
+        playeritem = player->getWieldedItem(&selected, &hand);
+    }
+
+    ToolCapabilities playeritem_toolcap =
+        playeritem.getToolCapabilities(m_client->getItemDefManager());
+
+    time_from_last_punch += dtime;
+    float full_punch_interval = playeritem_toolcap.full_punch_interval;
+    float tool_reload_ratio = time_from_last_punch / full_punch_interval;
+
+    tool_reload_ratio = MYMIN(tool_reload_ratio, 1.0);*/
+
 	// Get player position
 	// Smooth the movement when walking up stairs
     v3f old_player_position = m_playerbase_pos;
-	v3f player_position = player->getPosition();
+    v3f player_position = player->getPosition();
 
-	f32 yaw = player->getYaw();
-	f32 pitch = player->getPitch();
+    f32 yaw = player->getYaw();
+    f32 pitch = player->getPitch();
 
 	// This is worse than `LocalPlayer::getPosition()` but
 	// mods expect the player head to be at the parent's position
 	// plus eye height.
-	if (player->getParent())
-		player_position = player->getParent()->getPosition();
+    if (player->getParent())
+        player_position = player->getParent()->getPosition();
 
 	// Smooth the camera movement after the player instantly moves upward due to stepheight.
 	// The smoothing usually continues until the camera position reaches the player position.
-	float player_stepheight = player->getCAO() ? player->getCAO()->getStepHeight() : HUGE_VALF;
+    float player_stepheight = player->getCAO() ? player->getCAO()->getStepHeight() : HUGE_VALF;
 	float upward_movement = player_position.Y - old_player_position.Y;
 	if (upward_movement < 0.01f || upward_movement > player_stepheight) {
 		m_stepheight_smooth_active = false;
-	} else if (player->touching_ground) {
+    } else if (player->touching_ground) {
 		m_stepheight_smooth_active = true;
 	}
 	if (m_stepheight_smooth_active) {
 		f32 oldy = old_player_position.Y;
 		f32 newy = player_position.Y;
-		f32 t = std::exp(-23 * frametime);
+        f32 t = std::exp(-23 * dtime);
 		player_position.Y = oldy * t + newy * (1-t);
 	}
 
     m_playerbase_pos = player_position;
 
 	// Get camera tilt timer (hurt animation)
-	float cameratilt = fabs(fabs(player->hurt_tilt_timer-0.75)-0.75);
+    float cameratilt = fabs(fabs(player->hurt_tilt_timer-0.75)-0.75);
 
 	// Fall bobbing animation
 	float fall_bobbing = 0;
-	if(player->camera_impact >= 1 && m_camera_mode < CAMERA_MODE_THIRD)
+    if(player->camera_impact >= 1 && m_camera_mode < CAMERA_MODE_THIRD)
 	{
 		if(m_view_bobbing_fall == -1) // Effect took place and has finished
-			player->camera_impact = m_view_bobbing_fall = 0;
+            player->camera_impact = m_view_bobbing_fall = 0;
 		else if(m_view_bobbing_fall == 0) // Initialize effect
 			m_view_bobbing_fall = 1;
 
@@ -381,8 +351,8 @@ void PlayerCamera::update(LocalPlayer* player, f32 frametime, f32 tool_reload_ra
 		// Smoothen and invert the above
 		fall_bobbing = sin(fall_bobbing * 0.5 * M_PI) * -1;
 		// Amplify according to the intensity of the impact
-		if (player->camera_impact > 0.0f)
-			fall_bobbing *= (1 - rangelim(50 / player->camera_impact, 0, 1)) * 5;
+        if (player->camera_impact > 0.0f)
+            fall_bobbing *= (1 - rangelim(50 / player->camera_impact, 0, 1)) * 5;
 
 		fall_bobbing *= m_cache_fall_bobbing_amount;
 	}
@@ -488,14 +458,10 @@ void PlayerCamera::update(LocalPlayer* player, f32 frametime, f32 tool_reload_ra
     updateOffset();
 
     // Set camera node transformation
-    m_position -= intToFloat(m_offset, BS);
-    //m_cameranode->setPosition(my_cp-intToFloat(m_camera_offset, BS));
-    //m_cameranode->updateAbsolutePosition();
+    my_cp -= intToFloat(m_offset, BS);
     m_up_vector = abs_cam_up;
-    //m_cameranode->setUpVector(abs_cam_up);
 	// *100.0 helps in large map coordinates
     setDirection(my_cp-intToFloat(m_offset, BS) + m_direction * 100);
-    //m_cameranode->setTarget(my_cp-intToFloat(m_camera_offset, BS) + 100 * m_camera_direction);
 
 	// update the camera position in third-person mode to render blocks behind player
 	// and correctly apply liquid post FX.
@@ -510,7 +476,7 @@ void PlayerCamera::update(LocalPlayer* player, f32 frametime, f32 tool_reload_ra
 	if (m_fov_transition_active) {
 		// Smooth FOV transition
 		// Dynamically calculate FOV delta based on frametimes
-		f32 delta = (frametime / m_transition_time) * m_fov_diff;
+        f32 delta = (dtime / m_transition_time) * m_fov_diff;
 		m_curr_fov_degrees += delta;
 
 		// Mark transition as complete if target FOV has been reached
@@ -522,9 +488,9 @@ void PlayerCamera::update(LocalPlayer* player, f32 frametime, f32 tool_reload_ra
 	} else if (m_server_sent_fov) {
 		// Instantaneous FOV change
 		m_curr_fov_degrees = m_target_fov_degrees;
-	} else if (player->getPlayerControl().zoom && player->getZoomFOV() > 0.001f) {
+    } else if (player->getPlayerControl().zoom && player->getZoomFOV() > 0.001f) {
 		// Player requests zoom, apply zoom FOV
-		m_curr_fov_degrees = player->getZoomFOV();
+        m_curr_fov_degrees = player->getZoomFOV();
 	} else {
 		// Set to client's selected FOV
 		m_curr_fov_degrees = m_cache_fov;
@@ -542,11 +508,11 @@ void PlayerCamera::update(LocalPlayer* player, f32 frametime, f32 tool_reload_ra
 	// Make new matrices and frustum
     updateMatrices();
 
-	if (m_arm_inertia)
-		addArmInertia(yaw);
+	//if (m_arm_inertia)
+	//	addArmInertia(yaw);
 
 	// Position the wielded item
-	v3f wield_position = v3f(m_wieldmesh_offset.X, m_wieldmesh_offset.Y, 65);
+	/*v3f wield_position = v3f(m_wieldmesh_offset.X, m_wieldmesh_offset.Y, 65);
 	v3f wield_rotation = v3f(-100, 120, -100);
 	wield_position.Y += std::abs(m_wield_change_timer)*320 - 40;
 	if(m_digging_anim < 0.05 || m_digging_anim > 0.5)
@@ -579,11 +545,11 @@ void PlayerCamera::update(LocalPlayer* player, f32 frametime, f32 tool_reload_ra
 		f32 bobfrac = my_modf(m_view_bobbing_anim);
 		wield_position.X -= std::sin(bobfrac*M_PI*2.0) * 3.0;
 		wield_position.Y += std::sin(my_modf(bobfrac*2.0)*M_PI) * 3.0;
-	}
+	}*/
     //m_wieldnode->setPosition(wield_position);
     //m_wieldnode->setRotation(wield_rotation);
 
-	m_player_light_color = player->light_color;
+    updateLightColor(player->light_color);
     //m_wieldnode->setNodeLightColor(m_player_light_color);
 
 	// Set render distance
@@ -592,13 +558,13 @@ void PlayerCamera::update(LocalPlayer* player, f32 frametime, f32 tool_reload_ra
 	// If the player is walking, swimming, or climbing,
 	// view bobbing is enabled and free_move is off,
 	// start (or continue) the view bobbing animation.
-	const v3f &speed = player->getSpeed();
+    const v3f &speed = player->getSpeed();
 	const bool movement_XZ = std::hypot(speed.X, speed.Z) > BS;
 	const bool movement_Y = std::abs(speed.Y) > BS;
 
-	const bool walking = movement_XZ && player->touching_ground;
-	const bool swimming = (movement_XZ || player->swimming_vertical) && player->in_liquid;
-	const bool climbing = movement_Y && player->is_climbing;
+    const bool walking = movement_XZ && player->touching_ground;
+    const bool swimming = (movement_XZ || player->swimming_vertical) && player->in_liquid;
+    const bool climbing = movement_Y && player->is_climbing;
 	const bool flying = g_settings->getBool("free_move")
         && player->checkLocalPrivilege("fly");
 	if ((walking || swimming || climbing) && !flying) {
@@ -610,6 +576,8 @@ void PlayerCamera::update(LocalPlayer* player, f32 frametime, f32 tool_reload_ra
 		m_view_bobbing_state = 2;
 		m_view_bobbing_speed = 60;
 	}
+
+    step(dtime);
 }
 
 void PlayerCamera::updateViewingRange()
@@ -626,13 +594,13 @@ void PlayerCamera::updateViewingRange()
     setFarValue((viewing_range < 2000) ? 2000 * BS : viewing_range * BS);
 }
 
-void PlayerCamera::setDigging(s32 button)
+/*void PlayerCamera::setDigging(s32 button)
 {
 	if (m_digging_button == -1)
 		m_digging_button = button;
-}
+}*/
 
-void PlayerCamera::wield(const ItemStack &item)
+/*void PlayerCamera::wield(const ItemStack &item)
 {
 	if (item.name != m_wield_item_next.name ||
 			item.metadata != m_wield_item_next.metadata) {
@@ -642,10 +610,10 @@ void PlayerCamera::wield(const ItemStack &item)
 		else if (m_wield_change_timer == 0)
 			m_wield_change_timer = -0.001;
 	}
-}
+}*/
 
-void PlayerCamera::drawWieldedTool(matrix4* translation)
-{
+//void PlayerCamera::drawWieldedTool(matrix4* translation)
+//{
 	// Clear Z buffer so that the wielded tool stays in front of world geometry
     /*m_wieldmgr->getVideoDriver()->clearBuffers(video::ECBF_DEPTH);
 
@@ -669,30 +637,4 @@ void PlayerCamera::drawWieldedTool(matrix4* translation)
 		cam->setTarget(focusPoint);
 	}
     m_wieldmgr->drawAll();*/
-}
-
-void PlayerCamera::drawNametags()
-{
-    for (const auto &nametag : m_nametags) {
-		// Nametags are hidden in GenericCAO::updateNametag()
-        nametag->drawBank();
-	}
-}
-
-Nametag *PlayerCamera::addNametag(
-        const std::string &text, img::color8 textcolor,
-        std::optional<img::color8> bgcolor, const v3f &pos)
-{
-    m_nametags.emplace_back(std::make_unique<Nametag>(m_client, text, textcolor, bgcolor, pos));
-    return m_nametags.back().get();
-}
-
-void PlayerCamera::removeNametag(Nametag *nametag)
-{
-    auto find_nametag = std::find(m_nametags.begin(), m_nametags.end(),
-        [nametag] (const std::unique_ptr<Nametag> &nt)
-        {
-            return nt.get() == nametag;
-        });
-    m_nametags.erase(find_nametag);
-}
+//}

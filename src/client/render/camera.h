@@ -31,6 +31,8 @@ protected:
 
     img::color8 m_light_color;
 public:
+    bool disable_update = false;
+
     Camera(const v2u &viewportSize=v2u(),
             const v3f &position=v3f(), const v3f &direction=v3f(0,0,1),
             bool isOrthogonal=false);

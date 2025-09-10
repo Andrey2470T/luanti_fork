@@ -1,4 +1,5 @@
 #include "rendersystem.h"
+#include "gui/touchcontrols.h"
 #include "settings.h"
 #include "client/ui/glyph_atlas.h"
 #include "loadscreen.h"
@@ -22,44 +23,8 @@
 #include "client/ui/minimap.h"
 #include "gui/guiEnvironment.h"
 #include "client/ui/gameformspec.h"
-
-void FpsControl::reset()
-{
-    last_time = porting::getTimeUs();
-}
-
-void FpsControl::limit(core::MainWindow *wnd, f32 *dtime)
-{
-    const float fps_limit = wnd->isFocused()
-            ? g_settings->getFloat("fps_max")
-            : g_settings->getFloat("fps_max_unfocused");
-    const u64 frametime_min = 1000000.0f / std::max(fps_limit, 1.0f);
-
-    u64 time = porting::getTimeUs();
-
-    if (time > last_time) // Make sure time hasn't overflowed
-        busy_time = time - last_time;
-    else
-        busy_time = 0;
-
-    if (busy_time < frametime_min) {
-        sleep_time = frametime_min - busy_time;
-        porting::preciseSleepUs(sleep_time);
-    } else {
-        sleep_time = 0;
-    }
-
-    // Read the timer again to accurately determine how long we actually slept,
-    // rather than calculating it by adding sleep_time to time.
-    time = porting::getTimeUs();
-
-    if (time > last_time) // Make sure last_time hasn't overflowed
-        *dtime = (time - last_time) / 1000000.0f;
-    else
-        *dtime = 0;
-
-    last_time = time;
-}
+#include "gui/profilergraph.h"
+#include "util/tracy_wrapper.h"
 
 RenderSystem::RenderSystem(ResourceCache *_cache)
     : cache(_cache)
@@ -152,6 +117,88 @@ void RenderSystem::buildGUIAtlas()
     }
 
     guiPool->buildRectpack2DAtlas();
+}
+
+void RenderSystem::render(ProfilerGraph *graph)
+{
+    ZoneScoped;
+
+    auto fog_color = sky->getFogColor();
+    auto sky_color = sky->getSkyColor();
+
+    /*
+        Fog
+    */
+    auto draw_control = drawlist->getDrawControl();
+
+    if (renderer->fogEnabled()) {
+        renderer->setFogParams(
+                FogType::Linear,
+                fog_color,
+                draw_control.fog_range * sky->getFogStart(),
+                draw_control.fog_range * 1.0f,
+                0.0f // unused
+        );
+    } else {
+        renderer->setFogParams(
+                FogType::Linear,
+                fog_color,
+                FOG_RANGE_ALL,
+                FOG_RANGE_ALL + 100 * BS,
+                0.0f // unused
+        );
+    }
+
+    /*
+        Drawing
+    */
+    TimeTaker tt_draw("Draw scene", nullptr, PRECISION_MICRO);
+
+    renderer->getContext()->clearBuffers(render::CBF_COLOR | render::CBF_DEPTH, sky_color);
+
+    const LocalPlayer *player = this->client->getEnv().getLocalPlayer();
+
+    pp_core->run(sky_color, gameui->getFlags() & GUIF_SHOW_HUD);
+
+    /*
+        Profiler graph
+    */
+    v2u wndsize = window->getWindowSize();
+
+    if (gameui->getFlags() & GUIF_SHOW_PROFILER_GRAPH) {}
+        //graph->draw(10, screensize.Y - 10, driver, g_fontengine->getFont());
+
+    auto drawstats = renderer->getDrawStats();
+    drawstats.drawtime = tt_draw.stop(true);
+    g_profiler->graphAdd("Draw scene [us]", drawstats.drawtime);
+}
+
+void RenderSystem::autosaveScreensizeAndCo(v2u initial_screen_size, bool initial_wnd_maximized)
+{
+    if (!g_settings->getBool("autosave_screensize"))
+        return;
+
+    // Note: If the screensize or similar hasn't changed (i.e. it's the same as
+    // the setting was when minetest started, as given by the initial_* parameters),
+    // we do not want to save the thing. This allows users to also manually change
+    // the settings.
+
+    // Don't save the fullscreen size, we want the windowed size.
+    bool fullscreen = window->isFullScreen();
+    // Screen size
+    const v2u current_wnd_size = window->getWindowSize();
+    // Don't replace good value with (0, 0)
+    if (!fullscreen &&
+        current_wnd_size != v2u(0, 0) &&
+        current_wnd_size != initial_screen_size) {
+        g_settings->setU16("screen_w", current_wnd_size.X);
+        g_settings->setU16("screen_h", current_wnd_size.Y);
+    }
+
+    // Window maximized
+    const bool is_window_maximized = window->isMaximized();
+    if (is_window_maximized != initial_wnd_maximized)
+        g_settings->setBool("window_maximized", is_window_maximized);
 }
 
 void RenderSystem::initWindow()

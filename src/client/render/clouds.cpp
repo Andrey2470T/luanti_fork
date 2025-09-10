@@ -3,6 +3,7 @@
 // Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "clouds.h"
+#include "client/render/sky.h"
 #include "constants.h"
 #include "debug.h"
 #include <Utils/Printing.h>
@@ -16,10 +17,6 @@
 #include "batcher3d.h"
 #include "renderer.h"
 #include "client/mesh/defaultVertexTypes.h"
-
-class Clouds;
-//scene::ISceneManager *g_menucloudsmgr = nullptr;
-Clouds *g_menuclouds = nullptr;
 
 // Constant for now
 static constexpr const float cloud_size = BS * 64.0f;
@@ -308,9 +305,9 @@ void Clouds::updateMesh()
 		<< std::endl;
 }
 
-void Clouds::render()
+void Clouds::render(v3s16 camera_offset)
 {
-	if (m_params.density <= 0.0f)
+    if (!m_visible || m_params.density <= 0.0f)
         return; // no need to do anything
 
 	//updateMesh();
@@ -320,7 +317,7 @@ void Clouds::render()
 
     v2f off_origin = m_origin - m_mesh_origin;
     v3f rel(off_origin.X, 0, off_origin.Y);
-    rel -= intToFloat(m_camera_offset, BS);
+    rel -= intToFloat(camera_offset, BS);
     matrix4 translate;
     translate.setTranslation(rel);
 
@@ -342,32 +339,63 @@ void Clouds::step(float dtime)
     m_origin = m_origin + m_params.speed * dtime * BS;
 }
 
-void Clouds::update(const v3f &camera_p, const img::colorf &color_diffuse)
+//void Clouds::update(const v3f &camera_p, v3s16 camera_offset, const img::colorf &color_diffuse)
+void Clouds::update(f32 dtime, PlayerCamera *camera, Sky *sky, f32 &fog_range)
 {
+    if (!sky->getCloudsVisible()) {
+        m_visible = false;
+        return;
+    }
+
+    m_visible = true;
+    step(dtime);
+    // this->camera->getPosition is not enough for third-person camera.
+    v3f camera_pos = camera->getPosition();
+    v3s16 camera_offset      = camera->getOffset();
+    camera_pos.X   = camera_pos.X + camera_offset.X * BS;
+    camera_pos.Y   = camera_pos.Y + camera_offset.Y * BS;
+    camera_pos.Z   = camera_pos.Z + camera_offset.Z * BS;
+
     img::colorf ambient = img::color8ToColorf(m_params.color_ambient);
     img::colorf bright = img::color8ToColorf(m_params.color_bright);
-    m_color.R(std::clamp(color_diffuse.R() * bright.G(), ambient.R(), 1.0f));
-    m_color.G(std::clamp(color_diffuse.G() * bright.G(), ambient.G(), 1.0f));
-    m_color.B(std::clamp(color_diffuse.B() * bright.B(), ambient.B(), 1.0f));
+
+    img::colorf cloud_color = sky->getCloudColor();
+    m_color.R(std::clamp(cloud_color.R() * bright.G(), ambient.R(), 1.0f));
+    m_color.G(std::clamp(cloud_color.G() * bright.G(), ambient.G(), 1.0f));
+    m_color.B(std::clamp(cloud_color.B() * bright.B(), ambient.B(), 1.0f));
     m_color.A(bright.A());
 
 	// is the camera inside the cloud mesh?
-	m_camera_pos = camera_p;
+    m_camera_pos = camera_pos;
 	m_camera_inside_cloud = false; // default
+
+    updateBox();
 	if (is3D()) {
-		float camera_height = camera_p.Y - BS * m_camera_offset.Y;
+        float camera_height = camera_pos.Y - BS * camera_offset.Y;
 		if (camera_height >= m_box.MinEdge.Y &&
 				camera_height <= m_box.MaxEdge.Y) {
 			v2f camera_in_noise;
-			camera_in_noise.X = floor((camera_p.X - m_origin.X) / cloud_size + 0.5);
-			camera_in_noise.Y = floor((camera_p.Z - m_origin.Y) / cloud_size + 0.5);
+            camera_in_noise.X = floor((camera_pos.X - m_origin.X) / cloud_size + 0.5);
+            camera_in_noise.Y = floor((camera_pos.Z - m_origin.Y) / cloud_size + 0.5);
 			bool filled = gridFilled(camera_in_noise.X, camera_in_noise.Y);
 			m_camera_inside_cloud = filled;
 		}
 	}
 
+    updateMesh();
+
     for (u32 i = 0; i < m_mesh->getVertexCount(); i++)
         svtSetHWColor(m_mesh.get(), m_color, i);
+
+    if (isCameraInsideCloud() && m_rndsys->getRenderer()->fogEnabled()) {
+        // If camera is inside cloud and fog is enabled, use cloud's colors as sky colors.
+        img::color8 clouds_dark = getColor().linInterp(img::black, 0.9);
+        sky->overrideColors(clouds_dark, getColor());
+        sky->setInClouds(true);
+        fog_range = std::fmin(fog_range * 0.5f, 32.0f * BS);
+        // Clouds are not drawn in this case.
+        m_visible = false;
+    }
 }
 
 void Clouds::readSettings()

@@ -8,6 +8,8 @@
 #include <cmath>
 #include <json/json.h>
 #include "client.h"
+#include "client/render/renderer.h"
+#include "client/render/sky.h"
 #include "client/sound/soundopenal.h"
 #include "client/ui/gameformspec.h"
 #include "client/ui/gameui.h"
@@ -83,7 +85,7 @@ Client::Client(ResourceCache *resource_cache, RenderSystem *render_system,
 			new ModStorageDatabaseSQLite3(porting::path_user + DIR_DELIM + "client");
 	m_mod_storage_database->beginSave();
 
-	m_cache_save_interval = g_settings->getU16("server_map_save_interval");
+    m_cache_save_interval = g_settings->getU16("server_map_save_interval");
 }
 
 bool Client::initSound()
@@ -135,6 +137,33 @@ bool Client::initGui()
     }
 
     return true;
+}
+
+void Client::updateSound(f32 dtime)
+{
+    // Update sound listener
+    LocalPlayer *player = m_env.getLocalPlayer();
+    ClientActiveObject *parent = player->getParent();
+    Camera *camera = player->getCamera();
+    v3s16 camera_offset = camera->getOffset();
+    m_sound->updateListener(
+            camera->getPosition() * (1.0f/BS) + intToFloat(camera_offset, 1.0f),
+            (parent ? parent->getVelocity() : player->getSpeed()) * (1.0f/BS),
+            camera->getDirection(),
+            camera->getUpVector());
+
+    sound_volume_control(m_sound.get(), m_render_system->getWindow()->isActive());
+
+    // Tell the sound maker whether to make footstep sounds
+    m_soundmaker->makes_footstep_sound = player->makes_footstep_sound;
+
+    //	Update sound maker
+    if (player->makes_footstep_sound)
+        m_soundmaker->step(dtime);
+
+    ClientMap &map = m_env.getClientMap();
+    MapNode n = map.getNode(player->getFootstepNodePos());
+    m_soundmaker->m_player_step_sound = m_nodedef->get(n).sound_footstep;
 }
 
 void Client::migrateModStorage()
@@ -345,7 +374,7 @@ Client::~Client()
 	m_sounds_client_to_server.clear();
 }
 
-void Client::step(float dtime)
+void Client::step(f32 dtime)
 {
 	// Limit a bit
 	if (dtime > DTIME_LIMIT)
@@ -382,7 +411,7 @@ void Client::step(float dtime)
 	LocalPlayer *player = m_env.getLocalPlayer();
 
 	// Step environment (also handles player controls)
-	m_env.step(dtime);
+    m_env.step(dtime);
 	m_sound->step(dtime);
 
 	/*
@@ -1018,7 +1047,7 @@ ISoundManager* Client::getSoundManager()
 }
 MtEventManager* Client::getEventManager()
 {
-	return m_event;
+    return m_eventmgr.get();
 }
 
 const std::string* Client::getModFile(std::string filename)

@@ -11,11 +11,16 @@
 #include <ctime.h>
 #include "utils/string.h"
 #include "script/scripting_client.h"
+#include "client/render/rendersystem.h"
+#include "client/ui/gameui.h"
 
 ChatMessanger::ChatMessanger(Client *_client)
     : client(_client), packet_handler(client->getPacketHandler()), chat_backend(std::make_unique<ChatBackend>()),
     last_chat_message_sent(time(nullptr))
-{}
+{
+    g_settings->registerChangedCallback("chat_log_level",
+        &settingChangedCallback, this);
+}
 
 void ChatMessanger::init(gui::IGUIEnvironment *guienv)
 {
@@ -128,4 +133,60 @@ void ChatMessanger::sendFromQueue()
 
 	sendChatMessage(out_chat_queue.front());
 	out_chat_queue.pop();
+}
+
+void ChatMessanger::updateChat(f32 dtime)
+{
+	auto color_for = [](LogLevel level) -> const char* {
+		switch (level) {
+		case LL_ERROR  : return "\x1b(c@#F00)"; // red
+		case LL_WARNING: return "\x1b(c@#EE0)"; // yellow
+		case LL_INFO   : return "\x1b(c@#BBB)"; // grey
+		case LL_VERBOSE: return "\x1b(c@#888)"; // dark grey
+		case LL_TRACE  : return "\x1b(c@#888)"; // dark grey
+		default        : return "";
+		}
+	};
+
+	// Get new messages from error log buffer
+	std::vector<LogEntry> entries = chat_log_buf.take();
+	for (const auto& entry : entries) {
+		std::string line;
+		line.append(color_for(entry.level)).append(entry.combined);
+		chat_backend->addMessage(L"", utf8_to_wide(line));
+	}
+
+	// Get new messages from client
+	std::wstring message;
+	while (getChatMessage(message)) {
+		chat_backend->addUnparsedMessage(message);
+	}
+
+	// Remove old messages
+	chat_backend->step(dtime);
+
+	// Display all messages in a static text element
+	auto &buf = chat_backend->getRecentBuffer();
+	if (buf.getLinesModified()) {
+		buf.resetLinesModified();
+        client->getRenderSystem()->getGameUI()->setChatText(chat_backend->getRecentChat(), buf.getLineCount());
+	}
+
+	// Make sure that the size is still correct
+	client->getRenderSystem()->getGameUI()->updateChatSize();
+}
+
+void ChatMessanger::settingChangedCallback(const std::string &setting_name, void *data)
+{
+    ((ChatMessanger *)data)->readSettings();
+}
+
+void ChatMessanger::readSettings()
+{
+    LogLevel chat_log_level = Logger::stringToLevel(g_settings->get("chat_log_level"));
+    if (chat_log_level == LL_MAX) {
+        warningstream << "Supplied unrecognized chat_log_level; showing none." << std::endl;
+        chat_log_level = LL_NONE;
+    }
+    chat_log_buf.setLogLevel(chat_log_level);
 }

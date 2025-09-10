@@ -3,6 +3,7 @@ set(ao_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/ao/clientActiveObject.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ao/clientActiveObjectMgr.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ao/genericCAO.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ao/nametag.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ao/renderCAO.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ao/skeleton.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ao/smokePuffCSO.cpp
@@ -74,6 +75,7 @@ set(pipeline_SRCS
 )
 
 set(player_SRCS
+	${CMAKE_CURRENT_SOURCE_DIR}/player/interaction.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/player/playercamera.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/player/localplayer.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/player/selection.cpp
@@ -93,7 +95,6 @@ set(render_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/render/rendersystem.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/sky.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/tilelayer.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/render/wieldmesh.cpp
 )
 
 set(shadows_SRCS

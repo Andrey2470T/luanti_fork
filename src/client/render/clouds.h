@@ -13,13 +13,12 @@
 class RenderSystem;
 class ResourceCache;
 class MeshBuffer;
+class PlayerCamera;
+class Sky;
 
 // Menu clouds
 // The mainmenu and the loading screen use the same Clouds object so that the
 // clouds don't jump when switching between the two.
-class Clouds;
-//extern scene::ISceneManager *g_menucloudsmgr;
-extern Clouds *g_menuclouds;
 
 class Clouds
 {
@@ -57,15 +56,9 @@ public:
 
 	void step(float dtime);
 
-	void update(const v3f &camera_p, const img::colorf &color);
+    void update(f32 dtime, PlayerCamera *camera, Sky *sky, f32 &fog_range);
 
-    void render();
-
-	void updateCameraOffset(v3s16 camera_offset)
-	{
-		m_camera_offset = camera_offset;
-		updateBox();
-	}
+    void render(v3s16 camera_offset);
 
 	void readSettings();
 
@@ -164,7 +157,7 @@ private:
 	u32 m_seed;
 	v3f m_camera_pos;
 
-	v3s16 m_camera_offset;
+    bool m_visible = true;
 	bool m_camera_inside_cloud = false;
 
 	bool m_enable_3d;

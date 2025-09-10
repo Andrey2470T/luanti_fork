@@ -54,7 +54,7 @@ void Draw3D::run(PipelineContext &context)
     auto camera = context.client->getEnv().getLocalPlayer()->getCamera();
 
     rnd_sys->getSky()->render(camera);
-    rnd_sys->getClouds()->render();
+    rnd_sys->getClouds()->render(camera->getOffset());
     rnd_sys->getDrawList()->render();
     rnd_sys->getParticleManager()->renderParticles();
 }
@@ -67,8 +67,6 @@ void DrawHUD::run(PipelineContext &context)
 
         auto rnd_sys = context.client->getRenderSystem();
         rnd_sys->getGameUI()->render();
-
-        context.client->getEnv().getLocalPlayer()->getCamera()->drawNametags();
     }
         /*context.hud->resizeHotbar();
 

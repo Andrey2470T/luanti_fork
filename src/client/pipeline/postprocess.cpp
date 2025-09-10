@@ -239,6 +239,7 @@ RenderStep *addPostProcessing(RenderPipeline *pipeline, RenderStep *previousStep
 	}
 
     pipeline->addStep<MapPostFxStep>(buffer, final_stage_source);
+    pipeline->addStep<DamageFlashStep>(buffer, final_stage_source);
 
 	return effect;
 }
@@ -290,6 +291,32 @@ void MapPostFxStep::run(PipelineContext &context)
         // Draw a full-screen rectangle
         quad->render(context.client);
     }
+}
+
+void DamageFlashStep::setRenderTarget(RenderTarget * _target)
+{
+    target = _target;
+}
+
+void DamageFlashStep::run(PipelineContext &context)
+{
+    if (target)
+        target->activate(context);
+
+    if (context.client->getEnv().damage_flash <= 0.0f)
+        return;
+
+    img::color8 color(img::PF_RGBA8, 180, 0, 0, context.client->getEnv().damage_flash);
+
+    auto rnd_sys = context.client->getRenderSystem();
+    if (!quad) {
+        quad = std::make_unique<ScreenQuad>(rnd_sys, source);
+        quad->setTextureMap({texture_index});
+    }
+
+    quad->updateQuad();
+    // Draw a full-screen rectangle
+    quad->render(context.client);
 }
 
 void ResolveMSAAStep::run(PipelineContext &context)

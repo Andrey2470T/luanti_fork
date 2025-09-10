@@ -5,13 +5,10 @@
 #pragma once
 
 #include <BasicIncludes.h>
+#include "clientdynamicinfo.h"
 #include "config.h"
-//#include "gui/profilergraph.h"
-//#include "inventory.h"
-//#include "util/pointedthing.h"
 #include <string>
 #include <memory>
-//#include <Core/MainWindow.h>
 
 #if !IS_CLIENT_BUILD
 #error Do not include in server builds
@@ -26,7 +23,6 @@ class NodeDefManager;
 class InputHandler;
 class ResourceCache;
 class RenderSystem;
-struct FpsControl;
 
 struct CameraOrientation {
 	f32 camera_yaw;    // "right/left"
@@ -121,53 +117,13 @@ protected:
 
     // Main loop
 
-    void updateInteractTimers(f32 dtime);
-    void updateProfilerGraphs(ProfilerGraph *graph);
+    void updatePauseState();
 
     void step(f32 dtime);
-
-    /*!
-     * Returns the object or node the player is pointing at.
-     * Also updates the selected thing in the Hud.
-     *
-     * @param[in]  shootline         the shootline, starting from
-     * the camera position. This also gives the maximal distance
-     * of the search.
-     * @param[in]  liquids_pointable if false, liquids are ignored
-     * @param[in]  pointabilities    item specific pointable overriding
-     * @param[in]  look_for_object   if false, objects are ignored
-     * @param[in]  camera_offset     offset of the camera
-     * @param[out] selected_object   the selected object or
-     * NULL if not found
-     */
-    PointedThing updatePointedThing(
-            const line3f &shootline, bool liquids_pointable,
-            const std::optional<Pointabilities> &pointabilities,
-            bool look_for_object, const v3s16 &camera_offset);
-    void handlePointingAtNothing(const ItemStack &playerItem);
-    void handlePointingAtNode(const PointedThing &pointed,
-            const ItemStack &selected_item, const ItemStack &hand_item, f32 dtime);
-    void handlePointingAtObject(const PointedThing &pointed, const ItemStack &playeritem,
-            const v3f &player_position, bool show_debug);
-    void handleDigging(const PointedThing &pointed, const v3s16 &nodepos,
-            const ItemStack &selected_item, const ItemStack &hand_item, f32 dtime);
-    void updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
-            const CameraOrientation &cam);
-    void updateClouds(float dtime);
-    //void updateShadows();
-    void drawScene(ProfilerGraph *graph, RunStats *stats);
 
     // Misc
     void showOverlayMessage(const char *msg, float dtime, int percent,
             float *indef_pos = nullptr);
-
-    inline bool fogEnabled()
-    {
-        // Client setting only takes effect if fog distance unlimited or debug priv
-        if (sky->getFogDistance() < 0 || client->checkPrivilege("debug"))
-            return m_cache_enable_fog;
-        return true;
-    }
 
     static void settingChangedCallback(const std::string &setting_name, void *data);
     void readSettings();
@@ -182,16 +138,6 @@ private:
         /// 0 = no debug text active, see toggleDebug() for the rest
         int debug_state = 0;
     };
-
-    void pauseAnimation();
-    void resumeAnimation();
-
-    void updateChat(f32 dtime);
-
-    bool nodePlacement(const ItemDefinition &selected_def, const ItemStack &selected_item,
-        const v3s16 &nodepos, const v3s16 &neighborpos, const PointedThing &pointed,
-        const NodeMetadata *meta);
-    static const ClientEventHandler clientEventHandler[CLIENTEVENT_MAX];
 
     f32 getSensitivityScaleFactor() const;
 
@@ -234,7 +180,6 @@ private:
      */
     bool m_cache_doubletap_jump;
     bool m_cache_enable_joysticks;
-    bool m_cache_enable_fog;
     bool m_cache_enable_noclip;
     bool m_cache_enable_free_move;
     f32  m_cache_mouse_sensitivity;

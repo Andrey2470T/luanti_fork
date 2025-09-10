@@ -12,6 +12,8 @@ Camera::Camera(const v2u &viewportSize,
 
 void Camera::updateOffset()
 {
+    if (disable_update)
+        return;
     v3f cp = m_position / BS;
 
     // Update offset if too far away from the center of the map
@@ -59,6 +61,8 @@ void Camera::updatePlanes()
 
 bool Camera::isNecessaryUpdateDrawList()
 {
+    if (disable_update)
+        return false;
     v3s16 previous_node = floatToInt(m_last_position, BS) + m_last_offset;
     v3s16 previous_block = getContainerPos(previous_node, MAP_BLOCKSIZE);
 

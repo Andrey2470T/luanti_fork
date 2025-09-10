@@ -7,6 +7,7 @@
 
 #include "text_sprite.h"
 #include "util/numeric.h"
+#include <list>
 
 class Client;
 class EnrichedString;
@@ -18,6 +19,7 @@ class RenderSystem;
 class ResourceCache;
 struct FpsControl;
 class ProfilerGraph;
+class Nametag;
 
 /*
  * This object intend to contain the core UI elements
@@ -91,6 +93,8 @@ public:
         statustext->setText(L"");
     }
 
+    void showDebug();
+
 	bool isChatVisible()
 	{
         return flags & GUIF_SHOW_CHAT && recent_chat_count != 0 && profiler_current_page == 0;
@@ -110,8 +114,18 @@ public:
     void render();
 
     void updateDebugState(Client *client);
-    void updateProfilers(const FpsControl &draw_times, f32 dtime);
+    void updateProfilers(f32 dtime);
     void updateProfilerGraphs(ProfilerGraph *graph);
+    
+    Nametag *addNametag(
+            Client *client,
+            const std::string &text,
+            const img::color8 &textcolor,
+            const std::optional<img::color8> &bgcolor,
+            const v3f &pos);
+    void removeNametag(Nametag *nt);
+
+    bool debug_state = false;
 
 private:
     void toggleFlag(GameUIFlags flag)
@@ -153,4 +167,6 @@ private:
     std::unique_ptr<UITextSprite> profilertext; // Profiler text
     u8 profiler_current_page = 0;
     const u8 profiler_max_page = 3;
+    
+    std::list<std::unique_ptr<Nametag>> nametags;
 };
