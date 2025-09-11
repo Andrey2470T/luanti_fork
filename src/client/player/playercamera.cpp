@@ -65,7 +65,6 @@ PlayerCamera::PlayerCamera(Client *client):
 	// as a zoom FOV and load world beyond the set server limits.
 	m_cache_fov                 = g_settings->getFloat("fov", 45.0f, 160.0f);
 	m_arm_inertia               = g_settings->getBool("arm_inertia");
-    m_touch_use_crosshair       = g_settings->getBool("touch_use_crosshair");
 }
 
 PlayerCamera::~PlayerCamera()

@@ -1,101 +1,132 @@
 #include "interaction.h"
+#include "client/core/client.h"
+#include "client/core/clientenvironment.h"
+#include "client/event/inputhandler.h"
+#include "client/event/keytype.h"
+#include "client/network/packethandler.h"
+#include "client/map/clientmap.h"
+#include "client/render/particles.h"
+#include "client/ui/gameformspec.h"
+#include "client/ui/gameui.h"
+#include "gui/touchcontrols.h"
+#include "localplayer.h"
+#include "playercamera.h"
+#include "client/ao/renderCAO.h"
+#include "client/mesh/lighting.h"
+#include "client/render/rendersystem.h"
+#include "client/render/drawlist.h"
+#include "client/player/selection.h"
+#include "client/ui/hud.h"
+#include "nodedef.h"
+#include "raycast.h"
+#include "scripting_client.h"
+#include "util/numeric.h"
+#include "util/directiontables.h"
 
 PointedThing PlayerInteraction::updatePointedThing(
-	const core::line3d<f32> &shootline,
+	const line3f &shootline,
 	bool liquids_pointable,
 	const std::optional<Pointabilities> &pointabilities,
 	bool look_for_object,
 	const v3s16 &camera_offset)
 {
-	std::vector<aabb3f> *selectionboxes = hud->getSelectionBoxes();
+	auto selection = rndsys->getDrawList()->getSelectionMesh();
+	auto selectionboxes = selection->getSelectionBoxes();
 	selectionboxes->clear();
-	hud->setSelectedFaceNormal(v3f());
+	selection->setSelectedFaceNormal(v3f());
 	static thread_local const bool show_entity_selectionbox = g_settings->getBool(
 		"show_entity_selectionbox");
 
 	ClientEnvironment &env = client->getEnv();
 	ClientMap &map = env.getClientMap();
-	const NodeDefManager *nodedef = map.getNodeDefManager();
+	const NodeDefManager *nodedef = client->getNodeDefManager();
 
-	runData.selected_object = NULL;
-	hud->pointing_at_object = false;
+	selected_object = nullptr;
+	pointing_at_object = false;
 
 	RaycastState s(shootline, look_for_object, liquids_pointable, pointabilities);
-	PointedThing result;
+    PointedThing result;
+
+    v3f pos;
 	env.continueRaycast(&s, &result);
 	if (result.type == POINTEDTHING_OBJECT) {
-		hud->pointing_at_object = true;
+		pointing_at_object = true;
+        selected_object = client->getEnv().getRenderCAO(result.object_id);
+		aabbf selection_box{{0.0f, 0.0f, 0.0f}};
 
-		runData.selected_object = client->getEnv().getActiveObject(result.object_id);
-		aabb3f selection_box{{0.0f, 0.0f, 0.0f}};
-		if (show_entity_selectionbox && runData.selected_object->doShowSelectionBox() &&
-				runData.selected_object->getSelectionBox(&selection_box)) {
-			v3f pos = runData.selected_object->getPosition();
+		if (show_entity_selectionbox && selected_object->doShowSelectionBox() &&
+				selected_object->getSelectionBox(&selection_box)) {
+            pos = selected_object->getPosition();
 			selectionboxes->push_back(selection_box);
-			hud->setSelectionPos(pos, camera_offset);
-			GenericCAO* gcao = dynamic_cast<GenericCAO*>(runData.selected_object);
-			if (gcao != nullptr && gcao->getProperties().rotate_selectionbox)
-				hud->setSelectionRotation(gcao->getSceneNode()->getAbsoluteTransformation().getRotationDegrees());
+			
+			if (selected_object->getProperties().rotate_selectionbox)
+				selection->setRotation(selected_object->getAbsoluteMatrix().getRotationDegrees());
 			else
-				hud->setSelectionRotation(v3f());
+				selection->setRotation(v3f());
 		}
-		hud->setSelectedFaceNormal(result.raw_intersection_normal);
+		selection->setSelectedFaceNormal(result.raw_intersection_normal);
 	} else if (result.type == POINTEDTHING_NODE) {
 		// Update selection boxes
 		MapNode n = map.getNode(result.node_undersurface);
-		std::vector<aabb3f> boxes;
+        std::vector<aabbf> boxes;
 		n.getSelectionBoxes(nodedef, &boxes,
 			n.getNeighbors(result.node_undersurface, &map));
 
 		f32 d = 0.002 * BS;
-		for (std::vector<aabb3f>::const_iterator i = boxes.begin();
-			i != boxes.end(); ++i) {
-			aabb3f box = *i;
+        for (auto &box : boxes) {
 			box.MinEdge -= v3f(d, d, d);
 			box.MaxEdge += v3f(d, d, d);
 			selectionboxes->push_back(box);
 		}
-		hud->setSelectionPos(intToFloat(result.node_undersurface, BS),
-			camera_offset);
-		hud->setSelectionRotation(v3f());
-		hud->setSelectedFaceNormal(result.intersection_normal);
+        pos = intToFloat(result.node_undersurface, BS);
+		selection->setRotation(v3f());
+		selection->setSelectedFaceNormal(result.intersection_normal);
 	}
 
 	// Update selection mesh light level and vertex colors
 	if (!selectionboxes->empty()) {
-		v3f pf = hud->getSelectionPos();
-		v3s16 p = floatToInt(pf, BS);
+        selection->updateMesh(pos, camera_offset, *selectionboxes, rndsys->getDrawList());
+        v3s16 p = floatToInt(pos, BS);
 
-		// Get selection mesh light level
-		MapNode n = map.getNode(p);
-		u16 node_light = getInteriorLight(n, -1, nodedef);
-		u16 light_level = node_light;
-
-		for (const v3s16 &dir : g_6dirs) {
-			n = map.getNode(p + dir);
-			node_light = getInteriorLight(n, -1, nodedef);
-			if (node_light > light_level)
-				light_level = node_light;
-		}
-
-		u32 daynight_ratio = client->getEnv().getDayNightRatio();
-		video::SColor c;
-		final_color_blend(&c, light_level, daynight_ratio);
+        img::color8 c = getBlendedLightColor(map, nodedef, getCornerPositions(p), client->getEnv().getDayNightRatio());
 
 		// Modify final color a bit with time
 		u32 timer = client->getEnv().getFrameTime() % 5000;
-		float timerf = (float) (irr::core::PI * ((timer / 2500.0) - 0.5));
-		float sin_r = 0.08f * std::sin(timerf);
-		float sin_g = 0.08f * std::sin(timerf + irr::core::PI * 0.5f);
-		float sin_b = 0.08f * std::sin(timerf + irr::core::PI);
-		c.setRed(core::clamp(core::round32(c.getRed() * (0.8 + sin_r)), 0, 255));
-		c.setGreen(core::clamp(core::round32(c.getGreen() * (0.8 + sin_g)), 0, 255));
-		c.setBlue(core::clamp(core::round32(c.getBlue() * (0.8 + sin_b)), 0, 255));
+        f32 timerf = (float) (PI * ((timer / 2500.0) - 0.5));
+        f32 sin_r = 0.08f * std::sin(timerf);
+        f32 sin_g = 0.08f * std::sin(timerf + PI * 0.5f);
+        f32 sin_b = 0.08f * std::sin(timerf + PI);
+        c.R(round32(c.R() * (0.8 + sin_r)));
+        c.G(round32(c.G() * (0.8 + sin_g)));
+        c.B(round32(c.B() * (0.8 + sin_b)));
 
 		// Set mesh final color
-		hud->setSelectionMeshColor(c);
+		selection->setLightColor(c);
 	}
 	return result;
+}
+
+void PlayerInteraction::settingChangedCallback(const std::string &setting_name, void *data)
+{
+    ((PlayerInteraction *)data)->readSettings();
+}
+
+void PlayerInteraction::readSettings()
+{
+    repeat_place_time = g_settings->getFloat("repeat_place_time", 0.16f, 2.0f);
+    repeat_dig_time = g_settings->getFloat("repeat_dig_time", 0.0f, 2.0f);
+}
+
+PlayerInteraction::PlayerInteraction(Client *_client)
+    : client(_client), rndsys(client->getRenderSystem()), player(client->getEnv().getLocalPlayer()),
+      input(client->getInputHandler()), pkt_handler(client->getPacketHandler())
+{
+    touch_use_crosshair = g_settings->getBool("touch_use_crosshair");
+
+    g_settings->registerChangedCallback("repeat_place_time",
+        &settingChangedCallback, this);
+    g_settings->registerChangedCallback("repeat_dig_time",
+        &settingChangedCallback, this);
 }
 
 bool PlayerInteraction::isTouchCrosshairDisabled() {
@@ -107,7 +138,7 @@ void PlayerInteraction::handlePointingAtNothing(const ItemStack &playerItem)
 	infostream << "Attempted to place item while pointing at nothing" << std::endl;
 	PointedThing fauxPointed;
 	fauxPointed.type = POINTEDTHING_NOTHING;
-	client->interact(INTERACT_ACTIVATE, fauxPointed);
+    pkt_handler->interact(rndsys->getDrawList()->getDrawControl().wanted_range, INTERACT_ACTIVATE, fauxPointed);
 }
 
 
@@ -123,47 +154,48 @@ void PlayerInteraction::handlePointingAtNode(const PointedThing &pointed,
 
 	ClientMap &map = client->getEnv().getClientMap();
 
-	if (runData.nodig_delay_timer <= 0.0 && isKeyDown(KeyType::DIG)
-			&& !runData.digging_blocked
-			&& client->checkPrivilege("interact")) {
+    if (nodig_delay_timer <= 0.0 && input->isKeyDown(KeyType::DIG)
+            && !digging_blocked
+            && player->checkPrivilege("interact")) {
 		handleDigging(pointed, nodepos, selected_item, hand_item, dtime);
 	}
 
 	// This should be done after digging handling
 	NodeMetadata *meta = map.getNodeMetadata(nodepos);
 
+    auto gameui = rndsys->getGameUI();
 	if (meta) {
-		m_game_ui->setInfoText(unescape_translate(utf8_to_wide(
+        gameui->setInfoText(unescape_translate(utf8_to_wide(
 			meta->getString("infotext"))));
 	} else {
 		MapNode n = map.getNode(nodepos);
 
-		if (nodedef_manager->get(n).name == "unknown") {
-			m_game_ui->setInfoText(L"Unknown node");
+        if (client->getNodeDefManager()->get(n).name == "unknown") {
+            gameui->setInfoText(L"Unknown node");
 		}
 	}
 
-	if ((wasKeyPressed(KeyType::PLACE) ||
-			runData.repeat_place_timer >= m_repeat_place_time) &&
-			client->checkPrivilege("interact")) {
-		runData.repeat_place_timer = 0;
+    if ((input->wasKeyPressed(KeyType::PLACE) ||
+            repeat_place_timer >= repeat_place_time) &&
+            player->checkPrivilege("interact")) {
+        repeat_place_timer = 0;
 		infostream << "Place button pressed while looking at ground" << std::endl;
 
 		// Placing animation (always shown for feedback)
-		camera->setDigging(1);
+        //camera->setDigging(1);
 
-		soundmaker->m_player_rightpunch_sound = SoundSpec();
+        client->getSoundMaker()->m_player_rightpunch_sound = SoundSpec();
 
 		// If the wielded item has node placement prediction,
 		// make that happen
 		// And also set the sound and send the interact
 		// But first check for meta formspec and rightclickable
-		auto &def = selected_item.getDefinition(itemdef_manager);
+        auto &def = selected_item.getDefinition(client->getItemDefManager());
 		bool placed = nodePlacement(def, selected_item, nodepos, neighborpos,
 			pointed, meta);
 
 		if (placed && client->modsLoaded())
-			client->getScript()->on_placenode(pointed, def);
+            client->getScript()->on_placenode(pointed, def);
 	}
 }
 
@@ -178,28 +210,32 @@ bool PlayerInteraction::nodePlacement(const ItemDefinition &selected_def,
 	MapNode node;
 	bool is_valid_position;
 
+    auto soundmaker = client->getSoundMaker();
+
 	node = map.getNode(nodepos, &is_valid_position);
 	if (!is_valid_position) {
-		soundmaker->m_player_rightpunch_sound = selected_def.sound_place_failed;
+        soundmaker->m_player_rightpunch_sound = selected_def.sound_place_failed;
 		return false;
 	}
 
+    auto draw_control = rndsys->getDrawList()->getDrawControl();
+
 	// formspec in meta
 	if (meta && !meta->getString("formspec").empty() && !input->isRandom()
-			&& !isKeyDown(KeyType::SNEAK)) {
+            && !input->isKeyDown(KeyType::SNEAK)) {
 		// on_rightclick callbacks are called anyway
-		if (nodedef_manager->get(map.getNode(nodepos)).rightclickable)
-			client->interact(INTERACT_PLACE, pointed);
+        if (client->getNodeDefManager()->get(map.getNode(nodepos)).rightclickable)
+            pkt_handler->interact(draw_control.wanted_range, INTERACT_PLACE, pointed);
 
-		m_game_formspec.showNodeFormspec(meta->getString("formspec"), nodepos);
+        rndsys->getGameFormSpec()->showNodeFormspec(meta->getString("formspec"), nodepos);
 		return false;
 	}
 
 	// on_rightclick callback
 	if (prediction.empty() || (nodedef->get(node).rightclickable &&
-			!isKeyDown(KeyType::SNEAK))) {
+            !input->isKeyDown(KeyType::SNEAK))) {
 		// Report to server
-		client->interact(INTERACT_PLACE, pointed);
+        pkt_handler->interact(draw_control.wanted_range, INTERACT_PLACE, pointed);
 		return false;
 	}
 
@@ -217,7 +253,7 @@ bool PlayerInteraction::nodePlacement(const ItemDefinition &selected_def,
 			if (is_valid_position && !nodedef->get(node).buildable_to) {
 				soundmaker->m_player_rightpunch_sound = selected_def.sound_place_failed;
 				// Report to server
-				client->interact(INTERACT_PLACE, pointed);
+                pkt_handler->interact(draw_control.wanted_range, INTERACT_PLACE, pointed);
 				return false;
 			}
 		}
@@ -233,7 +269,7 @@ bool PlayerInteraction::nodePlacement(const ItemDefinition &selected_def,
 			<< ") - Name not known" << std::endl;
 		// Handle this as if prediction was empty
 		// Report to server
-		client->interact(INTERACT_PLACE, pointed);
+        pkt_handler->interact(draw_control.wanted_range, INTERACT_PLACE, pointed);
 		return false;
 	}
 
@@ -327,7 +363,7 @@ bool PlayerInteraction::nodePlacement(const ItemDefinition &selected_def,
 		if (!nodedef->get(map.getNode(pp)).walkable) {
 			soundmaker->m_player_rightpunch_sound = selected_def.sound_place_failed;
 			// Report to server
-			client->interact(INTERACT_PLACE, pointed);
+            pkt_handler->interact(draw_control.wanted_range, INTERACT_PLACE, pointed);
 			return false;
 		}
 	}
@@ -358,20 +394,19 @@ bool PlayerInteraction::nodePlacement(const ItemDefinition &selected_def,
 
 	// Add node to client map
 	try {
-		LocalPlayer *player = client->getEnv().getLocalPlayer();
-
 		// Don't place node when player would be inside new node
 		// NOTE: This is to be eventually implemented by a mod as client-side Lua
 		if (!predicted_f.walkable ||
 				g_settings->getBool("enable_build_where_you_stand") ||
-				(client->checkPrivilege("noclip") && g_settings->getBool("noclip")) ||
+                (player->checkPrivilege("noclip") && g_settings->getBool("noclip")) ||
 				(predicted_f.walkable &&
 					neighborpos != player->getStandingNodePos() + v3s16(0, 1, 0) &&
 					neighborpos != player->getStandingNodePos() + v3s16(0, 2, 0))) {
 			// This triggers the required mesh update too
-			client->addNode(p, predicted_node);
+            std::map<v3s16, MapBlock*> modified_mapblocks;
+            map.addNode(p, predicted_node);
 			// Report to server
-			client->interact(INTERACT_PLACE, pointed);
+            pkt_handler->interact(draw_control.wanted_range, INTERACT_PLACE, pointed);
 			// A node is predicted, also play a sound
 			soundmaker->m_player_rightpunch_sound = selected_def.sound_place;
 			return true;
@@ -392,50 +427,53 @@ void PlayerInteraction::handlePointingAtObject(const PointedThing &pointed,
 		const ItemStack &tool_item, const v3f &player_position, bool show_debug)
 {
 	std::wstring infotext = unescape_translate(
-		utf8_to_wide(runData.selected_object->infoText()));
+        utf8_to_wide(selected_object->infoText()));
 
 	if (show_debug) {
 		if (!infotext.empty()) {
 			infotext += L"\n";
 		}
-		infotext += utf8_to_wide(runData.selected_object->debugInfoText());
+        infotext += utf8_to_wide(selected_object->debugInfoText());
 	}
 
-	m_game_ui->setInfoText(infotext);
+    auto gameui = rndsys->getGameUI();
+    gameui->setInfoText(infotext);
 
-	if (isKeyDown(KeyType::DIG)) {
+    auto draw_control = rndsys->getDrawList()->getDrawControl();
+
+    if (input->isKeyDown(KeyType::DIG)) {
 		bool do_punch = false;
 		bool do_punch_damage = false;
 
-		if (runData.object_hit_delay_timer <= 0.0) {
+        if (object_hit_delay_timer <= 0.0) {
 			do_punch = true;
 			do_punch_damage = true;
-			runData.object_hit_delay_timer = object_hit_delay;
+            object_hit_delay_timer = object_hit_delay;
 		}
 
-		if (wasKeyPressed(KeyType::DIG))
+        if (input->wasKeyPressed(KeyType::DIG))
 			do_punch = true;
 
 		if (do_punch) {
 			infostream << "Punched object" << std::endl;
-			runData.punching = true;
+            punching = true;
 		}
 
 		if (do_punch_damage) {
 			// Report direct punch
-			v3f objpos = runData.selected_object->getPosition();
+            v3f objpos = selected_object->getPosition();
 			v3f dir = (objpos - player_position).normalize();
 
-			bool disable_send = runData.selected_object->directReportPunch(
-					dir, &tool_item, runData.time_from_last_punch);
-			runData.time_from_last_punch = 0;
+            bool disable_send = selected_object->directReportPunch(
+                    dir, &tool_item, time_from_last_punch);
+            time_from_last_punch = 0;
 
 			if (!disable_send)
-				client->interact(INTERACT_START_DIGGING, pointed);
+                pkt_handler->interact(draw_control.wanted_range, INTERACT_START_DIGGING, pointed);
 		}
-	} else if (wasKeyDown(KeyType::PLACE)) {
+    } else if (input->wasKeyDown(KeyType::PLACE)) {
 		infostream << "Pressed place button while pointing at object" << std::endl;
-		client->interact(INTERACT_PLACE, pointed);  // place
+        pkt_handler->interact(draw_control.wanted_range,INTERACT_PLACE, pointed);  // place
 	}
 }
 
@@ -444,14 +482,14 @@ void PlayerInteraction::handleDigging(const PointedThing &pointed, const v3s16 &
 		const ItemStack &selected_item, const ItemStack &hand_item, f32 dtime)
 {
 	// See also: serverpackethandle.cpp, action == 2
-	LocalPlayer *player = client->getEnv().getLocalPlayer();
 	ClientMap &map = client->getEnv().getClientMap();
 	MapNode n = map.getNode(nodepos);
-	const auto &features = nodedef_manager->get(n);
+    const auto &features = client->getNodeDefManager()->get(n);
 
 	// NOTE: Similar piece of code exists on the server side for
 	// cheat detection.
 	// Get digging parameters
+    auto itemdef_manager = client->getItemDefManager();
 	DigParams params = getDigParams(features.groups,
 			&selected_item.getToolCapabilities(itemdef_manager),
 			selected_item.wear);
@@ -464,35 +502,38 @@ void PlayerInteraction::handleDigging(const PointedThing &pointed, const v3s16 &
 
 	if (!params.diggable) {
 		// I guess nobody will wait for this long
-		runData.dig_time_complete = 10000000.0;
+        dig_time_complete = 10000000.0;
 	} else {
-		runData.dig_time_complete = params.time;
+        dig_time_complete = params.time;
 
-		client->getParticleManager()->addNodeParticle(client,
+        rndsys->getParticleManager()->addNodeParticle(client,
 				player, nodepos, n, features);
 	}
 
-	if (!runData.digging) {
+    auto draw_control = rndsys->getDrawList()->getDrawControl();
+
+    if (!digging) {
 		infostream << "Started digging" << std::endl;
-		runData.dig_instantly = runData.dig_time_complete == 0;
+        dig_instantly = dig_time_complete == 0;
 		if (client->modsLoaded() && client->getScript()->on_punchnode(nodepos, n))
 			return;
 
-		client->interact(INTERACT_START_DIGGING, pointed);
-		runData.digging = true;
-		runData.btn_down_for_dig = true;
+        pkt_handler->interact(draw_control.wanted_range, INTERACT_START_DIGGING, pointed);
+        digging = true;
+        btn_down_for_dig = true;
 	}
 
-	if (!runData.dig_instantly) {
-		runData.dig_index = (float)crack_animation_length
-				* runData.dig_time
-				/ runData.dig_time_complete;
+    /*if (!dig_instantly) {
+        dig_index = (float)crack_animation_length
+                * dig_time
+                / dig_time_complete;
 	} else {
 		// This is for e.g. torches
-		runData.dig_index = crack_animation_length;
-	}
+        dig_index = crack_animation_length;
+    }*/
 
 	const auto &sound_dig = features.sound_dig;
+    auto soundmaker = client->getSoundMaker();
 
 	if (sound_dig.exists() && params.diggable) {
 		if (sound_dig.name == "__group") {
@@ -508,34 +549,32 @@ void PlayerInteraction::handleDigging(const PointedThing &pointed, const v3s16 &
 	}
 
 	// Don't show cracks if not diggable
-	if (runData.dig_time_complete >= 100000.0) {
-	} else if (runData.dig_index < crack_animation_length) {
-		client->setCrack(runData.dig_index, nodepos);
-	} else {
+    if (dig_time_complete >= 100000.0) {
+    } /*else if (dig_index < crack_animation_length) {
+        client->setCrack(dig_index, nodepos);
+    } */else {
 		infostream << "Digging completed" << std::endl;
-		client->setCrack(-1, v3s16(0, 0, 0));
+        //client->setCrack(-1, v3s16(0, 0, 0));
 
-		runData.dig_time = 0;
-		runData.digging = false;
+        dig_time = 0;
+        digging = false;
 		// we successfully dug, now block it from repeating if we want to be safe
 		if (g_settings->getBool("safe_dig_and_place"))
-			runData.digging_blocked = true;
+            digging_blocked = true;
 
-		runData.nodig_delay_timer =
-				runData.dig_time_complete / (float)crack_animation_length;
+        //nodig_delay_timer = dig_time_complete / (float)crack_animation_length;
 
 		// We don't want a corresponding delay to very time consuming nodes
 		// and nodes without digging time (e.g. torches) get a fixed delay.
-		if (runData.nodig_delay_timer > 0.3f)
-			runData.nodig_delay_timer = 0.3f;
-		else if (runData.dig_instantly)
-			runData.nodig_delay_timer = 0.15f;
+        if (nodig_delay_timer > 0.3f)
+            nodig_delay_timer = 0.3f;
+        else if (dig_instantly)
+            nodig_delay_timer = 0.15f;
 
 		// Ensure that the delay between breaking nodes
 		// (dig_time_complete + nodig_delay_timer) is at least the
 		// value of the repeat_dig_time setting.
-		runData.nodig_delay_timer = std::max(runData.nodig_delay_timer,
-				m_repeat_dig_time - runData.dig_time_complete);
+        nodig_delay_timer = std::max(nodig_delay_timer, repeat_dig_time - dig_time_complete);
 
 		if (client->modsLoaded() &&
 				client->getScript()->on_dignode(nodepos, n)) {
@@ -543,32 +582,32 @@ void PlayerInteraction::handleDigging(const PointedThing &pointed, const v3s16 &
 		}
 
 		if (features.node_dig_prediction == "air") {
-			client->removeNode(nodepos);
+            map.removeNode(nodepos);
 		} else if (!features.node_dig_prediction.empty()) {
 			content_t id;
-			bool found = nodedef_manager->getId(features.node_dig_prediction, id);
+            bool found = client->getNodeDefManager()->getId(features.node_dig_prediction, id);
 			if (found)
-				client->addNode(nodepos, id, true);
+                map.addNode(nodepos, id, true);
 		}
 		// implicit else: no prediction
 
-		client->interact(INTERACT_DIGGING_COMPLETED, pointed);
+        pkt_handler->interact(draw_control.wanted_range, INTERACT_DIGGING_COMPLETED, pointed);
 
-		client->getParticleManager()->addDiggingParticles(client,
+        rndsys->getParticleManager()->addDiggingParticles(client,
 			player, nodepos, n, features);
 
 		// Send event to trigger sound
 		client->getEventManager()->put(new NodeDugEvent(nodepos, n));
 	}
 
-	if (runData.dig_time_complete < 100000.0) {
-		runData.dig_time += dtime;
+    if (dig_time_complete < 100000.0) {
+        dig_time += dtime;
 	} else {
-		runData.dig_time = 0;
-		client->setCrack(-1, nodepos);
+        dig_time = 0;
+        //client->setCrack(-1, nodepos);
 	}
 
-	camera->setDigging(0);  // Dig animation
+    //camera->setDigging(0);  // Dig animation
 }
 
 void PlayerInteraction::updateTimers(f32 dtime)
@@ -576,15 +615,16 @@ void PlayerInteraction::updateTimers(f32 dtime)
     if (nodig_delay_timer >= 0)
         nodig_delay_timer -= dtime;
 
-    if (object_hit_delay_timer >= 0)
+    if (object_hit_delay_timer >= 0) {
         object_hit_delay_timer -= dtime;
+    }
 
 	time_from_last_punch += dtime;
 }
 
-void PlayerInteraction::step(f32 dtime, bool show_hud)
+void PlayerInteraction::step(f32 dtime)
 {
-	LocalPlayer *player = client->getEnv().getLocalPlayer();
+    auto camera = player->getCamera();
 
 	const v3f camera_direction = camera->getDirection();
 	const v3s16 camera_offset  = camera->getOffset();
@@ -596,44 +636,45 @@ void PlayerInteraction::step(f32 dtime, bool show_hud)
 	ItemStack selected_item, hand_item;
 	const ItemStack &tool_item = player->getWieldedItem(&selected_item, &hand_item);
 
+    auto itemdef_manager = client->getItemDefManager();
 	const ItemDefinition &selected_def = selected_item.getDefinition(itemdef_manager);
 	f32 d = getToolRange(selected_item, hand_item, itemdef_manager);
 
-	core::line3d<f32> shootline;
+    line3f shootline;
 
 	switch (camera->getCameraMode()) {
 	case CAMERA_MODE_FIRST:
 		// Shoot from camera position, with bobbing
-		shootline.start = camera->getPosition();
+        shootline.Start = camera->getPosition();
 		break;
 	case CAMERA_MODE_THIRD:
 		// Shoot from player head, no bobbing
-		shootline.start = camera->getHeadPosition();
+        shootline.Start = camera->getHeadPosition();
 		break;
 	case CAMERA_MODE_THIRD_FRONT:
-		shootline.start = camera->getHeadPosition();
+        shootline.Start = camera->getHeadPosition();
 		// prevent player pointing anything in front-view
 		d = 0;
 		break;
 	}
-	shootline.end = shootline.start + camera_direction * BS * d;
+    shootline.End = shootline.Start + camera_direction * BS * d;
 
 	if (g_touchcontrols && isTouchCrosshairDisabled()) {
 		shootline = g_touchcontrols->getShootline();
 		// Scale shootline to the acual distance the player can reach
-		shootline.end = shootline.start +
+        shootline.End = shootline.Start +
 				shootline.getVector().normalize() * BS * d;
-		shootline.start += intToFloat(camera_offset, BS);
-		shootline.end += intToFloat(camera_offset, BS);
+        shootline.Start += intToFloat(camera_offset, BS);
+        shootline.End += intToFloat(camera_offset, BS);
 	}
 
 	PointedThing pointed = updatePointedThing(shootline,
 			selected_def.liquids_pointable,
 			selected_def.pointabilities,
-			!runData.btn_down_for_dig,
+            !btn_down_for_dig,
 			camera_offset);
 
-	if (pointed != runData.pointed_old)
+    if (pointed != pointed_old)
 		infostream << "Pointing at " << pointed.dump() << std::endl;
 
 	if (g_touchcontrols) {
@@ -641,98 +682,101 @@ void PlayerInteraction::step(f32 dtime, bool show_hud)
 		g_touchcontrols->applyContextControls(mode);
 		// applyContextControls may change dig/place input.
 		// Update again so that TOSERVER_INTERACT packets have the correct controls set.
-		player->control.dig = isKeyDown(KeyType::DIG);
-		player->control.place = isKeyDown(KeyType::PLACE);
+        player->control.dig = input->isKeyDown(KeyType::DIG);
+        player->control.place = input->isKeyDown(KeyType::PLACE);
 	}
 
+    auto drawlist = rndsys->getDrawList();
+    auto draw_control = drawlist->getDrawControl();
+    auto selection = drawlist->getSelectionMesh();
 	// Note that updating the selection mesh every frame is not particularly efficient,
 	// but the halo rendering code is already inefficient so there's no point in optimizing it here
-	hud->updateSelectionMesh(camera_offset);
+    selection->updateCameraOffset(camera_offset, drawlist);
 
 	// Allow digging again if button is not pressed
-	if (runData.digging_blocked && !isKeyDown(KeyType::DIG))
-		runData.digging_blocked = false;
+    if (digging_blocked && !input->isKeyDown(KeyType::DIG))
+        digging_blocked = false;
 
 	/*
 		Stop digging when
 		- releasing dig button
 		- pointing away from node
 	*/
-	if (runData.digging) {
-		if (wasKeyReleased(KeyType::DIG)) {
+    if (digging) {
+        if (input->wasKeyReleased(KeyType::DIG)) {
 			infostream << "Dig button released (stopped digging)" << std::endl;
-			runData.digging = false;
-		} else if (pointed != runData.pointed_old) {
+            digging = false;
+        } else if (pointed != pointed_old) {
 			if (pointed.type == POINTEDTHING_NODE
-					&& runData.pointed_old.type == POINTEDTHING_NODE
+                    && pointed_old.type == POINTEDTHING_NODE
 					&& pointed.node_undersurface
-							== runData.pointed_old.node_undersurface) {
+                            == pointed_old.node_undersurface) {
 				// Still pointing to the same node, but a different face.
 				// Don't reset.
 			} else {
 				infostream << "Pointing away from node (stopped digging)" << std::endl;
-				runData.digging = false;
-				hud->updateSelectionMesh(camera_offset);
+                digging = false;
+                selection->updateCameraOffset(camera_offset, drawlist);
 			}
 		}
 
-		if (!runData.digging) {
-			client->interact(INTERACT_STOP_DIGGING, runData.pointed_old);
-			client->setCrack(-1, v3s16(0, 0, 0));
-			runData.dig_time = 0.0;
+        if (!digging) {
+            pkt_handler->interact(draw_control.wanted_range, INTERACT_STOP_DIGGING, pointed_old);
+            //client->setCrack(-1, v3s16(0, 0, 0));
+            dig_time = 0.0;
 		}
-	} else if (runData.dig_instantly && wasKeyReleased(KeyType::DIG)) {
+    } else if (dig_instantly && input->wasKeyReleased(KeyType::DIG)) {
 		// Remove e.g. torches faster when clicking instead of holding dig button
-		runData.nodig_delay_timer = 0;
-		runData.dig_instantly = false;
+        nodig_delay_timer = 0;
+        dig_instantly = false;
 	}
 
-	if (!runData.digging && runData.btn_down_for_dig && !isKeyDown(KeyType::DIG))
-		runData.btn_down_for_dig = false;
+    if (!digging && btn_down_for_dig && !input->isKeyDown(KeyType::DIG))
+        btn_down_for_dig = false;
 
-	runData.punching = false;
+    punching = false;
 
-	soundmaker->m_player_leftpunch_sound = SoundSpec();
-	soundmaker->m_player_leftpunch_sound2 = pointed.type != POINTEDTHING_NOTHING ?
+    client->getSoundMaker()->m_player_leftpunch_sound = SoundSpec();
+    client->getSoundMaker()->m_player_leftpunch_sound2 = pointed.type != POINTEDTHING_NOTHING ?
 		selected_def.sound_use : selected_def.sound_use_air;
 
 	// Prepare for repeating, unless we're not supposed to
-	if (isKeyDown(KeyType::PLACE) && !g_settings->getBool("safe_dig_and_place"))
-		runData.repeat_place_timer += dtime;
+    if (input->isKeyDown(KeyType::PLACE) && !g_settings->getBool("safe_dig_and_place"))
+        repeat_place_timer += dtime;
 	else
-		runData.repeat_place_timer = 0;
+        repeat_place_timer = 0;
 
-	if (selected_def.usable && isKeyDown(KeyType::DIG)) {
-		if (wasKeyPressed(KeyType::DIG) && (!client->modsLoaded() ||
+    if (selected_def.usable && input->isKeyDown(KeyType::DIG)) {
+        if (input->wasKeyPressed(KeyType::DIG) && (!client->modsLoaded() ||
 				!client->getScript()->on_item_use(selected_item, pointed)))
-			client->interact(INTERACT_USE, pointed);
+            pkt_handler->interact(draw_control.wanted_range, INTERACT_USE, pointed);
 	} else if (pointed.type == POINTEDTHING_NODE) {
 		handlePointingAtNode(pointed, selected_item, hand_item, dtime);
 	} else if (pointed.type == POINTEDTHING_OBJECT) {
 		v3f player_position  = player->getPosition();
-		bool basic_debug_allowed = client->checkPrivilege("debug") || (player->hud_flags & HUD_FLAG_BASIC_DEBUG);
+        bool basic_debug_allowed = player->checkPrivilege("debug") || (player->hud_flags & HUD_FLAG_BASIC_DEBUG);
 		handlePointingAtObject(pointed, tool_item, player_position,
-				m_game_ui->m_flags.show_basic_debug && basic_debug_allowed);
-	} else if (isKeyDown(KeyType::DIG)) {
+                rndsys->getGameUI()->getFlags() & GUIF_SHOW_BASIC_DEBUG && basic_debug_allowed);
+    } else if (input->isKeyDown(KeyType::DIG)) {
 		// When button is held down in air, show continuous animation
-		runData.punching = true;
+        punching = true;
 		// Run callback even though item is not usable
-		if (wasKeyPressed(KeyType::DIG) && client->modsLoaded())
+        if (input->wasKeyPressed(KeyType::DIG) && client->modsLoaded())
 			client->getScript()->on_item_use(selected_item, pointed);
-	} else if (wasKeyPressed(KeyType::PLACE)) {
+    } else if (input->wasKeyPressed(KeyType::PLACE)) {
 		handlePointingAtNothing(selected_item);
 	}
 
-	runData.pointed_old = pointed;
+    pointed_old = pointed;
 
-	if (runData.punching || wasKeyPressed(KeyType::DIG))
-		camera->setDigging(0); // dig animation
+    //if (punching || input->wasKeyPressed(KeyType::DIG))
+    //	camera->setDigging(0); // dig animation
 
 	input->clearWasKeyPressed();
 	input->clearWasKeyReleased();
 	// Ensure DIG & PLACE are marked as handled
-	wasKeyDown(KeyType::DIG);
-	wasKeyDown(KeyType::PLACE);
+    input->wasKeyDown(KeyType::DIG);
+    input->wasKeyDown(KeyType::PLACE);
 
 	input->joystick.clearWasKeyPressed(KeyType::DIG);
 	input->joystick.clearWasKeyPressed(KeyType::PLACE);

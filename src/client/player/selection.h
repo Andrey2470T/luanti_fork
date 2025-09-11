@@ -58,6 +58,11 @@ public:
     void setRotation(v3f rot) { rotation = rot; }
     v3f getRotation() const { return rotation; }
 
+    void updateCameraOffset(const v3s16 &camera_offset, DistanceSortedDrawList *drawlist)
+    {
+        updateMesh(pos, camera_offset, boxes, drawlist);
+    }
+
     void setLightColor(const img::color8 &c)
     {
         light_color = c;

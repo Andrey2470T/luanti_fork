@@ -54,7 +54,6 @@ public:
     img::color8 crosshair_color;
     const std::string crosshair_img = "crosshair.png";
     const std::string object_crosshair_img = "object_crosshair.png";
-    bool pointing_at_object;
 
     Hud(Client *_client);
 

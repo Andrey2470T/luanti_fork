@@ -5,6 +5,7 @@
 // Copyright (C) 2010-2013 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
 
 #include "hud.h"
+#include "client/player/interaction.h"
 #include "gui/touchcontrols.h"
 #include "settings.h"
 #include "util/numeric.h"
@@ -73,7 +74,7 @@ void Hud::updateCrosshair()
     };
 
     std::string imgname;
-    if (pointing_at_object)
+    if (player->getInteraction()->pointing_at_object)
         imgname = object_crosshair_img;
     else
         imgname = crosshair_img;
@@ -188,7 +189,7 @@ void Hud::setHudVisible(bool visible)
 
 void Hud::render()
 {
-    if (g_touchcontrols && isTouchCrosshairDisabled())
+    if (g_touchcontrols && player->getInteraction()->isTouchCrosshairDisabled())
         crosshair_hidden = true;
 
     if (!crosshair_hidden)

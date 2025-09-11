@@ -153,6 +153,10 @@ public:
 	ICraftDefManager* getCraftDefManager() override;
 	u16 allocateUnknownNodeId(const std::string &name) override;
 	virtual ISoundManager* getSoundManager();
+    SoundMaker *getSoundMaker() const
+    {
+        return m_soundmaker.get();
+    }
 	MtEventManager* getEventManager();
 	const std::string* getModFile(std::string filename);
 	ModStorageDatabase *getModStorageDatabase() override { return m_mod_storage_database; }
@@ -192,6 +196,11 @@ public:
     ResourceCache *getResourceCache() const
     {
         return m_resource_cache;
+    }
+
+    InputHandler *getInputHandler() const
+    {
+        return m_input;
     }
 
     ClientPacketHandler *getPacketHandler() const

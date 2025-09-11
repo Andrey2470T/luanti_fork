@@ -23,6 +23,7 @@ struct collisionMoveResult;
 class Camera;
 class PlayerCamera;
 struct DrawControl;
+class PlayerInteraction;
 
 enum class LocalPlayerAnimation
 {
@@ -169,6 +170,7 @@ public:
 	}
 
     PlayerCamera *getCamera() const;
+    PlayerInteraction *getInteraction() const;
 
     Lighting& getLighting() { return m_lighting; }
 
@@ -246,9 +248,11 @@ private:
 	Client *m_client;
 
     std::unique_ptr<PlayerCamera> m_camera;
+    std::unique_ptr<PlayerInteraction> m_interaction;
 
 	PlayerSettings m_player_settings;
 	Lighting m_lighting;
+	
 
     // Privileges
     std::unordered_set<std::string> m_privileges;

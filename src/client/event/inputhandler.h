@@ -27,14 +27,14 @@ public:
 
 	virtual bool isKeyDown(GameKeyType k) = 0;
 	virtual bool wasKeyDown(GameKeyType k) = 0;
-    virtual bool wasMtKeyed(GameKeyType k) = 0;
+    virtual bool wasKeyPressed(GameKeyType k) = 0;
 	virtual bool wasKeyReleased(GameKeyType k) = 0;
 	virtual bool cancelPressed() = 0;
 
 	virtual float getJoystickSpeed() = 0;
 	virtual float getJoystickDirection() = 0;
 
-    virtual void clearWasMtKeyed() {}
+    virtual void clearWasKeyPressed() {}
 	virtual void clearWasKeyReleased() {}
 
     virtual void listenForKey(const MtKey &keyCode) {}
@@ -87,7 +87,7 @@ public:
 	{
         return receiver->WasKeyDown(keycache.key[k]) || joystick.wasKeyDown(k);
 	}
-    virtual bool wasMtKeyed(GameKeyType k)
+    virtual bool wasKeyPressed(GameKeyType k)
 	{
         return receiver->WasKeyPressed(keycache.key[k]) || joystick.wasKeyPressed(k);
 	}
@@ -105,7 +105,7 @@ public:
 		return wasKeyDown(KeyType::ESC);
 	}
 
-    virtual void clearWasMtKeyed()
+    virtual void clearWasKeyPressed()
 	{
         receiver->clearWasKeyPressed();
 	}
@@ -158,7 +158,7 @@ public:
 
 	virtual bool isKeyDown(GameKeyType k) { return keydown[keycache.key[k]]; }
 	virtual bool wasKeyDown(GameKeyType k) { return false; }
-    virtual bool wasMtKeyed(GameKeyType k) { return false; }
+    virtual bool wasKeyPressed(GameKeyType k) { return false; }
 	virtual bool wasKeyReleased(GameKeyType k) { return false; }
 	virtual bool cancelPressed() { return false; }
 	virtual float getJoystickSpeed() { return joystickSpeed; }

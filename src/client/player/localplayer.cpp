@@ -15,6 +15,7 @@
 #include "client/ao/renderCAO.h"
 #include "client/render/drawlist.h"
 #include "client/player/playercamera.h"
+#include "client/player/interaction.h"
 
 /*
 	PlayerSettings
@@ -62,7 +63,8 @@ void PlayerSettings::settingsChangedCallback(const std::string &name, void *data
 
 LocalPlayer::LocalPlayer(Client *client, const std::string &name):
     Player(name, client->idef()),
-    m_client(client), m_camera(std::make_unique<PlayerCamera>(client))
+    m_client(client), m_camera(std::make_unique<PlayerCamera>(client)),
+    m_interaction(std::make_unique<PlayerInteraction>(client))
 {
     if (client->modsLoaded())
         client->getScript()->on_camera_ready(m_camera.get());
@@ -780,6 +782,11 @@ bool LocalPlayer::isDead() const
 PlayerCamera *LocalPlayer::getCamera() const
 {
     return m_camera.get();
+}
+
+PlayerInteraction *LocalPlayer::getInteraction() const
+{
+	return m_interaction.get();
 }
 
 // Returns true once after the inventory of the local player

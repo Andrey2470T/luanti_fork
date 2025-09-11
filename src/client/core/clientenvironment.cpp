@@ -4,6 +4,7 @@
 
 #include "client/core/chatmessanger.h"
 #include "client/network/packethandler.h"
+#include "client/player/interaction.h"
 #include "client/render/clouds.h"
 #include "client/render/renderer.h"
 #include "client/render/sky.h"
@@ -166,7 +167,7 @@ void ClientEnvironment::step(ProfilerGraph *graph, f32 dtime, bool paused)
     camera->update(dtime);
 
     // class PlayerInteraction
-    //processPlayerInteraction(dtime, m_game_ui->m_flags.show_hud);
+    m_local_player->getInteraction()->step(dtime);
 }
 
 /*void ClientEnvironment::addSimpleObject(ClientSimpleObject *simple)
@@ -178,9 +179,18 @@ GenericCAO* ClientEnvironment::getGenericCAO(u16 id)
 {
 	ClientActiveObject *obj = getActiveObject(id);
 	if (obj && obj->getType() == ACTIVEOBJECT_TYPE_GENERIC)
-		return (GenericCAO*) obj;
+		return dynamic_cast<GenericCAO*>(obj);
 
-	return NULL;
+	return nullptr;
+}
+
+RenderCAO* ClientEnvironment::getRenderCAO(u16 id)
+{
+	auto generic_cao = getGenericCAO(id);
+	
+	if (!generic_cao)
+	    return nullptr;
+	return dynamic_cast<RenderCAO*>(generic_cao);
 }
 
 void ClientEnvironment::addActiveObject(u16 id, u8 type,

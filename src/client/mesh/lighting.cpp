@@ -5,6 +5,7 @@
 #include "client/map/mapblockmesh.h"
 #include "settings.h"
 #include "map.h"
+#include "util/directiontables.h"
 
 /*
     Calculate non-smooth lighting at interior of node.
@@ -380,7 +381,17 @@ void final_color_blend(img::color8 *result,
     result->B(b * 255);
 }
 
-img::color8 getLightColor(Map &map, const NodeDefManager *ndef, const std::vector<v3s16> &positions, s32 glow)
+std::vector<v3s16> getCornerPositions(v3s16 origin)
+{
+    std::vector<v3s16> positions(6);
+
+    for (u8 k = 0; k < 6; k++)
+        positions[k] = origin + g_6dirs[k];
+
+    return positions;
+}
+
+u16 getMaxLightLevel(Map &map, const NodeDefManager *ndef, const std::vector<v3s16> &positions, s32 glow)
 {
     u16 light_at_pos = 0;
     u8 light_at_pos_intensity = 0;
@@ -403,12 +414,29 @@ img::color8 getLightColor(Map &map, const NodeDefManager *ndef, const std::vecto
     if (!pos_ok)
         light_at_pos = LIGHT_SUN;
 
+    return light_at_pos;
+}
+
+img::color8 getLightColor(Map &map, const NodeDefManager *ndef, const std::vector<v3s16> &positions, s32 glow)
+{
+    u16 light = getMaxLightLevel(map, ndef, positions, glow);
+
     // Initialize with full alpha, otherwise entity won't be visible
     img::color8 light_color = img::white;
 
     // Encode light into color, adding a small boost
     // based on the entity glow.
-    light_color = encode_light(light_at_pos, glow);
+    light_color = encode_light(light, glow);
+
+    return light_color;
+}
+
+img::color8 getBlendedLightColor(Map &map, const NodeDefManager *ndef, const std::vector<v3s16> &positions, u32 daynight_ratio)
+{
+    u16 light = getMaxLightLevel(map, ndef, positions, 0);
+
+    img::color8 light_color;
+    final_color_blend(&light_color, light, daynight_ratio);
 
     return light_color;
 }

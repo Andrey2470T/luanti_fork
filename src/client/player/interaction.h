@@ -1,28 +1,69 @@
 #pragma once
 
 #include <BasicIncludes.h>
+#include <Utils/Line3D.h>
+#include "util/pointedthing.h"
 
+class Client;
+class RenderSystem;
 class LocalPlayer;
-
+class RenderCAO;
+struct ItemStack;
+struct ItemDefinition;
+class NodeMetadata;
+class InputHandler;
+class ClientPacketHandler;
 
 class PlayerInteraction
 {
+	Client *client;
+	RenderSystem *rndsys;
 	LocalPlayer *player;
+    InputHandler *input;
+    ClientPacketHandler *pkt_handler;
+
+    PointedThing pointed_old;
 
 	f32 time_from_last_punch = 10.0f;
     f32 nodig_delay_timer;
+    f32 dig_time;
+    f32 dig_time_complete;
+    bool btn_down_for_dig;
+    bool dig_instantly;
+    bool digging_blocked;
+    u16 dig_index;
     f32 object_hit_delay_timer;
 
+    f32 repeat_place_timer;
+    f32 repeat_dig_time;
+
+    bool digging;
+    bool punching;
+    
+    RenderCAO *selected_object = nullptr;
+
+    const float object_hit_delay = 0.2f;
+
 	bool touch_use_crosshair;
+    f32 repeat_place_time;
 
 	PointedThing updatePointedThing(
 		const line3f &shootline, bool liquids_pointable,
 		const std::optional<Pointabilities> &pointabilities,
 		bool look_for_object, const v3s16 &camera_offset);
 
-	bool isTouchCrosshairDisabled();
+    bool nodePlacement(const ItemDefinition &selected_def, const ItemStack &selected_item,
+            const v3s16 &nodepos, const v3s16 &neighborpos, const PointedThing &pointed,
+            const NodeMetadata *meta);
+
+    static void settingChangedCallback(const std::string &setting_name, void *data);
+    void readSettings();
 public:
-	PlayerInteraction() = default;
+    bool pointing_at_object = true;
+
+	PlayerInteraction(Client *_client);
+	
+	bool isTouchCrosshairDisabled();
 
     /*!
      * Returns the object or node the player is pointing at.

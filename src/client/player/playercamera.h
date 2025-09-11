@@ -14,7 +14,7 @@
 class LocalPlayer;
 struct DrawControl;
 class Client;
-class WieldMeshSceneNode;
+//class WieldMeshSceneNode;
 
 enum CameraMode {
     CAMERA_MODE_FIRST,
@@ -50,7 +50,6 @@ public:
 
 	// Update render distance
 	void updateViewingRange();
-	void updateCameraMode();
 
 	// Start digging animation
 	// Pass 0 for left click, 1 for right click

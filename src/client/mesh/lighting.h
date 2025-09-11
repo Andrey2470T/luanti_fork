@@ -98,6 +98,8 @@ void final_color_blend(img::color8 *result,
 void final_color_blend(img::color8 *result,
     const img::color8 &data, const img::colorf &dayLight);
 
+std::vector<v3s16> getCornerPositions(v3s16 origin);
+
 /*!
  * Returns the baked light color of the light at that node position from "positions"
  * where the light intensity is maximal
@@ -108,3 +110,5 @@ void final_color_blend(img::color8 *result,
  * \return
  */
 img::color8 getLightColor(Map &map, const NodeDefManager *ndef, const std::vector<v3s16> &positions, s32 glow);
+
+img::color8 getBlendedLightColor(Map &map, const NodeDefManager *ndef, const std::vector<v3s16> &positions, u32 daynight_ratio);

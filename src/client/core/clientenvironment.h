@@ -20,6 +20,7 @@ class ClientMap;
 class ClientScripting;
 class ClientActiveObject;
 class GenericCAO;
+class RenderCAO;
 class LocalPlayer;
 class ResourceCache;
 class Inventory;
@@ -82,6 +83,7 @@ public:
 	*/
 
 	GenericCAO* getGenericCAO(u16 id);
+	RenderCAO* getRenderCAO(u16 id);
 	ClientActiveObject* getActiveObject(u16 id)
 	{
 		return m_ao_manager.getActiveObject(id);
