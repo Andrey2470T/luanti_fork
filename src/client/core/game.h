@@ -32,8 +32,6 @@ struct CameraOrientation {
 #define GAME_FALLBACK_TIMEOUT 1.8f
 #define GAME_CONNECTION_TIMEOUT 10.0f
 
-const static float object_hit_delay = 0.2;
-
 //const static u16 bbox_debug_flag = scene::EDS_BBOX_ALL;
 
 /* The reason the following structs are not anonymous structs within the
@@ -184,8 +182,6 @@ private:
     bool m_cache_enable_free_move;
     f32  m_cache_mouse_sensitivity;
     f32  m_cache_joystick_frustum_sensitivity;
-    f32  m_repeat_place_time;
-    f32  m_repeat_dig_time;
     f32  m_cache_cam_smoothing;
 
     bool m_invert_mouse;
@@ -193,7 +189,6 @@ private:
     bool m_invert_hotbar_mouse_wheel;
 
     bool m_first_loop_after_window_activation = false;
-    bool m_camera_offset_changed = false;
     bool m_game_focused = false;
 
     bool m_does_lost_focus_pause_game = false;

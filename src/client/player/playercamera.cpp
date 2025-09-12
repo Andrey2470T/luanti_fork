@@ -3,9 +3,11 @@
 // Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "playercamera.h"
+#include "client/event/inputhandler.h"
 #include "client/render/renderer.h"
 #include "debug.h"
 #include "config.h"
+#include "gui/touchcontrols.h"
 #include "map.h"
 #include <cmath>
 #include "client/core/client.h"
@@ -29,6 +31,7 @@
 #include "client/render/drawlist.h"
 #include "client/ao/renderCAO.h"
 #include <Utils/TypeConverter.h>
+#include "client/event/joystickcontroller.h"
 
 #define WIELDMESH_OFFSET_X 55.0f
 #define WIELDMESH_OFFSET_Y -35.0f
@@ -591,6 +594,50 @@ void PlayerCamera::updateViewingRange()
 		return;
 	}
     setFarValue((viewing_range < 2000) ? 2000 * BS : viewing_range * BS);
+}
+
+f32 PlayerCamera::getSensitivityScaleFactor() const
+{
+    // Multiply by a constant such that it becomes 1.0 at 72 degree FOV and
+    // 16:9 aspect ratio to minimize disruption of existing sensitivity
+    // settings.
+    return std::tan(m_frustum.Fovy / 2.0f) * 1.3763819f;
+}
+
+void PlayerCamera::updateOrientation(bool invert_mouse, f32 mouse_sensitivity,
+    bool enable_joysticks, f32 joystick_frustum_sensitivity, f32 dtime)
+{
+    auto input = m_client->getInputHandler();
+
+    if (g_touchcontrols) {
+        m_orientation.Y   += g_touchcontrols->getYawChange();
+        m_orientation.X += g_touchcontrols->getPitchChange();
+    } else {
+        auto wndsize = m_client->getRenderSystem()->getWindowSize();
+
+        v2i center(wndsize.X / 2, wndsize.Y / 2);
+        v2i dist = input->getMousePos() - center;
+
+        if (invert_mouse || m_camera_mode == CAMERA_MODE_THIRD_FRONT) {
+            dist.Y = -dist.Y;
+        }
+
+        f32 sens_scale = getSensitivityScaleFactor();
+        m_orientation.Y   -= dist.X * mouse_sensitivity * sens_scale;
+        m_orientation.X += dist.Y * mouse_sensitivity * sens_scale;
+
+        if (dist.X != 0 || dist.Y != 0)
+            input->setMousePos(center.X, center.Y);
+    }
+
+    if (enable_joysticks) {
+        f32 sens_scale = getSensitivityScaleFactor();
+        f32 c = joystick_frustum_sensitivity * dtime * sens_scale;
+        m_orientation.Y -= input->joystick.getAxisWithoutDead(JA_FRUSTUM_HORIZONTAL) * c;
+        m_orientation.X += input->joystick.getAxisWithoutDead(JA_FRUSTUM_VERTICAL) * c;
+    }
+
+    m_orientation.X = rangelim(m_orientation.X, -89.5, 89.5);
 }
 
 /*void PlayerCamera::setDigging(s32 button)

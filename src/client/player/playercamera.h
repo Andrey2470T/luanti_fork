@@ -33,6 +33,11 @@ public:
     PlayerCamera(Client *client);
 	~PlayerCamera();
 
+    v2f getOrientation() const
+    {
+        return m_orientation;
+    }
+
 	// Returns the absolute position of the head SceneNode in the world
     v3f getHeadPosition() const
 	{
@@ -50,6 +55,9 @@ public:
 
 	// Update render distance
 	void updateViewingRange();
+    f32 getSensitivityScaleFactor() const;
+    void updateOrientation(bool invert_mouse, f32 mouse_sensitivity,
+        bool enable_joysticks, f32 joystick_frustum_sensitivity, f32 dtime);
 
 	// Start digging animation
 	// Pass 0 for left click, 1 for right click
@@ -73,6 +81,10 @@ public:
 			m_camera_mode = CAMERA_MODE_FIRST;
 	}
 
+    void setOrientation(const v2f new_orientation)
+    {
+        m_orientation = new_orientation;
+    }
 	// Set the current camera mode
     void setCameraMode(CameraMode mode)
 	{
@@ -95,6 +107,8 @@ private:
     DrawControl& m_draw_control;
 
 	Client *m_client;
+
+    v2f m_orientation; // {pitch, yaw}
 
 	// Default Client FOV (as defined by the "fov" setting)
 	f32 m_cache_fov;

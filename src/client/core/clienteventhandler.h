@@ -3,19 +3,21 @@
 
 class Client;
 class ClientEventHandler;
+class RenderSystem;
+class LocalPlayer;
 
-struct ClientEventCallback
-{
-    void (ClientEventHandler::*handler)(ClientEvent *);
-};
+typedef std::array<void (ClientEventHandler::*)(ClientEvent*), CLIENTEVENT_MAX> ClientEventTable;
 
 class ClientEventHandler
 {
     Client *client;
+    RenderSystem *rndsys;
+    LocalPlayer *player;
 
     std::queue<ClientEvent *> clientEventQueue;
 
-    static const ClientEventHandler clientEventHandler[CLIENTEVENT_MAX];
+    static const ClientEventTable clientEventTable;
+
 public:
     ClientEventHandler(Client *_client);
 
@@ -25,6 +27,8 @@ public:
     ClientEvent * getClientEvent();
 
     void pushToEventQueue(ClientEvent *event);
+
+    void processClientEvents();
 
     void handleClientEvent_None(ClientEvent *event);
     void handleClientEvent_PlayerDamage(ClientEvent *event);

@@ -1,32 +1,52 @@
 #include "clienteventhandler.h"
+#include "client.h"
+#include "client/render/clouds.h"
+#include "client/render/drawlist.h"
+#include "client/render/particles.h"
+#include "client/render/rendersystem.h"
+#include "client/render/sky.h"
+#include "client/ui/gameformspec.h"
+#include "clientenvironment.h"
+#include "client/player/localplayer.h"
+#include "client/ao/renderCAO.h"
+#include "debug.h"
+#include "scripting_client.h"
+#include "client/player/playercamera.h"
+#include "settings.h"
+#include <Image/Converting.h>
 
-const ClientEventHandler ClientEventHandler::clientEventHandler[CLIENTEVENT_MAX] = {
-    {&Game::handleClientEvent_None},
-    {&Game::handleClientEvent_PlayerDamage},
-    {&Game::handleClientEvent_PlayerForceMove},
-    {&Game::handleClientEvent_DeathscreenLegacy},
-    {&Game::handleClientEvent_ShowFormSpec},
-    {&Game::handleClientEvent_ShowLocalFormSpec},
-    {&Game::handleClientEvent_HandleParticleEvent},
-    {&Game::handleClientEvent_HandleParticleEvent},
-    {&Game::handleClientEvent_HandleParticleEvent},
-    {&Game::handleClientEvent_HudAdd},
-    {&Game::handleClientEvent_HudRemove},
-    {&Game::handleClientEvent_HudChange},
-    {&Game::handleClientEvent_SetSky},
-    {&Game::handleClientEvent_SetSun},
-    {&Game::handleClientEvent_SetMoon},
-    {&Game::handleClientEvent_SetStars},
-    {&Game::handleClientEvent_OverrideDayNigthRatio},
-    {&Game::handleClientEvent_CloudParams},
+const ClientEventTable ClientEventHandler::clientEventTable = {
+    &ClientEventHandler::handleClientEvent_None,
+    &ClientEventHandler::handleClientEvent_PlayerDamage,
+    &ClientEventHandler::handleClientEvent_PlayerForceMove,
+    &ClientEventHandler::handleClientEvent_DeathscreenLegacy,
+    &ClientEventHandler::handleClientEvent_ShowFormSpec,
+    &ClientEventHandler::handleClientEvent_ShowLocalFormSpec,
+    &ClientEventHandler::handleClientEvent_HandleParticleEvent,
+    &ClientEventHandler::handleClientEvent_HandleParticleEvent,
+    &ClientEventHandler::handleClientEvent_HandleParticleEvent,
+    &ClientEventHandler::handleClientEvent_HudAdd,
+    &ClientEventHandler::handleClientEvent_HudRemove,
+    &ClientEventHandler::handleClientEvent_HudChange,
+    &ClientEventHandler::handleClientEvent_SetSky,
+    &ClientEventHandler::handleClientEvent_SetSun,
+    &ClientEventHandler::handleClientEvent_SetMoon,
+    &ClientEventHandler::handleClientEvent_SetStars,
+    &ClientEventHandler::handleClientEvent_OverrideDayNigthRatio,
+    &ClientEventHandler::handleClientEvent_CloudParams
 };
 
-void Game::handleClientEvent_None(ClientEvent *event, CameraOrientation *cam)
+ClientEventHandler::ClientEventHandler(Client *_client)
+    : client(_client)
+{
+
+}
+void ClientEventHandler::handleClientEvent_None(ClientEvent *event)
 {
     FATAL_ERROR("ClientEvent type None received");
 }
 
-void Game::handleClientEvent_PlayerDamage(ClientEvent *event, CameraOrientation *cam)
+void ClientEventHandler::handleClientEvent_PlayerDamage(ClientEvent *event)
 {
     if (client->modsLoaded())
         client->getScript()->on_damage_taken(event->player_damage.amount);
@@ -35,15 +55,15 @@ void Game::handleClientEvent_PlayerDamage(ClientEvent *event, CameraOrientation 
         return;
 
     // Damage flash and hurt tilt are not used at death
-    if (client->getHP() > 0) {
+    if (player->getHP() > 0) {
         LocalPlayer *player = client->getEnv().getLocalPlayer();
 
         f32 hp_max = player->getCAO() ?
             player->getCAO()->getProperties().hp_max : PLAYER_MAX_HP_DEFAULT;
         f32 damage_ratio = event->player_damage.amount / hp_max;
 
-        runData.damage_flash += 95.0f + 64.f * damage_ratio;
-        runData.damage_flash = MYMIN(runData.damage_flash, 127.0f);
+        client->getEnv().damage_flash += 95.0f + 64.f * damage_ratio;
+        client->getEnv().damage_flash = MYMIN(client->getEnv().damage_flash, 127.0f);
 
         player->hurt_tilt_timer = 1.5f;
         player->hurt_tilt_strength =
@@ -54,43 +74,42 @@ void Game::handleClientEvent_PlayerDamage(ClientEvent *event, CameraOrientation 
     client->getEventManager()->put(new SimpleTriggerEvent(MtEvent::PLAYER_DAMAGE));
 }
 
-void Game::handleClientEvent_PlayerForceMove(ClientEvent *event, CameraOrientation *cam)
+void ClientEventHandler::handleClientEvent_PlayerForceMove(ClientEvent *event)
 {
-    cam->camera_yaw = event->player_force_move.yaw;
-    cam->camera_pitch = event->player_force_move.pitch;
+    auto camera = player->getCamera();
+    camera->setOrientation({event->player_force_move.pitch, event->player_force_move.yaw});
 }
 
-void Game::handleClientEvent_DeathscreenLegacy(ClientEvent *event, CameraOrientation *cam)
+void ClientEventHandler::handleClientEvent_DeathscreenLegacy(ClientEvent *event)
 {
-    m_game_formspec.showDeathFormspecLegacy();
+    rndsys->getGameFormSpec()->showDeathFormspecLegacy();
 }
 
-void Game::handleClientEvent_ShowFormSpec(ClientEvent *event, CameraOrientation *cam)
+void ClientEventHandler::handleClientEvent_ShowFormSpec(ClientEvent *event)
 {
-    m_game_formspec.showFormSpec(*event->show_formspec.formspec,
+    rndsys->getGameFormSpec()->showFormSpec(*event->show_formspec.formspec,
         *event->show_formspec.formname);
 
     delete event->show_formspec.formspec;
     delete event->show_formspec.formname;
 }
 
-void Game::handleClientEvent_ShowLocalFormSpec(ClientEvent *event, CameraOrientation *cam)
+void ClientEventHandler::handleClientEvent_ShowLocalFormSpec(ClientEvent *event)
 {
-    m_game_formspec.showLocalFormSpec(*event->show_formspec.formspec,
+    rndsys->getGameFormSpec()->showLocalFormSpec(*event->show_formspec.formspec,
         *event->show_formspec.formname);
 
     delete event->show_formspec.formspec;
     delete event->show_formspec.formname;
 }
 
-void Game::handleClientEvent_HandleParticleEvent(ClientEvent *event,
-        CameraOrientation *cam)
+void ClientEventHandler::handleClientEvent_HandleParticleEvent(ClientEvent *event)
 {
     LocalPlayer *player = client->getEnv().getLocalPlayer();
-    client->getParticleManager()->handleParticleEvent(event, client, player);
+    rndsys->getParticleManager()->handleParticleEvent(event, client, player);
 }
 
-void Game::handleClientEvent_HudAdd(ClientEvent *event, CameraOrientation *cam)
+void ClientEventHandler::handleClientEvent_HudAdd(ClientEvent *event)
 {
     LocalPlayer *player = client->getEnv().getLocalPlayer();
 
@@ -123,7 +142,7 @@ void Game::handleClientEvent_HudAdd(ClientEvent *event, CameraOrientation *cam)
     delete event->hudadd;
 }
 
-void Game::handleClientEvent_HudRemove(ClientEvent *event, CameraOrientation *cam)
+void ClientEventHandler::handleClientEvent_HudRemove(ClientEvent *event)
 {
     LocalPlayer *player = client->getEnv().getLocalPlayer();
 
@@ -136,7 +155,7 @@ void Game::handleClientEvent_HudRemove(ClientEvent *event, CameraOrientation *ca
 
 }
 
-void Game::handleClientEvent_HudChange(ClientEvent *event, CameraOrientation *cam)
+void ClientEventHandler::handleClientEvent_HudChange(ClientEvent *event)
 {
     LocalPlayer *player = client->getEnv().getLocalPlayer();
 
@@ -195,8 +214,10 @@ void Game::handleClientEvent_HudChange(ClientEvent *event, CameraOrientation *ca
     delete event->hudchange;
 }
 
-void Game::handleClientEvent_SetSky(ClientEvent *event, CameraOrientation *cam)
+void ClientEventHandler::handleClientEvent_SetSky(ClientEvent *event)
 {
+    auto sky = rndsys->getSky();
+
     sky->setVisible(false);
     // Whether clouds are visible in front of a custom skybox.
     sky->setCloudsEnabled(event->set_sky->clouds);
@@ -253,7 +274,7 @@ void Game::handleClientEvent_SetSky(ClientEvent *event, CameraOrientation *cam)
 
     // if the fog distance is reset, switch back to the client's viewing_range
     if (event->set_sky->fog_distance < 0)
-        draw_control->wanted_range = g_settings->getS16("viewing_range");
+        rndsys->getDrawList()->getDrawControl().wanted_range = g_settings->getS16("viewing_range");
 
     if (event->set_sky->fog_start >= 0)
         sky->setFogStart(rangelim(event->set_sky->fog_start, 0.0f, 0.99f));
@@ -265,61 +286,67 @@ void Game::handleClientEvent_SetSky(ClientEvent *event, CameraOrientation *cam)
     delete event->set_sky;
 }
 
-void Game::handleClientEvent_SetSun(ClientEvent *event, CameraOrientation *cam)
+void ClientEventHandler::handleClientEvent_SetSun(ClientEvent *event)
 {
-    sky->setSunVisible(event->sun_params->visible);
-    sky->setSunTexture(event->sun_params->texture,
+    auto sun = rndsys->getSky()->getSun();
+
+    sun->setVisible(event->sun_params->visible);
+    sun->setTexture(event->sun_params->texture,
         event->sun_params->tonemap, texture_src);
-    sky->setSunScale(event->sun_params->scale);
-    sky->setSunriseVisible(event->sun_params->sunrise_visible);
-    sky->setSunriseTexture(event->sun_params->sunrise, texture_src);
+    sun->setScale(event->sun_params->scale);
+    sun->setSunriseVisible(event->sun_params->sunrise_visible);
+    sun->setSunriseTexture(event->sun_params->sunrise, texture_src);
     delete event->sun_params;
 }
 
-void Game::handleClientEvent_SetMoon(ClientEvent *event, CameraOrientation *cam)
+void ClientEventHandler::handleClientEvent_SetMoon(ClientEvent *event)
 {
-    sky->setMoonVisible(event->moon_params->visible);
-    sky->setMoonTexture(event->moon_params->texture,
+    auto moon = rndsys->getSky()->getMoon();
+
+    moon->setVisible(event->moon_params->visible);
+    moon->setTexture(event->moon_params->texture,
         event->moon_params->tonemap, texture_src);
-    sky->setMoonScale(event->moon_params->scale);
+    moon->setScale(event->moon_params->scale);
     delete event->moon_params;
 }
 
-void Game::handleClientEvent_SetStars(ClientEvent *event, CameraOrientation *cam)
+void ClientEventHandler::handleClientEvent_SetStars(ClientEvent *event)
 {
-    sky->setStarsVisible(event->star_params->visible);
-    sky->setStarCount(event->star_params->count);
-    sky->setStarColor(event->star_params->starcolor);
-    sky->setStarScale(event->star_params->scale);
-    sky->setStarDayOpacity(event->star_params->day_opacity);
+    auto stars = rndsys->getSky()->getStars();
+
+    stars->setVisible(event->star_params->visible);
+    stars->setCount(event->star_params->count);
+    stars->setColor(event->star_params->starcolor);
+    stars->setScale(event->star_params->scale);
+    stars->setDayOpacity(event->star_params->day_opacity);
     delete event->star_params;
 }
 
-void Game::handleClientEvent_OverrideDayNigthRatio(ClientEvent *event,
-        CameraOrientation *cam)
+void ClientEventHandler::handleClientEvent_OverrideDayNigthRatio(ClientEvent *event)
 {
     client->getEnv().setDayNightRatioOverride(
         event->override_day_night_ratio.do_override,
         event->override_day_night_ratio.ratio_f * 1000.0f);
 }
 
-void Game::handleClientEvent_CloudParams(ClientEvent *event, CameraOrientation *cam)
+void ClientEventHandler::handleClientEvent_CloudParams(ClientEvent *event)
 {
+    auto clouds = rndsys->getClouds();
+
     clouds->setDensity(event->cloud_params.density);
-    clouds->setColorBright(video::SColor(event->cloud_params.color_bright));
-    clouds->setColorAmbient(video::SColor(event->cloud_params.color_ambient));
-    clouds->setColorShadow(video::SColor(event->cloud_params.color_shadow));
+    clouds->setColorBright(img::colorU32NumberToObject(event->cloud_params.color_bright));
+    clouds->setColorAmbient(img::colorU32NumberToObject(event->cloud_params.color_ambient));
+    clouds->setColorShadow(img::colorU32NumberToObject(event->cloud_params.color_shadow));
     clouds->setHeight(event->cloud_params.height);
     clouds->setThickness(event->cloud_params.thickness);
     clouds->setSpeed(v2f(event->cloud_params.speed_x, event->cloud_params.speed_y));
 }
 
-void Game::processClientEvents(CameraOrientation *cam)
+void ClientEventHandler::processClientEvents()
 {
-    while (client->hasClientEvents()) {
-        std::unique_ptr<ClientEvent> event(client->getClientEvent());
+    while (hasClientEvents()) {
+        std::unique_ptr<ClientEvent> event(getClientEvent());
         FATAL_ERROR_IF(event->type >= CLIENTEVENT_MAX, "Invalid clientevent type");
-        const ClientEventHandler& evHandler = clientEventHandler[event->type];
-        (this->*evHandler.handler)(event.get(), cam);
+        (clientEventTable[event->type])(event.get());
     }
 }
