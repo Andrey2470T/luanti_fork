@@ -565,6 +565,9 @@ void Client::step(f32 dtime)
 		m_localdb->endSave();
 		m_localdb->beginSave();
 	}
+
+    m_clientevent_handler->processEvents();
+    updateSound(dtime);
 }
 
 bool Client::loadMedia(const std::string &data, const std::string &filename,

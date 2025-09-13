@@ -251,8 +251,6 @@ void Game::run()
 
 		step(dtime);
 
-        //processClientEvents(&cam_view_target);
-        client->updateSound(dtime);
         client->getEnv().updateFrame(&graph, dtime, m_is_paused);
 
         if (m_does_lost_focus_pause_game && !rndsys->getWindow()->isFocused() && !isMenuActive()) {

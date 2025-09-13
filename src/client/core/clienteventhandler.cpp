@@ -6,12 +6,14 @@
 #include "client/render/rendersystem.h"
 #include "client/render/sky.h"
 #include "client/ui/gameformspec.h"
+#include "client/ui/gameui.h"
 #include "clientenvironment.h"
 #include "client/player/localplayer.h"
 #include "client/ao/renderCAO.h"
 #include "debug.h"
 #include "scripting_client.h"
 #include "client/player/playercamera.h"
+#include "client/ui/hud.h"
 #include "settings.h"
 #include <Image/Converting.h>
 
@@ -37,10 +39,11 @@ const ClientEventTable ClientEventHandler::clientEventTable = {
 };
 
 ClientEventHandler::ClientEventHandler(Client *_client)
-    : client(_client)
-{
+    : client(_client), rndsys(client->getRenderSystem()), cache(client->getResourceCache()),
+      player(client->getEnv().getLocalPlayer()), formspec(rndsys->getGameFormSpec()),
+      hud(rndsys->getGameUI()->getHud()), sky(rndsys->getSky())
+{}
 
-}
 void ClientEventHandler::handleClientEvent_None(ClientEvent *event)
 {
     FATAL_ERROR("ClientEvent type None received");
@@ -56,13 +59,11 @@ void ClientEventHandler::handleClientEvent_PlayerDamage(ClientEvent *event)
 
     // Damage flash and hurt tilt are not used at death
     if (player->getHP() > 0) {
-        LocalPlayer *player = client->getEnv().getLocalPlayer();
-
         f32 hp_max = player->getCAO() ?
             player->getCAO()->getProperties().hp_max : PLAYER_MAX_HP_DEFAULT;
         f32 damage_ratio = event->player_damage.amount / hp_max;
 
-        client->getEnv().damage_flash += 95.0f + 64.f * damage_ratio;
+        client->getEnv().damage_flash += 95.0f + 64.0f * damage_ratio;
         client->getEnv().damage_flash = MYMIN(client->getEnv().damage_flash, 127.0f);
 
         player->hurt_tilt_timer = 1.5f;
@@ -82,12 +83,12 @@ void ClientEventHandler::handleClientEvent_PlayerForceMove(ClientEvent *event)
 
 void ClientEventHandler::handleClientEvent_DeathscreenLegacy(ClientEvent *event)
 {
-    rndsys->getGameFormSpec()->showDeathFormspecLegacy();
+    formspec->showDeathFormspecLegacy();
 }
 
 void ClientEventHandler::handleClientEvent_ShowFormSpec(ClientEvent *event)
 {
-    rndsys->getGameFormSpec()->showFormSpec(*event->show_formspec.formspec,
+    formspec->showFormSpec(*event->show_formspec.formspec,
         *event->show_formspec.formname);
 
     delete event->show_formspec.formspec;
@@ -96,7 +97,7 @@ void ClientEventHandler::handleClientEvent_ShowFormSpec(ClientEvent *event)
 
 void ClientEventHandler::handleClientEvent_ShowLocalFormSpec(ClientEvent *event)
 {
-    rndsys->getGameFormSpec()->showLocalFormSpec(*event->show_formspec.formspec,
+    formspec->showLocalFormSpec(*event->show_formspec.formspec,
         *event->show_formspec.formname);
 
     delete event->show_formspec.formspec;
@@ -111,12 +112,10 @@ void ClientEventHandler::handleClientEvent_HandleParticleEvent(ClientEvent *even
 
 void ClientEventHandler::handleClientEvent_HudAdd(ClientEvent *event)
 {
-    LocalPlayer *player = client->getEnv().getLocalPlayer();
-
     u32 server_id = event->hudadd->server_id;
     // ignore if we already have a HUD with that ID
-    auto i = m_hud_server_to_client.find(server_id);
-    if (i != m_hud_server_to_client.end()) {
+    auto i = hud_server_to_client.find(server_id);
+    if (i != hud_server_to_client.end()) {
         delete event->hudadd;
         return;
     }
@@ -137,32 +136,31 @@ void ClientEventHandler::handleClientEvent_HudAdd(ClientEvent *event)
     e->z_index   = event->hudadd->z_index;
     e->text2     = event->hudadd->text2;
     e->style     = event->hudadd->style;
-    m_hud_server_to_client[server_id] = player->addHud(e);
+    hud_server_to_client[server_id] = player->addHud(e);
 
     delete event->hudadd;
+
+    hud->addHUDElement(hud_server_to_client[server_id], e);
 }
 
 void ClientEventHandler::handleClientEvent_HudRemove(ClientEvent *event)
 {
-    LocalPlayer *player = client->getEnv().getLocalPlayer();
-
-    auto i = m_hud_server_to_client.find(event->hudrm.id);
-    if (i != m_hud_server_to_client.end()) {
+    auto i = hud_server_to_client.find(event->hudrm.id);
+    if (i != hud_server_to_client.end()) {
         HudElement *e = player->removeHud(i->second);
-        delete e;
-        m_hud_server_to_client.erase(i);
-    }
 
+        hud->removeHUDElement(i->second);
+        delete e;
+        hud_server_to_client.erase(i);
+    }
 }
 
 void ClientEventHandler::handleClientEvent_HudChange(ClientEvent *event)
 {
-    LocalPlayer *player = client->getEnv().getLocalPlayer();
-
     HudElement *e = nullptr;
 
-    auto i = m_hud_server_to_client.find(event->hudchange->id);
-    if (i != m_hud_server_to_client.end()) {
+    auto i = hud_server_to_client.find(event->hudchange->id);
+    if (i != hud_server_to_client.end()) {
         e = player->getHud(i->second);
     }
 
@@ -212,12 +210,12 @@ void ClientEventHandler::handleClientEvent_HudChange(ClientEvent *event)
 #undef CASE_SET
 
     delete event->hudchange;
+
+    hud->updateHUDElement(i->second);
 }
 
 void ClientEventHandler::handleClientEvent_SetSky(ClientEvent *event)
 {
-    auto sky = rndsys->getSky();
-
     sky->setVisible(false);
     // Whether clouds are visible in front of a custom skybox.
     sky->setCloudsEnabled(event->set_sky->clouds);
@@ -249,7 +247,7 @@ void ClientEventHandler::handleClientEvent_SetSky(ClientEvent *event)
         );
         // Add textures to skybox.
         for (int i = 0; i < 6; i++)
-            sky->addTextureToSkybox(event->set_sky->textures[i], i, texture_src);
+            sky->addTextureToSkybox(event->set_sky->textures[i], i);
     } else {
         // Handle everything else as plain color.
         if (event->set_sky->type != "plain")
@@ -288,31 +286,31 @@ void ClientEventHandler::handleClientEvent_SetSky(ClientEvent *event)
 
 void ClientEventHandler::handleClientEvent_SetSun(ClientEvent *event)
 {
-    auto sun = rndsys->getSky()->getSun();
+    auto sun = sky->getSun();
 
     sun->setVisible(event->sun_params->visible);
-    sun->setTexture(event->sun_params->texture,
-        event->sun_params->tonemap, texture_src);
+    sun->setImage(event->sun_params->texture,
+        event->sun_params->tonemap, cache);
     sun->setScale(event->sun_params->scale);
     sun->setSunriseVisible(event->sun_params->sunrise_visible);
-    sun->setSunriseTexture(event->sun_params->sunrise, texture_src);
+    sun->setSunriseImage(event->sun_params->sunrise, cache);
     delete event->sun_params;
 }
 
 void ClientEventHandler::handleClientEvent_SetMoon(ClientEvent *event)
 {
-    auto moon = rndsys->getSky()->getMoon();
+    auto moon = sky->getMoon();
 
     moon->setVisible(event->moon_params->visible);
-    moon->setTexture(event->moon_params->texture,
-        event->moon_params->tonemap, texture_src);
+    moon->setImage(event->moon_params->texture,
+        event->moon_params->tonemap, cache);
     moon->setScale(event->moon_params->scale);
     delete event->moon_params;
 }
 
 void ClientEventHandler::handleClientEvent_SetStars(ClientEvent *event)
 {
-    auto stars = rndsys->getSky()->getStars();
+    auto stars = sky->getStars();
 
     stars->setVisible(event->star_params->visible);
     stars->setCount(event->star_params->count);
@@ -342,11 +340,21 @@ void ClientEventHandler::handleClientEvent_CloudParams(ClientEvent *event)
     clouds->setSpeed(v2f(event->cloud_params.speed_x, event->cloud_params.speed_y));
 }
 
-void ClientEventHandler::processClientEvents()
+ClientEvent * ClientEventHandler::getClientEvent()
 {
-    while (hasClientEvents()) {
+    FATAL_ERROR_IF(clientEventQueue.empty(),
+        "Cannot getClientEvent, queue is empty.");
+
+    ClientEvent *event = clientEventQueue.front();
+    clientEventQueue.pop();
+    return event;
+}
+
+void ClientEventHandler::processEvents()
+{
+    while (!clientEventQueue.empty()) {
         std::unique_ptr<ClientEvent> event(getClientEvent());
         FATAL_ERROR_IF(event->type >= CLIENTEVENT_MAX, "Invalid clientevent type");
-        (clientEventTable[event->type])(event.get());
+        (this->*(clientEventTable[event->type]))(event.get());
     }
 }

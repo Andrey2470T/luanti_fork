@@ -4,7 +4,11 @@
 class Client;
 class ClientEventHandler;
 class RenderSystem;
+class ResourceCache;
 class LocalPlayer;
+class GameFormSpec;
+class Hud;
+class Sky;
 
 typedef std::array<void (ClientEventHandler::*)(ClientEvent*), CLIENTEVENT_MAX> ClientEventTable;
 
@@ -12,23 +16,26 @@ class ClientEventHandler
 {
     Client *client;
     RenderSystem *rndsys;
+    ResourceCache *cache;
     LocalPlayer *player;
+    GameFormSpec *formspec;
+    Hud *hud;
+    Sky *sky;
 
     std::queue<ClientEvent *> clientEventQueue;
 
     static const ClientEventTable clientEventTable;
 
+    std::unordered_map<u32, u32> hud_server_to_client;
 public:
     ClientEventHandler(Client *_client);
-
-    bool hasClientEvents() const { return !clientEventQueue.empty(); }
 
     // Get event from queue. If queue is empty, it triggers an assertion failure.
     ClientEvent * getClientEvent();
 
     void pushToEventQueue(ClientEvent *event);
 
-    void processClientEvents();
+    void processEvents();
 
     void handleClientEvent_None(ClientEvent *event);
     void handleClientEvent_PlayerDamage(ClientEvent *event);
