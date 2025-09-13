@@ -68,40 +68,6 @@
 
 Game::Game()
 {
-	g_settings->registerChangedCallback("chat_log_level",
-		&settingChangedCallback, this);
-	g_settings->registerChangedCallback("doubletap_jump",
-		&settingChangedCallback, this);
-	g_settings->registerChangedCallback("enable_joysticks",
-		&settingChangedCallback, this);
-	g_settings->registerChangedCallback("enable_fog",
-		&settingChangedCallback, this);
-	g_settings->registerChangedCallback("mouse_sensitivity",
-		&settingChangedCallback, this);
-	g_settings->registerChangedCallback("joystick_frustum_sensitivity",
-		&settingChangedCallback, this);
-	g_settings->registerChangedCallback("repeat_place_time",
-		&settingChangedCallback, this);
-	g_settings->registerChangedCallback("repeat_dig_time",
-		&settingChangedCallback, this);
-	g_settings->registerChangedCallback("noclip",
-		&settingChangedCallback, this);
-	g_settings->registerChangedCallback("free_move",
-		&settingChangedCallback, this);
-	g_settings->registerChangedCallback("fog_start",
-		&settingChangedCallback, this);
-	g_settings->registerChangedCallback("cinematic",
-		&settingChangedCallback, this);
-	g_settings->registerChangedCallback("cinematic_camera_smoothing",
-		&settingChangedCallback, this);
-	g_settings->registerChangedCallback("camera_smoothing",
-		&settingChangedCallback, this);
-	g_settings->registerChangedCallback("invert_mouse",
-		&settingChangedCallback, this);
-	g_settings->registerChangedCallback("enable_hotbar_mouse_wheel",
-		&settingChangedCallback, this);
-	g_settings->registerChangedCallback("invert_hotbar_mouse_wheel",
-		&settingChangedCallback, this);
 	g_settings->registerChangedCallback("pause_on_lost_focus",
 		&settingChangedCallback, this);
 
@@ -136,19 +102,7 @@ bool Game::startup(bool *kill, InputHandler *input, RenderSystem *rndsys, Resour
     this->rescache = rescache;
     this->input = input;
 
-    //driver->setTextureCreationFlag(video::ETCF_CREATE_MIP_MAPS, g_settings->getBool("mip_map"));
-
-    //smgr->getParameters()->setAttribute(scene::OBJ_LOADER_IGNORE_MATERIAL_FILES, true);
-
-	// Reinit runData
-    //runData = GameRunData();
-    //runData.time_from_last_punch = 10.0;
-
-    this->rndsys->getGameUI()->showDebug();
-
-	m_first_loop_after_window_activation = true;
-
-    //g_client_translations->clear();
+    g_client_translations->clear();
 
     showOverlayMessage(N_("Loading..."), 0, 0);
 
@@ -172,8 +126,6 @@ void Game::run()
 	ZoneScoped;
 
 	ProfilerGraph graph;
-	CameraOrientation cam_view_target = {};
-	CameraOrientation cam_view = {};
 	f32 dtime; // in seconds
 
 	// Clear the profiler
@@ -186,9 +138,6 @@ void Game::run()
     drawstats.fps.reset();
 
 	set_light_table(g_settings->getFloat("display_gamma"));
-
-	m_touch_simulate_aux1 = g_settings->getBool("fast_move")
-            && client->getEnv().getLocalPlayer()->checkPrivilege("fast");
 
     const v2u initial_screen_size(
 			g_settings->getU16("screen_w"),
@@ -234,16 +183,6 @@ void Game::run()
 			break;
         if (!rndsys->getGameFormSpec()->handleCallbacks())
 			break;
-
-        // !!! GameInputHandler !!!
-        //processUserInput(dtime);
-		// Update camera before player movement to avoid camera lag of one frame
-        /*updateCameraDirection(&cam_view_target, dtime);
-		cam_view.camera_yaw += (cam_view_target.camera_yaw -
-				cam_view.camera_yaw) * m_cache_cam_smoothing;
-		cam_view.camera_pitch += (cam_view_target.camera_pitch -
-                cam_view.camera_pitch) * m_cache_cam_smoothing;
-        updatePlayerControl(cam_view);*/
 
 		updatePauseState();
 		if (m_is_paused)
@@ -439,7 +378,7 @@ bool Game::createClient(const GameStartData &start_data)
 	/* Set window caption
 	 */
     auto wnd = rndsys->getWindow();
-    auto driver_name = wnd->getGLVersion();
+    auto driver_name = wnd->getGLVersionString();
 	std::string str = std::string(PROJECT_NAME_C) +
 			" " + g_version_hash + " [";
 	str += simple_singleplayer_mode ? gettext("Singleplayer")
@@ -515,7 +454,8 @@ bool Game::connectToServer(const GameStartData &start_data,
                 rescache,
                 input,
                 start_data.name.c_str(),
-                start_data.password);
+                start_data.password,
+                start_data.allow_login_or_register);
 	} catch (const BaseException &e) {
 		*error_message = fmtgettext("Error creating client: %s", e.what());
 		errorstream << *error_message << std::endl;
@@ -786,24 +726,6 @@ void Game::settingChangedCallback(const std::string &setting_name, void *data)
 
 void Game::readSettings()
 {
-	m_cache_doubletap_jump               = g_settings->getBool("doubletap_jump");
-	m_cache_enable_joysticks             = g_settings->getBool("enable_joysticks");
-	m_cache_mouse_sensitivity            = g_settings->getFloat("mouse_sensitivity", 0.001f, 10.0f);
-    m_cache_joystick_frustum_sensitivity = std::max(g_settings->getFloat("joystick_frustum_sensitivity"), 0.001f);
-
-	m_cache_cam_smoothing = 0;
-	if (g_settings->getBool("cinematic"))
-		m_cache_cam_smoothing = 1 - g_settings->getFloat("cinematic_camera_smoothing");
-	else
-		m_cache_cam_smoothing = 1 - g_settings->getFloat("camera_smoothing");
-
-	m_cache_cam_smoothing = rangelim(m_cache_cam_smoothing, 0.01f, 1.0f);
-	m_cache_mouse_sensitivity = rangelim(m_cache_mouse_sensitivity, 0.001, 100.0);
-
-	m_invert_mouse = g_settings->getBool("invert_mouse");
-	m_enable_hotbar_mouse_wheel = g_settings->getBool("enable_hotbar_mouse_wheel");
-	m_invert_hotbar_mouse_wheel = g_settings->getBool("invert_hotbar_mouse_wheel");
-
 	m_does_lost_focus_pause_game = g_settings->getBool("pause_on_lost_focus");
 }
 

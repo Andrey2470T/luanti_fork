@@ -35,6 +35,44 @@ void ChatMessanger::init(gui::IGUIEnvironment *guienv)
             -1, chat_backend, client, &g_menumgr);
 }
 
+void ChatMessanger::openConsole(float scale, const wchar_t *line)
+{
+    assert(scale > 0.0f && scale <= 1.0f);
+
+#ifdef __ANDROID__
+    if (!porting::hasPhysicalKeyboardAndroid()) {
+        porting::showTextInputDialog("", "", 2);
+        android_chat_open = true;
+    } else {
+#endif
+    if (gui_chat_console->isOpenInhibited())
+        return;
+    gui_chat_console->openConsole(scale);
+    if (line) {
+        gui_chat_console->setCloseOnEnter(true);
+        gui_chat_console->replaceAndAddToHistory(line);
+    }
+#ifdef __ANDROID__
+    } // else
+#endif
+}
+
+#ifdef __ANDROID__
+void ChatMessanger::handleAndroidChatInput()
+{
+    // It has to be a text input
+    if (android_chat_open && porting::getLastInputDialogType() == porting::TEXT_INPUT) {
+        porting::AndroidDialogState dialogState = porting::getInputDialogState();
+        if (dialogState == porting::DIALOG_INPUTTED) {
+            std::string text = porting::getInputDialogMessage();
+            typeChatMessage(utf8_to_wide(text));
+        }
+        if (dialogState != porting::DIALOG_SHOWN)
+            android_chat_open = false;
+    }
+}
+#endif
+
 bool ChatMessanger::getChatMessage(std::wstring &res)
 {
 	if (chat_queue.empty())

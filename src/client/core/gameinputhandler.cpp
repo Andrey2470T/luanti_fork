@@ -1,46 +1,71 @@
 #include "gameinputhandler.h"
+#include "client.h"
+#include "client/core/chatmessanger.h"
 #include "client/event/inputhandler.h"
 #include "client/event/eventreceiver.h"
+#include "client/player/interaction.h"
+#include "client/player/selection.h"
+#include "client/render/drawlist.h"
 #include "client/render/rendersystem.h"
 #include <Core/MainWindow.h>
+#include "client/render/sky.h"
+#include "client/ui/gameformspec.h"
+#include "client/ui/gameui.h"
+#include "client/ui/hud.h"
+#include "client/ui/minimap.h"
+#include "gui/guiChatConsole.h"
+#include "gui/mainmenumanager.h"
+#include "gui/touchcontrols.h"
+#include "client/player/localplayer.h"
+#include "client/ao/renderCAO.h"
+#include "hud.h"
 #include "settings.h"
+#include "util/quicktune_shortcutter.h"
+#include "client/network/packethandler.h"
+#include "util/numeric.h"
+#include "gettext.h"
 
-GameInputSystem::GameInputSystem(Client *_client, bool random_input)
-    : client(_client), receiver(std::make_unique<MtEventReceiver>(client->getRenderSystem()->getWindow()))
+GameInputSystem::GameInputSystem(Client *_client)
+    : client(_client), input(client->getInputHandler()),
+      receiver(input->getReceiver()), guienv(client->getRenderSystem()->getGUIEnvironment()),
+      wnd(client->getRenderSystem()->getWindow()), chat_console(client->getChatMessanger()->getChatConsole()),
+      player(client->getEnv().getLocalPlayer()), gameui(client->getRenderSystem()->getGameUI()),
+      camera(player->getCamera()), sky(client->getRenderSystem()->getSky()),
+      quicktune(std::make_unique<QuicktuneShortcutter>())
 {
-    if (random_input)
-        input = std::make_unique<RandomInputHandler>();
-    else
-        input = std::make_unique<RealInputHandler>(receiver.get());
-
-    if (g_settings->getBool("enable_joysticks")) {
-        std::vector<core::JoystickInfo> infos;
-        std::vector<core::JoystickInfo> joystick_infos;
-
-        // Make sure this is called maximum once per
-        // irrlicht device, otherwise it will give you
-        // multiple events for the same joystick.
-        if (!client->getRenderSystem()->getWindow()->activateJoysticks(infos)) {
-            errorstream << "Could not activate joystick support." << std::endl;
-            return;
-        }
-
-        infostream << "Joystick support enabled" << std::endl;
-        joystick_infos.reserve(infos.size());
-        for (u32 i = 0; i < infos.size(); i++) {
-            joystick_infos.push_back(infos[i]);
-        }
-        input->joystick.onJoystickConnect(joystick_infos);
-    }
-
-
+    g_settings->registerChangedCallback("doubletap_jump",
+        &settingChangedCallback, this);
+    g_settings->registerChangedCallback("enable_joysticks",
+        &settingChangedCallback, this);
+    g_settings->registerChangedCallback("noclip",
+        &settingChangedCallback, this);
+    g_settings->registerChangedCallback("free_move",
+        &settingChangedCallback, this);
+    g_settings->registerChangedCallback("mouse_sensitivity",
+        &settingChangedCallback, this);
+    g_settings->registerChangedCallback("joystick_frustum_sensitivity",
+        &settingChangedCallback, this);
+    g_settings->registerChangedCallback("cinematic",
+        &settingChangedCallback, this);
+    g_settings->registerChangedCallback("cinematic_camera_smoothing",
+        &settingChangedCallback, this);
+    g_settings->registerChangedCallback("camera_smoothing",
+        &settingChangedCallback, this);
+    g_settings->registerChangedCallback("invert_mouse",
+        &settingChangedCallback, this);
+    g_settings->registerChangedCallback("enable_hotbar_mouse_wheel",
+        &settingChangedCallback, this);
+    g_settings->registerChangedCallback("invert_hotbar_mouse_wheel",
+        &settingChangedCallback, this);
+    g_settings->registerChangedCallback("fast_move",
+        &settingChangedCallback, this);
 }
 
 void GameInputSystem::processUserInput(f32 dtime)
 {
     bool desired = shouldShowTouchControls();
     if (desired && !g_touchcontrols) {
-        g_touchcontrols = new TouchControls(device, texture_src);
+        //g_touchcontrols = new TouchControls(device, texture_src);
 
     } else if (!desired && g_touchcontrols) {
         delete g_touchcontrols;
@@ -48,9 +73,9 @@ void GameInputSystem::processUserInput(f32 dtime)
     }
 
     // Reset input if window not active or some menu is active
-    if (!device->isWindowActive() || isMenuActive() || guienv->hasFocus(gui_chat_console.get())) {
-        if (m_GameInputSystem_focused) {
-            m_GameInputSystem_focused = false;
+    if (!wnd->isActive() || isMenuActive() || guienv->hasFocus(chat_console) {
+        if (game_focused) {
+            game_focused = false;
             infostream << "GameInputSystem lost focus" << std::endl;
             input->releaseAllKeys();
         } else {
@@ -68,13 +93,13 @@ void GameInputSystem::processUserInput(f32 dtime)
             g_touchcontrols->step(dtime);
         }
 
-        m_GameInputSystem_focused = true;
+        game_focused = true;
     }
 
-    if (!guienv->hasFocus(gui_chat_console.get()) && gui_chat_console->isOpen()
-        && !gui_chat_console->isMyChild(guienv->getFocus()))
+    if (!guienv->hasFocus(chat_console) && chat_console->isOpen()
+        && !chat_console->isMyChild(guienv->getFocus()))
     {
-        gui_chat_console->closeConsoleAtOnce();
+        chat_console->closeConsoleAtOnce();
     }
 
     // Input handler step() (used by the random input generator)
@@ -86,130 +111,131 @@ void GameInputSystem::processUserInput(f32 dtime)
 #endif
 
     // Increase timer for double tap of "keymap_jump"
-    if (m_cache_doubletap_jump && runData.jump_timer_up <= 0.2f)
-        runData.jump_timer_up += dtime;
-    if (m_cache_doubletap_jump && runData.jump_timer_down <= 0.4f)
-        runData.jump_timer_down += dtime;
+    if (cache_doubletap_jump && jump_timer_up <= 0.2f)
+        jump_timer_up += dtime;
+    if (cache_doubletap_jump && jump_timer_down <= 0.4f)
+        jump_timer_down += dtime;
 
     processKeyInput();
-    processItemSelection(&runData.new_playeritem);
+    processItemSelection(&client->getEnv().new_playeritem);
 }
 
 
 void GameInputSystem::processKeyInput()
 {
-    if (wasKeyDown(KeyType::DROP)) {
-        dropSelectedItem(isKeyDown(KeyType::SNEAK));
-    } else if (wasKeyDown(KeyType::AUTOFORWARD)) {
+    auto formspec = client->getRenderSystem()->getGameFormSpec();
+    auto chat_msgr = client->getChatMessanger();
+
+    if (input->wasKeyDown(KeyType::DROP)) {
+        player->dropSelectedItem(input->isKeyDown(KeyType::SNEAK));
+    } else if (input->wasKeyDown(KeyType::AUTOFORWARD)) {
         toggleAutoforward();
-    } else if (wasKeyDown(KeyType::BACKWARD)) {
+    } else if (input->wasKeyDown(KeyType::BACKWARD)) {
         if (g_settings->getBool("continuous_forward"))
             toggleAutoforward();
-    } else if (wasKeyDown(KeyType::INVENTORY)) {
-        m_GameInputSystem_formspec.showPlayerInventory();
+    } else if (input->wasKeyDown(KeyType::INVENTORY)) {
+        formspec->showPlayerInventory();
     } else if (input->cancelPressed()) {
 #ifdef __ANDROID__
-        m_android_chat_open = false;
+        chat_msgr->android_chat_open = false;
 #endif
-        if (!gui_chat_console->isOpenInhibited()) {
-            m_GameInputSystem_formspec.showPauseMenu();
+        if (!chat_console->isOpenInhibited()) {
+            formspec->showPauseMenu();
         }
-    } else if (wasKeyDown(KeyType::CHAT)) {
-        openConsole(0.2, L"");
-    } else if (wasKeyDown(KeyType::CMD)) {
-        openConsole(0.2, L"/");
-    } else if (wasKeyDown(KeyType::CMD_LOCAL)) {
+    } else if (input->wasKeyDown(KeyType::CHAT)) {
+        chat_msgr->openConsole(0.2, L"");
+    } else if (input->wasKeyDown(KeyType::CMD)) {
+        chat_msgr->openConsole(0.2, L"/");
+    } else if (input->wasKeyDown(KeyType::CMD_LOCAL)) {
         if (client->modsLoaded())
-            openConsole(0.2, L".");
+            chat_msgr->openConsole(0.2, L".");
         else
-            m_GameInputSystem_ui->showTranslatedStatusText("Client side scripting is disabled");
-    } else if (wasKeyDown(KeyType::CONSOLE)) {
-        openConsole(core::clamp(g_settings->getFloat("console_height"), 0.1f, 1.0f));
-    } else if (wasKeyDown(KeyType::FREEMOVE)) {
+            gameui->showTranslatedStatusText("Client side scripting is disabled");
+    } else if (input->wasKeyDown(KeyType::CONSOLE)) {
+        chat_msgr->openConsole(std::clamp(g_settings->getFloat("console_height"), 0.1f, 1.0f));
+    } else if (input->wasKeyDown(KeyType::FREEMOVE)) {
         toggleFreeMove();
-    } else if (wasKeyDown(KeyType::JUMP)) {
+    } else if (input->wasKeyDown(KeyType::JUMP)) {
         toggleFreeMoveAlt();
-    } else if (wasKeyDown(KeyType::PITCHMOVE)) {
+    } else if (input->wasKeyDown(KeyType::PITCHMOVE)) {
         togglePitchMove();
-    } else if (wasKeyDown(KeyType::FASTMOVE)) {
+    } else if (input->wasKeyDown(KeyType::FASTMOVE)) {
         toggleFast();
-    } else if (wasKeyDown(KeyType::NOCLIP)) {
+    } else if (input->wasKeyDown(KeyType::NOCLIP)) {
         toggleNoClip();
 #if USE_SOUND
-    } else if (wasKeyDown(KeyType::MUTE)) {
+    } else if (input->wasKeyDown(KeyType::MUTE)) {
         bool new_mute_sound = !g_settings->getBool("mute_sound");
         g_settings->setBool("mute_sound", new_mute_sound);
         if (new_mute_sound)
-            m_GameInputSystem_ui->showTranslatedStatusText("Sound muted");
+            gameui->showTranslatedStatusText("Sound muted");
         else
-            m_GameInputSystem_ui->showTranslatedStatusText("Sound unmuted");
-    } else if (wasKeyDown(KeyType::INC_VOLUME)) {
+            gameui->showTranslatedStatusText("Sound unmuted");
+    } else if (input->wasKeyDown(KeyType::INC_VOLUME)) {
         float new_volume = g_settings->getFloat("sound_volume", 0.0f, 0.9f) + 0.1f;
         g_settings->setFloat("sound_volume", new_volume);
         std::wstring msg = fwgettext("Volume changed to %d%%", myround(new_volume * 100));
-        m_GameInputSystem_ui->showStatusText(msg);
-    } else if (wasKeyDown(KeyType::DEC_VOLUME)) {
+        gameui->showStatusText(msg);
+    } else if (input->wasKeyDown(KeyType::DEC_VOLUME)) {
         float new_volume = g_settings->getFloat("sound_volume", 0.1f, 1.0f) - 0.1f;
         g_settings->setFloat("sound_volume", new_volume);
         std::wstring msg = fwgettext("Volume changed to %d%%", myround(new_volume * 100));
-        m_GameInputSystem_ui->showStatusText(msg);
+        gameui->showStatusText(msg);
 #else
     } else if (wasKeyDown(KeyType::MUTE) || wasKeyDown(KeyType::INC_VOLUME)
             || wasKeyDown(KeyType::DEC_VOLUME)) {
-        m_GameInputSystem_ui->showTranslatedStatusText("Sound system is not supported on this build");
+        gameui->showTranslatedStatusText("Sound system is not supported on this build");
 #endif
-    } else if (wasKeyDown(KeyType::CINEMATIC)) {
+    } else if (input->wasKeyDown(KeyType::CINEMATIC)) {
         toggleCinematic();
-    } else if (wasKeyPressed(KeyType::SCREENSHOT)) {
-        client->makeScreenshot();
-    } else if (wasKeyPressed(KeyType::TOGGLE_BLOCK_BOUNDS)) {
+    } else if (input->wasKeyPressed(KeyType::SCREENSHOT)) {
+        //client->makeScreenshot();
+    } else if (input->wasKeyPressed(KeyType::TOGGLE_BLOCK_BOUNDS)) {
         toggleBlockBounds();
-    } else if (wasKeyPressed(KeyType::TOGGLE_HUD)) {
-        m_GameInputSystem_ui->toggleHud();
-    } else if (wasKeyPressed(KeyType::MINIMAP)) {
-        toggleMinimap(isKeyDown(KeyType::SNEAK));
-    } else if (wasKeyPressed(KeyType::TOGGLE_CHAT)) {
-        m_GameInputSystem_ui->toggleChat(client);
-    } else if (wasKeyPressed(KeyType::TOGGLE_FOG)) {
+    } else if (input->wasKeyPressed(KeyType::TOGGLE_HUD)) {
+        gameui->toggleHud();
+    } else if (input->wasKeyPressed(KeyType::MINIMAP)) {
+        toggleMinimap(input->isKeyDown(KeyType::SNEAK));
+    } else if (input->wasKeyPressed(KeyType::TOGGLE_CHAT)) {
+        gameui->toggleChat(client);
+    } else if (input->wasKeyPressed(KeyType::TOGGLE_FOG)) {
         toggleFog();
-    } else if (wasKeyDown(KeyType::TOGGLE_UPDATE_CAMERA)) {
+    } else if (input->wasKeyDown(KeyType::TOGGLE_UPDATE_CAMERA)) {
         toggleUpdateCamera();
-    } else if (wasKeyPressed(KeyType::TOGGLE_DEBUG)) {
+    } else if (input->wasKeyPressed(KeyType::TOGGLE_DEBUG)) {
         toggleDebug();
-    } else if (wasKeyPressed(KeyType::TOGGLE_PROFILER)) {
-        m_GameInputSystem_ui->toggleProfiler();
-    } else if (wasKeyDown(KeyType::INCREASE_VIEWING_RANGE)) {
+    } else if (input->wasKeyPressed(KeyType::TOGGLE_PROFILER)) {
+        gameui->toggleProfiler();
+    } else if (input->wasKeyDown(KeyType::INCREASE_VIEWING_RANGE)) {
         increaseViewRange();
-    } else if (wasKeyDown(KeyType::DECREASE_VIEWING_RANGE)) {
+    } else if (input->wasKeyDown(KeyType::DECREASE_VIEWING_RANGE)) {
         decreaseViewRange();
-    } else if (wasKeyPressed(KeyType::RANGESELECT)) {
+    } else if (input->wasKeyPressed(KeyType::RANGESELECT)) {
         toggleFullViewRange();
-    } else if (wasKeyDown(KeyType::ZOOM)) {
+    } else if (input->wasKeyDown(KeyType::ZOOM)) {
         checkZoomEnabled();
-    } else if (wasKeyDown(KeyType::QUICKTUNE_NEXT)) {
+    } else if (input->wasKeyDown(KeyType::QUICKTUNE_NEXT)) {
         quicktune->next();
-    } else if (wasKeyDown(KeyType::QUICKTUNE_PREV)) {
+    } else if (input->wasKeyDown(KeyType::QUICKTUNE_PREV)) {
         quicktune->prev();
-    } else if (wasKeyDown(KeyType::QUICKTUNE_INC)) {
+    } else if (input->wasKeyDown(KeyType::QUICKTUNE_INC)) {
         quicktune->inc();
-    } else if (wasKeyDown(KeyType::QUICKTUNE_DEC)) {
+    } else if (input->wasKeyDown(KeyType::QUICKTUNE_DEC)) {
         quicktune->dec();
     }
 
-    if (!isKeyDown(KeyType::JUMP) && runData.reset_jump_timer) {
-        runData.reset_jump_timer = false;
-        runData.jump_timer_up = 0.0f;
+    if (!input->isKeyDown(KeyType::JUMP) && reset_jump_timer) {
+        reset_jump_timer = false;
+        jump_timer_up = 0.0f;
     }
 
     if (quicktune->hasMessage()) {
-        m_GameInputSystem_ui->showStatusText(utf8_to_wide(quicktune->getMessage()));
+        gameui->showStatusText(utf8_to_wide(quicktune->getMessage()));
     }
 }
 
 void GameInputSystem::processItemSelection(u16 *new_playeritem)
 {
-    LocalPlayer *player = client->getEnv().getLocalPlayer();
-
     *new_playeritem = player->getWieldIndex();
     u16 max_item = player->getMaxHotbarItemcount();
     if (max_item == 0)
@@ -219,17 +245,17 @@ void GameInputSystem::processItemSelection(u16 *new_playeritem)
     /* Item selection using mouse wheel
      */
     s32 wheel = input->getMouseWheel();
-    if (!m_enable_hotbar_mouse_wheel)
+    if (!enable_hotbar_mouse_wheel)
         wheel = 0;
-    if (m_invert_hotbar_mouse_wheel)
+    if (invert_hotbar_mouse_wheel)
         wheel *= -1;
 
     s32 dir = wheel;
 
-    if (wasKeyDown(KeyType::HOTBAR_NEXT))
+    if (input->wasKeyDown(KeyType::HOTBAR_NEXT))
         dir = -1;
 
-    if (wasKeyDown(KeyType::HOTBAR_PREV))
+    if (input->wasKeyDown(KeyType::HOTBAR_PREV))
         dir = 1;
 
     if (dir < 0)
@@ -241,7 +267,7 @@ void GameInputSystem::processItemSelection(u16 *new_playeritem)
     /* Item selection using hotbar slot keys
      */
     for (u16 i = 0; i <= max_item; i++) {
-        if (wasKeyDown((GameInputSystemKeyType) (KeyType::SLOT_1 + i))) {
+        if (input->wasKeyDown((GameKeyType)(KeyType::SLOT_1 + i))) {
             *new_playeritem = i;
             break;
         }
@@ -257,84 +283,35 @@ void GameInputSystem::processItemSelection(u16 *new_playeritem)
     *new_playeritem = MYMIN(*new_playeritem, max_item);
 }
 
-
-void GameInputSystem::dropSelectedItem(bool single_item)
-{
-    IDropAction *a = new IDropAction();
-    a->count = single_item ? 1 : 0;
-    a->from_inv.setCurrentPlayer();
-    a->from_list = "main";
-    a->from_i = client->getEnv().getLocalPlayer()->getWieldIndex();
-    client->inventoryAction(a);
-}
-
-void GameInputSystem::openConsole(float scale, const wchar_t *line)
-{
-    assert(scale > 0.0f && scale <= 1.0f);
-
-#ifdef __ANDROID__
-    if (!porting::hasPhysicalKeyboardAndroid()) {
-        porting::showTextInputDialog("", "", 2);
-        m_android_chat_open = true;
-    } else {
-#endif
-    if (gui_chat_console->isOpenInhibited())
-        return;
-    gui_chat_console->openConsole(scale);
-    if (line) {
-        gui_chat_console->setCloseOnEnter(true);
-        gui_chat_console->replaceAndAddToHistory(line);
-    }
-#ifdef __ANDROID__
-    } // else
-#endif
-}
-
-#ifdef __ANDROID__
-void GameInputSystem::handleAndroidChatInput()
-{
-    // It has to be a text input
-    if (m_android_chat_open && porting::getLastInputDialogType() == porting::TEXT_INPUT) {
-        porting::AndroidDialogState dialogState = porting::getInputDialogState();
-        if (dialogState == porting::DIALOG_INPUTTED) {
-            std::string text = porting::getInputDialogMessage();
-            client->typeChatMessage(utf8_to_wide(text));
-        }
-        if (dialogState != porting::DIALOG_SHOWN)
-            m_android_chat_open = false;
-    }
-}
-#endif
-
 void GameInputSystem::toggleFreeMove()
 {
     bool free_move = !g_settings->getBool("free_move");
     g_settings->set("free_move", bool_to_cstr(free_move));
 
     if (free_move) {
-        if (client->checkPrivilege("fly")) {
-            m_GameInputSystem_ui->showTranslatedStatusText("Fly mode enabled");
+        if (player->checkPrivilege("fly")) {
+            gameui->showTranslatedStatusText("Fly mode enabled");
         } else {
-            m_GameInputSystem_ui->showTranslatedStatusText("Fly mode enabled (note: no 'fly' privilege)");
+            gameui->showTranslatedStatusText("Fly mode enabled (note: no 'fly' privilege)");
         }
     } else {
-        m_GameInputSystem_ui->showTranslatedStatusText("Fly mode disabled");
+        gameui->showTranslatedStatusText("Fly mode disabled");
     }
 }
 
 void GameInputSystem::toggleFreeMoveAlt()
 {
-    if (!runData.reset_jump_timer) {
-        runData.jump_timer_down_before = runData.jump_timer_down;
-        runData.jump_timer_down = 0.0f;
+    if (!reset_jump_timer) {
+        jump_timer_down_before = jump_timer_down;
+        jump_timer_down = 0.0f;
     }
 
     // key down (0.2 s max.), then key up (0.2 s max.), then key down
-    if (m_cache_doubletap_jump && runData.jump_timer_up < 0.2f &&
-            runData.jump_timer_down_before < 0.4f) // 0.2 + 0.2
+    if (cache_doubletap_jump && jump_timer_up < 0.2f &&
+            jump_timer_down_before < 0.4f) // 0.2 + 0.2
         toggleFreeMove();
 
-    runData.reset_jump_timer = true;
+    reset_jump_timer = true;
 }
 
 
@@ -344,9 +321,9 @@ void GameInputSystem::togglePitchMove()
     g_settings->set("pitch_move", bool_to_cstr(pitch_move));
 
     if (pitch_move) {
-        m_GameInputSystem_ui->showTranslatedStatusText("Pitch move mode enabled");
+        gameui->showTranslatedStatusText("Pitch move mode enabled");
     } else {
-        m_GameInputSystem_ui->showTranslatedStatusText("Pitch move mode disabled");
+        gameui->showTranslatedStatusText("Pitch move mode disabled");
     }
 }
 
@@ -354,20 +331,20 @@ void GameInputSystem::togglePitchMove()
 void GameInputSystem::toggleFast()
 {
     bool fast_move = !g_settings->getBool("fast_move");
-    bool has_fast_privs = client->checkPrivilege("fast");
+    bool has_fast_privs = player->checkPrivilege("fast");
     g_settings->set("fast_move", bool_to_cstr(fast_move));
 
     if (fast_move) {
         if (has_fast_privs) {
-            m_GameInputSystem_ui->showTranslatedStatusText("Fast mode enabled");
+            gameui->showTranslatedStatusText("Fast mode enabled");
         } else {
-            m_GameInputSystem_ui->showTranslatedStatusText("Fast mode enabled (note: no 'fast' privilege)");
+            gameui->showTranslatedStatusText("Fast mode enabled (note: no 'fast' privilege)");
         }
     } else {
-        m_GameInputSystem_ui->showTranslatedStatusText("Fast mode disabled");
+        gameui->showTranslatedStatusText("Fast mode disabled");
     }
 
-    m_touch_simulate_aux1 = fast_move && has_fast_privs;
+    touch_simulate_aux1 = fast_move && has_fast_privs;
 }
 
 
@@ -377,13 +354,13 @@ void GameInputSystem::toggleNoClip()
     g_settings->set("noclip", bool_to_cstr(noclip));
 
     if (noclip) {
-        if (client->checkPrivilege("noclip")) {
-            m_GameInputSystem_ui->showTranslatedStatusText("Noclip mode enabled");
+        if (player->checkPrivilege("noclip")) {
+            gameui->showTranslatedStatusText("Noclip mode enabled");
         } else {
-            m_GameInputSystem_ui->showTranslatedStatusText("Noclip mode enabled (note: no 'noclip' privilege)");
+            gameui->showTranslatedStatusText("Noclip mode enabled (note: no 'noclip' privilege)");
         }
     } else {
-        m_GameInputSystem_ui->showTranslatedStatusText("Noclip mode disabled");
+        gameui->showTranslatedStatusText("Noclip mode disabled");
     }
 }
 
@@ -393,28 +370,30 @@ void GameInputSystem::toggleCinematic()
     g_settings->set("cinematic", bool_to_cstr(cinematic));
 
     if (cinematic)
-        m_GameInputSystem_ui->showTranslatedStatusText("Cinematic mode enabled");
+        gameui->showTranslatedStatusText("Cinematic mode enabled");
     else
-        m_GameInputSystem_ui->showTranslatedStatusText("Cinematic mode disabled");
+        gameui->showTranslatedStatusText("Cinematic mode disabled");
 }
 
 void GameInputSystem::toggleBlockBounds()
 {
-    LocalPlayer *player = client->getEnv().getLocalPlayer();
-    if (!(client->checkPrivilege("debug") || (player->hud_flags & HUD_FLAG_BASIC_DEBUG))) {
-        m_GameInputSystem_ui->showTranslatedStatusText("Can't show block bounds (disabled by GameInputSystem or mod)");
+    if (!(player->checkPrivilege("debug") || (player->hud_flags & HUD_FLAG_BASIC_DEBUG))) {
+        gameui->showTranslatedStatusText("Can't show block bounds (disabled by GameInputSystem or mod)");
         return;
     }
-    enum Hud::BlockBoundsMode newmode = hud->toggleBlockBounds();
+
+    auto drawlist = client->getRenderSystem()->getDrawList();
+    auto blockbounds = drawlist->getBlockBounds();
+    BlockBounds::Mode newmode = blockbounds->toggle(client, drawlist);
     switch (newmode) {
-        case Hud::BLOCK_BOUNDS_OFF:
-            m_GameInputSystem_ui->showTranslatedStatusText("Block bounds hidden");
+        case BlockBounds::Mode::BLOCK_BOUNDS_OFF:
+            gameui->showTranslatedStatusText("Block bounds hidden");
             break;
-        case Hud::BLOCK_BOUNDS_CURRENT:
-            m_GameInputSystem_ui->showTranslatedStatusText("Block bounds shown for current block");
+        case BlockBounds::Mode::BLOCK_BOUNDS_CURRENT:
+            gameui->showTranslatedStatusText("Block bounds shown for current block");
             break;
-        case Hud::BLOCK_BOUNDS_NEAR:
-            m_GameInputSystem_ui->showTranslatedStatusText("Block bounds shown for nearby blocks");
+        case BlockBounds::Mode::BLOCK_BOUNDS_NEAR:
+            gameui->showTranslatedStatusText("Block bounds shown for nearby blocks");
             break;
         default:
             break;
@@ -428,20 +407,22 @@ void GameInputSystem::toggleAutoforward()
     g_settings->set("continuous_forward", bool_to_cstr(autorun_enabled));
 
     if (autorun_enabled)
-        m_GameInputSystem_ui->showTranslatedStatusText("Automatic forward enabled");
+        gameui->showTranslatedStatusText("Automatic forward enabled");
     else
-        m_GameInputSystem_ui->showTranslatedStatusText("Automatic forward disabled");
+        gameui->showTranslatedStatusText("Automatic forward disabled");
 }
 
 void GameInputSystem::toggleMinimap(bool shift_pressed)
 {
-    if (!mapper || !m_GameInputSystem_ui->m_flags.show_hud || !g_settings->getBool("enable_minimap"))
+    auto minimap = client->getRenderSystem()->getDefaultMinimap();
+
+    if (!minimap || !(gameui->getFlags() & GUIF_SHOW_HUD) || !g_settings->getBool("enable_minimap"))
         return;
 
     if (shift_pressed)
-        mapper->toggleMinimapShape();
+        minimap->toggleMinimapShape();
     else
-        mapper->nextMode();
+        minimap->nextMode();
 
     // TODO: When legacy minimap is deprecated, keep only HUD minimap stuff here
 
@@ -452,87 +433,61 @@ void GameInputSystem::toggleMinimap(bool shift_pressed)
     if (hud_flags & HUD_FLAG_MINIMAP_VISIBLE) {
     // If radar is disabled, try to find a non radar mode or fall back to 0
         if (!(hud_flags & HUD_FLAG_MINIMAP_RADAR_VISIBLE))
-            while (mapper->getModeIndex() &&
-                    mapper->getModeDef().type == MINIMAP_TYPE_RADAR)
-                mapper->nextMode();
+            while (minimap->getModeIndex() &&
+                    minimap->getModeDef().type == MINIMAP_TYPE_RADAR)
+                minimap->nextMode();
     }
     // <--
     // End of 'not so satifying code'
-    if (hud && hud->hasElementOfType(HUD_ELEM_MINIMAP))
-        m_GameInputSystem_ui->showStatusText(utf8_to_wide(mapper->getModeDef().label));
+    if (gameui->getHud()->hasElementOfType(HUD_ELEM_MINIMAP))
+        gameui->showStatusText(utf8_to_wide(minimap->getModeDef().label));
     else
-        m_GameInputSystem_ui->showTranslatedStatusText("Minimap currently disabled by GameInputSystem or mod");
+        gameui->showTranslatedStatusText("Minimap currently disabled by GameInputSystem or mod");
 }
 
 void GameInputSystem::toggleFog()
 {
     bool flag = !g_settings->getBool("enable_fog");
     g_settings->setBool("enable_fog", flag);
-    bool allowed = sky->getFogDistance() < 0 || client->checkPrivilege("debug");
+    bool allowed = sky->getFogDistance() < 0 || player->checkPrivilege("debug");
     if (!allowed)
-        m_GameInputSystem_ui->showTranslatedStatusText("Fog enabled by GameInputSystem or mod");
+        gameui->showTranslatedStatusText("Fog enabled by GameInputSystem or mod");
     else if (flag)
-        m_GameInputSystem_ui->showTranslatedStatusText("Fog enabled");
+        gameui->showTranslatedStatusText("Fog enabled");
     else
-        m_GameInputSystem_ui->showTranslatedStatusText("Fog disabled");
+        gameui->showTranslatedStatusText("Fog disabled");
 }
 
 
 void GameInputSystem::toggleDebug()
 {
-    LocalPlayer *player = client->getEnv().getLocalPlayer();
-    bool has_debug = client->checkPrivilege("debug");
-    bool has_basic_debug = has_debug || (player->hud_flags & HUD_FLAG_BASIC_DEBUG);
-
-    // Initial: No debug info
-    // 1x toggle: Debug text
-    // 2x toggle: Debug text with profiler graph
-    // 3x toggle: Debug text and wireframe (needs "debug" priv)
-    // 4x toggle: Debug text and bbox (needs "debug" priv)
-    //
-    // The debug text can be in 2 modes: minimal and basic.
-    // * Minimal: Only technical client info that not GameInputSystemplay-relevant
-    // * Basic: Info that might give GameInputSystemplay advantage, e.g. pos, angle
-    // Basic mode is used when player has the debug HUD flag set,
-    // otherwise the Minimal mode is used.
-
-    auto &state = m_flags.debug_state;
-    state = (state + 1) % 5;
-    if (state >= 3 && !has_debug)
-        state = 0;
-
-    m_GameInputSystem_ui->m_flags.show_minimal_debug = state > 0;
-    m_GameInputSystem_ui->m_flags.show_basic_debug = state > 0 && has_basic_debug;
-    m_GameInputSystem_ui->m_flags.show_profiler_graph = state == 2;
-    draw_control->show_wireframe = state == 3;
-    smgr->setGlobalDebugData(state == 4 ? bbox_debug_flag : 0,
-            state == 4 ? 0 : bbox_debug_flag);
+    u8 state = gameui->toggleDebug(player);
+    client->getRenderSystem()->getDrawList()->getDrawControl().show_wireframe = state == 3;
 
     if (state == 1) {
-        m_GameInputSystem_ui->showTranslatedStatusText("Debug info shown");
+        gameui->showTranslatedStatusText("Debug info shown");
     } else if (state == 2) {
-        m_GameInputSystem_ui->showTranslatedStatusText("Profiler graph shown");
+        gameui->showTranslatedStatusText("Profiler graph shown");
     } else if (state == 3) {
-        if (driver->getDriverType() == video::EDT_OGLES2)
-            m_GameInputSystem_ui->showTranslatedStatusText("Wireframe not supported by video driver");
+        if (wnd->getOpenGLVersion().Type == core::OGL_TYPE_ES)
+            gameui->showTranslatedStatusText("Wireframe not supported by video driver");
         else
-            m_GameInputSystem_ui->showTranslatedStatusText("Wireframe shown");
+            gameui->showTranslatedStatusText("Wireframe shown");
     } else if (state == 4) {
-        m_GameInputSystem_ui->showTranslatedStatusText("Bounding boxes shown");
+        gameui->showTranslatedStatusText("Bounding boxes shown");
     } else {
-        m_GameInputSystem_ui->showTranslatedStatusText("All debug info hidden");
+        gameui->showTranslatedStatusText("All debug info hidden");
     }
 }
 
 
 void GameInputSystem::toggleUpdateCamera()
 {
-    auto &flag = m_flags.disable_camera_update;
-    flag = client->checkPrivilege("debug") ? !flag : false;
-    if (flag)
-        m_GameInputSystem_ui->showTranslatedStatusText("Camera update disabled");
+    camera->disable_update = player->checkPrivilege("debug") ? !camera->disable_update : false;
+    if (camera->disable_update)
+        gameui->showTranslatedStatusText("Camera update disabled");
     else
-        m_GameInputSystem_ui->showTranslatedStatusText("Camera update enabled");
+        gameui->showTranslatedStatusText("Camera update enabled");
 }
 
 
@@ -547,12 +502,12 @@ void GameInputSystem::increaseViewRange()
         std::wstring msg = server_limit >= 0 && range_new > server_limit ?
                 fwgettext("Viewing range changed to %d (the maximum), but limited to %d by GameInputSystem or mod", range_new, server_limit) :
                 fwgettext("Viewing range changed to %d (the maximum)", range_new);
-        m_GameInputSystem_ui->showStatusText(msg);
+        gameui->showStatusText(msg);
     } else {
         std::wstring msg = server_limit >= 0 && range_new > server_limit ?
                 fwgettext("Viewing range changed to %d, but limited to %d by GameInputSystem or mod", range_new, server_limit) :
                 fwgettext("Viewing range changed to %d", range_new);
-        m_GameInputSystem_ui->showStatusText(msg);
+        gameui->showStatusText(msg);
     }
     g_settings->set("viewing_range", itos(range_new));
 }
@@ -569,12 +524,12 @@ void GameInputSystem::decreaseViewRange()
         std::wstring msg = server_limit >= 0 && range_new > server_limit ?
                 fwgettext("Viewing changed to %d (the minimum), but limited to %d by GameInputSystem or mod", range_new, server_limit) :
                 fwgettext("Viewing changed to %d (the minimum)", range_new);
-        m_GameInputSystem_ui->showStatusText(msg);
+        gameui->showStatusText(msg);
     } else {
         std::wstring msg = server_limit >= 0 && range_new > server_limit ?
                 fwgettext("Viewing range changed to %d, but limited to %d by GameInputSystem or mod", range_new, server_limit) :
                 fwgettext("Viewing range changed to %d", range_new);
-        m_GameInputSystem_ui->showStatusText(msg);
+        gameui->showStatusText(msg);
     }
     g_settings->set("viewing_range", itos(range_new));
 }
@@ -582,29 +537,29 @@ void GameInputSystem::decreaseViewRange()
 
 void GameInputSystem::toggleFullViewRange()
 {
-    draw_control->range_all = !draw_control->range_all;
-    if (draw_control->range_all) {
+    auto draw_control = client->getRenderSystem()->getDrawList()->getDrawControl();
+    draw_control.range_all = !draw_control.range_all;
+    if (draw_control.range_all) {
         if (sky->getFogDistance() >= 0) {
-            m_GameInputSystem_ui->showTranslatedStatusText("Unlimited viewing range enabled, but forbidden by GameInputSystem or mod");
+            gameui->showTranslatedStatusText("Unlimited viewing range enabled, but forbidden by GameInputSystem or mod");
         } else {
-            m_GameInputSystem_ui->showTranslatedStatusText("Unlimited viewing range enabled");
+            gameui->showTranslatedStatusText("Unlimited viewing range enabled");
         }
     } else {
-        m_GameInputSystem_ui->showTranslatedStatusText("Unlimited viewing range disabled");
+        gameui->showTranslatedStatusText("Unlimited viewing range disabled");
     }
 }
 
 void GameInputSystem::checkZoomEnabled()
 {
-    LocalPlayer *player = client->getEnv().getLocalPlayer();
     if (player->getZoomFOV() < 0.001f || player->getFov().fov > 0.0f)
-        m_GameInputSystem_ui->showTranslatedStatusText("Zoom currently disabled by GameInputSystem or mod");
+        gameui->showTranslatedStatusText("Zoom currently disabled by GameInputSystem or mod");
 }
 
 void GameInputSystem::updateCameraMode()
 {
-    if (wasKeyPressed(KeyType::CAMERA_MODE)) {
-        GenericCAO *playercao = player->getCAO();
+    if (input->wasKeyPressed(KeyType::CAMERA_MODE)) {
+        RenderCAO *playercao = player->getCAO();
 
         // If playercao not loaded, don't change camera
         if (!playercao)
@@ -613,7 +568,7 @@ void GameInputSystem::updateCameraMode()
         camera->toggleCameraMode();
 
         if (g_touchcontrols)
-            g_touchcontrols->setUseCrosshair(!isTouchCrosshairDisabled());
+            g_touchcontrols->setUseCrosshair(!player->getInteraction()->isTouchCrosshairDisabled());
 
         // Make the player visible depending on camera mode.
         playercao->updateMeshCulling();
@@ -621,9 +576,9 @@ void GameInputSystem::updateCameraMode()
     }
 }
 
-void GameInputSystem::updateCameraDirection(CameraOrientation *cam, float dtime)
+void GameInputSystem::updateCameraDirection(float dtime)
 {
-    auto *cur_control = device->getCursorControl();
+    auto cur_control = wnd->getCursorControl();
 
     /* With CIrrDeviceSDL on Linux and Windows, enabling relative mouse mode
     somehow results in simulated mouse events being generated from touch events,
@@ -631,101 +586,56 @@ void GameInputSystem::updateCameraDirection(CameraOrientation *cam, float dtime)
     Since Minetest has its own code to synthesize mouse events from touch events,
     this results in duplicated input. To avoid that, we don't enable relative
     mouse mode if we're in touchscreen mode. */
-    if (cur_control)
-        cur_control->setRelativeMode(!g_touchcontrols && !isMenuActive());
 
-    if ((device->isWindowActive() && device->isWindowFocused()
+    cur_control.setRelativeMode(!g_touchcontrols && !isMenuActive());
+
+    if ((wnd->isActive() && wnd->isFocused()
             && !isMenuActive()) || input->isRandom()) {
 
-        if (cur_control && !input->isRandom()) {
+        if (!input->isRandom()) {
             // Mac OSX gets upset if this is set every frame
-            if (cur_control->isVisible())
-                cur_control->setVisible(false);
+            if (cur_control.isVisible())
+                cur_control.setVisible(false);
         }
 
-        if (m_first_loop_after_window_activation && !g_touchcontrols) {
-            m_first_loop_after_window_activation = false;
+        if (first_loop_after_window_activation && !g_touchcontrols) {
+            first_loop_after_window_activation = false;
 
-            input->setMousePos(driver->getScreenSize().Width / 2,
-                driver->getScreenSize().Height / 2);
+            input->setMousePos(wnd->getWindowSize().X / 2, wnd->getWindowSize().Y / 2);
         } else {
-            updateCameraOrientation(cam, dtime);
+            camera->updateOrientation(invert_mouse, cache_mouse_sensitivity, cache_enable_joysticks,
+                cache_joystick_frustum_sensitivity, cache_cam_smoothing, dtime);
         }
 
     } else {
         // Mac OSX gets upset if this is set every frame
-        if (cur_control && !cur_control->isVisible())
-            cur_control->setVisible(true);
+        if (!cur_control.isVisible())
+            cur_control.setVisible(true);
 
-        m_first_loop_after_window_activation = true;
+        first_loop_after_window_activation = true;
     }
     if (g_touchcontrols)
-        m_first_loop_after_window_activation = true;
+        first_loop_after_window_activation = true;
 }
 
-// Get the factor to multiply with sensitivity to get the same mouse/joystick
-// responsiveness independently of FOV.
-f32 GameInputSystem::getSensitivityScaleFactor() const
+void GameInputSystem::updatePlayerControl()
 {
-    f32 fov_y = client->getCamera()->getFovY();
-
-    // Multiply by a constant such that it becomes 1.0 at 72 degree FOV and
-    // 16:9 aspect ratio to minimize disruption of existing sensitivity
-    // settings.
-    return std::tan(fov_y / 2.0f) * 1.3763819f;
-}
-
-void GameInputSystem::updateCameraOrientation(CameraOrientation *cam, float dtime)
-{
-    if (g_touchcontrols) {
-        cam->camera_yaw   += g_touchcontrols->getYawChange();
-        cam->camera_pitch += g_touchcontrols->getPitchChange();
-    } else {
-        v2s32 center(driver->getScreenSize().Width / 2, driver->getScreenSize().Height / 2);
-        v2s32 dist = input->getMousePos() - center;
-
-        if (m_invert_mouse || camera->getCameraMode() == CAMERA_MODE_THIRD_FRONT) {
-            dist.Y = -dist.Y;
-        }
-
-        f32 sens_scale = getSensitivityScaleFactor();
-        cam->camera_yaw   -= dist.X * m_cache_mouse_sensitivity * sens_scale;
-        cam->camera_pitch += dist.Y * m_cache_mouse_sensitivity * sens_scale;
-
-        if (dist.X != 0 || dist.Y != 0)
-            input->setMousePos(center.X, center.Y);
-    }
-
-    if (m_cache_enable_joysticks) {
-        f32 sens_scale = getSensitivityScaleFactor();
-        f32 c = m_cache_joystick_frustum_sensitivity * dtime * sens_scale;
-        cam->camera_yaw -= input->joystick.getAxisWithoutDead(JA_FRUSTUM_HORIZONTAL) * c;
-        cam->camera_pitch += input->joystick.getAxisWithoutDead(JA_FRUSTUM_VERTICAL) * c;
-    }
-
-    cam->camera_pitch = rangelim(cam->camera_pitch, -89.5, 89.5);
-}
-
-
-void GameInputSystem::updatePlayerControl(const CameraOrientation &cam)
-{
-    LocalPlayer *player = client->getEnv().getLocalPlayer();
-
     //TimeTaker tt("update player control", NULL, PRECISION_NANO);
 
+    v2f cam_orient = player->getCamera()->getOrientation();
     PlayerControl control(
-        isKeyDown(KeyType::FORWARD),
-        isKeyDown(KeyType::BACKWARD),
-        isKeyDown(KeyType::LEFT),
-        isKeyDown(KeyType::RIGHT),
-        isKeyDown(KeyType::JUMP) || player->getAutojump(),
-        isKeyDown(KeyType::AUX1),
-        isKeyDown(KeyType::SNEAK),
-        isKeyDown(KeyType::ZOOM),
-        isKeyDown(KeyType::DIG),
-        isKeyDown(KeyType::PLACE),
-        cam.camera_pitch,
-        cam.camera_yaw,
+        input->isKeyDown(KeyType::FORWARD),
+        input->isKeyDown(KeyType::BACKWARD),
+        input->isKeyDown(KeyType::LEFT),
+        input->isKeyDown(KeyType::RIGHT),
+        input->isKeyDown(KeyType::JUMP) || player->getAutojump(),
+        input->isKeyDown(KeyType::AUX1),
+        input->isKeyDown(KeyType::SNEAK),
+        input->isKeyDown(KeyType::ZOOM),
+        input->isKeyDown(KeyType::DIG),
+        input->isKeyDown(KeyType::PLACE),
+        cam_orient.X,
+        cam_orient.Y,
         input->getJoystickSpeed(),
         input->getJoystickDirection()
     );
@@ -733,7 +643,7 @@ void GameInputSystem::updatePlayerControl(const CameraOrientation &cam)
 
     // autoforward if set: move at maximum speed
     if (player->getPlayerSettings().continuous_forward &&
-            client->activeObjectsReceived() && !player->isDead()) {
+            client->getPacketHandler()->activeObjectsReceived() && !player->isDead()) {
         control.movement_speed = 1.0f;
         // sideways movement only
         float dx = std::sin(control.movement_direction);
@@ -745,11 +655,40 @@ void GameInputSystem::updatePlayerControl(const CameraOrientation &cam)
      * touch then its meaning is inverted (i.e. holding aux1 means walk and
      * not fast)
      */
-    if (g_touchcontrols && m_touch_simulate_aux1) {
+    if (g_touchcontrols && touch_simulate_aux1) {
         control.aux1 = control.aux1 ^ true;
     }
 
-    client->setPlayerControl(control);
+    player->setPlayerControl(control);
 
     //tt.stop();
+}
+
+void GameInputSystem::settingChangedCallback(const std::string &setting_name, void *data)
+{
+    ((GameInputSystem *)data)->readSettings();
+}
+
+void GameInputSystem::readSettings()
+{
+    cache_doubletap_jump               = g_settings->getBool("doubletap_jump");
+    cache_enable_joysticks             = g_settings->getBool("enable_joysticks");
+    cache_mouse_sensitivity            = g_settings->getFloat("mouse_sensitivity", 0.001f, 10.0f);
+    cache_joystick_frustum_sensitivity = std::max(g_settings->getFloat("joystick_frustum_sensitivity"), 0.001f);
+
+    cache_cam_smoothing = 0;
+    if (g_settings->getBool("cinematic"))
+        cache_cam_smoothing = 1 - g_settings->getFloat("cinematic_camera_smoothing");
+    else
+        cache_cam_smoothing = 1 - g_settings->getFloat("camera_smoothing");
+
+    cache_cam_smoothing = rangelim(cache_cam_smoothing, 0.01f, 1.0f);
+    cache_mouse_sensitivity = rangelim(cache_mouse_sensitivity, 0.001, 100.0);
+
+    invert_mouse = g_settings->getBool("invert_mouse");
+    enable_hotbar_mouse_wheel = g_settings->getBool("enable_hotbar_mouse_wheel");
+    invert_hotbar_mouse_wheel = g_settings->getBool("invert_hotbar_mouse_wheel");
+
+    touch_simulate_aux1 = g_settings->getBool("fast_move")
+        && client->getEnv().getLocalPlayer()->checkPrivilege("fast");
 }

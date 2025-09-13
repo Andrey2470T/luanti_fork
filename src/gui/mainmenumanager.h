@@ -7,13 +7,13 @@
 /*
 	All kinds of stuff that needs to be exposed from main.cpp
 */
+#include "client/render/rendersystem.h"
+#include "gui/IGUIEnvironment.h"
 #include "modalMenu.h"
 #include <cassert>
 #include <list>
 #include "client/render/clouds.h"
 #include "client/render/camera.h"
-
-#include "IGUIEnvironment.h"
 
 namespace gui {
 	class IGUIStaticText;
@@ -32,20 +32,19 @@ public:
 	virtual void touchscreenLayout() = 0;
 };
 
-extern gui::IGUIEnvironment *guienv;
-extern gui::IGUIStaticText *guiroot;
-
 // Handler for the modal menus
 
 class MainMenuManager : public IMenuManager
 {
 public:
     MainMenuManager(RenderSystem *rndsys, ResourceCache *rescache)
-        : m_menuclouds(std::make_unique<Clouds>(rndsys, rescache, rand())),
+        : m_guienv(rndsys->getGUIEnvironment()),
+          m_menuclouds(std::make_unique<Clouds>(rndsys, rescache, rand())),
           m_menucamera(std::make_unique<Camera>())
     {
         m_menuclouds->setHeight(100.0f);
-        m_menuclouds->update(v3f(0, 0, 0), img::color8(img::PF_RGBA8, 240, 240, 255, 255));
+        f32 fog_range = 0.0f;
+        m_menuclouds->update(0.0f, m_menucamera.get(), nullptr, fog_range, img::color8(img::PF_RGBA8, 240, 240, 255, 255));
         m_menucamera->setDirection(v3f(0, 60, 100));
         m_menucamera->setFarValue(10000);
     }
@@ -61,7 +60,7 @@ public:
 			m_stack.back()->setVisible(false);
 
 		m_stack.push_back(menu);
-		guienv->setFocus(m_stack.back());
+        m_guienv->setFocus(m_stack.back());
 	}
 
 	virtual void deletingMenu(gui::IGUIElement *menu)
@@ -71,7 +70,7 @@ public:
 
 		if(!m_stack.empty()) {
 			m_stack.back()->setVisible(true);
-			guienv->setFocus(m_stack.back());
+            m_guienv->setFocus(m_stack.back());
 		}
 	}
 
@@ -106,6 +105,7 @@ public:
 	}
 
 private:
+    gui::IGUIEnvironment *m_guienv;
 	std::list<gui::IGUIElement*> m_stack;
 
     std::unique_ptr<Clouds> m_menuclouds;

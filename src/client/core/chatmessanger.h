@@ -31,14 +31,28 @@ class ChatMessanger
 	float chat_message_allowance = 5.0f;
 	std::queue<ChatMessage *> chat_queue;
 public:
+#ifdef __ANDROID__
+    bool android_chat_open;
+#endif
+
 	ChatMessanger(Client *_client);
 
     ChatBackend *getBackend() const
     {
         return chat_backend.get();
     }
+    GUIChatConsole *getChatConsole() const
+    {
+        return gui_chat_console.get();
+    }
 
     void init(gui::IGUIEnvironment *guienv);
+
+    void openConsole(f32 scale, const wchar_t *line=NULL);
+
+#ifdef __ANDROID__
+    void handleAndroidChatInput();
+#endif
 
 	bool getChatMessage(std::wstring &message);
     void typeChatMessage(const std::wstring& message);

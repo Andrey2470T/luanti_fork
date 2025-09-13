@@ -457,7 +457,7 @@ void GameFormSpec::update()
 	}
 
 	if (isMenuActive())
-        guiroot->bringToFront(formspec);
+        guienv->getRootGUIElement()->bringToFront(formspec);
 }
 
 void GameFormSpec::disableDebugView()
@@ -478,6 +478,7 @@ bool GameFormSpec::handleCallbacks()
 		return false;
 	}
 
+    auto guiroot = guienv->getRootGUIElement();
 	if (g_gamecallback->changepassword_requested) {
 		(void)make_irr<GUIPasswordChange>(guienv, guiroot, -1,
                        &g_menumgr, client, cache);

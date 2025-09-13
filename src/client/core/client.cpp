@@ -8,6 +8,7 @@
 #include <cmath>
 #include <json/json.h>
 #include "client.h"
+#include "client/player/interaction.h"
 #include "client/render/renderer.h"
 #include "client/render/sky.h"
 #include "client/sound/soundopenal.h"
@@ -51,8 +52,8 @@
 #include "chatmessanger.h"
 #include "itemdef.cpp"
 #include "client/event/eventmanager.h"
-#include "util/quicktune_shortcutter.h"
 #include "client/event/inputhandler.h"
+#include "gameinputhandler.h"
 #include "chat.h"
 
 /*
@@ -62,14 +63,17 @@
 Client::Client(ResourceCache *resource_cache, RenderSystem *render_system,
         InputHandler *input,
         const char *playername,
-        const std::string &password):
+        const std::string &password,
+        ELoginRegister allow_login_or_register):
     m_eventmgr(std::make_unique<EventManager>()),
     m_itemdef(std::make_unique<CItemDefManager>()),
     m_nodedef(std::make_unique<NodeDefManager>()),
-    m_quicktune(std::make_unique<QuicktuneShortcutter>()),
     m_resource_cache(resource_cache),
     m_render_system(render_system),
     m_input(input),
+    m_packet_handler(std::make_unique<ClientPacketHandler>(this, allow_login_or_register)),
+    m_clientevent_handler(std::make_unique<ClientEventHandler>(this)),
+    m_inputsys(std::make_unique<GameInputSystem>(this)),
 	m_env(this),
     m_chat_msger(std::make_unique<ChatMessanger>(this)),
     m_password(password),
@@ -133,7 +137,7 @@ bool Client::initGui()
 
     if (shouldShowTouchControls()) {
         g_touchcontrols = new TouchControls(device, texture_src);
-        g_touchcontrols->setUseCrosshair(!isTouchCrosshairDisabled());
+        g_touchcontrols->setUseCrosshair(!m_env.getLocalPlayer()->getInteraction()->isTouchCrosshairDisabled());
     }
 
     return true;
@@ -404,6 +408,11 @@ void Client::step(f32 dtime)
 		Send pending messages on out chat queue
 	*/
     m_chat_msger->sendFromQueue();
+
+    m_inputsys->processUserInput(dtime);
+    // Update camera before player movement to avoid camera lag of one frame
+    m_inputsys->updateCameraDirection(dtime);
+    m_inputsys->updatePlayerControl();
 
 	/*
 		Handle environment

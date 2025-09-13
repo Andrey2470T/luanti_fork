@@ -56,9 +56,6 @@ ClientLauncher::~ClientLauncher()
     delete g_gamecallback;
     g_gamecallback = nullptr;
 
-    guiroot = nullptr;
-    guienv = nullptr;
-
     if (g_menumgr)
         assert(g_menumgr->menuCount() == 0);
 
@@ -123,7 +120,7 @@ bool ClientLauncher::run(GameStartData &start_data, const Settings &cmd_args)
     while (render_system->run() && !*kill &&
         !g_gamecallback->shutdown_requested) {
         // Set the window caption
-        auto gl_version = render_system->getWindow()->getGLVersion();
+        auto gl_version = render_system->getWindow()->getGLVersionString();
         std::string caption = std::string(PROJECT_NAME_C) +
             " " + g_version_hash +
             " [" + gettext("Main Menu") + "]" +
@@ -292,7 +289,7 @@ void ClientLauncher::setting_changed_callback(const std::string &name, void *dat
 
 void ClientLauncher::config_guienv()
 {
-    GUISkin *skin = guienv->getSkin();
+    GUISkin *skin = render_system->getGUIEnvironment()->getSkin();
 
     skin->setColor(GUIDefaultColor::WindowSymbol, img::white);
     skin->setColor(GUIDefaultColor::ButtonText, img::white);

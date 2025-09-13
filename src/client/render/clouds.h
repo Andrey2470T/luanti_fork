@@ -13,7 +13,7 @@
 class RenderSystem;
 class ResourceCache;
 class MeshBuffer;
-class PlayerCamera;
+class Camera;
 class Sky;
 
 // Menu clouds
@@ -56,7 +56,8 @@ public:
 
 	void step(float dtime);
 
-    void update(f32 dtime, PlayerCamera *camera, Sky *sky, f32 &fog_range);
+    void update(f32 dtime, Camera *camera, Sky *sky, f32 &fog_range,
+        std::optional<img::color8> color_override=std::nullopt);
 
     void render(v3s16 camera_offset);
 

@@ -46,6 +46,7 @@ inline static const char *yawToDirectionString(int yaw)
 GameUI::GameUI(Client *client)
     : rndsys(client->getRenderSystem()), hud(std::make_unique<Hud>(client))
 {
+    auto guienv = rndsys->getGUIEnvironment();
 	if (guienv && guienv->getSkin())
         statustext_initial_color = guienv->getSkin()->getColor(GUIDefaultColor::ButtonText);
 
@@ -95,6 +96,8 @@ void GameUI::init()
     profilertext->setOverrideFont(font_mgr->getFont(render::FontMode::MONO, render::FontStyle::NORMAL,
         font_mgr->getDefaultFontSize(render::FontMode::MONO) * 0.9f));
     profilertext->setVisible(false);
+
+    showDebug();
 }
 
 void GameUI::update(Client *client,
@@ -237,7 +240,7 @@ void GameUI::showDebug()
 {
     if (g_settings->getBool("show_debug")) {
         debug_state = true;
-        this->rndsys->getGameUI()->toggleMinimalDebug();
+        toggleMinimalDebug();
     }
 }
 
@@ -316,6 +319,31 @@ void GameUI::toggleHud()
 		showTranslatedStatusText("HUD shown");
 	else
 		showTranslatedStatusText("HUD hidden");
+}
+
+u8 GameUI::toggleDebug(LocalPlayer *player)
+{
+    bool has_debug = player->checkPrivilege("debug");
+    bool has_basic_debug = has_debug || (player->hud_flags & HUD_FLAG_BASIC_DEBUG);
+
+    // Initial: No debug info
+    // 1x toggle: Debug text
+    // 2x toggle: Debug text with profiler graph
+    // 3x toggle: Debug text and wireframe (needs "debug" priv)
+    // 4x toggle: Debug text and bbox (needs "debug" priv)
+    //
+    // The debug text can be in 2 modes: minimal and basic.
+    // * Minimal: Only technical client info that not GameInputSystemplay-relevant
+    // * Basic: Info that might give GameInputSystemplay advantage, e.g. pos, angle
+    // Basic mode is used when player has the debug HUD flag set,
+    // otherwise the Minimal mode is used.
+    debug_state = (debug_state + 1) % 5;
+    if (debug_state >= 3 && !has_debug)
+        debug_state = 0;
+
+    enableFlag(GUIF_SHOW_MINIMAL_DEBUG, debug_state > 0);
+    enableFlag(GUIF_SHOW_BASIC_DEBUG, debug_state > 0 && has_basic_debug);
+    enableFlag(GUIF_SHOW_PROFILER_GRAPH, debug_state == 2);
 }
 
 void GameUI::toggleProfiler()

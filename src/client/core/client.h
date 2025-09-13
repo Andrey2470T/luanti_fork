@@ -53,8 +53,8 @@ class ResourceCache;
 class ClientPacketHandler;
 class ClientEventHandler;
 class ChatMessanger;
-class QuicktuneShortcutter;
 class InputHandler;
+class GameInputSystem;
 
 enum LocalClientState {
     LC_Created,
@@ -78,7 +78,8 @@ public:
             RenderSystem *render_system,
             InputHandler *input,
             const char *playername,
-            const std::string &password
+            const std::string &password,
+            ELoginRegister allow_login_or_register
     );
 
 	~Client();
@@ -207,6 +208,10 @@ public:
     {
         return m_packet_handler.get();
     }
+    ClientEventHandler *getClientEventHandler() const
+    {
+        return m_clientevent_handler.get();
+    }
 
     ChatMessanger *getChatMessanger() const
     {
@@ -241,7 +246,6 @@ private:
     std::unique_ptr<NodeDefManager> m_nodedef;
     std::unique_ptr<ISoundManager> m_sound;
     std::unique_ptr<SoundMaker> m_soundmaker;
-    std::unique_ptr<QuicktuneShortcutter> m_quicktune;
 
     ResourceCache *m_resource_cache;
     RenderSystem *m_render_system;
@@ -249,6 +253,7 @@ private:
 
     std::unique_ptr<ClientPacketHandler> m_packet_handler;
     std::unique_ptr<ClientEventHandler> m_clientevent_handler;
+    std::unique_ptr<GameInputSystem> m_inputsys;
 
 	ClientEnvironment m_env;
 

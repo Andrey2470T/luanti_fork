@@ -20,6 +20,7 @@ class ResourceCache;
 struct FpsControl;
 class ProfilerGraph;
 class Nametag;
+class LocalPlayer;
 
 /*
  * This object intend to contain the core UI elements
@@ -107,6 +108,7 @@ public:
     void toggleMinimalDebug();
 	void toggleChat(Client *client);
 	void toggleHud();
+    u8 toggleDebug(LocalPlayer *player);
 	void toggleProfiler();
 
 	void clearText();
@@ -125,8 +127,6 @@ public:
             const v3f &pos);
     void removeNametag(Nametag *nt);
 
-    bool debug_state = false;
-
 private:
     void toggleFlag(GameUIFlags flag)
     {
@@ -134,6 +134,13 @@ private:
             flags &= ~flag;
         else
             flags |= flag;
+    }
+    void enableFlag(GameUIFlags flag, bool enable)
+    {
+        if (enable)
+            flags |= flag;
+        else
+            flags &= ~flag;
     }
     RenderSystem *rndsys;
     ResourceCache *cache;
@@ -145,6 +152,8 @@ private:
     float drawtime_avg = 0;
 
     bool enable_noclip;
+
+    u8 debug_state = 0;
 
     IntervalLimiter profiler_interval;
 

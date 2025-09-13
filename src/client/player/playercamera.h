@@ -56,8 +56,8 @@ public:
 	// Update render distance
 	void updateViewingRange();
     f32 getSensitivityScaleFactor() const;
-    void updateOrientation(bool invert_mouse, f32 mouse_sensitivity,
-        bool enable_joysticks, f32 joystick_frustum_sensitivity, f32 dtime);
+    void updateOrientation(bool invert_mouse, f32 mouse_sensitivity, bool enable_joysticks,
+        f32 joystick_frustum_sensitivity, f32 cam_smoothing, f32 dtime);
 
 	// Start digging animation
 	// Pass 0 for left click, 1 for right click

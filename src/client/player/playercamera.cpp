@@ -605,13 +605,14 @@ f32 PlayerCamera::getSensitivityScaleFactor() const
 }
 
 void PlayerCamera::updateOrientation(bool invert_mouse, f32 mouse_sensitivity,
-    bool enable_joysticks, f32 joystick_frustum_sensitivity, f32 dtime)
+    bool enable_joysticks, f32 joystick_frustum_sensitivity, f32 cam_smoothing, f32 dtime)
 {
     auto input = m_client->getInputHandler();
 
+    v2f new_orientation = m_orientation;
     if (g_touchcontrols) {
-        m_orientation.Y   += g_touchcontrols->getYawChange();
-        m_orientation.X += g_touchcontrols->getPitchChange();
+        new_orientation.Y += g_touchcontrols->getYawChange();
+        new_orientation.X += g_touchcontrols->getPitchChange();
     } else {
         auto wndsize = m_client->getRenderSystem()->getWindowSize();
 
@@ -623,8 +624,8 @@ void PlayerCamera::updateOrientation(bool invert_mouse, f32 mouse_sensitivity,
         }
 
         f32 sens_scale = getSensitivityScaleFactor();
-        m_orientation.Y   -= dist.X * mouse_sensitivity * sens_scale;
-        m_orientation.X += dist.Y * mouse_sensitivity * sens_scale;
+        new_orientation.Y   -= dist.X * mouse_sensitivity * sens_scale;
+        new_orientation.X += dist.Y * mouse_sensitivity * sens_scale;
 
         if (dist.X != 0 || dist.Y != 0)
             input->setMousePos(center.X, center.Y);
@@ -633,11 +634,13 @@ void PlayerCamera::updateOrientation(bool invert_mouse, f32 mouse_sensitivity,
     if (enable_joysticks) {
         f32 sens_scale = getSensitivityScaleFactor();
         f32 c = joystick_frustum_sensitivity * dtime * sens_scale;
-        m_orientation.Y -= input->joystick.getAxisWithoutDead(JA_FRUSTUM_HORIZONTAL) * c;
-        m_orientation.X += input->joystick.getAxisWithoutDead(JA_FRUSTUM_VERTICAL) * c;
+        new_orientation.Y -= input->joystick.getAxisWithoutDead(JA_FRUSTUM_HORIZONTAL) * c;
+        new_orientation.X += input->joystick.getAxisWithoutDead(JA_FRUSTUM_VERTICAL) * c;
     }
 
-    m_orientation.X = rangelim(m_orientation.X, -89.5, 89.5);
+    new_orientation.X = rangelim(m_orientation.X, -89.5, 89.5);
+
+    m_orientation += (new_orientation - m_orientation) * cam_smoothing;
 }
 
 /*void PlayerCamera::setDigging(s32 button)

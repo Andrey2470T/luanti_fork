@@ -61,12 +61,13 @@ public:
     ClientEnvironment(Client *client);
 	~ClientEnvironment();
 
-	Map & getMap();
+    Map & getMap() override;
 	ClientMap & getClientMap();
 
 	Client *getGameDef() { return m_client; }
 	void setScript(ClientScripting *script) { m_script = script; }
 
+    void step(f32 dtime) override {}
     void step(ProfilerGraph *graph, f32 dtime, bool paused);
 
 	virtual void setLocalPlayer(LocalPlayer *player);

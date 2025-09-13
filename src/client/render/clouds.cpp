@@ -340,21 +340,24 @@ void Clouds::step(float dtime)
 }
 
 //void Clouds::update(const v3f &camera_p, v3s16 camera_offset, const img::colorf &color_diffuse)
-void Clouds::update(f32 dtime, PlayerCamera *camera, Sky *sky, f32 &fog_range)
+void Clouds::update(f32 dtime, Camera *camera, Sky *sky, f32 &fog_range,
+    std::optional<img::color8> color_override)
 {
-    if (!sky->getCloudsVisible()) {
-        m_visible = false;
-        return;
-    }
-
-    m_visible = true;
-    step(dtime);
-    // this->camera->getPosition is not enough for third-person camera.
     v3f camera_pos = camera->getPosition();
-    v3s16 camera_offset      = camera->getOffset();
-    camera_pos.X   = camera_pos.X + camera_offset.X * BS;
-    camera_pos.Y   = camera_pos.Y + camera_offset.Y * BS;
-    camera_pos.Z   = camera_pos.Z + camera_offset.Z * BS;
+    v3s16 camera_offset = camera->getOffset();
+    if (sky) {
+        if (!sky->getCloudsVisible()) {
+            m_visible = false;
+            return;
+        }
+
+        m_visible = true;
+        step(dtime);
+        // this->camera->getPosition is not enough for third-person camera.
+        camera_pos.X   = camera_pos.X + camera_offset.X * BS;
+        camera_pos.Y   = camera_pos.Y + camera_offset.Y * BS;
+        camera_pos.Z   = camera_pos.Z + camera_offset.Z * BS;
+    }
 
     img::colorf ambient = img::color8ToColorf(m_params.color_ambient);
     img::colorf bright = img::color8ToColorf(m_params.color_bright);
@@ -387,14 +390,16 @@ void Clouds::update(f32 dtime, PlayerCamera *camera, Sky *sky, f32 &fog_range)
     for (u32 i = 0; i < m_mesh->getVertexCount(); i++)
         svtSetHWColor(m_mesh.get(), m_color, i);
 
-    if (isCameraInsideCloud() && m_rndsys->getRenderer()->fogEnabled()) {
-        // If camera is inside cloud and fog is enabled, use cloud's colors as sky colors.
-        img::color8 clouds_dark = getColor().linInterp(img::black, 0.9);
-        sky->overrideColors(clouds_dark, getColor());
-        sky->setInClouds(true);
-        fog_range = std::fmin(fog_range * 0.5f, 32.0f * BS);
-        // Clouds are not drawn in this case.
-        m_visible = false;
+    if (sky) {
+        if (isCameraInsideCloud() && m_rndsys->getRenderer()->fogEnabled()) {
+            // If camera is inside cloud and fog is enabled, use cloud's colors as sky colors.
+            img::color8 clouds_dark = getColor().linInterp(img::black, 0.9);
+            sky->overrideColors(clouds_dark, getColor());
+            sky->setInClouds(true);
+            fog_range = std::fmin(fog_range * 0.5f, 32.0f * BS);
+            // Clouds are not drawn in this case.
+            m_visible = false;
+        }
     }
 }
 

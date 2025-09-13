@@ -5,6 +5,7 @@
 #include "localplayer.h"
 #include <cmath>
 #include "client/event/eventsystem.h"
+#include "client/network/packethandler.h"
 #include "collision.h"
 #include "nodedef.h"
 #include "scripting_client.h"
@@ -66,8 +67,9 @@ LocalPlayer::LocalPlayer(Client *client, const std::string &name):
     m_client(client), m_camera(std::make_unique<PlayerCamera>(client)),
     m_interaction(std::make_unique<PlayerInteraction>(client))
 {
-    if (client->modsLoaded())
+    if (client->modsLoaded()) {
         client->getScript()->on_camera_ready(m_camera.get());
+    }
 
 	m_player_settings.readGlobalSettings();
 	m_player_settings.registerSettingsCallback();
@@ -799,6 +801,16 @@ bool LocalPlayer::updateWieldedItem()
         list->setModified(false);
 
     return true;
+}
+
+void LocalPlayer::dropSelectedItem(bool single_item)
+{
+    IDropAction *a = new IDropAction();
+    a->count = single_item ? 1 : 0;
+    a->from_inv.setCurrentPlayer();
+    a->from_list = "main";
+    a->from_i = getWieldIndex();
+    m_client->getPacketHandler()->sendInventoryAction(a);
 }
 
 void LocalPlayer::setPlayerControl(PlayerControl &_control)

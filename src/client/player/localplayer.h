@@ -180,6 +180,8 @@ public:
     // updated from the server. If it is true, it is set to false.
     bool updateWieldedItem();
 
+    void dropSelectedItem(bool single_item = false);
+
     void setPlayerControl(PlayerControl &_control);
 
     u16 getHP();
@@ -252,7 +254,6 @@ private:
 
 	PlayerSettings m_player_settings;
 	Lighting m_lighting;
-	
 
     // Privileges
     std::unordered_set<std::string> m_privileges;
