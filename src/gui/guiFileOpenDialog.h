@@ -8,7 +8,7 @@
 #include "IGUIButton.h"
 #include "IGUIListBox.h"
 #include "IGUIEditBox.h"
-#include <Main/Events.h>
+#include <Core/Events.h>
 
 namespace gui
 {
@@ -37,7 +37,7 @@ public:
 	const wchar_t *getDirectoryNameW() const override;
 
 	//! called if an event happened.
-	bool OnEvent(const main::Event &event) override;
+	bool OnEvent(const core::Event &event) override;
 
 	//! draws the element and its children
 	void draw() override;

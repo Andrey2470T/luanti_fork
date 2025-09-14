@@ -42,8 +42,8 @@ GUIChatConsole::GUIChatConsole(
 		Client* client,
 		IMenuManager* menumgr
 ):
-	IGUIElement(gui::EGUIET_ELEMENT, env, parent, id,
-			core::rect<s32>(0,0,100,100)),
+	IGUIElement(EGUIET_ELEMENT, env, parent, id,
+			recti(0,0,100,100)),
 	m_chat_backend(backend),
 	m_client(client),
 	m_menumgr(menumgr),
@@ -74,7 +74,7 @@ GUIChatConsole::GUIChatConsole(
 	if (!m_font) {
 		errorstream << "GUIChatConsole: Unable to load mono font" << std::endl;
 	} else {
-		core::dimension2d<u32> dim = m_font->getDimension(L"M");
+		v2u dim = m_font->getDimension(L"M");
 		m_fontsize = v2u32(dim.Width, dim.Height);
 	}
 	m_fontsize.X = MYMAX(m_fontsize.X, 1);
@@ -87,7 +87,7 @@ GUIChatConsole::GUIChatConsole(
 	m_is_ctrl_down = false;
 	m_cache_clickable_chat_weblinks = g_settings->getBool("clickable_chat_weblinks");
 
-	m_scrollbar.reset(new GUIScrollBar(env, this, -1, core::rect<s32>(0, 0, 30, m_height), false, true, tsrc));
+	m_scrollbar.reset(new GUIScrollBar(env, this, -1, recti(0, 0, 30, m_height), false, true, tsrc));
 	m_scrollbar->setSubElement(true);
 	m_scrollbar->setLargeStep(1);
 	m_scrollbar->setSmallStep(1);
@@ -185,7 +185,7 @@ void GUIChatConsole::draw()
 		m_screensize = screensize;
 		m_desired_height = m_desired_height_fraction * m_screensize.Y;
 		reformatConsole();
-	} else if (!m_scrollbar->getAbsolutePosition().isPointInside(core::vector2di(screensize.X, m_height))) {
+	} else if (!m_scrollbar->getAbsolutePosition().isPointInside(v2i(screensize.X, m_height))) {
 		// the height of the chat window is no longer the height of the scrollbar
 		// happens while opening/closing the window
 		updateScrollbar(true);
@@ -222,7 +222,7 @@ void GUIChatConsole::reformatConsole()
 
 void GUIChatConsole::recalculateConsolePosition()
 {
-	core::rect<s32> rect(0, 0, m_screensize.X, m_height);
+	recti rect(0, 0, m_screensize.X, m_height);
 	DesiredRect = rect;
 	recalculateAbsolutePosition(false);
 }
@@ -285,10 +285,10 @@ void GUIChatConsole::drawBackground()
 	video::IVideoDriver* driver = Environment->getVideoDriver();
 	if (m_background != NULL)
 	{
-		core::rect<s32> sourcerect(0, -m_height, m_screensize.X, 0);
+		recti sourcerect(0, -m_height, m_screensize.X, 0);
 		driver->draw2DImage(
 			m_background,
-			v2s32(0, 0),
+			v2i(0, 0),
 			sourcerect,
 			&AbsoluteClippingRect,
 			m_background_color,
@@ -298,7 +298,7 @@ void GUIChatConsole::drawBackground()
 	{
 		driver->draw2DRectangle(
 			m_background_color,
-			core::rect<s32>(0, 0, m_screensize.X, m_height),
+			recti(0, 0, m_screensize.X, m_height),
 			&AbsoluteClippingRect);
 	}
 }
@@ -312,7 +312,7 @@ void GUIChatConsole::drawText()
 
 	core::recti rect;
 	if (m_scrollbar->isVisible())
-		rect = core::rect<s32> (0, 0, m_screensize.X - getScrollbarSize(Environment), m_height);
+		rect = recti (0, 0, m_screensize.X - getScrollbarSize(Environment), m_height);
 	else
 		rect = AbsoluteClippingRect;
 
@@ -329,7 +329,7 @@ void GUIChatConsole::drawText()
 
 		for (const ChatFormattedFragment &fragment : line.fragments) {
 			s32 x = (fragment.column + 1) * m_fontsize.X;
-			core::rect<s32> destrect(
+			recti destrect(
 				x, y, x + m_fontsize.X * fragment.text.size(), y + m_fontsize.Y);
 
 			if (m_font->getType() == irr::gui::EGFT_CUSTOM) {
@@ -346,7 +346,7 @@ void GUIChatConsole::drawText()
 				m_font->draw(
 					fragment.text.c_str(),
 					destrect,
-					video::SColor(255, 255, 255, 255),
+					img::color8(255, 255, 255, 255),
 					false,
 					false,
 					&rect);
@@ -368,7 +368,7 @@ void GUIChatConsole::drawPrompt()
 	u32 font_width  = m_fontsize.X;
 	u32 font_height = m_fontsize.Y;
 
-	core::dimension2d<u32> size = m_font->getDimension(prompt_text.c_str());
+	v2u size = m_font->getDimension(prompt_text.c_str());
 	u32 text_width = size.Width;
 	if (size.Height > font_height)
 		font_height = size.Height;
@@ -376,12 +376,12 @@ void GUIChatConsole::drawPrompt()
 	u32 row = m_chat_backend->getConsoleBuffer().getRows();
 	s32 y = row * font_height + m_height - m_desired_height;
 
-	core::rect<s32> destrect(
+	recti destrect(
 		font_width, y, font_width + text_width, y + font_height);
 	m_font->draw(
 		prompt_text.c_str(),
 		destrect,
-		video::SColor(255, 255, 255, 255),
+		img::color8(255, 255, 255, 255),
 		false,
 		false,
 		&AbsoluteClippingRect);
@@ -399,13 +399,13 @@ void GUIChatConsole::drawPrompt()
 			s32 cursor_len = prompt.getCursorLength();
 			video::IVideoDriver* driver = Environment->getVideoDriver();
 			s32 x = font_width + text_to_cursor_pos_width;
-			core::rect<s32> destrect(
+			recti destrect(
 				x,
 				y + font_height * (1.0 - m_cursor_height),
 				x + font_width * MYMAX(cursor_len, 1),
 				y + font_height * (cursor_len ? m_cursor_height+1 : 1)
 			);
-			video::SColor cursor_color(255,255,255,255);
+			img::color8 cursor_color(255,255,255,255);
 			driver->draw2DRectangle(
 				cursor_color,
 				destrect,
@@ -415,12 +415,12 @@ void GUIChatConsole::drawPrompt()
 
 }
 
-bool GUIChatConsole::OnEvent(const SEvent& event)
+bool GUIChatConsole::OnEvent(const core::Event& event)
 {
 
 	ChatPrompt &prompt = m_chat_backend->getPrompt();
 
-	if (event.EventType == EET_KEY_INPUT_EVENT && !event.KeyInput.PressedDown)
+	if (event.Type == EET_KEY_INPUT_EVENT && !event.KeyInput.PressedDown)
 	{
 		// CTRL up
 		if (isInCtrlKeys(event.KeyInput.Key))
@@ -428,7 +428,7 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 			m_is_ctrl_down = false;
 		}
 	}
-	else if(event.EventType == EET_KEY_INPUT_EVENT && event.KeyInput.PressedDown)
+	else if(event.Type == EET_KEY_INPUT_EVENT && event.KeyInput.PressedDown)
 	{
 		// CTRL down
 		if (isInCtrlKeys(event.KeyInput.Key)) {
@@ -665,7 +665,7 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 			return true;
 		}
 	}
-	else if(event.EventType == EET_MOUSE_INPUT_EVENT)
+	else if(event.Type == EET_MOUSE_INPUT_EVENT)
 	{
 		if (event.MouseInput.Event == EMIE_MOUSE_WHEEL)
 		{
@@ -696,13 +696,13 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 			}
 		}
 	}
-	else if(event.EventType == EET_STRING_INPUT_EVENT)
+	else if(event.Type == EET_STRING_INPUT_EVENT)
 	{
 		prompt.input(std::wstring(event.StringInput.Str->c_str()));
 		return true;
 	}
-	else if (event.EventType == EET_GUI_EVENT && event.GUIEvent.EventType == EGET_SCROLL_BAR_CHANGED &&
-			(void*) event.GUIEvent.Caller == (void*) m_scrollbar.get())
+	else if (event.Type == EET_GUI_EVENT && event.GUI.Type == EGET_SCROLL_BAR_CHANGED &&
+			(void*) event.GUI.Caller == (void*) m_scrollbar.get())
 	{
 		m_chat_backend->getConsoleBuffer().scrollAbsolute(m_scrollbar->getPos());
 	}
@@ -801,7 +801,7 @@ void GUIChatConsole::updateScrollbar(bool update_size)
 	m_scrollbar->setVisible(m_scrollbar->getMin() != m_scrollbar->getMax());
 
 	if (update_size) {
-		const core::rect<s32> rect (m_screensize.X - getScrollbarSize(Environment), 0, m_screensize.X, m_height);
+		const recti rect (m_screensize.X - getScrollbarSize(Environment), 0, m_screensize.X, m_height);
 		m_scrollbar->setRelativePosition(rect);
 	}
 }

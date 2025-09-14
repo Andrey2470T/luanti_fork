@@ -12,7 +12,7 @@ class GUIEditBox : public IGUIEditBox
 {
 public:
 	GUIEditBox(IGUIEnvironment *environment, IGUIElement *parent, s32 id,
-			core::rect<s32> rectangle, bool border, bool writable) :
+			recti rectangle, bool border, bool writable) :
 			IGUIEditBox(environment, parent, id, rectangle),
 			m_border(border), m_writable(writable), m_frame_rect(rectangle)
 	{
@@ -21,20 +21,20 @@ public:
 	virtual ~GUIEditBox();
 
 	//! Sets another skin independent font.
-	virtual void setOverrideFont(IGUIFont *font = 0);
+	virtual void setOverrideFont(render::TTFont *font = 0);
 
-	virtual IGUIFont *getOverrideFont() const { return m_override_font; }
+	virtual render::TTFont *getOverrideFont() const { return m_override_font; }
 
 	//! Get the font which is used right now for drawing
 	/** Currently this is the override font when one is set and the
 	font of the active skin otherwise */
-	virtual IGUIFont *getActiveFont() const;
+	virtual render::TTFont *getActiveFont() const;
 
 	//! Sets another color for the text.
-	virtual void setOverrideColor(video::SColor color);
+	virtual void setOverrideColor(img::color8 color);
 
 	//! Gets the override color
-	virtual video::SColor getOverrideColor() const;
+	virtual img::color8 getOverrideColor() const;
 
 	//! Sets if the text should use the overide color or the
 	//! color in the gui skin.
@@ -108,7 +108,7 @@ public:
 	virtual void setWritable(bool can_write_text);
 
 	//! called if an event happened.
-	virtual bool OnEvent(const SEvent &event);
+	virtual bool OnEvent(const core::Event &event);
 
 	virtual bool acceptsIME() { return isEnabled() && m_writable; };
 
@@ -129,7 +129,7 @@ protected:
 
 	virtual s32 getCursorPos(s32 x, s32 y) = 0;
 
-	bool processKey(const SEvent &event);
+	bool processKey(const core::Event &event);
 	virtual void inputString(const core::stringw &str);
 	virtual void inputChar(wchar_t c);
 
@@ -139,7 +139,7 @@ protected:
 	//! update the vertical scrollBar (visibilty & position)
 	void updateVScrollBar();
 
-	gui::IGUIFont *m_override_font = nullptr;
+	render::TTFont *m_override_font = nullptr;
 
 	bool m_override_color_enabled = false;
 	bool m_word_wrap = false;
@@ -163,9 +163,9 @@ protected:
 	s32 m_vscroll_pos = 0; // scroll position in characters
 	u32 m_max = 0;
 
-	video::SColor m_override_color = video::SColor(101, 255, 255, 255);
+	img::color8 m_override_color = img::color8(101, 255, 255, 255);
 
-	core::rect<s32> m_current_text_rect = core::rect<s32>(0, 0, 1, 1);
+	recti m_current_text_rect = recti(0, 0, 1, 1);
 
 	bool m_writable;
 
@@ -174,22 +174,22 @@ protected:
 	s32 m_mark_begin = 0;
 	s32 m_mark_end = 0;
 
-	gui::IGUIFont *m_last_break_font = nullptr;
+	render::TTFont *m_last_break_font = nullptr;
 	IOSOperator *m_operator = nullptr;
 
-	core::rect<s32> m_frame_rect; // temporary values
+	recti m_frame_rect; // temporary values
 
 	u32 m_scrollbar_width = 0;
 	GUIScrollBar *m_vscrollbar = nullptr;
 
 private:
-	bool processMouse(const SEvent &event);
+	bool processMouse(const core::Event &event);
 
-	bool onKeyUp(const SEvent &event, s32 &mark_begin, s32 &mark_end);
-	bool onKeyDown(const SEvent &event, s32 &mark_begin, s32 &mark_end);
-	void onKeyControlC(const SEvent &event);
-	bool onKeyControlX(const SEvent &event, s32 &mark_begin, s32 &mark_end);
-	bool onKeyControlV(const SEvent &event, s32 &mark_begin, s32 &mark_end);
-	bool onKeyBack(const SEvent &event, s32 &mark_begin, s32 &mark_end);
-	bool onKeyDelete(const SEvent &event, s32 &mark_begin, s32 &mark_end);
+	bool onKeyUp(const core::Event &event, s32 &mark_begin, s32 &mark_end);
+	bool onKeyDown(const core::Event &event, s32 &mark_begin, s32 &mark_end);
+	void onKeyControlC(const core::Event &event);
+	bool onKeyControlX(const core::Event &event, s32 &mark_begin, s32 &mark_end);
+	bool onKeyControlV(const core::Event &event, s32 &mark_begin, s32 &mark_end);
+	bool onKeyBack(const core::Event &event, s32 &mark_begin, s32 &mark_end);
+	bool onKeyDelete(const core::Event &event, s32 &mark_begin, s32 &mark_end);
 };

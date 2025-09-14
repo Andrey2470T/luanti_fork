@@ -17,26 +17,34 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #pragma once
 
-#include "irrlichttypes_extrabloated.h"
+#include "IGUIElement.h"
 #include "util/string.h"
+#include <Image/Image.h>
+#include <variant>
 
-class ISimpleTextureSource;
-
+class ImageSprite;
+class Image2D9Slice;
 
 class GUIBackgroundImage : public gui::IGUIElement
 {
 public:
 	GUIBackgroundImage(gui::IGUIEnvironment *env, gui::IGUIElement *parent, s32 id,
-		const core::rect<s32> &rectangle, const std::string &name,
-		const core::rect<s32> &middle, ISimpleTextureSource *tsrc, bool autoclip,
-		v2s32 autoclip_offset);
+		const recti &rectangle, const std::string &name,
+        const recti &middle, bool autoclip,
+        v2i autoclip_offset);
 
+    void setTexture(img::Image *img)
+    {
+        texture = img;
+    }
 	virtual void draw() override;
 
 private:
+    img::Image *texture;
 	std::string m_name;
-	core::rect<s32> m_middle;
-	ISimpleTextureSource *m_tsrc;
+	recti m_middle;
 	bool m_autoclip;
-	v2s32 m_autoclip_offset;
+    v2i m_autoclip_offset;
+
+    std::variant<std::shared_ptr<ImageSprite>, std::shared_ptr<Image2D9Slice>> Image;
 };

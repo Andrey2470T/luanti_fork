@@ -102,7 +102,7 @@ public:
 	s32 getTabAt(s32 xpos, s32 ypos) const override;
 
 	//! called if an event happened.
-	bool OnEvent(const main::Event &event) override;
+	bool OnEvent(const core::Event &event) override;
 
 	//! draws the element and its children
 	void draw() override;

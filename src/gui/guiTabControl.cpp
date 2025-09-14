@@ -334,7 +334,7 @@ IGUITab *CGUITabControl::getTab(s32 idx) const
 }
 
 //! called if an event happened.
-bool CGUITabControl::OnEvent(const main::Event &event)
+bool CGUITabControl::OnEvent(const core::Event &event)
 {
 	if (isEnabled()) {
 		switch (event.Type) {
@@ -872,7 +872,7 @@ bool CGUITabControl::setActiveTab(s32 idx)
 	setVisibleTab(ActiveTabIndex);
 
 	if (changed && Parent) {
-		main::Event event;
+		core::Event event;
 		event.Type = EET_GUI_EVENT;
         event.GUI.Caller = getID();
 		event.GUI.Element = 0;

@@ -8,8 +8,8 @@
 #include "GUISkin.h"
 #include <Utils/Rect.h>
 #include "GUIEnums.h"
-#include <Main/IEventReceiver.h>
-#include <Main/Events.h>
+#include <Core/IEventReceiver.h>
+#include <Core/Events.h>
 
 class RenderSystem;
 class ResourceCache;
@@ -91,13 +91,13 @@ public:
 	use this method, it is used by the engine internally.
 	\param event The event to post.
 	\return True if succeeded, else false. */
-	virtual bool postEventFromUser(const main::Event &event) = 0;
+	virtual bool postEventFromUser(const core::Event &event) = 0;
 
 	//! This sets a new event receiver for gui events.
 	/** Usually you do not have to
 	use this method, it is used by the engine internally.
 	\param evr Pointer to the new receiver. */
-    virtual void setUserEventReceiver(main::IEventReceiver *evr) = 0;
+    virtual void setUserEventReceiver(core::IEventReceiver *evr) = 0;
 
 	//! Returns pointer to the current gui skin.
 	/** \return Pointer to the GUI skin. */

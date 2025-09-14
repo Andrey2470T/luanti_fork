@@ -54,7 +54,7 @@ public:
 	// Irrlicht draw method
 	virtual void draw();
 
-	virtual bool OnEvent(const SEvent& event);
+	virtual bool OnEvent(const core::Event& event);
 
 	virtual void setVisible(bool visible);
 
@@ -115,12 +115,12 @@ private:
 	f32 m_cursor_height = 0.0f;
 
 	// background texture
-	video::ITexture *m_background = nullptr;
+	img::Image *m_background = nullptr;
 	// background color (including alpha)
-	video::SColor m_background_color = video::SColor(255, 0, 0, 0);
+	img::color8 m_background_color = img::color8(255, 0, 0, 0);
 
 	// font
-	irr_ptr<gui::IGUIFont> m_font;
+	irr_ptr<render::TTFont> m_font;
 	v2u32 m_fontsize;
 
 	// Enable clickable chat weblinks

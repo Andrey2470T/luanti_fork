@@ -75,7 +75,7 @@ public:
 
 	GUITable(gui::IGUIEnvironment *env,
 			gui::IGUIElement *parent, s32 id,
-			core::rect<s32> rectangle,
+			recti rectangle,
 			ISimpleTextureSource *tsrc);
 
 	virtual ~GUITable();
@@ -109,10 +109,10 @@ public:
 	void setSelected(s32 index);
 
 	//! Sets another skin independent font. If this is set to zero, the button uses the font of the skin.
-	virtual void setOverrideFont(gui::IGUIFont *font = nullptr);
+	virtual void setOverrideFont(render::TTFont *font = nullptr);
 
 	//! Gets the override font (if any)
-	virtual gui::IGUIFont *getOverrideFont() const;
+	virtual render::TTFont *getOverrideFont() const;
 
 	/* Get selection, scroll position and opened (sub)trees */
 	DynamicData getDynamicData() const;
@@ -130,7 +130,7 @@ public:
 	virtual void draw();
 
 	/* Irrlicht event handler */
-	virtual bool OnEvent(const SEvent &event);
+	virtual bool OnEvent(const core::Event &event);
 
 protected:
 	enum ColumnType {
@@ -148,7 +148,7 @@ protected:
 		ColumnType content_type;
 		s32 content_index;
 		s32 tooltip_index;
-		video::SColor color;
+		img::color8 color;
 		bool color_defined;
 		s32 reported_column;
 		f32 image_scale; // only for "image" type columns
@@ -185,17 +185,17 @@ protected:
 
 	// Drawing and geometry information
 	bool m_border = true;
-	video::SColor m_color = video::SColor(255, 255, 255, 255);
-	video::SColor m_background = video::SColor(255, 0, 0, 0);
-	video::SColor m_highlight = video::SColor(255, 70, 100, 50);
-	video::SColor m_highlight_text = video::SColor(255, 255, 255, 255);
+	img::color8 m_color = img::color8(255, 255, 255, 255);
+	img::color8 m_background = img::color8(255, 0, 0, 0);
+	img::color8 m_highlight = img::color8(255, 70, 100, 50);
+	img::color8 m_highlight_text = img::color8(255, 255, 255, 255);
 	s32 m_rowheight = 1;
-	gui::IGUIFont *m_font = nullptr;
+	render::TTFont *m_font = nullptr;
 	GUIScrollBar *m_scrollbar = nullptr;
 
 	// Allocated strings and images
 	std::vector<core::stringw> m_strings;
-	std::vector<video::ITexture*> m_images;
+	std::vector<img::Image*> m_images;
 	std::map<std::string, s32> m_alloc_strings;
 	std::map<std::string, s32> m_alloc_images;
 
@@ -204,9 +204,9 @@ protected:
 	void allocationComplete();
 
 	// Helper for draw() that draws a single cell
-	void drawCell(const Cell *cell, video::SColor color,
-			const core::rect<s32> &rowrect,
-			const core::rect<s32> &client_clip);
+	void drawCell(const Cell *cell, img::color8 color,
+			const recti &rowrect,
+			const recti &client_clip);
 
 	// Returns the i-th visible row (NULL if i is invalid)
 	const Row *getRow(s32 i) const;

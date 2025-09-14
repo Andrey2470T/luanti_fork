@@ -8,10 +8,8 @@
 #include <Image/Color.h>
 #include <Render/Texture2D.h>
 
-namespace video
-{
-class ITexture;
-}
+typedef std::pair<u32, u32> AtlasTileAnim;
+
 namespace gui
 {
 //! GUI element displaying an image.
@@ -23,7 +21,7 @@ public:
 			IGUIElement(EGUIET_IMAGE, environment, parent, id, rectangle) {}
 
 	//! Sets an image texture
-	virtual void setImage(img::Image *image) = 0;
+    virtual void setImage(img::Image *image, std::optional<AtlasTileAnim> animParams = std::nullopt) = 0;
 
 	//! Gets the image texture
 	virtual img::Image *getImage() const = 0;

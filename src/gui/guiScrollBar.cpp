@@ -17,7 +17,7 @@ the arrow buttons where there is insufficient space.
 #include <IGUISkin.h>
 
 GUIScrollBar::GUIScrollBar(IGUIEnvironment *environment, IGUIElement *parent, s32 id,
-		core::rect<s32> rectangle, bool horizontal, bool auto_scale,
+		recti rectangle, bool horizontal, bool auto_scale,
 		ISimpleTextureSource *tsrc) :
 		IGUIElement(EGUIET_ELEMENT, environment, parent, id, rectangle),
 		up_button(nullptr), down_button(nullptr), is_dragging(false),
@@ -34,10 +34,10 @@ GUIScrollBar::GUIScrollBar(IGUIEnvironment *environment, IGUIElement *parent, s3
 	setPos(0);
 }
 
-bool GUIScrollBar::OnEvent(const SEvent &event)
+bool GUIScrollBar::OnEvent(const core::Event &event)
 {
 	if (isEnabled()) {
-		switch (event.EventType) {
+		switch (event.Type) {
 		case EET_KEY_INPUT_EVENT:
 			if (event.KeyInput.PressedDown) {
 				const s32 old_pos = getTargetPos();
@@ -71,18 +71,18 @@ bool GUIScrollBar::OnEvent(const SEvent &event)
 			}
 			break;
 		case EET_GUI_EVENT:
-			if (event.GUIEvent.EventType == EGET_BUTTON_CLICKED) {
-				if (event.GUIEvent.Caller == up_button)
+			if (event.GUI.Type == EGET_BUTTON_CLICKED) {
+				if (event.GUI.Caller == up_button)
 					setPosInterpolated(getTargetPos() - small_step);
-				else if (event.GUIEvent.Caller == down_button)
+				else if (event.GUI.Caller == down_button)
 					setPosInterpolated(getTargetPos() + small_step);
 				return true;
-			} else if (event.GUIEvent.EventType == EGET_ELEMENT_FOCUS_LOST)
-				if (event.GUIEvent.Caller == this)
+			} else if (event.GUI.Type == EGET_ELEMENT_FOCUS_LOST)
+				if (event.GUI.Caller == this)
 					is_dragging = false;
 			break;
 		case EET_MOUSE_INPUT_EVENT: {
-			const core::position2di p(event.MouseInput.X, event.MouseInput.Y);
+			const v2i p(event.MouseInput.X, event.MouseInput.Y);
 			bool is_inside = isPointInside(p);
 			switch (event.MouseInput.Event) {
 			case EMIE_MOUSE_WHEEL:
@@ -97,7 +97,7 @@ bool GUIScrollBar::OnEvent(const SEvent &event)
 				if (is_inside) {
 					is_dragging = true;
 					dragged_by_slider = slider_rect.isPointInside(p);
-					core::vector2di corner = slider_rect.UpperLeftCorner;
+					v2i corner = slider_rect.ULC;
 					drag_offset = is_horizontal ? p.X - corner.X : p.Y - corner.Y;
 					tray_clicked = !dragged_by_slider;
 					if (tray_clicked) {
@@ -162,7 +162,7 @@ void GUIScrollBar::draw()
 	if (!skin)
 		return;
 
-	video::SColor icon_color = skin->getColor(
+	img::color8 icon_color = skin->getColor(
 			isEnabled() ? EGDC_WINDOW_SYMBOL : EGDC_GRAY_WINDOW_SYMBOL);
 	if (icon_color != current_icon_color)
 		refreshControls();
@@ -173,15 +173,15 @@ void GUIScrollBar::draw()
 
 	if (core::isnotzero(range())) {
 		if (is_horizontal) {
-			slider_rect.UpperLeftCorner.X = AbsoluteRect.UpperLeftCorner.X +
+			slider_rect.ULC.X = AbsoluteRect.ULC.X +
 							draw_center - thumb_size / 2;
-			slider_rect.LowerRightCorner.X =
-					slider_rect.UpperLeftCorner.X + thumb_size;
+			slider_rect.LRC.X =
+					slider_rect.ULC.X + thumb_size;
 		} else {
-			slider_rect.UpperLeftCorner.Y = AbsoluteRect.UpperLeftCorner.Y +
+			slider_rect.ULC.Y = AbsoluteRect.ULC.Y +
 							draw_center - thumb_size / 2;
-			slider_rect.LowerRightCorner.Y =
-					slider_rect.UpperLeftCorner.Y + thumb_size;
+			slider_rect.LRC.Y =
+					slider_rect.ULC.Y + thumb_size;
 		}
 		skin->draw3DButtonPaneStandard(this, slider_rect, &AbsoluteClippingRect);
 	}
@@ -206,11 +206,11 @@ void GUIScrollBar::interpolatePos()
 		if (scroll_pos == target_pos)
 			target_pos = std::nullopt;
 
-		SEvent e;
-		e.EventType = EET_GUI_EVENT;
-		e.GUIEvent.Caller = this;
-		e.GUIEvent.Element = nullptr;
-		e.GUIEvent.EventType = EGET_SCROLL_BAR_CHANGED;
+		core::Event e;
+		e.Type = EET_GUI_EVENT;
+		e.GUI.Caller = this;
+		e.GUI.Element = nullptr;
+		e.GUI.Type = EGET_SCROLL_BAR_CHANGED;
 		Parent->OnEvent(e);
 	}
 }
@@ -229,17 +229,17 @@ void GUIScrollBar::updateAbsolutePosition()
 	updatePos();
 }
 
-s32 GUIScrollBar::getPosFromMousePos(const core::position2di &pos) const
+s32 GUIScrollBar::getPosFromMousePos(const v2i &pos) const
 {
 	s32 w, p;
 	s32 offset = dragged_by_slider ? drag_offset : thumb_size / 2;
 
 	if (is_horizontal) {
 		w = RelativeRect.getWidth() - border_size * 2 - thumb_size;
-		p = pos.X - AbsoluteRect.UpperLeftCorner.X - border_size - offset;
+		p = pos.X - AbsoluteRect.ULC.X - border_size - offset;
 	} else {
 		w = RelativeRect.getHeight() - border_size * 2 - thumb_size;
-		p = pos.Y - AbsoluteRect.UpperLeftCorner.Y - border_size - offset;
+		p = pos.Y - AbsoluteRect.ULC.Y - border_size - offset;
 	}
 	return core::isnotzero(range()) ? s32(f32(p) / f32(w) * range() + 0.5f) + min_pos : 0;
 }
@@ -286,11 +286,11 @@ void GUIScrollBar::setPosAndSend(const s32 &pos)
 	const s32 old_pos = scroll_pos;
 	setPos(pos);
 	if (scroll_pos != old_pos && Parent) {
-		SEvent e;
-		e.EventType = EET_GUI_EVENT;
-		e.GUIEvent.Caller = this;
-		e.GUIEvent.Element = nullptr;
-		e.GUIEvent.EventType = EGET_SCROLL_BAR_CHANGED;
+		core::Event e;
+		e.Type = EET_GUI_EVENT;
+		e.GUI.Caller = this;
+		e.GUI.Element = nullptr;
+		e.GUI.Type = EGET_SCROLL_BAR_CHANGED;
 		Parent->OnEvent(e);
 	}
 }
@@ -375,7 +375,7 @@ void GUIScrollBar::refreshControls()
 {
 	IGUISkin *skin = Environment->getSkin();
 	IGUISpriteBank *sprites = nullptr;
-	current_icon_color = video::SColor(255, 255, 255, 255);
+	current_icon_color = img::color8(255, 255, 255, 255);
 
 	if (skin) {
 		sprites = skin->getSpriteBank();
@@ -387,7 +387,7 @@ void GUIScrollBar::refreshControls()
 		s32 h = RelativeRect.getHeight();
 		border_size = RelativeRect.getWidth() < h * 4 ? 0 : h;
 		if (!up_button) {
-			core::rect<s32> up_button_rect(0, 0, h, h);
+			recti up_button_rect(0, 0, h, h);
 			up_button = GUIButton::addButton(Environment, up_button_rect, m_tsrc,
 					this, -1, L"");
 			up_button->setSubElement(true);
@@ -402,11 +402,11 @@ void GUIScrollBar::refreshControls()
 					s32(skin->getIcon(EGDI_CURSOR_LEFT)),
 					current_icon_color);
 		}
-		up_button->setRelativePosition(core::rect<s32>(0, 0, h, h));
+		up_button->setRelativePosition(recti(0, 0, h, h));
 		up_button->setAlignment(EGUIA_UPPERLEFT, EGUIA_UPPERLEFT, EGUIA_UPPERLEFT,
 				EGUIA_LOWERRIGHT);
 		if (!down_button) {
-			core::rect<s32> down_button_rect(
+			recti down_button_rect(
 					RelativeRect.getWidth() - h, 0,
 					RelativeRect.getWidth(), h
 				);
@@ -425,7 +425,7 @@ void GUIScrollBar::refreshControls()
 					current_icon_color);
 		}
 		down_button->setRelativePosition(
-				core::rect<s32>(RelativeRect.getWidth() - h, 0,
+				recti(RelativeRect.getWidth() - h, 0,
 						RelativeRect.getWidth(), h));
 		down_button->setAlignment(EGUIA_LOWERRIGHT, EGUIA_LOWERRIGHT,
 				EGUIA_UPPERLEFT, EGUIA_LOWERRIGHT);
@@ -433,7 +433,7 @@ void GUIScrollBar::refreshControls()
 		s32 w = RelativeRect.getWidth();
 		border_size = RelativeRect.getHeight() < w * 4 ? 0 : w;
 		if (!up_button) {
-			core::rect<s32> up_button_rect(0, 0, w, w);
+			recti up_button_rect(0, 0, w, w);
 			up_button = GUIButton::addButton(Environment, up_button_rect, m_tsrc,
 					this, -1, L"");
 			up_button->setSubElement(true);
@@ -448,11 +448,11 @@ void GUIScrollBar::refreshControls()
 					s32(skin->getIcon(EGDI_CURSOR_UP)),
 					current_icon_color);
 		}
-		up_button->setRelativePosition(core::rect<s32>(0, 0, w, w));
+		up_button->setRelativePosition(recti(0, 0, w, w));
 		up_button->setAlignment(EGUIA_UPPERLEFT, EGUIA_LOWERRIGHT,
 				EGUIA_UPPERLEFT, EGUIA_UPPERLEFT);
 		if (!down_button) {
-			core::rect<s32> down_button_rect(
+			recti down_button_rect(
 					0, RelativeRect.getHeight() - w,
 					w, RelativeRect.getHeight()
 				);
@@ -471,7 +471,7 @@ void GUIScrollBar::refreshControls()
 					current_icon_color);
 		}
 		down_button->setRelativePosition(
-				core::rect<s32>(0, RelativeRect.getHeight() - w, w,
+				recti(0, RelativeRect.getHeight() - w, w,
 						RelativeRect.getHeight()));
 		down_button->setAlignment(EGUIA_UPPERLEFT, EGUIA_LOWERRIGHT,
 				EGUIA_LOWERRIGHT, EGUIA_LOWERRIGHT);

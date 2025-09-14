@@ -45,7 +45,7 @@ public:
 	void setSelected(const wchar_t *item) override;
 
 	//! called if an event happened.
-	bool OnEvent(const main::Event &event) override;
+	bool OnEvent(const core::Event &event) override;
 
 	//! draws the element and its children
 	void draw() override;

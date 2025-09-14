@@ -75,12 +75,12 @@ public:
 	}
 
 	// Returns true to prevent further processing
-	virtual bool preprocessEvent(const SEvent& event)
+	virtual bool preprocescore::Event(const core::Event& event)
 	{
 		if (m_stack.empty())
 			return false;
 		GUIModalMenu *mm = dynamic_cast<GUIModalMenu*>(m_stack.back());
-		return mm && mm->preprocessEvent(event);
+		return mm && mm->preprocescore::Event(event);
 	}
 
 	size_t menuCount() const

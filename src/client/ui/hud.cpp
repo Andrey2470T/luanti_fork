@@ -221,8 +221,8 @@ void drawItemStack(
 		video::IVideoDriver *driver,
 		gui::IGUIFont *font,
 		const ItemStack &item,
-		const core::rect<s32> &rect,
-		const core::rect<s32> *clip,
+		const recti &rect,
+		const recti *clip,
 		Client *client,
 		ItemRotationKind rotation_kind,
 		const v3s16 &angle,
@@ -250,7 +250,7 @@ void drawItemStack(
 	bool has_mesh = false;
 	ItemMesh *imesh;
 
-	core::rect<s32> viewrect = rect;
+	recti viewrect = rect;
 	if (clip != nullptr)
 		viewrect.clipAgainst(*clip);
 
@@ -272,7 +272,7 @@ void drawItemStack(
 				delta = porting::getDeltaMs(ti.time, porting::getTimeMs()) % 100000;
 			}
 		}
-		core::rect<s32> oldViewPort = driver->getViewPort();
+		recti oldViewPort = driver->getViewPort();
 		core::matrix4 oldProjMat = driver->getTransform(video::ETS_PROJECTION);
 		core::matrix4 oldViewMat = driver->getTransform(video::ETS_VIEW);
 
@@ -361,7 +361,7 @@ void drawItemStack(
 		const video::SColor colors[] = { color, color, color, color };
 
 		draw2DImageFilterScaled(driver, texture, rect,
-			core::rect<s32>({0, 0}, core::dimension2di(texture->getOriginalSize())),
+			recti({0, 0}, core::dimension2di(texture->getOriginalSize())),
 			clip, colors, true);
 
 		draw_overlay = true;
@@ -372,7 +372,7 @@ void drawItemStack(
 		ITextureSource *tsrc = client->getTextureSource();
 		video::ITexture *overlay_texture = tsrc->getTexture(inventory_overlay);
 		core::dimension2d<u32> dimens = overlay_texture->getOriginalSize();
-		core::rect<s32> srcrect(0, 0, dimens.Width, dimens.Height);
+		recti srcrect(0, 0, dimens.Width, dimens.Height);
 		draw2DImageFilterScaled(driver, overlay_texture, rect, srcrect, clip, 0, true);
 	}
 
@@ -382,7 +382,7 @@ void drawItemStack(
 		float barpad_x = static_cast<float>(rect.getWidth()) / 16;
 		float barpad_y = static_cast<float>(rect.getHeight()) / 16;
 
-		core::rect<s32> progressrect(
+		recti progressrect(
 			rect.ULC.X + barpad_x,
 			rect.LRC.Y - barpad_y - barheight,
 			rect.LRC.X - barpad_x,
@@ -416,7 +416,7 @@ void drawItemStack(
 				color.set(255, 255, 511 - wear_i, 0);
 		}
 
-		core::rect<s32> progressrect2 = progressrect;
+		recti progressrect2 = progressrect;
 		progressrect2.LRC.X = progressmid;
 		driver->draw2DRectangle(color, progressrect2, clip);
 
@@ -433,7 +433,7 @@ void drawItemStack(
 		v2u32 dim = font->getDimension(utf8_to_wide(unescape_enriched(text)).c_str());
 		v2s32 sdim(dim.X, dim.Y);
 
-		core::rect<s32> rect2(
+		recti rect2(
 			rect.LRC - sdim,
 			rect.LRC
 		);
@@ -483,7 +483,7 @@ void drawItemStack(
 				break;
 			}
 
-			rect2 = core::rect<s32>(x1, y1, x2, y2);
+			rect2 = recti(x1, y1, x2, y2);
 		}
 
 		video::SColor color(255, 255, 255, 255);
@@ -495,8 +495,8 @@ void drawItemStack(
 		video::IVideoDriver *driver,
 		gui::IGUIFont *font,
 		const ItemStack &item,
-		const core::rect<s32> &rect,
-		const core::rect<s32> *clip,
+		const recti &rect,
+		const recti *clip,
 		Client *client,
 		ItemRotationKind rotation_kind)
 {

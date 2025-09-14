@@ -7,17 +7,18 @@
 #include "IReferenceCounted.h"
 #include <BasicIncludes.h>
 #include <Utils/Rect.h>
-#include <Main/IEventReceiver.h>
+#include <Core/IEventReceiver.h>
 #include "GUIEnums.h"
 #include <cassert>
 #include <list>
+#include <Utils/TypeConverter.h>
 
 namespace gui
 {
 class IGUIEnvironment;
 
 //! Base class of all GUI elements.
-class IGUIElement : virtual public IReferenceCounted, public main::IEventReceiver
+class IGUIElement : virtual public IReferenceCounted, public core::IEventReceiver
 {
 public:
 	//! Constructor
@@ -487,7 +488,7 @@ public:
 	}
 
 	//! Called if an event happened.
-    bool OnEvent(const main::Event &event) override
+    bool OnEvent(const core::Event &event) override
 	{
 		return Parent ? Parent->OnEvent(event) : false;
 	}

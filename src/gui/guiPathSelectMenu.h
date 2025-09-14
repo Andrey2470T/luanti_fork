@@ -27,7 +27,7 @@ public:
 
 	void drawMenu();
 
-	bool OnEvent(const SEvent &event);
+	bool OnEvent(const core::Event &event);
 
 	void setTextDest(TextDest *dest) { m_text_dst = dest; }
 

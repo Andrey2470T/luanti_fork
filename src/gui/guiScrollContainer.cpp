@@ -5,9 +5,9 @@
 #include "guiScrollContainer.h"
 
 GUIScrollContainer::GUIScrollContainer(gui::IGUIEnvironment *env,
-		gui::IGUIElement *parent, s32 id, const core::rect<s32> &rectangle,
+		gui::IGUIElement *parent, s32 id, const recti &rectangle,
 		const std::string &orientation, f32 scrollfactor) :
-		gui::IGUIElement(gui::EGUIET_ELEMENT, env, parent, id, rectangle),
+		gui::IGUIElement(EGUIET_ELEMENT, env, parent, id, rectangle),
 		m_scrollbar(nullptr), m_scrollfactor(scrollfactor)
 {
 	if (orientation == "vertical")
@@ -18,18 +18,18 @@ GUIScrollContainer::GUIScrollContainer(gui::IGUIEnvironment *env,
 		m_orientation = UNDEFINED;
 }
 
-bool GUIScrollContainer::OnEvent(const SEvent &event)
+bool GUIScrollContainer::OnEvent(const core::Event &event)
 {
-	if (event.EventType == EET_MOUSE_INPUT_EVENT &&
+	if (event.Type == EET_MOUSE_INPUT_EVENT &&
 			event.MouseInput.Event == EMIE_MOUSE_WHEEL &&
 			!event.MouseInput.isLeftPressed() && m_scrollbar) {
 		Environment->setFocus(m_scrollbar);
 		bool retval = m_scrollbar->OnEvent(event);
 
 		// a hacky fix for updating the hovering and co.
-		IGUIElement *hovered_elem = getElementFromPoint(core::position2d<s32>(
+		IGUIElement *hovered_elem = getElementFromPoint(v2i(
 				event.MouseInput.X, event.MouseInput.Y));
-		SEvent mov_event = event;
+		core::Event mov_event = event;
 		mov_event.MouseInput.Event = EMIE_MOUSE_MOVED;
 		Environment->postEventFromUser(mov_event);
 		if (hovered_elem)
@@ -60,10 +60,10 @@ void GUIScrollContainer::setScrollBar(GUIScrollBar *scrollbar)
 		// Set the scrollbar max value based on the content size.
 
 		// Get content size based on elements
-		core::rect<s32> size;
+		recti size;
 		for (gui::IGUIElement *e : Children) {
-			core::rect<s32> abs_rect = e->getAbsolutePosition();
-			size.addInternalPoint(abs_rect.LowerRightCorner);
+			recti abs_rect = e->getAbsolutePosition();
+			size.addInternalPoint(abs_rect.LRC);
 		}
 
 		s32 visible_content_px = (
@@ -74,8 +74,8 @@ void GUIScrollContainer::setScrollBar(GUIScrollBar *scrollbar)
 
 		s32 total_content_px = *m_content_padding_px + (
 			m_orientation == VERTICAL
-				? (size.LowerRightCorner.Y - AbsoluteClippingRect.UpperLeftCorner.Y)
-				: (size.LowerRightCorner.X - AbsoluteClippingRect.UpperLeftCorner.X)
+				? (size.LRC.Y - AbsoluteClippingRect.ULC.Y)
+				: (size.LRC.X - AbsoluteClippingRect.ULC.X)
 		);
 
 		s32 hidden_content_px = std::max<s32>(0, total_content_px - visible_content_px);
@@ -99,12 +99,12 @@ void GUIScrollContainer::setScrollBar(GUIScrollBar *scrollbar)
 void GUIScrollContainer::updateScrolling()
 {
 	s32 pos = m_scrollbar->getPos();
-	core::rect<s32> rect = getRelativePosition();
+	recti rect = getRelativePosition();
 
 	if (m_orientation == VERTICAL)
-		rect.UpperLeftCorner.Y = pos * m_scrollfactor;
+		rect.ULC.Y = pos * m_scrollfactor;
 	else if (m_orientation == HORIZONTAL)
-		rect.UpperLeftCorner.X = pos * m_scrollfactor;
+		rect.ULC.X = pos * m_scrollfactor;
 
 	setRelativePosition(rect);
 }

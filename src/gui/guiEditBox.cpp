@@ -6,7 +6,7 @@
 
 #include "IGUISkin.h"
 #include "IGUIEnvironment.h"
-#include "IGUIFont.h"
+#include "render::TTFont.h"
 
 #include "porting.h"
 #include "util/string.h"
@@ -23,7 +23,7 @@ GUIEditBox::~GUIEditBox()
 		m_vscrollbar->drop();
 }
 
-void GUIEditBox::setOverrideFont(IGUIFont *font)
+void GUIEditBox::setOverrideFont(render::TTFont *font)
 {
 	if (m_override_font == font)
 		return;
@@ -40,7 +40,7 @@ void GUIEditBox::setOverrideFont(IGUIFont *font)
 }
 
 //! Get the font which is used right now for drawing
-IGUIFont *GUIEditBox::getActiveFont() const
+render::TTFont *GUIEditBox::getActiveFont() const
 {
 	if (m_override_font)
 		return m_override_font;
@@ -51,13 +51,13 @@ IGUIFont *GUIEditBox::getActiveFont() const
 }
 
 //! Sets another color for the text.
-void GUIEditBox::setOverrideColor(video::SColor color)
+void GUIEditBox::setOverrideColor(img::color8 color)
 {
 	m_override_color = color;
 	m_override_color_enabled = true;
 }
 
-video::SColor GUIEditBox::getOverrideColor() const
+img::color8 GUIEditBox::getOverrideColor() const
 {
 	return m_override_color;
 }
@@ -131,15 +131,15 @@ void GUIEditBox::setMax(u32 max)
 //! \return Returns the size in pixels of the text
 core::dimension2du GUIEditBox::getTextDimension()
 {
-	core::rect<s32> ret;
+	recti ret;
 
 	setTextRect(0);
 	ret = m_current_text_rect;
 
 	for (u32 i = 1; i < m_broken_text.size(); ++i) {
 		setTextRect(i);
-		ret.addInternalPoint(m_current_text_rect.UpperLeftCorner);
-		ret.addInternalPoint(m_current_text_rect.LowerRightCorner);
+		ret.addInternalPoint(m_current_text_rect.ULC);
+		ret.addInternalPoint(m_current_text_rect.LRC);
 	}
 
 	return core::dimension2du(ret.getSize());
@@ -180,24 +180,24 @@ void GUIEditBox::setTextMarkers(s32 begin, s32 end)
 void GUIEditBox::sendGuiEvent(EGUI_EVENT_TYPE type)
 {
 	if (Parent) {
-		SEvent e;
-		e.EventType = EET_GUI_EVENT;
-		e.GUIEvent.Caller = this;
-		e.GUIEvent.Element = 0;
-		e.GUIEvent.EventType = type;
+		core::Event e;
+		e.Type = EET_GUI_EVENT;
+		e.GUI.Caller = this;
+		e.GUI.Element = 0;
+		e.GUI.Type = type;
 
 		Parent->OnEvent(e);
 	}
 }
 
 //! called if an event happened.
-bool GUIEditBox::OnEvent(const SEvent &event)
+bool GUIEditBox::OnEvent(const core::Event &event)
 {
 	if (isEnabled()) {
-		switch (event.EventType) {
+		switch (event.Type) {
 		case EET_GUI_EVENT:
-			if (event.GUIEvent.EventType == EGET_ELEMENT_FOCUS_LOST) {
-				if (event.GUIEvent.Caller == this) {
+			if (event.GUI.Type == EGET_ELEMENT_FOCUS_LOST) {
+				if (event.GUI.Caller == this) {
 					m_mouse_marking = false;
 					setTextMarkers(0, 0);
 				}
@@ -222,7 +222,7 @@ bool GUIEditBox::OnEvent(const SEvent &event)
 	return IGUIElement::OnEvent(event);
 }
 
-bool GUIEditBox::processKey(const SEvent &event)
+bool GUIEditBox::processKey(const core::Event &event)
 {
 	if (!event.KeyInput.PressedDown)
 		return false;
@@ -436,7 +436,7 @@ bool GUIEditBox::processKey(const SEvent &event)
 	return true;
 }
 
-bool GUIEditBox::onKeyUp(const SEvent &event, s32 &mark_begin, s32 &mark_end)
+bool GUIEditBox::onKeyUp(const core::Event &event, s32 &mark_begin, s32 &mark_end)
 {
 	if (m_multiline || (m_word_wrap && m_broken_text.size() > 1)) {
 		s32 lineNo = getLineFromPos(m_cursor_pos);
@@ -466,7 +466,7 @@ bool GUIEditBox::onKeyUp(const SEvent &event, s32 &mark_begin, s32 &mark_end)
 	return false;
 }
 
-bool GUIEditBox::onKeyDown(const SEvent &event, s32 &mark_begin, s32 &mark_end)
+bool GUIEditBox::onKeyDown(const core::Event &event, s32 &mark_begin, s32 &mark_end)
 {
 	if (m_multiline || (m_word_wrap && m_broken_text.size() > 1)) {
 		s32 lineNo = getLineFromPos(m_cursor_pos);
@@ -496,7 +496,7 @@ bool GUIEditBox::onKeyDown(const SEvent &event, s32 &mark_begin, s32 &mark_end)
 	return false;
 }
 
-void GUIEditBox::onKeyControlC(const SEvent &event)
+void GUIEditBox::onKeyControlC(const core::Event &event)
 {
 	// copy to clipboard
 	if (m_passwordbox || !m_operator || m_mark_begin == m_mark_end)
@@ -509,7 +509,7 @@ void GUIEditBox::onKeyControlC(const SEvent &event)
 	m_operator->copyToClipboard(s.c_str());
 }
 
-bool GUIEditBox::onKeyControlX(const SEvent &event, s32 &mark_begin, s32 &mark_end)
+bool GUIEditBox::onKeyControlX(const core::Event &event, s32 &mark_begin, s32 &mark_end)
 {
 	// First copy to clipboard
 	onKeyControlC(event);
@@ -540,7 +540,7 @@ bool GUIEditBox::onKeyControlX(const SEvent &event, s32 &mark_begin, s32 &mark_e
 	return false;
 }
 
-bool GUIEditBox::onKeyControlV(const SEvent &event, s32 &mark_begin, s32 &mark_end)
+bool GUIEditBox::onKeyControlV(const core::Event &event, s32 &mark_begin, s32 &mark_end)
 {
 	if (!isEnabled() || !m_writable)
 		return false;
@@ -585,7 +585,7 @@ bool GUIEditBox::onKeyControlV(const SEvent &event, s32 &mark_begin, s32 &mark_e
 	return true;
 }
 
-bool GUIEditBox::onKeyBack(const SEvent &event, s32 &mark_begin, s32 &mark_end)
+bool GUIEditBox::onKeyBack(const core::Event &event, s32 &mark_begin, s32 &mark_end)
 {
 	if (!isEnabled() || Text.empty() || !m_writable)
 		return false;
@@ -623,7 +623,7 @@ bool GUIEditBox::onKeyBack(const SEvent &event, s32 &mark_begin, s32 &mark_end)
 	return true;
 }
 
-bool GUIEditBox::onKeyDelete(const SEvent &event, s32 &mark_begin, s32 &mark_end)
+bool GUIEditBox::onKeyDelete(const core::Event &event, s32 &mark_begin, s32 &mark_end)
 {
 	if (!isEnabled() || Text.empty() || !m_writable)
 		return false;
@@ -704,7 +704,7 @@ void GUIEditBox::inputString(const core::stringw &str)
 	calculateScrollPos();
 }
 
-bool GUIEditBox::processMouse(const SEvent &event)
+bool GUIEditBox::processMouse(const core::Event &event)
 {
 	switch (event.MouseInput.Event) {
 	case irr::EMIE_LMOUSE_LEFT_UP:
@@ -739,7 +739,7 @@ bool GUIEditBox::processMouse(const SEvent &event)
 			calculateScrollPos();
 			return true;
 		} else {
-			if (!AbsoluteClippingRect.isPointInside(core::position2d<s32>(
+			if (!AbsoluteClippingRect.isPointInside(v2i(
 					    event.MouseInput.X, event.MouseInput.Y))) {
 				return false;
 			} else {
@@ -766,7 +766,7 @@ bool GUIEditBox::processMouse(const SEvent &event)
 		}
 		break;
 	case EMIE_MMOUSE_PRESSED_DOWN: {
-		if (!AbsoluteClippingRect.isPointInside(core::position2d<s32>(
+		if (!AbsoluteClippingRect.isPointInside(v2i(
 					event.MouseInput.X, event.MouseInput.Y)))
 			return false;
 
@@ -821,8 +821,8 @@ void GUIEditBox::updateVScrollBar()
 	// OnScrollBarChanged(...)
 	if (m_vscrollbar->getPos() != m_vscroll_pos) {
 		s32 deltaScrollY = m_vscrollbar->getPos() - m_vscroll_pos;
-		m_current_text_rect.UpperLeftCorner.Y -= deltaScrollY;
-		m_current_text_rect.LowerRightCorner.Y -= deltaScrollY;
+		m_current_text_rect.ULC.Y -= deltaScrollY;
+		m_current_text_rect.LRC.Y -= deltaScrollY;
 
 		s32 scrollymax = getTextDimension().Height - m_frame_rect.getHeight();
 		if (scrollymax != m_vscrollbar->getMax()) {
@@ -838,7 +838,7 @@ void GUIEditBox::updateVScrollBar()
 
 	// check if a vertical scrollbar is needed ?
 	if (getTextDimension().Height > (u32)m_frame_rect.getHeight()) {
-		m_frame_rect.LowerRightCorner.X -= m_scrollbar_width;
+		m_frame_rect.LRC.X -= m_scrollbar_width;
 
 		s32 scrollymax = getTextDimension().Height - m_frame_rect.getHeight();
 		if (scrollymax != m_vscrollbar->getMax()) {

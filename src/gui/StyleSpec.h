@@ -4,15 +4,13 @@
 
 #pragma once
 
-#include "client/texturesource.h"
-#include "client/fontengine.h"
+#include "client/media/resource.h"
+#include "client/ui/glyph_atlas.h"
+#include <Render/TTFont.h>
 #include "debug.h"
-#include "irrlichttypes_bloated.h"
 #include "util/string.h"
 #include <algorithm>
 #include <array>
-#include <vector>
-
 
 class StyleSpec
 {
@@ -179,7 +177,7 @@ public:
 		return temp;
 	}
 
-	video::SColor getColor(Property prop, video::SColor def) const
+	img::color8 getColor(Property prop, img::color8 def) const
 	{
 		const auto &val = properties[prop];
 		if (val.empty()) {
@@ -190,18 +188,18 @@ public:
 		return def;
 	}
 
-	video::SColor getColor(Property prop) const
+	img::color8 getColor(Property prop) const
 	{
 		const auto &val = properties[prop];
 		FATAL_ERROR_IF(val.empty(), "Unexpected missing property");
 
-		video::SColor color;
+		img::color8 color;
 		parseColorString(val, color, false, 0xFF);
 		return color;
 	}
 
-	std::array<video::SColor, 4> getColorArray(Property prop,
-		std::array<video::SColor, 4> def) const
+	std::array<img::color8, 4> getColorArray(Property prop,
+		std::array<img::color8, 4> def) const
 	{
 		const auto &val = properties[prop];
 		if (val.empty())
@@ -212,7 +210,7 @@ public:
 			return def;
 
 		for (size_t i = 0; i <= 3; i++) {
-			video::SColor color;
+			img::color8 color;
 			if (parseColorString(strs[i], color, false, 0xff))
 				def[i] = color;
 		}
@@ -236,71 +234,73 @@ public:
 		return def;
 	}
 
-	irr::core::rect<s32> getRect(Property prop, irr::core::rect<s32> def) const
+	recti getRect(Property prop, recti def) const
 	{
 		const auto &val = properties[prop];
 		if (val.empty())
 			return def;
 
-		irr::core::rect<s32> rect;
+		recti rect;
 		if (!parseRect(val, &rect))
 			return def;
 
 		return rect;
 	}
 
-	irr::core::rect<s32> getRect(Property prop) const
+	recti getRect(Property prop) const
 	{
 		const auto &val = properties[prop];
 		FATAL_ERROR_IF(val.empty(), "Unexpected missing property");
 
-		irr::core::rect<s32> rect;
+		recti rect;
 		parseRect(val, &rect);
 		return rect;
 	}
 
-	v2f32 getVector2f(Property prop, v2f32 def) const
+    v2f getVector2f(Property prop, v2f def) const
 	{
 		const auto &val = properties[prop];
 		if (val.empty())
 			return def;
 
-		v2f32 vec;
+        v2f vec;
 		if (!parseVector2f(val, &vec))
 			return def;
 
 		return vec;
 	}
 
-	v2s32 getVector2i(Property prop, v2s32 def) const
+	v2i getVector2i(Property prop, v2i def) const
 	{
 		const auto &val = properties[prop];
 		if (val.empty())
 			return def;
 
-		v2f32 vec;
+        v2f vec;
 		if (!parseVector2f(val, &vec))
 			return def;
 
-		return v2s32(vec.X, vec.Y);
+		return v2i(vec.X, vec.Y);
 	}
 
-	v2s32 getVector2i(Property prop) const
+	v2i getVector2i(Property prop) const
 	{
 		const auto &val = properties[prop];
 		FATAL_ERROR_IF(val.empty(), "Unexpected missing property");
 
-		v2f32 vec;
+        v2f vec;
 		parseVector2f(val, &vec);
-		return v2s32(vec.X, vec.Y);
+		return v2i(vec.X, vec.Y);
 	}
 
-	gui::IGUIFont *getFont() const
+    render::TTFont *getFont(FontManager *font_mgr) const
 	{
-		FontSpec spec(FONT_SIZE_UNSPECIFIED, FM_Standard, false, false);
+        render::FontMode mode = render::FontMode::GRAY;
+        render::FontStyle style = render::FontStyle::NORMAL;
 
 		const std::string &font = properties[FONT];
 		const std::string &size = properties[FONT_SIZE];
+        u32 font_size;
 
 		if (font.empty() && size.empty())
 			return nullptr;
@@ -309,13 +309,13 @@ public:
 
 		for (size_t i = 0; i < modes.size(); i++) {
 			if (modes[i] == "normal")
-				spec.mode = FM_Standard;
+                style = render::FontStyle::NORMAL;
 			else if (modes[i] == "mono")
-				spec.mode = FM_Mono;
+                mode = render::FontMode::MONO;
 			else if (modes[i] == "bold")
-				spec.bold = true;
+                style = render::FontStyle::BOLD;
 			else if (modes[i] == "italic")
-				spec.italic = true;
+                style = render::FontStyle::ITALIC;
 		}
 
 		if (!size.empty()) {
@@ -323,38 +323,38 @@ public:
 
 			if (size[0] == '*') {
 				std::string new_size = size.substr(1); // Remove '*' (invalid for stof)
-				calc_size = stof(new_size) * g_fontengine->getFontSize(spec.mode);
+                calc_size = stof(new_size) * font_mgr->getDefaultFontSize(mode);
 			} else if (size[0] == '+' || size[0] == '-') {
-				calc_size = stoi(size) + g_fontengine->getFontSize(spec.mode);
+                calc_size = stoi(size) + font_mgr->getDefaultFontSize(mode);
 			} else {
 				calc_size = stoi(size);
 			}
 
-			spec.size = (unsigned)std::min(std::max(calc_size, 1), 999);
+            font_size = (unsigned)std::min(std::max(calc_size, 1), 999);
 		}
 
-		return g_fontengine->getFont(spec);
+        return font_mgr->getFontOrCreate(mode, style, font_size);
 	}
 
-	video::ITexture *getTexture(Property prop, ISimpleTextureSource *tsrc,
-			video::ITexture *def) const
+    img::Image *getTexture(Property prop, ResourceCache *cache,
+			img::Image *def) const
 	{
 		const auto &val = properties[prop];
 		if (val.empty()) {
 			return def;
 		}
 
-		video::ITexture *texture = tsrc->getTexture(val);
+        img::Image *texture = cache->getOrLoad<img::Image>(ResourceType::IMAGE, val);
 
 		return texture;
 	}
 
-	video::ITexture *getTexture(Property prop, ISimpleTextureSource *tsrc) const
+    img::Image *getTexture(Property prop, ResourceCache *cache) const
 	{
 		const auto &val = properties[prop];
 		FATAL_ERROR_IF(val.empty(), "Unexpected missing property");
 
-		video::ITexture *texture = tsrc->getTexture(val);
+        img::Image *texture = cache->getOrLoad<img::Image>(ResourceType::IMAGE, val);
 
 		return texture;
 	}
@@ -414,25 +414,25 @@ private:
 		return true;
 	}
 
-	bool parseRect(const std::string &value, irr::core::rect<s32> *parsed_rect) const
+	bool parseRect(const std::string &value, recti *parsed_rect) const
 	{
-		irr::core::rect<s32> rect;
+		recti rect;
 		std::vector<std::string> v_rect = split(value, ',');
 
 		if (v_rect.size() == 1) {
 			s32 x = stoi(v_rect[0]);
-			rect.UpperLeftCorner = irr::core::vector2di(x, x);
-			rect.LowerRightCorner = irr::core::vector2di(-x, -x);
+            rect.ULC = v2i(x, x);
+            rect.LRC = v2i(-x, -x);
 		} else if (v_rect.size() == 2) {
 			s32 x = stoi(v_rect[0]);
 			s32 y =	stoi(v_rect[1]);
-			rect.UpperLeftCorner = irr::core::vector2di(x, y);
-			rect.LowerRightCorner = irr::core::vector2di(-x, -y);
+            rect.ULC = v2i(x, y);
+            rect.LRC = v2i(-x, -y);
 			// `-x` is interpreted as `w - x`
 		} else if (v_rect.size() == 4) {
-			rect.UpperLeftCorner = irr::core::vector2di(
+            rect.ULC = v2i(
 					stoi(v_rect[0]), stoi(v_rect[1]));
-			rect.LowerRightCorner = irr::core::vector2di(
+            rect.LRC = v2i(
 					stoi(v_rect[2]), stoi(v_rect[3]));
 		} else {
 			warningstream << "Invalid rectangle string format: \"" << value
@@ -445,9 +445,9 @@ private:
 		return true;
 	}
 
-	bool parseVector2f(const std::string &value, v2f32 *parsed_vec) const
+    bool parseVector2f(const std::string &value, v2f *parsed_vec) const
 	{
-		v2f32 vec;
+        v2f vec;
 		std::vector<std::string> v_vector = split(value, ',');
 
 		if (v_vector.size() == 1) {

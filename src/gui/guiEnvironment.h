@@ -31,17 +31,17 @@ public:
 	void drawAll(bool useScreenSize) override;
 
 	//! posts an input event to the environment
-	bool postEventFromUser(const main::Event &event) override;
+	bool postEventFromUser(const core::Event &event) override;
 
 	//! This sets a new event receiver for gui events. Usually you do not have to
 	//! use this method, it is used by the internal engine.
-    void setUserEventReceiver(main::IEventReceiver *evr) override;
+    void setUserEventReceiver(core::IEventReceiver *evr) override;
 
 	//! removes all elements from the environment
 	void clear() override;
 
 	//! called if an event happened.
-	bool OnEvent(const main::Event &event) override;
+	bool OnEvent(const core::Event &event) override;
 
 	//! returns the current gui skin
     GUISkin *getSkin() const override;
@@ -205,7 +205,7 @@ private:
 	IGUIElement *Focus;
 	v2i LastHoveredMousePos;
     std::unique_ptr<GUISkin> CurrentSkin;
-    main::IEventReceiver *UserReceiver;
+    core::IEventReceiver *UserReceiver;
 	u32 FocusFlags;
 	std::vector<IGUIElement *> DeletionQueue;
 

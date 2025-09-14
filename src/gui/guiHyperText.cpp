@@ -21,7 +21,7 @@ using namespace irr::gui;
 
 static bool check_color(const std::string &str)
 {
-	irr::video::SColor color;
+	irr::img::color8 color;
 	return parseColorString(str, color, false);
 }
 
@@ -43,7 +43,7 @@ void ParsedText::Element::setStyle(StyleList &style)
 {
 	this->underline = is_yes(style["underline"]);
 
-	video::SColor color;
+	img::color8 color;
 
 	if (parseColorString(style["color"], color, false))
 		this->color = color;
@@ -359,7 +359,7 @@ void ParsedText::globalTag(const AttrsList &attrs)
 			else if (attr.second == "middle")
 				valign = ParsedText::VALIGN_MIDDLE;
 		} else if (attr.first == "background") {
-			irr::video::SColor color;
+			irr::img::color8 color;
 			if (attr.second == "none") {
 				background_type = BACKGROUND_NONE;
 			} else if (parseColorString(attr.second, color, false)) {
@@ -646,14 +646,14 @@ TextDrawer::TextDrawer(const wchar_t *text, Client *client,
 					break;
 
 				// Default image and item size
-				core::dimension2d<u32> dim(80, 80);
+				v2u dim(80, 80);
 
 				if (e.type == ParsedText::ELEMENT_IMAGE) {
-					video::ITexture *texture =
+					img::Image *texture =
 						m_tsrc->
 							getTexture(stringw_to_utf8(e.text));
 					if (texture)
-						dim = texture->getOriginalSize();
+						dim = texture->getSize();
 				}
 
 				if (e.dim.Height == 0)
@@ -673,12 +673,12 @@ TextDrawer::TextDrawer(const wchar_t *text, Client *client,
 
 // Get element at given coordinates. Coordinates are inner coordinates (starting
 // at 0,0).
-ParsedText::Element *TextDrawer::getElementAt(core::position2d<s32> pos)
+ParsedText::Element *TextDrawer::getElementAt(v2i pos)
 {
 	pos.Y -= m_voffset;
 	for (auto &p : m_text.m_paragraphs) {
 		for (auto &el : p.elements) {
-			core::rect<s32> rect(el.pos, el.dim);
+			recti rect(el.pos, el.dim);
 			if (rect.isPointInside(pos))
 				return &el;
 		}
@@ -694,7 +694,7 @@ ParsedText::Element *TextDrawer::getElementAt(core::position2d<s32> pos)
    test if text fits in window and eventually another time if width is reduced
    m_floating because of scrollbar added.
 */
-void TextDrawer::place(const core::rect<s32> &dest_rect)
+void TextDrawer::place(const recti &dest_rect)
 {
 	m_floating.clear();
 	s32 y = 0;
@@ -721,7 +721,7 @@ void TextDrawer::place(const core::rect<s32> &dest_rect)
 							m_text.margin;
 
 				RectWithMargin floating;
-				floating.rect = core::rect<s32>(e->pos, e->dim);
+				floating.rect = recti(e->pos, e->dim);
 				floating.margin = e->margin;
 
 				m_floating.push_back(floating);
@@ -750,34 +750,34 @@ void TextDrawer::place(const core::rect<s32> &dest_rect)
 
 				for (const auto &f : m_floating) {
 					// Does floating rect intersect paragraph y line?
-					if (f.rect.UpperLeftCorner.Y - f.margin <= y &&
-							f.rect.LowerRightCorner.Y + f.margin >= y) {
+					if (f.rect.ULC.Y - f.margin <= y &&
+							f.rect.LRC.Y + f.margin >= y) {
 
 						// Next Y to try if no room left
-						if (!nexty || f.rect.LowerRightCorner.Y +
+						if (!nexty || f.rect.LRC.Y +
 								std::max(f.margin, p.margin) < nexty) {
-							nexty = f.rect.LowerRightCorner.Y +
+							nexty = f.rect.LRC.Y +
 									std::max(f.margin, p.margin) + 1;
 						}
 
-						if (f.rect.UpperLeftCorner.X - f.margin <= left &&
-								f.rect.LowerRightCorner.X + f.margin < right) {
+						if (f.rect.ULC.X - f.margin <= left &&
+								f.rect.LRC.X + f.margin < right) {
 							// float on left
-							if (f.rect.LowerRightCorner.X +
+							if (f.rect.LRC.X +
 									std::max(f.margin, p.margin) > left) {
-								left = f.rect.LowerRightCorner.X +
+								left = f.rect.LRC.X +
 										std::max(f.margin, p.margin);
 							}
-						} else if (f.rect.LowerRightCorner.X + f.margin >= right &&
-								f.rect.UpperLeftCorner.X - f.margin > left) {
+						} else if (f.rect.LRC.X + f.margin >= right &&
+								f.rect.ULC.X - f.margin > left) {
 							// float on right
-							if (f.rect.UpperLeftCorner.X -
+							if (f.rect.ULC.X -
 									std::max(f.margin, p.margin) < right)
-								right = f.rect.UpperLeftCorner.X -
+								right = f.rect.ULC.X -
 										std::max(f.margin, p.margin);
 
-						} else if (f.rect.UpperLeftCorner.X - f.margin <= left &&
-							 	f.rect.LowerRightCorner.X + f.margin >= right) {
+						} else if (f.rect.ULC.X - f.margin <= left &&
+							 	f.rect.LRC.X + f.margin >= right) {
 							// float taking all space
 							left = right;
 						}
@@ -905,8 +905,8 @@ void TextDrawer::place(const core::rect<s32> &dest_rect)
 
 	// Check if float goes under paragraph
 	for (const auto &f : m_floating) {
-		if (f.rect.LowerRightCorner.Y >= y)
-			y = f.rect.LowerRightCorner.Y;
+		if (f.rect.LRC.Y >= y)
+			y = f.rect.LRC.Y;
 	}
 
 	m_height = y + m_text.margin;
@@ -929,11 +929,11 @@ void TextDrawer::place(const core::rect<s32> &dest_rect)
 
 // Draw text in a rectangle with a given offset. Items are actually placed in
 // relative (to upper left corner) coordinates.
-void TextDrawer::draw(const core::rect<s32> &clip_rect,
-		const core::position2d<s32> &dest_offset)
+void TextDrawer::draw(const recti &clip_rect,
+		const v2i &dest_offset)
 {
 	irr::video::IVideoDriver *driver = m_guienv->getVideoDriver();
-	core::position2d<s32> offset = dest_offset;
+	v2i offset = dest_offset;
 	offset.Y += m_voffset;
 
 	if (m_text.background_type == ParsedText::BACKGROUND_COLOR)
@@ -941,14 +941,14 @@ void TextDrawer::draw(const core::rect<s32> &clip_rect,
 
 	for (auto &p : m_text.m_paragraphs) {
 		for (auto &el : p.elements) {
-			core::rect<s32> rect(el.pos + offset, el.dim);
+			recti rect(el.pos + offset, el.dim);
 			if (!rect.isRectCollided(clip_rect))
 				continue;
 
 			switch (el.type) {
 			case ParsedText::ELEMENT_SEPARATOR:
 			case ParsedText::ELEMENT_TEXT: {
-				irr::video::SColor color = el.color;
+				irr::img::color8 color = el.color;
 
 				for (auto tag : el.tags)
 					if (&(*tag) == m_hovertag)
@@ -965,7 +965,7 @@ void TextDrawer::draw(const core::rect<s32> &clip_rect,
 					s32 linepos = el.pos.Y + offset.Y +
 							el.dim.Height - (el.baseline >> 1);
 
-					core::rect<s32> linerect(el.pos.X + offset.X,
+					recti linerect(el.pos.X + offset.X,
 							linepos - (el.baseline >> 3) - 1,
 							el.pos.X + offset.X + el.drawwidth,
 							linepos + (el.baseline >> 3));
@@ -975,15 +975,15 @@ void TextDrawer::draw(const core::rect<s32> &clip_rect,
 			} break;
 
 			case ParsedText::ELEMENT_IMAGE: {
-				video::ITexture *texture =
+				img::Image *texture =
 						m_tsrc->getTexture(
 								stringw_to_utf8(el.text));
 				if (texture != 0)
 					m_guienv->getVideoDriver()->draw2DImage(
 							texture, rect,
-							irr::core::rect<s32>(
-									core::position2d<s32>(0, 0),
-									texture->getOriginalSize()),
+							irr::recti(
+									v2i(0, 0),
+									texture->getSize()),
 							&clip_rect, 0, true);
 			} break;
 
@@ -1008,7 +1008,7 @@ void TextDrawer::draw(const core::rect<s32> &clip_rect,
 
 //! constructor
 GUIHyperText::GUIHyperText(const wchar_t *text, IGUIEnvironment *environment,
-		IGUIElement *parent, s32 id, const core::rect<s32> &rectangle,
+		IGUIElement *parent, s32 id, const recti &rectangle,
 		Client *client, ISimpleTextureSource *tsrc) :
 		IGUIElement(EGUIET_ELEMENT, environment, parent, id, rectangle),
 		m_tsrc(tsrc), m_vscrollbar(nullptr),
@@ -1021,7 +1021,7 @@ GUIHyperText::GUIHyperText(const wchar_t *text, IGUIEnvironment *environment,
 
 	m_scrollbar_width = skin ? skin->getSize(gui::EGDS_SCROLLBAR_SIZE) : 16;
 
-	core::rect<s32> rect = irr::core::rect<s32>(
+	recti rect = irr::recti(
 			RelativeRect.getWidth() - m_scrollbar_width, 0,
 			RelativeRect.getWidth(), RelativeRect.getHeight());
 
@@ -1038,8 +1038,8 @@ GUIHyperText::~GUIHyperText()
 
 ParsedText::Element *GUIHyperText::getElementAt(s32 X, s32 Y)
 {
-	core::position2d<s32> pos{X, Y};
-	pos -= m_display_text_rect.UpperLeftCorner;
+	v2i pos{X, Y};
+	pos -= m_display_text_rect.ULC;
 	pos -= m_text_scrollpos;
 	return m_drawer.getElementAt(pos);
 }
@@ -1048,7 +1048,7 @@ void GUIHyperText::checkHover(s32 X, s32 Y)
 {
 	m_drawer.m_hovertag = nullptr;
 
-	if (AbsoluteRect.isPointInside(core::position2d<s32>(X, Y))) {
+	if (AbsoluteRect.isPointInside(v2i(X, Y))) {
 		ParsedText::Element *element = getElementAt(X, Y);
 
 		if (element) {
@@ -1067,18 +1067,18 @@ void GUIHyperText::checkHover(s32 X, s32 Y)
 		cursor_control->setActiveIcon(m_drawer.m_hovertag ? gui::ECI_HAND : gui::ECI_NORMAL);
 }
 
-bool GUIHyperText::OnEvent(const SEvent &event)
+bool GUIHyperText::OnEvent(const core::Event &event)
 {
 	// Scroll bar
-	if (event.EventType == EET_GUI_EVENT &&
-			event.GUIEvent.EventType == EGET_SCROLL_BAR_CHANGED &&
-			event.GUIEvent.Caller == m_vscrollbar) {
+	if (event.Type == EET_GUI_EVENT &&
+			event.GUI.Type == EGET_SCROLL_BAR_CHANGED &&
+			event.GUI.Caller == m_vscrollbar) {
 		m_text_scrollpos.Y = -m_vscrollbar->getPos();
 	}
 
 	// Reset hover if element left
-	if (event.EventType == EET_GUI_EVENT &&
-			event.GUIEvent.EventType == EGET_ELEMENT_LEFT) {
+	if (event.Type == EET_GUI_EVENT &&
+			event.GUI.Type == EGET_ELEMENT_LEFT) {
 		m_drawer.m_hovertag = nullptr;
 
 		ICursorControl *cursor_control = RenderingEngine::get_raw_device()->getCursorControl();
@@ -1087,7 +1087,7 @@ bool GUIHyperText::OnEvent(const SEvent &event)
 			cursor_control->setActiveIcon(gui::ECI_NORMAL);
 	}
 
-	if (event.EventType == EET_MOUSE_INPUT_EVENT) {
+	if (event.Type == EET_MOUSE_INPUT_EVENT) {
 		if (event.MouseInput.Event == EMIE_MOUSE_MOVED)
 			checkHover(event.MouseInput.X, event.MouseInput.Y);
 
@@ -1109,11 +1109,11 @@ bool GUIHyperText::OnEvent(const SEvent &event)
 						Text = core::stringw(L"action:") +
 						       utf8_to_stringw(tag->attrs["name"]);
 						if (Parent) {
-							SEvent newEvent;
-							newEvent.EventType = EET_GUI_EVENT;
-							newEvent.GUIEvent.Caller = this;
-							newEvent.GUIEvent.Element = 0;
-							newEvent.GUIEvent.EventType = EGET_BUTTON_CLICKED;
+							core::Event newEvent;
+							newEvent.Type = EET_GUI_EVENT;
+							newEvent.GUI.Caller = this;
+							newEvent.GUI.Element = 0;
+							newEvent.GUI.Type = EGET_BUTTON_CLICKED;
 							Parent->OnEvent(newEvent);
 						}
 
@@ -1154,8 +1154,8 @@ void GUIHyperText::draw()
 		// more text to be wrapped and thus increasing the height of the text.
 		// Therefore, we have to re-layout the text *before* setting the height
 		// of the scrollbar.
-		core::rect<s32> smaller_rect = m_display_text_rect;
-		smaller_rect.LowerRightCorner.X -= m_scrollbar_width;
+		recti smaller_rect = m_display_text_rect;
+		smaller_rect.LRC.X -= m_scrollbar_width;
 		m_drawer.place(smaller_rect);
 
 		m_vscrollbar->setSmallStep(m_display_text_rect.getHeight() * 0.1f);
@@ -1171,7 +1171,7 @@ void GUIHyperText::draw()
 		m_vscrollbar->setVisible(false);
 	}
 	m_drawer.draw(AbsoluteClippingRect,
-			m_display_text_rect.UpperLeftCorner + m_text_scrollpos);
+			m_display_text_rect.ULC + m_text_scrollpos);
 
 	// draw children
 	IGUIElement::draw();

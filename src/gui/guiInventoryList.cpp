@@ -12,18 +12,18 @@
 GUIInventoryList::GUIInventoryList(gui::IGUIEnvironment *env,
 	gui::IGUIElement *parent,
 	s32 id,
-	const core::rect<s32> &rectangle,
+	const recti &rectangle,
 	InventoryManager *invmgr,
 	const InventoryLocation &inventoryloc,
 	const std::string &listname,
-	const v2s32 &geom,
+	const v2i &geom,
 	const s32 start_item_i,
-	const v2s32 &slot_size,
-	const v2f32 &slot_spacing,
+	const v2i &slot_size,
+	const v2f &slot_spacing,
 	GUIFormSpecMenu *fs_menu,
 	const Options &options,
-	gui::IGUIFont *font) :
-	gui::IGUIElement(gui::EGUIET_ELEMENT, env, parent, id, rectangle),
+	render::TTFont *font) :
+	gui::IGUIElement(EGUIET_ELEMENT, env, parent, id, rectangle),
 	m_invmgr(invmgr),
 	m_inventoryloc(inventoryloc),
 	m_listname(listname),
@@ -72,8 +72,8 @@ void GUIInventoryList::draw()
 	Client *client = m_fs_menu->getClient();
 	const ItemSpec *selected_item = m_fs_menu->getSelectedItem();
 
-	core::rect<s32> imgrect(0, 0, m_slot_size.X, m_slot_size.Y);
-	v2s32 base_pos = AbsoluteRect.UpperLeftCorner;
+	recti imgrect(0, 0, m_slot_size.X, m_slot_size.Y);
+	v2i base_pos = AbsoluteRect.ULC;
 
 	const s32 list_size = (s32)ilist->getSize();
 
@@ -82,9 +82,9 @@ void GUIInventoryList::draw()
 		if (item_i >= list_size)
 			break;
 
-		v2s32 p((i % m_geom.X) * m_slot_spacing.X,
+		v2i p((i % m_geom.X) * m_slot_spacing.X,
 				(i / m_geom.X) * m_slot_spacing.Y);
-		core::rect<s32> rect = imgrect + base_pos + p;
+		recti rect = imgrect + base_pos + p;
 		const ItemStack &orig_item = ilist->getItem(item_i);
 		ItemStack item = orig_item;
 
@@ -105,26 +105,26 @@ void GUIInventoryList::draw()
 
 		// Draw inv slot borders
 		if (m_options.slotborder) {
-			s32 x1 = rect.UpperLeftCorner.X;
-			s32 y1 = rect.UpperLeftCorner.Y;
-			s32 x2 = rect.LowerRightCorner.X;
-			s32 y2 = rect.LowerRightCorner.Y;
+			s32 x1 = rect.ULC.X;
+			s32 y1 = rect.ULC.Y;
+			s32 x2 = rect.LRC.X;
+			s32 y2 = rect.LRC.Y;
 			s32 border = 1;
-			core::rect<s32> clipping_rect = Parent ? Parent->getAbsoluteClippingRect()
-					: core::rect<s32>();
-			core::rect<s32> *clipping_rect_ptr = Parent ? &clipping_rect : nullptr;
+			recti clipping_rect = Parent ? Parent->getAbsoluteClippingRect()
+					: recti();
+			recti *clipping_rect_ptr = Parent ? &clipping_rect : nullptr;
 			driver->draw2DRectangle(m_options.slotbordercolor,
-				core::rect<s32>(v2s32(x1 - border, y1 - border),
-								v2s32(x2 + border, y1)), clipping_rect_ptr);
+				recti(v2i(x1 - border, y1 - border),
+								v2i(x2 + border, y1)), clipping_rect_ptr);
 			driver->draw2DRectangle(m_options.slotbordercolor,
-				core::rect<s32>(v2s32(x1 - border, y2),
-								v2s32(x2 + border, y2 + border)), clipping_rect_ptr);
+				recti(v2i(x1 - border, y2),
+								v2i(x2 + border, y2 + border)), clipping_rect_ptr);
 			driver->draw2DRectangle(m_options.slotbordercolor,
-				core::rect<s32>(v2s32(x1 - border, y1),
-								v2s32(x1, y2)), clipping_rect_ptr);
+				recti(v2i(x1 - border, y1),
+								v2i(x1, y2)), clipping_rect_ptr);
 			driver->draw2DRectangle(m_options.slotbordercolor,
-				core::rect<s32>(v2s32(x2, y1),
-								v2s32(x2 + border, y2)), clipping_rect_ptr);
+				recti(v2i(x2, y1),
+								v2i(x2 + border, y2)), clipping_rect_ptr);
 		}
 
 		// layer 1
@@ -168,18 +168,18 @@ void GUIInventoryList::draw()
 	IGUIElement::draw();
 }
 
-bool GUIInventoryList::OnEvent(const SEvent &event)
+bool GUIInventoryList::OnEvent(const core::Event &event)
 {
-	if (event.EventType != EET_MOUSE_INPUT_EVENT) {
-		if (event.EventType == EET_GUI_EVENT &&
-				event.GUIEvent.EventType == EGET_ELEMENT_LEFT) {
+	if (event.Type != EET_MOUSE_INPUT_EVENT) {
+		if (event.Type == EET_GUI_EVENT &&
+				event.GUI.Type == EGET_ELEMENT_LEFT) {
 			// element is no longer hovered
 			m_hovered_i = -1;
 		}
 		return IGUIElement::OnEvent(event);
 	}
 
-	m_hovered_i = getItemIndexAtPos(v2s32(event.MouseInput.X, event.MouseInput.Y));
+	m_hovered_i = getItemIndexAtPos(v2i(event.MouseInput.X, event.MouseInput.Y));
 
 	if (m_hovered_i != -1)
 		return IGUIElement::OnEvent(event);
@@ -190,7 +190,7 @@ bool GUIInventoryList::OnEvent(const SEvent &event)
 	IsVisible = false;
 	IGUIElement *hovered =
 		Environment->getRootGUIElement()->getElementFromPoint(
-			core::position2d<s32>(event.MouseInput.X, event.MouseInput.Y));
+			v2i(event.MouseInput.X, event.MouseInput.Y));
 
 	// if the player clicks outside of the formspec window, hovered is not
 	// m_fs_menu, but some other weird element (with ID -1). we do however need
@@ -206,7 +206,7 @@ bool GUIInventoryList::OnEvent(const SEvent &event)
 	return ret;
 }
 
-s32 GUIInventoryList::getItemIndexAtPos(v2s32 p) const
+s32 GUIInventoryList::getItemIndexAtPos(v2i p) const
 {
 	// no item if no gui element at pointer
 	if (!IsVisible || AbsoluteClippingRect.getArea() <= 0 ||
@@ -221,17 +221,17 @@ s32 GUIInventoryList::getItemIndexAtPos(v2s32 p) const
 	if (!ilist)
 		return -1;
 
-	core::rect<s32> imgrect(0, 0, m_slot_size.X, m_slot_size.Y);
-	v2s32 base_pos = AbsoluteRect.UpperLeftCorner;
+	recti imgrect(0, 0, m_slot_size.X, m_slot_size.Y);
+	v2i base_pos = AbsoluteRect.ULC;
 
 	// instead of looping through each slot, we look where p would be in the grid
 	s32 i = static_cast<s32>((p.X - base_pos.X) / m_slot_spacing.X)
 			+ static_cast<s32>((p.Y - base_pos.Y) / m_slot_spacing.Y) * m_geom.X;
 
-	v2s32 p0((i % m_geom.X) * m_slot_spacing.X,
+	v2i p0((i % m_geom.X) * m_slot_spacing.X,
 			(i / m_geom.X) * m_slot_spacing.Y);
 
-	core::rect<s32> rect = imgrect + base_pos + p0;
+	recti rect = imgrect + base_pos + p0;
 
 	rect.clipAgainst(AbsoluteClippingRect);
 

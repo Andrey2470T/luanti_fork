@@ -60,7 +60,7 @@ MenuTextureSource::~MenuTextureSource()
 }
 
 /******************************************************************************/
-video::ITexture *MenuTextureSource::getTexture(const std::string &name, u32 *id)
+img::Image *MenuTextureSource::getTexture(const std::string &name, u32 *id)
 {
 	if (id)
 		*id = 0;
@@ -69,7 +69,7 @@ video::ITexture *MenuTextureSource::getTexture(const std::string &name, u32 *id)
 		return NULL;
 
 	// return if already loaded
-	video::ITexture *retval = m_driver->findTexture(name.c_str());
+	img::Image *retval = m_driver->findTexture(name.c_str());
 	if (retval)
 		return retval;
 
@@ -141,9 +141,9 @@ GUIEngine::GUIEngine(JoystickController *joystick,
 	// create topleft header
 	m_toplefttext = L"";
 
-	core::rect<s32> rect(0, 0, g_fontengine->getTextWidth(m_toplefttext.c_str()),
+	recti rect(0, 0, g_fontengine->getTextWidth(m_toplefttext.c_str()),
 		g_fontengine->getTextHeight());
-	rect += v2s32(4, 0);
+	rect += v2i(4, 0);
 
 	m_irr_toplefttext = gui::StaticText::add(rendering_engine->get_gui_env(),
 			m_toplefttext, rect, false, true, 0, -1);
@@ -302,7 +302,7 @@ void GUIEngine::run()
 
 	// Reset fog color
 	{
-		video::SColor fog_color;
+		img::color8 fog_color;
 		video::E_FOG_TYPE fog_type = video::EFT_FOG_LINEAR;
 		f32 fog_start = 0;
 		f32 fog_end = 0;
@@ -316,7 +316,7 @@ void GUIEngine::run()
 				fog_end, fog_density, fog_pixelfog, fog_rangefog);
 	}
 
-	const irr::core::dimension2d<u32> initial_screen_size(
+	const v2u initial_screen_size(
 			g_settings->getU16("screen_w"),
 			g_settings->getU16("screen_h")
 		);
@@ -427,17 +427,17 @@ void GUIEngine::drawBackground(video::IVideoDriver *driver)
 {
 	v2u32 screensize = driver->getScreenSize();
 
-	video::ITexture* texture = m_textures[TEX_LAYER_BACKGROUND].texture;
+	img::Image* texture = m_textures[TEX_LAYER_BACKGROUND].texture;
 
 	/* If no texture, draw background of solid color */
 	if(!texture){
-		video::SColor color(255,80,58,37);
-		core::rect<s32> rect(0, 0, screensize.X, screensize.Y);
+		img::color8 color(255,80,58,37);
+		recti rect(0, 0, screensize.X, screensize.Y);
 		driver->draw2DRectangle(color, rect, NULL);
 		return;
 	}
 
-	v2u32 sourcesize = texture->getOriginalSize();
+	v2u32 sourcesize = texture->getSize();
 
 	if (m_textures[TEX_LAYER_BACKGROUND].tile)
 	{
@@ -449,8 +449,8 @@ void GUIEngine::drawBackground(video::IVideoDriver *driver)
 			for (unsigned int y = 0; y < screensize.Y; y += tilesize.Y )
 			{
 				draw2DImageFilterScaled(driver, texture,
-					core::rect<s32>(x, y, x+tilesize.X, y+tilesize.Y),
-					core::rect<s32>(0, 0, sourcesize.X, sourcesize.Y),
+					recti(x, y, x+tilesize.X, y+tilesize.Y),
+					recti(0, 0, sourcesize.X, sourcesize.Y),
 					NULL, NULL, true);
 			}
 		}
@@ -459,21 +459,21 @@ void GUIEngine::drawBackground(video::IVideoDriver *driver)
 
 	// Chop background image to the smaller screen dimension
 	v2u32 bg_size = screensize;
-	v2f32 scale(
+	v2f scale(
 			(f32) bg_size.X / sourcesize.X,
 			(f32) bg_size.Y / sourcesize.Y);
 	if (scale.X < scale.Y)
 		bg_size.X = (int) (scale.Y * sourcesize.X);
 	else
 		bg_size.Y = (int) (scale.X * sourcesize.Y);
-	v2s32 offset = v2s32(
+	v2i offset = v2i(
 		(s32) screensize.X - (s32) bg_size.X,
 		(s32) screensize.Y - (s32) bg_size.Y
 	) / 2;
 	/* Draw background texture */
 	draw2DImageFilterScaled(driver, texture,
-		core::rect<s32>(offset.X, offset.Y, bg_size.X + offset.X, bg_size.Y + offset.Y),
-		core::rect<s32>(0, 0, sourcesize.X, sourcesize.Y),
+		recti(offset.X, offset.Y, bg_size.X + offset.X, bg_size.Y + offset.Y),
+		recti(0, 0, sourcesize.X, sourcesize.Y),
 		NULL, NULL, true);
 }
 
@@ -482,26 +482,26 @@ void GUIEngine::drawOverlay(video::IVideoDriver *driver)
 {
 	v2u32 screensize = driver->getScreenSize();
 
-	video::ITexture* texture = m_textures[TEX_LAYER_OVERLAY].texture;
+	img::Image* texture = m_textures[TEX_LAYER_OVERLAY].texture;
 
 	/* If no texture, draw nothing */
 	if(!texture)
 		return;
 
 	/* Draw background texture */
-	v2u32 sourcesize = texture->getOriginalSize();
+	v2u32 sourcesize = texture->getSize();
 	draw2DImageFilterScaled(driver, texture,
-		core::rect<s32>(0, 0, screensize.X, screensize.Y),
-		core::rect<s32>(0, 0, sourcesize.X, sourcesize.Y),
+		recti(0, 0, screensize.X, screensize.Y),
+		recti(0, 0, sourcesize.X, sourcesize.Y),
 		NULL, NULL, true);
 }
 
 /******************************************************************************/
 void GUIEngine::drawHeader(video::IVideoDriver *driver)
 {
-	core::dimension2d<u32> screensize = driver->getScreenSize();
+	v2u screensize = driver->getScreenSize();
 
-	video::ITexture* texture = m_textures[TEX_LAYER_HEADER].texture;
+	img::Image* texture = m_textures[TEX_LAYER_HEADER].texture;
 
 	// If no texture, draw nothing
 	if (!texture)
@@ -510,9 +510,9 @@ void GUIEngine::drawHeader(video::IVideoDriver *driver)
 	/*
 	 * Calculate the maximum rectangle
 	 */
-	core::rect<s32> formspec_rect = m_menu->getAbsoluteRect();
+	recti formspec_rect = m_menu->getAbsoluteRect();
 	// 4 px of padding on each side
-	core::rect<s32> max_rect(4, 4, screensize.Width - 8, formspec_rect.UpperLeftCorner.Y - 8);
+	recti max_rect(4, 4, screensize.Width - 8, formspec_rect.ULC.Y - 8);
 
 	// If no space (less than 16x16 px), draw nothing
 	if (max_rect.getWidth() < 16 || max_rect.getHeight() < 16)
@@ -522,15 +522,15 @@ void GUIEngine::drawHeader(video::IVideoDriver *driver)
 	 * Calculate the preferred rectangle
 	 */
 	f32 mult = (((f32)screensize.Width / 2.0)) /
-			((f32)texture->getOriginalSize().Width);
+			((f32)texture->getSize().Width);
 
-	v2s32 splashsize(((f32)texture->getOriginalSize().Width) * mult,
-			((f32)texture->getOriginalSize().Height) * mult);
+	v2i splashsize(((f32)texture->getSize().Width) * mult,
+			((f32)texture->getSize().Height) * mult);
 
 	s32 free_space = (((s32)screensize.Height)-320)/2;
 
-	core::rect<s32> desired_rect(0, 0, splashsize.X, splashsize.Y);
-	desired_rect += v2s32((screensize.Width/2)-(splashsize.X/2),
+	recti desired_rect(0, 0, splashsize.X, splashsize.Y);
+	desired_rect += v2i((screensize.Width/2)-(splashsize.X/2),
 			((free_space/2)-splashsize.Y/2)+10);
 
 	/*
@@ -540,9 +540,9 @@ void GUIEngine::drawHeader(video::IVideoDriver *driver)
 	f32 scale = std::min((f32)max_rect.getWidth() / (f32)desired_rect.getWidth(),
 			(f32)max_rect.getHeight() / (f32)desired_rect.getHeight());
 	if (scale < 1.0f) {
-		v2s32 old_center = desired_rect.getCenter();
-		desired_rect.LowerRightCorner.X = desired_rect.UpperLeftCorner.X + desired_rect.getWidth() * scale;
-		desired_rect.LowerRightCorner.Y = desired_rect.UpperLeftCorner.Y + desired_rect.getHeight() * scale;
+		v2i old_center = desired_rect.getCenter();
+		desired_rect.LRC.X = desired_rect.ULC.X + desired_rect.getWidth() * scale;
+		desired_rect.LRC.Y = desired_rect.ULC.Y + desired_rect.getHeight() * scale;
 		desired_rect += old_center - desired_rect.getCenter();
 	}
 
@@ -550,39 +550,39 @@ void GUIEngine::drawHeader(video::IVideoDriver *driver)
 	desired_rect.constrainTo(max_rect);
 
 	draw2DImageFilterScaled(driver, texture, desired_rect,
-		core::rect<s32>(core::position2d<s32>(0,0),
-		core::dimension2di(texture->getOriginalSize())),
+		recti(v2i(0,0),
+		v2i(texture->getSize())),
 		NULL, NULL, true);
 }
 
 /******************************************************************************/
 void GUIEngine::drawFooter(video::IVideoDriver *driver)
 {
-	core::dimension2d<u32> screensize = driver->getScreenSize();
+	v2u screensize = driver->getScreenSize();
 
-	video::ITexture* texture = m_textures[TEX_LAYER_FOOTER].texture;
+	img::Image* texture = m_textures[TEX_LAYER_FOOTER].texture;
 
 	/* If no texture, draw nothing */
 	if(!texture)
 		return;
 
 	f32 mult = (((f32)screensize.Width)) /
-			((f32)texture->getOriginalSize().Width);
+			((f32)texture->getSize().Width);
 
-	v2s32 footersize(((f32)texture->getOriginalSize().Width) * mult,
-			((f32)texture->getOriginalSize().Height) * mult);
+	v2i footersize(((f32)texture->getSize().Width) * mult,
+			((f32)texture->getSize().Height) * mult);
 
 	// Don't draw the footer if there isn't enough room
 	s32 free_space = (((s32)screensize.Height)-320)/2;
 
 	if (free_space > footersize.Y) {
-		core::rect<s32> rect(0,0,footersize.X,footersize.Y);
-		rect += v2s32(screensize.Width/2,screensize.Height-footersize.Y);
-		rect -= v2s32(footersize.X/2, 0);
+		recti rect(0,0,footersize.X,footersize.Y);
+		rect += v2i(screensize.Width/2,screensize.Height-footersize.Y);
+		rect -= v2i(footersize.X/2, 0);
 
 		draw2DImageFilterScaled(driver, texture, rect,
-			core::rect<s32>(core::position2d<s32>(0,0),
-			core::dimension2di(texture->getOriginalSize())),
+			recti(v2i(0,0),
+			v2i(texture->getSize())),
 			NULL, NULL, true);
 	}
 }
@@ -655,9 +655,9 @@ void GUIEngine::setTopleftText(const std::string &text)
 /******************************************************************************/
 void GUIEngine::updateTopLeftTextSize()
 {
-	core::rect<s32> rect(0, 0, g_fontengine->getTextWidth(m_toplefttext.c_str()),
+	recti rect(0, 0, g_fontengine->getTextWidth(m_toplefttext.c_str()),
 		g_fontengine->getTextHeight());
-	rect += v2s32(4, 0);
+	rect += v2i(4, 0);
 
 	m_irr_toplefttext->remove();
 	m_irr_toplefttext = gui::StaticText::add(m_rendering_engine->get_gui_env(),

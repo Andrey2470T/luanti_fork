@@ -24,7 +24,7 @@ class GUIScrollBar : public IGUIElement
 {
 public:
 	GUIScrollBar(IGUIEnvironment *environment, IGUIElement *parent, s32 id,
-			core::rect<s32> rectangle, bool horizontal, bool auto_scale,
+			recti rectangle, bool horizontal, bool auto_scale,
 			ISimpleTextureSource *tsrc);
 
 	enum ArrowVisibility
@@ -36,7 +36,7 @@ public:
 
 	virtual void draw() override;
 	virtual void updateAbsolutePosition() override;
-	virtual bool OnEvent(const SEvent &event) override;
+	virtual bool OnEvent(const core::Event &event) override;
 	virtual void OnPostRender(u32 time_ms) override;
 
 	s32 getMax() const { return max_pos; }
@@ -66,7 +66,7 @@ public:
 
 private:
 	void refreshControls();
-	s32 getPosFromMousePos(const core::position2di &p) const;
+	s32 getPosFromMousePos(const v2i &p) const;
 	f32 range() const { return f32(max_pos - min_pos); }
 
 	IGUIButton *up_button;
@@ -88,8 +88,8 @@ private:
 	s32 page_size;
 	s32 border_size;
 
-	core::rect<s32> slider_rect;
-	video::SColor current_icon_color;
+	recti slider_rect;
+	img::color8 current_icon_color;
 
 	ISimpleTextureSource *m_tsrc;
 

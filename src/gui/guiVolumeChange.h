@@ -38,7 +38,7 @@ public:
 
 	void drawMenu();
 
-	bool OnEvent(const SEvent& event);
+	bool OnEvent(const core::Event& event);
 
 	bool pausesGame() { return true; }
 

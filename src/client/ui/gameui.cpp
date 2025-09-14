@@ -79,7 +79,7 @@ void GameUI::init()
     infotext->getShape()->move(v2f(100, chat_font_height * (g_settings->getU16("recent_chat_messages") + 3)));
         /*gui::StaticText::add(guienv, L"",
 		// Size is limited; text will be truncated after 6 lines.
-        core::rect<s32>(0, 0, 400, g_fontengine->getTextHeight() * 6) +
+        recti(0, 0, 400, g_fontengine->getTextHeight() * 6) +
 			v2s32(100, chat_font_height *
 			(g_settings->getU16("recent_chat_messages") + 3)),
             false, true, guiroot);*/
@@ -225,7 +225,7 @@ void GameUI::update(Client *client,
         s32 status_x = (wndSize.X - status_width) / 2;
 
         guitext_status->getShape()->move(v2f(status_x, status_y - status_height));
-        //guitext_status->setRelativePosition(core::rect<s32>(status_x ,
+        //guitext_status->setRelativePosition(recti(status_x ,
         //	status_y - status_height, status_x + status_width, status_y));
 
 		// Fade out

@@ -19,7 +19,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "guiButton.h"
 #include "guiEditBoxWithScrollbar.h"
 #include <IGUIEditBox.h>
-#include <IGUIFont.h>
+#include <render::TTFont.h>
 #include <IVideoDriver.h>
 #include "client/renderingengine.h"
 #include "porting.h"
@@ -72,8 +72,8 @@ void GUIOpenURLMenu::regenerateGui(v2u32 screensize)
 	DesiredRect = info.rect;
 	recalculateAbsolutePosition(false);
 
-	v2s32 size = DesiredRect.getSize();
-	v2s32 topleft_client(40 * s, 0);
+	v2i size = DesiredRect.getSize();
+	v2i topleft_client(40 * s, 0);
 
 	/*
 		Get URL text
@@ -93,8 +93,8 @@ void GUIOpenURLMenu::regenerateGui(v2u32 screensize)
 	s32 ypos = 40 * s;
 
 	{
-		core::rect<s32> rect(0, 0, 500 * s, 20 * s);
-		rect += topleft_client + v2s32(20 * s, ypos);
+		recti rect(0, 0, 500 * s, 20 * s);
+		rect += topleft_client + v2i(20 * s, ypos);
 
 		std::wstring title = ok
 				? wstrgettext("Open URL?")
@@ -106,7 +106,7 @@ void GUIOpenURLMenu::regenerateGui(v2u32 screensize)
 	ypos += 50 * s;
 
 	{
-		core::rect<s32> rect(0, 0, 440 * s, 60 * s);
+		recti rect(0, 0, 440 * s, 60 * s);
 
 		auto font = g_fontengine->getFont(FONT_SIZE_UNSPECIFIED,
 				ok ? FM_Mono : FM_Standard);
@@ -115,7 +115,7 @@ void GUIOpenURLMenu::regenerateGui(v2u32 screensize)
 
 		text = wrap_rows(text, max_cols, true);
 
-		rect += topleft_client + v2s32(20 * s, ypos);
+		rect += topleft_client + v2i(20 * s, ypos);
 		IGUIEditBox *e = new GUIEditBoxWithScrollBar(utf8_to_wide(text).c_str(), true, Environment,
 				this, ID_url, rect, m_tsrc, false, true);
 		e->setMultiLine(true);
@@ -129,14 +129,14 @@ void GUIOpenURLMenu::regenerateGui(v2u32 screensize)
 
 	ypos += 80 * s;
 	if (ok) {
-		core::rect<s32> rect(0, 0, 100 * s, 40 * s);
-		rect = rect + v2s32(size.X / 2 - 150 * s, ypos);
+		recti rect(0, 0, 100 * s, 40 * s);
+		rect = rect + v2i(size.X / 2 - 150 * s, ypos);
 		GUIButton::addButton(Environment, rect, m_tsrc, this, ID_open,
 				wstrgettext("Open").c_str());
 	}
 	{
-		core::rect<s32> rect(0, 0, 100 * s, 40 * s);
-		rect = rect + v2s32(size.X / 2 + 50 * s, ypos);
+		recti rect(0, 0, 100 * s, 40 * s);
+		rect = rect + v2i(size.X / 2 + 50 * s, ypos);
 		GUIButton::addButton(Environment, rect, m_tsrc, this, ID_cancel,
 				wstrgettext("Cancel").c_str());
 	}
@@ -149,7 +149,7 @@ void GUIOpenURLMenu::drawMenu()
 		return;
 	video::IVideoDriver *driver = Environment->getVideoDriver();
 
-	video::SColor bgcolor(140, 0, 0, 0);
+	img::color8 bgcolor(140, 0, 0, 0);
 	driver->draw2DRectangle(bgcolor, AbsoluteRect, &AbsoluteClippingRect);
 
 	gui::IGUIElement::draw();
@@ -158,9 +158,9 @@ void GUIOpenURLMenu::drawMenu()
 #endif
 }
 
-bool GUIOpenURLMenu::OnEvent(const SEvent &event)
+bool GUIOpenURLMenu::OnEvent(const core::Event &event)
 {
-	if (event.EventType == EET_KEY_INPUT_EVENT) {
+	if (event.Type == EET_KEY_INPUT_EVENT) {
 		if (event.KeyInput.Key == KEY_ESCAPE && event.KeyInput.PressedDown) {
 			quitMenu();
 			return true;
@@ -172,10 +172,10 @@ bool GUIOpenURLMenu::OnEvent(const SEvent &event)
 		}
 	}
 
-	if (event.EventType == EET_GUI_EVENT) {
-		if (event.GUIEvent.EventType == gui::EGET_ELEMENT_FOCUS_LOST &&
+	if (event.Type == EET_GUI_EVENT) {
+		if (event.GUI.Type == gui::EGET_ELEMENT_FOCUS_LOST &&
 				isVisible()) {
-			if (!canTakeFocus(event.GUIEvent.Element)) {
+			if (!canTakeFocus(event.GUI.Element)) {
 				infostream << "GUIOpenURLMenu: Not allowing focus change."
 					<< std::endl;
 				// Returning true disables focus change
@@ -183,8 +183,8 @@ bool GUIOpenURLMenu::OnEvent(const SEvent &event)
 			}
 		}
 
-		if (event.GUIEvent.EventType == gui::EGET_BUTTON_CLICKED) {
-			switch (event.GUIEvent.Caller->getID()) {
+		if (event.GUI.Type == gui::EGET_BUTTON_CLICKED) {
+			switch (event.GUI.Caller->getID()) {
 			case ID_open:
 				porting::open_url(url);
 				quitMenu();

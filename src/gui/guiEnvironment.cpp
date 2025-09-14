@@ -19,7 +19,7 @@
 #include "CGUIEditBox.h"
 #include "CGUITabControl.h"
 #include "CGUIComboBox.h"
-#include <Main/TimeCounter.h>
+#include <Core/TimeCounter.h>
 #include "client/render/rendersystem.h"
 #include "client/ui/glyph_atlas.h"
 #include "client/media/resource.h"
@@ -104,7 +104,7 @@ void CGUIEnvironment::drawAll(bool useScreenSize)
 		bringToFront(ToolTip.Element);
 
 	draw();
-	OnPostRender(main::TimeCounter::getRealTime());
+	OnPostRender(core::TimeCounter::getRealTime());
 
 	clearDeletionQueue();
 }
@@ -129,7 +129,7 @@ bool CGUIEnvironment::setFocus(IGUIElement *element)
 	if (Focus) {
 		currentFocus = Focus;
 		currentFocus->grab();
-		main::Event e;
+		core::Event e;
 		e.Type = EET_GUI_EVENT;
         e.GUI.Caller = Focus->getID();
         e.GUI.Element = element->getID();
@@ -150,7 +150,7 @@ bool CGUIEnvironment::setFocus(IGUIElement *element)
 			currentFocus->grab();
 
 		// send focused event
-		main::Event e;
+		core::Event e;
 		e.Type = EET_GUI_EVENT;
         e.GUI.Caller = element->getID();
         e.GUI.Element = Focus->getID();
@@ -192,7 +192,7 @@ IGUIElement *CGUIEnvironment::getHovered() const
 bool CGUIEnvironment::removeFocus(IGUIElement *element)
 {
 	if (Focus && Focus == element) {
-		main::Event e;
+		core::Event e;
 		e.Type = EET_GUI_EVENT;
         e.GUI.Caller = Focus->getID();
         e.GUI.Element = std::nullopt;
@@ -249,7 +249,7 @@ void CGUIEnvironment::clear()
 }
 
 //! called by ui if an event happened.
-bool CGUIEnvironment::OnEvent(const main::Event &event)
+bool CGUIEnvironment::OnEvent(const core::Event &event)
 {
 
 	bool ret = false;
@@ -367,7 +367,7 @@ void CGUIEnvironment::updateHoveredElement(v2i mousePos)
 		HoveredNoSubelement->grab();
 
 	if (Hovered != lastHovered) {
-		main::Event event;
+		core::Event event;
 		event.Type = EET_GUI_EVENT;
 
 		if (lastHovered) {
@@ -393,7 +393,7 @@ void CGUIEnvironment::updateHoveredElement(v2i mousePos)
 		}
 
 		if (HoveredNoSubelement) {
-			u32 now = main::TimeCounter::getRealTime();
+			u32 now = core::TimeCounter::getRealTime();
 			ToolTip.EnterTime = now;
 		}
 	}
@@ -406,13 +406,13 @@ void CGUIEnvironment::updateHoveredElement(v2i mousePos)
 
 //! This sets a new event receiver for gui events. Usually you do not have to
 //! use this method, it is used by the internal engine.
-void CGUIEnvironment::setUserEventReceiver(main::IEventReceiver *evr)
+void CGUIEnvironment::setUserEventReceiver(core::IEventReceiver *evr)
 {
 	UserReceiver = evr;
 }
 
 //! posts an input event to the environment
-bool CGUIEnvironment::postEventFromUser(const main::Event &event)
+bool CGUIEnvironment::postEventFromUser(const core::Event &event)
 {
 	switch (event.Type) {
 	case EET_GUI_EVENT: {

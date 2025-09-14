@@ -4,17 +4,19 @@
 
 #pragma once
 
-#include "irrlichttypes_extrabloated.h"
+#include "IGUIElement.h"
 #include "util/string.h"
+#include <Render/TTFont.h>
 
 class Client;
+class UITextSprite;
 
 class GUIItemImage : public gui::IGUIElement
 {
 public:
 	GUIItemImage(gui::IGUIEnvironment *env, gui::IGUIElement *parent, s32 id,
-		const core::rect<s32> &rectangle, const std::string &item_name,
-		gui::IGUIFont *font, Client *client);
+		const recti &rectangle, const std::string &item_name,
+		render::TTFont *font, Client *client);
 
 	virtual void draw() override;
 
@@ -25,7 +27,9 @@ public:
 
 private:
 	std::string m_item_name;
-	gui::IGUIFont *m_font;
+	render::TTFont *m_font;
 	Client *m_client;
-	core::stringw m_label;
+    std::wstring m_label;
+
+    std::unique_ptr<UITextSprite> m_text;
 };

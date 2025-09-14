@@ -118,13 +118,6 @@ public:
 			const img::color8 *const colors = 0,
 			u32 timeTicks = 0,
 			bool loop = true) = 0;
-
-	//! Draws a sprite batch in 2d using an array of positions and a color
-    virtual void draw2DSpriteBatch(const std::vector<u32> &indices, const std::vector<v2i> &pos,
-			const recti *clip = 0,
-            const img::color8 &color = img::white,
-			u32 starttime = 0, u32 currenttime = 0,
-			bool loop = true, bool center = false) = 0;
 };
 
 } // end namespace gui

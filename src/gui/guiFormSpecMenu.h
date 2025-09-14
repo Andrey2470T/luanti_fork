@@ -129,7 +129,7 @@ class GUIFormSpecMenu : public GUIModalMenu
 		bool is_exit;
 		// Draw priority for formspec version < 3
 		int priority;
-		core::rect<s32> rect;
+		recti rect;
 		gui::ECURSOR_ICON fcursor_icon;
 		std::string sound;
 	};
@@ -137,8 +137,8 @@ class GUIFormSpecMenu : public GUIModalMenu
 	struct TooltipSpec
 	{
 		TooltipSpec() = default;
-		TooltipSpec(const std::wstring &a_tooltip, irr::video::SColor a_bgcolor,
-				irr::video::SColor a_color):
+		TooltipSpec(const std::wstring &a_tooltip, irr::img::color8 a_bgcolor,
+				irr::img::color8 a_color):
 			tooltip(translate_string(a_tooltip)),
 			bgcolor(a_bgcolor),
 			color(a_color)
@@ -146,8 +146,8 @@ class GUIFormSpecMenu : public GUIModalMenu
 		}
 
 		std::wstring tooltip;
-		irr::video::SColor bgcolor;
-		irr::video::SColor color;
+		irr::img::color8 bgcolor;
+		irr::img::color8 color;
 	};
 
 public:
@@ -257,7 +257,7 @@ public:
 	*/
 	void regenerateGui(v2u32 screensize);
 
-	GUIInventoryList::ItemSpec getItemAtPos(v2s32 p) const;
+	GUIInventoryList::ItemSpec getItemAtPos(v2i p) const;
 	void drawSelectedItem();
 	void drawMenu();
 	void updateSelectedItem();
@@ -266,8 +266,8 @@ public:
 	s16 getNextInventoryRing(const InventoryLocation &inventoryloc, const std::string &listname);
 
 	void acceptInput(FormspecQuitMode quitmode=quit_mode_no);
-	bool preprocessEvent(const SEvent& event);
-	bool OnEvent(const SEvent& event);
+	bool preprocescore::Event(const core::Event& event);
+	bool OnEvent(const core::Event& event);
 	bool doPause;
 	bool pausesGame() { return doPause; }
 
@@ -275,7 +275,7 @@ public:
 	std::vector<std::string>* getDropDownValues(const std::string &name);
 
 	// This will only return a meaningful value if called after drawMenu().
-	core::rect<s32> getAbsoluteRect();
+	recti getAbsoluteRect();
 
 #ifdef __ANDROID__
 	void getAndroidUIInput();
@@ -287,16 +287,16 @@ public:
 	static double getImgsize(v2u32 avail_screensize, double screen_dpi, double gui_scaling);
 
 protected:
-	v2s32 getBasePos() const
+	v2i getBasePos() const
 	{
-			return padding + offset + AbsoluteRect.UpperLeftCorner;
+			return padding + offset + AbsoluteRect.ULC;
 	}
 	std::wstring getLabelByID(s32 id);
 	std::string getNameByID(s32 id);
 	const FieldSpec *getSpecByID(s32 id);
-	v2s32 getElementBasePos(const std::vector<std::string> *v_pos);
-	v2s32 getRealCoordinateBasePos(const std::vector<std::string> &v_pos);
-	v2s32 getRealCoordinateGeometry(const std::vector<std::string> &v_geom);
+	v2i getElementBasePos(const std::vector<std::string> *v_pos);
+	v2i getRealCoordinateBasePos(const std::vector<std::string> &v_pos);
+	v2i getRealCoordinateGeometry(const std::vector<std::string> &v_geom);
 	bool precheckElement(const std::string &name, const std::string &element,
 		size_t args_min, size_t args_max, std::vector<std::string> &parts);
 
@@ -309,12 +309,12 @@ protected:
 	std::array<StyleSpec, StyleSpec::NUM_STATES> getStyleForElement(const std::string &type,
 			const std::string &name="", const std::string &parent_type="");
 
-	v2s32 padding;
-	v2f32 spacing;
-	v2s32 imgsize;
-	v2s32 offset;
-	v2f32 pos_offset;
-	std::stack<v2f32> container_stack;
+	v2i padding;
+	v2f spacing;
+	v2i imgsize;
+	v2i offset;
+	v2f pos_offset;
+	std::stack<v2f> container_stack;
 
 	InventoryManager *m_invmgr;
 	ISimpleTextureSource *m_tsrc;
@@ -369,10 +369,10 @@ protected:
 
 	bool m_bgnonfullscreen;
 	bool m_bgfullscreen;
-	video::SColor m_bgcolor;
-	video::SColor m_fullscreen_bgcolor;
-	video::SColor m_default_tooltip_bgcolor;
-	video::SColor m_default_tooltip_color;
+	img::color8 m_bgcolor;
+	img::color8 m_fullscreen_bgcolor;
+	img::color8 m_default_tooltip_bgcolor;
+	img::color8 m_default_tooltip_color;
 
 private:
 	IFormSource               *m_form_src;
@@ -388,12 +388,12 @@ private:
 		bool real_coordinates;
 		u8 simple_field_count;
 		v2f invsize;
-		v2s32 size;
-		v2f32 offset;
-		v2f32 anchor;
-		v2f32 padding;
-		core::rect<s32> rect;
-		v2s32 basepos;
+		v2i size;
+		v2f offset;
+		v2f anchor;
+		v2f padding;
+		recti rect;
+		v2i basepos;
 		v2u32 screensize;
 		GUITable::TableOptions table_options;
 		GUITable::TableColumns table_columns;
@@ -456,7 +456,7 @@ private:
 	void parsePwdField(parserData* data, const std::string &element);
 	void parseField(parserData* data, const std::string &element);
 	void createTextField(parserData *data, FieldSpec &spec,
-		core::rect<s32> &rect, bool is_multiline);
+		recti &rect, bool is_multiline);
 	void parseSimpleField(parserData* data,std::vector<std::string> &parts);
 	void parseTextArea(parserData* data,std::vector<std::string>& parts,
 			const std::string &type);
@@ -485,12 +485,12 @@ private:
 	void parseSetFocus(parserData *, const std::string &element);
 	void parseModel(parserData *data, const std::string &element);
 
-	bool parseMiddleRect(const std::string &value, core::rect<s32> *parsed_rect);
+	bool parseMiddleRect(const std::string &value, recti *parsed_rect);
 
 	void tryClose();
 
-	void showTooltip(const std::wstring &text, const irr::video::SColor &color,
-		const irr::video::SColor &bgcolor);
+	void showTooltip(const std::wstring &text, const irr::img::color8 &color,
+		const irr::img::color8 &bgcolor);
 
 	/**
 	 * In formspec version < 2 the elements were not ordered properly. Some element
@@ -500,7 +500,7 @@ private:
 	void legacySortElements(std::list<IGUIElement *>::iterator from);
 
 	int m_btn_height;
-	gui::IGUIFont *m_font = nullptr;
+	render::TTFont *m_font = nullptr;
 
 	// used by getAbsoluteRect
 	s32 m_tabheader_upper_edge = 0;

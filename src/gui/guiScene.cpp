@@ -14,7 +14,7 @@
 
 GUIScene::GUIScene(gui::IGUIEnvironment *env, scene::ISceneManager *smgr,
 		   gui::IGUIElement *parent, core::recti rect, s32 id)
-	: IGUIElement(gui::EGUIET_ELEMENT, env, parent, id, rect)
+	: IGUIElement(EGUIET_ELEMENT, env, parent, id, rect)
 {
 	m_driver = env->getVideoDriver();
 	m_smgr = smgr->createNewSceneManager(false);
@@ -49,7 +49,7 @@ scene::IAnimatedMeshSceneNode *GUIScene::setMesh(scene::IAnimatedMesh *mesh)
 	return m_mesh;
 }
 
-void GUIScene::setTexture(u32 idx, video::ITexture *texture)
+void GUIScene::setTexture(u32 idx, img::Image *texture)
 {
 	video::SMaterial &material = m_mesh->getMaterial(idx);
 	material.MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL;
@@ -73,7 +73,7 @@ void GUIScene::draw()
 		dtime_ms = porting::getDeltaMs(m_last_time, new_time);
 	m_last_time = new_time;
 
-	core::rect<s32> oldViewPort = m_driver->getViewPort();
+	recti oldViewPort = m_driver->getViewPort();
 	m_driver->setViewPort(getAbsoluteClippingRect());
 
 	if (m_bgcolor != 0) {
@@ -110,9 +110,9 @@ void GUIScene::draw()
 	m_driver->setViewPort(oldViewPort);
 }
 
-bool GUIScene::OnEvent(const SEvent &event)
+bool GUIScene::OnEvent(const core::Event &event)
 {
-	if (m_mouse_ctrl && event.EventType == EET_MOUSE_INPUT_EVENT) {
+	if (m_mouse_ctrl && event.Type == EET_MOUSE_INPUT_EVENT) {
 		if (event.MouseInput.Event == EMIE_LMOUSE_PRESSED_DOWN) {
 			m_last_pos = v2f((f32)event.MouseInput.X, (f32)event.MouseInput.Y);
 			return true;

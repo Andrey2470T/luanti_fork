@@ -7,6 +7,14 @@
 #include "client/render/renderer.h"
 
 Image2D9Slice::Image2D9Slice(ResourceCache *resCache, Renderer *renderer,
+    render::Texture2D *base_tex, const std::array<img::color8, 4> &colors)
+    : UISprite(base_tex, renderer, resCache, {UIPrimitiveType::RECTANGLE, UIPrimitiveType::RECTANGLE,
+              UIPrimitiveType::RECTANGLE, UIPrimitiveType::RECTANGLE, UIPrimitiveType::RECTANGLE, UIPrimitiveType::RECTANGLE,
+              UIPrimitiveType::RECTANGLE, UIPrimitiveType::RECTANGLE, UIPrimitiveType::RECTANGLE})
+{
+    visible = true;
+}
+Image2D9Slice::Image2D9Slice(ResourceCache *resCache, Renderer *renderer,
                              const rectf &src_rect, const rectf &dest_rect,
                              const rectf &middle_rect, render::Texture2D *base_tex,
                              const std::array<img::color8, 4> &colors)
@@ -16,6 +24,11 @@ Image2D9Slice::Image2D9Slice(ResourceCache *resCache, Renderer *renderer,
         destRect(dest_rect), middleRect(middle_rect), rectColors(colors)
 {
     visible = true;
+    updateRects(src_rect, dest_rect, middle_rect);
+}
+
+void Image2D9Slice::updateRects(const rectf &src_rect, const rectf &dest_rect, const rectf &middle_rect)
+{
     if (middleRect.LRC.X < 0)
         middleRect.LRC.X += srcRect.getWidth();
     if (middleRect.LRC.Y < 0)
@@ -84,13 +97,14 @@ ImageSprite::ImageSprite(RenderSystem *rndsys, ResourceCache *cache)
       pool(rndsys->getPool(false))
 {}
 
-void ImageSprite::update(img::Image *newImage, const rectf &rect, const std::array<img::color8, 4> &colors, const recti *cliprect)
+void ImageSprite::update(img::Image *newImage, const rectf &rect, const std::array<img::color8, 4> &colors,
+    const recti *cliprect, std::optional<AtlasTileAnim> anim)
 {
     rectf tile_rect;
 
     if (newImage) {
         image = newImage;
-        setTexture(pool->getAtlasByTile(image, true)->getTexture());
+        setTexture(pool->getAtlasByTile(image, true, anim)->getTexture());
         tile_rect = pool->getTileRect(image, false, true);
     }
     getShape()->updateRectangle(0, rect, colors, tile_rect);
@@ -100,7 +114,8 @@ void ImageSprite::update(img::Image *newImage, const rectf &rect, const std::arr
     setClipRect(*cliprect);
 }
 
-void ImageSprite::update(img::Image *newImage, const rectf &rect, const img::color8 &color, const recti *cliprect)
+void ImageSprite::update(img::Image *newImage, const rectf &rect, const img::color8 &color,
+    const recti *cliprect, std::optional<AtlasTileAnim> anim)
 {
     update(newImage, rect, {color, color, color, color}, cliprect);
 }

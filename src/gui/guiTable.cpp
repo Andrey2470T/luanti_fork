@@ -9,7 +9,7 @@
 #include <utility>
 #include <cstring>
 #include <IGUISkin.h>
-#include <IGUIFont.h>
+#include <render::TTFont.h>
 #include "client/renderingengine.h"
 #include "debug.h"
 #include "irrlicht_changes/CGUITTFont.h"
@@ -29,10 +29,10 @@
 
 GUITable::GUITable(gui::IGUIEnvironment *env,
 		gui::IGUIElement* parent, s32 id,
-		core::rect<s32> rectangle,
+		recti rectangle,
 		ISimpleTextureSource *tsrc
 ):
-	gui::IGUIElement(gui::EGUIET_ELEMENT, env, parent, id, rectangle),
+	gui::IGUIElement(EGUIET_ELEMENT, env, parent, id, rectangle),
 	m_tsrc(tsrc)
 {
 	assert(tsrc != NULL);
@@ -48,7 +48,7 @@ GUITable::GUITable(gui::IGUIEnvironment *env,
 
 	const s32 s = skin->getSize(gui::EGDS_SCROLLBAR_SIZE);
 	m_scrollbar = new GUIScrollBar(Environment, this, -1,
-			core::rect<s32>(RelativeRect.getWidth() - s,
+			recti(RelativeRect.getWidth() - s,
 					0,
 					RelativeRect.getWidth(),
 					RelativeRect.getHeight()),
@@ -218,7 +218,7 @@ void GUITable::setTable(const TableOptions &options,
 		// Vector of completed cells in this row
 		std::vector<Cell> cells;
 		// Stores colors and how long they last (maximum column index)
-		std::vector<std::pair<video::SColor, s32> > colors;
+		std::vector<std::pair<img::color8, s32> > colors;
 
 		TempRow(): x(0), indent(0), content_index(0), content_width(0) {}
 	};
@@ -368,20 +368,20 @@ void GUITable::setTable(const TableOptions &options,
 					row->content_index = image_iter->second;
 
 				// Get texture object (might be NULL)
-				video::ITexture *image = NULL;
+				img::Image *image = NULL;
 				if (row->content_index >= 0)
 					image = m_images[row->content_index];
 
 				row->image_scale = 1.0f;
 				row->content_width = 0;
 				if (image) {
-					f32 max_image_scale = (f32)m_rowheight / (f32)image->getOriginalSize().Height;
+					f32 max_image_scale = (f32)m_rowheight / (f32)image->getSize().Height;
 					// Scale with display density and make sure it fits into the row
 					row->image_scale = std::min(desired_image_scale, max_image_scale);
 					// When upscaling, fractional factors would cause artifacts
 					if (row->image_scale > 1.0f)
 						row->image_scale = std::floor(row->image_scale);
-					row->content_width = image->getOriginalSize().Width * row->image_scale;
+					row->content_width = image->getSize().Width * row->image_scale;
 				}
 				// Get content width and update xmax
 				row->content_width = MYMAX(row->content_width, width);
@@ -401,7 +401,7 @@ void GUITable::setTable(const TableOptions &options,
 		}
 		else if (columntype == COLUMN_TYPE_COLOR) {
 			for (s32 i = 0; i < rowcount; ++i) {
-				video::SColor cellcolor(255, 255, 255, 255);
+				img::color8 cellcolor(255, 255, 255, 255);
 				if (parseColorString(content[i * colcount + j], cellcolor, true))
 					rows[i].colors.emplace_back(cellcolor, j+span);
 			}
@@ -584,7 +584,7 @@ void GUITable::setSelected(s32 index)
 	}
 }
 
-void GUITable::setOverrideFont(IGUIFont *font)
+void GUITable::setOverrideFont(render::TTFont *font)
 {
 	if (m_font == font)
 		return;
@@ -604,7 +604,7 @@ void GUITable::setOverrideFont(IGUIFont *font)
 	updateScrollBar();
 }
 
-IGUIFont *GUITable::getOverrideFont() const
+render::TTFont *GUITable::getOverrideFont() const
 {
 	return m_font;
 }
@@ -667,14 +667,14 @@ void GUITable::draw()
 
 	// get clipping rect
 
-	core::rect<s32> client_clip(AbsoluteRect);
-	client_clip.UpperLeftCorner.Y += 1;
-	client_clip.UpperLeftCorner.X += 1;
-	client_clip.LowerRightCorner.Y -= 1;
-	client_clip.LowerRightCorner.X -= 1;
+	recti client_clip(AbsoluteRect);
+	client_clip.ULC.Y += 1;
+	client_clip.ULC.X += 1;
+	client_clip.LRC.Y -= 1;
+	client_clip.LRC.X -= 1;
 	if (m_scrollbar->isVisible()) {
-		client_clip.LowerRightCorner.X =
-				m_scrollbar->getAbsolutePosition().UpperLeftCorner.X;
+		client_clip.LRC.X =
+				m_scrollbar->getAbsolutePosition().ULC.X;
 	}
 	client_clip.clipAgainst(AbsoluteClippingRect);
 
@@ -686,17 +686,17 @@ void GUITable::draw()
 			/ m_rowheight + 1;
 	row_max = MYMIN(row_max, (s32) m_visible_rows.size());
 
-	core::rect<s32> row_rect(AbsoluteRect);
+	recti row_rect(AbsoluteRect);
 	if (m_scrollbar->isVisible())
-		row_rect.LowerRightCorner.X -=
+		row_rect.LRC.X -=
 			skin->getSize(gui::EGDS_SCROLLBAR_SIZE);
-	row_rect.UpperLeftCorner.Y += row_min * m_rowheight - scrollpos;
-	row_rect.LowerRightCorner.Y = row_rect.UpperLeftCorner.Y + m_rowheight;
+	row_rect.ULC.Y += row_min * m_rowheight - scrollpos;
+	row_rect.LRC.Y = row_rect.ULC.Y + m_rowheight;
 
 	for (s32 i = row_min; i < row_max; ++i) {
 		Row *row = &m_rows[m_visible_rows[i]];
 		bool is_sel = i == m_selected;
-		video::SColor color = m_color;
+		img::color8 color = m_color;
 
 		if (is_sel) {
 			skin->draw2DRectangle(this, m_highlight, row_rect, &client_clip);
@@ -706,25 +706,25 @@ void GUITable::draw()
 		for (s32 j = 0; j < row->cellcount; ++j)
 			drawCell(&row->cells[j], color, row_rect, client_clip);
 
-		row_rect.UpperLeftCorner.Y += m_rowheight;
-		row_rect.LowerRightCorner.Y += m_rowheight;
+		row_rect.ULC.Y += m_rowheight;
+		row_rect.LRC.Y += m_rowheight;
 	}
 
 	// Draw children
 	IGUIElement::draw();
 }
 
-void GUITable::drawCell(const Cell *cell, video::SColor color,
-		const core::rect<s32> &row_rect,
-		const core::rect<s32> &client_clip)
+void GUITable::drawCell(const Cell *cell, img::color8 color,
+		const recti &row_rect,
+		const recti &client_clip)
 {
 	if ((cell->content_type == COLUMN_TYPE_TEXT)
 			|| (cell->content_type == COLUMN_TYPE_TREE)) {
 
-		core::rect<s32> text_rect = row_rect;
-		text_rect.UpperLeftCorner.X = row_rect.UpperLeftCorner.X
+		recti text_rect = row_rect;
+		text_rect.ULC.X = row_rect.ULC.X
 				+ cell->xpos;
-		text_rect.LowerRightCorner.X = row_rect.UpperLeftCorner.X
+		text_rect.LRC.X = row_rect.ULC.X
 				+ cell->xmax;
 
 		if (cell->color_defined)
@@ -747,23 +747,23 @@ void GUITable::drawCell(const Cell *cell, video::SColor color,
 			return;
 
 		video::IVideoDriver *driver = Environment->getVideoDriver();
-		video::ITexture *image = m_images[cell->content_index];
+		img::Image *image = m_images[cell->content_index];
 
 		if (image) {
-			core::rect<s32> source_rect(
-					core::position2d<s32>(0, 0),
-					image->getOriginalSize());
-			core::rect<s32> dest_rect(
+			recti source_rect(
+					v2i(0, 0),
+					image->getSize());
+			recti dest_rect(
 					0, 0,
-					image->getOriginalSize().Width * cell->image_scale,
-					image->getOriginalSize().Height * cell->image_scale);
-			dest_rect += row_rect.UpperLeftCorner + v2s32(cell->xpos, 0);
+					image->getSize().Width * cell->image_scale,
+					image->getSize().Height * cell->image_scale);
+			dest_rect += row_rect.ULC + v2i(cell->xpos, 0);
 
 			s32 imgh = dest_rect.getHeight();
 			s32 rowh = row_rect.getHeight();
 			// Center vertically if needed
 			if (imgh < rowh)
-				dest_rect += v2s32(0, (rowh - imgh) / 2);
+				dest_rect += v2i(0, (rowh - imgh) / 2);
 
 			driver->draw2DImage(image, dest_rect, source_rect,
 					&client_clip, nullptr, true);
@@ -771,12 +771,12 @@ void GUITable::drawCell(const Cell *cell, video::SColor color,
 	}
 }
 
-bool GUITable::OnEvent(const SEvent &event)
+bool GUITable::OnEvent(const core::Event &event)
 {
 	if (!isEnabled())
 		return IGUIElement::OnEvent(event);
 
-	if (event.EventType == EET_KEY_INPUT_EVENT) {
+	if (event.Type == EET_KEY_INPUT_EVENT) {
 		if (event.KeyInput.PressedDown && (
 				event.KeyInput.Key == KEY_DOWN ||
 				event.KeyInput.Key == KEY_UP   ||
@@ -874,8 +874,8 @@ bool GUITable::OnEvent(const SEvent &event)
 			return true;
 		}
 	}
-	if (event.EventType == EET_MOUSE_INPUT_EVENT) {
-		core::position2d<s32> p(event.MouseInput.X, event.MouseInput.Y);
+	if (event.Type == EET_MOUSE_INPUT_EVENT) {
+		v2i p(event.MouseInput.X, event.MouseInput.Y);
 
 		if (event.MouseInput.Event == EMIE_MOUSE_WHEEL) {
 			m_scrollbar->setPosInterpolated(m_scrollbar->getTargetPos() +
@@ -949,9 +949,9 @@ bool GUITable::OnEvent(const SEvent &event)
 		}
 		return true;
 	}
-	if (event.EventType == EET_GUI_EVENT &&
-			event.GUIEvent.EventType == gui::EGET_SCROLL_BAR_CHANGED &&
-			event.GUIEvent.Caller == m_scrollbar) {
+	if (event.Type == EET_GUI_EVENT &&
+			event.GUI.Type == gui::EGET_SCROLL_BAR_CHANGED &&
+			event.GUI.Caller == m_scrollbar) {
 		// Don't pass events from our scrollbar to the parent
 		return true;
 	}
@@ -1032,7 +1032,7 @@ s32 GUITable::getRowAt(s32 y, bool &really_hovering) const
 		return -1;
 
 	// Use arithmetic to find row
-	s32 rel_y = y - AbsoluteRect.UpperLeftCorner.Y - 1;
+	s32 rel_y = y - AbsoluteRect.ULC.Y - 1;
 	s32 i = (rel_y + m_scrollbar->getPos()) / m_rowheight;
 
 	if (i >= 0 && i < rowcount) {
@@ -1052,7 +1052,7 @@ s32 GUITable::getCellAt(s32 x, s32 row_i) const
 		return -1;
 
 	// Use binary search to find cell in row
-	s32 rel_x = x - AbsoluteRect.UpperLeftCorner.X - 1;
+	s32 rel_x = x - AbsoluteRect.ULC.X - 1;
 	s32 jmin = 0;
 	s32 jmax = row->cellcount - 1;
 	while (jmin < jmax) {
@@ -1106,11 +1106,11 @@ void GUITable::sendTableEvent(s32 column, bool doubleclick)
 	m_sel_column = column;
 	m_sel_doubleclick = doubleclick;
 	if (Parent) {
-		SEvent e;
-		e.EventType = EET_GUI_EVENT;
-		e.GUIEvent.Caller = this;
-		e.GUIEvent.Element = 0;
-		e.GUIEvent.EventType = gui::EGET_TABLE_CHANGED;
+		core::Event e;
+		e.Type = EET_GUI_EVENT;
+		e.GUI.Caller = this;
+		e.GUI.Element = 0;
+		e.GUI.Type = gui::EGET_TABLE_CHANGED;
 		Parent->OnEvent(e);
 	}
 }

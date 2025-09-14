@@ -5,9 +5,6 @@
 #pragma once
 
 #include "guiButton.h"
-#include "IGUIButton.h"
-
-using namespace irr;
 
 class Client;
 class GUIItemImage;
@@ -17,12 +14,12 @@ class GUIButtonItemImage : public GUIButton
 public:
 	//! constructor
 	GUIButtonItemImage(gui::IGUIEnvironment *environment, gui::IGUIElement *parent,
-			s32 id, core::rect<s32> rectangle, ISimpleTextureSource *tsrc,
+            s32 id, recti rectangle,
 			const std::string &item, Client *client, bool noclip = false);
 
 	//! Do not drop returned handle
 	static GUIButtonItemImage *addButton(gui::IGUIEnvironment *environment,
-			const core::rect<s32> &rectangle, ISimpleTextureSource *tsrc,
+            const recti &rectangle,
 			IGUIElement *parent, s32 id, const wchar_t *text,
 			const std::string &item, Client *client);
 

@@ -74,18 +74,18 @@ public:
 		ElementType type;
 		core::stringw text = "";
 
-		core::dimension2d<u32> dim;
-		core::position2d<s32> pos;
+		v2u dim;
+		v2i pos;
 		s32 drawwidth;
 
 		FloatType floating = FLOAT_NONE;
 
 		ValignType valign;
 
-		gui::IGUIFont *font;
+		render::TTFont *font;
 
-		irr::video::SColor color;
-		irr::video::SColor hovercolor;
+		irr::img::color8 color;
+		irr::img::color8 hovercolor;
 		bool underline;
 
 		s32 baseline = 0;
@@ -115,7 +115,7 @@ public:
 	s32 margin = 3;
 	ValignType valign = VALIGN_TOP;
 	BackgroundType background_type = BACKGROUND_NONE;
-	irr::video::SColor background_color;
+	irr::img::color8 background_color;
 
 	Tag m_root_tag;
 
@@ -158,17 +158,17 @@ public:
 	TextDrawer(const wchar_t *text, Client *client, gui::IGUIEnvironment *environment,
 			ISimpleTextureSource *tsrc);
 
-	void place(const core::rect<s32> &dest_rect);
+	void place(const recti &dest_rect);
 	inline s32 getHeight() { return m_height; };
-	void draw(const core::rect<s32> &clip_rect,
-			const core::position2d<s32> &dest_offset);
-	ParsedText::Element *getElementAt(core::position2d<s32> pos);
+	void draw(const recti &clip_rect,
+			const v2i &dest_offset);
+	ParsedText::Element *getElementAt(v2i pos);
 	ParsedText::Tag *m_hovertag;
 
 protected:
 	struct RectWithMargin
 	{
-		core::rect<s32> rect;
+		recti rect;
 		s32 margin;
 	};
 
@@ -187,7 +187,7 @@ public:
 	//! constructor
 	GUIHyperText(const wchar_t *text, gui::IGUIEnvironment *environment,
 			gui::IGUIElement *parent, s32 id,
-			const core::rect<s32> &rectangle, Client *client,
+			const recti &rectangle, Client *client,
 			ISimpleTextureSource *tsrc);
 
 	//! destructor
@@ -198,7 +198,7 @@ public:
 
 	core::dimension2du getTextDimension();
 
-	bool OnEvent(const SEvent &event);
+	bool OnEvent(const core::Event &event);
 
 protected:
 	// GUI members
@@ -208,8 +208,8 @@ protected:
 
 	// Positioning
 	u32 m_scrollbar_width;
-	core::rect<s32> m_display_text_rect;
-	core::position2d<s32> m_text_scrollpos;
+	recti m_display_text_rect;
+	v2i m_text_scrollpos;
 
 	ParsedText::Element *getElementAt(s32 X, s32 Y);
 	void checkHover(s32 X, s32 Y);

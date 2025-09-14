@@ -46,7 +46,7 @@ public:
 
     virtual void regenerateGui(v2u screensize) = 0;
 	virtual void drawMenu() = 0;
-    virtual bool preprocessEvent(const core::Event &event);
+    virtual bool preprocescore::Event(const core::Event &event);
     virtual bool OnEvent(const core::Event &event) { return false; };
 	virtual bool pausesGame() { return false; } // Used for pause menu
 #ifdef __ANDROID__

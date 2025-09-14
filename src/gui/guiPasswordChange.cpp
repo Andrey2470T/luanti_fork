@@ -23,7 +23,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <IGUIEditBox.h>
 #include <IGUIButton.h>
 #include <IGUIStaticText.h>
-#include <IGUIFont.h>
+#include <render::TTFont.h>
 #include <IVideoDriver.h>
 
 #include "porting.h"
@@ -68,22 +68,22 @@ void GUIPasswordChange::regenerateGui(v2u32 screensize)
 	DesiredRect = info.rect;
 	recalculateAbsolutePosition(false);
 
-	v2s32 size = DesiredRect.getSize();
-	v2s32 topleft_client(40 * s, 0);
+	v2i size = DesiredRect.getSize();
+	v2i topleft_client(40 * s, 0);
 
 	/*
 		Add stuff
 	*/
 	s32 ypos = 50 * s;
 	{
-		core::rect<s32> rect(0, 0, 150 * s, 20 * s);
-		rect += topleft_client + v2s32(25 * s, ypos + 6 * s);
+		recti rect(0, 0, 150 * s, 20 * s);
+		rect += topleft_client + v2i(25 * s, ypos + 6 * s);
 		gui::StaticText::add(Environment, wstrgettext("Old Password"), rect,
 				false, true, this, -1);
 	}
 	{
-		core::rect<s32> rect(0, 0, 230 * s, 30 * s);
-		rect += topleft_client + v2s32(160 * s, ypos);
+		recti rect(0, 0, 230 * s, 30 * s);
+		rect += topleft_client + v2i(160 * s, ypos);
 		gui::IGUIEditBox *e = Environment->addEditBox(
 				m_oldpass.c_str(), rect, true, this, ID_oldPassword);
 		Environment->setFocus(e);
@@ -91,28 +91,28 @@ void GUIPasswordChange::regenerateGui(v2u32 screensize)
 	}
 	ypos += 50 * s;
 	{
-		core::rect<s32> rect(0, 0, 150 * s, 20 * s);
-		rect += topleft_client + v2s32(25 * s, ypos + 6 * s);
+		recti rect(0, 0, 150 * s, 20 * s);
+		rect += topleft_client + v2i(25 * s, ypos + 6 * s);
 		gui::StaticText::add(Environment, wstrgettext("New Password"), rect,
 				false, true, this, -1);
 	}
 	{
-		core::rect<s32> rect(0, 0, 230 * s, 30 * s);
-		rect += topleft_client + v2s32(160 * s, ypos);
+		recti rect(0, 0, 230 * s, 30 * s);
+		rect += topleft_client + v2i(160 * s, ypos);
 		gui::IGUIEditBox *e = Environment->addEditBox(
 				m_newpass.c_str(), rect, true, this, ID_newPassword1);
 		e->setPasswordBox(true);
 	}
 	ypos += 50 * s;
 	{
-		core::rect<s32> rect(0, 0, 150 * s, 20 * s);
-		rect += topleft_client + v2s32(25 * s, ypos + 6 * s);
+		recti rect(0, 0, 150 * s, 20 * s);
+		rect += topleft_client + v2i(25 * s, ypos + 6 * s);
 		gui::StaticText::add(Environment, wstrgettext("Confirm Password"), rect,
 				false, true, this, -1);
 	}
 	{
-		core::rect<s32> rect(0, 0, 230 * s, 30 * s);
-		rect += topleft_client + v2s32(160 * s, ypos);
+		recti rect(0, 0, 230 * s, 30 * s);
+		rect += topleft_client + v2i(160 * s, ypos);
 		gui::IGUIEditBox *e = Environment->addEditBox(
 				m_newpass_confirm.c_str(), rect, true, this, ID_newPassword2);
 		e->setPasswordBox(true);
@@ -120,22 +120,22 @@ void GUIPasswordChange::regenerateGui(v2u32 screensize)
 
 	ypos += 50 * s;
 	{
-		core::rect<s32> rect(0, 0, 100 * s, 30 * s);
-		rect = rect + v2s32(size.X / 4 + 56 * s, ypos);
+		recti rect(0, 0, 100 * s, 30 * s);
+		rect = rect + v2i(size.X / 4 + 56 * s, ypos);
 		GUIButton::addButton(Environment, rect, m_tsrc, this, ID_change,
 				wstrgettext("Change").c_str());
 	}
 	{
-		core::rect<s32> rect(0, 0, 100 * s, 30 * s);
-		rect = rect + v2s32(size.X / 4 + 185 * s, ypos);
+		recti rect(0, 0, 100 * s, 30 * s);
+		rect = rect + v2i(size.X / 4 + 185 * s, ypos);
 		GUIButton::addButton(Environment, rect, m_tsrc, this, ID_cancel,
 				wstrgettext("Cancel").c_str());
 	}
 
 	ypos += 50 * s;
 	{
-		core::rect<s32> rect(0, 0, 300 * s, 20 * s);
-		rect += topleft_client + v2s32(35 * s, ypos);
+		recti rect(0, 0, 300 * s, 20 * s);
+		rect += topleft_client + v2i(35 * s, ypos);
 		IGUIElement *e = gui::StaticText::add(
 				Environment, wstrgettext("Passwords do not match!"), rect,
 				false, true, this, ID_message);
@@ -150,7 +150,7 @@ void GUIPasswordChange::drawMenu()
 		return;
 	video::IVideoDriver *driver = Environment->getVideoDriver();
 
-	video::SColor bgcolor(140, 0, 0, 0);
+	img::color8 bgcolor(140, 0, 0, 0);
 	driver->draw2DRectangle(bgcolor, AbsoluteRect, &AbsoluteClippingRect);
 
 	gui::IGUIElement::draw();
@@ -185,9 +185,9 @@ bool GUIPasswordChange::processInput()
 	return true;
 }
 
-bool GUIPasswordChange::OnEvent(const SEvent &event)
+bool GUIPasswordChange::OnEvent(const core::Event &event)
 {
-	if (event.EventType == EET_KEY_INPUT_EVENT) {
+	if (event.Type == EET_KEY_INPUT_EVENT) {
 		if (event.KeyInput.Key == KEY_ESCAPE && event.KeyInput.PressedDown) {
 			quitMenu();
 			return true;
@@ -199,18 +199,18 @@ bool GUIPasswordChange::OnEvent(const SEvent &event)
 			return true;
 		}
 	}
-	if (event.EventType == EET_GUI_EVENT) {
-		if (event.GUIEvent.EventType == gui::EGET_ELEMENT_FOCUS_LOST &&
+	if (event.Type == EET_GUI_EVENT) {
+		if (event.GUI.Type == gui::EGET_ELEMENT_FOCUS_LOST &&
 				isVisible()) {
-			if (!canTakeFocus(event.GUIEvent.Element)) {
+			if (!canTakeFocus(event.GUI.Element)) {
 				infostream << "GUIPasswordChange: Not allowing focus change."
 					<< std::endl;
 				// Returning true disables focus change
 				return true;
 			}
 		}
-		if (event.GUIEvent.EventType == gui::EGET_BUTTON_CLICKED) {
-			switch (event.GUIEvent.Caller->getID()) {
+		if (event.GUI.Type == gui::EGET_BUTTON_CLICKED) {
+			switch (event.GUI.Caller->getID()) {
 			case ID_change:
 				acceptInput();
 				if (processInput())
@@ -221,8 +221,8 @@ bool GUIPasswordChange::OnEvent(const SEvent &event)
 				return true;
 			}
 		}
-		if (event.GUIEvent.EventType == gui::EGET_EDITBOX_ENTER) {
-			switch (event.GUIEvent.Caller->getID()) {
+		if (event.GUI.Type == gui::EGET_EDITBOX_ENTER) {
+			switch (event.GUI.Caller->getID()) {
 			case ID_oldPassword:
 			case ID_newPassword1:
 			case ID_newPassword2:

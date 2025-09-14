@@ -5,33 +5,28 @@
 #pragma once
 
 #include "guiButton.h"
-#include "IGUIButton.h"
-#include "guiAnimatedImage.h"
-#include "irr_ptr.h"
-
-using namespace irr;
+#include "guiImage.h"
 
 class GUIButtonImage : public GUIButton
 {
 public:
 	//! constructor
 	GUIButtonImage(gui::IGUIEnvironment *environment, gui::IGUIElement *parent,
-			s32 id, core::rect<s32> rectangle, ISimpleTextureSource *tsrc,
-			bool noclip = false);
+            s32 id, recti rectangle, bool noclip = false);
 
-	void setForegroundImage(irr_ptr<video::ITexture> image = nullptr,
-			const core::rect<s32> &middle = core::rect<s32>());
+    void setForegroundImage(img::Image *image = nullptr,
+			const recti &middle = recti());
 
 	//! Set element properties from a StyleSpec
 	virtual void setFromStyle(const StyleSpec &style) override;
 
 	//! Do not drop returned handle
 	static GUIButtonImage *addButton(gui::IGUIEnvironment *environment,
-			const core::rect<s32> &rectangle, ISimpleTextureSource *tsrc,
+            const recti &rectangle,
 			IGUIElement *parent, s32 id, const wchar_t *text,
 			const wchar_t *tooltiptext = L"");
 
 private:
-	irr_ptr<video::ITexture> m_foreground_image;
-	irr_ptr<GUIAnimatedImage> m_image;
+    img::Image *m_foreground_image;
+    std::unique_ptr<gui::CGUIImage> m_image;
 };

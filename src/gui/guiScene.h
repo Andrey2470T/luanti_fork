@@ -19,8 +19,8 @@ public:
 	~GUIScene();
 
 	scene::IAnimatedMeshSceneNode *setMesh(scene::IAnimatedMesh *mesh = nullptr);
-	void setTexture(u32 idx, video::ITexture *texture);
-	void setBackgroundColor(const video::SColor &color) noexcept { m_bgcolor = color; };
+	void setTexture(u32 idx, img::Image *texture);
+	void setBackgroundColor(const img::color8 &color) noexcept { m_bgcolor = color; };
 	void setFrameLoop(f32 begin, f32 end);
 	void setAnimationSpeed(f32 speed);
 	void enableMouseControl(bool enable) noexcept { m_mouse_ctrl = enable; };
@@ -29,7 +29,7 @@ public:
 	void setStyles(const std::array<StyleSpec, StyleSpec::NUM_STATES> &styles);
 
 	virtual void draw();
-	virtual bool OnEvent(const SEvent &event);
+	virtual bool OnEvent(const core::Event &event);
 
 private:
 	void calcOptimalDistance();
@@ -68,5 +68,5 @@ private:
 	bool m_inf_rot    = false;
 	bool m_initial_rotation = true;
 
-	video::SColor m_bgcolor = 0;
+	img::color8 m_bgcolor = 0;
 };

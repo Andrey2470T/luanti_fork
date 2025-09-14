@@ -6,11 +6,9 @@
 
 #include "IGUIEnvironment.h"
 #include "GUISkin.h"
-#include "IGUIEnvironment.h"
 #include "IGUIButton.h"
 #include "guiListBox.h"
 #include "client/render/rendersystem.h"
-#include <Utils/TypeConverter.h>
 
 namespace gui
 {
@@ -174,7 +172,7 @@ void CGUIComboBox::setAndSendSelected(s32 idx)
 }
 
 //! called if an event happened.
-bool CGUIComboBox::OnEvent(const main::Event &event)
+bool CGUIComboBox::OnEvent(const core::Event &event)
 {
 	if (isEnabled()) {
 		switch (event.Type) {
@@ -322,7 +320,7 @@ bool CGUIComboBox::OnEvent(const main::Event &event)
 void CGUIComboBox::sendSelectionChangedEvent()
 {
 	if (Parent) {
-		main::Event event;
+		core::Event event;
 
 		event.Type = EET_GUI_EVENT;
         event.GUI.Caller = getID();
@@ -411,7 +409,7 @@ void CGUIComboBox::openCloseMenu()
 		ListBox = nullptr;
 	} else {
 		if (Parent) {
-			main::Event event;
+			core::Event event;
 			event.Type = EET_GUI_EVENT;
             event.GUI.Caller = getID();
             event.GUI.Element = std::nullopt;

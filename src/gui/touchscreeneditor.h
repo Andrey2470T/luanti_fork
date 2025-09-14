@@ -27,7 +27,7 @@ public:
 
 	void regenerateGui(v2u32 screensize);
 	void drawMenu();
-	bool OnEvent(const SEvent& event);
+	bool OnEvent(const core::Event& event);
 
 protected:
 	std::wstring getLabelByID(s32 id) { return L""; }
@@ -49,7 +49,7 @@ private:
 
 	std::unordered_map<touch_gui_button_id, std::shared_ptr<gui::IGUIImage>> m_gui_images;
 	// unused if m_mode == Mode::Add
-	std::unordered_map<touch_gui_button_id, v2s32> m_gui_images_target_pos;
+	std::unordered_map<touch_gui_button_id, v2i> m_gui_images_target_pos;
 	void clearGUIImages();
 	void regenerateGUIImagesRegular(v2u32 screensize);
 	void regenerateGUIImagesAddMode(v2u32 screensize);
@@ -57,13 +57,13 @@ private:
 
 	// interaction state
 	bool m_mouse_down = false;
-	v2s32 m_last_mouse_pos;
+	v2i m_last_mouse_pos;
 	touch_gui_button_id m_selected_btn = touch_gui_button_id_END;
 
 	// dragging
 	ButtonLayout m_last_good_layout;
 	std::vector<core::recti> m_error_rects;
-	void updateDragState(v2u32 screensize, v2s32 mouse_movement);
+	void updateDragState(v2u32 screensize, v2i mouse_movement);
 
 	// add mode
 	ButtonLayout m_add_layout;

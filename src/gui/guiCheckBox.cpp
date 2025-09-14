@@ -6,7 +6,7 @@
 
 #include "GUISkin.h"
 #include "IGUIEnvironment.h"
-#include <Main/TimeCounter.h>
+#include <Core/TimeCounter.h>
 #include "client/ui/text_sprite.h"
 #include "client/render/rendersystem.h"
 #include <Utils/TypeConverter.h>
@@ -27,7 +27,7 @@ CGUICheckBox::CGUICheckBox(bool checked, IGUIEnvironment *environment, IGUIEleme
 }
 
 //! called if an event happened.
-bool CGUICheckBox::OnEvent(const main::Event &event)
+bool CGUICheckBox::OnEvent(const core::Event &event)
 {
 	if (isEnabled()) {
 		switch (event.Type) {
@@ -43,7 +43,7 @@ bool CGUICheckBox::OnEvent(const main::Event &event)
 					   (event.KeyInput.Key == KEY_RETURN || event.KeyInput.Key == KEY_SPACE)) {
 				Pressed = false;
 				if (Parent) {
-					main::Event newEvent;
+					core::Event newEvent;
 					newEvent.Type = EET_GUI_EVENT;
                     newEvent.GUI.Caller = getID();
 					newEvent.GUI.Element = 0;
@@ -63,7 +63,7 @@ bool CGUICheckBox::OnEvent(const main::Event &event)
 		case EET_MOUSE_INPUT_EVENT:
 			if (event.MouseInput.Type == EMIE_LMOUSE_PRESSED_DOWN) {
 				Pressed = true;
-				CheckTime = main::TimeCounter::getRealTime();
+				CheckTime = core::TimeCounter::getRealTime();
 				return true;
 			} else if (event.MouseInput.Type == EMIE_LMOUSE_LEFT_UP) {
 				bool wasPressed = Pressed;
@@ -75,7 +75,7 @@ bool CGUICheckBox::OnEvent(const main::Event &event)
 						return true;
 					}
 
-					main::Event newEvent;
+					core::Event newEvent;
 					newEvent.Type = EET_GUI_EVENT;
                     newEvent.GUI.Caller = getID();
 					newEvent.GUI.Element = 0;
@@ -148,7 +148,7 @@ void CGUICheckBox::draw()
 		if (Checked) {
             shape->addRectangle(toRectf(frameRect), {});
 			skin->drawIcon(this, EGDI_CHECK_BOX_CHECKED, checkRect.getCenter(),
-					CheckTime, main::TimeCounter::getRealTime(), false, &AbsoluteClippingRect);
+					CheckTime, core::TimeCounter::getRealTime(), false, &AbsoluteClippingRect);
 		}
 
 		// associated text

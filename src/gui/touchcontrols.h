@@ -77,7 +77,7 @@ public:
 	~TouchControls();
 	DISABLE_CLASS_COPY(TouchControls);
 
-	void translateEvent(const SEvent &event);
+	void translateEvent(const core::Event &event);
 	void applyContextControls(const TouchInteractionMode &mode);
 
 	double getYawChange()
@@ -153,7 +153,7 @@ private:
 	bool m_move_has_really_moved = false;
 	u64 m_move_downtime = 0;
 	// m_move_pos stays valid even after m_move_id has been released.
-	v2s32 m_move_pos;
+	v2i m_move_pos;
 	// This is needed so that we don't miss if m_has_move_id is true for less
 	// than one client step, i.e. press and release happen in the same step.
 	bool m_had_move_id = false;
@@ -214,7 +214,7 @@ private:
 			const recti &rect, bool visible);
 
 	// handle pressing hotbar items
-	bool isHotbarButton(const SEvent &event);
+	bool isHotbarButton(const core::Event &event);
 
 	// handle release event
 	void handleReleaseEvent(size_t pointer_id);
@@ -223,11 +223,11 @@ private:
 	void applyJoystickStatus();
 
 	// map to store the IDs and original positions of currently pressed pointers
-	std::unordered_map<size_t, v2s32> m_pointer_downpos;
+	std::unordered_map<size_t, v2i> m_pointer_downpos;
 	// map to store the IDs and positions of currently pressed pointers
-	std::unordered_map<size_t, v2s32> m_pointer_pos;
+	std::unordered_map<size_t, v2i> m_pointer_pos;
 
-	v2s32 getPointerPos();
+	v2i getPointerPos();
 	void emitMouseEvent(EMOUSE_INPUT_EVENT type);
 	TouchInteractionMode m_last_mode = TouchInteractionMode_END;
 	TapState m_tap_state = TapState::None;

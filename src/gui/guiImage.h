@@ -5,8 +5,10 @@
 #pragma once
 
 #include "IGUIImage.h"
+#include <variant>
 
 class ImageSprite;
+class Image2D9Slice;
 
 namespace gui
 {
@@ -15,13 +17,13 @@ class CGUIImage : public IGUIImage
 {
 public:
 	//! constructor
-	CGUIImage(IGUIEnvironment *environment, IGUIElement *parent, s32 id, recti rectangle);
+    CGUIImage(IGUIEnvironment *environment, IGUIElement *parent, s32 id, recti rectangle, const rectf &middle=rectf());
 
 	//! destructor
 	virtual ~CGUIImage();
 
 	//! sets an image
-	void setImage(img::Image *image) override;
+    void setImage(img::Image *image, std::optional<AtlasTileAnim> animParams = std::nullopt) override;
 
 	//! Gets the image texture
 	img::Image *getImage() const override;
@@ -31,6 +33,16 @@ public:
 
 	//! sets if the image should scale to fit the element
 	void setScaleImage(bool scale) override;
+
+    void setMiddleRect(const rectf &r)
+    {
+        MiddleRect = r;
+    }
+
+    rectf getMiddleRect() const
+    {
+        return MiddleRect;
+    }
 
 	//! draws the element and its children
 	void draw() override;
@@ -85,14 +97,16 @@ protected:
 
 private:
 	img::Image *Texture;
+    std::optional<AtlasTileAnim> AnimParams = std::nullopt;
 	img::color8 Color;
 	bool UseAlphaChannel;
 	bool ScaleImage;
 	recti SourceRect;
 	rectf DrawBounds;
 	bool DrawBackground;
+    rectf MiddleRect;
 
-    std::unique_ptr<ImageSprite> Image;
+    std::variant<std::shared_ptr<ImageSprite>, std::shared_ptr<Image2D9Slice>> Image;
 };
 
 } // end namespace gui

@@ -157,7 +157,7 @@ void CGUIFileOpenDialog::setDirectoryName(const std::string &name)
 }
 
 //! called if an event happened.
-bool CGUIFileOpenDialog::OnEvent(const main::Event &event)
+bool CGUIFileOpenDialog::OnEvent(const core::Event &event)
 {
 	if (isEnabled()) {
 		switch (event.Type) {
@@ -335,7 +335,7 @@ void CGUIFileOpenDialog::fillListBox()
 //! sends the event that the file has been selected.
 void CGUIFileOpenDialog::sendSelectedEvent(EGUI_EVENT_TYPE type)
 {
-	main::Event event;
+	core::Event event;
 	event.Type = EET_GUI_EVENT;
     event.GUI.Caller = getID();
 	event.GUI.Element = 0;
@@ -346,7 +346,7 @@ void CGUIFileOpenDialog::sendSelectedEvent(EGUI_EVENT_TYPE type)
 //! sends the event that the file choose process has been cancelled
 void CGUIFileOpenDialog::sendCancelEvent()
 {
-	main::Event event;
+	core::Event event;
 	event.Type = EET_GUI_EVENT;
     event.GUI.Caller = getID();
 	event.GUI.Element = 0;

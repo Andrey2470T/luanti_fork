@@ -15,20 +15,20 @@
 #include "settings.h"
 #include "touchcontrols.h"
 
-PointerAction PointerAction::fromEvent(const SEvent &event) {
-	switch (event.EventType) {
+PointerAction PointerAction::fromEvent(const core::Event &event) {
+	switch (event.Type) {
 	case EET_MOUSE_INPUT_EVENT:
-		return {v2s32(event.MouseInput.X, event.MouseInput.Y), porting::getTimeMs()};
+		return {v2i(event.MouseInput.X, event.MouseInput.Y), porting::getTimeMs()};
 	case EET_TOUCH_INPUT_EVENT:
-		return {v2s32(event.TouchInput.X, event.TouchInput.Y), porting::getTimeMs()};
+		return {v2i(event.TouchInput.X, event.TouchInput.Y), porting::getTimeMs()};
 	default:
-		FATAL_ERROR("SEvent given to PointerAction::fromEvent has wrong EventType");
+		FATAL_ERROR("core::Event given to PointerAction::fromEvent has wrong EventType");
 	}
 }
 
 bool PointerAction::isRelated(PointerAction previous) {
 	u64 time_delta = porting::getDeltaMs(previous.time, time);
-	v2s32 pos_delta = pos - previous.pos;
+	v2i pos_delta = pos - previous.pos;
 	f32 distance_sq = (f32)pos_delta.X * pos_delta.X + (f32)pos_delta.Y * pos_delta.Y;
 
 	return time_delta < 400 && distance_sq < (30.0f * 30.0f);
@@ -36,8 +36,8 @@ bool PointerAction::isRelated(PointerAction previous) {
 
 GUIModalMenu::GUIModalMenu(gui::IGUIEnvironment* env, gui::IGUIElement* parent,
 	s32 id, IMenuManager *menumgr, bool remap_click_outside) :
-		IGUIElement(gui::EGUIET_ELEMENT, env, parent, id,
-				core::rect<s32>(0, 0, 100, 100)),
+		IGUIElement(EGUIET_ELEMENT, env, parent, id,
+				recti(0, 0, 100, 100)),
 #ifdef __ANDROID__
 		m_jni_field_name(""),
 #endif
@@ -111,9 +111,9 @@ static bool isChild(gui::IGUIElement *tocheck, gui::IGUIElement *parent)
 	return false;
 }
 
-bool GUIModalMenu::remapClickOutside(const SEvent &event)
+bool GUIModalMenu::remapClickOutside(const core::Event &event)
 {
-	if (!m_remap_click_outside || event.EventType != EET_MOUSE_INPUT_EVENT ||
+	if (!m_remap_click_outside || event.Type != EET_MOUSE_INPUT_EVENT ||
 			(event.MouseInput.Event != EMIE_LMOUSE_PRESSED_DOWN &&
 					event.MouseInput.Event != EMIE_LMOUSE_LEFT_UP))
 		return false;
@@ -146,8 +146,8 @@ bool GUIModalMenu::remapClickOutside(const SEvent &event)
 
 	if (event.MouseInput.Event == EMIE_LMOUSE_LEFT_UP &&
 			current.isRelated(last)) {
-		SEvent translated{};
-		translated.EventType            = EET_KEY_INPUT_EVENT;
+		core::Event translated{};
+		translated.Type            = EET_KEY_INPUT_EVENT;
 		translated.KeyInput.Key         = KEY_ESCAPE;
 		translated.KeyInput.Control     = false;
 		translated.KeyInput.Shift       = false;
@@ -168,8 +168,8 @@ bool GUIModalMenu::simulateMouseEvent(ETOUCH_INPUT_EVENT touch_event, bool secon
 	else
 		target = m_touch_hovered.get();
 
-	SEvent mouse_event{}; // value-initialized, not unitialized
-	mouse_event.EventType = EET_MOUSE_INPUT_EVENT;
+	core::Event mouse_event{}; // value-initialized, not unitialized
+	mouse_event.Type = EET_MOUSE_INPUT_EVENT;
 	mouse_event.MouseInput.X = m_pointer.X;
 	mouse_event.MouseInput.Y = m_pointer.Y;
 	mouse_event.MouseInput.Simulated = true;
@@ -197,7 +197,7 @@ bool GUIModalMenu::simulateMouseEvent(ETOUCH_INPUT_EVENT touch_event, bool secon
 
 	bool retval;
 	do {
-		if (preprocessEvent(mouse_event)) {
+		if (preprocescore::Event(mouse_event)) {
 			retval = true;
 			break;
 		}
@@ -220,11 +220,11 @@ void GUIModalMenu::enter(gui::IGUIElement *hovered)
 		return;
 	sanity_check(!m_touch_hovered);
 	m_touch_hovered.grab(hovered);
-	SEvent gui_event{};
-	gui_event.EventType = EET_GUI_EVENT;
-	gui_event.GUIEvent.Caller = m_touch_hovered.get();
-	gui_event.GUIEvent.EventType = gui::EGET_ELEMENT_HOVERED;
-	gui_event.GUIEvent.Element = gui_event.GUIEvent.Caller;
+	core::Event gui_event{};
+	gui_event.Type = EET_GUI_EVENT;
+	gui_event.GUI.Caller = m_touch_hovered.get();
+	gui_event.GUI.Type = gui::EGET_ELEMENT_HOVERED;
+	gui_event.GUI.Element = gui_event.GUI.Caller;
 	m_touch_hovered->OnEvent(gui_event);
 }
 
@@ -232,24 +232,24 @@ void GUIModalMenu::leave()
 {
 	if (!m_touch_hovered)
 		return;
-	SEvent gui_event{};
-	gui_event.EventType = EET_GUI_EVENT;
-	gui_event.GUIEvent.Caller = m_touch_hovered.get();
-	gui_event.GUIEvent.EventType = gui::EGET_ELEMENT_LEFT;
+	core::Event gui_event{};
+	gui_event.Type = EET_GUI_EVENT;
+	gui_event.GUI.Caller = m_touch_hovered.get();
+	gui_event.GUI.Type = gui::EGET_ELEMENT_LEFT;
 	m_touch_hovered->OnEvent(gui_event);
 	m_touch_hovered.reset();
 }
 
-bool GUIModalMenu::preprocessEvent(const SEvent &event)
+bool GUIModalMenu::preprocescore::Event(const core::Event &event)
 {
 #ifdef __ANDROID__
 	// display software keyboard when clicking edit boxes
-	if (event.EventType == EET_MOUSE_INPUT_EVENT &&
+	if (event.Type == EET_MOUSE_INPUT_EVENT &&
 			event.MouseInput.Event == EMIE_LMOUSE_PRESSED_DOWN &&
 			!porting::hasPhysicalKeyboardAndroid()) {
 		gui::IGUIElement *hovered =
 			Environment->getRootGUIElement()->getElementFromPoint(
-				core::position2d<s32>(event.MouseInput.X, event.MouseInput.Y));
+				v2i(event.MouseInput.X, event.MouseInput.Y));
 		if ((hovered) && (hovered->getType() == irr::gui::EGUIET_EDIT_BOX)) {
 			bool retval = hovered->OnEvent(event);
 			if (retval)
@@ -279,9 +279,9 @@ bool GUIModalMenu::preprocessEvent(const SEvent &event)
 		}
 	}
 
-	if (event.EventType == EET_GUI_EVENT) {
-		if (event.GUIEvent.EventType == gui::EGET_LISTBOX_OPENED) {
-			gui::IGUIComboBox *dropdown = (gui::IGUIComboBox *) event.GUIEvent.Caller;
+	if (event.Type == EET_GUI_EVENT) {
+		if (event.GUI.Type == gui::EGET_LISTBOX_OPENED) {
+			gui::IGUIComboBox *dropdown = (gui::IGUIComboBox *) event.GUI.Caller;
 
 			std::string field_name = getNameByID(dropdown->getID());
 			if (field_name.empty())
@@ -309,14 +309,14 @@ bool GUIModalMenu::preprocessEvent(const SEvent &event)
 		return true;
 
 	// Convert touch events into mouse events.
-	if (event.EventType == EET_TOUCH_INPUT_EVENT) {
+	if (event.Type == EET_TOUCH_INPUT_EVENT) {
 		irr_ptr<GUIModalMenu> holder;
 		holder.grab(this); // keep this alive until return (it might be dropped downstream [?])
 
 		if (event.TouchInput.touchedCount == 1) {
-			m_pointer = v2s32(event.TouchInput.X, event.TouchInput.Y);
+			m_pointer = v2i(event.TouchInput.X, event.TouchInput.Y);
 
-			gui::IGUIElement *hovered = Environment->getRootGUIElement()->getElementFromPoint(core::position2d<s32>(m_pointer));
+			gui::IGUIElement *hovered = Environment->getRootGUIElement()->getElementFromPoint(v2i(m_pointer));
 			if (event.TouchInput.Event == ETIE_PRESSED_DOWN)
 				Environment->setFocus(hovered);
 			if (m_touch_hovered != hovered) {
@@ -355,10 +355,10 @@ bool GUIModalMenu::preprocessEvent(const SEvent &event)
 		}
 	}
 
-	if (event.EventType == EET_MOUSE_INPUT_EVENT) {
+	if (event.Type == EET_MOUSE_INPUT_EVENT) {
 		if (!event.MouseInput.Simulated) {
 			// Only process if this is a real mouse event.
-			m_pointer = v2s32(event.MouseInput.X, event.MouseInput.Y);
+			m_pointer = v2i(event.MouseInput.X, event.MouseInput.Y);
 			m_touch_hovered.reset();
 		}
 
@@ -386,7 +386,7 @@ GUIModalMenu::ScalingInfo GUIModalMenu::getScalingInfo(v2u32 screensize, v2u32 b
 	scale = std::min(scale, (f32)screensize.X / (f32)base_size.X);
 	scale = std::min(scale, (f32)screensize.Y / (f32)base_size.Y);
 	s32 w = base_size.X * scale, h = base_size.Y * scale;
-	return {scale, core::rect<s32>(
+	return {scale, recti(
 		screensize.X / 2 - w / 2,
 		screensize.Y / 2 - h / 2,
 		screensize.X / 2 + w / 2,

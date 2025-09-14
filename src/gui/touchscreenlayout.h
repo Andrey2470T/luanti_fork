@@ -65,9 +65,9 @@ struct ButtonMeta {
 	v2f offset;
 
 	// Returns the button's effective center position in pixels.
-	v2s32 getPos(v2u32 screensize, s32 button_size) const;
+	v2i getPos(v2u32 screensize, s32 button_size) const;
 	// Sets the button's effective center position in pixels.
-	void setPos(v2s32 pos, v2u32 screensize, s32 button_size);
+	void setPos(v2i pos, v2u32 screensize, s32 button_size);
 };
 
 struct ButtonLayout {
@@ -76,7 +76,7 @@ struct ButtonLayout {
 	static s32 getButtonSize(v2u32 screensize);
 	static ButtonLayout loadFromSettings();
 
-	static video::ITexture *getTexture(touch_gui_button_id btn, ISimpleTextureSource *tsrc);
+	static img::Image *getTexture(touch_gui_button_id btn, ISimpleTextureSource *tsrc);
 	static void clearTextureCache();
 
 	std::unordered_map<touch_gui_button_id, ButtonMeta> layout;
@@ -92,13 +92,13 @@ struct ButtonLayout {
 	static const ButtonLayout predefined;
 
 private:
-	static std::unordered_map<touch_gui_button_id, irr_ptr<video::ITexture>> texture_cache;
+	static std::unordered_map<touch_gui_button_id, irr_ptr<img::Image>> texture_cache;
 };
 
 void layout_button_grid(v2u32 screensize, ISimpleTextureSource *tsrc,
 		const std::vector<touch_gui_button_id> &buttons,
 		// pos refers to the center of the button.
-		const std::function<void(touch_gui_button_id btn, v2s32 pos, core::recti rect)> &callback);
+		const std::function<void(touch_gui_button_id btn, v2i pos, core::recti rect)> &callback);
 
 void make_button_grid_title(gui::IGUIStaticText *text,
-		touch_gui_button_id btn,v2s32 pos, core::recti rect);
+		touch_gui_button_id btn,v2i pos, core::recti rect);

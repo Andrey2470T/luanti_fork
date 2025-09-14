@@ -9,26 +9,36 @@
 #include "client/ui/extra_images.h"
 #include "client/render/rendersystem.h"
 #include "client/render/atlas.h"
-#include <Utils/TypeConverter.h>
 
 namespace gui
 {
 
 //! constructor
-CGUIImage::CGUIImage(IGUIEnvironment *environment, IGUIElement *parent, s32 id, recti rectangle) :
+CGUIImage::CGUIImage(IGUIEnvironment *environment, IGUIElement *parent, s32 id, recti rectangle, const rectf &middle) :
         IGUIImage(environment, parent, id, rectangle), Texture(0), Color(img::white),
         UseAlphaChannel(false), ScaleImage(false), DrawBounds(0.f, 0.f, 1.f, 1.f), DrawBackground(true),
+        MiddleRect(middle),
         Image(std::make_unique<ImageSprite>(Environment->getRenderSystem(),
             Environment->getResourceCache()))
-{}
+{
+    if (MiddleRect.getArea() == 0) {
+        Image = std::make_shared<ImageSprite>(Environment->getRenderSystem(),
+            Environment->getResourceCache());
+    }
+    else {
+        Image = std::make_shared<Image2D9Slice>(environment->getResourceCache(),
+            environment->getRenderSystem()->getRenderer(), nullptr, std::array<img::color8, 4>{});
+    }
+}
 
 //! sets an image
-void CGUIImage::setImage(img::Image *image)
+void CGUIImage::setImage(img::Image *image, std::optional<AtlasTileAnim> animParams)
 {
 	if (image == Texture)
 		return;
 
 	Texture = image;
+    AnimParams = animParams;
 }
 
 //! Gets the image texture
@@ -63,28 +73,50 @@ void CGUIImage::draw()
             sourceRect = recti(v2i(Texture->getSize().X ,Texture->getSize().Y));
 		}
 
+        recti clippingRect;
+        std::array<img::color8, 4> Colors;
 		if (ScaleImage) {
-            const std::array<img::color8, 4> Colors = {Color, Color, Color, Color};
+            Colors = {Color, Color, Color, Color};
 
-			recti clippingRect(AbsoluteClippingRect);
+            clippingRect = AbsoluteClippingRect;
 			checkBounds(clippingRect);
-
-            Image->update(Texture, toRectf(AbsoluteRect), Colors, &clippingRect);
-            Image->draw();
 		} else {
-			recti clippingRect(AbsoluteRect.ULC, sourceRect.getSize());
+            clippingRect = recti(AbsoluteRect.ULC, sourceRect.getSize());
 			checkBounds(clippingRect);
 			clippingRect.clipAgainst(AbsoluteClippingRect);
-
-            Image->update(Texture, toRectf(AbsoluteRect), Color, &clippingRect);
-            Image->draw();
 		}
+        if (MiddleRect.getArea() == 0) {
+            auto img = std::get<std::shared_ptr<ImageSprite>>(Image);
+            img->update(Texture, toRectf(AbsoluteRect), Colors, &clippingRect, AnimParams);
+            img->draw();
+        }
+        else {
+            auto sliced_img = std::get<std::shared_ptr<Image2D9Slice>>(Image);
+            sliced_img->setTexture(
+                Environment->getRenderSystem()->getPool(false)->getAtlasByTile(Texture, true)->getTexture());
+            sliced_img->updateRects(toRectf(sourceRect), MiddleRect, toRectf(AbsoluteRect));
+            sliced_img->createSlices();
+            sliced_img->setClipRect(clippingRect);
+            sliced_img->draw();
+        }
 	} else if (DrawBackground) {
 		recti clippingRect(AbsoluteClippingRect);
 		checkBounds(clippingRect);
 
-        Image->update(nullptr, toRectf(AbsoluteRect), skin->getColor(EGDC_3D_DARK_SHADOW), &clippingRect);
-        Image->draw();
+        auto color = skin->getColor(EGDC_3D_DARK_SHADOW);
+        std::array<img::color8, 4> Colors = {color, color, color, color};
+        if (MiddleRect.getArea() == 0) {
+            auto img = std::get<std::shared_ptr<ImageSprite>>(Image);
+            img->update(nullptr, toRectf(AbsoluteRect), Colors, &clippingRect, AnimParams);
+            img->draw();
+        }
+        else {
+            auto sliced_img = std::get<std::shared_ptr<Image2D9Slice>>(Image);
+            sliced_img->updateRects(toRectf(SourceRect), MiddleRect, toRectf(AbsoluteRect));
+            sliced_img->createSlices();
+            sliced_img->setClipRect(clippingRect);
+            sliced_img->draw();
+        }
 	}
 
 	IGUIElement::draw();

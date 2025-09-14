@@ -20,7 +20,7 @@
 #include "irr_gui_ptr.h"
 #include "IGUIImage.h"
 #include "IGUIStaticText.h"
-#include "IGUIFont.h"
+#include "render::TTFont.h"
 #include <IrrlichtDevice.h>
 #include <ISceneCollisionManager.h>
 
@@ -31,8 +31,8 @@ TouchControls *g_touchcontrols;
 
 void TouchControls::emitKeyboardEvent(EKEY_CODE keycode, bool pressed)
 {
-	SEvent e{};
-	e.EventType            = EET_KEY_INPUT_EVENT;
+	core::Event e{};
+	e.Type            = EET_KEY_INPUT_EVENT;
 	e.KeyInput.Key         = keycode;
 	e.KeyInput.Control     = false;
 	e.KeyInput.Shift       = false;
@@ -44,7 +44,7 @@ void TouchControls::emitKeyboardEvent(EKEY_CODE keycode, bool pressed)
 void TouchControls::loadButtonTexture(IGUIImage *gui_button, const std::string &path)
 {
 	auto rect = gui_button->getRelativePosition();
-	video::ITexture *texture = guiScalingImageButton(m_device->getVideoDriver(),
+	img::Image *texture = guiScalingImageButton(m_device->getVideoDriver(),
 			m_texturesource->getTexture(path), rect.getWidth(), rect.getHeight());
 	gui_button->setImage(texture);
 	gui_button->setScaleImage(true);
@@ -270,8 +270,8 @@ void TouchControls::applyLayout(const ButtonLayout &layout)
 	}
 
 	IGUIStaticText *background = m_guienv->addStaticText(L"",
-			recti(v2s32(0, 0), dimension2du(m_screensize)));
-	background->setBackgroundColor(video::SColor(140, 0, 0, 0));
+			recti(v2i(0, 0), dimension2du(m_screensize)));
+	background->setBackgroundColor(img::color8(140, 0, 0, 0));
 	background->setVisible(false);
 	m_overflow_bg = grab_gui_element<IGUIStaticText>(background);
 
@@ -285,7 +285,7 @@ void TouchControls::applyLayout(const ButtonLayout &layout)
 			}), overflow_buttons.end());
 
 	layout_button_grid(m_screensize, m_texturesource, overflow_buttons,
-			[&] (touch_gui_button_id id, v2s32 pos, recti rect) {
+			[&] (touch_gui_button_id id, v2i pos, recti rect) {
 		if (id == toggle_chat_id)
 			// Chat is shown by default, so chat_hide_btn.png is shown first.
 			addToggleButton(m_overflow_buttons, id, "chat_hide_btn.png",
@@ -298,8 +298,8 @@ void TouchControls::applyLayout(const ButtonLayout &layout)
 		text->setVisible(false);
 		m_overflow_button_titles.push_back(grab_gui_element<IGUIStaticText>(text));
 
-		rect.addInternalPoint(text->getRelativePosition().UpperLeftCorner);
-		rect.addInternalPoint(text->getRelativePosition().LowerRightCorner);
+		rect.addInternalPoint(text->getRelativePosition().ULC);
+		rect.addInternalPoint(text->getRelativePosition().LRC);
 		m_overflow_button_rects.push_back(rect);
 	});
 
@@ -360,9 +360,9 @@ IGUIImage *TouchControls::makeButtonDirect(touch_gui_button_id id,
 	return btn_gui_button;
 }
 
-bool TouchControls::isHotbarButton(const SEvent &event)
+bool TouchControls::isHotbarButton(const core::Event &event)
 {
-	const v2s32 touch_pos = v2s32(event.TouchInput.X, event.TouchInput.Y);
+	const v2i touch_pos = v2i(event.TouchInput.X, event.TouchInput.Y);
 	// check if hotbar item is pressed
 	for (auto &[index, rect] : m_hotbar_rects) {
 		if (rect.isPointInside(touch_pos)) {
@@ -427,7 +427,7 @@ void TouchControls::handleReleaseEvent(size_t pointer_id)
 	}
 }
 
-void TouchControls::translateEvent(const SEvent &event)
+void TouchControls::translateEvent(const core::Event &event)
 {
 	if (!m_visible) {
 		infostream << "TouchControls::translateEvent got event but is not visible!"
@@ -435,17 +435,17 @@ void TouchControls::translateEvent(const SEvent &event)
 		return;
 	}
 
-	if (event.EventType != EET_TOUCH_INPUT_EVENT)
+	if (event.Type != EET_TOUCH_INPUT_EVENT)
 		return;
 
 	const s32 half_button_size = m_button_size / 2.0f;
 	const s32 fixed_joystick_range_sq = half_button_size * half_button_size * 3 * 3;
 	const s32 X = event.TouchInput.X;
 	const s32 Y = event.TouchInput.Y;
-	const v2s32 touch_pos = v2s32(X, Y);
-	const v2s32 fixed_joystick_center = v2s32(half_button_size * 5,
+	const v2i touch_pos = v2i(X, Y);
+	const v2i fixed_joystick_center = v2i(half_button_size * 5,
 			m_screensize.Y - half_button_size * 5);
-	const v2s32 dir_fixed = touch_pos - fixed_joystick_center;
+	const v2i dir_fixed = touch_pos - fixed_joystick_center;
 
 	if (event.TouchInput.Event == ETIE_PRESSED_DOWN) {
 		size_t pointer_id = event.TouchInput.ID;
@@ -535,9 +535,9 @@ void TouchControls::translateEvent(const SEvent &event)
 				m_pointer_pos[event.TouchInput.ID] == touch_pos)
 			return;
 
-		const v2s32 dir_free_original = touch_pos - m_pointer_downpos[event.TouchInput.ID];
-		const v2s32 free_joystick_center = m_pointer_pos[event.TouchInput.ID];
-		const v2s32 dir_free = touch_pos - free_joystick_center;
+		const v2i dir_free_original = touch_pos - m_pointer_downpos[event.TouchInput.ID];
+		const v2i free_joystick_center = m_pointer_pos[event.TouchInput.ID];
+		const v2i dir_free = touch_pos - free_joystick_center;
 
 		const double touch_threshold_sq = m_touchscreen_threshold * m_touchscreen_threshold;
 
@@ -556,7 +556,7 @@ void TouchControls::translateEvent(const SEvent &event)
 		}
 
 		if (m_has_joystick_id && event.TouchInput.ID == m_joystick_id) {
-			v2s32 dir = dir_free;
+			v2i dir = dir_free;
 			if (m_fixed_joystick)
 				dir = dir_fixed;
 
@@ -582,7 +582,7 @@ void TouchControls::translateEvent(const SEvent &event)
 
 				if (distance > m_button_size) {
 					// move joystick "button"
-					v2s32 new_offset = dir * m_button_size / distance - half_button_size;
+					v2i new_offset = dir * m_button_size / distance - half_button_size;
 					if (m_fixed_joystick)
 						m_joystick_btn_center->setRelativePosition(
 								fixed_joystick_center + new_offset);
@@ -643,7 +643,7 @@ void TouchControls::step(float dtime)
 	// Only updating when m_has_move_id means that the shootline will stay at
 	// it's last in-world position when the player doesn't need it.
 	if (!m_draw_crosshair && (m_has_move_id || m_had_move_id)) {
-		v2s32 pointer_pos = getPointerPos();
+		v2i pointer_pos = getPointerPos();
 		m_shootline = m_device
 				->getSceneManager()
 				->getSceneCollisionManager()
@@ -729,10 +729,10 @@ void TouchControls::show()
 	setVisible(true);
 }
 
-v2s32 TouchControls::getPointerPos()
+v2i TouchControls::getPointerPos()
 {
 	if (m_draw_crosshair)
-		return v2s32(m_screensize.X / 2, m_screensize.Y / 2);
+		return v2i(m_screensize.X / 2, m_screensize.Y / 2);
 	// We can't just use m_pointer_pos[m_move_id] because applyContextControls
 	// may emit release events after m_pointer_pos[m_move_id] is erased.
 	return m_move_pos;
@@ -740,10 +740,10 @@ v2s32 TouchControls::getPointerPos()
 
 void TouchControls::emitMouseEvent(EMOUSE_INPUT_EVENT type)
 {
-	v2s32 pointer_pos = getPointerPos();
+	v2i pointer_pos = getPointerPos();
 
-	SEvent event{};
-	event.EventType               = EET_MOUSE_INPUT_EVENT;
+	core::Event event{};
+	event.Type               = EET_MOUSE_INPUT_EVENT;
 	event.MouseInput.X            = pointer_pos.X;
 	event.MouseInput.Y            = pointer_pos.Y;
 	event.MouseInput.Shift        = false;

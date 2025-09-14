@@ -38,7 +38,7 @@ public:
 
 	void drawMenu();
 
-	bool OnEvent(const SEvent &event);
+	bool OnEvent(const core::Event &event);
 
 protected:
 	std::wstring getLabelByID(s32 id) { return L""; }

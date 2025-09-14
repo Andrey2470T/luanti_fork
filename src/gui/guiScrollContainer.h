@@ -12,10 +12,10 @@ class GUIScrollContainer : public gui::IGUIElement
 {
 public:
 	GUIScrollContainer(gui::IGUIEnvironment *env, gui::IGUIElement *parent, s32 id,
-			const core::rect<s32> &rectangle, const std::string &orientation,
+			const recti &rectangle, const std::string &orientation,
 			f32 scrollfactor);
 
-	virtual bool OnEvent(const SEvent &event) override;
+	virtual bool OnEvent(const core::Event &event) override;
 
 	virtual void draw() override;
 

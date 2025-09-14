@@ -9,7 +9,7 @@
 #include "IGUIEnvironment.h"
 #include "IGUISpriteBank.h"
 #include "CGUIScrollBar.h"
-#include <Main/TimeCounter.h>
+#include <Core/TimeCounter.h>
 #include <Utils/String.h>
 
 namespace gui
@@ -98,7 +98,7 @@ void CGUIListBox::removeItem(u32 id)
 		Selected = -1;
 	} else if ((u32)Selected > id) {
 		Selected -= 1;
-		selectTime = main::TimeCounter::getRealTime();
+		selectTime = core::TimeCounter::getRealTime();
 	}
 
     Items.erase(Items.begin()+id);
@@ -174,7 +174,7 @@ void CGUIListBox::setSelected(s32 id)
 	else
 		Selected = id;
 
-	selectTime = main::TimeCounter::getRealTime();
+	selectTime = core::TimeCounter::getRealTime();
 
 	recalculateScrollPos();
 }
@@ -194,7 +194,7 @@ void CGUIListBox::setSelected(const wchar_t *item)
 }
 
 //! called if an event happened.
-bool CGUIListBox::OnEvent(const main::Event &event)
+bool CGUIListBox::OnEvent(const core::Event &event)
 {
 	if (isEnabled()) {
 		switch (event.Type) {
@@ -239,7 +239,7 @@ bool CGUIListBox::OnEvent(const main::Event &event)
 				// post the news
 
 				if (oldSelected != Selected && Parent && !Selecting && !MoveOverSelect) {
-					main::Event e;
+					core::Event e;
 					e.Type = EET_GUI_EVENT;
                     e.GUI.Caller = getID();
 					e.GUI.Element = 0;
@@ -250,7 +250,7 @@ bool CGUIListBox::OnEvent(const main::Event &event)
 				return true;
 			} else if (!event.KeyInput.PressedDown && (event.KeyInput.Key == KEY_RETURN || event.KeyInput.Key == KEY_SPACE)) {
 				if (Parent) {
-					main::Event e;
+					core::Event e;
 					e.Type = EET_GUI_EVENT;
                     e.GUI.Caller = getID();
 					e.GUI.Element = 0;
@@ -262,7 +262,7 @@ bool CGUIListBox::OnEvent(const main::Event &event)
 				return false;
 			} else if (event.KeyInput.PressedDown && event.KeyInput.Char) {
 				// change selection based on text as it is typed.
-				u32 now = main::TimeCounter::getRealTime();
+				u32 now = core::TimeCounter::getRealTime();
 
 				if (now - LastKeyTime < 500) {
 					// add to key buffer if it isn't a key repeat
@@ -290,7 +290,7 @@ bool CGUIListBox::OnEvent(const main::Event &event)
 					if (Items[current].Text.size() >= KeyBuffer.size()) {
                         if (equal_ignore_case<wchar_t>(KeyBuffer, Items[current].Text.substr(0, KeyBuffer.size()))) {
 							if (Parent && Selected != current && !Selecting && !MoveOverSelect) {
-								main::Event e;
+								core::Event e;
 								e.Type = EET_GUI_EVENT;
                                 e.GUI.Caller = getID();
 								e.GUI.Element = 0;
@@ -307,7 +307,7 @@ bool CGUIListBox::OnEvent(const main::Event &event)
                         if (equal_ignore_case<wchar_t>(KeyBuffer, Items[current].Text.substr(0, KeyBuffer.size()))) {
 							if (Parent && Selected != current && !Selecting && !MoveOverSelect) {
 								Selected = current;
-								main::Event e;
+								core::Event e;
 								e.Type = EET_GUI_EVENT;
                                 e.GUI.Caller = getID();
 								e.GUI.Element = 0;
@@ -382,7 +382,7 @@ bool CGUIListBox::OnEvent(const main::Event &event)
 
 void CGUIListBox::selectNew(s32 ypos, bool onlyHover)
 {
-	u32 now = main::TimeCounter::getRealTime();
+	u32 now = core::TimeCounter::getRealTime();
 	s32 oldSelected = Selected;
 
 	Selected = getItemAt(AbsoluteRect.ULC.X, ypos);
@@ -395,7 +395,7 @@ void CGUIListBox::selectNew(s32 ypos, bool onlyHover)
 	selectTime = now;
 	// post the news
 	if (Parent && !onlyHover) {
-		main::Event event;
+		core::Event event;
 		event.Type = EET_GUI_EVENT;
         event.GUI.Caller = getID();
 		event.GUI.Element = 0;
@@ -474,11 +474,11 @@ void CGUIListBox::draw()
 					if (i == Selected && hl) {
 						IconBank->draw2DSprite((u32)Items[i].Icon, iconPos, &clientClip,
 								hasItemOverrideColor(i, EGUI_LBC_ICON_HIGHLIGHT) ? getItemOverrideColor(i, EGUI_LBC_ICON_HIGHLIGHT) : getItemDefaultColor(EGUI_LBC_ICON_HIGHLIGHT),
-								selectTime, main::TimeCounter::getRealTime(), false, true);
+								selectTime, core::TimeCounter::getRealTime(), false, true);
 					} else {
 						IconBank->draw2DSprite((u32)Items[i].Icon, iconPos, &clientClip,
 								hasItemOverrideColor(i, EGUI_LBC_ICON) ? getItemOverrideColor(i, EGUI_LBC_ICON) : getItemDefaultColor(EGUI_LBC_ICON),
-								0, (i == Selected) ? main::TimeCounter::getRealTime() : 0, false, true);
+								0, (i == Selected) ? core::TimeCounter::getRealTime() : 0, false, true);
 					}
 				}
 

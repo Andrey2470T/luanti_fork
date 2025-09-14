@@ -4,53 +4,45 @@
 
 #pragma once
 
-#include <IGUIStaticText.h>
-#include "irrlicht_changes/static_text.h"
+#include "IGUIStaticText.h"
 #include "IGUIButton.h"
 #include "IGUISpriteBank.h"
-#include "ITexture.h"
-#include "SColor.h"
 #include "StyleSpec.h"
 
-using namespace irr;
-
-class ISimpleTextureSource;
 
 class GUIButton : public gui::IGUIButton
 {
 public:
-
 	//! constructor
 	GUIButton(gui::IGUIEnvironment* environment, gui::IGUIElement* parent,
-			   s32 id, core::rect<s32> rectangle, ISimpleTextureSource *tsrc,
-			   bool noclip=false);
+               s32 id, recti rectangle, bool noclip=false);
 
 	//! destructor
 	virtual ~GUIButton();
 
 	//! called if an event happened.
-	virtual bool OnEvent(const SEvent& event) override;
+    virtual bool OnEvent(const core::Event& event) override;
 
 	//! draws the element and its children
 	virtual void draw() override;
 
 	//! sets another skin independent font. if this is set to zero, the button uses the font of the skin.
-	virtual void setOverrideFont(gui::IGUIFont* font=0) override;
+    virtual void setOverrideFont(render::TTFont* font=0) override;
 
 	//! Gets the override font (if any)
-	virtual gui::IGUIFont* getOverrideFont() const override;
+    virtual render::TTFont* getOverrideFont() const override;
 
 	//! Get the font which is used right now for drawing
-	virtual gui::IGUIFont* getActiveFont() const override;
+    virtual render::TTFont* getActiveFont() const override;
 
 	//! Sets another color for the button text.
-	virtual void setOverrideColor(video::SColor color) override;
+	virtual void setOverrideColor(img::color8 color) override;
 
 	//! Gets the override color
-	virtual video::SColor getOverrideColor() const override;
+	virtual img::color8 getOverrideColor() const override;
 
 	//! Gets the currently used text color
-	virtual video::SColor getActiveColor() const override;
+	virtual img::color8 getActiveColor() const override;
 
 	//! Sets if the button text should use the override color or the color in the gui skin.
 	virtual void enableOverrideColor(bool enable) override;
@@ -60,21 +52,21 @@ public:
 
 	// PATCH
 	//! Sets an image which should be displayed on the button when it is in the given state.
-	virtual void setImage(gui::EGUI_BUTTON_IMAGE_STATE state,
-			video::ITexture* image=nullptr,
-			const core::rect<s32>& sourceRect=core::rect<s32>(0,0,0,0)) override;
+    virtual void setImage(EGUI_BUTTON_IMAGE_STATE state,
+			img::Image* image=nullptr,
+			const recti& sourceRect=recti(0,0,0,0)) override;
 
 	//! Sets an image which should be displayed on the button when it is in normal state.
-	virtual void setImage(video::ITexture* image=nullptr) override;
+	virtual void setImage(img::Image* image=nullptr) override;
 
 	//! Sets an image which should be displayed on the button when it is in normal state.
-	virtual void setImage(video::ITexture* image, const core::rect<s32>& pos) override;
+	virtual void setImage(img::Image* image, const recti& pos) override;
 
 	//! Sets an image which should be displayed on the button when it is in pressed state.
-	virtual void setPressedImage(video::ITexture* image=nullptr) override;
+	virtual void setPressedImage(img::Image* image=nullptr) override;
 
 	//! Sets an image which should be displayed on the button when it is in pressed state.
-	virtual void setPressedImage(video::ITexture* image, const core::rect<s32>& pos) override;
+	virtual void setPressedImage(img::Image* image, const recti& pos) override;
 
 	//! Sets the text displayed by the button
 	virtual void setText(const wchar_t* text) override;
@@ -89,18 +81,18 @@ public:
 	\param index: The sprite number from the current sprite bank
 	\param color: The color of the sprite
 	*/
-	virtual void setSprite(gui::EGUI_BUTTON_STATE state, s32 index,
-						   video::SColor color=video::SColor(255,255,255,255),
+    virtual void setSprite(EGUI_BUTTON_STATE state, s32 index,
+                           img::color8 color=img::white,
 						   bool loop=false) override;
 
 	//! Get the sprite-index for the given state or -1 when no sprite is set
-	virtual s32 getSpriteIndex(gui::EGUI_BUTTON_STATE state) const override;
+    virtual s32 getSpriteIndex(EGUI_BUTTON_STATE state) const override;
 
 	//! Get the sprite color for the given state. Color is only used when a sprite is set.
-	virtual video::SColor getSpriteColor(gui::EGUI_BUTTON_STATE state) const override;
+    virtual img::color8 getSpriteColor(EGUI_BUTTON_STATE state) const override;
 
 	//! Returns if the sprite in the given state does loop
-	virtual bool getSpriteLoop(gui::EGUI_BUTTON_STATE state) const override;
+    virtual bool getSpriteLoop(EGUI_BUTTON_STATE state) const override;
 
 	//! Sets if the button should behave like a push button. Which means it
 	//! can be in two states: Normal or Pressed. With a click on the button,
@@ -154,7 +146,7 @@ public:
 		return ClickControlState;
 	}
 
-	void setColor(video::SColor color);
+	void setColor(img::color8 color);
 	// PATCH
 	//! Set element properties from a StyleSpec corresponding to the button state
 	void setFromState();
@@ -169,15 +161,13 @@ public:
 
 	//! Do not drop returned handle
 	static GUIButton* addButton(gui::IGUIEnvironment *environment,
-			const core::rect<s32>& rectangle, ISimpleTextureSource *tsrc,
+            const recti& rectangle,
 			IGUIElement* parent, s32 id, const wchar_t* text,
 			const wchar_t *tooltiptext=L"");
 
 protected:
-	void drawSprite(gui::EGUI_BUTTON_STATE state, u32 startTime, const core::position2di& center);
-	gui::EGUI_BUTTON_IMAGE_STATE getImageState(bool pressed) const;
-
-	ISimpleTextureSource *getTextureSource() { return TSrc; }
+    void drawSprite(EGUI_BUTTON_STATE state, u32 startTime, const v2i& center);
+    EGUI_BUTTON_IMAGE_STATE getImageState(bool pressed) const;
 
 	struct ButtonImage
 	{
@@ -188,21 +178,11 @@ protected:
 			*this = other;
 		}
 
-		~ButtonImage()
-		{
-			if ( Texture )
-				Texture->drop();
-		}
-
 		ButtonImage& operator=(const ButtonImage& other)
 		{
 			if ( this == &other )
 				return *this;
 
-			if (other.Texture)
-				other.Texture->grab();
-			if ( Texture )
-				Texture->drop();
 			Texture = other.Texture;
 			SourceRect = other.SourceRect;
 			return *this;
@@ -214,11 +194,11 @@ protected:
 		}
 
 
-		video::ITexture* Texture = nullptr;
-		core::rect<s32> SourceRect = core::rect<s32>(0,0,0,0);
+		img::Image* Texture = nullptr;
+		recti SourceRect = recti(0,0,0,0);
 	};
 
-	gui::EGUI_BUTTON_IMAGE_STATE getImageState(bool pressed, const ButtonImage* images) const;
+    EGUI_BUTTON_IMAGE_STATE getImageState(bool pressed, const ButtonImage* images) const;
 
 private:
 
@@ -230,21 +210,21 @@ private:
 		}
 
 		s32 Index = -1;
-		video::SColor Color;
+		img::color8 Color;
 		bool Loop = false;
 	};
 
-	ButtonSprite ButtonSprites[gui::EGBS_COUNT];
+    ButtonSprite ButtonSprites[(u8)EGBS_COUNT];
 	gui::IGUISpriteBank* SpriteBank = nullptr;
 
-	ButtonImage ButtonImages[gui::EGBIS_COUNT];
+    ButtonImage ButtonImages[(u8)EGBIS_COUNT];
 
 	std::array<StyleSpec, StyleSpec::NUM_STATES> Styles;
 
-	gui::IGUIFont* OverrideFont = nullptr;
+    render::TTFont* OverrideFont = nullptr;
 
 	bool OverrideColorEnabled = false;
-	video::SColor OverrideColor = video::SColor(101,255,255,255);
+    img::color8 OverrideColor = img::color8(img::PF_RGBA8, 255,255,255,101);
 
 	u32 ClickTime = 0;
 	u32 HoverTime = 0;
@@ -259,17 +239,17 @@ private:
 	bool DrawBorder = true;
 	bool ScaleImage = false;
 
-	video::SColor Colors[4];
+	img::color8 Colors[4];
 	// PATCH
 	bool WasHovered = false;
 	bool WasFocused = false;
-	ISimpleTextureSource *TSrc;
 
 	gui::IGUIStaticText *StaticText;
+    std::unique_ptr<UISpriteBank> ButtonBox;
 
-	core::rect<s32> BgMiddle;
-	core::rect<s32> Padding;
-	core::vector2d<s32> ContentOffset;
-	video::SColor BgColor = video::SColor(0xFF,0xFF,0xFF,0xFF);
+	recti BgMiddle;
+	recti Padding;
+    v2i ContentOffset;
+    img::color8 BgColor = img::white;
 	// END PATCH
 };

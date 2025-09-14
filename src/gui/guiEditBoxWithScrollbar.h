@@ -15,7 +15,7 @@ public:
 
 	//! constructor
 	GUIEditBoxWithScrollBar(const wchar_t* text, bool border, IGUIEnvironment* environment,
-		IGUIElement* parent, s32 id, const core::rect<s32>& rectangle,
+		IGUIElement* parent, s32 id, const recti& rectangle,
 		ISimpleTextureSource *tsrc, bool writable = true, bool has_vscrollbar = true);
 
 	//! destructor
@@ -31,7 +31,7 @@ public:
 	virtual void updateAbsolutePosition();
 
 	//! Change the background color
-	virtual void setBackgroundColor(const video::SColor &bg_color);
+	virtual void setBackgroundColor(const img::color8 &bg_color);
 
 	virtual bool isDrawBackgroundEnabled() const;
 	virtual bool isDrawBorderEnabled() const;
@@ -57,7 +57,7 @@ protected:
 	bool m_background;
 
 	bool m_bg_color_used;
-	video::SColor m_bg_color;
+	img::color8 m_bg_color;
 
 	ISimpleTextureSource *m_tsrc;
 };

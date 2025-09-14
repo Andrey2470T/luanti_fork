@@ -16,27 +16,34 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
 #include "guiBackgroundImage.h"
-#include "client/guiscalingfilter.h"
+#include "IGUIEnvironment.h"
 #include "log.h"
-#include "client/texturesource.h"
-#include <ITexture.h>
+#include "client/ui/extra_images.h"
+#include "client/render/rendersystem.h"
+#include "client/render/atlas.h"
 
 GUIBackgroundImage::GUIBackgroundImage(gui::IGUIEnvironment *env,
-	gui::IGUIElement *parent, s32 id, const core::rect<s32> &rectangle,
-	const std::string &name, const core::rect<s32> &middle,
-	ISimpleTextureSource *tsrc, bool autoclip, v2s32 autoclip_offset) :
-	gui::IGUIElement(gui::EGUIET_ELEMENT, env, parent, id, rectangle),
-	m_name(name), m_middle(middle), m_tsrc(tsrc), m_autoclip(autoclip),
-	m_autoclip_offset(autoclip_offset)
+    gui::IGUIElement *parent, s32 id, const recti &rectangle,
+    const std::string &name, const recti &middle, bool autoclip, v2i autoclip_offset) :
+	gui::IGUIElement(EGUIET_ELEMENT, env, parent, id, rectangle),
+    m_name(name), m_middle(middle), m_autoclip(autoclip),
+    m_autoclip_offset(autoclip_offset)
 {
+    if (m_middle.getArea() == 0) {
+        Image = std::make_unique<ImageSprite>(env->getRenderSystem(),
+            env->getResourceCache());
+    }
+    else {
+        Image = std::make_unique<Image2D9Slice>(env->getResourceCache(),
+            env->getRenderSystem()->getRenderer(), nullptr,
+            std::array<img::color8, 4>{img::white, img::white, img::white, img::white});
+    }
 }
 
 void GUIBackgroundImage::draw()
 {
 	if (!IsVisible)
 		return;
-
-	video::ITexture *texture = m_tsrc->getTexture(m_name);
 
 	if (!texture) {
 		errorstream << "GUIBackgroundImage::draw() Unable to load texture:"
@@ -45,26 +52,28 @@ void GUIBackgroundImage::draw()
 		return;
 	}
 
-	core::rect<s32> rect;
+	recti rect;
 	if (m_autoclip) {
 		rect = Parent->getAbsoluteClippingRect();
-		rect.UpperLeftCorner -= m_autoclip_offset;
-		rect.LowerRightCorner += m_autoclip_offset;
+        rect.ULC -= m_autoclip_offset;
+        rect.LRC += m_autoclip_offset;
 	} else {
 		rect = AbsoluteRect;
 	}
 
-	video::IVideoDriver *driver = Environment->getVideoDriver();
-
-	core::rect<s32> srcrect(core::position2d<s32>(0, 0),
-			core::dimension2di(texture->getOriginalSize()));
+    recti srcrect(v2i(0, 0), toV2i(texture->getSize()));
 
 	if (m_middle.getArea() == 0) {
-		const video::SColor color(255, 255, 255, 255);
-		const video::SColor colors[] = {color, color, color, color};
-		draw2DImageFilterScaled(driver, texture, rect, srcrect, nullptr, colors, true);
+        std::array<img::color8, 4> colors = {img::white, img::white, img::white, img::white};
+
+        auto img = std::get<std::shared_ptr<ImageSprite>>(Image);
+        img->update(texture, toRectf(rect), colors, &srcrect);
+        img->draw();
 	} else {
-		draw2DImage9Slice(driver, texture, rect, srcrect, m_middle);
+        auto img = std::get<std::shared_ptr<Image2D9Slice>>(Image);
+        img->updateRects(toRectf(srcrect), toRectf(rect), toRectf(m_middle));
+        img->createSlices();
+        img->draw();
 	}
 
 	IGUIElement::draw();

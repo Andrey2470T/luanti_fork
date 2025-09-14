@@ -269,7 +269,7 @@ public:
     // 'shift': '0' - shift to right, '1' - shift down
     // the sprites on each line are centered
     template<typename T, typename... Args>
-    void addSprite(Args&&... args, u8 shift)
+    void addSprite(u8 shift, Args&&... args)
     {
         T *newSprite = new T(std::forward<Args>(args)...);
         sprites.emplace_back(dynamic_cast<UISprite *>(newSprite));
@@ -307,6 +307,13 @@ public:
             auto primArea = sprite->getShape()->getMaxArea();
             updateMaxArea(maxArea, primArea.ULC, primArea.LRC, maxAreaInit);
         }
+    }
+
+    void remove(u32 n)
+    {
+        if (n > sprites.size()-1)
+            return;
+        sprites.erase(sprites.begin()+n);
     }
 
     void update()

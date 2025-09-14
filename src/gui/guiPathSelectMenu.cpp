@@ -27,7 +27,7 @@ void GUIFileSelectMenu::regenerateGui(v2u32 screensize)
 	m_fileOpenDialog = 0;
 
 	core::dimension2du size(600 * m_gui_scale, 400 * m_gui_scale);
-	core::rect<s32> rect(0, 0, screensize.X, screensize.Y);
+	recti rect(0, 0, screensize.X, screensize.Y);
 
 	DesiredRect = rect;
 	recalculateAbsolutePosition(false);
@@ -35,7 +35,7 @@ void GUIFileSelectMenu::regenerateGui(v2u32 screensize)
 	m_fileOpenDialog =
 			Environment->addFileOpenDialog(m_title.c_str(), false, this, -1);
 
-	core::position2di pos = core::position2di(screensize.X / 2 - size.Width / 2,
+	v2i pos = v2i(screensize.X / 2 - size.Width / 2,
 			screensize.Y / 2 - size.Height / 2);
 	m_fileOpenDialog->setRelativePosition(pos);
 	m_fileOpenDialog->setMinSize(size);
@@ -72,10 +72,10 @@ void GUIFileSelectMenu::acceptInput()
 	quitMenu();
 }
 
-bool GUIFileSelectMenu::OnEvent(const SEvent &event)
+bool GUIFileSelectMenu::OnEvent(const core::Event &event)
 {
-	if (event.EventType == irr::EET_GUI_EVENT) {
-		switch (event.GUIEvent.EventType) {
+	if (event.Type == irr::EET_GUI_EVENT) {
+		switch (event.GUI.Type) {
 		case gui::EGET_ELEMENT_CLOSED:
 		case gui::EGET_FILE_CHOOSE_DIALOG_CANCELLED:
 			m_accepted = false;
