@@ -28,7 +28,6 @@ class AnimationManager;
 class Minimap;
 class GameFormSpec;
 class InputHandler;
-class ProfilerGraph;
 
 namespace gui
 {
@@ -180,7 +179,7 @@ public:
         return window->pollEventsFromQueue();
     }
 
-    void render(ProfilerGraph *graph);
+    void render();
 
     void autosaveScreensizeAndCo(v2u initial_screen_size, bool initial_wnd_maximized);
 private:

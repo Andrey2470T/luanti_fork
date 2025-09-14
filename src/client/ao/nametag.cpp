@@ -37,7 +37,7 @@ void Nametag::updateBank(v3f newWorldPos)
 
     auto font_mgr = client->getRenderSystem()->getFontManager();
 
-    auto font = font_mgr->getFont(render::FontMode::GRAY, render::FontStyle::NORMAL);
+    auto font = font_mgr->getFontOrCreate(render::FontMode::GRAY, render::FontStyle::NORMAL);
     v2u textsize = font->getTextSize(nametag_colorless.c_str());
 
     auto text_sprite = dynamic_cast<UITextSprite *>(faceBank->getSprite(0));

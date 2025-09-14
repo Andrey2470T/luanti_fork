@@ -18,7 +18,7 @@ class Hud;
 class RenderSystem;
 class ResourceCache;
 struct FpsControl;
-class ProfilerGraph;
+class ProfilerGraphSet;
 class Nametag;
 class LocalPlayer;
 
@@ -76,6 +76,10 @@ public:
     {
         return hud.get();
     }
+    ProfilerGraphSet *getProfilerGraphs() const
+    {
+        return graph_set.get();
+    }
 
     void setInfoText(const std::wstring &str) {
         infotext->setText(str);
@@ -117,7 +121,7 @@ public:
 
     void updateDebugState(Client *client);
     void updateProfilers(f32 dtime);
-    void updateProfilerGraphs(ProfilerGraph *graph);
+    void updateProfilerGraphs();
     
     Nametag *addNametag(
             Client *client,
@@ -178,4 +182,6 @@ private:
     const u8 profiler_max_page = 3;
     
     std::list<std::unique_ptr<Nametag>> nametags;
+
+    std::unique_ptr<ProfilerGraphSet> graph_set;
 };

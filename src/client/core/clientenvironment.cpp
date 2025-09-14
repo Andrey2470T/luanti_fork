@@ -84,7 +84,7 @@ void ClientEnvironment::setLocalPlayer(LocalPlayer *player)
     m_local_player.reset(player);
 }
 
-void ClientEnvironment::step(ProfilerGraph *graph, f32 dtime, bool paused)
+void ClientEnvironment::step(f32 dtime, bool paused)
 {
     TimeTaker tt_update("ClientEnvironment::step()");
     m_animation_time += dtime;
@@ -455,7 +455,7 @@ void ClientEnvironment::updateTimeOfDay()
             m_local_player->getPitch());
 }
 
-void ClientEnvironment::updateFrame(ProfilerGraph *graph, f32 dtime, bool paused)
+void ClientEnvironment::updateFrame(f32 dtime, bool paused)
 {
     ZoneScoped;
     TimeTaker tt_update("ClientEnvironment::updateFrame()");
@@ -546,7 +546,7 @@ void ClientEnvironment::updateFrame(ProfilerGraph *graph, f32 dtime, bool paused
         ==================== Drawing begins ====================
     */
     if (rnd_sys->getWindow()->isVisible())
-        rnd_sys->render(graph);
+        rnd_sys->render();
     /*
         ==================== End scene ====================
     */

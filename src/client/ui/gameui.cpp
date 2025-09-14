@@ -10,7 +10,7 @@
 #include "client/render/renderer.h"
 #include "gui/mainmenumanager.h"
 #include "gui/guiChatConsole.h"
-#include "gui/profilergraph.h"
+#include "client/ui/profilergraph.h"
 #include "gui/touchcontrols.h"
 #include "util/enriched_string.h"
 #include "util/pointedthing.h"
@@ -67,7 +67,7 @@ void GameUI::init()
         rndsys->getRenderer(), cache);
 	u16 chat_font_size = g_settings->getU16("chat_font_size");
 	if (chat_font_size != 0) {
-        chattext->setOverrideFont(font_mgr->getFont(
+        chattext->setOverrideFont(font_mgr->getFontOrCreate(
             render::FontMode::GRAY, render::FontStyle::NORMAL, std::clamp<u16>(chat_font_size, 5, 72)));
 	}
 
@@ -93,9 +93,20 @@ void GameUI::init()
 	// Profiler text (size is updated when text is updated)
     profilertext = std::make_unique<UITextSprite>(font_mgr, EnrichedString("<Profiler>"),
         rndsys->getRenderer(), cache, false, false);
-    profilertext->setOverrideFont(font_mgr->getFont(render::FontMode::MONO, render::FontStyle::NORMAL,
+    profilertext->setOverrideFont(font_mgr->getFontOrCreate(render::FontMode::MONO, render::FontStyle::NORMAL,
         font_mgr->getDefaultFontSize(render::FontMode::MONO) * 0.9f));
     profilertext->setVisible(false);
+
+    graph_set = std::make_unique<ProfilerGraphSet>(rndsys, cache);
+    graph_set->addGraph("Draw scene [us]", 0, img::color8(img::PF_RGBA8, 255, 100, 100, 255));
+    graph_set->addGraph("FPS", 1, img::color8(img::PF_RGBA8, 90, 225, 90, 255));
+    graph_set->addGraph("Sleep [us]", 2, img::color8(img::PF_RGBA8, 100, 100, 255, 255));
+    graph_set->addGraph("Time non-rendering [us]", 3, img::color8(img::PF_RGBA8, 255, 150, 50, 255));
+    graph_set->addGraph("client_received_packets", 4, img::color8(img::PF_RGBA8, 220, 220, 100, 255));
+    graph_set->addGraph("num_processed_meshes", 5, img::color8(img::PF_RGBA8, 200, 200, 200, 255));
+    graph_set->addGraph("packets_lost", 6, img::color8(img::PF_RGBA8, 200, 200, 200, 255));
+    graph_set->addGraph("rudp RTT [ms]", 7, img::color8(img::PF_RGBA8, 200, 200, 200, 255));
+    graph_set->addGraph("rudp jitter [ms]", 8, img::color8(img::PF_RGBA8, 200, 200, 200, 255));
 
     showDebug();
 }
@@ -454,11 +465,13 @@ void GameUI::updateProfilers(f32 dtime)
 }
 
 /* Log times and stuff for visualization */
-void GameUI::updateProfilerGraphs(ProfilerGraph *graph)
+void GameUI::updateProfilerGraphs()
 {
     Profiler::GraphValues values;
     g_profiler->graphPop(values);
-    graph->put(values);
+    graph_set->put(values);
+
+    graph_set->setVisible(flags & GUIF_SHOW_PROFILER_GRAPH);
 }
 
 Nametag *GameUI::addNametag(

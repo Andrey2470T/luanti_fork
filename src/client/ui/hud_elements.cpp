@@ -81,7 +81,7 @@ render::TTFont *getHudTextFont(FontManager *font_mgr, const HudElement *elem, bo
         else if (elem->style & HUD_STYLE_ITALIC)
             style = render::FontStyle::ITALIC;
     }
-    return font_mgr->getFont(render::FontMode::GRAY, style, font_size);
+    return font_mgr->getFontOrCreate(render::FontMode::GRAY, style, font_size);
 }
 
 rectf getHudTextRect(RenderSystem *rnd_system, const std::string &text, const HudElement *elem, bool use_style,

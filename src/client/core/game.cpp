@@ -32,7 +32,7 @@
 #include "gettext.h"
 #include "gui/guiChatConsole.h"
 #include "gui/mainmenumanager.h"
-#include "gui/profilergraph.h"
+#include "client/ui/profilergraph.h"
 #include "client/ui/minimap.h"
 #include "nodedef.h"         // Needed for determining pointing to nodes
 #include "nodemetadata.h"
@@ -125,7 +125,6 @@ void Game::run()
 {
 	ZoneScoped;
 
-	ProfilerGraph graph;
 	f32 dtime; // in seconds
 
 	// Clear the profiler
@@ -190,7 +189,7 @@ void Game::run()
 
 		step(dtime);
 
-        client->getEnv().updateFrame(&graph, dtime, m_is_paused);
+        client->getEnv().updateFrame(dtime, m_is_paused);
 
         if (m_does_lost_focus_pause_game && !rndsys->getWindow()->isFocused() && !isMenuActive()) {
             rndsys->getGameFormSpec()->showPauseMenu();

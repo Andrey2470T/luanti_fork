@@ -23,7 +23,7 @@
 #include "client/ui/minimap.h"
 #include "gui/guiEnvironment.h"
 #include "client/ui/gameformspec.h"
-#include "gui/profilergraph.h"
+#include "client/ui/profilergraph.h"
 #include "util/tracy_wrapper.h"
 
 RenderSystem::RenderSystem(ResourceCache *_cache)
@@ -119,7 +119,7 @@ void RenderSystem::buildGUIAtlas()
     guiPool->buildRectpack2DAtlas();
 }
 
-void RenderSystem::render(ProfilerGraph *graph)
+void RenderSystem::render()
 {
     ZoneScoped;
 
@@ -156,17 +156,12 @@ void RenderSystem::render(ProfilerGraph *graph)
 
     renderer->getContext()->clearBuffers(render::CBF_COLOR | render::CBF_DEPTH, sky_color);
 
-    const LocalPlayer *player = this->client->getEnv().getLocalPlayer();
-
     pp_core->run(sky_color, gameui->getFlags() & GUIF_SHOW_HUD);
 
     /*
         Profiler graph
     */
-    v2u wndsize = window->getWindowSize();
-
-    if (gameui->getFlags() & GUIF_SHOW_PROFILER_GRAPH) {}
-        //graph->draw(10, screensize.Y - 10, driver, g_fontengine->getFont());
+    gameui->getProfilerGraphs()->draw();
 
     auto drawstats = renderer->getDrawStats();
     drawstats.drawtime = tt_draw.stop(true);

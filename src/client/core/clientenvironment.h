@@ -25,7 +25,6 @@ class LocalPlayer;
 class ResourceCache;
 class Inventory;
 struct InventoryLocation;
-class ProfilerGraph;
 
 /*
 	The client-side environment.
@@ -68,7 +67,7 @@ public:
 	void setScript(ClientScripting *script) { m_script = script; }
 
     void step(f32 dtime) override {}
-    void step(ProfilerGraph *graph, f32 dtime, bool paused);
+    void step(f32 dtime, bool paused);
 
 	virtual void setLocalPlayer(LocalPlayer *player);
     LocalPlayer *getLocalPlayer() const { return m_local_player.get(); }
@@ -151,7 +150,7 @@ public:
     void updateFog();
     void updateTimeOfDay();
 
-    void updateFrame(ProfilerGraph *graph, f32 dtime, bool paused);
+    void updateFrame(f32 dtime, bool paused);
 
     // time_of_day speed approximation for old protocol
     bool m_time_of_day_set = false;

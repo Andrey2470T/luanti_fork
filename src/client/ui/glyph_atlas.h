@@ -51,6 +51,11 @@ public:
         return defaultSizes.at((u32)mode);
     }
 
+    render::TTFont *getDefaultFont()
+    {
+        return getFontOrCreate(render::FontMode::MONO, render::FontStyle::NORMAL);
+    }
+
     render::TTFont *getFont(render::FontMode mode, render::FontStyle style, std::optional<u32> size=std::nullopt) const;
     AtlasPool *getPool(render::FontMode mode, render::FontStyle style, std::optional<u32> size=std::nullopt);
 

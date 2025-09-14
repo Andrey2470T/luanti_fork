@@ -577,6 +577,7 @@ void ClientMap::step(f32 dtime)
         if (num_processed_meshes > 0)
             g_profiler->graphAdd("num_processed_meshes", num_processed_meshes);
 
+
         /*auto shadow_renderer = RenderingEngine::get_shadow_renderer();
         if (shadow_renderer && force_update_shadows)
             shadow_renderer->setForceUpdateShadowMap();*/
