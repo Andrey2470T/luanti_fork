@@ -463,7 +463,7 @@ bool CGUIEnvironment::postEventFromUser(const core::Event &event)
 		// CAREFUL when changing - there's an identical check in CGUIModalScreen::OnEvent
         if (FocusFlags & (u32)EFF_SET_ON_TAB &&
 				event.KeyInput.PressedDown &&
-				event.KeyInput.Key == KEY_TAB) {
+				event.KeyInput.Key == core::KEY_TAB) {
 			IGUIElement *next = getNextElement(event.KeyInput.Shift, event.KeyInput.Control);
 			if (next && next != Focus) {
 				if (setFocus(next))

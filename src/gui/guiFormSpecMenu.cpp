@@ -79,7 +79,7 @@
 */
 static unsigned int font_line_height(render::TTFont *font)
 {
-	return font->getDimension(L"Ay").Height + font->getKerning(L'A').Y;
+	return font->getDimension(L"Ay").Y + font->getKerning(L'A').Y;
 }
 
 inline u32 clamp_u8(s32 value)
@@ -303,7 +303,7 @@ void GUIFormSpecMenu::parseSize(parserData* data, const std::string &element)
 		lockSize(false);
 		if (!g_settings->getBool("touch_gui") && parts.size() == 3) {
 			if (parts[2] == "true") {
-				lockSize(true,v2u32(800,600));
+				lockSize(true,v2u(800,600));
 			}
 		}
 		data->explicit_size = true;
@@ -583,7 +583,7 @@ void GUIFormSpecMenu::parseCheckbox(parserData* data, const std::string &element
 	std::wstring wlabel = translate_string(utf8_to_wide(unescape_string(label)));
 	const v2u label_size = m_font->getDimension(wlabel.c_str());
 	s32 cb_size = Environment->getSkin()->getSize(gui::EGDS_CHECK_BOX_WIDTH);
-	s32 y_center = (std::max(label_size.Height, (u32)cb_size) + 1) / 2;
+	s32 y_center = (std::max(label_size.Y, (u32)cb_size) + 1) / 2;
 
 	v2i pos;
 	recti rect;
@@ -594,7 +594,7 @@ void GUIFormSpecMenu::parseCheckbox(parserData* data, const std::string &element
 		rect = recti(
 				pos.X,
 				pos.Y - y_center,
-				pos.X + label_size.Width + cb_size + 7,
+				pos.X + label_size.X + cb_size + 7,
 				pos.Y + y_center
 			);
 	} else {
@@ -602,7 +602,7 @@ void GUIFormSpecMenu::parseCheckbox(parserData* data, const std::string &element
 		rect = recti(
 				pos.X,
 				pos.Y + imgsize.Y / 2 - y_center,
-				pos.X + label_size.Width + cb_size + 7,
+				pos.X + label_size.X + cb_size + 7,
 				pos.Y + imgsize.Y / 2 + y_center
 			);
 	}
@@ -790,9 +790,9 @@ void GUIFormSpecMenu::parseImage(parserData* data, const std::string &element)
 
 	if (parts.size() < 3) {
 		if (texture != nullptr) {
-			core::dimension2du dim = texture->getSize();
-			geom.X = dim.Width;
-			geom.Y = dim.Height;
+			v2u dim = texture->getSize();
+			geom.X = dim.X;
+			geom.Y = dim.Y;
 		} else {
 			geom = v2i(0);
 		}
@@ -1493,7 +1493,7 @@ void GUIFormSpecMenu::parsePwdField(parserData* data, const std::string &element
 
 	irr::core::Event evt;
 	evt.Type            = EET_KEY_INPUT_EVENT;
-	evt.KeyInput.Key         = KEY_END;
+	evt.KeyInput.Key         = core::KEY_END;
 	evt.KeyInput.Char        = 0;
 	evt.KeyInput.Control     = false;
 	evt.KeyInput.Shift       = false;
@@ -1544,11 +1544,11 @@ void GUIFormSpecMenu::createTextField(parserData *data, FieldSpec &spec,
 		if (is_multiline) {
 			e->setMultiLine(true);
 			e->setWordWrap(true);
-			e->setTextAlignment(gui::EGUIA_UPPERLEFT, gui::EGUIA_UPPERLEFT);
+			e->setTextAlignment(EGUIA_UPPERLEFT, EGUIA_UPPERLEFT);
 		} else {
 			irr::core::Event evt;
 			evt.Type            = EET_KEY_INPUT_EVENT;
-			evt.KeyInput.Key         = KEY_END;
+			evt.KeyInput.Key         = core::KEY_END;
 			evt.KeyInput.Char        = 0;
 			evt.KeyInput.Control     = 0;
 			evt.KeyInput.Shift       = 0;
@@ -1794,7 +1794,7 @@ void GUIFormSpecMenu::parseLabel(parserData* data, const std::string &element)
 
 			rect = recti(
 				pos.X, pos.Y,
-				pos.X + font->getDimension(line.c_str()).Width,
+				pos.X + font->getDimension(line.c_str()).X,
 				pos.Y + imgsize.Y);
 
 		} else {
@@ -1816,7 +1816,7 @@ void GUIFormSpecMenu::parseLabel(parserData* data, const std::string &element)
 
 			rect = recti(
 				pos.X, pos.Y - m_btn_height,
-				pos.X + font->getDimension(line.c_str()).Width,
+				pos.X + font->getDimension(line.c_str()).X,
 				pos.Y + m_btn_height);
 		}
 
@@ -1830,7 +1830,7 @@ void GUIFormSpecMenu::parseLabel(parserData* data, const std::string &element)
 		gui::IGUIStaticText *e = gui::StaticText::add(Environment,
 				line, rect, false, false, data->current_parent,
 				spec.fid);
-		e->setTextAlignment(gui::EGUIA_UPPERLEFT, gui::EGUIA_CENTER);
+		e->setTextAlignment(EGUIA_UPPERLEFT, gui::EGUIA_CENTER);
 
 		e->setNotClipped(style.getBool(StyleSpec::NOCLIP, false));
 		e->setOverrideColor(style.getColor(StyleSpec::TEXTCOLOR, img::color8(0xFFFFFFFF)));
@@ -2099,8 +2099,8 @@ void GUIFormSpecMenu::parseTabHeader(parserData* data, const std::string &elemen
 
 	gui::IGUITabControl *e = Environment->addTabControl(rect,
 			data->current_parent, show_background, show_border, spec.fid);
-	e->setAlignment(irr::gui::EGUIA_UPPERLEFT, irr::gui::EGUIA_UPPERLEFT,
-			irr::gui::EGUIA_UPPERLEFT, irr::gui::EGUIA_LOWERRIGHT);
+	e->setAlignment(irr::EGUIA_UPPERLEFT, irr::EGUIA_UPPERLEFT,
+			irr::EGUIA_UPPERLEFT, irr::EGUIA_LOWERRIGHT);
 	e->setTabHeight(geom.Y);
 
 	auto style = getDefaultStyleForElement("tabheader", name);
@@ -2934,7 +2934,7 @@ void GUIFormSpecMenu::parseElement(parserData* data, const std::string &element)
 			<< std::endl;
 }
 
-void GUIFormSpecMenu::regenerateGui(v2u32 screensize)
+void GUIFormSpecMenu::regenerateGui(v2u screensize)
 {
 	// Useless to regenerate without a screensize
 	if ((screensize.X <= 0) || (screensize.Y <= 0)) {
@@ -3105,8 +3105,8 @@ void GUIFormSpecMenu::regenerateGui(v2u32 screensize)
 	if (mydata.explicit_size) {
 		// compute scaling for specified form size
 		if (m_lock) {
-			v2u32 current_screensize = RenderingEngine::get_video_driver()->getScreenSize();
-			v2u32 delta = current_screensize - m_lockscreensize;
+			v2u current_screensize = RenderingEngine::get_video_driver()->getScreenSize();
+			v2u delta = current_screensize - m_lockscreensize;
 
 			if (current_screensize.Y > m_lockscreensize.Y)
 				delta.Y /= 2;
@@ -3445,7 +3445,7 @@ void GUIFormSpecMenu::drawMenu()
 	/*
 		Draw background color
 	*/
-	v2u32 screenSize = driver->getScreenSize();
+	v2u screenSize = driver->getScreenSize();
 	recti allbg(0, 0, screenSize.X, screenSize.Y);
 
 	if (m_bgfullscreen)
@@ -3596,7 +3596,7 @@ void GUIFormSpecMenu::showTooltip(const std::wstring &text,
 	s32 tooltip_width = m_tooltip_element->getTextWidth() + m_btn_height;
 	s32 tooltip_height = m_tooltip_element->getTextHeight() + 5;
 
-	v2u32 screenSize = Environment->getVideoDriver()->getScreenSize();
+	v2u screenSize = Environment->getVideoDriver()->getScreenSize();
 	int tooltip_offset_x = m_btn_height;
 	int tooltip_offset_y = m_btn_height;
 
@@ -3869,7 +3869,7 @@ void GUIFormSpecMenu::acceptInput(FormspecQuitMode quitmode)
 					// without rtti support in Irrlicht
 					IGUIElement *element = getElementFromId(s.fid, true);
 					gui::IGUICheckBox *e = nullptr;
-					if ((element) && (element->getType() == gui::EGUIET_CHECK_BOX)) {
+					if ((element) && (element->getType() == EGUIET_CHECK_BOX)) {
 						e = static_cast<gui::IGUICheckBox*>(element);
 					}
 
@@ -3915,11 +3915,11 @@ void GUIFormSpecMenu::acceptInput(FormspecQuitMode quitmode)
 	}
 }
 
-bool GUIFormSpecMenu::preprocescore::Event(const core::Event& event)
+bool GUIFormSpecMenu::preprocessEvent(const core::Event& event)
 {
 	// This must be done first so that GUIModalMenu can set m_pointer_type
 	// correctly.
-	if (GUIModalMenu::preprocescore::Event(event))
+	if (GUIModalMenu::preprocessEvent(event))
 		return true;
 
 	// The IGUITabControl renders visually using the skin's selected
@@ -3929,7 +3929,7 @@ bool GUIFormSpecMenu::preprocescore::Event(const core::Event& event)
 	// To make these two consistent, temporarily override the skin's
 	// font while the IGUITabControl is processing the event.
 	if (event.Type == EET_MOUSE_INPUT_EVENT &&
-			event.MouseInput.Event == EMIE_LMOUSE_LEFT_UP) {
+			event.MouseInput.Type == EMIE_LMOUSE_LEFT_UP) {
 		s32 x = event.MouseInput.X;
 		s32 y = event.MouseInput.Y;
 		gui::IGUIElement *hovered =
@@ -3951,16 +3951,16 @@ bool GUIFormSpecMenu::preprocescore::Event(const core::Event& event)
 
 	// Fix Esc/Return key being eaten by checkboxen and tables
 	if (event.Type == EET_KEY_INPUT_EVENT) {
-			KeyPress kp(event.KeyInput);
+			MtKey kp(event.KeyInput);
 		if (kp == EscapeKey
 				|| kp == getKeySetting("keymap_inventory")
-				|| event.KeyInput.Key==KEY_RETURN) {
+				|| event.KeyInput.Key==core::KEY_RETURN) {
 			gui::IGUIElement *focused = Environment->getFocus();
 			if (focused && isMyChild(focused) &&
 					(focused->getType() == gui::EGUIET_LIST_BOX ||
-					focused->getType() == gui::EGUIET_CHECK_BOX) &&
+					focused->getType() == EGUIET_CHECK_BOX) &&
 					(focused->getParent()->getType() != gui::EGUIET_COMBO_BOX ||
-					event.KeyInput.Key != KEY_RETURN)) {
+					event.KeyInput.Key != core::KEY_RETURN)) {
 				OnEvent(event);
 				return true;
 			}
@@ -3968,8 +3968,8 @@ bool GUIFormSpecMenu::preprocescore::Event(const core::Event& event)
 	}
 	// Mouse wheel and move events: send to hovered element instead of focused
 	if (event.Type == EET_MOUSE_INPUT_EVENT &&
-			(event.MouseInput.Event == EMIE_MOUSE_WHEEL ||
-			(event.MouseInput.Event == EMIE_MOUSE_MOVED &&
+			(event.MouseInput.Type == EMIE_MOUSE_WHEEL ||
+			(event.MouseInput.Type == EMIE_MOUSE_MOVED &&
 			event.MouseInput.ButtonStates == 0))) {
 		s32 x = event.MouseInput.X;
 		s32 y = event.MouseInput.Y;
@@ -3978,7 +3978,7 @@ bool GUIFormSpecMenu::preprocescore::Event(const core::Event& event)
 				v2i(x, y));
 		if (hovered && isMyChild(hovered)) {
 			hovered->OnEvent(event);
-			return event.MouseInput.Event == EMIE_MOUSE_WHEEL;
+			return event.MouseInput.Type == EMIE_MOUSE_WHEEL;
 		}
 	}
 
@@ -4017,7 +4017,7 @@ void GUIFormSpecMenu::tryClose()
 bool GUIFormSpecMenu::OnEvent(const core::Event& event)
 {
 	if (event.Type==EET_KEY_INPUT_EVENT) {
-		KeyPress kp(event.KeyInput);
+		MtKey kp(event.KeyInput);
 		if (event.KeyInput.PressedDown && (
 				(kp == EscapeKey) ||
 				((m_client != NULL) && (kp == getKeySetting("keymap_inventory"))))) {
@@ -4036,18 +4036,18 @@ bool GUIFormSpecMenu::OnEvent(const core::Event& event)
 		}
 
 		if (event.KeyInput.PressedDown &&
-			(event.KeyInput.Key==KEY_RETURN ||
-			 event.KeyInput.Key==KEY_UP ||
-			 event.KeyInput.Key==KEY_DOWN)
+			(event.KeyInput.Key==core::KEY_RETURN ||
+			 event.KeyInput.Key==core::KEY_UP ||
+			 event.KeyInput.Key==core::KEY_DOWN)
 			) {
 			switch (event.KeyInput.Key) {
-				case KEY_RETURN:
+				case core::KEY_RETURN:
 					current_keys_pending.key_enter = true;
 					break;
-				case KEY_UP:
+				case core::KEY_UP:
 					current_keys_pending.key_up = true;
 					break;
-				case KEY_DOWN:
+				case core::KEY_DOWN:
 					current_keys_pending.key_down = true;
 					break;
 				break;
@@ -4072,7 +4072,7 @@ bool GUIFormSpecMenu::OnEvent(const core::Event& event)
 	   or touch event (for touch screen devices)
 	 */
 	if ((event.Type == EET_MOUSE_INPUT_EVENT &&
-			(event.MouseInput.Event != EMIE_MOUSE_MOVED ||
+			(event.MouseInput.Type != EMIE_MOUSE_MOVED ||
 				((event.MouseInput.isLeftPressed() ||
 					event.MouseInput.isRightPressed() ||
 					event.MouseInput.isMiddlePressed()) &&
@@ -4149,7 +4149,7 @@ bool GUIFormSpecMenu::OnEvent(const core::Event& event)
 		bool mouse_shift = false;
 		if (event.Type == EET_MOUSE_INPUT_EVENT) {
 			mouse_shift = event.MouseInput.Shift;
-			switch (event.MouseInput.Event) {
+			switch (event.MouseInput.Type) {
 			case EMIE_LMOUSE_PRESSED_DOWN:
 				button = BET_LEFT; updown = BET_DOWN;
 				break;
@@ -4181,10 +4181,10 @@ bool GUIFormSpecMenu::OnEvent(const core::Event& event)
 			}
 		}
 
-		// The second touch (see GUIModalMenu::preprocescore::Event() function)
+		// The second touch (see GUIModalMenu::preprocessEvent() function)
 		ButtonEventType touch = BET_OTHER;
 		if (event.Type == EET_TOUCH_INPUT_EVENT) {
-			if (event.TouchInput.Event == ETIE_LEFT_UP)
+			if (event.TouchInput.Type == ETIE_LEFT_UP)
 				touch = BET_RIGHT;
 		}
 
@@ -4463,7 +4463,7 @@ bool GUIFormSpecMenu::OnEvent(const core::Event& event)
 			// Some other mouse event has occured
 			// Currently only left-double-click should trigger this
 			if (!s.isValid() || event.Type != EET_MOUSE_INPUT_EVENT ||
-					event.MouseInput.Event != EMIE_LMOUSE_DOUBLE_CLICK)
+					event.MouseInput.Type != EMIE_LMOUSE_DOUBLE_CLICK)
 				break;
 
 			// Only do the pickup all thing when putting down an item.
@@ -4787,7 +4787,7 @@ bool GUIFormSpecMenu::OnEvent(const core::Event& event)
 				}
 			}
 		}
-		if (event.GUI.Type == gui::EGET_ELEMENT_FOCUS_LOST
+		if (event.GUI.Type == EGET_ELEMENT_FOCUS_LOST
 				&& isVisible()) {
 			if (!canTakeFocus(event.GUI.Element)) {
 				infostream<<"GUIFormSpecMenu: Not allowing focus change."
@@ -4796,10 +4796,10 @@ bool GUIFormSpecMenu::OnEvent(const core::Event& event)
 				return true;
 			}
 		}
-		if ((event.GUI.Type == gui::EGET_BUTTON_CLICKED) ||
-				(event.GUI.Type == gui::EGET_CHECKBOX_CHANGED) ||
+		if ((event.GUI.Type == EGET_BUTTON_CLICKED) ||
+				(event.GUI.Type == EGET_CHECKBOX_CHANGED) ||
 				(event.GUI.Type == gui::EGET_COMBO_BOX_CHANGED) ||
-				(event.GUI.Type == gui::EGET_SCROLL_BAR_CHANGED)) {
+				(event.GUI.Type == EGET_SCROLL_BAR_CHANGED)) {
 			s32 caller_id = event.GUI.Caller->getID();
 
 			if (caller_id == 257) {
@@ -4886,7 +4886,7 @@ bool GUIFormSpecMenu::OnEvent(const core::Event& event)
 			}
 		}
 
-		if (event.GUI.Type == gui::EGET_SCROLL_BAR_CHANGED) {
+		if (event.GUI.Type == EGET_SCROLL_BAR_CHANGED) {
 			// move scroll_containers
 			for (const std::pair<std::string, GUIScrollContainer *> &c : m_scroll_containers)
 				c.second->onScrollEvent(event.GUI.Caller);
@@ -4921,7 +4921,7 @@ bool GUIFormSpecMenu::OnEvent(const core::Event& event)
 			}
 		}
 
-		if (event.GUI.Type == gui::EGET_TABLE_CHANGED) {
+		if (event.GUI.Type == EGET_TABLE_CHANGED) {
 			int current_id = event.GUI.Caller->getID();
 			if (current_id > 257) {
 				// find the element that was clicked
@@ -5040,7 +5040,7 @@ double GUIFormSpecMenu::getFixedImgsize(double screen_dpi, double gui_scaling)
 	return 0.5555 * screen_dpi * gui_scaling;
 }
 
-double GUIFormSpecMenu::getImgsize(v2u32 avail_screensize, double screen_dpi, double gui_scaling)
+double GUIFormSpecMenu::getImgsize(v2u avail_screensize, double screen_dpi, double gui_scaling)
 {
 	double fixed_imgsize = getFixedImgsize(screen_dpi, gui_scaling);
 
@@ -5085,7 +5085,7 @@ double GUIFormSpecMenu::calculateImgsize(const parserData &data)
 				((15.0 / 13.0) * (0.85 + data.invsize.Y));
 	}
 
-	double prefer_imgsize = getImgsize(v2u32(padded_screensize.X, padded_screensize.Y),
+	double prefer_imgsize = getImgsize(v2u(padded_screensize.X, padded_screensize.Y),
 			screen_dpi, gui_scaling);
 
 	// Try to use the preferred imgsize, but if that's bigger than the maximum

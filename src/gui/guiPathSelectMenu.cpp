@@ -21,12 +21,12 @@ GUIFileSelectMenu::~GUIFileSelectMenu()
 	setlocale(LC_NUMERIC, "C");
 }
 
-void GUIFileSelectMenu::regenerateGui(v2u32 screensize)
+void GUIFileSelectMenu::regenerateGui(v2u screensize)
 {
 	removeAllChildren();
 	m_fileOpenDialog = 0;
 
-	core::dimension2du size(600 * m_gui_scale, 400 * m_gui_scale);
+	v2u size(600 * m_gui_scale, 400 * m_gui_scale);
 	recti rect(0, 0, screensize.X, screensize.Y);
 
 	DesiredRect = rect;
@@ -35,8 +35,8 @@ void GUIFileSelectMenu::regenerateGui(v2u32 screensize)
 	m_fileOpenDialog =
 			Environment->addFileOpenDialog(m_title.c_str(), false, this, -1);
 
-	v2i pos = v2i(screensize.X / 2 - size.Width / 2,
-			screensize.Y / 2 - size.Height / 2);
+	v2i pos = v2i(screensize.X / 2 - size.X / 2,
+			screensize.Y / 2 - size.Y / 2);
 	m_fileOpenDialog->setRelativePosition(pos);
 	m_fileOpenDialog->setMinSize(size);
 }

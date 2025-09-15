@@ -46,7 +46,7 @@ public:
 
     virtual void regenerateGui(v2u screensize) = 0;
 	virtual void drawMenu() = 0;
-    virtual bool preprocescore::Event(const core::Event &event);
+    virtual bool preprocessEvent(const core::Event &event);
     virtual bool OnEvent(const core::Event &event) { return false; };
 	virtual bool pausesGame() { return false; } // Used for pause menu
 #ifdef __ANDROID__
@@ -99,7 +99,7 @@ private:
     std::unique_ptr<gui::IGUIElement> m_touch_hovered;
 
 	// Converts touches into clicks.
-    bool simulateMouseEvent(core::ET_TOUCH_INPUT_EVENT touch_event, bool second_try=false);
+    bool simulateMouseEvent(core::TouchInputEventType touch_event, bool second_try=false);
 	void enter(gui::IGUIElement *element);
 	void leave();
 

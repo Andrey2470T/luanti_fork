@@ -200,30 +200,30 @@ bool CGUIListBox::OnEvent(const core::Event &event)
 		switch (event.Type) {
 		case EET_KEY_INPUT_EVENT:
 			if (event.KeyInput.PressedDown &&
-					(event.KeyInput.Key == KEY_DOWN ||
-							event.KeyInput.Key == KEY_UP ||
-							event.KeyInput.Key == KEY_HOME ||
-							event.KeyInput.Key == KEY_END ||
-							event.KeyInput.Key == KEY_NEXT ||
-							event.KeyInput.Key == KEY_PRIOR)) {
+					(event.KeyInput.Key == core::KEY_DOWN ||
+							event.KeyInput.Key == core::KEY_UP ||
+							event.KeyInput.Key == core::KEY_HOME ||
+							event.KeyInput.Key == core::KEY_END ||
+							event.KeyInput.Key == core::KEY_NEXT ||
+							event.KeyInput.Key == core::KEY_PRIOR)) {
 				s32 oldSelected = Selected;
 				switch (event.KeyInput.Key) {
-				case KEY_DOWN:
+				case core::KEY_DOWN:
 					Selected += 1;
 					break;
-				case KEY_UP:
+				case core::KEY_UP:
 					Selected -= 1;
 					break;
-				case KEY_HOME:
+				case core::KEY_HOME:
 					Selected = 0;
 					break;
-				case KEY_END:
+				case core::KEY_END:
 					Selected = (s32)Items.size() - 1;
 					break;
-				case KEY_NEXT:
+				case core::KEY_NEXT:
 					Selected += AbsoluteRect.getHeight() / ItemHeight;
 					break;
-				case KEY_PRIOR:
+				case core::KEY_PRIOR:
 					Selected -= AbsoluteRect.getHeight() / ItemHeight;
 					break;
 				default:
@@ -248,7 +248,7 @@ bool CGUIListBox::OnEvent(const core::Event &event)
 				}
 
 				return true;
-			} else if (!event.KeyInput.PressedDown && (event.KeyInput.Key == KEY_RETURN || event.KeyInput.Key == KEY_SPACE)) {
+			} else if (!event.KeyInput.PressedDown && (event.KeyInput.Key == core::KEY_RETURN || event.KeyInput.Key == core::KEY_SPACE)) {
 				if (Parent) {
 					core::Event e;
 					e.Type = EET_GUI_EVENT;
@@ -258,7 +258,7 @@ bool CGUIListBox::OnEvent(const core::Event &event)
 					Parent->OnEvent(e);
 				}
 				return true;
-			} else if (event.KeyInput.Key == KEY_TAB) {
+			} else if (event.KeyInput.Key == core::KEY_TAB) {
 				return false;
 			} else if (event.KeyInput.PressedDown && event.KeyInput.Char) {
 				// change selection based on text as it is typed.

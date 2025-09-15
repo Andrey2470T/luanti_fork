@@ -275,6 +275,10 @@ public:
         sprites.emplace_back(dynamic_cast<UISprite *>(newSprite));
     }
 
+    void addSprite(UISprite *sprite)
+    {
+        sprites.emplace_back(sprite);
+    }
     void addSprite(const rectf &r, u8 shift, const std::array<img::color8, 4> &colors={img::black, img::black, img::black, img::black});
     void addImageSprite(render::Texture2D *tex, const rectf &texPart, u8 shift);
     void addTextSprite(FontManager *mgr, const EnrichedString &text, u8 shift);
@@ -314,6 +318,11 @@ public:
         if (n > sprites.size()-1)
             return;
         sprites.erase(sprites.begin()+n);
+    }
+
+    void clear()
+    {
+        sprites.clear();
     }
 
     void update()

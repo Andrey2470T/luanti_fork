@@ -36,7 +36,7 @@ void GUIItemImage::draw()
 	ItemStack item;
 	item.deSerialize(m_item_name, idef);
 	// Viewport rectangle on screen
-	recti rect = recti(AbsoluteRect);
+    //recti rect = recti(AbsoluteRect);
     //drawItemStack(Environment->getVideoDriver(), m_font, item, rect,
     //		&AbsoluteClippingRect, m_client, IT_ROT_NONE);
     img::color8 color = img::white;

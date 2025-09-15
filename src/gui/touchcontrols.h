@@ -128,7 +128,7 @@ private:
 	IGUIEnvironment *m_guienv = nullptr;
 	IEventReceiver *m_receiver = nullptr;
 	ISimpleTextureSource *m_texturesource = nullptr;
-	v2u32 m_screensize;
+	v2u m_screensize;
 	s32 m_button_size;
 	double m_touchscreen_threshold;
 	u16 m_long_tap_delay;

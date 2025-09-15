@@ -13,7 +13,7 @@
 #include "settings.h"
 
 GUIScene::GUIScene(gui::IGUIEnvironment *env, scene::ISceneManager *smgr,
-		   gui::IGUIElement *parent, core::recti rect, s32 id)
+		   gui::IGUIElement *parent, recti rect, s32 id)
 	: IGUIElement(EGUIET_ELEMENT, env, parent, id, rect)
 {
 	m_driver = env->getVideoDriver();
@@ -77,14 +77,14 @@ void GUIScene::draw()
 	m_driver->setViewPort(getAbsoluteClippingRect());
 
 	if (m_bgcolor != 0) {
-		core::recti borderRect =
+		recti borderRect =
 				Environment->getRootGUIElement()->getAbsoluteClippingRect();
 		Environment->getSkin()->draw3DSunkenPane(
 			this, m_bgcolor, false, true, borderRect, 0);
 	}
 
 	core::dimension2d<s32> size = getAbsoluteClippingRect().getSize();
-	m_smgr->getActiveCamera()->setAspectRatio((f32)size.Width / (f32)size.Height);
+	m_smgr->getActiveCamera()->setAspectRatio((f32)size.X / (f32)size.Y);
 
 	if (!m_target) {
 		updateCamera(m_smgr->addEmptySceneNode());
@@ -113,10 +113,10 @@ void GUIScene::draw()
 bool GUIScene::OnEvent(const core::Event &event)
 {
 	if (m_mouse_ctrl && event.Type == EET_MOUSE_INPUT_EVENT) {
-		if (event.MouseInput.Event == EMIE_LMOUSE_PRESSED_DOWN) {
+		if (event.MouseInput.Type == EMIE_LMOUSE_PRESSED_DOWN) {
 			m_last_pos = v2f((f32)event.MouseInput.X, (f32)event.MouseInput.Y);
 			return true;
-		} else if (event.MouseInput.Event == EMIE_MOUSE_MOVED) {
+		} else if (event.MouseInput.Type == EMIE_MOUSE_MOVED) {
 			if (event.MouseInput.isLeftPressed()) {
 				m_curr_pos = v2f((f32)event.MouseInput.X, (f32)event.MouseInput.Y);
 
@@ -174,7 +174,7 @@ inline void GUIScene::calcOptimalDistance()
 	f32 far_width = core::line3df(f->getFarLeftUp(), f->getFarRightUp()).getLength();
 	f32 far_height = core::line3df(f->getFarLeftUp(), f->getFarLeftDown()).getLength();
 
-	core::recti rect = getAbsolutePosition();
+	recti rect = getAbsolutePosition();
 	f32 zoomX = rect.getWidth() / max_width;
 	f32 zoomY = rect.getHeight() / height;
 	f32 dist;

@@ -12,20 +12,18 @@ the arrow buttons where there is insufficient space.
 
 #pragma once
 
-#include "irrlichttypes_extrabloated.h"
+#include "IGUIButton.h"
 #include <optional>
 
-class ISimpleTextureSource;
+class UISprite;
 
-using namespace irr;
 using namespace gui;
 
 class GUIScrollBar : public IGUIElement
 {
 public:
 	GUIScrollBar(IGUIEnvironment *environment, IGUIElement *parent, s32 id,
-			recti rectangle, bool horizontal, bool auto_scale,
-			ISimpleTextureSource *tsrc);
+            recti rectangle, bool horizontal, bool auto_scale);
 
 	enum ArrowVisibility
 	{
@@ -91,7 +89,7 @@ private:
 	recti slider_rect;
 	img::color8 current_icon_color;
 
-	ISimpleTextureSource *m_tsrc;
+    std::unique_ptr<UISprite> box;
 
 	void setPosRaw(const s32 &pos);
 	void updatePos();

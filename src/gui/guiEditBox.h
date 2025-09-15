@@ -4,9 +4,11 @@
 
 #pragma once
 
+#include <Core/MainWindow.h>
 #include "IGUIEditBox.h"
 #include "guiScrollBar.h"
 #include <Render/TTFont.h>
+#include <Core/Events.h>
 
 class GUIEditBox : public IGUIEditBox
 {
@@ -102,7 +104,7 @@ public:
 
 	//! Gets the size area of the text in the edit box
 	//! \return Returns the size in pixels of the text
-	virtual core::dimension2du getTextDimension();
+    virtual v2u getTextDimension();
 
 	//! set true if this EditBox is writable
 	virtual void setWritable(bool can_write_text);
@@ -122,7 +124,7 @@ protected:
 	void setTextMarkers(s32 begin, s32 end);
 
 	//! send some gui event to parent
-	void sendGuiEvent(EGUI_EVENT_TYPE type);
+    void sendGuiEvent(core::GUIEventType type);
 
 	//! calculates the current scroll position
 	virtual void calculateScrollPos() = 0;
@@ -130,7 +132,7 @@ protected:
 	virtual s32 getCursorPos(s32 x, s32 y) = 0;
 
 	bool processKey(const core::Event &event);
-	virtual void inputString(const core::stringw &str);
+    virtual void inputString(const std::wstring &str);
 	virtual void inputChar(wchar_t c);
 
 	//! returns the line number that the cursor is on
@@ -151,7 +153,7 @@ protected:
 	bool m_passwordbox = false;
 	wchar_t m_passwordchar = L'*';
 
-	std::vector<core::stringw> m_broken_text;
+    std::vector<std::wstring> m_broken_text;
 	std::vector<s32> m_broken_text_positions;
 
 	EGUI_ALIGNMENT m_halign = EGUIA_UPPERLEFT;
@@ -163,7 +165,7 @@ protected:
 	s32 m_vscroll_pos = 0; // scroll position in characters
 	u32 m_max = 0;
 
-	img::color8 m_override_color = img::color8(101, 255, 255, 255);
+    img::color8 m_override_color = img::color8(img::PF_RGBA8, 255, 255, 255, 101);
 
 	recti m_current_text_rect = recti(0, 0, 1, 1);
 
@@ -175,7 +177,7 @@ protected:
 	s32 m_mark_end = 0;
 
 	render::TTFont *m_last_break_font = nullptr;
-	IOSOperator *m_operator = nullptr;
+    const core::Clipboard *m_operator = nullptr;
 
 	recti m_frame_rect; // temporary values
 

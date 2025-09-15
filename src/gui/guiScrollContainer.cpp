@@ -3,6 +3,8 @@
 // Copyright (C) 2020 DS
 
 #include "guiScrollContainer.h"
+#include "gui/IGUIEnvironment.h"
+#include <Core/Events.h>
 
 GUIScrollContainer::GUIScrollContainer(gui::IGUIEnvironment *env,
 		gui::IGUIElement *parent, s32 id, const recti &rectangle,
@@ -21,7 +23,7 @@ GUIScrollContainer::GUIScrollContainer(gui::IGUIEnvironment *env,
 bool GUIScrollContainer::OnEvent(const core::Event &event)
 {
 	if (event.Type == EET_MOUSE_INPUT_EVENT &&
-			event.MouseInput.Event == EMIE_MOUSE_WHEEL &&
+            event.MouseInput.Type == EMIE_MOUSE_WHEEL &&
 			!event.MouseInput.isLeftPressed() && m_scrollbar) {
 		Environment->setFocus(m_scrollbar);
 		bool retval = m_scrollbar->OnEvent(event);
@@ -30,7 +32,7 @@ bool GUIScrollContainer::OnEvent(const core::Event &event)
 		IGUIElement *hovered_elem = getElementFromPoint(v2i(
 				event.MouseInput.X, event.MouseInput.Y));
 		core::Event mov_event = event;
-		mov_event.MouseInput.Event = EMIE_MOUSE_MOVED;
+        mov_event.MouseInput.Type = EMIE_MOUSE_MOVED;
 		Environment->postEventFromUser(mov_event);
 		if (hovered_elem)
 			hovered_elem->OnEvent(mov_event);

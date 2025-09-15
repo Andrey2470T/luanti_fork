@@ -5,10 +5,12 @@
 #pragma once
 
 #include "inventorymanager.h"
-#include "irrlichttypes_extrabloated.h"
+#include "IGUIElement.h"
 #include "util/string.h"
+#include <Render/TTFont.h>
 
 class GUIFormSpecMenu;
+class UISprite;
 
 class GUIInventoryList : public gui::IGUIElement
 {
@@ -46,10 +48,10 @@ public:
 	struct Options {
 		// whether a one-pixel border for the slots should be drawn and its color
 		bool slotborder = false;
-		img::color8 slotbordercolor = img::color8(200, 0, 0, 0);
+		img::color8 slotbordercolor = img::color8(img::PF_RGBA8, 0, 0, 0, 200);
 		// colors for normal and highlighted slot background
-		img::color8 slotbg_n = img::color8(255, 128, 128, 128);
-		img::color8 slotbg_h = img::color8(255, 192, 192, 192);
+		img::color8 slotbg_n = img::color8(img::PF_RGBA8, 128, 128, 128, 255);
+		img::color8 slotbg_h = img::color8(img::PF_RGBA8, 192, 192, 192, 255);
 	};
 
 	GUIInventoryList(gui::IGUIEnvironment *env,
@@ -123,6 +125,8 @@ private:
 
 	// the font
 	render::TTFont *m_font;
+	
+	std::unique_ptr<UISprite> m_slots_rects;
 
 	// the index of the hovered item; -1 if no item is hovered
 	s32 m_hovered_i;

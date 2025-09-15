@@ -514,7 +514,7 @@ u32 ParsedText::parseTag(const wchar_t *text, u32 cursor)
 		else
 			enterElement(ELEMENT_ITEM);
 
-		m_element->text = utf8_to_stringw(attrs["name"]);
+		m_element->text = utf8_to_wide(attrs["name"]);
 
 		if (attrs.count("float")) {
 			if (attrs["float"] == "left")
@@ -526,13 +526,13 @@ u32 ParsedText::parseTag(const wchar_t *text, u32 cursor)
 		if (attrs.count("width")) {
 			int width = stoi(attrs["width"]);
 			if (width > 0)
-				m_element->dim.Width = width;
+				m_element->dim.X = width;
 		}
 
 		if (attrs.count("height")) {
 			int height = stoi(attrs["height"]);
 			if (height > 0)
-				m_element->dim.Height = height;
+				m_element->dim.Y = height;
 		}
 
 		if (attrs.count("angle")) {
@@ -628,11 +628,11 @@ TextDrawer::TextDrawer(const wchar_t *text, Client *client,
 			case ParsedText::ELEMENT_SEPARATOR:
 			case ParsedText::ELEMENT_TEXT:
 				if (e.font) {
-					e.dim.Width = e.font->getDimension(e.text.c_str()).Width;
-					e.dim.Height = e.font->getDimension(L"Yy").Height;
-					if (e.font->getType() == irr::gui::EGFT_CUSTOM) {
+					e.dim.X = e.font->getDimension(e.text.c_str()).X;
+					e.dim.Y = e.font->getDimension(L"Yy").Y;
+					if (e.font->getType() == EGFT_CUSTOM) {
 						CGUITTFont *tmp = static_cast<CGUITTFont*>(e.font);
-						e.baseline = e.dim.Height - 1 - tmp->getAscender() / 64;
+						e.baseline = e.dim.Y - 1 - tmp->getAscender() / 64;
 					}
 				} else {
 					e.dim = {0, 0};
@@ -642,7 +642,7 @@ TextDrawer::TextDrawer(const wchar_t *text, Client *client,
 			case ParsedText::ELEMENT_IMAGE:
 			case ParsedText::ELEMENT_ITEM:
 				// Resize only non sized items
-				if (e.dim.Height != 0 && e.dim.Width != 0)
+				if (e.dim.Y != 0 && e.dim.X != 0)
 					break;
 
 				// Default image and item size
@@ -656,15 +656,15 @@ TextDrawer::TextDrawer(const wchar_t *text, Client *client,
 						dim = texture->getSize();
 				}
 
-				if (e.dim.Height == 0)
-					if (e.dim.Width == 0)
+				if (e.dim.Y == 0)
+					if (e.dim.X == 0)
 						e.dim = dim;
 					else
-						e.dim.Height = dim.Height * e.dim.Width /
-								dim.Width;
+						e.dim.Y = dim.Y * e.dim.X /
+								dim.X;
 				else
-					e.dim.Width = dim.Width * e.dim.Height /
-							dim.Height;
+					e.dim.X = dim.X * e.dim.Y /
+							dim.Y;
 				break;
 			}
 		}
@@ -717,7 +717,7 @@ void TextDrawer::place(const recti &dest_rect)
 				if (e->floating == ParsedText::FLOAT_LEFT)
 					e->pos.X = m_text.margin;
 				if (e->floating == ParsedText::FLOAT_RIGHT)
-					e->pos.X = dest_rect.getWidth() - e->dim.Width -
+					e->pos.X = dest_rect.getWidth() - e->dim.X -
 							m_text.margin;
 
 				RectWithMargin floating;
@@ -801,8 +801,8 @@ void TextDrawer::place(const recti &dest_rect)
 					el->type == ParsedText::ELEMENT_SEPARATOR) {
 				if (el->floating == ParsedText::FLOAT_NONE) {
 					el->drawwidth = 0;
-					if (charsheight < el->dim.Height)
-						charsheight = el->dim.Height;
+					if (charsheight < el->dim.Y)
+						charsheight = el->dim.Y;
 				}
 				el++;
 			}
@@ -813,15 +813,15 @@ void TextDrawer::place(const recti &dest_rect)
 			// First pass, find elements fitting into line
 			// (or at least one element)
 			while (el != p.elements.end() && (charswidth == 0 ||
-					charswidth + el->dim.Width <= linewidth)) {
+					charswidth + el->dim.X <= linewidth)) {
 				if (el->floating == ParsedText::FLOAT_NONE) {
 					if (el->type != ParsedText::ELEMENT_SEPARATOR) {
 						lineend = el;
 						wordcount++;
 					}
-					charswidth += el->dim.Width;
-					if (charsheight < el->dim.Height)
-						charsheight = el->dim.Height;
+					charswidth += el->dim.X;
+					if (charsheight < el->dim.Y)
+						charsheight = el->dim.Y;
 				}
 				el++;
 			}
@@ -841,9 +841,9 @@ void TextDrawer::place(const recti &dest_rect)
 			s32 bottom = 0;
 			for (auto e = linestart; e != lineend; ++e) {
 				if (e->floating == ParsedText::FLOAT_NONE) {
-					charswidth += e->dim.Width;
-					if (top < (s32)e->dim.Height - e->baseline)
-						top = e->dim.Height - e->baseline;
+					charswidth += e->dim.X;
+					if (top < (s32)e->dim.Y - e->baseline)
+						top = e->dim.Y - e->baseline;
 					if (bottom < e->baseline)
 						bottom = e->baseline;
 				}
@@ -881,16 +881,16 @@ void TextDrawer::place(const recti &dest_rect)
 					e->pos.X = x;
 
 					// Align char baselines
-					e->pos.Y = y + top + e->baseline - e->dim.Height;
+					e->pos.Y = y + top + e->baseline - e->dim.Y;
 
-					x += e->dim.Width;
+					x += e->dim.X;
 					if (e->type == ParsedText::ELEMENT_SEPARATOR)
 						x += extraspace;
 					break;
 
 				case ParsedText::ELEMENT_IMAGE:
 				case ParsedText::ELEMENT_ITEM:
-					x += e->dim.Width;
+					x += e->dim.X;
 					break;
 				}
 
@@ -963,7 +963,7 @@ void TextDrawer::draw(const recti &clip_rect,
 
 				if (el.underline &&  el.drawwidth) {
 					s32 linepos = el.pos.Y + offset.Y +
-							el.dim.Height - (el.baseline >> 1);
+							el.dim.Y - (el.baseline >> 1);
 
 					recti linerect(el.pos.X + offset.X,
 							linepos - (el.baseline >> 3) - 1,
@@ -1019,7 +1019,7 @@ GUIHyperText::GUIHyperText(const wchar_t *text, IGUIEnvironment *environment,
 	if (Environment)
 		skin = Environment->getSkin();
 
-	m_scrollbar_width = skin ? skin->getSize(gui::EGDS_SCROLLBAR_SIZE) : 16;
+	m_scrollbar_width = skin ? skin->getSize(EGDS_SCROLLBAR_SIZE) : 16;
 
 	recti rect = irr::recti(
 			RelativeRect.getWidth() - m_scrollbar_width, 0,
@@ -1088,10 +1088,10 @@ bool GUIHyperText::OnEvent(const core::Event &event)
 	}
 
 	if (event.Type == EET_MOUSE_INPUT_EVENT) {
-		if (event.MouseInput.Event == EMIE_MOUSE_MOVED)
+		if (event.MouseInput.Type == EMIE_MOUSE_MOVED)
 			checkHover(event.MouseInput.X, event.MouseInput.Y);
 
-		if (event.MouseInput.Event == EMIE_MOUSE_WHEEL && m_vscrollbar->isVisible()) {
+		if (event.MouseInput.Type == EMIE_MOUSE_WHEEL && m_vscrollbar->isVisible()) {
 			m_vscrollbar->setPosInterpolated(m_vscrollbar->getTargetPos() -
 					event.MouseInput.Wheel * m_vscrollbar->getSmallStep());
 			m_text_scrollpos.Y = -m_vscrollbar->getPos();
@@ -1099,15 +1099,15 @@ bool GUIHyperText::OnEvent(const core::Event &event)
 			checkHover(event.MouseInput.X, event.MouseInput.Y);
 			return true;
 
-		} else if (event.MouseInput.Event == EMIE_LMOUSE_PRESSED_DOWN) {
+		} else if (event.MouseInput.Type == EMIE_LMOUSE_PRESSED_DOWN) {
 			ParsedText::Element *element = getElementAt(
 					event.MouseInput.X, event.MouseInput.Y);
 
 			if (element) {
 				for (auto &tag : element->tags) {
 					if (tag->name == "action") {
-						Text = core::stringw(L"action:") +
-						       utf8_to_stringw(tag->attrs["name"]);
+						Text = std::wstring(L"action:") +
+						       utf8_to_wide(tag->attrs["name"]);
 						if (Parent) {
 							core::Event newEvent;
 							newEvent.Type = EET_GUI_EVENT;

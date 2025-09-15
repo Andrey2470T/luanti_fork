@@ -7,6 +7,9 @@
 #include "IGUITabControl.h"
 #include "GUISkin.h"
 
+class UISprite;
+class UISpriteBank;
+
 namespace gui
 {
 class CGUITabControl;
@@ -46,6 +49,8 @@ private:
 	bool OverrideTextColorEnabled;
 	img::color8 TextColor;
 	bool DrawBackground;
+
+    std::unique_ptr<UISprite> box;
 };
 
 //! A standard tab control
@@ -166,6 +171,8 @@ private:
 	s32 TabMaxWidth;
 	s32 CurrentScrollTabIndex;
 	s32 TabExtraWidth;
+
+    std::unique_ptr<UISpriteBank> TabBoxes;
 };
 
 } // end namespace gui

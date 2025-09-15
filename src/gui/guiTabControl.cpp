@@ -4,9 +4,12 @@
 
 #include "guiTabControl.h"
 
+#include "client/render/rendersystem.h"
+#include "client/ui/text_sprite.h"
 #include "guiButton.h"
 #include "GUISkin.h"
 #include "IGUIEnvironment.h"
+#include "util/enriched_string.h"
 #include <Utils/Rect.h>
 
 namespace gui
@@ -22,7 +25,9 @@ CGUITab::CGUITab(IGUIEnvironment *environment,
 		s32 id) :
 		IGUITab(environment, parent, id, rectangle),
         BackColor(img::black), OverrideTextColorEnabled(false), TextColor(img::black),
-		DrawBackground(false)
+        DrawBackground(false),
+        box(std::make_unique<UISprite>(nullptr, environment->getRenderSystem()->getRenderer(),
+            environment->getResourceCache(), std::vector<UIPrimitiveType>{UIPrimitiveType::RECTANGLE}, true))
 {
 	const GUISkin *const skin = environment->getSkin();
 	if (skin)
@@ -37,8 +42,12 @@ void CGUITab::draw()
 
 	GUISkin *skin = Environment->getSkin();
 
-	if (skin && DrawBackground)
-		skin->draw2DRectangle(this, BackColor, AbsoluteRect, &AbsoluteClippingRect);
+    if (skin && DrawBackground) {
+        box->getShape()->updateRectangle(0, toRectf(AbsoluteRect), {BackColor, BackColor, BackColor, BackColor});
+        box->updateMesh();
+        box->setClipRect(AbsoluteClippingRect);
+        box->draw();
+    }
 
 	IGUIElement::draw();
 }
@@ -93,7 +102,9 @@ CGUITabControl::CGUITabControl(IGUIEnvironment *environment,
 		IGUITabControl(environment, parent, id, rectangle),
 		ActiveTabIndex(-1),
         Border(border), FillBackground(fillbackground), ScrollControl(false), TabHeight(0), VerticalAlignment(GUIAlignment::UpperLeft),
-		UpButton(0), DownButton(0), TabMaxWidth(0), CurrentScrollTabIndex(0), TabExtraWidth(20)
+        UpButton(0), DownButton(0), TabMaxWidth(0), CurrentScrollTabIndex(0), TabExtraWidth(20),
+        TabBoxes(std::make_unique<UISpriteBank>(environment->getRenderSystem()->getRenderer(),
+            environment->getResourceCache(), false))
 {
 	GUISkin *skin = Environment->getSkin();
 	IGUISpriteBank *sprites = 0;
@@ -537,11 +548,19 @@ void CGUITabControl::draw()
 
 	render::TTFont *font = skin->getFont();
 
+    auto rnd = Environment->getRenderSystem()->getRenderer();
+    auto cache = Environment->getResourceCache();
+    auto font_mgr = Environment->getRenderSystem()->getFontManager();
+
 	recti frameRect(AbsoluteRect);
 
+    TabBoxes->clear();
+
 	// some empty background as placeholder when there are no tabs
-	if (Tabs.empty())
-		driver->draw2DRectangle(skin->getColor(EGDC_3D_HIGH_LIGHT), frameRect, &AbsoluteClippingRect);
+    if (Tabs.empty()) {
+        img::color8 color = skin->getColor(EGDC_3D_HIGH_LIGHT);
+        TabBoxes->addSprite(toRectf(frameRect), 0, {color, color, color, color});
+    }
 
 	if (!font)
 		return;
@@ -598,13 +617,19 @@ void CGUITabControl::draw()
 			// activetext = text;
 			activeTab = Tabs[i];
 		} else {
-			skin->draw3DTabButton(this, false, frameRect, &AbsoluteClippingRect, VerticalAlignment);
+            UISprite *tabButton = new UISprite(nullptr, rnd, cache, true);
+            tabButton->setClipRect(AbsoluteClippingRect);
+            skin->add3DTabButton(tabButton, false, toRectf(frameRect), VerticalAlignment);
+            TabBoxes->addSprite(tabButton);
 
 			// draw text
 			recti textClipRect(frameRect); // TODO: exact size depends on borders in draw3DTabButton which we don't get with current interface
 			textClipRect.clipAgainst(AbsoluteClippingRect);
-			font->draw(text, frameRect, Tabs[i]->getTextColor(),
-					true, true, &textClipRect);
+            TabBoxes->addTextSprite(font_mgr, EnrichedString(text), 0);
+
+            auto tabText = dynamic_cast<UITextSprite *>(TabBoxes->getSprite(TabBoxes->getSpriteCount()-1));
+            tabText->setColor(Tabs[i]->getTextColor());
+            tabText->setClipRect(textClipRect);
 		}
 	}
 
@@ -617,43 +642,67 @@ void CGUITabControl::draw()
 			frameRect.LRC.X = right + 2;
 			frameRect.ULC.Y -= 2;
 
-			skin->draw3DTabButton(this, true, frameRect, &AbsoluteClippingRect, VerticalAlignment);
+            UISprite *tabButton = new UISprite(nullptr, rnd, cache, true);
+            tabButton->setClipRect(AbsoluteClippingRect);
+            skin->add3DTabButton(tabButton, true, toRectf(frameRect), VerticalAlignment);
+            TabBoxes->addSprite(tabButton);
 
 			// draw text
 			recti textClipRect(frameRect); // TODO: exact size depends on borders in draw3DTabButton which we don't get with current interface
 			textClipRect.clipAgainst(AbsoluteClippingRect);
-			font->draw(activeTab->getText(), frameRect, activeTab->getTextColor(),
-					true, true, &textClipRect);
+            TabBoxes->addTextSprite(font_mgr, EnrichedString(activeTab->getText()), 0);
+
+            auto tabText = dynamic_cast<UITextSprite *>(TabBoxes->getSprite(TabBoxes->getSpriteCount()-1));
+            tabText->setColor(activeTab->getTextColor());
+            tabText->setClipRect(textClipRect);
 
 			tr.ULC.X = AbsoluteRect.ULC.X;
 			tr.LRC.X = left - 1;
 			tr.ULC.Y = frameRect.LRC.Y - 1;
 			tr.LRC.Y = frameRect.LRC.Y;
-			driver->draw2DRectangle(skin->getColor(EGDC_3D_HIGH_LIGHT), tr, &AbsoluteClippingRect);
+
+            tabButton = new UISprite(nullptr, rnd, cache, true);
+            tabButton->setClipRect(AbsoluteClippingRect);
+            TabBoxes->addSprite(tabButton);
+
+            img::color8 color = skin->getColor(EGDC_3D_HIGH_LIGHT);
+            tabButton->getShape()->addRectangle(toRectf(tr), {color, color, color, color});
 
 			tr.ULC.X = right;
 			tr.LRC.X = AbsoluteRect.LRC.X;
-			driver->draw2DRectangle(skin->getColor(EGDC_3D_HIGH_LIGHT), tr, &AbsoluteClippingRect);
+            tabButton->getShape()->addRectangle(toRectf(tr), {color, color, color, color});
 		} else {
 			frameRect.ULC.X = left - 2;
 			frameRect.LRC.X = right + 2;
 			frameRect.LRC.Y += 2;
 
-			skin->draw3DTabButton(this, true, frameRect, &AbsoluteClippingRect, VerticalAlignment);
+            UISprite *tabButton = new UISprite(nullptr, rnd, cache, true);
+            tabButton->setClipRect(AbsoluteClippingRect);
+            skin->add3DTabButton(tabButton, true, toRectf(frameRect), VerticalAlignment);
+            TabBoxes->addSprite(tabButton);
 
 			// draw text
-			font->draw(activeTab->getText(), frameRect, activeTab->getTextColor(),
-					true, true, &frameRect);
+            TabBoxes->addTextSprite(font_mgr, EnrichedString(activeTab->getText()), 0);
+
+            auto tabText = dynamic_cast<UITextSprite *>(TabBoxes->getSprite(TabBoxes->getSpriteCount()-1));
+            tabText->setColor(activeTab->getTextColor());
+            tabText->setClipRect(frameRect);
+
+            tabButton = new UISprite(nullptr, rnd, cache, true);
+            tabButton->setClipRect(AbsoluteClippingRect);
+            TabBoxes->addSprite(tabButton);
 
 			tr.ULC.X = AbsoluteRect.ULC.X;
 			tr.LRC.X = left - 1;
 			tr.ULC.Y = frameRect.ULC.Y - 1;
 			tr.LRC.Y = frameRect.ULC.Y;
-			driver->draw2DRectangle(skin->getColor(EGDC_3D_DARK_SHADOW), tr, &AbsoluteClippingRect);
+
+            img::color8 color = skin->getColor(EGDC_3D_DARK_SHADOW);
+            tabButton->getShape()->addRectangle(toRectf(tr), {color, color, color, color});
 
 			tr.ULC.X = right;
 			tr.LRC.X = AbsoluteRect.LRC.X;
-			driver->draw2DRectangle(skin->getColor(EGDC_3D_DARK_SHADOW), tr, &AbsoluteClippingRect);
+            tabButton->getShape()->addRectangle(toRectf(tr), {color, color, color, color});
 		}
 	} else {
 		// No active tab
@@ -663,17 +712,27 @@ void CGUITabControl::draw()
 		tr.ULC.Y = frameRect.LRC.Y - 1;
 		tr.LRC.Y = frameRect.LRC.Y;
 
+        auto tabButton = new UISprite(nullptr, rnd, cache, true);
+        tabButton->setClipRect(AbsoluteClippingRect);
+        TabBoxes->addSprite(tabButton);
+
         if (VerticalAlignment == GUIAlignment::UpperLeft) {
-			driver->draw2DRectangle(skin->getColor(EGDC_3D_HIGH_LIGHT), tr, &AbsoluteClippingRect);
+            img::color8 color = skin->getColor(EGDC_3D_HIGH_LIGHT);
+            tabButton->getShape()->addRectangle(toRectf(tr), {color, color, color, color});
 		} else {
 			tr.ULC.Y = frameRect.ULC.Y - 1;
 			tr.LRC.Y = frameRect.ULC.Y;
-			driver->draw2DRectangle(skin->getColor(EGDC_3D_DARK_SHADOW), tr, &AbsoluteClippingRect);
+            img::color8 color = skin->getColor(EGDC_3D_DARK_SHADOW);
+            tabButton->getShape()->addRectangle(toRectf(tr), {color, color, color, color});
 		}
+
 	}
 
+    auto tabBody = new UISprite(nullptr, rnd, cache, true);
 	// drawing some border and background for the tab-area.
-	skin->draw3DTabBody(this, Border, FillBackground, AbsoluteRect, &AbsoluteClippingRect, TabHeight, VerticalAlignment);
+    skin->add3DTabBody(tabBody, Border, FillBackground, toRectf(AbsoluteRect), TabHeight, VerticalAlignment);
+    tabBody->setClipRect(AbsoluteClippingRect);
+    TabBoxes->addSprite(tabBody);
 
 	// enable scrollcontrols on need
 	if (UpButton)
@@ -681,6 +740,12 @@ void CGUITabControl::draw()
 	if (DownButton)
 		DownButton->setEnabled(needRightScroll);
 	refreshSprites();
+
+    for (u32 k = 0; k < TabBoxes->getSpriteCount(); k++) {
+        TabBoxes->getSprite(k)->rebuildMesh();
+    }
+
+    TabBoxes->drawBank();
 
 	IGUIElement::draw();
 }

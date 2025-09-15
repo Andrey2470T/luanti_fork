@@ -25,7 +25,7 @@ public:
             IMenuManager *menumgr, ISimpleTextureSource *tsrc);
 	~GUITouchscreenLayout();
 
-	void regenerateGui(v2u32 screensize);
+	void regenerateGui(v2u screensize);
 	void drawMenu();
 	bool OnEvent(const core::Event& event);
 
@@ -37,7 +37,7 @@ private:
 	ISimpleTextureSource *m_tsrc;
 
 	ButtonLayout m_layout;
-	v2u32 m_last_screensize;
+	v2u m_last_screensize;
 	s32 m_button_size;
 
 	enum class Mode {
@@ -51,8 +51,8 @@ private:
 	// unused if m_mode == Mode::Add
 	std::unordered_map<touch_gui_button_id, v2i> m_gui_images_target_pos;
 	void clearGUIImages();
-	void regenerateGUIImagesRegular(v2u32 screensize);
-	void regenerateGUIImagesAddMode(v2u32 screensize);
+	void regenerateGUIImagesRegular(v2u screensize);
+	void regenerateGUIImagesAddMode(v2u screensize);
 	void interpolateGUIImages();
 
 	// interaction state
@@ -62,8 +62,8 @@ private:
 
 	// dragging
 	ButtonLayout m_last_good_layout;
-	std::vector<core::recti> m_error_rects;
-	void updateDragState(v2u32 screensize, v2i mouse_movement);
+	std::vector<recti> m_error_rects;
+	void updateDragState(v2u screensize, v2i mouse_movement);
 
 	// add mode
 	ButtonLayout m_add_layout;
@@ -78,5 +78,5 @@ private:
 
 	std::shared_ptr<gui::IGUIButton> m_gui_remove_btn;
 
-	void regenerateMenu(v2u32 screensize);
+	void regenerateMenu(v2u screensize);
 };

@@ -4,14 +4,15 @@
 
 #pragma once
 
-#include "irrlichttypes_extrabloated.h"
+#include "Image/Image.h"
+#include "Render/TTFont.h"
 #include "modalMenu.h"
 #include "chat.h"
 #include "config.h"
-#include "irr_ptr.h"
 
 class Client;
 class GUIScrollBar;
+class UISpriteBank;
 
 class GUIChatConsole : public gui::IGUIElement
 {
@@ -83,10 +84,10 @@ private:
 	ChatBackend* m_chat_backend;
 	Client* m_client;
 	IMenuManager* m_menumgr;
-	irr_ptr<GUIScrollBar> m_scrollbar;
+	std::unique_ptr<GUIScrollBar> m_scrollbar;
 
 	// current screen size
-	v2u32 m_screensize;
+	v2u m_screensize;
 
 	// used to compute how much time passed since last animate()
 	u64 m_animate_time_old;
@@ -117,11 +118,13 @@ private:
 	// background texture
 	img::Image *m_background = nullptr;
 	// background color (including alpha)
-	img::color8 m_background_color = img::color8(255, 0, 0, 0);
+	img::color8 m_background_color = img::black;
 
 	// font
-	irr_ptr<render::TTFont> m_font;
-	v2u32 m_fontsize;
+	render::TTFont *m_font;
+	v2u m_fontsize;
+
+    std::unique_ptr<UISpriteBank> m_chat_bank;
 
 	// Enable clickable chat weblinks
 	bool m_cache_clickable_chat_weblinks;

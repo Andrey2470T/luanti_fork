@@ -52,7 +52,7 @@ void TouchControls::loadButtonTexture(IGUIImage *gui_button, const std::string &
 
 void TouchControls::buttonEmitAction(button_info &btn, bool action)
 {
-	if (btn.keycode == KEY_UNKNOWN)
+	if (btn.keycode == core::KEY_UNKNOWN)
 		return;
 
 	emitKeyboardEvent(btn.keycode, action);
@@ -136,7 +136,7 @@ static EKEY_CODE id_to_keycode(touch_gui_button_id id)
 	EKEY_CODE code;
 	// ESC isn't part of the keymap.
 	if (id == exit_id)
-		return KEY_ESCAPE;
+		return core::KEY_ESCAPE;
 
 	std::string key = "";
 	switch (id) {
@@ -193,7 +193,7 @@ static EKEY_CODE id_to_keycode(touch_gui_button_id id)
 	try {
 		code = keyname_to_keycode(resolved.c_str());
 	} catch (UnknownKeycode &e) {
-		code = KEY_UNKNOWN;
+		code = core::KEY_UNKNOWN;
 		warningstream << "TouchControls: Unknown key '" << resolved
 			      << "' for '" << key << "', hiding button." << std::endl;
 	}
@@ -323,7 +323,7 @@ bool TouchControls::mayAddButton(touch_gui_button_id id)
 		return false;
 	if (id == aux1_id && m_joystick_triggers_aux1)
 		return false;
-	if (id != overflow_id && id_to_keycode(id) == KEY_UNKNOWN)
+	if (id != overflow_id && id_to_keycode(id) == core::KEY_UNKNOWN)
 		return false;
 	return true;
 }
@@ -447,7 +447,7 @@ void TouchControls::translateEvent(const core::Event &event)
 			m_screensize.Y - half_button_size * 5);
 	const v2i dir_fixed = touch_pos - fixed_joystick_center;
 
-	if (event.TouchInput.Event == ETIE_PRESSED_DOWN) {
+	if (event.TouchInput.Type == ETIE_PRESSED_DOWN) {
 		size_t pointer_id = event.TouchInput.ID;
 		m_pointer_downpos[pointer_id] = touch_pos;
 		m_pointer_pos[pointer_id] = touch_pos;
@@ -525,11 +525,11 @@ void TouchControls::translateEvent(const core::Event &event)
 			}
 		}
 	}
-	else if (event.TouchInput.Event == ETIE_LEFT_UP) {
+	else if (event.TouchInput.Type == ETIE_LEFT_UP) {
 		verbosestream << "Up event for pointerid: " << event.TouchInput.ID << std::endl;
 		handleReleaseEvent(event.TouchInput.ID);
 	} else {
-		assert(event.TouchInput.Event == ETIE_MOVED);
+		assert(event.TouchInput.Type == ETIE_MOVED);
 
 		if (!(m_has_joystick_id && m_fixed_joystick) &&
 				m_pointer_pos[event.TouchInput.ID] == touch_pos)
@@ -610,7 +610,7 @@ void TouchControls::applyJoystickStatus()
 
 void TouchControls::step(float dtime)
 {
-	v2u32 screensize = m_device->getVideoDriver()->getScreenSize();
+	v2u screensize = m_device->getVideoDriver()->getScreenSize();
 	s32 button_size = ButtonLayout::getButtonSize(screensize);
 
 	if (m_screensize != screensize || m_button_size != button_size) {
@@ -749,7 +749,7 @@ void TouchControls::emitMouseEvent(EMOUSE_INPUT_EVENT type)
 	event.MouseInput.Shift        = false;
 	event.MouseInput.Control      = false;
 	event.MouseInput.ButtonStates = 0;
-	event.MouseInput.Event        = type;
+	event.MouseInput.Type        = type;
 	event.MouseInput.Simulated    = true;
 	m_receiver->OnEvent(event);
 }

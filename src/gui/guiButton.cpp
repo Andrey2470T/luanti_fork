@@ -126,7 +126,7 @@ bool GUIButton::OnEvent(const core::Event& event)
 	{
 	case EET_KEY_INPUT_EVENT:
 		if (event.KeyInput.PressedDown &&
-			(event.KeyInput.Key == KEY_RETURN || event.KeyInput.Key == KEY_SPACE))
+			(event.KeyInput.Key == core::KEY_RETURN || event.KeyInput.Key == core::KEY_SPACE))
 		{
 			if (!IsPushButton)
 				setPressed(true);
@@ -135,14 +135,14 @@ bool GUIButton::OnEvent(const core::Event& event)
 
 			return true;
 		}
-		if (Pressed && !IsPushButton && event.KeyInput.PressedDown && event.KeyInput.Key == KEY_ESCAPE)
+		if (Pressed && !IsPushButton && event.KeyInput.PressedDown && event.KeyInput.Key == core::KEY_ESCAPE)
 		{
 			setPressed(false);
 			return true;
 		}
 		else
 		if (!event.KeyInput.PressedDown && Pressed &&
-			(event.KeyInput.Key == KEY_RETURN || event.KeyInput.Key == KEY_SPACE))
+			(event.KeyInput.Key == core::KEY_RETURN || event.KeyInput.Key == core::KEY_SPACE))
 		{
 
 			if (!IsPushButton)

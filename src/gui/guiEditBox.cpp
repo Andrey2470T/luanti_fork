@@ -4,21 +4,15 @@
 
 #include "guiEditBox.h"
 
-#include "IGUISkin.h"
+#include "GUISkin.h"
 #include "IGUIEnvironment.h"
-#include "render::TTFont.h"
+#include <Render/TTFont.h>
 
 #include "porting.h"
 #include "util/string.h"
 
 GUIEditBox::~GUIEditBox()
 {
-	if (m_override_font)
-		m_override_font->drop();
-
-	if (m_operator)
-		m_operator->drop();
-
 	if (m_vscrollbar)
 		m_vscrollbar->drop();
 }
@@ -28,13 +22,7 @@ void GUIEditBox::setOverrideFont(render::TTFont *font)
 	if (m_override_font == font)
 		return;
 
-	if (m_override_font)
-		m_override_font->drop();
-
 	m_override_font = font;
-
-	if (m_override_font)
-		m_override_font->grab();
 
 	breakText();
 }
@@ -44,7 +32,7 @@ render::TTFont *GUIEditBox::getActiveFont() const
 {
 	if (m_override_font)
 		return m_override_font;
-	IGUISkin *skin = Environment->getSkin();
+    GUISkin *skin = Environment->getSkin();
 	if (skin)
 		return skin->getFont();
 	return 0;
@@ -124,12 +112,12 @@ void GUIEditBox::setMax(u32 max)
 	m_max = max;
 
 	if (Text.size() > m_max && m_max != 0)
-		Text = Text.subString(0, m_max);
+        Text = Text.substr(0, m_max);
 }
 
 //! Gets the area of the text in the edit box
 //! \return Returns the size in pixels of the text
-core::dimension2du GUIEditBox::getTextDimension()
+v2u GUIEditBox::getTextDimension()
 {
 	recti ret;
 
@@ -142,7 +130,7 @@ core::dimension2du GUIEditBox::getTextDimension()
 		ret.addInternalPoint(m_current_text_rect.LRC);
 	}
 
-	return core::dimension2du(ret.getSize());
+    return toV2u(ret.getSize());
 }
 
 //! Turns the border on or off
@@ -168,7 +156,7 @@ void GUIEditBox::setTextMarkers(s32 begin, s32 end)
 			const s32 realmbgn = m_mark_begin < m_mark_end ? m_mark_begin : m_mark_end;
 			const s32 realmend = m_mark_begin < m_mark_end ? m_mark_end : m_mark_begin;
 
-			std::string s = stringw_to_utf8(Text.subString(realmbgn, realmend - realmbgn));
+            std::string s = wide_to_utf8(Text.substr(realmbgn, realmend - realmbgn));
 			m_operator->copyToPrimarySelection(s.c_str());
 		}
 
@@ -182,8 +170,8 @@ void GUIEditBox::sendGuiEvent(EGUI_EVENT_TYPE type)
 	if (Parent) {
 		core::Event e;
 		e.Type = EET_GUI_EVENT;
-		e.GUI.Caller = this;
-		e.GUI.Element = 0;
+        e.GUI.Caller = getID();
+        e.GUI.Element = std::nullopt;
 		e.GUI.Type = type;
 
 		Parent->OnEvent(e);
@@ -197,7 +185,7 @@ bool GUIEditBox::OnEvent(const core::Event &event)
 		switch (event.Type) {
 		case EET_GUI_EVENT:
 			if (event.GUI.Type == EGET_ELEMENT_FOCUS_LOST) {
-				if (event.GUI.Caller == this) {
+                if (event.GUI.Caller == getID()) {
 					m_mouse_marking = false;
 					setTextMarkers(0, 0);
 				}
@@ -241,21 +229,21 @@ bool GUIEditBox::processKey(const core::Event &event)
 		}
 
 		switch (event.KeyInput.Key) {
-		case KEY_KEY_A:
+		case core::KEY_KEY_A:
 			// select all
 			new_mark_begin = 0;
 			new_mark_end = Text.size();
 			break;
-		case KEY_KEY_C:
+		case core::KEY_KEY_C:
 			onKeyControlC(event);
 			break;
-		case KEY_KEY_X:
+		case core::KEY_KEY_X:
 			text_changed = onKeyControlX(event, new_mark_begin, new_mark_end);
 			break;
-		case KEY_KEY_V:
+		case core::KEY_KEY_V:
 			text_changed = onKeyControlV(event, new_mark_begin, new_mark_end);
 			break;
-		case KEY_HOME:
+		case core::KEY_HOME:
 			// move/highlight to start of text
 			if (event.KeyInput.Shift) {
 				new_mark_end = m_cursor_pos;
@@ -267,7 +255,7 @@ bool GUIEditBox::processKey(const core::Event &event)
 				new_mark_end = 0;
 			}
 			break;
-		case KEY_END:
+		case core::KEY_END:
 			// move/highlight to end of text
 			if (event.KeyInput.Shift) {
 				new_mark_begin = m_cursor_pos;
@@ -284,7 +272,7 @@ bool GUIEditBox::processKey(const core::Event &event)
 		}
 	} else {
 		switch (event.KeyInput.Key) {
-		case KEY_END: {
+		case core::KEY_END: {
 			s32 p = Text.size();
 			if (m_word_wrap || m_multiline) {
 				p = getLineFromPos(m_cursor_pos);
@@ -307,7 +295,7 @@ bool GUIEditBox::processKey(const core::Event &event)
 			m_cursor_pos = p;
 			m_blink_start_time = porting::getTimeMs();
 		} break;
-		case KEY_HOME: {
+		case core::KEY_HOME: {
 
 			s32 p = 0;
 			if (m_word_wrap || m_multiline) {
@@ -326,7 +314,7 @@ bool GUIEditBox::processKey(const core::Event &event)
 			m_cursor_pos = p;
 			m_blink_start_time = porting::getTimeMs();
 		} break;
-		case KEY_RETURN:
+		case core::KEY_RETURN:
 			if (m_multiline) {
 				inputChar(L'\n');
 			} else {
@@ -334,7 +322,7 @@ bool GUIEditBox::processKey(const core::Event &event)
 				sendGuiEvent(EGET_EDITBOX_ENTER);
 			}
 			return true;
-		case KEY_LEFT:
+		case core::KEY_LEFT:
 			if (event.KeyInput.Shift) {
 				if (m_cursor_pos > 0) {
 					if (m_mark_begin == m_mark_end)
@@ -351,7 +339,7 @@ bool GUIEditBox::processKey(const core::Event &event)
 				m_cursor_pos--;
 			m_blink_start_time = porting::getTimeMs();
 			break;
-		case KEY_RIGHT:
+		case core::KEY_RIGHT:
 			if (event.KeyInput.Shift) {
 				if (Text.size() > (u32)m_cursor_pos) {
 					if (m_mark_begin == m_mark_end)
@@ -368,51 +356,51 @@ bool GUIEditBox::processKey(const core::Event &event)
 				m_cursor_pos++;
 			m_blink_start_time = porting::getTimeMs();
 			break;
-		case KEY_UP:
+		case core::KEY_UP:
 			if (!onKeyUp(event, new_mark_begin, new_mark_end)) {
 				return false;
 			}
 			break;
-		case KEY_DOWN:
+		case core::KEY_DOWN:
 			if (!onKeyDown(event, new_mark_begin, new_mark_end)) {
 				return false;
 			}
 			break;
-		case KEY_BACK:
+		case core::KEY_BACK:
 			text_changed = onKeyBack(event, new_mark_begin, new_mark_end);
 			break;
 
-		case KEY_DELETE:
+		case core::KEY_DELETE:
 			text_changed = onKeyDelete(event, new_mark_begin, new_mark_end);
 			break;
 
-		case KEY_ESCAPE:
-		case KEY_TAB:
-		case KEY_SHIFT:
-		case KEY_F1:
-		case KEY_F2:
-		case KEY_F3:
-		case KEY_F4:
-		case KEY_F5:
-		case KEY_F6:
-		case KEY_F7:
-		case KEY_F8:
-		case KEY_F9:
-		case KEY_F10:
-		case KEY_F11:
-		case KEY_F12:
-		case KEY_F13:
-		case KEY_F14:
-		case KEY_F15:
-		case KEY_F16:
-		case KEY_F17:
-		case KEY_F18:
-		case KEY_F19:
-		case KEY_F20:
-		case KEY_F21:
-		case KEY_F22:
-		case KEY_F23:
-		case KEY_F24:
+		case core::KEY_ESCAPE:
+		case core::KEY_TAB:
+		case core::KEY_SHIFT:
+		case core::KEY_F1:
+		case core::KEY_F2:
+		case core::KEY_F3:
+		case core::KEY_F4:
+		case core::KEY_F5:
+		case core::KEY_F6:
+		case core::KEY_F7:
+		case core::KEY_F8:
+		case core::KEY_F9:
+		case core::KEY_F10:
+		case core::KEY_F11:
+		case core::KEY_F12:
+		case core::KEY_F13:
+		case core::KEY_F14:
+		case core::KEY_F15:
+		case core::KEY_F16:
+		case core::KEY_F17:
+		case core::KEY_F18:
+		case core::KEY_F19:
+		case core::KEY_F20:
+		case core::KEY_F21:
+		case core::KEY_F22:
+		case core::KEY_F23:
+		case core::KEY_F24:
 			// ignore these keys
 			return false;
 
@@ -446,7 +434,7 @@ bool GUIEditBox::onKeyUp(const core::Event &event, s32 &mark_begin, s32 &mark_en
 			s32 cp = m_cursor_pos - m_broken_text_positions[lineNo];
 			if ((s32)m_broken_text[lineNo - 1].size() < cp) {
 				m_cursor_pos = m_broken_text_positions[lineNo - 1] +
-					core::max_((u32)1, m_broken_text[lineNo - 1].size()) - 1;
+                    std::max<u32>((u32)1, m_broken_text[lineNo - 1].size()) - 1;
 			}
 			else
 				m_cursor_pos = m_broken_text_positions[lineNo - 1] + cp;
@@ -476,7 +464,7 @@ bool GUIEditBox::onKeyDown(const core::Event &event, s32 &mark_begin, s32 &mark_
 			s32 cp = m_cursor_pos - m_broken_text_positions[lineNo];
 			if ((s32)m_broken_text[lineNo + 1].size() < cp) {
 				m_cursor_pos = m_broken_text_positions[lineNo + 1] +
-					core::max_((u32)1, m_broken_text[lineNo + 1].size()) - 1;
+                    std::max<u32>((u32)1, m_broken_text[lineNo + 1].size()) - 1;
 			}
 			else
 				m_cursor_pos = m_broken_text_positions[lineNo + 1] + cp;
@@ -505,7 +493,7 @@ void GUIEditBox::onKeyControlC(const core::Event &event)
 	const s32 realmbgn = m_mark_begin < m_mark_end ? m_mark_begin : m_mark_end;
 	const s32 realmend = m_mark_begin < m_mark_end ? m_mark_end : m_mark_begin;
 
-	std::string s = stringw_to_utf8(Text.subString(realmbgn, realmend - realmbgn));
+    std::string s = wide_to_utf8(Text.substr(realmbgn, realmend - realmbgn));
 	m_operator->copyToClipboard(s.c_str());
 }
 
@@ -526,9 +514,9 @@ bool GUIEditBox::onKeyControlX(const core::Event &event, s32 &mark_begin, s32 &m
 	// Now remove from box if enabled
 	if (isEnabled()) {
 		// delete
-		core::stringw s;
-		s = Text.subString(0, realmbgn);
-		s.append(Text.subString(realmend, Text.size() - realmend));
+		std::wstring s;
+        s = Text.substr(0, realmbgn);
+        s.append(Text.substr(realmend, Text.size() - realmend));
 		Text = s;
 
 		m_cursor_pos = realmbgn;
@@ -554,12 +542,12 @@ bool GUIEditBox::onKeyControlV(const core::Event &event, s32 &mark_begin, s32 &m
 
 	// add new character
 	if (const c8 *p = m_operator->getTextFromClipboard()) {
-		core::stringw inserted_text = utf8_to_stringw(p);
+        std::wstring inserted_text = utf8_to_wide(p);
 		if (m_mark_begin == m_mark_end) {
 			// insert text
-			core::stringw s = Text.subString(0, m_cursor_pos);
+            std::wstring s = Text.substr(0, m_cursor_pos);
 			s.append(inserted_text);
-			s.append(Text.subString(
+            s.append(Text.substr(
 					m_cursor_pos, Text.size() - m_cursor_pos));
 
 			if (!m_max || s.size() <= m_max) {
@@ -569,9 +557,9 @@ bool GUIEditBox::onKeyControlV(const core::Event &event, s32 &mark_begin, s32 &m
 		} else {
 			// replace text
 
-			core::stringw s = Text.subString(0, realmbgn);
+            std::wstring s = Text.substr(0, realmbgn);
 			s.append(inserted_text);
-			s.append(Text.subString(realmend, Text.size() - realmend));
+            s.append(Text.substr(realmend, Text.size() - realmend));
 
 			if (!m_max || s.size() <= m_max) {
 				Text = s;
@@ -590,7 +578,7 @@ bool GUIEditBox::onKeyBack(const core::Event &event, s32 &mark_begin, s32 &mark_
 	if (!isEnabled() || Text.empty() || !m_writable)
 		return false;
 
-	core::stringw s;
+	std::wstring s;
 
 	if (m_mark_begin != m_mark_end) {
 		// delete marked text
@@ -599,18 +587,18 @@ bool GUIEditBox::onKeyBack(const core::Event &event, s32 &mark_begin, s32 &mark_
 		const s32 realmend =
 				m_mark_begin < m_mark_end ? m_mark_end : m_mark_begin;
 
-		s = Text.subString(0, realmbgn);
-		s.append(Text.subString(realmend, Text.size() - realmend));
+        s = Text.substr(0, realmbgn);
+        s.append(Text.substr(realmend, Text.size() - realmend));
 		Text = s;
 
 		m_cursor_pos = realmbgn;
 	} else {
 		// delete text behind cursor
 		if (m_cursor_pos > 0)
-			s = Text.subString(0, m_cursor_pos - 1);
+            s = Text.substr(0, m_cursor_pos - 1);
 		else
 			s = L"";
-		s.append(Text.subString(m_cursor_pos, Text.size() - m_cursor_pos));
+        s.append(Text.substr(m_cursor_pos, Text.size() - m_cursor_pos));
 		Text = s;
 		--m_cursor_pos;
 	}
@@ -628,7 +616,7 @@ bool GUIEditBox::onKeyDelete(const core::Event &event, s32 &mark_begin, s32 &mar
 	if (!isEnabled() || Text.empty() || !m_writable)
 		return false;
 
-	core::stringw s;
+	std::wstring s;
 
 	if (m_mark_begin != m_mark_end) {
 		// delete marked text
@@ -637,15 +625,15 @@ bool GUIEditBox::onKeyDelete(const core::Event &event, s32 &mark_begin, s32 &mar
 		const s32 realmend =
 				m_mark_begin < m_mark_end ? m_mark_end : m_mark_begin;
 
-		s = Text.subString(0, realmbgn);
-		s.append(Text.subString(realmend, Text.size() - realmend));
+        s = Text.substr(0, realmbgn);
+        s.append(Text.substr(realmend, Text.size() - realmend));
 		Text = s;
 
 		m_cursor_pos = realmbgn;
 	} else {
 		// delete text before cursor
-		s = Text.subString(0, m_cursor_pos);
-		s.append(Text.subString(
+        s = Text.substr(0, m_cursor_pos);
+        s.append(Text.substr(
 				m_cursor_pos + 1, Text.size() - m_cursor_pos - 1));
 		Text = s;
 	}
@@ -663,33 +651,33 @@ void GUIEditBox::inputChar(wchar_t c)
 {
 	if (c == 0)
 		return;
-	core::stringw s(&c, 1);
+	std::wstring s(&c, 1);
 	inputString(s);
 }
 
-void GUIEditBox::inputString(const core::stringw &str)
+void GUIEditBox::inputString(const std::wstring &str)
 {
 	if (!isEnabled() || !m_writable)
 		return;
 
 	u32 len = str.size();
 	if (Text.size()+len <= m_max || m_max == 0) {
-		core::stringw s;
+		std::wstring s;
 		if (m_mark_begin != m_mark_end) {
 			// replace marked text
 			s32 real_begin = m_mark_begin < m_mark_end ? m_mark_begin : m_mark_end;
 			s32 real_end = m_mark_begin < m_mark_end ? m_mark_end : m_mark_begin;
 
-			s = Text.subString(0, real_begin);
+            s = Text.substr(0, real_begin);
 			s.append(str);
-			s.append(Text.subString(real_end, Text.size() - real_end));
+            s.append(Text.substr(real_end, Text.size() - real_end));
 			Text = s;
 			m_cursor_pos = real_begin + len;
 		} else {
 			// append string
-			s = Text.subString(0, m_cursor_pos);
+            s = Text.substr(0, m_cursor_pos);
 			s.append(str);
-			s.append(Text.subString(m_cursor_pos,
+            s.append(Text.substr(m_cursor_pos,
 					Text.size() - m_cursor_pos));
 			Text = s;
 			m_cursor_pos += len;
@@ -706,8 +694,8 @@ void GUIEditBox::inputString(const core::stringw &str)
 
 bool GUIEditBox::processMouse(const core::Event &event)
 {
-	switch (event.MouseInput.Event) {
-	case irr::EMIE_LMOUSE_LEFT_UP:
+	switch (event.MouseInput.Type) {
+    case MIE_LMOUSE_LEFT_UP:
 		if (Environment->hasFocus(this)) {
 			m_cursor_pos = getCursorPos(
 					event.MouseInput.X, event.MouseInput.Y);
@@ -719,7 +707,7 @@ bool GUIEditBox::processMouse(const core::Event &event)
 			return true;
 		}
 		break;
-	case irr::EMIE_MOUSE_MOVED: {
+    case MIE_MOUSE_MOVED: {
 		if (m_mouse_marking) {
 			m_cursor_pos = getCursorPos(
 					event.MouseInput.X, event.MouseInput.Y);
@@ -728,7 +716,7 @@ bool GUIEditBox::processMouse(const core::Event &event)
 			return true;
 		}
 	} break;
-	case EMIE_LMOUSE_PRESSED_DOWN:
+    case MIE_LMOUSE_PRESSED_DOWN:
 
 		if (!Environment->hasFocus(this)) {
 			m_blink_start_time = porting::getTimeMs();
@@ -757,15 +745,15 @@ bool GUIEditBox::processMouse(const core::Event &event)
 				return true;
 			}
 		}
-	case EMIE_MOUSE_WHEEL:
+    case MIE_MOUSE_WHEEL:
 		if (m_vscrollbar && m_vscrollbar->isVisible()) {
 			s32 pos = m_vscrollbar->getTargetPos();
 			s32 step = m_vscrollbar->getSmallStep();
-			m_vscrollbar->setPosInterpolated(pos - event.MouseInput.Wheel * step);
+            m_vscrollbar->setPosInterpolated(pos - event.MouseInput.WheelDelta * step);
 			return true;
 		}
 		break;
-	case EMIE_MMOUSE_PRESSED_DOWN: {
+    case MIE_MMOUSE_PRESSED_DOWN: {
 		if (!AbsoluteClippingRect.isPointInside(v2i(
 					event.MouseInput.X, event.MouseInput.Y)))
 			return false;
@@ -782,11 +770,11 @@ bool GUIEditBox::processMouse(const core::Event &event)
 		// paste from the primary selection
 		inputString([&] {
 			if (!m_operator)
-				return core::stringw();
+				return std::wstring();
 			const c8 *inserted_text_utf8 = m_operator->getTextFromPrimarySelection();
 			if (!inserted_text_utf8)
-				return core::stringw();
-			return utf8_to_stringw(inserted_text_utf8);
+				return std::wstring();
+            return utf8_to_wide(inserted_text_utf8);
 		}());
 
 		return true;
@@ -824,11 +812,11 @@ void GUIEditBox::updateVScrollBar()
 		m_current_text_rect.ULC.Y -= deltaScrollY;
 		m_current_text_rect.LRC.Y -= deltaScrollY;
 
-		s32 scrollymax = getTextDimension().Height - m_frame_rect.getHeight();
+        s32 scrollymax = getTextDimension().Y - m_frame_rect.getHeight();
 		if (scrollymax != m_vscrollbar->getMax()) {
 			// manage a newline or a deleted line
 			m_vscrollbar->setMax(scrollymax);
-			m_vscrollbar->setPageSize(s32(getTextDimension().Height));
+            m_vscrollbar->setPageSize(s32(getTextDimension().Y));
 			calculateScrollPos();
 		} else {
 			// manage a newline or a deleted line
@@ -837,13 +825,13 @@ void GUIEditBox::updateVScrollBar()
 	}
 
 	// check if a vertical scrollbar is needed ?
-	if (getTextDimension().Height > (u32)m_frame_rect.getHeight()) {
+    if (getTextDimension().Y > (u32)m_frame_rect.getHeight()) {
 		m_frame_rect.LRC.X -= m_scrollbar_width;
 
-		s32 scrollymax = getTextDimension().Height - m_frame_rect.getHeight();
+        s32 scrollymax = getTextDimension().Y - m_frame_rect.getHeight();
 		if (scrollymax != m_vscrollbar->getMax()) {
 			m_vscrollbar->setMax(scrollymax);
-			m_vscrollbar->setPageSize(s32(getTextDimension().Height));
+            m_vscrollbar->setPageSize(s32(getTextDimension().Y));
 		}
 
 		if (!m_vscrollbar->isVisible()) {
@@ -855,7 +843,7 @@ void GUIEditBox::updateVScrollBar()
 			m_vscroll_pos = 0;
 			m_vscrollbar->setPos(0);
 			m_vscrollbar->setMax(1);
-			m_vscrollbar->setPageSize(s32(getTextDimension().Height));
+            m_vscrollbar->setPageSize(s32(getTextDimension().Y));
 		}
 	}
 }

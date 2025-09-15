@@ -6,14 +6,10 @@
 
 #include <map>
 #include <set>
-#include <string>
-#include <vector>
 #include <iostream>
-
-#include "irrlichttypes_extrabloated.h"
 #include "guiScrollBar.h"
 
-class ISimpleTextureSource;
+class UISpriteBank;
 
 /*
 	A table GUI element for GUIFormSpecMenu.
@@ -39,7 +35,7 @@ public:
 		s32 selected = 0;
 		s32 scrollpos = 0;
 		s32 keynav_time = 0;
-		core::stringw keynav_buffer;
+        std::wstring keynav_buffer;
 		std::set<s32> opened_trees;
 	};
 
@@ -75,8 +71,7 @@ public:
 
 	GUITable(gui::IGUIEnvironment *env,
 			gui::IGUIElement *parent, s32 id,
-			recti rectangle,
-			ISimpleTextureSource *tsrc);
+            recti rectangle);
 
 	virtual ~GUITable();
 
@@ -164,9 +159,6 @@ protected:
 		s32 visible_index;
 	};
 
-	// Texture source
-	ISimpleTextureSource *m_tsrc;
-
 	// Table content (including hidden rows)
 	std::vector<Row> m_rows;
 	// Table content (only visible; indices into m_rows)
@@ -181,20 +173,22 @@ protected:
 
 	// Keyboard navigation stuff
 	u64 m_keynav_time = 0;
-	core::stringw m_keynav_buffer = L"";
+    std::wstring m_keynav_buffer = L"";
 
 	// Drawing and geometry information
 	bool m_border = true;
-	img::color8 m_color = img::color8(255, 255, 255, 255);
-	img::color8 m_background = img::color8(255, 0, 0, 0);
-	img::color8 m_highlight = img::color8(255, 70, 100, 50);
-	img::color8 m_highlight_text = img::color8(255, 255, 255, 255);
+    img::color8 m_color = img::white;
+    img::color8 m_background = img::black;
+    img::color8 m_highlight = img::color8(img::PF_RGBA8, 70, 100, 50, 255);
+    img::color8 m_highlight_text = img::white;
 	s32 m_rowheight = 1;
 	render::TTFont *m_font = nullptr;
 	GUIScrollBar *m_scrollbar = nullptr;
 
+    std::unique_ptr<UISpriteBank> m_table_box;
+
 	// Allocated strings and images
-	std::vector<core::stringw> m_strings;
+    std::vector<std::wstring> m_strings;
 	std::vector<img::Image*> m_images;
 	std::map<std::string, s32> m_alloc_strings;
 	std::map<std::string, s32> m_alloc_images;
@@ -212,7 +206,7 @@ protected:
 	const Row *getRow(s32 i) const;
 
 	// Key navigation helper
-	bool doesRowStartWith(const Row *row, const core::stringw &str) const;
+    bool doesRowStartWith(const Row *row, const std::wstring &str) const;
 
 	// Returns the row at a given screen Y coordinate
 	// Returns index i such that m_rows[i] is valid (or -1 on error)

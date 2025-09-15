@@ -4,10 +4,11 @@
 // Copyright (C) 2018 stujones11, Stuart Jones <stujones111@gmail.com>
 
 #include <cstdlib>
-#include <IEventReceiver.h>
-#include <IGUIComboBox.h>
-#include <IGUIEditBox.h>
-#include "client/renderingengine.h"
+#include <Core/IEventReceiver.h>
+#include "IGUIComboBox.h"
+#include "IGUIEditBox.h"
+#include "client/render/rendersystem.h"
+#include "gui/IGUIEnvironment.h"
 #include "modalMenu.h"
 #include "gettext.h"
 #include "gui/guiInventoryList.h"
@@ -44,8 +45,7 @@ GUIModalMenu::GUIModalMenu(gui::IGUIEnvironment* env, gui::IGUIElement* parent,
 		m_menumgr(menumgr),
 		m_remap_click_outside(remap_click_outside)
 {
-	m_gui_scale = g_settings->getFloat("gui_scaling", 0.5f, 20.0f) *
-			RenderingEngine::getDisplayDensity();
+    m_gui_scale = env->getRenderSystem()->getScaleFactor();
 
 	setVisible(true);
 	m_menumgr->createdMenu(this);
@@ -71,8 +71,7 @@ void GUIModalMenu::draw()
 	if (!IsVisible)
 		return;
 
-	video::IVideoDriver *driver = Environment->getVideoDriver();
-	v2u32 screensize = driver->getScreenSize();
+    v2u screensize = Environment->getRenderSystem()->getWindowSize();
 	if (screensize != m_screensize_old) {
 		m_screensize_old = screensize;
 		regenerateGui(screensize);
@@ -114,8 +113,8 @@ static bool isChild(gui::IGUIElement *tocheck, gui::IGUIElement *parent)
 bool GUIModalMenu::remapClickOutside(const core::Event &event)
 {
 	if (!m_remap_click_outside || event.Type != EET_MOUSE_INPUT_EVENT ||
-			(event.MouseInput.Event != EMIE_LMOUSE_PRESSED_DOWN &&
-					event.MouseInput.Event != EMIE_LMOUSE_LEFT_UP))
+            (event.MouseInput.Type != EMIE_LMOUSE_PRESSED_DOWN &&
+                    event.MouseInput.Type != EMIE_LMOUSE_LEFT_UP))
 		return false;
 
 	// The formspec must only be closed if both the EMIE_LMOUSE_PRESSED_DOWN and
@@ -139,16 +138,16 @@ bool GUIModalMenu::remapClickOutside(const core::Event &event)
 		// Return true since the event was handled, even if it wasn't handled by us.
 		return true;
 
-	if (event.MouseInput.Event == EMIE_LMOUSE_PRESSED_DOWN) {
+    if (event.MouseInput.Type == EMIE_LMOUSE_PRESSED_DOWN) {
 		m_last_click_outside = current;
 		return true;
 	}
 
-	if (event.MouseInput.Event == EMIE_LMOUSE_LEFT_UP &&
+    if (event.MouseInput.Type == EMIE_LMOUSE_LEFT_UP &&
 			current.isRelated(last)) {
 		core::Event translated{};
 		translated.Type            = EET_KEY_INPUT_EVENT;
-		translated.KeyInput.Key         = KEY_ESCAPE;
+		translated.KeyInput.Key         = core::KEY_ESCAPE;
 		translated.KeyInput.Control     = false;
 		translated.KeyInput.Shift       = false;
 		translated.KeyInput.PressedDown = true;
@@ -160,7 +159,7 @@ bool GUIModalMenu::remapClickOutside(const core::Event &event)
 	return false;
 }
 
-bool GUIModalMenu::simulateMouseEvent(ETOUCH_INPUT_EVENT touch_event, bool second_try)
+bool GUIModalMenu::simulateMouseEvent(core::TouchInputEventType touch_event, bool second_try)
 {
 	IGUIElement *target;
 	if (!second_try)
@@ -174,22 +173,22 @@ bool GUIModalMenu::simulateMouseEvent(ETOUCH_INPUT_EVENT touch_event, bool secon
 	mouse_event.MouseInput.Y = m_pointer.Y;
 	mouse_event.MouseInput.Simulated = true;
 	switch (touch_event) {
-	case ETIE_PRESSED_DOWN:
-		mouse_event.MouseInput.Event = EMIE_LMOUSE_PRESSED_DOWN;
-		mouse_event.MouseInput.ButtonStates = EMBSM_LEFT;
+    case TIE_PRESSED_DOWN:
+        mouse_event.MouseInput.Type = EMIE_LMOUSE_PRESSED_DOWN;
+        mouse_event.MouseInput.ButtonStates = MBSM_LEFT;
 		break;
-	case ETIE_MOVED:
-		mouse_event.MouseInput.Event = EMIE_MOUSE_MOVED;
-		mouse_event.MouseInput.ButtonStates = EMBSM_LEFT;
+    case TIE_MOVED:
+        mouse_event.MouseInput.Type = EMIE_MOUSE_MOVED;
+        mouse_event.MouseInput.ButtonStates = MBSM_LEFT;
 		break;
-	case ETIE_LEFT_UP:
-		mouse_event.MouseInput.Event = EMIE_LMOUSE_LEFT_UP;
+    case TIE_LEFT_UP:
+        mouse_event.MouseInput.Type = MIE_LMOUSE_LEFT_UP;
 		mouse_event.MouseInput.ButtonStates = 0;
 		break;
-	case ETIE_COUNT:
+    case TIE_COUNT:
 		// ETIE_COUNT is used for double-tap events.
-		mouse_event.MouseInput.Event = EMIE_LMOUSE_DOUBLE_CLICK;
-		mouse_event.MouseInput.ButtonStates = EMBSM_LEFT;
+        mouse_event.MouseInput.Type = MIE_LMOUSE_DOUBLE_CLICK;
+        mouse_event.MouseInput.ButtonStates = MBSM_LEFT;
 		break;
 	default:
 		return false;
@@ -197,7 +196,7 @@ bool GUIModalMenu::simulateMouseEvent(ETOUCH_INPUT_EVENT touch_event, bool secon
 
 	bool retval;
 	do {
-		if (preprocescore::Event(mouse_event)) {
+        if (preprocessEvent(mouse_event)) {
 			retval = true;
 			break;
 		}
@@ -219,11 +218,11 @@ void GUIModalMenu::enter(gui::IGUIElement *hovered)
 	if (!hovered)
 		return;
 	sanity_check(!m_touch_hovered);
-	m_touch_hovered.grab(hovered);
+    m_touch_hovered.reset(hovered);
 	core::Event gui_event{};
 	gui_event.Type = EET_GUI_EVENT;
-	gui_event.GUI.Caller = m_touch_hovered.get();
-	gui_event.GUI.Type = gui::EGET_ELEMENT_HOVERED;
+    gui_event.GUI.Caller = m_touch_hovered->getID();
+    gui_event.GUI.Type = EGET_ELEMENT_HOVERED;
 	gui_event.GUI.Element = gui_event.GUI.Caller;
 	m_touch_hovered->OnEvent(gui_event);
 }
@@ -234,23 +233,23 @@ void GUIModalMenu::leave()
 		return;
 	core::Event gui_event{};
 	gui_event.Type = EET_GUI_EVENT;
-	gui_event.GUI.Caller = m_touch_hovered.get();
-	gui_event.GUI.Type = gui::EGET_ELEMENT_LEFT;
+    gui_event.GUI.Caller = m_touch_hovered->getID();
+    gui_event.GUI.Type = EGET_ELEMENT_LEFT;
 	m_touch_hovered->OnEvent(gui_event);
 	m_touch_hovered.reset();
 }
 
-bool GUIModalMenu::preprocescore::Event(const core::Event &event)
+bool GUIModalMenu::preprocessEvent(const core::Event &event)
 {
 #ifdef __ANDROID__
 	// display software keyboard when clicking edit boxes
 	if (event.Type == EET_MOUSE_INPUT_EVENT &&
-			event.MouseInput.Event == EMIE_LMOUSE_PRESSED_DOWN &&
+            event.MouseInput.Type == EMIE_LMOUSE_PRESSED_DOWN &&
 			!porting::hasPhysicalKeyboardAndroid()) {
 		gui::IGUIElement *hovered =
 			Environment->getRootGUIElement()->getElementFromPoint(
 				v2i(event.MouseInput.X, event.MouseInput.Y));
-		if ((hovered) && (hovered->getType() == irr::gui::EGUIET_EDIT_BOX)) {
+        if ((hovered) && (hovered->getType() == EGUIET_EDIT_BOX)) {
 			bool retval = hovered->OnEvent(event);
 			if (retval)
 				Environment->setFocus(hovered);
@@ -280,8 +279,9 @@ bool GUIModalMenu::preprocescore::Event(const core::Event &event)
 	}
 
 	if (event.Type == EET_GUI_EVENT) {
-		if (event.GUI.Type == gui::EGET_LISTBOX_OPENED) {
-			gui::IGUIComboBox *dropdown = (gui::IGUIComboBox *) event.GUI.Caller;
+        if (event.GUI.Type == EGET_LISTBOX_OPENED) {
+            gui::IGUIComboBox *dropdown = (gui::IGUIComboBox *)(
+                Environment->getRootGUIElement()->getElementFromID(event.GUI.Caller));
 
 			std::string field_name = getNameByID(dropdown->getID());
 			if (field_name.empty())
@@ -310,36 +310,36 @@ bool GUIModalMenu::preprocescore::Event(const core::Event &event)
 
 	// Convert touch events into mouse events.
 	if (event.Type == EET_TOUCH_INPUT_EVENT) {
-		irr_ptr<GUIModalMenu> holder;
-		holder.grab(this); // keep this alive until return (it might be dropped downstream [?])
+        //irr_ptr<GUIModalMenu> holder;
+        //holder.grab(this); // keep this alive until return (it might be dropped downstream [?])
 
 		if (event.TouchInput.touchedCount == 1) {
 			m_pointer = v2i(event.TouchInput.X, event.TouchInput.Y);
 
 			gui::IGUIElement *hovered = Environment->getRootGUIElement()->getElementFromPoint(v2i(m_pointer));
-			if (event.TouchInput.Event == ETIE_PRESSED_DOWN)
+            if (event.TouchInput.Type == TIE_PRESSED_DOWN)
 				Environment->setFocus(hovered);
-			if (m_touch_hovered != hovered) {
+            if (m_touch_hovered.get() != hovered) {
 				leave();
 				enter(hovered);
 			}
-			bool ret = simulateMouseEvent(event.TouchInput.Event);
-			if (event.TouchInput.Event == ETIE_LEFT_UP)
+            bool ret = simulateMouseEvent(event.TouchInput.Type);
+            if (event.TouchInput.Type == TIE_LEFT_UP)
 				leave();
 
 			// Detect double-taps and convert them into double-click events.
-			if (event.TouchInput.Event == ETIE_PRESSED_DOWN) {
+            if (event.TouchInput.Type == TIE_PRESSED_DOWN) {
 				PointerAction current = PointerAction::fromEvent(event);
 				if (current.isRelated(m_last_touch)) {
 					// ETIE_COUNT is used for double-tap events.
-					simulateMouseEvent(ETIE_COUNT);
+                    simulateMouseEvent(TIE_COUNT);
 				}
 				m_last_touch = current;
 			}
 
 			return ret;
 		} else if (event.TouchInput.touchedCount == 2) {
-			if (event.TouchInput.Event != ETIE_LEFT_UP)
+            if (event.TouchInput.Type != TIE_LEFT_UP)
 				return true; // ignore
 			auto focused = Environment->getFocus();
 			if (!focused)
@@ -380,7 +380,7 @@ porting::AndroidDialogState GUIModalMenu::getAndroidUIInputState()
 }
 #endif
 
-GUIModalMenu::ScalingInfo GUIModalMenu::getScalingInfo(v2u32 screensize, v2u32 base_size)
+GUIModalMenu::ScalingInfo GUIModalMenu::getScalingInfo(v2u screensize, v2u base_size)
 {
 	f32 scale = m_gui_scale;
 	scale = std::min(scale, (f32)screensize.X / (f32)base_size.X);

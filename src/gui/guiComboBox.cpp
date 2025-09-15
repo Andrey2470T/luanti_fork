@@ -178,11 +178,11 @@ bool CGUIComboBox::OnEvent(const core::Event &event)
 		switch (event.Type) {
 
 		case EET_KEY_INPUT_EVENT:
-			if (ListBox && event.KeyInput.PressedDown && event.KeyInput.Key == KEY_ESCAPE) {
+            if (ListBox && event.KeyInput.PressedDown && event.KeyInput.Key == core::KEY_ESCAPE) {
 				// hide list box
 				openCloseMenu();
 				return true;
-			} else if (event.KeyInput.Key == KEY_RETURN || event.KeyInput.Key == KEY_SPACE) {
+            } else if (event.KeyInput.Key == core::KEY_RETURN || event.KeyInput.Key == core::KEY_SPACE) {
 				if (!event.KeyInput.PressedDown) {
 					openCloseMenu();
 				}
@@ -194,18 +194,18 @@ bool CGUIComboBox::OnEvent(const core::Event &event)
 				s32 oldSelected = Selected;
 				bool absorb = true;
 				switch (event.KeyInput.Key) {
-				case KEY_DOWN:
+                case core::KEY_DOWN:
 					setSelected(Selected + 1);
 					break;
-				case KEY_UP:
+                case core::KEY_UP:
 					setSelected(Selected - 1);
 					break;
-				case KEY_HOME:
-				case KEY_PRIOR:
+                case core::KEY_HOME:
+                case core::KEY_PRIOR:
 					setSelected(0);
 					break;
-				case KEY_END:
-				case KEY_NEXT:
+                case core::KEY_END:
+                case core::KEY_NEXT:
 					setSelected((s32)Items.size() - 1);
 					break;
 				default:

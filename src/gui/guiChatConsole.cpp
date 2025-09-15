@@ -4,19 +4,27 @@
 
 #include "guiChatConsole.h"
 #include "chat.h"
-#include "client/client.h"
+#include "client/core/client.h"
+#include "client/ui/extra_images.h"
+#include "client/ui/text_sprite.h"
 #include "debug.h"
 #include "gettime.h"
-#include "client/keycode.h"
+#include "client/event/keytype.h"
+#include "gui/GUISkin.h"
+#include "gui/IGUIEnvironment.h"
 #include "settings.h"
 #include "porting.h"
-#include "client/texturesource.h"
-#include "client/fontengine.h"
+#include "client/media/resource.h"
+#include "client/ui/glyph_atlas.h"
+#include "client/render/rendersystem.h"
 #include "log.h"
 #include "gettext.h"
-#include "irrlicht_changes/CGUITTFont.h"
+#include <Render/TTFont.h>
 #include "util/string.h"
 #include "guiScrollBar.h"
+#include "client/event/keypress.h"
+#include "client/core/chatmessanger.h"
+#include "client/ui/sprite.h"
 #include <string>
 
 inline u32 clamp_u8(s32 value)
@@ -24,14 +32,14 @@ inline u32 clamp_u8(s32 value)
 	return (u32) MYMIN(MYMAX(value, 0), 255);
 }
 
-inline bool isInCtrlKeys(const irr::EKEY_CODE& kc)
+inline bool isInCtrlKeys(const KEY_CODE& kc)
 {
-	return kc == KEY_LCONTROL || kc == KEY_RCONTROL || kc == KEY_CONTROL;
+	return kc == core::KEY_LCONTROL || kc == core::KEY_RCONTROL || kc == core::KEY_CONTROL;
 }
 
 inline u32 getScrollbarSize(IGUIEnvironment* env)
 {
-	return env->getSkin()->getSize(gui::EGDS_SCROLLBAR_SIZE);
+	return env->getSkin()->getSize(EGDS_SCROLLBAR_SIZE);
 }
 
 GUIChatConsole::GUIChatConsole(
@@ -47,35 +55,40 @@ GUIChatConsole::GUIChatConsole(
 	m_chat_backend(backend),
 	m_client(client),
 	m_menumgr(menumgr),
-	m_animate_time_old(porting::getTimeMs())
+    m_animate_time_old(porting::getTimeMs()),
+    m_chat_bank(std::make_unique<UISpriteBank>(env->getRenderSystem()->getRenderer(),
+        env->getResourceCache(), false))
 {
 	// load background settings
 	s32 console_alpha = g_settings->getS32("console_alpha");
-	m_background_color.setAlpha(clamp_u8(console_alpha));
+    m_background_color.A(clamp_u8(console_alpha));
 
 	// load the background texture depending on settings
-	ITextureSource *tsrc = client->getTextureSource();
-	if (tsrc->isKnownSourceImage("background_chat.jpg")) {
-		m_background = tsrc->getTexture("background_chat.jpg");
-		m_background_color.setRed(255);
-		m_background_color.setGreen(255);
-		m_background_color.setBlue(255);
-	} else {
+    auto rescache = env->getResourceCache();
+
+    m_background = rescache->get<img::Image>(ResourceType::IMAGE, "background_chat.jpg");
+    m_background_color.R(255);
+    m_background_color.G(255);
+    m_background_color.B(255);
+    /*else {
 		v3f console_color = g_settings->getV3F("console_color").value_or(v3f());
 		m_background_color.setRed(clamp_u8(myround(console_color.X)));
 		m_background_color.setGreen(clamp_u8(myround(console_color.Y)));
 		m_background_color.setBlue(clamp_u8(myround(console_color.Z)));
-	}
+    }*/
 
 	const u16 chat_font_size = g_settings->getU16("chat_font_size");
-	m_font.grab(g_fontengine->getFont(chat_font_size != 0 ?
-		rangelim(chat_font_size, 5, 72) : FONT_SIZE_UNSPECIFIED, FM_Mono));
+
+    auto font_mgr = env->getRenderSystem()->getFontManager();
+    u32 font_size = chat_font_size != 0 ?
+                rangelim(chat_font_size, 5, 72) : font_mgr->getDefaultFontSize(render::FontMode::MONO);
+    m_font = font_mgr->getFontOrCreate(render::FontMode::MONO, render::FontStyle::NORMAL, font_size);
 
 	if (!m_font) {
 		errorstream << "GUIChatConsole: Unable to load mono font" << std::endl;
 	} else {
-		v2u dim = m_font->getDimension(L"M");
-		m_fontsize = v2u32(dim.Width, dim.Height);
+        v2u dim = m_font->getTextSize(L"M");
+        m_fontsize = v2u(dim.X, dim.Y);
 	}
 	m_fontsize.X = MYMAX(m_fontsize.X, 1);
 	m_fontsize.Y = MYMAX(m_fontsize.Y, 1);
@@ -87,10 +100,15 @@ GUIChatConsole::GUIChatConsole(
 	m_is_ctrl_down = false;
 	m_cache_clickable_chat_weblinks = g_settings->getBool("clickable_chat_weblinks");
 
-	m_scrollbar.reset(new GUIScrollBar(env, this, -1, recti(0, 0, 30, m_height), false, true, tsrc));
+    m_scrollbar.reset(new GUIScrollBar(env, this, -1, recti(0, 0, 30, m_height), false, true));
 	m_scrollbar->setSubElement(true);
 	m_scrollbar->setLargeStep(1);
 	m_scrollbar->setSmallStep(1);
+
+    m_chat_bank->addImageSprite(nullptr, {}, 0);
+    m_chat_bank->addTextSprite(env->getRenderSystem()->getFontManager(), EnrichedString(), 0);
+    m_chat_bank->addTextSprite(env->getRenderSystem()->getFontManager(), EnrichedString(), 0);
+    m_chat_bank->addSprite<UISprite>(0, nullptr, env->getRenderSystem()->getRenderer(), env->getResourceCache(), true);
 }
 
 void GUIChatConsole::openConsole(f32 scale)
@@ -172,10 +190,8 @@ void GUIChatConsole::draw()
 	if(!IsVisible)
 		return;
 
-	video::IVideoDriver* driver = Environment->getVideoDriver();
-
 	// Check screen size
-	v2u32 screensize = driver->getScreenSize();
+    v2u screensize = Environment->getRenderSystem()->getWindowSize();
 	if (screensize != m_screensize)
 	{
 		// screen size has changed
@@ -202,6 +218,8 @@ void GUIChatConsole::draw()
 		drawBackground();
 		drawText();
 		drawPrompt();
+
+        m_chat_bank->drawBank();
 	}
 
 	gui::IGUIElement::draw();
@@ -282,25 +300,19 @@ void GUIChatConsole::animate(u32 msec)
 
 void GUIChatConsole::drawBackground()
 {
-	video::IVideoDriver* driver = Environment->getVideoDriver();
+    auto background = dynamic_cast<ImageSprite *>(m_chat_bank->getSprite(0));
+
 	if (m_background != NULL)
 	{
 		recti sourcerect(0, -m_height, m_screensize.X, 0);
-		driver->draw2DImage(
-			m_background,
-			v2i(0, 0),
-			sourcerect,
-			&AbsoluteClippingRect,
-			m_background_color,
-			false);
+        background->update(m_background, toRectf(sourcerect), m_background_color, &AbsoluteClippingRect);
 	}
 	else
 	{
-		driver->draw2DRectangle(
-			m_background_color,
-			recti(0, 0, m_screensize.X, m_height),
-			&AbsoluteClippingRect);
+        background->update(m_background, rectf(0, 0, m_screensize.X, m_height), m_background_color, &AbsoluteClippingRect);
 	}
+
+    background->rebuildMesh();
 }
 
 void GUIChatConsole::drawText()
@@ -310,7 +322,7 @@ void GUIChatConsole::drawText()
 
 	ChatBuffer& buf = m_chat_backend->getConsoleBuffer();
 
-	core::recti rect;
+    recti rect;
 	if (m_scrollbar->isVisible())
 		rect = recti (0, 0, m_screensize.X - getScrollbarSize(Environment), m_height);
 	else
@@ -332,25 +344,11 @@ void GUIChatConsole::drawText()
 			recti destrect(
 				x, y, x + m_fontsize.X * fragment.text.size(), y + m_fontsize.Y);
 
-			if (m_font->getType() == irr::gui::EGFT_CUSTOM) {
-				// Draw colored text if possible
-				auto *tmp = static_cast<gui::CGUITTFont*>(m_font.get());
-				tmp->draw(
-					fragment.text,
-					destrect,
-					false,
-					false,
-					&rect);
-			} else {
-				// Otherwise use standard text
-				m_font->draw(
-					fragment.text.c_str(),
-					destrect,
-					img::color8(255, 255, 255, 255),
-					false,
-					false,
-					&rect);
-			}
+            auto text = dynamic_cast<UITextSprite *>(m_chat_bank->getSprite(1));
+            text->setText(fragment.text);
+            text->setClipRect(AbsoluteClippingRect);
+            text->updateBuffer(rectf(
+                x, y, x + m_fontsize.X * fragment.text.size(), y + m_fontsize.Y));
 		}
 	}
 
@@ -368,23 +366,25 @@ void GUIChatConsole::drawPrompt()
 	u32 font_width  = m_fontsize.X;
 	u32 font_height = m_fontsize.Y;
 
-	v2u size = m_font->getDimension(prompt_text.c_str());
-	u32 text_width = size.Width;
-	if (size.Height > font_height)
-		font_height = size.Height;
+    v2u size = m_font->getTextSize(prompt_text.c_str());
+    u32 text_width = size.X;
+    if (size.Y > font_height) {
+        font_height = size.X;
+    }
 
 	u32 row = m_chat_backend->getConsoleBuffer().getRows();
 	s32 y = row * font_height + m_height - m_desired_height;
 
 	recti destrect(
 		font_width, y, font_width + text_width, y + font_height);
-	m_font->draw(
-		prompt_text.c_str(),
-		destrect,
-		img::color8(255, 255, 255, 255),
-		false,
-		false,
-		&AbsoluteClippingRect);
+
+    auto text = dynamic_cast<UITextSprite *>(m_chat_bank->getSprite(2));
+    text->setText(prompt_text);
+    text->setColor(img::white);
+    text->setClipRect(AbsoluteClippingRect);
+    text->updateBuffer(rectf(
+        font_width, y, font_width + text_width, y + font_height));
+
 
 	// Draw the cursor during on periods
 	if ((m_cursor_blink & 0x8000) != 0)
@@ -394,10 +394,9 @@ void GUIChatConsole::drawPrompt()
 		if (cursor_pos >= 0)
 		{
 
-			u32 text_to_cursor_pos_width = m_font->getDimension(prompt_text.substr(0, cursor_pos).c_str()).Width;
+            u32 text_to_cursor_pos_width = m_font->getTextWidth(prompt_text.substr(0, cursor_pos).c_str());
 
 			s32 cursor_len = prompt.getCursorLength();
-			video::IVideoDriver* driver = Environment->getVideoDriver();
 			s32 x = font_width + text_to_cursor_pos_width;
 			recti destrect(
 				x,
@@ -405,11 +404,11 @@ void GUIChatConsole::drawPrompt()
 				x + font_width * MYMAX(cursor_len, 1),
 				y + font_height * (cursor_len ? m_cursor_height+1 : 1)
 			);
-			img::color8 cursor_color(255,255,255,255);
-			driver->draw2DRectangle(
-				cursor_color,
-				destrect,
-				&AbsoluteClippingRect);
+            img::color8 cursor_color = img::white;
+            auto cursor = m_chat_bank->getSprite(3);
+            cursor->getShape()->updateRectangle(0, toRectf(destrect), {cursor_color, cursor_color, cursor_color, cursor_color});
+            cursor->setClipRect(AbsoluteClippingRect);
+            cursor->updateMesh();
 		}
 	}
 
@@ -417,6 +416,7 @@ void GUIChatConsole::drawPrompt()
 
 bool GUIChatConsole::OnEvent(const core::Event& event)
 {
+    auto clipboard = Environment->getRenderSystem()->getWindow()->getClipboard();
 
 	ChatPrompt &prompt = m_chat_backend->getPrompt();
 
@@ -436,7 +436,7 @@ bool GUIChatConsole::OnEvent(const core::Event& event)
 		}
 
 		// Key input
-		if (KeyPress(event.KeyInput) == getKeySetting("keymap_console")) {
+		if (MtKey(event.KeyInput) == getKeySetting("keymap_console")) {
 			closeConsole();
 
 			// inhibit open so the_game doesn't reopen immediately
@@ -449,39 +449,39 @@ bool GUIChatConsole::OnEvent(const core::Event& event)
 		bool has_char = event.KeyInput.Char && !event.KeyInput.Control &&
 				!iswcntrl(event.KeyInput.Char) && !IS_PRIVATE_USE_CHAR(event.KeyInput.Char);
 
-		if (event.KeyInput.Key == KEY_ESCAPE) {
+		if (event.KeyInput.Key == core::KEY_ESCAPE) {
 			closeConsoleAtOnce();
 			m_close_on_enter = false;
 			// inhibit open so the_game doesn't reopen immediately
 			m_open_inhibited = 1; // so the ESCAPE button doesn't open the "pause menu"
 			return true;
 		}
-		else if(event.KeyInput.Key == KEY_PRIOR)
+		else if(event.KeyInput.Key == core::KEY_PRIOR)
 		{
 			if (!has_char) { // no num lock
 				m_chat_backend->scrollPageUp();
 				return true;
 			}
 		}
-		else if(event.KeyInput.Key == KEY_NEXT)
+		else if(event.KeyInput.Key == core::KEY_NEXT)
 		{
 			if (!has_char) { // no num lock
 				m_chat_backend->scrollPageDown();
 				return true;
 			}
 		}
-		else if(event.KeyInput.Key == KEY_RETURN)
+		else if(event.KeyInput.Key == core::KEY_RETURN)
 		{
 			prompt.addToHistory(prompt.getLine());
 			std::wstring text = prompt.replace(L"");
-			m_client->typeChatMessage(text);
+            m_client->getChatMessanger()->typeChatMessage(text);
 			if (m_close_on_enter) {
 				closeConsoleAtOnce();
 				m_close_on_enter = false;
 			}
 			return true;
 		}
-		else if(event.KeyInput.Key == KEY_UP)
+		else if(event.KeyInput.Key == core::KEY_UP)
 		{
 			if (!has_char) { // no num lock
 				// Up pressed
@@ -490,7 +490,7 @@ bool GUIChatConsole::OnEvent(const core::Event& event)
 				return true;
 			}
 		}
-		else if(event.KeyInput.Key == KEY_DOWN)
+		else if(event.KeyInput.Key == core::KEY_DOWN)
 		{
 			if (!has_char) { // no num lock
 				// Down pressed
@@ -499,7 +499,7 @@ bool GUIChatConsole::OnEvent(const core::Event& event)
 				return true;
 			}
 		}
-		else if(event.KeyInput.Key == KEY_LEFT || event.KeyInput.Key == KEY_RIGHT)
+		else if(event.KeyInput.Key == core::KEY_LEFT || event.KeyInput.Key == core::KEY_RIGHT)
 		{
 			if (!has_char) { // no num lock
 				// Left/right pressed
@@ -507,7 +507,7 @@ bool GUIChatConsole::OnEvent(const core::Event& event)
 				ChatPrompt::CursorOp op = event.KeyInput.Shift ?
 					ChatPrompt::CURSOROP_SELECT :
 					ChatPrompt::CURSOROP_MOVE;
-				ChatPrompt::CursorOpDir dir = event.KeyInput.Key == KEY_LEFT ?
+				ChatPrompt::CursorOpDir dir = event.KeyInput.Key == core::KEY_LEFT ?
 					ChatPrompt::CURSOROP_DIR_LEFT :
 					ChatPrompt::CURSOROP_DIR_RIGHT;
 				ChatPrompt::CursorOpScope scope = event.KeyInput.Control ?
@@ -520,7 +520,7 @@ bool GUIChatConsole::OnEvent(const core::Event& event)
 				return true;
 			}
 		}
-		else if(event.KeyInput.Key == KEY_HOME)
+		else if(event.KeyInput.Key == core::KEY_HOME)
 		{
 			if (!has_char) { // no num lock
 				// Home pressed
@@ -532,7 +532,7 @@ bool GUIChatConsole::OnEvent(const core::Event& event)
 				return true;
 			}
 		}
-		else if(event.KeyInput.Key == KEY_END)
+		else if(event.KeyInput.Key == core::KEY_END)
 		{
 			if (!has_char) { // no num lock
 				// End pressed
@@ -544,7 +544,7 @@ bool GUIChatConsole::OnEvent(const core::Event& event)
 				return true;
 			}
 		}
-		else if(event.KeyInput.Key == KEY_BACK)
+		else if(event.KeyInput.Key == core::KEY_BACK)
 		{
 			// Backspace or Ctrl-Backspace pressed
 			// delete character / word to the left
@@ -558,7 +558,7 @@ bool GUIChatConsole::OnEvent(const core::Event& event)
 				scope);
 			return true;
 		}
-		else if(event.KeyInput.Key == KEY_DELETE)
+		else if(event.KeyInput.Key == core::KEY_DELETE)
 		{
 			if (!has_char) { // no num lock
 				// Delete or Ctrl-Delete pressed
@@ -574,7 +574,7 @@ bool GUIChatConsole::OnEvent(const core::Event& event)
 				return true;
 			}
 		}
-		else if(event.KeyInput.Key == KEY_KEY_A && event.KeyInput.Control)
+		else if(event.KeyInput.Key == core::KEY_KEY_A && event.KeyInput.Control)
 		{
 			// Ctrl-A pressed
 			// Select all text
@@ -586,7 +586,7 @@ bool GUIChatConsole::OnEvent(const core::Event& event)
 			updatePrimarySelection();
 			return true;
 		}
-		else if(event.KeyInput.Key == KEY_KEY_C && event.KeyInput.Control)
+		else if(event.KeyInput.Key == core::KEY_KEY_C && event.KeyInput.Control)
 		{
 			// Ctrl-C pressed
 			// Copy text to clipboard
@@ -594,10 +594,10 @@ bool GUIChatConsole::OnEvent(const core::Event& event)
 				return true;
 			std::wstring wselected = prompt.getSelection();
 			std::string selected = wide_to_utf8(wselected);
-			Environment->getOSOperator()->copyToClipboard(selected.c_str());
+            clipboard->copyToClipboard(selected.c_str());
 			return true;
 		}
-		else if(event.KeyInput.Key == KEY_KEY_V && event.KeyInput.Control)
+		else if(event.KeyInput.Key == core::KEY_KEY_V && event.KeyInput.Control)
 		{
 			// Ctrl-V pressed
 			// paste text from clipboard
@@ -608,14 +608,13 @@ bool GUIChatConsole::OnEvent(const core::Event& event)
 					ChatPrompt::CURSOROP_DIR_LEFT, // Ignored
 					ChatPrompt::CURSOROP_SCOPE_SELECTION);
 			}
-			IOSOperator *os_operator = Environment->getOSOperator();
-			const c8 *text = os_operator->getTextFromClipboard();
+            const c8 *text = clipboard->getTextFromClipboard();
 			if (!text)
 				return true;
 			prompt.input(utf8_to_wide(text));
 			return true;
 		}
-		else if(event.KeyInput.Key == KEY_KEY_X && event.KeyInput.Control)
+		else if(event.KeyInput.Key == core::KEY_KEY_X && event.KeyInput.Control)
 		{
 			// Ctrl-X pressed
 			// Cut text to clipboard
@@ -623,14 +622,14 @@ bool GUIChatConsole::OnEvent(const core::Event& event)
 				return true;
 			std::wstring wselected = prompt.getSelection();
 			std::string selected = wide_to_utf8(wselected);
-			Environment->getOSOperator()->copyToClipboard(selected.c_str());
+            clipboard->copyToClipboard(selected.c_str());
 			prompt.cursorOperation(
 				ChatPrompt::CURSOROP_DELETE,
 				ChatPrompt::CURSOROP_DIR_LEFT, // Ignored
 				ChatPrompt::CURSOROP_SCOPE_SELECTION);
 			return true;
 		}
-		else if(event.KeyInput.Key == KEY_KEY_U && event.KeyInput.Control)
+		else if(event.KeyInput.Key == core::KEY_KEY_U && event.KeyInput.Control)
 		{
 			// Ctrl-U pressed
 			// kill line to left end
@@ -640,7 +639,7 @@ bool GUIChatConsole::OnEvent(const core::Event& event)
 				ChatPrompt::CURSOROP_SCOPE_LINE);
 			return true;
 		}
-		else if(event.KeyInput.Key == KEY_KEY_K && event.KeyInput.Control)
+		else if(event.KeyInput.Key == core::KEY_KEY_K && event.KeyInput.Control)
 		{
 			// Ctrl-K pressed
 			// kill line to right end
@@ -650,7 +649,7 @@ bool GUIChatConsole::OnEvent(const core::Event& event)
 				ChatPrompt::CURSOROP_SCOPE_LINE);
 			return true;
 		}
-		else if(event.KeyInput.Key == KEY_TAB)
+		else if(event.KeyInput.Key == core::KEY_TAB)
 		{
 			// Tab or Shift-Tab pressed
 			// Nick completion
@@ -667,15 +666,15 @@ bool GUIChatConsole::OnEvent(const core::Event& event)
 	}
 	else if(event.Type == EET_MOUSE_INPUT_EVENT)
 	{
-		if (event.MouseInput.Event == EMIE_MOUSE_WHEEL)
+		if (event.MouseInput.Type == EMIE_MOUSE_WHEEL)
 		{
-			s32 rows = myround(-3.0 * event.MouseInput.Wheel);
+            s32 rows = myround(-3.0 * event.MouseInput.WheelDelta);
 			m_chat_backend->scroll(rows);
 		}
 		// Middle click or ctrl-click opens weblink, if enabled in config
 		// Otherwise, middle click pastes primary selection
-		else if (event.MouseInput.Event == EMIE_MMOUSE_PRESSED_DOWN ||
-				(event.MouseInput.Event == EMIE_LMOUSE_PRESSED_DOWN && m_is_ctrl_down))
+		else if (event.MouseInput.Type == EMIE_MMOUSE_PRESSED_DOWN ||
+				(event.MouseInput.Type == EMIE_LMOUSE_PRESSED_DOWN && m_is_ctrl_down))
 		{
 			// If clicked within console output region
 			if (event.MouseInput.Y / m_fontsize.Y < (m_height / m_fontsize.Y) - 1 )
@@ -686,10 +685,9 @@ bool GUIChatConsole::OnEvent(const core::Event& event)
 								event.MouseInput.Y / m_fontsize.Y);
 
 				if (!was_url_pressed
-						&& event.MouseInput.Event == EMIE_MMOUSE_PRESSED_DOWN) {
+						&& event.MouseInput.Type == EMIE_MMOUSE_PRESSED_DOWN) {
 					// Paste primary selection at cursor pos
-					const c8 *text = Environment->getOSOperator()
-							->getTextFromPrimarySelection();
+                    const c8 *text = clipboard->getTextFromPrimarySelection();
 					if (text)
 						prompt.input(utf8_to_wide(text));
 				}
@@ -702,7 +700,7 @@ bool GUIChatConsole::OnEvent(const core::Event& event)
 		return true;
 	}
 	else if (event.Type == EET_GUI_EVENT && event.GUI.Type == EGET_SCROLL_BAR_CHANGED &&
-			(void*) event.GUI.Caller == (void*) m_scrollbar.get())
+            event.GUI.Caller.value() == (u32)m_scrollbar->getID())
 	{
 		m_chat_backend->getConsoleBuffer().scrollAbsolute(m_scrollbar->getPos());
 	}
@@ -788,7 +786,7 @@ void GUIChatConsole::updatePrimarySelection()
 {
 	std::wstring wselected = m_chat_backend->getPrompt().getSelection();
 	std::string selected = wide_to_utf8(wselected);
-	Environment->getOSOperator()->copyToPrimarySelection(selected.c_str());
+    Environment->getRenderSystem()->getWindow()->getClipboard()->copyToPrimarySelection(selected.c_str());
 }
 
 void GUIChatConsole::updateScrollbar(bool update_size)

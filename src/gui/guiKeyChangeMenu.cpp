@@ -9,14 +9,13 @@
 #include "guiButton.h"
 #include "serialization.h"
 #include <string>
-#include <IGUICheckBox.h>
-#include <IGUIEditBox.h>
-#include <IGUIButton.h>
-#include <IGUIStaticText.h>
-#include <render::TTFont.h>
-#include <IVideoDriver.h>
+#include "IGUICheckBox.h"
+#include "IGUIEditBox.h"
+#include <Render/TTFont.h>
+#include "client/render/rendersystem.h"
 #include "settings.h"
 #include <algorithm>
+#include "client/ui/sprite.h"
 
 #include "mainmenumanager.h"  // for g_gamecallback
 
@@ -69,10 +68,10 @@ enum
 };
 
 GUIKeyChangeMenu::GUIKeyChangeMenu(gui::IGUIEnvironment* env,
-		gui::IGUIElement* parent, s32 id, IMenuManager *menumgr,
-		ISimpleTextureSource *tsrc) :
-		GUIModalMenu(env, parent, id, menumgr),
-		m_tsrc(tsrc)
+        gui::IGUIElement* parent, s32 id, IMenuManager *menumgr) :
+        GUIModalMenu(env, parent, id, menumgr),
+        box(std::make_unique<UISprite>(nullptr, env->getRenderSystem()->getRenderer(),
+            env->getResourceCache(), std::vector<UIPrimitiveType>{UIPrimitiveType::RECTANGLE}, true))
 {
 	init_keys();
 }
@@ -88,12 +87,12 @@ GUIKeyChangeMenu::~GUIKeyChangeMenu()
 	key_settings.clear();
 }
 
-void GUIKeyChangeMenu::regenerateGui(v2u32 screensize)
+void GUIKeyChangeMenu::regenerateGui(v2u screensize)
 {
 	removeAllChildren();
 	key_used_text = nullptr;
 
-	ScalingInfo info = getScalingInfo(screensize, v2u32(835, 430));
+    ScalingInfo info = getScalingInfo(screensize, v2u(835, 430));
 	const float s = info.scale;
 	DesiredRect = info.rect;
 	recalculateAbsolutePosition(false);
@@ -107,7 +106,7 @@ void GUIKeyChangeMenu::regenerateGui(v2u32 screensize)
 		//gui::IGUIStaticText *t =
 		gui::StaticText::add(Environment, wstrgettext("Keybindings."), rect,
 				false, true, this, -1);
-		//t->setTextAlignment(gui::EGUIA_CENTER, gui::EGUIA_UPPERLEFT);
+        //t->setTextAlignment(gui::EGUIA_CENTER, EGUIA_UPPERLEFT);
 	}
 
 	// Build buttons
@@ -127,7 +126,7 @@ void GUIKeyChangeMenu::regenerateGui(v2u32 screensize)
 		{
 			recti rect(0, 0, 100 * s, 30 * s);
 			rect += topleft + v2i(offset.X + 150 * s, offset.Y - 5 * s);
-			k->button = GUIButton::addButton(Environment, rect, m_tsrc, this, k->id,
+            k->button = GUIButton::addButton(Environment, rect, this, k->id,
 					wstrgettext(k->key.name()).c_str());
 		}
 		if ((i + 1) % KMaxButtonPerColumns == 0) {
@@ -180,26 +179,28 @@ void GUIKeyChangeMenu::regenerateGui(v2u32 screensize)
 	{
 		recti rect(0, 0, 100 * s, 30 * s);
 		rect += topleft + v2i(size.X / 2 - 105 * s, size.Y - 40 * s);
-		GUIButton::addButton(Environment, rect, m_tsrc, this, GUI_ID_BACK_BUTTON,
+        GUIButton::addButton(Environment, rect, this, GUI_ID_BACK_BUTTON,
 				wstrgettext("Save").c_str());
 	}
 	{
 		recti rect(0, 0, 100 * s, 30 * s);
 		rect += topleft + v2i(size.X / 2 + 5 * s, size.Y - 40 * s);
-		GUIButton::addButton(Environment, rect, m_tsrc, this, GUI_ID_ABORT_BUTTON,
+        GUIButton::addButton(Environment, rect, this, GUI_ID_ABORT_BUTTON,
 				wstrgettext("Cancel").c_str());
 	}
 }
 
 void GUIKeyChangeMenu::drawMenu()
 {
-	gui::IGUISkin* skin = Environment->getSkin();
+    GUISkin* skin = Environment->getSkin();
 	if (!skin)
 		return;
-	video::IVideoDriver* driver = Environment->getVideoDriver();
 
-	img::color8 bgcolor(140, 0, 0, 0);
-	driver->draw2DRectangle(bgcolor, AbsoluteRect, &AbsoluteClippingRect);
+    img::color8 bgcolor(img::PF_RGBA8, 0, 0, 0, 140);
+    box->getShape()->updateRectangle(0, toRectf(AbsoluteRect), {bgcolor, bgcolor, bgcolor, bgcolor});
+    box->updateMesh();
+    box->setClipRect(AbsoluteClippingRect);
+    box->draw();
 
 	gui::IGUIElement::draw();
 }
@@ -218,17 +219,17 @@ bool GUIKeyChangeMenu::acceptInput()
 
 	{
 		gui::IGUIElement *e = getElementFromId(GUI_ID_CB_AUX1_DESCENDS);
-		if(e && e->getType() == gui::EGUIET_CHECK_BOX)
+        if(e && e->getType() == EGUIET_CHECK_BOX)
 			g_settings->setBool("aux1_descends", ((gui::IGUICheckBox*)e)->isChecked());
 	}
 	{
 		gui::IGUIElement *e = getElementFromId(GUI_ID_CB_DOUBLETAP_JUMP);
-		if(e && e->getType() == gui::EGUIET_CHECK_BOX)
+        if(e && e->getType() == EGUIET_CHECK_BOX)
 			g_settings->setBool("doubletap_jump", ((gui::IGUICheckBox*)e)->isChecked());
 	}
 	{
 		gui::IGUIElement *e = getElementFromId(GUI_ID_CB_AUTOJUMP);
-		if(e && e->getType() == gui::EGUIET_CHECK_BOX)
+        if(e && e->getType() == EGUIET_CHECK_BOX)
 			g_settings->setBool("autojump", ((gui::IGUICheckBox*)e)->isChecked());
 	}
 
@@ -254,18 +255,18 @@ bool GUIKeyChangeMenu::OnEvent(const core::Event& event)
 			&& event.KeyInput.PressedDown) {
 
 		bool prefer_character = shift_down;
-		KeyPress kp(event.KeyInput, prefer_character);
+        MtKey kp(event.KeyInput, prefer_character);
 
-		if (event.KeyInput.Key == irr::KEY_DELETE)
-			kp = KeyPress(""); // To erase key settings
-		else if (event.KeyInput.Key == irr::KEY_ESCAPE)
+        if (event.KeyInput.Key == core::KEY_DELETE)
+            kp = MtKey(""); // To erase key settings
+        else if (event.KeyInput.Key == core::KEY_ESCAPE)
 			kp = active_key->key; // Cancel
 
 		bool shift_went_down = false;
 		if(!shift_down &&
-				(event.KeyInput.Key == irr::KEY_SHIFT ||
-				event.KeyInput.Key == irr::KEY_LSHIFT ||
-				event.KeyInput.Key == irr::KEY_RSHIFT))
+                (event.KeyInput.Key == core::KEY_SHIFT ||
+                event.KeyInput.Key == core::KEY_LSHIFT ||
+                event.KeyInput.Key == core::KEY_RSHIFT))
 			shift_went_down = true;
 
 		// Display Key already in use message
@@ -306,14 +307,14 @@ bool GUIKeyChangeMenu::OnEvent(const core::Event& event)
 		}
 	} else if (event.Type == EET_KEY_INPUT_EVENT && !active_key
 			&& event.KeyInput.PressedDown
-			&& event.KeyInput.Key == irr::KEY_ESCAPE) {
+            && event.KeyInput.Key == core::KEY_ESCAPE) {
 		quitMenu();
 		return true;
 	} else if (event.Type == EET_GUI_EVENT) {
-		if (event.GUI.Type == gui::EGET_ELEMENT_FOCUS_LOST
+        if (event.GUI.Type == EGET_ELEMENT_FOCUS_LOST
 			&& isVisible())
 		{
-			if (!canTakeFocus(event.GUI.Element))
+            if (!canTakeFocus(event.GUI.Element.value()))
 			{
 				infostream << "GUIKeyChangeMenu: Not allowing focus change."
 				<< std::endl;
@@ -321,9 +322,9 @@ bool GUIKeyChangeMenu::OnEvent(const core::Event& event)
 				return true;
 			}
 		}
-		if (event.GUI.Type == gui::EGET_BUTTON_CLICKED)
+        if (event.GUI.Type == EGET_BUTTON_CLICKED)
 		{
-			switch (event.GUI.Caller->getID())
+            switch (event.GUI.Caller.value())
 			{
 				case GUI_ID_BACK_BUTTON: //back
 					acceptInput();
@@ -335,7 +336,7 @@ bool GUIKeyChangeMenu::OnEvent(const core::Event& event)
 				default:
 					resetMenu();
 					for (key_setting *ks : key_settings) {
-						if (ks->id == event.GUI.Caller->getID()) {
+                        if (ks->id == (s32)event.GUI.Caller.value()) {
 							active_key = ks;
 							break;
 						}

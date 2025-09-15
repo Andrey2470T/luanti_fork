@@ -213,7 +213,7 @@ public:
 		m_show_debug = value;
 	}
 
-	void lockSize(bool lock,v2u32 basescreensize=v2u32(0,0))
+	void lockSize(bool lock,v2u basescreensize=v2u(0,0))
 	{
 		m_lock = lock;
 		m_lockscreensize = basescreensize;
@@ -255,7 +255,7 @@ public:
 	/*
 		Remove and re-add (or reposition) stuff
 	*/
-	void regenerateGui(v2u32 screensize);
+	void regenerateGui(v2u screensize);
 
 	GUIInventoryList::ItemSpec getItemAtPos(v2i p) const;
 	void drawSelectedItem();
@@ -266,7 +266,7 @@ public:
 	s16 getNextInventoryRing(const InventoryLocation &inventoryloc, const std::string &listname);
 
 	void acceptInput(FormspecQuitMode quitmode=quit_mode_no);
-	bool preprocescore::Event(const core::Event& event);
+	bool preprocessEvent(const core::Event& event);
 	bool OnEvent(const core::Event& event);
 	bool doPause;
 	bool pausesGame() { return doPause; }
@@ -284,7 +284,7 @@ public:
 	// Returns the fixed formspec coordinate size for the given parameters.
 	static double getFixedImgsize(double screen_dpi, double gui_scaling);
 	// Returns the preferred non-fixed formspec coordinate size for the given parameters.
-	static double getImgsize(v2u32 avail_screensize, double screen_dpi, double gui_scaling);
+	static double getImgsize(v2u avail_screensize, double screen_dpi, double gui_scaling);
 
 protected:
 	v2i getBasePos() const
@@ -365,7 +365,7 @@ protected:
 
 	bool m_allowclose = true;
 	bool m_lock = false;
-	v2u32 m_lockscreensize;
+	v2u m_lockscreensize;
 
 	bool m_bgnonfullscreen;
 	bool m_bgfullscreen;
@@ -394,7 +394,7 @@ private:
 		v2f padding;
 		recti rect;
 		v2i basepos;
-		v2u32 screensize;
+		v2u screensize;
 		GUITable::TableOptions table_options;
 		GUITable::TableColumns table_columns;
 		gui::IGUIElement *current_parent = nullptr;

@@ -72,7 +72,7 @@ public:
 	{
 		std::list<Tag *> tags;
 		ElementType type;
-		core::stringw text = "";
+		std::wstring text = "";
 
 		v2u dim;
 		v2i pos;
@@ -196,7 +196,7 @@ public:
 	//! draws the element and its children
 	virtual void draw();
 
-	core::dimension2du getTextDimension();
+	v2u getTextDimension();
 
 	bool OnEvent(const core::Event &event);
 

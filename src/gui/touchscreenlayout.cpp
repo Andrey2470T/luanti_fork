@@ -93,13 +93,13 @@ const char *button_image_names[] = {
 	"joystick_center.png",
 };
 
-v2i ButtonMeta::getPos(v2u32 screensize, s32 button_size) const
+v2i ButtonMeta::getPos(v2u screensize, s32 button_size) const
 {
 	return v2i((position.X * screensize.X) + (offset.X * button_size),
 			(position.Y * screensize.Y) + (offset.Y * button_size));
 }
 
-void ButtonMeta::setPos(v2i pos, v2u32 screensize, s32 button_size)
+void ButtonMeta::setPos(v2i pos, v2u screensize, s32 button_size)
 {
 	v2i third(screensize.X / 3, screensize.Y / 3);
 
@@ -132,7 +132,7 @@ bool ButtonLayout::isButtonRequired(touch_gui_button_id id)
 	return id == overflow_id;
 }
 
-s32 ButtonLayout::getButtonSize(v2u32 screensize)
+s32 ButtonLayout::getButtonSize(v2u screensize)
 {
 	return std::min(screensize.Y / 4.5f,
 			RenderingEngine::getDisplayDensity() * 65.0f *
@@ -207,16 +207,16 @@ void ButtonLayout::clearTextureCache()
 	texture_cache.clear();
 }
 
-core::recti ButtonLayout::getRect(touch_gui_button_id btn,
-		v2u32 screensize, s32 button_size, ISimpleTextureSource *tsrc)
+recti ButtonLayout::getRect(touch_gui_button_id btn,
+		v2u screensize, s32 button_size, ISimpleTextureSource *tsrc)
 {
 	const ButtonMeta &meta = layout.at(btn);
 	v2i pos = meta.getPos(screensize, button_size);
 
-	v2u32 orig_size = getTexture(btn, tsrc)->getSize();
+	v2u orig_size = getTexture(btn, tsrc)->getSize();
 	v2i size((button_size * orig_size.X) / orig_size.Y, button_size);
 
-	return core::recti(pos - size / 2, v2i(size));
+	return recti(pos - size / 2, v2i(size));
 }
 
 std::vector<touch_gui_button_id> ButtonLayout::getMissingButtons()
@@ -294,10 +294,10 @@ void ButtonLayout::deserializeJson(std::istream &is)
 	}
 }
 
-void layout_button_grid(v2u32 screensize, ISimpleTextureSource *tsrc,
+void layout_button_grid(v2u screensize, ISimpleTextureSource *tsrc,
 		const std::vector<touch_gui_button_id> &buttons,
 		// pos refers to the center of the button
-		const std::function<void(touch_gui_button_id btn, v2i pos, core::recti rect)> &callback)
+		const std::function<void(touch_gui_button_id btn, v2i pos, recti rect)> &callback)
 {
 	s32 cols = 4;
 	s32 rows = 3;
@@ -315,15 +315,15 @@ void layout_button_grid(v2u32 screensize, ISimpleTextureSource *tsrc,
 	v2i pos(spacing);
 
 	for (touch_gui_button_id btn : buttons) {
-		v2u32 orig_size = ButtonLayout::getTexture(btn, tsrc)->getSize();
+		v2u orig_size = ButtonLayout::getTexture(btn, tsrc)->getSize();
 		v2i size((button_size * orig_size.X) / orig_size.Y, button_size);
 
-		core::recti rect(pos - size / 2, v2i(size));
+		recti rect(pos - size / 2, v2i(size));
 
 		if (rect.LRC.X > (s32)screensize.X) {
 			pos.X = spacing.X;
 			pos.Y += spacing.Y;
-			rect = core::recti(pos - size / 2, v2i(size));
+			rect = recti(pos - size / 2, v2i(size));
 		}
 
 		callback(btn, pos, rect);
@@ -332,14 +332,14 @@ void layout_button_grid(v2u32 screensize, ISimpleTextureSource *tsrc,
 	}
 }
 
-void make_button_grid_title(gui::IGUIStaticText *text, touch_gui_button_id btn, v2i pos, core::recti rect)
+void make_button_grid_title(gui::IGUIStaticText *text, touch_gui_button_id btn, v2i pos, recti rect)
 {
 	std::wstring str = wstrgettext(button_titles[btn]);
 	text->setText(str.c_str());
 	render::TTFont *font = text->getActiveFont();
-	core::dimension2du dim = font->getDimension(str.c_str());
-	dim = core::dimension2du(dim.Width * 1.25f, dim.Height * 1.25f); // avoid clipping
-	text->setRelativePosition(core::recti(pos.X - dim.Width / 2, rect.LRC.Y,
-			pos.X + dim.Width / 2, rect.LRC.Y + dim.Height));
+	v2u dim = font->getDimension(str.c_str());
+	dim = v2u(dim.X * 1.25f, dim.Y * 1.25f); // avoid clipping
+	text->setRelativePosition(recti(pos.X - dim.X / 2, rect.LRC.Y,
+			pos.X + dim.X / 2, rect.LRC.Y + dim.Y));
 	text->setTextAlignment(gui::EGUIA_CENTER, gui::GUIAlignment::UpperLeft);
 }

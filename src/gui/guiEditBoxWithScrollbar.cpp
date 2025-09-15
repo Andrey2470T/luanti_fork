@@ -5,13 +5,12 @@
 
 #include "guiEditBoxWithScrollbar.h"
 
-#include "IGUISkin.h"
+#include "GUISkin.h"
 #include "IGUIEnvironment.h"
-#include "render::TTFont.h"
-#include "IVideoDriver.h"
-#include "rect.h"
+#include "client/render/rendersystem.h"
+#include <Render/TTFont.h>
 #include "porting.h"
-#include "Keycodes.h"
+#include <Core/Keycodes.h>
 
 /*
 todo:
@@ -25,19 +24,16 @@ numerical
 //! constructor
 GUIEditBoxWithScrollBar::GUIEditBoxWithScrollBar(const wchar_t* text, bool border,
 	IGUIEnvironment* environment, IGUIElement* parent, s32 id,
-	const recti& rectangle, ISimpleTextureSource *tsrc,
+    const recti& rectangle,
 	bool writable, bool has_vscrollbar)
 	: GUIEditBox(environment, parent, id, rectangle, border, writable),
-	m_background(true), m_bg_color_used(false), m_tsrc(tsrc)
+    m_background(true), m_bg_color_used(false)
 {
 
 	Text = text;
 
 	if (Environment)
-		m_operator = Environment->getOSOperator();
-
-	if (m_operator)
-		m_operator->grab();
+        m_operator = Environment->getRenderSystem()->getWindow()->getClipboard();
 
 	// this element can be tabbed to
 	setTabStop(true);
@@ -81,14 +77,14 @@ void GUIEditBoxWithScrollBar::draw()
 
 	const bool focus = Environment->hasFocus(this);
 
-	IGUISkin* skin = Environment->getSkin();
+    GUISkin* skin = Environment->getSkin();
 	if (!skin)
 		return;
 
 	img::color8 default_bg_color;
 	img::color8 bg_color;
 
-	default_bg_color = m_writable ? skin->getColor(EGDC_WINDOW) : img::color8(0);
+    default_bg_color = m_writable ? skin->getColor(EGDC_WINDOW) : img::black;
 	bg_color = m_bg_color_used ? m_bg_color : default_bg_color;
 
 	if (!m_border && m_background) {
@@ -123,10 +119,10 @@ void GUIEditBoxWithScrollBar::draw()
 
 		// calculate cursor pos
 
-		core::stringw *txt_line = &Text;
+		std::wstring *txt_line = &Text;
 		s32 start_pos = 0;
 
-		core::stringw s, s2;
+		std::wstring s, s2;
 
 		// get mark position
 		const bool ml = (!m_passwordbox && (m_word_wrap || m_multiline));
@@ -190,8 +186,8 @@ void GUIEditBoxWithScrollBar::draw()
 
 					if (i == hline_start) {
 						// highlight start is on this line
-						s = txt_line->subString(0, realmbgn - start_pos);
-						mbegin = font->getDimension(s.c_str()).Width;
+						s = txt_line->substr(0, realmbgn - start_pos);
+						mbegin = font->getDimension(s.c_str()).X;
 
 						// deal with kerning
 						mbegin += font->getKerning(
@@ -202,11 +198,11 @@ void GUIEditBoxWithScrollBar::draw()
 					}
 					if (i == hline_start + hline_count - 1) {
 						// highlight end is on this line
-						s2 = txt_line->subString(0, realmend - start_pos);
-						mend = font->getDimension(s2.c_str()).Width;
+						s2 = txt_line->substr(0, realmend - start_pos);
+						mend = font->getDimension(s2.c_str()).X;
 						lineEndPos = (s32)s2.size();
 					} else {
-						mend = font->getDimension(txt_line->c_str()).Width;
+						mend = font->getDimension(txt_line->c_str()).X;
 					}
 
 
@@ -218,7 +214,7 @@ void GUIEditBoxWithScrollBar::draw()
 					skin->draw2DRectangle(this, skin->getColor(EGDC_HIGH_LIGHT), m_current_text_rect, &local_clip_rect);
 
 					// draw marked text
-					s = txt_line->subString(lineStartPos, lineEndPos - lineStartPos);
+					s = txt_line->substr(lineStartPos, lineEndPos - lineStartPos);
 
 					if (s.size())
 						font->draw(s.c_str(), m_current_text_rect,
@@ -240,8 +236,8 @@ void GUIEditBoxWithScrollBar::draw()
 				txt_line = &m_broken_text[cursor_line];
 				start_pos = m_broken_text_positions[cursor_line];
 			}
-			s = txt_line->subString(0, m_cursor_pos - start_pos);
-			charcursorpos = font->getDimension(s.c_str()).Width +
+			s = txt_line->substr(0, m_cursor_pos - start_pos);
+			charcursorpos = font->getDimension(s.c_str()).X +
 				font->getKerning(L'_',
 					m_cursor_pos - start_pos > 0 ? (*txt_line)[m_cursor_pos - start_pos - 1] : 0).X;
 
@@ -267,7 +263,7 @@ s32 GUIEditBoxWithScrollBar::getCursorPos(s32 x, s32 y)
 
 	const u32 line_count = (m_word_wrap || m_multiline) ? m_broken_text.size() : 1;
 
-	core::stringw *txt_line = 0;
+	std::wstring *txt_line = 0;
 	s32 start_pos = 0;
 	x += 3;
 
@@ -293,7 +289,7 @@ s32 GUIEditBoxWithScrollBar::getCursorPos(s32 x, s32 y)
 	if (!txt_line)
 		return 0;
 
-	s32 idx = font->getCharacterFromPos(txt_line->c_str(), x - m_current_text_rect.ULC.X);
+    s32 idx = font->getCharFromPos(txt_line->c_str(), x - m_current_text_rect.ULC.X).value();
 
 	// click was on or left of the line
 	if (idx != -1)
@@ -319,9 +315,9 @@ void GUIEditBoxWithScrollBar::breakText()
 
 	m_last_break_font = font;
 
-	core::stringw line;
-	core::stringw word;
-	core::stringw whitespace;
+	std::wstring line;
+	std::wstring word;
+	std::wstring whitespace;
 	s32 last_line_start = 0;
 	s32 size = Text.size();
 	s32 length = 0;
@@ -358,8 +354,8 @@ void GUIEditBoxWithScrollBar::breakText()
 			// here comes the next whitespace, look if
 			// we can break the last word to the next line
 			// We also break whitespace, otherwise cursor would vanish beside the right border.
-			s32 whitelgth = font->getDimension(whitespace.c_str()).Width;
-			s32 worldlgth = font->getDimension(word.c_str()).Width;
+            s32 whitelgth = font->getTextWidth(whitespace.c_str());
+            s32 worldlgth = font->getTextWidth(word.c_str());
 
 			if (m_word_wrap && length + worldlgth + whitelgth > el_width && line.size() > 0) {
 				// break to next line
@@ -422,34 +418,34 @@ void GUIEditBoxWithScrollBar::setTextRect(s32 line)
 	if (!font)
 		return;
 
-	core::dimension2du d;
+	v2u d;
 
 	// get text dimension
 	const u32 line_count = (m_word_wrap || m_multiline) ? m_broken_text.size() : 1;
 	if (m_word_wrap || m_multiline) {
-		d = font->getDimension(m_broken_text[line].c_str());
+        d = font->getTextSize(m_broken_text[line].c_str());
 	} else {
-		d = font->getDimension(Text.c_str());
-		d.Height = AbsoluteRect.getHeight();
+        d = font->getTextSize(Text.c_str());
+		d.Y = AbsoluteRect.getHeight();
 	}
-	d.Height += font->getKerning(L'A').Y;
+    d.Y += font->getKerningSizeForTwoChars(L'A', L'B');
 
 	// justification
 	switch (m_halign) {
 	case EGUIA_CENTER:
 		// align to h center
-		m_current_text_rect.ULC.X = (m_frame_rect.getWidth() / 2) - (d.Width / 2);
-		m_current_text_rect.LRC.X = (m_frame_rect.getWidth() / 2) + (d.Width / 2);
+		m_current_text_rect.ULC.X = (m_frame_rect.getWidth() / 2) - (d.X / 2);
+		m_current_text_rect.LRC.X = (m_frame_rect.getWidth() / 2) + (d.X / 2);
 		break;
 	case EGUIA_LOWERRIGHT:
 		// align to right edge
-		m_current_text_rect.ULC.X = m_frame_rect.getWidth() - d.Width;
+		m_current_text_rect.ULC.X = m_frame_rect.getWidth() - d.X;
 		m_current_text_rect.LRC.X = m_frame_rect.getWidth();
 		break;
 	default:
 		// align to left edge
 		m_current_text_rect.ULC.X = 0;
-		m_current_text_rect.LRC.X = d.Width;
+		m_current_text_rect.LRC.X = d.X;
 
 	}
 
@@ -457,23 +453,23 @@ void GUIEditBoxWithScrollBar::setTextRect(s32 line)
 	case EGUIA_CENTER:
 		// align to v center
 		m_current_text_rect.ULC.Y =
-			(m_frame_rect.getHeight() / 2) - (line_count*d.Height) / 2 + d.Height*line;
+			(m_frame_rect.getHeight() / 2) - (line_count*d.Y) / 2 + d.Y*line;
 		break;
 	case EGUIA_LOWERRIGHT:
 		// align to bottom edge
 		m_current_text_rect.ULC.Y =
-			m_frame_rect.getHeight() - line_count*d.Height + d.Height*line;
+			m_frame_rect.getHeight() - line_count*d.Y + d.Y*line;
 		break;
 	default:
 		// align to top edge
-		m_current_text_rect.ULC.Y = d.Height*line;
+		m_current_text_rect.ULC.Y = d.Y*line;
 		break;
 	}
 
 	m_current_text_rect.ULC.X -= m_hscroll_pos;
 	m_current_text_rect.LRC.X -= m_hscroll_pos;
 	m_current_text_rect.ULC.Y -= m_vscroll_pos;
-	m_current_text_rect.LRC.Y = m_current_text_rect.ULC.Y + d.Height;
+	m_current_text_rect.LRC.Y = m_current_text_rect.ULC.Y + d.Y;
 
 	m_current_text_rect += m_frame_rect.ULC;
 }
@@ -484,7 +480,7 @@ void GUIEditBoxWithScrollBar::calculateScrollPos()
 	if (!m_autoscroll)
 		return;
 
-	IGUISkin* skin = Environment->getSkin();
+    GUISkin* skin = Environment->getSkin();
 	if (!skin)
 		return;
 	render::TTFont* font = m_override_font ? m_override_font : skin->getFont();
@@ -506,12 +502,12 @@ void GUIEditBoxWithScrollBar::calculateScrollPos()
 			return;
 
 		// get cursor area
-		irr::u32 cursor_width = font->getDimension(L"_").Width;
-		core::stringw *txt_line = has_broken_text ? &m_broken_text[curs_line] : &Text;
+        u32 cursor_width = font->getTextWidth(L"_");
+		std::wstring *txt_line = has_broken_text ? &m_broken_text[curs_line] : &Text;
 		s32 cpos = has_broken_text ? m_cursor_pos - m_broken_text_positions[curs_line] : m_cursor_pos;	// column
-		s32 cstart = font->getDimension(txt_line->subString(0, cpos).c_str()).Width;		// pixels from text-start
+        s32 cstart = font->getTextWidth(txt_line->substr(0, cpos).c_str());		// pixels from text-start
 		s32 cend = cstart + cursor_width;
-		s32 txt_width = font->getDimension(txt_line->c_str()).Width;
+        s32 txt_width = font->getTextWidth(txt_line->c_str());
 
 		if (txt_width < m_frame_rect.getWidth()) {
 			// TODO: Needs a clean left and right gap removal depending on HAlign, similar to vertical scrolling tests for top/bottom.
@@ -537,9 +533,9 @@ void GUIEditBoxWithScrollBar::calculateScrollPos()
 
 	// calculate vertical scrolling
 	if (has_broken_text) {
-		irr::u32 line_height = font->getDimension(L"A").Height + font->getKerning(L'A').Y;
+        u32 line_height = font->getTextHeight(L"A") + font->getKerningSizeForTwoChars(L'A', L'B');
 		// only up to 1 line fits?
-		if (line_height >= (irr::u32)m_frame_rect.getHeight()) {
+        if (line_height >= (u32)m_frame_rect.getHeight()) {
 			m_vscroll_pos = 0;
 			setTextRect(curs_line);
 			s32 unscrolledPos = m_current_text_rect.ULC.Y;
@@ -596,8 +592,7 @@ void GUIEditBoxWithScrollBar::calculateFrameRect()
 {
 	m_frame_rect = AbsoluteRect;
 
-
-	IGUISkin *skin = 0;
+    GUISkin *skin = 0;
 	if (Environment)
 		skin = Environment->getSkin();
 	if (m_border && skin) {
@@ -613,27 +608,27 @@ void GUIEditBoxWithScrollBar::calculateFrameRect()
 //! create a vertical scroll bar
 void GUIEditBoxWithScrollBar::createVScrollBar()
 {
-	IGUISkin *skin = 0;
+    GUISkin *skin = 0;
 	if (Environment)
 		skin = Environment->getSkin();
 
 	s32 fontHeight = 1;
 
 	if (m_override_font) {
-		fontHeight = m_override_font->getDimension(L"Ay").Height;
+        fontHeight = m_override_font->getFontHeight();
 	} else {
 		render::TTFont *font;
 		if (skin && (font = skin->getFont())) {
-			fontHeight = font->getDimension(L"Ay").Height;
+            fontHeight = font->getFontHeight();
 		}
 	}
 
-	m_scrollbar_width = skin ? skin->getSize(gui::EGDS_SCROLLBAR_SIZE) : 16;
+	m_scrollbar_width = skin ? skin->getSize(EGDS_SCROLLBAR_SIZE) : 16;
 
-	irr::recti scrollbarrect = m_frame_rect;
+    recti scrollbarrect = m_frame_rect;
 	scrollbarrect.ULC.X += m_frame_rect.getWidth() - m_scrollbar_width;
 	m_vscrollbar = new GUIScrollBar(Environment, getParent(), -1,
-			scrollbarrect, false, true, m_tsrc);
+            scrollbarrect, false, true);
 
 	m_vscrollbar->setVisible(false);
 	m_vscrollbar->setSmallStep(3 * fontHeight);
@@ -653,5 +648,5 @@ bool GUIEditBoxWithScrollBar::isDrawBackgroundEnabled() const { return false; }
 bool GUIEditBoxWithScrollBar::isDrawBorderEnabled() const { return false; }
 void GUIEditBoxWithScrollBar::setCursorChar(const wchar_t cursorChar) { }
 wchar_t GUIEditBoxWithScrollBar::getCursorChar() const { return '|'; }
-void GUIEditBoxWithScrollBar::setCursorBlinkTime(irr::u32 timeMs) { }
-irr::u32 GUIEditBoxWithScrollBar::getCursorBlinkTime() const { return 500; }
+void GUIEditBoxWithScrollBar::setCursorBlinkTime(u32 timeMs) { }
+u32 GUIEditBoxWithScrollBar::getCursorBlinkTime() const { return 500; }

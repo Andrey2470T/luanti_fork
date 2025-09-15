@@ -19,16 +19,18 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "guiVolumeChange.h"
 #include "debug.h"
+#include "gui/IGUIEnvironment.h"
 #include "guiButton.h"
 #include "guiScrollBar.h"
 #include "serialization.h"
 #include <string>
-#include <IGUICheckBox.h>
-#include <IGUIButton.h>
-#include <IGUIStaticText.h>
-#include <render::TTFont.h>
-#include <IVideoDriver.h>
+#include "IGUICheckBox.h"
+#include "IGUIButton.h"
+#include "IGUIStaticText.h"
+#include <Render/TTFont.h>
+#include "client/render/rendersystem.h"
 #include "settings.h"
+#include "client/ui/sprite.h"
 
 #include "gettext.h"
 
@@ -39,14 +41,15 @@ const int ID_soundMuteButton = 266;
 
 GUIVolumeChange::GUIVolumeChange(gui::IGUIEnvironment* env,
 		gui::IGUIElement* parent, s32 id,
-		IMenuManager *menumgr, ISimpleTextureSource *tsrc
+        IMenuManager *menumgr
 ):
-	GUIModalMenu(env, parent, id, menumgr),
-	m_tsrc(tsrc)
+    GUIModalMenu(env, parent, id, menumgr),
+    volumeChangeBox(std::make_unique<UISprite>(nullptr, env->getRenderSystem()->getRenderer(),
+        env->getResourceCache(), std::vector<UIPrimitiveType>{UIPrimitiveType::RECTANGLE}, true))
 {
 }
 
-void GUIVolumeChange::regenerateGui(v2u32 screensize)
+void GUIVolumeChange::regenerateGui(v2u screensize)
 {
 	/*
 		Remove stuff
@@ -55,7 +58,7 @@ void GUIVolumeChange::regenerateGui(v2u32 screensize)
 	/*
 		Calculate new sizes and positions
 	*/
-	ScalingInfo info = getScalingInfo(screensize, v2u32(380, 200));
+	ScalingInfo info = getScalingInfo(screensize, v2u(380, 200));
 	const float s = info.scale;
 	DesiredRect = info.rect;
 	recalculateAbsolutePosition(false);
@@ -76,14 +79,14 @@ void GUIVolumeChange::regenerateGui(v2u32 screensize)
 	{
 		recti rect(0, 0, 100 * s, 30 * s);
 		rect = rect + v2i(size.X / 2 - 100 * s / 2, size.Y / 2 + 55 * s);
-		GUIButton::addButton(Environment, rect, m_tsrc, this, ID_soundExitButton,
+        GUIButton::addButton(Environment, rect, this, ID_soundExitButton,
 				wstrgettext("Exit").c_str());
 	}
 	{
 		recti rect(0, 0, 300 * s, 20 * s);
 		rect = rect + v2i(size.X / 2 - 150 * s, size.Y / 2);
 		auto e = make_irr<GUIScrollBar>(Environment, this,
-				ID_soundSlider, rect, true, false, m_tsrc);
+                ID_soundSlider, rect, true, false);
 		e->setMax(100);
 		e->setPos(volume);
 	}
@@ -97,31 +100,34 @@ void GUIVolumeChange::regenerateGui(v2u32 screensize)
 
 void GUIVolumeChange::drawMenu()
 {
-	gui::IGUISkin* skin = Environment->getSkin();
+    GUISkin* skin = Environment->getSkin();
 	if (!skin)
 		return;
-	video::IVideoDriver* driver = Environment->getVideoDriver();
-	img::color8 bgcolor(140, 0, 0, 0);
-	driver->draw2DRectangle(bgcolor, AbsoluteRect, &AbsoluteClippingRect);
+
+    img::color8 bgcolor(img::PF_RGBA8, 0, 0, 0, 140);
+    volumeChangeBox->getShape()->updateRectangle(0, toRectf(AbsoluteRect), {bgcolor, bgcolor, bgcolor, bgcolor});
+    volumeChangeBox->updateMesh();
+    volumeChangeBox->setClipRect(AbsoluteClippingRect);
+    volumeChangeBox->draw();
 	gui::IGUIElement::draw();
 }
 
 bool GUIVolumeChange::OnEvent(const core::Event& event)
 {
 	if (event.Type == EET_KEY_INPUT_EVENT) {
-		if (event.KeyInput.Key == KEY_ESCAPE && event.KeyInput.PressedDown) {
+		if (event.KeyInput.Key == core::KEY_ESCAPE && event.KeyInput.PressedDown) {
 			quitMenu();
 			return true;
 		}
 
-		if (event.KeyInput.Key == KEY_RETURN && event.KeyInput.PressedDown) {
+		if (event.KeyInput.Key == core::KEY_RETURN && event.KeyInput.PressedDown) {
 			quitMenu();
 			return true;
 		}
 	} else if (event.Type == EET_GUI_EVENT) {
-		if (event.GUI.Type == gui::EGET_CHECKBOX_CHANGED) {
+        if (event.GUI.Type == EGET_CHECKBOX_CHANGED) {
 			gui::IGUIElement *e = getElementFromId(ID_soundMuteButton);
-			if (e != NULL && e->getType() == gui::EGUIET_CHECK_BOX) {
+			if (e != NULL && e->getType() == EGUIET_CHECK_BOX) {
 				g_settings->setBool("mute_sound", ((gui::IGUICheckBox*)e)->isChecked());
 			}
 
@@ -129,25 +135,25 @@ bool GUIVolumeChange::OnEvent(const core::Event& event)
 			return true;
 		}
 
-		if (event.GUI.Type == gui::EGET_BUTTON_CLICKED) {
-			if (event.GUI.Caller->getID() == ID_soundExitButton) {
+		if (event.GUI.Type == EGET_BUTTON_CLICKED) {
+            if (event.GUI.Caller == ID_soundExitButton->getID()) {
 				quitMenu();
 				return true;
 			}
 			Environment->setFocus(this);
 		}
 
-		if (event.GUI.Type == gui::EGET_ELEMENT_FOCUS_LOST
+		if (event.GUI.Type == EGET_ELEMENT_FOCUS_LOST
 				&& isVisible()) {
-			if (!canTakeFocus(event.GUI.Element)) {
+            if (!canTakeFocus(event.GUI.Element.value())) {
 				infostream << "GUIVolumeChange: Not allowing focus change."
 				<< std::endl;
 				// Returning true disables focus change
 				return true;
 			}
 		}
-		if (event.GUI.Type == gui::EGET_SCROLL_BAR_CHANGED) {
-			if (event.GUI.Caller->getID() == ID_soundSlider) {
+		if (event.GUI.Type == EGET_SCROLL_BAR_CHANGED) {
+            if (event.GUI.Caller == ID_soundSlider->getID()) {
 				s32 pos = static_cast<GUIScrollBar *>(event.GUI.Caller)->getPos();
 				g_settings->setFloat("sound_volume", (float) pos / 100);
 

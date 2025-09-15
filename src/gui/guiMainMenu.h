@@ -4,9 +4,8 @@
 
 #pragma once
 
-#include "irrlichttypes_extrabloated.h"
+#include <BasicIncludes.h>
 #include "gameparams.h"
-#include <string>
 #include <list>
 
 struct MainMenuDataForScript {

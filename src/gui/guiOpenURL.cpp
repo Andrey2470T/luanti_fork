@@ -16,12 +16,12 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
 #include "guiOpenURL.h"
+#include "gui/IGUIEnvironment.h"
 #include "guiButton.h"
 #include "guiEditBoxWithScrollbar.h"
-#include <IGUIEditBox.h>
-#include <render::TTFont.h>
-#include <IVideoDriver.h>
-#include "client/renderingengine.h"
+#include "IGUIEditBox.h"
+#include <Render/TTFont.h>
+#include "client/render/rendersystem.h"
 #include "porting.h"
 #include "gettext.h"
 #include "util/colorize.h"
@@ -38,8 +38,9 @@ GUIOpenURLMenu::GUIOpenURLMenu(gui::IGUIEnvironment* env,
 		ISimpleTextureSource *tsrc, const std::string &url
 ):
 	GUIModalMenu(env, parent, id, menumgr),
-	m_tsrc(tsrc),
-	url(url)
+    url(url),
+    openURLBox(std::make_unique<UISprite>(nullptr, env->getRenderSystem()->getRenderer(),
+        env->getResourceCache(), std::vector<UIPrimitiveType>{UIPrimitiveType::RECTANGLE}, true))
 {
 }
 
@@ -57,7 +58,7 @@ static std::string maybe_colorize_url(const std::string &url)
 #endif
 }
 
-void GUIOpenURLMenu::regenerateGui(v2u32 screensize)
+void GUIOpenURLMenu::regenerateGui(v2u screensize)
 {
 	/*
 		Remove stuff
@@ -67,7 +68,7 @@ void GUIOpenURLMenu::regenerateGui(v2u32 screensize)
 	/*
 		Calculate new sizes and positions
 	*/
-	ScalingInfo info = getScalingInfo(screensize, v2u32(580, 250));
+	ScalingInfo info = getScalingInfo(screensize, v2u(580, 250));
 	const float s = info.scale;
 	DesiredRect = info.rect;
 	recalculateAbsolutePosition(false);
@@ -108,19 +109,21 @@ void GUIOpenURLMenu::regenerateGui(v2u32 screensize)
 	{
 		recti rect(0, 0, 440 * s, 60 * s);
 
-		auto font = g_fontengine->getFont(FONT_SIZE_UNSPECIFIED,
-				ok ? FM_Mono : FM_Standard);
-		int scrollbar_width = Environment->getSkin()->getSize(gui::EGDS_SCROLLBAR_SIZE);
-		int max_cols = (rect.getWidth() - scrollbar_width - 10) / font->getDimension(L"x").Width;
+        auto font_mgr = Environment->getRenderSystem()->getFontManager();
+        auto font = font_mgr->getFontOrCreate(
+            ok ? render::FontMode::MONO : render::FontMode::GRAY, render::FontStyle::NORMAL,
+            font_mgr->getDefaultFontSize(ok ? render::FontMode::MONO : render::FontMode::GRAY));
+		int scrollbar_width = Environment->getSkin()->getSize(EGDS_SCROLLBAR_SIZE);
+        int max_cols = (rect.getWidth() - scrollbar_width - 10) / font->getTextWidth(L"x");
 
 		text = wrap_rows(text, max_cols, true);
 
 		rect += topleft_client + v2i(20 * s, ypos);
 		IGUIEditBox *e = new GUIEditBoxWithScrollBar(utf8_to_wide(text).c_str(), true, Environment,
-				this, ID_url, rect, m_tsrc, false, true);
+                this, ID_url, rect, false, true);
 		e->setMultiLine(true);
 		e->setWordWrap(true);
-		e->setTextAlignment(gui::EGUIA_UPPERLEFT, gui::EGUIA_UPPERLEFT);
+		e->setTextAlignment(EGUIA_UPPERLEFT, EGUIA_UPPERLEFT);
 		e->setDrawBorder(true);
 		e->setDrawBackground(true);
 		e->setOverrideFont(font);
@@ -131,26 +134,28 @@ void GUIOpenURLMenu::regenerateGui(v2u32 screensize)
 	if (ok) {
 		recti rect(0, 0, 100 * s, 40 * s);
 		rect = rect + v2i(size.X / 2 - 150 * s, ypos);
-		GUIButton::addButton(Environment, rect, m_tsrc, this, ID_open,
+        GUIButton::addButton(Environment, rect, this, ID_open,
 				wstrgettext("Open").c_str());
 	}
 	{
 		recti rect(0, 0, 100 * s, 40 * s);
 		rect = rect + v2i(size.X / 2 + 50 * s, ypos);
-		GUIButton::addButton(Environment, rect, m_tsrc, this, ID_cancel,
+        GUIButton::addButton(Environment, rect, this, ID_cancel,
 				wstrgettext("Cancel").c_str());
 	}
 }
 
 void GUIOpenURLMenu::drawMenu()
 {
-	gui::IGUISkin *skin = Environment->getSkin();
+    GUISkin *skin = Environment->getSkin();
 	if (!skin)
 		return;
-	video::IVideoDriver *driver = Environment->getVideoDriver();
 
-	img::color8 bgcolor(140, 0, 0, 0);
-	driver->draw2DRectangle(bgcolor, AbsoluteRect, &AbsoluteClippingRect);
+    img::color8 bgcolor(img::PF_RGBA8, 0, 0, 0, 140);
+    openURLBox->getShape()->updateRectangle(0, toRectf(AbsoluteRect), {bgcolor, bgcolor, bgcolor, bgcolor});
+    openURLBox->updateMesh();
+    openURLBox->setClipRect(AbsoluteClippingRect);
+    openURLBox->draw();
 
 	gui::IGUIElement::draw();
 #ifdef __ANDROID__
@@ -161,11 +166,11 @@ void GUIOpenURLMenu::drawMenu()
 bool GUIOpenURLMenu::OnEvent(const core::Event &event)
 {
 	if (event.Type == EET_KEY_INPUT_EVENT) {
-		if (event.KeyInput.Key == KEY_ESCAPE && event.KeyInput.PressedDown) {
+		if (event.KeyInput.Key == core::KEY_ESCAPE && event.KeyInput.PressedDown) {
 			quitMenu();
 			return true;
 		}
-		if (event.KeyInput.Key == KEY_RETURN && event.KeyInput.PressedDown) {
+		if (event.KeyInput.Key == core::KEY_RETURN && event.KeyInput.PressedDown) {
 			porting::open_url(url);
 			quitMenu();
 			return true;
@@ -173,9 +178,9 @@ bool GUIOpenURLMenu::OnEvent(const core::Event &event)
 	}
 
 	if (event.Type == EET_GUI_EVENT) {
-		if (event.GUI.Type == gui::EGET_ELEMENT_FOCUS_LOST &&
+		if (event.GUI.Type == EGET_ELEMENT_FOCUS_LOST &&
 				isVisible()) {
-			if (!canTakeFocus(event.GUI.Element)) {
+            if (!canTakeFocus(event.GUI.Element.value())) {
 				infostream << "GUIOpenURLMenu: Not allowing focus change."
 					<< std::endl;
 				// Returning true disables focus change
@@ -183,8 +188,8 @@ bool GUIOpenURLMenu::OnEvent(const core::Event &event)
 			}
 		}
 
-		if (event.GUI.Type == gui::EGET_BUTTON_CLICKED) {
-			switch (event.GUI.Caller->getID()) {
+		if (event.GUI.Type == EGET_BUTTON_CLICKED) {
+            switch (event.GUI.Caller.value()) {
 			case ID_open:
 				porting::open_url(url);
 				quitMenu();

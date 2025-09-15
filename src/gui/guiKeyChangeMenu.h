@@ -6,20 +6,19 @@
 
 #pragma once
 
-#include "irrlichttypes_extrabloated.h"
 #include "modalMenu.h"
 #include "gettext.h"
-#include "client/keycode.h"
-#include <string>
-#include <vector>
+#include "client/event/keypress.h"
+#include "IGUIButton.h"
+#include "IGUIStaticText.h"
 
-class ISimpleTextureSource;
+class UISprite;
 
 struct key_setting
 {
 	int id;
 	std::wstring button_name;
-	KeyPress key;
+    MtKey key;
 	std::string setting_name;
 	gui::IGUIButton *button;
 };
@@ -28,13 +27,13 @@ class GUIKeyChangeMenu : public GUIModalMenu
 {
 public:
 	GUIKeyChangeMenu(gui::IGUIEnvironment *env, gui::IGUIElement *parent, s32 id,
-			IMenuManager *menumgr, ISimpleTextureSource *tsrc);
+            IMenuManager *menumgr);
 	~GUIKeyChangeMenu();
 
 	/*
 	 Remove and re-add (or reposition) stuff
 	 */
-	void regenerateGui(v2u32 screensize);
+    void regenerateGui(v2u screensize);
 
 	void drawMenu();
 
@@ -60,5 +59,6 @@ private:
 	key_setting *active_key = nullptr;
 	gui::IGUIStaticText *key_used_text = nullptr;
 	std::vector<key_setting *> key_settings;
-	ISimpleTextureSource *m_tsrc;
+
+    std::unique_ptr<UISprite> box;
 };

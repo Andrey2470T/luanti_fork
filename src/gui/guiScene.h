@@ -14,7 +14,7 @@ class GUIScene : public gui::IGUIElement
 {
 public:
 	GUIScene(gui::IGUIEnvironment *env, scene::ISceneManager *smgr,
-		 gui::IGUIElement *parent, core::recti rect, s32 id = -1);
+		 gui::IGUIElement *parent, recti rect, s32 id = -1);
 
 	~GUIScene();
 

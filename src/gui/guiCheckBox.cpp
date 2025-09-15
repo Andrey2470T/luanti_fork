@@ -33,14 +33,14 @@ bool CGUICheckBox::OnEvent(const core::Event &event)
 		switch (event.Type) {
 		case EET_KEY_INPUT_EVENT:
 			if (event.KeyInput.PressedDown &&
-					(event.KeyInput.Key == KEY_RETURN || event.KeyInput.Key == KEY_SPACE)) {
+                    (event.KeyInput.Key == core::KEY_RETURN || event.KeyInput.Key == core::KEY_SPACE)) {
 				Pressed = true;
 				return true;
-			} else if (Pressed && event.KeyInput.PressedDown && event.KeyInput.Key == KEY_ESCAPE) {
+            } else if (Pressed && event.KeyInput.PressedDown && event.KeyInput.Key == core::KEY_ESCAPE) {
 				Pressed = false;
 				return true;
 			} else if (!event.KeyInput.PressedDown && Pressed &&
-					   (event.KeyInput.Key == KEY_RETURN || event.KeyInput.Key == KEY_SPACE)) {
+                       (event.KeyInput.Key == core::KEY_RETURN || event.KeyInput.Key == core::KEY_SPACE)) {
 				Pressed = false;
 				if (Parent) {
 					core::Event newEvent;

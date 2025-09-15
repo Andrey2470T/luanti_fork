@@ -48,7 +48,7 @@ GUIPasswordChange::GUIPasswordChange(gui::IGUIEnvironment* env,
 {
 }
 
-void GUIPasswordChange::regenerateGui(v2u32 screensize)
+void GUIPasswordChange::regenerateGui(v2u screensize)
 {
 	/*
 		save current input
@@ -63,7 +63,7 @@ void GUIPasswordChange::regenerateGui(v2u32 screensize)
 	/*
 		Calculate new sizes and positions
 	*/
-	ScalingInfo info = getScalingInfo(screensize, v2u32(580, 300));
+	ScalingInfo info = getScalingInfo(screensize, v2u(580, 300));
 	const float s = info.scale;
 	DesiredRect = info.rect;
 	recalculateAbsolutePosition(false);
@@ -188,11 +188,11 @@ bool GUIPasswordChange::processInput()
 bool GUIPasswordChange::OnEvent(const core::Event &event)
 {
 	if (event.Type == EET_KEY_INPUT_EVENT) {
-		if (event.KeyInput.Key == KEY_ESCAPE && event.KeyInput.PressedDown) {
+		if (event.KeyInput.Key == core::KEY_ESCAPE && event.KeyInput.PressedDown) {
 			quitMenu();
 			return true;
 		}
-		if (event.KeyInput.Key == KEY_RETURN && event.KeyInput.PressedDown) {
+		if (event.KeyInput.Key == core::KEY_RETURN && event.KeyInput.PressedDown) {
 			acceptInput();
 			if (processInput())
 				quitMenu();
@@ -200,7 +200,7 @@ bool GUIPasswordChange::OnEvent(const core::Event &event)
 		}
 	}
 	if (event.Type == EET_GUI_EVENT) {
-		if (event.GUI.Type == gui::EGET_ELEMENT_FOCUS_LOST &&
+		if (event.GUI.Type == EGET_ELEMENT_FOCUS_LOST &&
 				isVisible()) {
 			if (!canTakeFocus(event.GUI.Element)) {
 				infostream << "GUIPasswordChange: Not allowing focus change."
@@ -209,7 +209,7 @@ bool GUIPasswordChange::OnEvent(const core::Event &event)
 				return true;
 			}
 		}
-		if (event.GUI.Type == gui::EGET_BUTTON_CLICKED) {
+		if (event.GUI.Type == EGET_BUTTON_CLICKED) {
 			switch (event.GUI.Caller->getID()) {
 			case ID_change:
 				acceptInput();

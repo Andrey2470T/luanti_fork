@@ -29,18 +29,18 @@ GUITouchscreenLayout::GUITouchscreenLayout(gui::IGUIEnvironment* env,
 		m_layout = ButtonLayout::loadFromSettings();
 
 	m_gui_help_text = grab_gui_element<IGUIStaticText>(Environment->addStaticText(
-			L"", core::recti(), false, false, this, -1));
+			L"", recti(), false, false, this, -1));
 	m_gui_help_text->setTextAlignment(EGUIA_CENTER, EGUIA_CENTER);
 
 	m_gui_add_btn = grab_gui_element<IGUIButton>(Environment->addButton(
-			core::recti(), this, -1, wstrgettext("Add button").c_str()));
+			recti(), this, -1, wstrgettext("Add button").c_str()));
 	m_gui_reset_btn = grab_gui_element<IGUIButton>(Environment->addButton(
-			core::recti(), this, -1, wstrgettext("Reset").c_str()));
+			recti(), this, -1, wstrgettext("Reset").c_str()));
 	m_gui_done_btn = grab_gui_element<IGUIButton>(Environment->addButton(
-			core::recti(), this, -1, wstrgettext("Done").c_str()));
+			recti(), this, -1, wstrgettext("Done").c_str()));
 
 	m_gui_remove_btn = grab_gui_element<IGUIButton>(Environment->addButton(
-		core::recti(), this, -1, wstrgettext("Remove").c_str()));
+		recti(), this, -1, wstrgettext("Remove").c_str()));
 }
 
 GUITouchscreenLayout::~GUITouchscreenLayout()
@@ -48,9 +48,9 @@ GUITouchscreenLayout::~GUITouchscreenLayout()
 	ButtonLayout::clearTextureCache();
 }
 
-void GUITouchscreenLayout::regenerateGui(v2u32 screensize)
+void GUITouchscreenLayout::regenerateGui(v2u screensize)
 {
-	DesiredRect = core::recti(0, 0, screensize.X, screensize.Y);
+	DesiredRect = recti(0, 0, screensize.X, screensize.Y);
 	recalculateAbsolutePosition(false);
 
 	s32 button_size = ButtonLayout::getButtonSize(screensize);
@@ -84,7 +84,7 @@ void GUITouchscreenLayout::clearGUIImages()
 	m_add_button_titles.clear();
 }
 
-void GUITouchscreenLayout::regenerateGUIImagesRegular(v2u32 screensize)
+void GUITouchscreenLayout::regenerateGUIImagesRegular(v2u screensize)
 {
 	assert(m_mode != Mode::Add);
 
@@ -92,13 +92,13 @@ void GUITouchscreenLayout::regenerateGUIImagesRegular(v2u32 screensize)
 	clearGUIImages();
 
 	for (const auto &[btn, meta] : m_layout.layout) {
-		core::recti rect = m_layout.getRect(btn, screensize, m_button_size, m_tsrc);
+		recti rect = m_layout.getRect(btn, screensize, m_button_size, m_tsrc);
 		std::shared_ptr<IGUIImage> img;
 
 		if (old_gui_images.count(btn) > 0) {
 			img = old_gui_images.at(btn);
 			// Update size, keep position. Position is interpolated in interpolateGUIImages.
-			img->setRelativePosition(core::recti(
+			img->setRelativePosition(recti(
 					img->getRelativePosition().ULC, rect.getSize()));
 		} else {
 			img = grab_gui_element<IGUIImage>(Environment->addImage(rect, this, -1));
@@ -111,7 +111,7 @@ void GUITouchscreenLayout::regenerateGUIImagesRegular(v2u32 screensize)
 	}
 }
 
-void GUITouchscreenLayout::regenerateGUIImagesAddMode(v2u32 screensize)
+void GUITouchscreenLayout::regenerateGUIImagesAddMode(v2u screensize)
 {
 	assert(m_mode == Mode::Add);
 
@@ -120,7 +120,7 @@ void GUITouchscreenLayout::regenerateGUIImagesAddMode(v2u32 screensize)
 	auto missing_buttons = m_layout.getMissingButtons();
 
 	layout_button_grid(screensize, m_tsrc, missing_buttons,
-			[&] (touch_gui_button_id btn, v2i pos, core::recti rect) {
+			[&] (touch_gui_button_id btn, v2i pos, recti rect) {
 		auto img = grab_gui_element<IGUIImage>(Environment->addImage(rect, this, -1));
 		img->setImage(ButtonLayout::getTexture(btn, m_tsrc));
 		img->setScaleImage(true);
@@ -130,7 +130,7 @@ void GUITouchscreenLayout::regenerateGUIImagesAddMode(v2u32 screensize)
 		meta.setPos(pos, screensize, m_button_size);
 		m_add_layout.layout[btn] = meta;
 
-		IGUIStaticText *text = Environment->addStaticText(L"", core::recti(),
+		IGUIStaticText *text = Environment->addStaticText(L"", recti(),
 				false, false,this, -1);
 		make_button_grid_title(text, btn, pos, rect);
 		m_add_button_titles.push_back(grab_gui_element<IGUIStaticText>(text));
@@ -159,7 +159,7 @@ void GUITouchscreenLayout::interpolateGUIImages()
 	}
 }
 
-static void layout_menu_row(v2u32 screensize,
+static void layout_menu_row(v2u screensize,
 		const std::vector<std::shared_ptr<IGUIButton>> &row,
 		const std::vector<std::shared_ptr<IGUIButton>> &full_row, bool bottom)
 {
@@ -169,9 +169,9 @@ static void layout_menu_row(v2u32 screensize,
 	s32 btn_h = 0;
 	for (const auto &btn : full_row) {
 		render::TTFont *font = btn->getActiveFont();
-		core::dimension2du dim = font->getDimension(btn->getText());
-		btn_w = std::max(btn_w, (s32)(dim.Width * 1.5f));
-		btn_h = std::max(btn_h, (s32)(dim.Height * 2.5f));
+		v2u dim = font->getDimension(btn->getText());
+		btn_w = std::max(btn_w, (s32)(dim.X * 1.5f));
+		btn_h = std::max(btn_h, (s32)(dim.Y * 2.5f));
 	}
 
 	const s32 row_width = ((btn_w + spacing) * row.size()) - spacing;
@@ -179,13 +179,13 @@ static void layout_menu_row(v2u32 screensize,
 	const s32 y = bottom ? screensize.Y - spacing - btn_h : spacing;
 
 	for (const auto &btn : row) {
-		btn->setRelativePosition(core::recti(
-				v2i(x, y), core::dimension2du(btn_w, btn_h)));
+		btn->setRelativePosition(recti(
+				v2i(x, y), v2u(btn_w, btn_h)));
 		x += btn_w + spacing;
 	}
 }
 
-void GUITouchscreenLayout::regenerateMenu(v2u32 screensize)
+void GUITouchscreenLayout::regenerateMenu(v2u screensize)
 {
 	bool have_selection = m_selected_btn != touch_gui_button_id_END;
 
@@ -197,12 +197,12 @@ void GUITouchscreenLayout::regenerateMenu(v2u32 screensize)
 		m_gui_help_text->setText(wstrgettext("Tap outside to deselect.").c_str());
 
 	render::TTFont *font = m_gui_help_text->getActiveFont();
-	core::dimension2du dim = font->getDimension(m_gui_help_text->getText());
-	s32 height = dim.Height * 2.5f;
+	v2u dim = font->getDimension(m_gui_help_text->getText());
+	s32 height = dim.Y * 2.5f;
 	s32 pos_y = (m_mode == Mode::Add || have_selection) ? 0 : screensize.Y - height;
-	m_gui_help_text->setRelativePosition(core::recti(
+	m_gui_help_text->setRelativePosition(recti(
 			v2i(0, pos_y),
-			core::dimension2du(screensize.X, height)));
+			v2u(screensize.X, height)));
 
 	bool normal_buttons_visible = m_mode != Mode::Add && !have_selection;
 	bool add_visible = normal_buttons_visible && !m_layout.getMissingButtons().empty();
@@ -261,13 +261,13 @@ void GUITouchscreenLayout::drawMenu()
 	IGUIElement::draw();
 }
 
-void GUITouchscreenLayout::updateDragState(v2u32 screensize, v2i mouse_movement)
+void GUITouchscreenLayout::updateDragState(v2u screensize, v2i mouse_movement)
 {
 	assert(m_mode == Mode::Dragging);
 
-	core::recti rect = m_layout.getRect(m_selected_btn, screensize, m_button_size, m_tsrc);
+	recti rect = m_layout.getRect(m_selected_btn, screensize, m_button_size, m_tsrc);
 	rect += mouse_movement;
-	rect.constrainTo(core::recti(v2i(0, 0), core::dimension2du(screensize)));
+	rect.constrainTo(recti(v2i(0, 0), v2u(screensize)));
 
 	ButtonMeta &meta = m_layout.layout.at(m_selected_btn);
 	meta.setPos(rect.getCenter(), screensize, m_button_size);
@@ -278,7 +278,7 @@ void GUITouchscreenLayout::updateDragState(v2u32 screensize, v2i mouse_movement)
 	for (const auto &[other_btn, other_meta] : m_layout.layout) {
 		if (other_btn == m_selected_btn)
 			continue;
-		core::recti other_rect = m_layout.getRect(other_btn, screensize, m_button_size, m_tsrc);
+		recti other_rect = m_layout.getRect(other_btn, screensize, m_button_size, m_tsrc);
 		if (other_rect.isRectCollided(rect))
 			m_error_rects.push_back(other_rect);
 	}
@@ -289,18 +289,18 @@ void GUITouchscreenLayout::updateDragState(v2u32 screensize, v2i mouse_movement)
 bool GUITouchscreenLayout::OnEvent(const core::Event& event)
 {
 	if (event.Type == EET_KEY_INPUT_EVENT) {
-		if (event.KeyInput.Key == KEY_ESCAPE && event.KeyInput.PressedDown) {
+		if (event.KeyInput.Key == core::KEY_ESCAPE && event.KeyInput.PressedDown) {
 			quitMenu();
 			return true;
 		}
 	}
 
-	core::dimension2du screensize = Environment->getVideoDriver()->getScreenSize();
+	v2u screensize = Environment->getVideoDriver()->getScreenSize();
 
 	if (event.Type == EET_MOUSE_INPUT_EVENT) {
 		v2i mouse_pos = v2i(event.MouseInput.X, event.MouseInput.Y);
 
-		switch (event.MouseInput.Event) {
+		switch (event.MouseInput.Type) {
 		case EMIE_LMOUSE_PRESSED_DOWN: {
 			m_mouse_down = true;
 			m_last_mouse_pos = mouse_pos;

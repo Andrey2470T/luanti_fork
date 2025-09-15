@@ -168,7 +168,7 @@ GUIEngine::GUIEngine(JoystickController *joystick,
 			false);
 
 	m_menu->allowClose(false);
-	m_menu->lockSize(true,v2u32(800,600));
+	m_menu->lockSize(true,v2u(800,600));
 
 	// Initialize scripting
 
@@ -425,7 +425,7 @@ void GUIEngine::setFormspecPrepend(const std::string &fs)
 /******************************************************************************/
 void GUIEngine::drawBackground(video::IVideoDriver *driver)
 {
-	v2u32 screensize = driver->getScreenSize();
+	v2u screensize = driver->getScreenSize();
 
 	img::Image* texture = m_textures[TEX_LAYER_BACKGROUND].texture;
 
@@ -437,11 +437,11 @@ void GUIEngine::drawBackground(video::IVideoDriver *driver)
 		return;
 	}
 
-	v2u32 sourcesize = texture->getSize();
+	v2u sourcesize = texture->getSize();
 
 	if (m_textures[TEX_LAYER_BACKGROUND].tile)
 	{
-		v2u32 tilesize(
+		v2u tilesize(
 				MYMAX(sourcesize.X,m_textures[TEX_LAYER_BACKGROUND].minsize),
 				MYMAX(sourcesize.Y,m_textures[TEX_LAYER_BACKGROUND].minsize));
 		for (unsigned int x = 0; x < screensize.X; x += tilesize.X )
@@ -458,7 +458,7 @@ void GUIEngine::drawBackground(video::IVideoDriver *driver)
 	}
 
 	// Chop background image to the smaller screen dimension
-	v2u32 bg_size = screensize;
+	v2u bg_size = screensize;
 	v2f scale(
 			(f32) bg_size.X / sourcesize.X,
 			(f32) bg_size.Y / sourcesize.Y);
@@ -480,7 +480,7 @@ void GUIEngine::drawBackground(video::IVideoDriver *driver)
 /******************************************************************************/
 void GUIEngine::drawOverlay(video::IVideoDriver *driver)
 {
-	v2u32 screensize = driver->getScreenSize();
+	v2u screensize = driver->getScreenSize();
 
 	img::Image* texture = m_textures[TEX_LAYER_OVERLAY].texture;
 
@@ -489,7 +489,7 @@ void GUIEngine::drawOverlay(video::IVideoDriver *driver)
 		return;
 
 	/* Draw background texture */
-	v2u32 sourcesize = texture->getSize();
+	v2u sourcesize = texture->getSize();
 	draw2DImageFilterScaled(driver, texture,
 		recti(0, 0, screensize.X, screensize.Y),
 		recti(0, 0, sourcesize.X, sourcesize.Y),
@@ -512,7 +512,7 @@ void GUIEngine::drawHeader(video::IVideoDriver *driver)
 	 */
 	recti formspec_rect = m_menu->getAbsoluteRect();
 	// 4 px of padding on each side
-	recti max_rect(4, 4, screensize.Width - 8, formspec_rect.ULC.Y - 8);
+	recti max_rect(4, 4, screensize.X - 8, formspec_rect.ULC.Y - 8);
 
 	// If no space (less than 16x16 px), draw nothing
 	if (max_rect.getWidth() < 16 || max_rect.getHeight() < 16)
@@ -521,16 +521,16 @@ void GUIEngine::drawHeader(video::IVideoDriver *driver)
 	/*
 	 * Calculate the preferred rectangle
 	 */
-	f32 mult = (((f32)screensize.Width / 2.0)) /
-			((f32)texture->getSize().Width);
+	f32 mult = (((f32)screensize.X / 2.0)) /
+			((f32)texture->getSize().X);
 
-	v2i splashsize(((f32)texture->getSize().Width) * mult,
-			((f32)texture->getSize().Height) * mult);
+	v2i splashsize(((f32)texture->getSize().X) * mult,
+			((f32)texture->getSize().Y) * mult);
 
-	s32 free_space = (((s32)screensize.Height)-320)/2;
+	s32 free_space = (((s32)screensize.Y)-320)/2;
 
 	recti desired_rect(0, 0, splashsize.X, splashsize.Y);
-	desired_rect += v2i((screensize.Width/2)-(splashsize.X/2),
+	desired_rect += v2i((screensize.X/2)-(splashsize.X/2),
 			((free_space/2)-splashsize.Y/2)+10);
 
 	/*
@@ -566,18 +566,18 @@ void GUIEngine::drawFooter(video::IVideoDriver *driver)
 	if(!texture)
 		return;
 
-	f32 mult = (((f32)screensize.Width)) /
-			((f32)texture->getSize().Width);
+	f32 mult = (((f32)screensize.X)) /
+			((f32)texture->getSize().X);
 
-	v2i footersize(((f32)texture->getSize().Width) * mult,
-			((f32)texture->getSize().Height) * mult);
+	v2i footersize(((f32)texture->getSize().X) * mult,
+			((f32)texture->getSize().Y) * mult);
 
 	// Don't draw the footer if there isn't enough room
-	s32 free_space = (((s32)screensize.Height)-320)/2;
+	s32 free_space = (((s32)screensize.Y)-320)/2;
 
 	if (free_space > footersize.Y) {
 		recti rect(0,0,footersize.X,footersize.Y);
-		rect += v2i(screensize.Width/2,screensize.Height-footersize.Y);
+		rect += v2i(screensize.X/2,screensize.Y-footersize.Y);
 		rect -= v2i(footersize.X/2, 0);
 
 		draw2DImageFilterScaled(driver, texture, rect,

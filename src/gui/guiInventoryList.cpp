@@ -3,11 +3,15 @@
 // Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "guiInventoryList.h"
+#include "gui/IGUIEnvironment.h"
 #include "guiFormSpecMenu.h"
-#include "client/hud.h"
-#include "client/client.h"
-#include "client/renderingengine.h"
-#include <IVideoDriver.h>
+#include "client/ui/hud.h"
+#include "client/core/client.h"
+#include "client/render/rendersystem.h"
+#include "client/event/inputhandler.h"
+#include "client/event/eventreceiver.h"
+#include "client/ui/sprite.h"
+#include "client/ui/batcher2d.h"
 
 GUIInventoryList::GUIInventoryList(gui::IGUIEnvironment *env,
 	gui::IGUIElement *parent,
@@ -34,6 +38,8 @@ GUIInventoryList::GUIInventoryList(gui::IGUIEnvironment *env,
 	m_fs_menu(fs_menu),
 	m_options(options),
 	m_font(font),
+	m_slots_rects(std::make_unique<UISprite>(nullptr,
+        env->getRenderSystem()->getRenderer(), env->getResourceCache(), true)),
 	m_hovered_i(-1),
 	m_already_warned(false)
 {
@@ -68,7 +74,6 @@ void GUIInventoryList::draw()
 	}
 	m_already_warned = false;
 
-	video::IVideoDriver *driver = Environment->getVideoDriver();
 	Client *client = m_fs_menu->getClient();
 	const ItemSpec *selected_item = m_fs_menu->getSelectedItem();
 
@@ -76,6 +81,8 @@ void GUIInventoryList::draw()
 	v2i base_pos = AbsoluteRect.ULC;
 
 	const s32 list_size = (s32)ilist->getSize();
+	
+	m_slots_rects->clear();
 
 	for (s32 i = 0; i < m_geom.X * m_geom.Y; i++) {
 		s32 item_i = i + m_start_item_i;
@@ -96,11 +103,12 @@ void GUIInventoryList::draw()
 		ItemRotationKind rotation_kind = selected ? IT_ROT_SELECTED :
 			(hovering ? IT_ROT_HOVERED : IT_ROT_NONE);
 
+        auto shape = m_slots_rects->getShape();
 		// layer 0
 		if (hovering) {
-			driver->draw2DRectangle(m_options.slotbg_h, rect, &AbsoluteClippingRect);
+            shape->addRectangle(toRectf(rect), {m_options.slotbg_h, m_options.slotbg_h, m_options.slotbg_h, m_options.slotbg_h});
 		} else {
-			driver->draw2DRectangle(m_options.slotbg_n, rect, &AbsoluteClippingRect);
+            shape->addRectangle(toRectf(rect), {m_options.slotbg_n, m_options.slotbg_n, m_options.slotbg_n, m_options.slotbg_n});
 		}
 
 		// Draw inv slot borders
@@ -110,38 +118,32 @@ void GUIInventoryList::draw()
 			s32 x2 = rect.LRC.X;
 			s32 y2 = rect.LRC.Y;
 			s32 border = 1;
-			recti clipping_rect = Parent ? Parent->getAbsoluteClippingRect()
-					: recti();
-			recti *clipping_rect_ptr = Parent ? &clipping_rect : nullptr;
-			driver->draw2DRectangle(m_options.slotbordercolor,
-				recti(v2i(x1 - border, y1 - border),
-								v2i(x2 + border, y1)), clipping_rect_ptr);
-			driver->draw2DRectangle(m_options.slotbordercolor,
-				recti(v2i(x1 - border, y2),
-								v2i(x2 + border, y2 + border)), clipping_rect_ptr);
-			driver->draw2DRectangle(m_options.slotbordercolor,
-				recti(v2i(x1 - border, y1),
-								v2i(x1, y2)), clipping_rect_ptr);
-			driver->draw2DRectangle(m_options.slotbordercolor,
-				recti(v2i(x2, y1),
-								v2i(x2 + border, y2)), clipping_rect_ptr);
+			
+			std::array<img::color8, 4> colors = {
+				m_options.slotbordercolor, m_options.slotbordercolor,
+				m_options.slotbordercolor, m_options.slotbordercolor
+			};
+            shape->addRectangle(rectf(v2f(x1 - border, y1 - border), v2f(x2 + border, y1)), colors);
+            shape->addRectangle(rectf(v2f(x1 - border, y2), v2f(x2 + border, y2 + border)), colors);
+            shape->addRectangle(rectf(v2f(x1 - border, y1), v2f(x1, y2)), colors);
+            shape->addRectangle(rectf(v2f(x2, y1), v2f(x2 + border, y2)), colors);
 		}
 
 		// layer 1
 		if (selected)
 			item.takeItem(m_fs_menu->getSelectedAmount());
 
-		if (!item.empty()) {
+		/*if (!item.empty()) {
 			// Draw item stack
 			drawItemStack(driver, m_font, item, rect, &AbsoluteClippingRect,
 					client, rotation_kind);
-		}
+		}*/
 
 		// Add hovering tooltip. The tooltip disappears if any item is selected,
 		// including the currently hovered one.
 		bool show_tooltip = !item.empty() && hovering && !selected_item;
 
-		if (RenderingEngine::getLastPointerType() == PointerType::Touch) {
+		if (client->getInputHandler()->getReceiver()->getLastPointerType() == PointerType::Touch) {
 			// Touchscreen users cannot hover over an item without selecting it.
 			// To allow touchscreen users to see item tooltips, we also show the
 			// tooltip if the item is selected and the finger is still on the
@@ -164,6 +166,9 @@ void GUIInventoryList::draw()
 			m_fs_menu->addHoveredItemTooltip(tooltip);
 		}
 	}
+	
+    m_slots_rects->rebuildMesh();
+    m_slots_rects->draw();
 
 	IGUIElement::draw();
 }
