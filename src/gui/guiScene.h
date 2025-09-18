@@ -4,51 +4,51 @@
 
 #pragma once
 
-#include "irrlichttypes_extrabloated.h"
-#include "ICameraSceneNode.h"
+#include "IGUIElement.h"
 #include "StyleSpec.h"
+#include "client/render/camera.h"
 
-using namespace irr;
+class Client;
+class Model;
+struct TileLayer;
 
 class GUIScene : public gui::IGUIElement
 {
 public:
-	GUIScene(gui::IGUIEnvironment *env, scene::ISceneManager *smgr,
+    GUIScene(Client *client, gui::IGUIEnvironment *env,
 		 gui::IGUIElement *parent, recti rect, s32 id = -1);
 
-	~GUIScene();
+    ~GUIScene();
 
-	scene::IAnimatedMeshSceneNode *setMesh(scene::IAnimatedMesh *mesh = nullptr);
+    void setModel(Model *model);
 	void setTexture(u32 idx, img::Image *texture);
 	void setBackgroundColor(const img::color8 &color) noexcept { m_bgcolor = color; };
-	void setFrameLoop(f32 begin, f32 end);
+    void setFrameLoop(s32 begin, s32 end);
 	void setAnimationSpeed(f32 speed);
 	void enableMouseControl(bool enable) noexcept { m_mouse_ctrl = enable; };
 	void setRotation(v2f rot) noexcept { m_custom_rot = rot; };
 	void enableContinuousRotation(bool enable) noexcept { m_inf_rot = enable; };
 	void setStyles(const std::array<StyleSpec, StyleSpec::NUM_STATES> &styles);
+    v3f getCameraRotation() const { return m_cam->getRotation(); };
 
 	virtual void draw();
 	virtual bool OnEvent(const core::Event &event);
 
 private:
 	void calcOptimalDistance();
-	void updateTargetPos();
-	void updateCamera(scene::ISceneNode *target);
+    void updateTargetPos(v3f target);
 	void setCameraRotation(v3f rot);
 	/// @return true indicates that the rotation was corrected
 	bool correctBounds(v3f &rot);
-	void cameraLoop();
+    //void cameraLoop();
 
-	void updateCameraPos() { m_cam_pos = m_cam->getPosition(); };
-	v3f getCameraRotation() const { return (m_cam_pos - m_target_pos).getHorizontalAngle(); };
 	void rotateCamera(const v3f &delta) { setCameraRotation(getCameraRotation() + delta); };
 
-	scene::ISceneManager *m_smgr;
-	video::IVideoDriver *m_driver;
-	scene::ICameraSceneNode *m_cam;
-	scene::ISceneNode *m_target = nullptr;
-	scene::IAnimatedMeshSceneNode *m_mesh = nullptr;
+    void updateCamera();
+
+    Client *m_client;
+    Camera *m_cam = nullptr;
+    Model *m_model = nullptr;
 
 	f32 m_cam_distance = 50.f;
 
@@ -68,5 +68,8 @@ private:
 	bool m_inf_rot    = false;
 	bool m_initial_rotation = true;
 
-	img::color8 m_bgcolor = 0;
-};
+    img::color8 m_bgcolor;
+
+    std::shared_ptr<TileLayer> m_layer;
+    std::unique_ptr<UISprite> m_background;
+ };

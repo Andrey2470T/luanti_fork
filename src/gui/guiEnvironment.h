@@ -68,9 +68,6 @@ public:
 	//! remove loaded font
 	void removeFont(render::TTFont *font) override;
 
-	//! returns default font
-	render::TTFont *getBuiltInFont() const override;
-
 	//! returns the sprite bank
     IGUISpriteBank *getSpriteBank(const std::string &filename) override;
 
@@ -81,7 +78,7 @@ public:
 	IGUIButton *addButton(const recti &rectangle, IGUIElement *parent = 0, s32 id = -1, const wchar_t *text = 0, const wchar_t *tooltiptext = 0) override;
 
 	//! adds a scrollbar. The returned pointer must not be dropped.
-	virtual IGUIScrollBar *addScrollBar(bool horizontal, const recti &rectangle,
+    virtual IGUIElement *addScrollBar(bool horizontal, const recti &rectangle,
 			IGUIElement *parent = 0, s32 id = -1) override;
 
 	//! Adds an image element.
@@ -162,8 +159,6 @@ private:
 	void clearDeletionQueue();
 
 	void updateHoveredElement(v2i mousePos);
-
-	void loadBuiltInFont();
 
 	struct SFont
 	{

@@ -6,19 +6,19 @@
 #include "guiEnvironment.h"
 
 #include "GUISkin.h"
+#include "gui/guiEditBoxWithScrollbar.h"
 #include "guiButton.h"
-#include "CGUIScrollBar.h"
+#include "guiScrollBar.h"
 #include <Render/TTFont.h>
-#include "CGUISpriteBank.h"
-#include "CGUIImage.h"
-#include "CGUICheckBox.h"
-#include "CGUIListBox.h"
-#include "CGUIImageList.h"
-#include "CGUIFileOpenDialog.h"
-#include "CGUIStaticText.h"
-#include "CGUIEditBox.h"
-#include "CGUITabControl.h"
-#include "CGUIComboBox.h"
+#include "guiSpriteBank.h"
+#include "guiImage.h"
+#include "guiCheckBox.h"
+#include "guiListBox.h"
+#include "guiFileOpenDialog.h"
+#include "guiStaticText.h"
+#include "guiEditBox.h"
+#include "guiTabControl.h"
+#include "guiComboBox.h"
 #include <Core/TimeCounter.h>
 #include "client/render/rendersystem.h"
 #include "client/ui/glyph_atlas.h"
@@ -36,8 +36,6 @@ CGUIEnvironment::CGUIEnvironment(RenderSystem *rndsys, v2u wnd_size, ResourceCac
         UserReceiver(0), FocusFlags((u8)EFF_SET_ON_LMOUSE_DOWN | (u8)EFF_SET_ON_TAB),
         RndSys(rndsys), ResCache(rescache)
 {
-	loadBuiltInFont();
-
     GUISkin *skin = createSkin();
 	setSkin(skin);
 
@@ -509,13 +507,13 @@ GUISkin *CGUIEnvironment::createSkin()
     render::TTFont *defaultfont = font_mgr->getFontOrCreate(
         render::FontMode::MONO, render::FontStyle::NORMAL);
 
-	IGUISpriteBank *bank = 0;
+    //IGUISpriteBank *bank = 0;
     skin->setFont(defaultfont);
 
-	if (bitfont)
-		bank = bitfont->getSpriteBank();
+    //if (bitfont)
+    //	bank = bitfont->getSpriteBank();
 
-	skin->setSpriteBank(bank);
+    //skin->setSpriteBank(bank);
 
 	return skin;
 }
@@ -523,7 +521,7 @@ GUISkin *CGUIEnvironment::createSkin()
 //! adds a button. The returned pointer must not be dropped.
 IGUIButton *CGUIEnvironment::addButton(const recti &rectangle, IGUIElement *parent, s32 id, const wchar_t *text, const wchar_t *tooltiptext)
 {
-	IGUIButton *button = new CGUIButton(this, parent ? parent : this, id, rectangle);
+    IGUIButton *button = new GUIButton(this, parent ? parent : this, id, rectangle);
 	if (text)
 		button->setText(text);
 
@@ -535,9 +533,9 @@ IGUIButton *CGUIEnvironment::addButton(const recti &rectangle, IGUIElement *pare
 }
 
 //! adds a scrollbar. The returned pointer must not be dropped.
-IGUIScrollBar *CGUIEnvironment::addScrollBar(bool horizontal, const recti &rectangle, IGUIElement *parent, s32 id)
+IGUIElement *CGUIEnvironment::addScrollBar(bool horizontal, const recti &rectangle, IGUIElement *parent, s32 id)
 {
-	IGUIScrollBar *bar = new CGUIScrollBar(horizontal, this, parent ? parent : this, id, rectangle);
+    IGUIElement *bar = new GUIScrollBar(this, parent ? parent : this, id, rectangle, horizontal, false);
 	bar->drop();
 	return bar;
 }
@@ -602,11 +600,11 @@ IGUIListBox *CGUIEnvironment::addListBox(const recti &rectangle,
 	IGUIListBox *b = new CGUIListBox(this, parent ? parent : this, id, rectangle,
 			true, drawBackground, false);
 
-	if (CurrentSkin && CurrentSkin->getSpriteBank()) {
+    /*if (CurrentSkin && CurrentSkin->getSpriteBank()) {
 		b->setSpriteBank(CurrentSkin->getSpriteBank());
 	} else if (getBuiltInFont() && getBuiltInFont()->getType() == EGFT_BITMAP) {
 		b->setSpriteBank(((render::TTFontBitmap *)getBuiltInFont())->getSpriteBank());
-	}
+    }*/
 
 	b->drop();
 	return b;
@@ -649,7 +647,7 @@ IGUIEditBox *CGUIEnvironment::addEditBox(const wchar_t *text,
 		const recti &rectangle, bool border,
 		IGUIElement *parent, s32 id)
 {
-	IGUIEditBox *d = new CGUIEditBox(text, border, this,
+    IGUIEditBox *d = new GUIEditBoxWithScrollBar(text, border, this,
 			parent ? parent : this, id, rectangle);
 
 	d->drop();
@@ -692,9 +690,11 @@ render::TTFont *CGUIEnvironment::getFont(const std::string &filename)
 	// search existing font
 
 	SFont f;
-	f.NamedPath.setPath(filename);
+    f.NamedPath = filename;
 
-	s32 index = Fonts.binary_search(f);
+    auto found_font = std::find(Fonts.begin(), Fonts.end(),
+        [filename] (const SFont &font) { return filename == font.NamedPath; });
+    s32 index = std::distance(Fonts.begin(), found_font);
 	if (index != -1)
 		return Fonts[index].Font;
 
@@ -702,30 +702,14 @@ render::TTFont *CGUIEnvironment::getFont(const std::string &filename)
 
 	// does the file exist?
 
-	if (!FileSystem->existFile(filename)) {
-		os::Printer::log("Could not load font because the file does not exist", f.NamedPath.getPath(), ELL_ERROR);
-		return 0;
+    if (!fs::exists(fs::absolute(filename))) {
+        errorstream << "Could not load font because the file does not exist: " << fs::absolute(f.NamedPath) << std::endl;
+        return nullptr;
 	}
 
 	render::TTFont *ifont = 0;
-#if 0
-		{
-			CGUIFont* font = new CGUIFont(this, filename);
-			ifont = (render::TTFont*)font;
 
-			// load the font
-            std::string directory;
-			core::splitFilename(filename, &directory);
-			if (!font->load(xml, directory))
-			{
-				font->drop();
-				font  = 0;
-				ifont = 0;
-			}
-		}
-#endif
-
-	if (!ifont) {
+    /*if (!ifont) {
 
 		CGUIFont *font = new CGUIFont(this, f.NamedPath.getPath());
 		ifont = (render::TTFont *)font;
@@ -737,8 +721,8 @@ render::TTFont *CGUIEnvironment::getFont(const std::string &filename)
 
 	// add to fonts.
 
-	f.Font = ifont;
-	Fonts.push_back(f);
+    f.Font = ifont;
+    Fonts.push_back(f);*/
 
 	return ifont;
 }
@@ -748,13 +732,14 @@ render::TTFont *CGUIEnvironment::addFont(const std::string &name, render::TTFont
 {
 	if (font) {
 		SFont f;
-		f.NamedPath.setPath(name);
-		s32 index = Fonts.binary_search(f);
+        f.NamedPath = name;
+        auto found_font = std::find(Fonts.begin(), Fonts.end(),
+            [name] (const SFont &font) { return name == font.NamedPath; });
+        s32 index = std::distance(Fonts.begin(), found_font);
 		if (index != -1)
 			return Fonts[index].Font;
 		f.Font = font;
 		Fonts.push_back(f);
-		font->grab();
 	}
 	return font;
 }
@@ -766,20 +751,10 @@ void CGUIEnvironment::removeFont(render::TTFont *font)
 		return;
 	for (u32 i = 0; i < Fonts.size(); ++i) {
 		if (Fonts[i].Font == font) {
-			Fonts[i].Font->drop();
-			Fonts.erase(i);
+            Fonts.erase(Fonts.begin()+i);
 			return;
 		}
 	}
-}
-
-//! returns default font
-render::TTFont *CGUIEnvironment::getBuiltInFont() const
-{
-	if (Fonts.empty())
-		return 0;
-
-	return Fonts[0].Font;
 }
 
 IGUISpriteBank *CGUIEnvironment::getSpriteBank(const std::string &filename)
@@ -787,23 +762,25 @@ IGUISpriteBank *CGUIEnvironment::getSpriteBank(const std::string &filename)
 	// search for the file name
 
 	SSpriteBank b;
-	b.NamedPath.setPath(filename);
+    b.NamedPath = filename;
 
-	s32 index = Banks.binary_search(b);
+    auto found_bank = std::find(Banks.begin(), Banks.end(),
+        [filename] (const SSpriteBank &font) { return filename == font.NamedPath; });
+    s32 index = std::distance(Banks.begin(), found_bank);
 	if (index != -1)
 		return Banks[index].Bank;
 
 	// we don't have this sprite bank, we should load it
-	if (!FileSystem->existFile(b.NamedPath.getPath())) {
+    if (!fs::exists(fs::absolute(b.NamedPath))) {
 		if (filename != DefaultFontName) {
-			os::Printer::log("Could not load sprite bank because the file does not exist", b.NamedPath.getPath(), ELL_DEBUG);
+            errorstream << "Could not load sprite bank because the file does not exist: " << fs::absolute(b.NamedPath) << std::endl;
 		}
-		return 0;
+        return nullptr;
 	}
 
 	// todo: load it!
 
-	return 0;
+    return nullptr;
 }
 
 IGUISpriteBank *CGUIEnvironment::addEmptySpriteBank(const std::string &name)
@@ -811,9 +788,11 @@ IGUISpriteBank *CGUIEnvironment::addEmptySpriteBank(const std::string &name)
 	// no duplicate names allowed
 
 	SSpriteBank b;
-	b.NamedPath.setPath(name);
+    b.NamedPath = name;
 
-	const s32 index = Banks.binary_search(b);
+    auto found_bank = std::find(Banks.begin(), Banks.end(),
+        [name] (const SSpriteBank &font) { return name == font.NamedPath; });
+    s32 index = std::distance(Banks.begin(), found_bank);
 	if (index != -1)
 		return 0;
 
@@ -823,19 +802,6 @@ IGUISpriteBank *CGUIEnvironment::addEmptySpriteBank(const std::string &name)
 	Banks.push_back(b);
 
 	return b.Bank;
-}
-
-//! Creates the image list from the given texture.
-IGUIImageList *CGUIEnvironment::createImageList(img::Image *texture,
-        v2i imageSize, bool useAlphaChannel)
-{
-	CGUIImageList *imageList = new CGUIImageList(Driver);
-	if (!imageList->createImageList(texture, imageSize, useAlphaChannel)) {
-		imageList->drop();
-		return 0;
-	}
-
-	return imageList;
 }
 
 //! Returns the root gui element.
@@ -873,7 +839,7 @@ IGUIElement *CGUIEnvironment::getNextElement(bool reverse, bool group)
 	// find the element
 	IGUIElement *closest = 0;
 	IGUIElement *first = 0;
-	startPos->getNextElement(startOrder, reverse, group, first, closest, false, (FocusFlags & EFF_CAN_FOCUS_DISABLED) != 0);
+    startPos->getNextElement(startOrder, reverse, group, first, closest, false, (FocusFlags & (u8)EFF_CAN_FOCUS_DISABLED) != 0);
 
 	if (closest)
 		return closest; // we found an element
@@ -896,11 +862,9 @@ u32 CGUIEnvironment::getFocusBehavior() const
 }
 
 //! creates an GUI Environment
-IGUIEnvironment *createGUIEnvironment(io::IFileSystem *fs,
-		video::IVideoDriver *Driver,
-		IOSOperator *op)
+IGUIEnvironment *createGUIEnvironment(RenderSystem *rndsys, ResourceCache *cache)
 {
-	return new CGUIEnvironment(fs, Driver, op);
+    return new CGUIEnvironment(rndsys, rndsys->getWindowSize(), cache);
 }
 
 } // end namespace gui

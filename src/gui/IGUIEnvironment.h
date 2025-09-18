@@ -148,12 +148,6 @@ public:
 	//! remove loaded font
 	virtual void removeFont(render::TTFont *font) = 0;
 
-	//! Returns the default built-in font.
-	/** \return Pointer to the default built-in font.
-	This pointer should not be dropped. See IReferenceCounted::drop() for
-	more information. */
-	virtual render::TTFont *getBuiltInFont() const = 0;
-
 	//! Returns pointer to the sprite bank which was added with addEmptySpriteBank
 	/** TODO: This should load files in the future, but not implemented so far.
 	\param filename Name of a spritebank added with addEmptySpriteBank
@@ -197,7 +191,7 @@ public:
 	\return Pointer to the created scrollbar. Returns 0 if an error
 	occurred. This pointer should not be dropped. See
 	IReferenceCounted::drop() for more information. */
-	virtual IGUIScrollBar *addScrollBar(bool horizontal, const recti &rectangle,
+    virtual IGUIElement *addScrollBar(bool horizontal, const recti &rectangle,
 			IGUIElement *parent = 0, s32 id = -1) = 0;
 
 	//! Adds an image element.
