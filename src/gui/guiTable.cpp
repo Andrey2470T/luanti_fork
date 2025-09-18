@@ -35,7 +35,7 @@ GUITable::GUITable(gui::IGUIEnvironment *env,
         gui::IGUIElement* parent, s32 id,
         recti rectangle):
     gui::IGUIElement(EGUIET_ELEMENT, env, parent, id, rectangle),
-    m_table_box(std::make_unique<UISpriteBank>(env->getRenderSystem()->getRenderer(),
+    m_table_box(std::make_unique<UISpriteBank>(env->getRenderSystem(),
         env->getResourceCache(), false))
 {
     GUISkin* skin = Environment->getSkin();
@@ -745,19 +745,11 @@ void GUITable::drawCell(const Cell *cell, img::color8 color,
 		if (m_font) {
             if (cell->content_type == COLUMN_TYPE_TEXT) {
                 m_table_box->addTextSprite(
-                    font_mgr, EnrichedString(m_strings[cell->content_index]), 0);
-
-                auto cellText = dynamic_cast<UITextSprite *>(m_table_box->getSprite(m_table_box->getSpriteCount()-1));
-                cellText->setColor(color);
-                cellText->setClipRect(client_clip);
+                    font_mgr, EnrichedString(m_strings[cell->content_index]), 0, toV2f(text_rect.ULC), color, &client_clip);
             }
             else { // tree
                 m_table_box->addTextSprite(
-                    font_mgr, EnrichedString(cell->content_index ? L"+" : L"-"), 0);
-
-                auto cellText = dynamic_cast<UITextSprite *>(m_table_box->getSprite(m_table_box->getSpriteCount()-1));
-                cellText->setColor(color);
-                cellText->setClipRect(client_clip);
+                    font_mgr, EnrichedString(cell->content_index ? L"+" : L"-"), 0, toV2f(text_rect.ULC), color, &client_clip);
             }
 		}
 	}
@@ -781,11 +773,7 @@ void GUITable::drawCell(const Cell *cell, img::color8 color,
 			if (imgh < rowh)
 				dest_rect += v2i(0, (rowh - imgh) / 2);
 
-
-            auto tex = Environment->getRenderSystem()->getPool(false)->getAtlasByTile(image, true)->getTexture();
-            m_table_box->addImageSprite(tex, toRectf(dest_rect), 0);
-            auto cellImage = dynamic_cast<UITextSprite *>(m_table_box->getSprite(m_table_box->getSpriteCount()-1));
-            cellImage->setClipRect(client_clip);
+            m_table_box->addImageSprite(image, 0, toRectf(dest_rect), &client_clip);
 		}
 	}
 }

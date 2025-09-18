@@ -26,7 +26,7 @@ GUIButton::GUIButton(IGUIEnvironment* environment, IGUIElement* parent,
         s32 id, recti rectangle, bool noclip) :
     IGUIButton(environment, parent, id, rectangle),
     ButtonBox(std::make_unique<UISpriteBank>(
-        environment->getRenderSystem()->getRenderer(), environment->getResourceCache(), false))
+        environment->getRenderSystem(), environment->getResourceCache(), false))
 {
 	setNotClipped(noclip);
 
@@ -274,7 +274,9 @@ void GUIButton::draw()
             skin->addColored3DButtonPanePressed(sprite0, toRectf(AbsoluteRect), Colors);
 			// END PATCH
 		}
+        sprite0->rebuildMesh();
         sprite0->setClipRect(AbsoluteClippingRect);
+        sprite0->draw();
 	}
 
     const v2i buttonCenter(AbsoluteRect.getCenter());
@@ -314,8 +316,8 @@ void GUIButton::draw()
 		} else {
             auto sliced_img = dynamic_cast<Image2D9Slice *>(ButtonBox->getSprite(1));
             sliced_img->updateRects(toRectf(sourceRect), toRectf(BgMiddle),
-                toRectf(ScaleImage ? AbsoluteRect : recti(pos, sourceRect.getSize())));
-            sliced_img->createSlices();
+                toRectf(ScaleImage ? AbsoluteRect : recti(pos, sourceRect.getSize())),
+                texture, image_colors, &AbsoluteClippingRect);
             sliced_img->draw();
 		}
 		// END PATCH

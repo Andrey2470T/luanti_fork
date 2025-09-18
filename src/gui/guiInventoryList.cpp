@@ -3,6 +3,7 @@
 // Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "guiInventoryList.h"
+#include "client/ui/extra_images.h"
 #include "gui/IGUIEnvironment.h"
 #include "guiFormSpecMenu.h"
 #include "client/ui/hud.h"
@@ -38,8 +39,7 @@ GUIInventoryList::GUIInventoryList(gui::IGUIEnvironment *env,
 	m_fs_menu(fs_menu),
 	m_options(options),
 	m_font(font),
-	m_slots_rects(std::make_unique<UISprite>(nullptr,
-        env->getRenderSystem()->getRenderer(), env->getResourceCache(), true)),
+    m_slots_rects(std::make_unique<UIRects>(env->getRenderSystem(), 0)),
 	m_hovered_i(-1),
 	m_already_warned(false)
 {
@@ -103,12 +103,11 @@ void GUIInventoryList::draw()
 		ItemRotationKind rotation_kind = selected ? IT_ROT_SELECTED :
 			(hovering ? IT_ROT_HOVERED : IT_ROT_NONE);
 
-        auto shape = m_slots_rects->getShape();
 		// layer 0
 		if (hovering) {
-            shape->addRectangle(toRectf(rect), {m_options.slotbg_h, m_options.slotbg_h, m_options.slotbg_h, m_options.slotbg_h});
+            m_slots_rects->addRect(toRectf(rect), {m_options.slotbg_h});
 		} else {
-            shape->addRectangle(toRectf(rect), {m_options.slotbg_n, m_options.slotbg_n, m_options.slotbg_n, m_options.slotbg_n});
+            m_slots_rects->addRect(toRectf(rect), {m_options.slotbg_n});
 		}
 
 		// Draw inv slot borders
@@ -123,10 +122,10 @@ void GUIInventoryList::draw()
 				m_options.slotbordercolor, m_options.slotbordercolor,
 				m_options.slotbordercolor, m_options.slotbordercolor
 			};
-            shape->addRectangle(rectf(v2f(x1 - border, y1 - border), v2f(x2 + border, y1)), colors);
-            shape->addRectangle(rectf(v2f(x1 - border, y2), v2f(x2 + border, y2 + border)), colors);
-            shape->addRectangle(rectf(v2f(x1 - border, y1), v2f(x1, y2)), colors);
-            shape->addRectangle(rectf(v2f(x2, y1), v2f(x2 + border, y2)), colors);
+            m_slots_rects->addRect(rectf(v2f(x1 - border, y1 - border), v2f(x2 + border, y1)), colors);
+            m_slots_rects->addRect(rectf(v2f(x1 - border, y2), v2f(x2 + border, y2 + border)), colors);
+            m_slots_rects->addRect(rectf(v2f(x1 - border, y1), v2f(x1, y2)), colors);
+            m_slots_rects->addRect(rectf(v2f(x2, y1), v2f(x2 + border, y2)), colors);
 		}
 
 		// layer 1
@@ -167,7 +166,6 @@ void GUIInventoryList::draw()
 		}
 	}
 	
-    m_slots_rects->rebuildMesh();
     m_slots_rects->draw();
 
 	IGUIElement::draw();

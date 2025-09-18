@@ -128,14 +128,14 @@ void Hud::addHUDElement(u32 id, const HudElement *elem)
         hudsprites.emplace(std::unique_ptr<HudSprite>(new HudInventoryList(client, elem)));
         break;
     case HUD_ELEM_WAYPOINT: {
-        UISpriteBank *bank = new UISpriteBank(rnd_system->getRenderer(), cache);
+        UISpriteBank *bank = new UISpriteBank(rnd_system, cache);
         bank->addTextSprite(rnd_system->getFontManager(), EnrichedString(), 0);
         hudsprites.emplace(std::unique_ptr<HudSprite>(new HudWaypoint(client, elem, bank)));
         break;
     }
     case HUD_ELEM_IMAGE_WAYPOINT: {
-        UISpriteBank *bank = new UISpriteBank(rnd_system->getRenderer(), cache);
-        bank->addImageSprite(nullptr, rectf(), 0);
+        UISpriteBank *bank = new UISpriteBank(rnd_system, cache);
+        bank->addImageSprite(nullptr, 0);
         hudsprites.emplace(std::unique_ptr<HudSprite>(new HudWaypoint(client, elem, bank)));
         break;
     }

@@ -3,8 +3,10 @@
 #include "client/mesh/defaultVertexTypes.h"
 #include "client/render/renderer.h"
 #include <Render/StreamTexture2D.h>
+#include "client/render/rendersystem.h"
 #include "text_sprite.h"
 #include "glyph_atlas.h"
+#include "extra_images.h"
 
 std::array<u8, 4> primVCounts = {2, 3, 4, 9};
 
@@ -336,6 +338,8 @@ UISprite::UISprite(render::Texture2D *tex, Renderer *_renderer,
     rebuildMesh();
 }
 
+const std::array<img::color8, 4> UISprite::defaultColors = {img::white, img::white, img::white, img::white};
+
 // Creates (without buffer filling) multiple-primitive mesh
 UISprite::UISprite(render::Texture2D *tex, Renderer *_renderer, ResourceCache *_cache,
     const std::vector<UIPrimitiveType> &primitives, bool streamTexture, bool staticUsage)
@@ -453,34 +457,75 @@ void UISprite::drawPart(u32 pOffset, u32 pCount)
     }
 }
 
-void UISpriteBank::addSprite(const rectf &r, u8 shift, const std::array<img::color8, 4> &colors)
+// if auto-align is enabled, the rects areas must be absolute, otherwise - relative to the ulc
+void UISpriteBank::addSprite(const std::vector<ColoredRect> &rects, u8 shift, const recti *clipRect)
 {
-    rectf resRect = r;
-    shiftRectByLastSprite(resRect, shift);
-    sprites.emplace_back(nullptr, rnd, cache, rectf(), resRect, colors, true);
-    updateMaxArea(maxArea, resRect.ULC, resRect.LRC, maxAreaInit);
+    UIRects *rectsSprite = new UIRects(rndsys, rects.size());
+
+    if (!rects.empty()) {
+        for (u32 k = 0; k < rects.size(); k++)
+            rectsSprite->updateRect(k, rects.at(k).area, rects[k].colors);
+
+        rectf old_maxarea = rectsSprite->getShape()->getMaxArea();
+        rectf shifted_maxarea = old_maxarea;
+        shiftRectByLastSprite(shifted_maxarea, shift);
+
+        if (auto_align)
+            move(shifted_maxarea.getCenter() - old_maxarea.getCenter());
+        else
+            updateMaxArea(maxArea, shifted_maxarea.ULC, shifted_maxarea.LRC, maxAreaInit);
+    }
+    
+    if (clipRect)
+        rectsSprite->setClipRect(*clipRect);
+
+    sprites.emplace_back(rectsSprite);
 }
 
-void UISpriteBank::addImageSprite(render::Texture2D *tex, const rectf &texPart, u8 shift)
+// 'pos' is used for auto_align = false
+void UISpriteBank::addImageSprite(img::Image *img, u8 shift,
+    std::optional<rectf> rect, const recti *clipRect, std::optional<AtlasTileAnim> anim)
 {
-    rectf resRect(0, 0, texPart.getWidth(), texPart.getHeight());
+    ImageSprite *imageSprite = new ImageSprite(rndsys, cache);
+
+    rectf resRect(v2f(), img->getClipSize().X, img->getClipSize().Y);
+
+    if (rect) {
+        if (auto_align)
+            resRect.LRC = rect.value().getSize();
+        else
+            resRect = rect.value();
+    }
+
     shiftRectByLastSprite(resRect, shift);
-    std::array<img::color8, 4> colors = {img::white, img::white, img::white, img::white};
-    sprites.emplace_back(tex, rnd, cache, texPart, resRect, colors, true);
+    imageSprite->update(img, resRect, img::white, clipRect, anim);
     updateMaxArea(maxArea, resRect.ULC, resRect.LRC, maxAreaInit);
+
+    sprites.emplace_back(imageSprite);
 }
 
-void UISpriteBank::addTextSprite(FontManager *mgr, const EnrichedString &text, u8 shift)
+void UISpriteBank::addTextSprite(FontManager *mgr, const EnrichedString &text, u8 shift, std::optional<v2f> pos,
+    const img::color8 &textColor, const recti *clipRect)
 {
-    UITextSprite *textSprite = new UITextSprite(mgr, text, rnd, cache, {});
+    UITextSprite *textSprite = new UITextSprite(mgr, text, rndsys->getRenderer(), cache, {});
+
     textSprite->setAlignment(GUIAlignment::Center, GUIAlignment::Center);
+    textSprite->setColor(textColor);
 
     auto font = textSprite->getActiveFont();
     rectf resRect(0, 0, font->getTextWidth(text.getString()), font->getTextHeight(text.getString()));
+
+    if (pos && !auto_align)
+        resRect += pos.value();
+
     shiftRectByLastSprite(resRect, shift);
     textSprite->updateBuffer(rectf(resRect));
-    sprites.emplace_back(std::unique_ptr<UISprite>(textSprite));
     updateMaxArea(maxArea, resRect.ULC, resRect.LRC, maxAreaInit);
+    
+    if (clipRect)
+        textSprite->setClipRect(*clipRect);
+
+    sprites.emplace_back(textSprite);
 }
 
 void UISpriteBank::shiftRectByLastSprite(rectf &r, u8 shift)

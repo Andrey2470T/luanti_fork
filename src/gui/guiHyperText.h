@@ -4,22 +4,20 @@
 
 #pragma once
 
-#include <vector>
+#include "IGUIElement.h"
 #include <list>
 #include <unordered_map>
-#include <string>
-#include "irrlichttypes_extrabloated.h"
+#include <Render/TTFont.h>
 
-using namespace irr;
-
-class ISimpleTextureSource;
 class Client;
 class GUIScrollBar;
+class FontManager;
+class UISpriteBank;
 
 class ParsedText
 {
 public:
-	ParsedText(const wchar_t *text);
+    ParsedText(FontManager *fontmgr, const wchar_t *text);
 	~ParsedText();
 
 	enum ElementType
@@ -72,7 +70,7 @@ public:
 	{
 		std::list<Tag *> tags;
 		ElementType type;
-		std::wstring text = "";
+        std::wstring text = L"";
 
 		v2u dim;
 		v2i pos;
@@ -84,8 +82,8 @@ public:
 
 		render::TTFont *font;
 
-		irr::img::color8 color;
-		irr::img::color8 hovercolor;
+        img::color8 color;
+        img::color8 hovercolor;
 		bool underline;
 
 		s32 baseline = 0;
@@ -97,7 +95,7 @@ public:
 
 		s32 margin = 10;
 
-		void setStyle(StyleList &style);
+        void setStyle(FontManager *font_mgr, StyleList &style);
 	};
 
 	struct Paragraph
@@ -115,9 +113,11 @@ public:
 	s32 margin = 3;
 	ValignType valign = VALIGN_TOP;
 	BackgroundType background_type = BACKGROUND_NONE;
-	irr::img::color8 background_color;
+    img::color8 background_color;
 
 	Tag m_root_tag;
+
+    FontManager *font_mgr;
 
 protected:
 	typedef enum { ER_NONE, ER_TAG, ER_NEWLINE } EndReason;
@@ -155,8 +155,7 @@ protected:
 class TextDrawer
 {
 public:
-	TextDrawer(const wchar_t *text, Client *client, gui::IGUIEnvironment *environment,
-			ISimpleTextureSource *tsrc);
+    TextDrawer(const wchar_t *text, Client *client, gui::IGUIEnvironment *environment);
 
 	void place(const recti &dest_rect);
 	inline s32 getHeight() { return m_height; };
@@ -174,11 +173,12 @@ protected:
 
 	ParsedText m_text;
 	Client *m_client; ///< null in the mainmenu
-	ISimpleTextureSource *m_tsrc;
 	gui::IGUIEnvironment *m_guienv;
 	s32 m_height;
 	s32 m_voffset;
 	std::vector<RectWithMargin> m_floating;
+
+    std::unique_ptr<UISpriteBank> m_box;
 };
 
 class GUIHyperText : public gui::IGUIElement
@@ -187,8 +187,7 @@ public:
 	//! constructor
 	GUIHyperText(const wchar_t *text, gui::IGUIEnvironment *environment,
 			gui::IGUIElement *parent, s32 id,
-			const recti &rectangle, Client *client,
-			ISimpleTextureSource *tsrc);
+            const recti &rectangle, Client *client);
 
 	//! destructor
 	virtual ~GUIHyperText();
@@ -202,7 +201,6 @@ public:
 
 protected:
 	// GUI members
-	ISimpleTextureSource *m_tsrc;
 	GUIScrollBar *m_vscrollbar;
 	TextDrawer m_drawer;
 

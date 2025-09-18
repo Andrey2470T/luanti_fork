@@ -5,7 +5,7 @@
 #include "guiBox.h"
 #include "client/render/rendersystem.h"
 #include "client/render/atlas.h"
-#include "client/ui/sprite.h"
+#include "client/ui/extra_images.h"
 #include "gui/IGUIEnvironment.h"
 
 GUIBox::GUIBox(gui::IGUIEnvironment *env, gui::IGUIElement *parent, s32 id,
@@ -17,9 +17,7 @@ GUIBox::GUIBox(gui::IGUIEnvironment *env, gui::IGUIElement *parent, s32 id,
 	m_colors(colors),
 	m_bordercolors(bordercolors),
     m_borderwidths(borderwidths),
-    m_box(std::make_unique<UISprite>(nullptr, env->getRenderSystem()->getRenderer(), env->getResourceCache(),
-        std::vector<UIPrimitiveType>{UIPrimitiveType::RECTANGLE, UIPrimitiveType::RECTANGLE, UIPrimitiveType::RECTANGLE,
-        UIPrimitiveType::RECTANGLE, UIPrimitiveType::RECTANGLE}))
+    m_box(std::make_unique<UIRects>(env->getRenderSystem(), 5))
 {}
 
 void GUIBox::draw()
@@ -95,11 +93,10 @@ void GUIBox::draw()
 		lowerright_rect.Y
 	);
 
-    auto shape = m_box->getShape();
-    shape->updateRectangle(0, toRectf(main_rect), {m_colors[0], m_colors[1], m_colors[3], m_colors[2]});
+    m_box->updateRect(0, toRectf(main_rect), {m_colors[0], m_colors[1], m_colors[3], m_colors[2]});
 
     for (size_t i = 1; i <= 4; i++)
-        shape->updateRectangle(i, toRectf(border_rects[i]),
+        m_box->updateRect(i, toRectf(border_rects[i]),
             {m_bordercolors[i], m_bordercolors[i], m_bordercolors[i], m_bordercolors[i]});
 
     m_box->setClipRect(AbsoluteClippingRect);

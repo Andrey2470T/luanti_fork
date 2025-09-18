@@ -112,7 +112,7 @@ public:
 	virtual void setDrawBackground(bool draw) = 0;
 
 	//! Access the vertical scrollbar
-	virtual IGUIScrollBar *getVerticalScrollBar() const = 0;
+    virtual IGUIElement *getVerticalScrollBar() const = 0;
 };
 
 } // end namespace gui

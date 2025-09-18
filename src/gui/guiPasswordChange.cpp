@@ -17,14 +17,15 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
 #include "guiPasswordChange.h"
-#include "client/client.h"
+#include "client/core/client.h"
+#include "gui/IGUIEnvironment.h"
 #include "guiButton.h"
-#include <IGUICheckBox.h>
-#include <IGUIEditBox.h>
-#include <IGUIButton.h>
-#include <IGUIStaticText.h>
-#include <render::TTFont.h>
-#include <IVideoDriver.h>
+#include "IGUICheckBox.h"
+#include "IGUIEditBox.h"
+#include "IGUIButton.h"
+#include "IGUIStaticText.h"
+#include <Render/TTFont.h>
+#include "client/ui/extra_images.h"
 
 #include "porting.h"
 #include "gettext.h"
@@ -39,12 +40,11 @@ const int ID_cancel = 261;
 GUIPasswordChange::GUIPasswordChange(gui::IGUIEnvironment* env,
 		gui::IGUIElement* parent, s32 id,
 		IMenuManager *menumgr,
-		Client* client,
-		ISimpleTextureSource *tsrc
+        Client* client
 ):
 	GUIModalMenu(env, parent, id, menumgr),
-	m_client(client),
-	m_tsrc(tsrc)
+    m_client(client),
+    m_box(std::make_unique<UIRects>(env->getRenderSystem(), 1))
 {
 }
 
@@ -122,13 +122,13 @@ void GUIPasswordChange::regenerateGui(v2u screensize)
 	{
 		recti rect(0, 0, 100 * s, 30 * s);
 		rect = rect + v2i(size.X / 4 + 56 * s, ypos);
-		GUIButton::addButton(Environment, rect, m_tsrc, this, ID_change,
+        GUIButton::addButton(Environment, rect,this, ID_change,
 				wstrgettext("Change").c_str());
 	}
 	{
 		recti rect(0, 0, 100 * s, 30 * s);
 		rect = rect + v2i(size.X / 4 + 185 * s, ypos);
-		GUIButton::addButton(Environment, rect, m_tsrc, this, ID_cancel,
+        GUIButton::addButton(Environment, rect, this, ID_cancel,
 				wstrgettext("Cancel").c_str());
 	}
 
@@ -145,13 +145,14 @@ void GUIPasswordChange::regenerateGui(v2u screensize)
 
 void GUIPasswordChange::drawMenu()
 {
-	gui::IGUISkin *skin = Environment->getSkin();
+    GUISkin *skin = Environment->getSkin();
 	if (!skin)
 		return;
-	video::IVideoDriver *driver = Environment->getVideoDriver();
 
-	img::color8 bgcolor(140, 0, 0, 0);
-	driver->draw2DRectangle(bgcolor, AbsoluteRect, &AbsoluteClippingRect);
+    img::color8 bgcolor(img::PF_RGBA8, 0, 0, 0, 140);
+    m_box->updateRect(0, toRectf(AbsoluteRect), bgcolor);
+    m_box->setClipRect(AbsoluteClippingRect);
+    m_box->draw();
 
 	gui::IGUIElement::draw();
 #ifdef __ANDROID__
@@ -202,7 +203,7 @@ bool GUIPasswordChange::OnEvent(const core::Event &event)
 	if (event.Type == EET_GUI_EVENT) {
 		if (event.GUI.Type == EGET_ELEMENT_FOCUS_LOST &&
 				isVisible()) {
-			if (!canTakeFocus(event.GUI.Element)) {
+            if (!canTakeFocus(Environment->getRootGUIElement()->getElementFromId(event.GUI.Element.value()))) {
 				infostream << "GUIPasswordChange: Not allowing focus change."
 					<< std::endl;
 				// Returning true disables focus change
@@ -210,7 +211,7 @@ bool GUIPasswordChange::OnEvent(const core::Event &event)
 			}
 		}
 		if (event.GUI.Type == EGET_BUTTON_CLICKED) {
-			switch (event.GUI.Caller->getID()) {
+            switch (event.GUI.Caller.value()) {
 			case ID_change:
 				acceptInput();
 				if (processInput())
@@ -221,8 +222,8 @@ bool GUIPasswordChange::OnEvent(const core::Event &event)
 				return true;
 			}
 		}
-		if (event.GUI.Type == gui::EGET_EDITBOX_ENTER) {
-			switch (event.GUI.Caller->getID()) {
+        if (event.GUI.Type == GET_EDITBOX_ENTER) {
+            switch (event.GUI.Caller.value()) {
 			case ID_oldPassword:
 			case ID_newPassword1:
 			case ID_newPassword2:
@@ -274,7 +275,7 @@ void GUIPasswordChange::getAndroidUIInput()
 		e = getElementFromId(ID_newPassword2);
 	m_jni_field_name.clear();
 
-	if (!e || e->getType() != irr::gui::EGUIET_EDIT_BOX)
+    if (!e || e->getType() != GUIET_EDIT_BOX)
 		return;
 
 	std::string text = porting::getInputDialogMessage();

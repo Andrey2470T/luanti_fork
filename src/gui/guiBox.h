@@ -8,7 +8,7 @@
 #include <Image/Color.h>
 #include <array>
 
-class UISprite;
+class UIRects;
 
 class GUIBox : public gui::IGUIElement
 {
@@ -26,5 +26,5 @@ private:
 	std::array<img::color8, 4> m_bordercolors;
 	std::array<s32, 4> m_borderwidths;
 
-    std::unique_ptr<UISprite> m_box;
+    std::unique_ptr<UIRects> m_box;
 };

@@ -16,6 +16,7 @@
 #include "settings.h"
 #include <algorithm>
 #include "client/ui/sprite.h"
+#include "client/ui/extra_images.h"
 
 #include "mainmenumanager.h"  // for g_gamecallback
 
@@ -70,8 +71,7 @@ enum
 GUIKeyChangeMenu::GUIKeyChangeMenu(gui::IGUIEnvironment* env,
         gui::IGUIElement* parent, s32 id, IMenuManager *menumgr) :
         GUIModalMenu(env, parent, id, menumgr),
-        box(std::make_unique<UISprite>(nullptr, env->getRenderSystem()->getRenderer(),
-            env->getResourceCache(), std::vector<UIPrimitiveType>{UIPrimitiveType::RECTANGLE}, true))
+        box(std::make_unique<UIRects>(env->getRenderSystem(), 1))
 {
 	init_keys();
 }
@@ -197,8 +197,7 @@ void GUIKeyChangeMenu::drawMenu()
 		return;
 
     img::color8 bgcolor(img::PF_RGBA8, 0, 0, 0, 140);
-    box->getShape()->updateRectangle(0, toRectf(AbsoluteRect), {bgcolor, bgcolor, bgcolor, bgcolor});
-    box->updateMesh();
+    box->updateRect(0, toRectf(AbsoluteRect), {bgcolor, bgcolor, bgcolor, bgcolor});
     box->setClipRect(AbsoluteClippingRect);
     box->draw();
 

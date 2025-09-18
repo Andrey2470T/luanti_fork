@@ -3,6 +3,7 @@
 // Copyright (C) 2013 sapier
 
 #include "guiPathSelectMenu.h"
+#include "gui/IGUIEnvironment.h"
 #include "guiFormSpecMenu.h" //required because of TextDest only !!!
 
 GUIFileSelectMenu::GUIFileSelectMenu(gui::IGUIEnvironment* env,
@@ -43,7 +44,7 @@ void GUIFileSelectMenu::regenerateGui(v2u screensize)
 
 void GUIFileSelectMenu::drawMenu()
 {
-	gui::IGUISkin *skin = Environment->getSkin();
+    GUISkin *skin = Environment->getSkin();
 	if (!skin)
 		return;
 
@@ -57,7 +58,7 @@ void GUIFileSelectMenu::acceptInput()
 		if (m_accepted) {
 			std::string path;
 			if (!m_file_select_dialog) {
-				core::string<fschar_t> string =
+                std::string string =
 						m_fileOpenDialog->getDirectoryName();
 				path = std::string(string.c_str());
 			} else {
@@ -74,18 +75,18 @@ void GUIFileSelectMenu::acceptInput()
 
 bool GUIFileSelectMenu::OnEvent(const core::Event &event)
 {
-	if (event.Type == irr::EET_GUI_EVENT) {
+    if (event.Type == EET_GUI_EVENT) {
 		switch (event.GUI.Type) {
-		case gui::EGET_ELEMENT_CLOSED:
-		case gui::EGET_FILE_CHOOSE_DIALOG_CANCELLED:
+        case EGET_ELEMENT_CLOSED:
+        case EGET_FILE_CHOOSE_DIALOG_CANCELLED:
 			m_accepted = false;
 			acceptInput();
 			return true;
-		case gui::EGET_DIRECTORY_SELECTED:
+        case EGET_DIRECTORY_SELECTED:
 			m_accepted = !m_file_select_dialog;
 			acceptInput();
 			return true;
-		case gui::EGET_FILE_SELECTED:
+        case EGET_FILE_SELECTED:
 			m_accepted = m_file_select_dialog;
 			acceptInput();
 			return true;

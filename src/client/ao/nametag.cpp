@@ -18,7 +18,7 @@ Nametag::Nametag(Client *client,
       bgcolor(bgcolor)
 {
     auto rndsys = client->getRenderSystem();
-    faceBank = std::make_unique<UISpriteBank>(rndsys->getRenderer(), client->getResourceCache());
+    faceBank = std::make_unique<UISpriteBank>(rndsys, client->getResourceCache());
     faceBank->addTextSprite(rndsys->getFontManager(), EnrichedString(text), 0);
 
     show_backgrounds = g_settings->getBool("show_nametag_backgrounds");

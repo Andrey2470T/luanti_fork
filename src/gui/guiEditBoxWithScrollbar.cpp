@@ -11,6 +11,8 @@
 #include <Render/TTFont.h>
 #include "porting.h"
 #include <Core/Keycodes.h>
+#include "client/ui/sprite.h"
+#include "util/enriched_string.h"
 
 /*
 todo:
@@ -27,7 +29,8 @@ GUIEditBoxWithScrollBar::GUIEditBoxWithScrollBar(const wchar_t* text, bool borde
     const recti& rectangle,
 	bool writable, bool has_vscrollbar)
 	: GUIEditBox(environment, parent, id, rectangle, border, writable),
-    m_background(true), m_bg_color_used(false)
+    m_background(true), m_bg_color_used(false),
+    m_editbox_bank(std::make_unique<UISpriteBank>(environment->getRenderSystem(), environment->getResourceCache(), false))
 {
 
 	Text = text;
@@ -87,18 +90,20 @@ void GUIEditBoxWithScrollBar::draw()
     default_bg_color = m_writable ? skin->getColor(EGDC_WINDOW) : img::black;
 	bg_color = m_bg_color_used ? m_bg_color : default_bg_color;
 
-	if (!m_border && m_background) {
-		skin->draw2DRectangle(this, bg_color, AbsoluteRect, &AbsoluteClippingRect);
-	}
+    m_editbox_bank->clear();
+
+    if (!m_border && m_background) {
+        m_editbox_bank->addSprite({{toRectf(AbsoluteRect), {bg_color}}}, 0);
+    }
 
 	// draw the border
 
 	if (m_border) {
 
-		if (m_writable) {
-			skin->draw3DSunkenPane(this, bg_color, false, m_background,
-				AbsoluteRect, &AbsoluteClippingRect);
-		}
+        if (m_writable) {
+            skin->add3DSunkenPane(m_editbox_bank->getSprite(0), bg_color, false, m_background, toRectf(AbsoluteRect));
+            m_editbox_bank->getSprite(0)->rebuildMesh();
+        }
 	}
 	calculateFrameRect();
 
@@ -116,6 +121,8 @@ void GUIEditBoxWithScrollBar::draw()
 		if (m_last_break_font != font) {
 			breakText();
 		}
+
+        auto font_mgr = Environment->getRenderSystem()->getFontManager();
 
 		// calculate cursor pos
 
@@ -174,9 +181,8 @@ void GUIEditBoxWithScrollBar::draw()
 
 
 				// draw normal text
-				font->draw(txt_line->c_str(), m_current_text_rect,
-					m_override_color_enabled ? m_override_color : skin->getColor(EGDC_BUTTON_TEXT),
-					false, true, &local_clip_rect);
+                m_editbox_bank->addTextSprite(font_mgr, EnrichedString(*txt_line), 0, toV2f(m_current_text_rect.ULC),
+                    m_override_color_enabled ? m_override_color : skin->getColor(EGDC_BUTTON_TEXT), &local_clip_rect);
 
 				// draw mark and marked text
 				if (focus && m_mark_begin != m_mark_end && i >= hline_start && i < hline_start + hline_count) {
@@ -187,22 +193,22 @@ void GUIEditBoxWithScrollBar::draw()
 					if (i == hline_start) {
 						// highlight start is on this line
 						s = txt_line->substr(0, realmbgn - start_pos);
-						mbegin = font->getDimension(s.c_str()).X;
+                        mbegin = font->getTextWidth(s);
 
 						// deal with kerning
-						mbegin += font->getKerning(
+                        mbegin += font->getKerningSizeForTwoChars(
 							(*txt_line)[realmbgn - start_pos],
-							realmbgn - start_pos > 0 ? (*txt_line)[realmbgn - start_pos - 1] : 0).X;
+                            realmbgn - start_pos > 0 ? (*txt_line)[realmbgn - start_pos - 1] : 0);
 
 						lineStartPos = realmbgn - start_pos;
 					}
 					if (i == hline_start + hline_count - 1) {
 						// highlight end is on this line
 						s2 = txt_line->substr(0, realmend - start_pos);
-						mend = font->getDimension(s2.c_str()).X;
+                        mend = font->getTextWidth(s2);
 						lineEndPos = (s32)s2.size();
 					} else {
-						mend = font->getDimension(txt_line->c_str()).X;
+                        mend = font->getTextWidth(*txt_line);
 					}
 
 
@@ -211,16 +217,14 @@ void GUIEditBoxWithScrollBar::draw()
 
 
 					// draw mark
-					skin->draw2DRectangle(this, skin->getColor(EGDC_HIGH_LIGHT), m_current_text_rect, &local_clip_rect);
+                    m_editbox_bank->addSprite({{toRectf(m_current_text_rect), {skin->getColor(EGDC_HIGH_LIGHT)}}}, 0, &local_clip_rect);
 
 					// draw marked text
 					s = txt_line->substr(lineStartPos, lineEndPos - lineStartPos);
 
 					if (s.size())
-						font->draw(s.c_str(), m_current_text_rect,
-							m_override_color_enabled ? m_override_color : skin->getColor(EGDC_HIGH_LIGHT_TEXT),
-							false, true, &local_clip_rect);
-
+                        m_editbox_bank->addTextSprite(font_mgr, EnrichedString(s), 0, toV2f(m_current_text_rect.ULC),
+                            m_override_color_enabled ? m_override_color : skin->getColor(EGDC_HIGH_LIGHT_TEXT),  &local_clip_rect);
 				}
 			}
 
@@ -237,20 +241,21 @@ void GUIEditBoxWithScrollBar::draw()
 				start_pos = m_broken_text_positions[cursor_line];
 			}
 			s = txt_line->substr(0, m_cursor_pos - start_pos);
-			charcursorpos = font->getDimension(s.c_str()).X +
-				font->getKerning(L'_',
-					m_cursor_pos - start_pos > 0 ? (*txt_line)[m_cursor_pos - start_pos - 1] : 0).X;
+            charcursorpos = font->getTextWidth(s) +
+                font->getKerningSizeForTwoChars(L'_',
+                    m_cursor_pos - start_pos > 0 ? (*txt_line)[m_cursor_pos - start_pos - 1] : 0);
 
 			if (focus && (porting::getTimeMs() - m_blink_start_time) % 700 < 350) {
 				setTextRect(cursor_line);
 				m_current_text_rect.ULC.X += charcursorpos;
 
-				font->draw(L"_", m_current_text_rect,
-					m_override_color_enabled ? m_override_color : skin->getColor(EGDC_BUTTON_TEXT),
-					false, true, &local_clip_rect);
+                m_editbox_bank->addTextSprite(font_mgr, EnrichedString(""), 0, toV2f(m_current_text_rect.ULC),
+                    m_override_color_enabled ? m_override_color : skin->getColor(EGDC_BUTTON_TEXT), &local_clip_rect);
 			}
 		}
 	}
+
+    m_editbox_bank->drawBank();
 
 	// draw children
 	IGUIElement::draw();

@@ -12,7 +12,7 @@
 #include "IGUIButton.h"
 #include "IGUIStaticText.h"
 
-class UISprite;
+class UIRects;
 
 struct key_setting
 {
@@ -60,5 +60,5 @@ private:
 	gui::IGUIStaticText *key_used_text = nullptr;
 	std::vector<key_setting *> key_settings;
 
-    std::unique_ptr<UISprite> box;
+    std::unique_ptr<UIRects> box;
 };

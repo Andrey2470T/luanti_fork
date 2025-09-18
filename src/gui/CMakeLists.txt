@@ -24,6 +24,7 @@ set(gui_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/guiScene.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/guiScrollBar.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/guiScrollContainer.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/GUISkin.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/guiSpriteBank.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/guiStaticText.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/guiTabControl.cpp

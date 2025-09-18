@@ -4,13 +4,15 @@
 
 #include "guiListBox.h"
 
-#include "CGUIListBox.h"
 #include "GUISkin.h"
 #include "IGUIEnvironment.h"
 #include "IGUISpriteBank.h"
-#include "CGUIScrollBar.h"
+#include "client/render/rendersystem.h"
+#include "guiScrollBar.h"
 #include <Core/TimeCounter.h>
 #include <Utils/String.h>
+#include "client/ui/sprite.h"
+#include "util/enriched_string.h"
 
 namespace gui
 {
@@ -24,13 +26,13 @@ CGUIListBox::CGUIListBox(IGUIEnvironment *environment, IGUIElement *parent,
 		ItemHeight(0), ItemHeightOverride(0),
 		TotalItemHeight(0), ItemsIconWidth(0), Font(0), IconBank(0),
 		ScrollBar(0), selectTime(0), LastKeyTime(0), Selecting(false), DrawBack(drawBack),
-		MoveOverSelect(moveOverSelect), AutoScroll(true), HighlightWhenNotFocused(true)
+        MoveOverSelect(moveOverSelect), AutoScroll(true), HighlightWhenNotFocused(true),
+        listBoxBank(std::make_unique<UISpriteBank>(environment->getRenderSystem(),
+            environment->getResourceCache(), false))
 {
 	GUISkin *skin = Environment->getSkin();
 
-	ScrollBar = new CGUIScrollBar(false, Environment, this, -1,
-			recti(0, 0, 1, 1),
-			!clip);
+    ScrollBar = new GUIScrollBar(Environment, this, -1, recti(0, 0, 1, 1), false, false);
 	ScrollBar->setSubElement(true);
 	ScrollBar->setTabStop(false);
     ScrollBar->setAlignment(EGUIA_LOWERRIGHT, EGUIA_LOWERRIGHT, GUIAlignment::UpperLeft, EGUIA_LOWERRIGHT);
@@ -423,6 +425,8 @@ void CGUIListBox::draw()
 	GUISkin *skin = Environment->getSkin();
 	updateScrollBarSize(skin->getSize(EGDS_SCROLLBAR_SIZE));
 
+    listBoxBank->clear();
+
 	recti *clipRect = 0;
 
 	// draw background
@@ -438,8 +442,11 @@ void CGUIListBox::draw()
 	clientClip.LRC.Y -= 1;
 	clientClip.clipAgainst(AbsoluteClippingRect);
 
-	skin->draw3DSunkenPane(this, skin->getColor(EGDC_3D_HIGH_LIGHT), true,
-			DrawBack, frameRect, &AbsoluteClippingRect);
+    listBoxBank->addSprite({{rectf(), {}}}, 0);
+    skin->add3DSunkenPane(listBoxBank->getSprite(0), skin->getColor(EGDC_3D_HIGH_LIGHT), true,
+            DrawBack, toRectf(frameRect));
+    listBoxBank->getSprite(0)->setClipRect(clientClip);
+    listBoxBank->getSprite(0)->rebuildMesh();
 
 	if (clipRect)
 		clientClip.clipAgainst(*clipRect);
@@ -460,7 +467,7 @@ void CGUIListBox::draw()
 		if (frameRect.LRC.Y >= AbsoluteRect.ULC.Y &&
 				frameRect.ULC.Y <= AbsoluteRect.LRC.Y) {
 			if (i == Selected && hl)
-				skin->draw2DRectangle(this, skin->getColor(EGDC_HIGH_LIGHT), frameRect, &clientClip);
+                listBoxBank->addSprite({{toRectf(frameRect), {skin->getColor(EGDC_HIGH_LIGHT)}}}, 0, &clientClip);
 
 			recti textRect = frameRect;
 			textRect.ULC.X += 3;
@@ -484,15 +491,17 @@ void CGUIListBox::draw()
 
 				textRect.ULC.X += ItemsIconWidth + 3;
 
+                img::color8 textColor;
 				if (i == Selected && hl) {
-					Font->draw(Items[i].Text.c_str(), textRect,
-							hasItemOverrideColor(i, EGUI_LBC_TEXT_HIGHLIGHT) ? getItemOverrideColor(i, EGUI_LBC_TEXT_HIGHLIGHT) : getItemDefaultColor(EGUI_LBC_TEXT_HIGHLIGHT),
-							false, true, &clientClip);
+                    textColor = hasItemOverrideColor(i, EGUI_LBC_TEXT_HIGHLIGHT) ?
+                        getItemOverrideColor(i, EGUI_LBC_TEXT_HIGHLIGHT) : getItemDefaultColor(EGUI_LBC_TEXT_HIGHLIGHT);
 				} else {
-					Font->draw(Items[i].Text.c_str(), textRect,
-							hasItemOverrideColor(i, EGUI_LBC_TEXT) ? getItemOverrideColor(i, EGUI_LBC_TEXT) : getItemDefaultColor(EGUI_LBC_TEXT),
-							false, true, &clientClip);
+                    textColor = hasItemOverrideColor(i, EGUI_LBC_TEXT) ?
+                        getItemOverrideColor(i, EGUI_LBC_TEXT) : getItemDefaultColor(EGUI_LBC_TEXT);
 				}
+
+                listBoxBank->addTextSprite(Environment->getRenderSystem()->getFontManager(), EnrichedString(Items[i].Text),
+                    0, toV2f(textRect.ULC), textColor, &clientClip);
 
 				textRect.ULC.X -= ItemsIconWidth + 3;
 			}
@@ -501,6 +510,8 @@ void CGUIListBox::draw()
 		frameRect.ULC.Y += ItemHeight;
 		frameRect.LRC.Y += ItemHeight;
 	}
+
+    listBoxBank->drawBank();
 
 	IGUIElement::draw();
 }
@@ -721,7 +732,7 @@ void CGUIListBox::setDrawBackground(bool draw)
 }
 
 //! Access the vertical scrollbar
-IGUIScrollBar *CGUIListBox::getVerticalScrollBar() const
+IGUIElement *CGUIListBox::getVerticalScrollBar() const
 {
 	return ScrollBar;
 }

@@ -56,7 +56,7 @@ void GameUI::init()
 {
     auto font_mgr = rndsys->getFontManager();
 
-    debugtext = std::make_unique<UISpriteBank>(rndsys->getRenderer(), cache);
+    debugtext = std::make_unique<UISpriteBank>(rndsys, cache);
 
 	// First line of debug text
     debugtext->addTextSprite(font_mgr, EnrichedString(utf8_to_wide(PROJECT_NAME_C)), 0);

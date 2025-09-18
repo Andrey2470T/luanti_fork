@@ -171,10 +171,13 @@ protected:
     render::Texture2D *texture = nullptr;
 
     bool streamTex = false;
-    bool visible = false;
+    bool visible = true;
 
     recti clipRect;
+    
 public:
+    static const std::array<img::color8, 4> defaultColors;
+
     // Creates an empty sprite
     UISprite(render::Texture2D *tex, Renderer *_renderer, ResourceCache *_cache,
         bool streamTexture=false, bool staticUsage=true);
@@ -182,7 +185,7 @@ public:
     // Creates a single rectangle mesh
     UISprite(render::Texture2D *tex, Renderer *_renderer,
         ResourceCache *_cache, const rectf &srcRect, const rectf &destRect,
-        const std::array<img::color8, 4> &colors, bool streamTexture=false, bool staticUsage=true);
+        const std::array<img::color8, 4> &colors=defaultColors, bool streamTexture=false, bool staticUsage=true);
 
     // Creates (without buffer filling) multiple-primitive mesh
     UISprite(render::Texture2D *tex, Renderer *_renderer, ResourceCache *_cache,
@@ -243,10 +246,19 @@ public:
 class UITextSprite;
 class FontManager;
 class EnrichedString;
+class RenderSystem;
+
+struct ColoredRect
+{
+    rectf area;
+    std::array<img::color8, 4> colors = UISprite::defaultColors;
+};
+
+typedef std::pair<u32, u32> AtlasTileAnim;
 
 class UISpriteBank
 {
-    Renderer *rnd;
+    RenderSystem *rndsys;
     ResourceCache *cache;
     std::vector<std::unique_ptr<UISprite>> sprites;
 
@@ -258,8 +270,8 @@ class UISpriteBank
     v2f center;
     bool auto_align;
 public:
-    UISpriteBank(Renderer *_rnd, ResourceCache *_cache, bool _auto_align=true)
-        : rnd(_rnd), cache(_cache), auto_align(_auto_align)
+    UISpriteBank(RenderSystem *_rndsys, ResourceCache *_cache, bool _auto_align=true)
+        : rndsys(_rndsys), cache(_cache), auto_align(_auto_align)
     {}
 
     void setCenter(const v2f &c)
@@ -279,9 +291,11 @@ public:
     {
         sprites.emplace_back(sprite);
     }
-    void addSprite(const rectf &r, u8 shift, const std::array<img::color8, 4> &colors={img::black, img::black, img::black, img::black});
-    void addImageSprite(render::Texture2D *tex, const rectf &texPart, u8 shift);
-    void addTextSprite(FontManager *mgr, const EnrichedString &text, u8 shift);
+    void addSprite(const std::vector<ColoredRect> &rects, u8 shift, const recti *clipRect=nullptr);
+    void addImageSprite(img::Image *img, u8 shift, std::optional<rectf> rect=std::nullopt, const recti *clipRect=nullptr,
+        std::optional<AtlasTileAnim> anim=std::nullopt);
+    void addTextSprite(FontManager *mgr, const EnrichedString &text, u8 shift,
+        std::optional<v2f> pos=std::nullopt, const img::color8 &textColor=img::white, const recti *clipRect=nullptr);
 
     u32 getSpriteCount() const
     {
@@ -330,6 +344,12 @@ public:
     	alignSpritesByCenter();
         for (auto &sprite : sprites)
             sprite->updateMesh();
+    }
+    
+    void setClipRect(u32 n, const recti &r)
+    {
+    	assert(n < sprites.size());
+    	sprites.at(n)->setClipRect(r);
     }
 
     void drawSprite(u32 n)

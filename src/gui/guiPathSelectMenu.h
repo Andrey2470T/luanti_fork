@@ -5,8 +5,6 @@
 
 #pragma once
 
-#include <string>
-
 #include "modalMenu.h"
 #include "IGUIFileOpenDialog.h"
 

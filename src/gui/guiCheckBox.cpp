@@ -7,6 +7,7 @@
 #include "GUISkin.h"
 #include "IGUIEnvironment.h"
 #include <Core/TimeCounter.h>
+#include "client/ui/extra_images.h"
 #include "client/ui/text_sprite.h"
 #include "client/render/rendersystem.h"
 #include <Utils/TypeConverter.h>
@@ -107,12 +108,10 @@ void CGUICheckBox::draw()
 
 		recti frameRect(AbsoluteRect);
 
-        auto shape = Sprite->getShape();
-
 		// draw background
 		if (Background) {
             img::color8 bgColor = skin->getColor(EGDC_3D_FACE);
-            shape->addRectangle(toRectf(frameRect), {bgColor, bgColor, bgColor, bgColor});
+            Sprite->addRect(toRectf(frameRect), {bgColor, bgColor, bgColor, bgColor});
 		}
 
 		// draw the border
@@ -146,7 +145,8 @@ void CGUICheckBox::draw()
 
 		// the checked icon
 		if (Checked) {
-            shape->addRectangle(toRectf(frameRect), {});
+            Sprite->addRect(toRectf(frameRect));
+            Sprite->drawPart(Sprite->getShape()->getPrimitiveCount()-1);
 			skin->drawIcon(this, EGDI_CHECK_BOX_CHECKED, checkRect.getCenter(),
 					CheckTime, core::TimeCounter::getRealTime(), false, &AbsoluteClippingRect);
 		}

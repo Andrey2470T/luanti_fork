@@ -4,24 +4,23 @@
 
 #include "guiHyperText.h"
 #include "guiScrollBar.h"
-#include "client/fontengine.h"
-#include "client/hud.h" // drawItemStack
-#include "IVideoDriver.h"
-#include "client/client.h"
-#include "client/renderingengine.h"
-#include "client/texturesource.h"
+#include "client/ui/glyph_atlas.h"
+#include "client/ui/hud.h" // drawItemStack
+#include "client/core/client.h"
+#include "client/render/rendersystem.h"
+#include "client/media/resource.h"
 #include "hud.h"
 #include "inventory.h"
 #include "util/string.h"
-#include "irrlicht_changes/CGUITTFont.h"
 #include "mainmenumanager.h"
 #include "porting.h"
+#include "client/ui/sprite.h"
 
-using namespace irr::gui;
+using namespace gui;
 
 static bool check_color(const std::string &str)
 {
-	irr::img::color8 color;
+    img::color8 color;
 	return parseColorString(str, color, false);
 }
 
@@ -39,7 +38,7 @@ static bool check_integer(const std::string &str)
 // -----------------------------------------------------------------------------
 // ParsedText - A text parser
 
-void ParsedText::Element::setStyle(StyleList &style)
+void ParsedText::Element::setStyle(FontManager *font_mgr, StyleList &style)
 {
 	this->underline = is_yes(style["underline"]);
 
@@ -52,25 +51,31 @@ void ParsedText::Element::setStyle(StyleList &style)
 
 	unsigned int font_size = std::atoi(style["fontsize"].c_str());
 
-	FontMode font_mode = FM_Standard;
+    render::FontMode font_mode = render::FontMode::GRAY;
 	if (style["fontstyle"] == "mono")
-		font_mode = FM_Mono;
+        font_mode = render::FontMode::MONO;
 
 	// hypertext[] only accepts absolute font size values and has a hardcoded
 	// default font size of 16. This is the only way to make hypertext[]
 	// respect font size settings that I can think of.
-	font_size = myround(font_size / 16.0f * g_fontengine->getFontSize(font_mode));
+    font_size = myround(font_size / 16.0f * font_mgr->getDefaultFontSize(font_mode));
 
-	FontSpec spec(font_size, font_mode,
-		is_yes(style["bold"]), is_yes(style["italic"]));
+    render::FontStyle font_style = render::FontStyle::NORMAL;
+
+    if (is_yes(style["bold"]))
+        font_style = render::FontStyle::BOLD;
+    else {
+        if (is_yes(style["italic"]))
+            font_style = render::FontStyle::ITALIC;
+    }
 
 	// TODO: find a way to check font validity
 	// Build a new fontengine ?
-	this->font = g_fontengine->getFont(spec);
+    font = font_mgr->getFontOrCreate(font_mode, font_style, font_size);
 
-	if (!this->font)
+    if (!font)
 		printf("No font found ! Size=%d, mode=%d, bold=%s, italic=%s\n",
-				font_size, font_mode, style["bold"].c_str(),
+                font_size, (u8)font_mode, style["bold"].c_str(),
 				style["italic"].c_str());
 }
 
@@ -86,7 +91,8 @@ void ParsedText::Paragraph::setStyle(StyleList &style)
 		this->halign = HALIGN_LEFT;
 }
 
-ParsedText::ParsedText(const wchar_t *text)
+ParsedText::ParsedText(FontManager *fontmgr, const wchar_t *text)
+    : font_mgr(fontmgr)
 {
 	// Default style
 	m_root_tag.name = "root";
@@ -267,7 +273,7 @@ void ParsedText::enterElement(ElementType type)
 		m_element = &m_paragraph->elements.back();
 		m_element->type = type;
 		m_element->tags = m_active_tags;
-		m_element->setStyle(m_style);
+        m_element->setStyle(font_mgr, m_style);
 	}
 }
 
@@ -359,7 +365,7 @@ void ParsedText::globalTag(const AttrsList &attrs)
 			else if (attr.second == "middle")
 				valign = ParsedText::VALIGN_MIDDLE;
 		} else if (attr.first == "background") {
-			irr::img::color8 color;
+            img::color8 color;
 			if (attr.second == "none") {
 				background_type = BACKGROUND_NONE;
 			} else if (parseColorString(attr.second, color, false)) {
@@ -618,8 +624,9 @@ u32 ParsedText::parseTag(const wchar_t *text, u32 cursor)
 // Text Drawer
 
 TextDrawer::TextDrawer(const wchar_t *text, Client *client,
-		gui::IGUIEnvironment *environment, ISimpleTextureSource *tsrc) :
-		m_text(text), m_client(client), m_tsrc(tsrc), m_guienv(environment)
+        gui::IGUIEnvironment *environment) :
+        m_text(environment->getRenderSystem()->getFontManager(), text), m_client(client), m_guienv(environment),
+        m_box(std::make_unique<UISpriteBank>(environment->getRenderSystem(), environment->getResourceCache(), false))
 {
 	// Size all elements
 	for (auto &p : m_text.m_paragraphs) {
@@ -628,12 +635,8 @@ TextDrawer::TextDrawer(const wchar_t *text, Client *client,
 			case ParsedText::ELEMENT_SEPARATOR:
 			case ParsedText::ELEMENT_TEXT:
 				if (e.font) {
-					e.dim.X = e.font->getDimension(e.text.c_str()).X;
-					e.dim.Y = e.font->getDimension(L"Yy").Y;
-					if (e.font->getType() == EGFT_CUSTOM) {
-						CGUITTFont *tmp = static_cast<CGUITTFont*>(e.font);
-						e.baseline = e.dim.Y - 1 - tmp->getAscender() / 64;
-					}
+                    e.dim = e.font->getTextSize(e.text);
+                    e.baseline = e.dim.Y - 1 - e.font->getFontAscent() / 64;
 				} else {
 					e.dim = {0, 0};
 				}
@@ -650,8 +653,8 @@ TextDrawer::TextDrawer(const wchar_t *text, Client *client,
 
 				if (e.type == ParsedText::ELEMENT_IMAGE) {
 					img::Image *texture =
-						m_tsrc->
-							getTexture(stringw_to_utf8(e.text));
+                        environment->getResourceCache()->
+                            getOrLoad<img::Image>(ResourceType::IMAGE, wide_to_utf8(e.text));
 					if (texture)
 						dim = texture->getSize();
 				}
@@ -678,7 +681,7 @@ ParsedText::Element *TextDrawer::getElementAt(v2i pos)
 	pos.Y -= m_voffset;
 	for (auto &p : m_text.m_paragraphs) {
 		for (auto &el : p.elements) {
-			recti rect(el.pos, el.dim);
+            recti rect(el.pos, el.dim.X, el.dim.Y);
 			if (rect.isPointInside(pos))
 				return &el;
 		}
@@ -721,7 +724,7 @@ void TextDrawer::place(const recti &dest_rect)
 							m_text.margin;
 
 				RectWithMargin floating;
-				floating.rect = recti(e->pos, e->dim);
+                floating.rect = recti(e->pos, e->dim.X, e->dim.Y);
 				floating.margin = e->margin;
 
 				m_floating.push_back(floating);
@@ -932,23 +935,26 @@ void TextDrawer::place(const recti &dest_rect)
 void TextDrawer::draw(const recti &clip_rect,
 		const v2i &dest_offset)
 {
-	irr::video::IVideoDriver *driver = m_guienv->getVideoDriver();
 	v2i offset = dest_offset;
 	offset.Y += m_voffset;
 
+    m_box->clear();
+
 	if (m_text.background_type == ParsedText::BACKGROUND_COLOR)
-		driver->draw2DRectangle(m_text.background_color, clip_rect);
+        m_box->addSprite({{toRectf(clip_rect), {m_text.background_color}}}, 0);
+
+    auto font_mgr = m_guienv->getRenderSystem()->getFontManager();
 
 	for (auto &p : m_text.m_paragraphs) {
 		for (auto &el : p.elements) {
-			recti rect(el.pos + offset, el.dim);
+            recti rect(el.pos + offset, el.dim.X, el.dim.Y);
 			if (!rect.isRectCollided(clip_rect))
 				continue;
 
 			switch (el.type) {
 			case ParsedText::ELEMENT_SEPARATOR:
 			case ParsedText::ELEMENT_TEXT: {
-				irr::img::color8 color = el.color;
+                img::color8 color = el.color;
 
 				for (auto tag : el.tags)
 					if (&(*tag) == m_hovertag)
@@ -958,8 +964,7 @@ void TextDrawer::draw(const recti &clip_rect,
 					break;
 
 				if (el.type == ParsedText::ELEMENT_TEXT)
-					el.font->draw(el.text, rect, color, false, true,
-							&clip_rect);
+                    m_box->addTextSprite(font_mgr, EnrichedString(el.text), 0, toV2f(rect.ULC), color, &clip_rect);
 
 				if (el.underline &&  el.drawwidth) {
 					s32 linepos = el.pos.Y + offset.Y +
@@ -970,37 +975,33 @@ void TextDrawer::draw(const recti &clip_rect,
 							el.pos.X + offset.X + el.drawwidth,
 							linepos + (el.baseline >> 3));
 
-					driver->draw2DRectangle(color, linerect, &clip_rect);
+                    m_box->addSprite({{toRectf(linerect), {color}}}, 0, &clip_rect);
 				}
 			} break;
 
 			case ParsedText::ELEMENT_IMAGE: {
 				img::Image *texture =
-						m_tsrc->getTexture(
-								stringw_to_utf8(el.text));
-				if (texture != 0)
-					m_guienv->getVideoDriver()->draw2DImage(
-							texture, rect,
-							irr::recti(
-									v2i(0, 0),
-									texture->getSize()),
-							&clip_rect, 0, true);
+                        m_guienv->getResourceCache()->getOrLoad<img::Image>(ResourceType::IMAGE, wide_to_utf8(el.text));
+                if (texture)
+                    m_box->addImageSprite(texture, 0, toRectf(rect), &clip_rect);
 			} break;
 
 			case ParsedText::ELEMENT_ITEM: {
 				if (m_client) {
 					IItemDefManager *idef = m_client->idef();
 					ItemStack item;
-					item.deSerialize(stringw_to_utf8(el.text), idef);
+                    item.deSerialize(wide_to_utf8(el.text), idef);
 
-					drawItemStack(m_guienv->getVideoDriver(),
+                    /*drawItemStack(m_guienv->getVideoDriver(),
 							g_fontengine->getFont(), item, rect, &clip_rect, m_client,
-							IT_ROT_OTHER, el.angle, el.rotation);
+                            IT_ROT_OTHER, el.angle, el.rotation);*/
 				}
 			} break;
 			}
 		}
 	}
+
+    m_box->drawBank();
 }
 
 // -----------------------------------------------------------------------------
@@ -1009,23 +1010,23 @@ void TextDrawer::draw(const recti &clip_rect,
 //! constructor
 GUIHyperText::GUIHyperText(const wchar_t *text, IGUIEnvironment *environment,
 		IGUIElement *parent, s32 id, const recti &rectangle,
-		Client *client, ISimpleTextureSource *tsrc) :
+        Client *client) :
 		IGUIElement(EGUIET_ELEMENT, environment, parent, id, rectangle),
-		m_tsrc(tsrc), m_vscrollbar(nullptr),
-		m_drawer(text, client, environment, tsrc), m_text_scrollpos(0, 0)
+        m_vscrollbar(nullptr),
+        m_drawer(text, client, environment), m_text_scrollpos(0, 0)
 {
 
-	IGUISkin *skin = 0;
+    GUISkin *skin = nullptr;
 	if (Environment)
 		skin = Environment->getSkin();
 
 	m_scrollbar_width = skin ? skin->getSize(EGDS_SCROLLBAR_SIZE) : 16;
 
-	recti rect = irr::recti(
+    recti rect(
 			RelativeRect.getWidth() - m_scrollbar_width, 0,
 			RelativeRect.getWidth(), RelativeRect.getHeight());
 
-	m_vscrollbar = new GUIScrollBar(Environment, this, -1, rect, false, true, tsrc);
+    m_vscrollbar = new GUIScrollBar(Environment, this, -1, rect, false, true);
 	m_vscrollbar->setVisible(false);
 }
 
@@ -1061,10 +1062,8 @@ void GUIHyperText::checkHover(s32 X, s32 Y)
 		}
 	}
 
-	ICursorControl *cursor_control = RenderingEngine::get_raw_device()->getCursorControl();
-
-	if (cursor_control)
-		cursor_control->setActiveIcon(m_drawer.m_hovertag ? gui::ECI_HAND : gui::ECI_NORMAL);
+    auto cursor_control = Environment->getRenderSystem()->getWindow()->getCursorControl();
+    cursor_control.setActiveIcon(m_drawer.m_hovertag ? CI_HAND : CI_NORMAL);
 }
 
 bool GUIHyperText::OnEvent(const core::Event &event)
@@ -1072,7 +1071,7 @@ bool GUIHyperText::OnEvent(const core::Event &event)
 	// Scroll bar
 	if (event.Type == EET_GUI_EVENT &&
 			event.GUI.Type == EGET_SCROLL_BAR_CHANGED &&
-			event.GUI.Caller == m_vscrollbar) {
+            event.GUI.Caller == m_vscrollbar->getID()) {
 		m_text_scrollpos.Y = -m_vscrollbar->getPos();
 	}
 
@@ -1081,10 +1080,10 @@ bool GUIHyperText::OnEvent(const core::Event &event)
 			event.GUI.Type == EGET_ELEMENT_LEFT) {
 		m_drawer.m_hovertag = nullptr;
 
-		ICursorControl *cursor_control = RenderingEngine::get_raw_device()->getCursorControl();
+        auto cursor_control = Environment->getRenderSystem()->getWindow()->getCursorControl();
 
-		if (cursor_control && cursor_control->isVisible())
-			cursor_control->setActiveIcon(gui::ECI_NORMAL);
+        if (cursor_control.isVisible())
+            cursor_control.setActiveIcon(CI_NORMAL);
 	}
 
 	if (event.Type == EET_MOUSE_INPUT_EVENT) {
@@ -1093,7 +1092,7 @@ bool GUIHyperText::OnEvent(const core::Event &event)
 
 		if (event.MouseInput.Type == EMIE_MOUSE_WHEEL && m_vscrollbar->isVisible()) {
 			m_vscrollbar->setPosInterpolated(m_vscrollbar->getTargetPos() -
-					event.MouseInput.Wheel * m_vscrollbar->getSmallStep());
+                    event.MouseInput.WheelDelta * m_vscrollbar->getSmallStep());
 			m_text_scrollpos.Y = -m_vscrollbar->getPos();
 			m_drawer.draw(m_display_text_rect, m_text_scrollpos);
 			checkHover(event.MouseInput.X, event.MouseInput.Y);
@@ -1111,8 +1110,8 @@ bool GUIHyperText::OnEvent(const core::Event &event)
 						if (Parent) {
 							core::Event newEvent;
 							newEvent.Type = EET_GUI_EVENT;
-							newEvent.GUI.Caller = this;
-							newEvent.GUI.Element = 0;
+                            newEvent.GUI.Caller = getID();
+                            newEvent.GUI.Element = std::nullopt;
 							newEvent.GUI.Type = EGET_BUTTON_CLICKED;
 							Parent->OnEvent(newEvent);
 						}

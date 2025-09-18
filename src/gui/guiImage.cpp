@@ -94,9 +94,8 @@ void CGUIImage::draw()
             auto sliced_img = std::get<std::shared_ptr<Image2D9Slice>>(Image);
             sliced_img->setTexture(
                 Environment->getRenderSystem()->getPool(false)->getAtlasByTile(Texture, true)->getTexture());
-            sliced_img->updateRects(toRectf(sourceRect), MiddleRect, toRectf(AbsoluteRect));
-            sliced_img->createSlices();
-            sliced_img->setClipRect(clippingRect);
+            sliced_img->updateRects(toRectf(sourceRect), MiddleRect, toRectf(AbsoluteRect),
+                Texture, Colors, &clippingRect, AnimParams);
             sliced_img->draw();
         }
 	} else if (DrawBackground) {
@@ -112,9 +111,8 @@ void CGUIImage::draw()
         }
         else {
             auto sliced_img = std::get<std::shared_ptr<Image2D9Slice>>(Image);
-            sliced_img->updateRects(toRectf(SourceRect), MiddleRect, toRectf(AbsoluteRect));
-            sliced_img->createSlices();
-            sliced_img->setClipRect(clippingRect);
+            sliced_img->updateRects(toRectf(SourceRect), MiddleRect, toRectf(AbsoluteRect),
+                nullptr, Colors, &clippingRect, AnimParams);
             sliced_img->draw();
         }
 	}

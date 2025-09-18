@@ -35,8 +35,7 @@ GUIBackgroundImage::GUIBackgroundImage(gui::IGUIEnvironment *env,
     }
     else {
         Image = std::make_unique<Image2D9Slice>(env->getResourceCache(),
-            env->getRenderSystem()->getRenderer(), nullptr,
-            std::array<img::color8, 4>{img::white, img::white, img::white, img::white});
+            env->getRenderSystem());
     }
 }
 
@@ -64,15 +63,12 @@ void GUIBackgroundImage::draw()
     recti srcrect(v2i(0, 0), toV2i(texture->getSize()));
 
 	if (m_middle.getArea() == 0) {
-        std::array<img::color8, 4> colors = {img::white, img::white, img::white, img::white};
-
         auto img = std::get<std::shared_ptr<ImageSprite>>(Image);
-        img->update(texture, toRectf(rect), colors, &srcrect);
+        img->update(texture, toRectf(rect), UISprite::defaultColors, &srcrect);
         img->draw();
 	} else {
         auto img = std::get<std::shared_ptr<Image2D9Slice>>(Image);
         img->updateRects(toRectf(srcrect), toRectf(rect), toRectf(m_middle));
-        img->createSlices();
         img->draw();
 	}
 

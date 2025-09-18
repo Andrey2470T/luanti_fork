@@ -13,7 +13,7 @@
 #include "client/render/renderer.h"
 #include <Render/DrawContext.h>
 #include "IGUISpriteBank.h"
-#include "irrlicht_gui/IGUIElement.h"
+#include "gui/IGUIElement.h"
 
 GUISkin::GUISkin(Renderer *_renderer, GUISkinType type)
     : renderer(_renderer), Type(type)

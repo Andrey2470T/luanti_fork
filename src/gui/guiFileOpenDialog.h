@@ -8,7 +8,11 @@
 #include "IGUIButton.h"
 #include "IGUIListBox.h"
 #include "IGUIEditBox.h"
+#include "IGUIEnvironment.h"
 #include <Core/Events.h>
+#include <FilesystemVersions.h>
+
+class UISpriteBank;
 
 namespace gui
 {
@@ -61,11 +65,11 @@ protected:
 	v2i DragStart;
 	std::string FileName;
 	std::wstring FileNameW;
-	std::string FileDirectory;
+	fs::path FileDirectory;
 	std::string FileDirectoryFlat;
 	std::wstring FileDirectoryFlatW;
-	std::string RestoreDirectory;
-	std::string StartDirectory;
+	fs::path RestoreDirectory;
+	fs::path StartDirectory;
 
 	IGUIButton *CloseButton;
 	IGUIButton *OKButton;
@@ -74,6 +78,8 @@ protected:
 	IGUIEditBox *FileNameText;
 	IGUIElement *EventParent;
 	bool Dragging;
+	
+	std::unique_ptr<UISpriteBank> DialogBank;
 };
 
 } // end namespace gui

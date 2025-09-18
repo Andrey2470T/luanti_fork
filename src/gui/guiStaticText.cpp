@@ -40,7 +40,6 @@ void CGUIStaticText::draw()
 	if (!IsVisible)
 		return;
 
-
     Text->updateBuffer(rectf(v2f(AbsoluteRect.ULC.X, AbsoluteRect.ULC.Y), v2f(AbsoluteRect.LRC.X, AbsoluteRect.LRC.Y)));
     Text->draw();
 }

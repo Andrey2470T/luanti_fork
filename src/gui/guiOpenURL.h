@@ -28,7 +28,7 @@ class GUIOpenURLMenu : public GUIModalMenu
 public:
 	GUIOpenURLMenu(gui::IGUIEnvironment *env, gui::IGUIElement *parent, s32 id,
 			IMenuManager *menumgr,
-			ISimpleTextureSource *tsrc, const std::string &url);
+            const std::string &url);
 
 	/*
 		Remove and re-add (or reposition) stuff

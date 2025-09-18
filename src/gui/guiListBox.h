@@ -7,10 +7,11 @@
 #include "IGUIListBox.h"
 #include <Render/TTFont.h>
 
+class GUIScrollBar;
+class UISpriteBank;
+
 namespace gui
 {
-
-class IGUIScrollBar;
 
 class CGUIListBox : public IGUIListBox
 {
@@ -119,7 +120,7 @@ public:
 	void setDrawBackground(bool draw) override;
 
 	//! Access the vertical scrollbar
-	IGUIScrollBar *getVerticalScrollBar() const override;
+    IGUIElement *getVerticalScrollBar() const override;
 
 private:
 	struct ListItem
@@ -155,7 +156,7 @@ private:
 	s32 ItemsIconWidth;
 	render::TTFont *Font;
 	gui::IGUISpriteBank *IconBank;
-	gui::IGUIScrollBar *ScrollBar;
+    GUIScrollBar *ScrollBar;
 	u32 selectTime;
 	u32 LastKeyTime;
 	std::wstring KeyBuffer;
@@ -164,6 +165,8 @@ private:
 	bool MoveOverSelect;
 	bool AutoScroll;
 	bool HighlightWhenNotFocused;
+
+    std::unique_ptr<UISpriteBank> listBoxBank;
 };
 
 } // end namespace gui

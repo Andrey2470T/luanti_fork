@@ -33,9 +33,8 @@ namespace {
 }
 
 GUIOpenURLMenu::GUIOpenURLMenu(gui::IGUIEnvironment* env,
-		gui::IGUIElement* parent, s32 id,
-		IMenuManager *menumgr,
-		ISimpleTextureSource *tsrc, const std::string &url
+        gui::IGUIElement* parent, s32 id,
+        IMenuManager *menumgr, const std::string &url
 ):
 	GUIModalMenu(env, parent, id, menumgr),
     url(url),
@@ -152,7 +151,7 @@ void GUIOpenURLMenu::drawMenu()
 		return;
 
     img::color8 bgcolor(img::PF_RGBA8, 0, 0, 0, 140);
-    openURLBox->getShape()->updateRectangle(0, toRectf(AbsoluteRect), {bgcolor, bgcolor, bgcolor, bgcolor});
+    openURLBox->getShape()->updateRectangle(0, toRectf(AbsoluteRect), {bgcolor});
     openURLBox->updateMesh();
     openURLBox->setClipRect(AbsoluteClippingRect);
     openURLBox->draw();

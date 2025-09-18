@@ -56,7 +56,7 @@ GUIChatConsole::GUIChatConsole(
 	m_client(client),
 	m_menumgr(menumgr),
     m_animate_time_old(porting::getTimeMs()),
-    m_chat_bank(std::make_unique<UISpriteBank>(env->getRenderSystem()->getRenderer(),
+    m_chat_bank(std::make_unique<UISpriteBank>(env->getRenderSystem(),
         env->getResourceCache(), false))
 {
 	// load background settings
@@ -105,10 +105,10 @@ GUIChatConsole::GUIChatConsole(
 	m_scrollbar->setLargeStep(1);
 	m_scrollbar->setSmallStep(1);
 
-    m_chat_bank->addImageSprite(nullptr, {}, 0);
+    m_chat_bank->addImageSprite(nullptr, 0);
     m_chat_bank->addTextSprite(env->getRenderSystem()->getFontManager(), EnrichedString(), 0);
     m_chat_bank->addTextSprite(env->getRenderSystem()->getFontManager(), EnrichedString(), 0);
-    m_chat_bank->addSprite<UISprite>(0, nullptr, env->getRenderSystem()->getRenderer(), env->getResourceCache(), true);
+    m_chat_bank->addSprite({}, 0);
 }
 
 void GUIChatConsole::openConsole(f32 scale)
@@ -302,15 +302,10 @@ void GUIChatConsole::drawBackground()
 {
     auto background = dynamic_cast<ImageSprite *>(m_chat_bank->getSprite(0));
 
-	if (m_background != NULL)
-	{
-		recti sourcerect(0, -m_height, m_screensize.X, 0);
-        background->update(m_background, toRectf(sourcerect), m_background_color, &AbsoluteClippingRect);
-	}
+    if (m_background != nullptr)
+        background->update(m_background, rectf(0, -m_height, m_screensize.X, 0), m_background_color, &AbsoluteClippingRect);
 	else
-	{
         background->update(m_background, rectf(0, 0, m_screensize.X, m_height), m_background_color, &AbsoluteClippingRect);
-	}
 
     background->rebuildMesh();
 }
@@ -405,10 +400,9 @@ void GUIChatConsole::drawPrompt()
 				y + font_height * (cursor_len ? m_cursor_height+1 : 1)
 			);
             img::color8 cursor_color = img::white;
-            auto cursor = m_chat_bank->getSprite(3);
-            cursor->getShape()->updateRectangle(0, toRectf(destrect), {cursor_color, cursor_color, cursor_color, cursor_color});
+            auto cursor = dynamic_cast<UIRects *>(m_chat_bank->getSprite(3));
+            cursor->updateRect(0, toRectf(destrect), {cursor_color, cursor_color, cursor_color, cursor_color});
             cursor->setClipRect(AbsoluteClippingRect);
-            cursor->updateMesh();
 		}
 	}
 
