@@ -6,8 +6,6 @@ set(ao_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/ao/nametag.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ao/renderCAO.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ao/skeleton.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ao/smokePuffCSO.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ao/testCAO.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ao/transformNode.cpp
 )
 

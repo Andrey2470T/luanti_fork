@@ -136,7 +136,8 @@ bool Client::initGui()
     m_chat_msger->init(m_render_system->getGUIEnvironment());
 
     if (shouldShowTouchControls()) {
-        g_touchcontrols = new TouchControls(device, texture_src);
+        g_touchcontrols = new TouchControls(
+            m_render_system, m_resource_cache, m_input->getReceiver());
         g_touchcontrols->setUseCrosshair(!m_env.getLocalPlayer()->getInteraction()->isTouchCrosshairDisabled());
     }
 

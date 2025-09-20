@@ -10,7 +10,6 @@
 #include "gui/touchcontrols.h"
 #include "hud.h"
 #include "log_internal.h"
-#include "client/renderingengine.h"
 
 /*
  * RealInputHandler
@@ -33,13 +32,13 @@ float RealInputHandler::getJoystickDirection()
 
 v2i RealInputHandler::getMousePos()
 {
-    auto control = m_receiver->main_wnd->getCursorControl();
+    auto control = receiver->main_wnd->getCursorControl();
     return control.getPosition(false);
 }
 
 void RealInputHandler::setMousePos(s32 x, s32 y)
 {
-    auto control = m_receiver->main_wnd->getCursorControl();
+    auto control = receiver->main_wnd->getCursorControl();
     control.setPosition({x, y});
 }
 

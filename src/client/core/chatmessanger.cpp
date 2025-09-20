@@ -4,19 +4,19 @@
 #include "client/network/packethandler.h"
 #include "gui/guiChatConsole.h"
 #include "client.h"
-#include "clientpackethandler.h"
+#include "client/network/packethandler.h"
 #include "gui/mainmenumanager.h"
 #include "settings.h"
 #include "log.h"
-#include <ctime.h>
-#include "utils/string.h"
+#include <ctime>
+#include "util/string.h"
 #include "script/scripting_client.h"
 #include "client/render/rendersystem.h"
 #include "client/ui/gameui.h"
 
 ChatMessanger::ChatMessanger(Client *_client)
     : client(_client), packet_handler(client->getPacketHandler()), chat_backend(std::make_unique<ChatBackend>()),
-    last_chat_message_sent(time(nullptr))
+    chat_log_buf(g_logger), last_chat_message_sent(time(nullptr))
 {
     g_settings->registerChangedCallback("chat_log_level",
         &settingChangedCallback, this);
@@ -32,7 +32,7 @@ void ChatMessanger::init(gui::IGUIEnvironment *guienv)
 
     // Chat backend and console
     gui_chat_console = std::make_unique<GUIChatConsole>(guienv, guienv->getRootGUIElement(),
-            -1, chat_backend, client, &g_menumgr);
+            -1, chat_backend.get(), client, g_menumgr.get());
 }
 
 void ChatMessanger::openConsole(float scale, const wchar_t *line)

@@ -1,3 +1,5 @@
+#pragma once
+
 #include "client/event/eventsystem.h"
 #include "soundmanager.h"
 #include "nodedef.h"

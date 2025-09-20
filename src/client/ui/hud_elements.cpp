@@ -523,9 +523,9 @@ HudInventoryList::HudInventoryList(Client *_client, const HudElement *elem)
     g_settings->registerChangedCallback("display_density_factor", setting_changed_callback, this);
     g_settings->registerChangedCallback("hud_scaling", setting_changed_callback, this);
 
-    list = std::make_unique<UISpriteBank>(rnd_system->getRenderer(), cache, false);
-    list->addSprite(rectf(), 0);
-    list->addSprite(rectf(), 0);
+    list = std::make_unique<UISpriteBank>(rnd_system, cache, false);
+    list->addSprite({{rectf(), {img::white}}}, 0);
+    list->addSprite({{rectf(), {img::white}}}, 0);
     list->getSprite(1)->setVisible(false);
 
     updateBackgroundImages();

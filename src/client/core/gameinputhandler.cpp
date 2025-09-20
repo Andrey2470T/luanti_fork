@@ -73,7 +73,7 @@ void GameInputSystem::processUserInput(f32 dtime)
     }
 
     // Reset input if window not active or some menu is active
-    if (!wnd->isActive() || isMenuActive() || guienv->hasFocus(chat_console) {
+    if (!wnd->isActive() || isMenuActive() || guienv->hasFocus(chat_console)) {
         if (game_focused) {
             game_focused = false;
             infostream << "GameInputSystem lost focus" << std::endl;
@@ -90,7 +90,7 @@ void GameInputSystem::processUserInput(f32 dtime)
             /* on touchcontrols step may generate own input events which ain't
              * what we want in case we just did clear them */
             g_touchcontrols->show();
-            g_touchcontrols->step(dtime);
+            g_touchcontrols->step(dtime, player->getCamera());
         }
 
         game_focused = true;

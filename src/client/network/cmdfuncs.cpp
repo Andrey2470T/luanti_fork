@@ -959,7 +959,7 @@ void ClientPacketHandler::handleCommand_DetachedInventory(NetworkPacket* pkt)
 	}
 	Inventory *inv = nullptr;
     if (inv_it == detached_inventories.end()) {
-        inv = new Inventory(m_client->m_itemdef);
+        inv = new Inventory(m_client->m_itemdef.get());
         detached_inventories[name] = inv;
 	} else {
 		inv = inv_it->second;

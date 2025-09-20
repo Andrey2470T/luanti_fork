@@ -5,7 +5,7 @@
 #include "particles.h"
 #include "collision.h"
 #include "client/ao/genericCAO.h"
-#include "client/event/clientevent.h"
+#include "client/core/clientevent.h"
 #include "util/numeric.h"
 #include "light.h"
 #include "client/player/localplayer.h"

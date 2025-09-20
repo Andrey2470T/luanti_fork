@@ -5,6 +5,7 @@
 #include "client/render/clouds.h"
 #include "client/ui/extra_images.h"
 #include "client/ui/sprite.h"
+#include "gui/mainmenumanager.h"
 #include "rendersystem.h"
 #include "client/ui/text_sprite.h"
 #include "client/render/atlas.h"
@@ -58,9 +59,6 @@ void LoadScreen::draw(v2u screensize, const std::wstring &text, f32 dtime, bool 
     guitext->setText(text);
     guitext->updateBuffer(rectf(center-textsize/2, center+textsize/2));
 
-    if (draw_clouds)
-        g_menuclouds->step(dtime*3);
-
     s32 percent_min = 0;
     s32 percent_max = percent;
     if (shutdown_progress) {
@@ -103,7 +101,7 @@ void LoadScreen::draw(v2u screensize, const std::wstring &text, f32 dtime, bool 
     renderer->getContext()->clearBuffers(render::CBF_COLOR, Renderer::menu_sky_color);
 
     if (draw_clouds)
-        g_menuclouds->render();
+        g_menumgr->drawClouds(dtime);
 
     progress_rect->drawPart(0, 1);
 

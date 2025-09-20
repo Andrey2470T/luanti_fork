@@ -173,7 +173,7 @@ void TextureBufferOutput::activate(PipelineContext &context)
     if (!render_target) {
         auto window = context.client->getRenderSystem()->getWindow();
         auto glParams = window->getGLParams();
-        render_target = std::make_unique<render::FrameBuffer>(glParams.maxColorAttachments);
+        render_target = std::make_unique<render::FrameBuffer>(glParams->maxColorAttachments);
     }
 
     std::vector<render::Texture *> textures;

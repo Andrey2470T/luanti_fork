@@ -60,7 +60,7 @@
 #include "client/render/loadscreen.h"
 
 #if USE_SOUND
-	#include "client/sound/sound_openal.h"
+    #include "client/sound/soundopenal.h"
 #endif
 
 /****************************************************************************
@@ -156,7 +156,7 @@ void Game::run()
 		// Calculate dtime =
 		//    m_rendering_engine->run() from this iteration
 		//  + Sleep time until the wanted FPS are reached
-        drawstats.fps.limit(rndsys->getWindow(), &dtime, g_menumgr->pausesGame());
+        drawstats.fps.limit(rndsys->getWindow(), &dtime);
 
 		framemarker.start();
 
@@ -212,8 +212,8 @@ void Game::shutdown()
         showOverlayMessage(N_("Shutting down..."), 0, 0);
 
 	/* cleanup menus */
-	while (g_menumgr.menuCount() > 0) {
-		g_menumgr.deleteFront();
+    while (g_menumgr->menuCount() > 0) {
+        g_menumgr->deleteFront();
 	}
 
 	auto stop_thread = runInThread([=] {
@@ -448,9 +448,9 @@ bool Game::connectToServer(const GameStartData &start_data,
 
 
 	try {
-        client = new Client(
-                rndsys,
+        client = std::make_unique<Client>(
                 rescache,
+                rndsys,
                 input,
                 start_data.name.c_str(),
                 start_data.password,

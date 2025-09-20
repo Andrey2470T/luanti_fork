@@ -232,6 +232,11 @@ public:
     void sendChangePassword(const std::string &oldpassword,
         const std::string &newpassword);
 
+    bool joinModChannel(const std::string &channel) override {};
+    bool leaveModChannel(const std::string &channel) override {};
+    bool sendModChannelMessage(const std::string &channel,
+        const std::string &message) override {};
+
 	bool inhibit_inventory_revert = false;
 
 private:

@@ -65,7 +65,7 @@ class TouchControls
 {
 public:
     TouchControls(RenderSystem *rndsys, ResourceCache *cache,
-        IEventReceiver *receiver, Camera *camera);
+        IEventReceiver *receiver);
 	~TouchControls();
 	DISABLE_CLASS_COPY(TouchControls);
 
@@ -98,7 +98,7 @@ public:
 	float getJoystickDirection() { return m_joystick_direction; }
 	float getJoystickSpeed() { return m_joystick_speed; }
 
-	void step(float dtime);
+    void step(float dtime, Camera *camera);
 	inline void setUseCrosshair(bool use_crosshair) { m_draw_crosshair = use_crosshair; }
 
 	void setVisible(bool visible);
@@ -121,7 +121,6 @@ private:
 	IGUIEnvironment *m_guienv = nullptr;
 	IEventReceiver *m_receiver = nullptr;
 	ResourceCache *m_cache = nullptr;
-    Camera *m_camera = nullptr;
     v2u m_wndsize;
 	s32 m_button_size;
 	double m_touchscreen_threshold;

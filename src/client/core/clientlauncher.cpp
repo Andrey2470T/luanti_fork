@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 // Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
+#include "client/render/renderer.h"
+#include "gui/IGUISpriteBank.h"
 #include "gui/mainmenumanager.h"
 #include "client/render/clouds.h"
 #include "gui/touchcontrols.h"
@@ -494,11 +496,12 @@ void ClientLauncher::main_menu(MainMenuData *menudata)
     auto framemarker = FrameMarker("ClientLauncher::main_menu()-wait-frame").started();
 
     auto ctxt = render_system->getRenderer()->getContext();
+    auto guienv = render_system->getGUIEnvironment();
     while (render_system->run() && !*kill) {
         if (!isMenuActive())
             break;
         ctxt->clearBuffers(render::CBF_COLOR | render::CBF_DEPTH, img::gray);
-        render_system->getGUIEnvironment()->drawAll();
+        guienv->drawAll();
         framemarker.end();
         // On some computers framerate doesn't seem to be automatically limited
         sleep_ms(25);
@@ -507,19 +510,15 @@ void ClientLauncher::main_menu(MainMenuData *menudata)
     framemarker.end();
     infostream << "Waited for other menus" << std::endl;
 
-    auto *cur_control = render_system->getWindow()->getCursorControl();
-    if (cur_control) {
-        // Cursor can be non-visible when coming from the game
-        cur_control->setVisible(true);
-        // Set absolute mouse mode
-        cur_control->setRelativeMode(false);
-    }
+    auto cur_control = render_system->getWindow()->getCursorControl();
+    // Cursor can be non-visible when coming from the game
+    cur_control.setVisible(true);
+    // Set absolute mouse mode
+    cur_control.setRelativeMode(false);
 
     /* show main menu */
-    GUIEngine mymenu(&input->joystick, guiroot, render_system, &g_menumgr, menudata, *kill);
-
-    /* leave scene manager in a clean state */
-    render_system->get_scene_manager()->clear();
+    GUIEngine mymenu(&input->joystick, guienv->getRootGUIElement(), render_system.get(), resource_cache.get(),
+        g_menumgr.get(), menudata, *kill);
 
     /* Save the settings when leaving the mainmenu.
      * This makes sure that setting changes made in the mainmenu are persisted

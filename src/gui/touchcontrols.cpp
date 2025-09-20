@@ -196,13 +196,12 @@ static KEY_CODE id_to_keycode(touch_gui_button_id id)
 
 
 TouchControls::TouchControls(RenderSystem *rndsys, ResourceCache *cache,
-    IEventReceiver *receiver, Camera *camera):
+    IEventReceiver *receiver):
         m_rndsys(rndsys),
         m_window(rndsys->getWindow()),
         m_guienv(rndsys->getGUIEnvironment()),
         m_receiver(receiver),
-        m_cache(cache),
-        m_camera(camera)
+        m_cache(cache)
 {
 	m_touchscreen_threshold = g_settings->getU16("touchscreen_threshold");
 	m_long_tap_delay = g_settings->getU16("touch_long_tap_delay");
@@ -603,7 +602,7 @@ void TouchControls::applyJoystickStatus()
 	}
 }
 
-void TouchControls::step(float dtime)
+void TouchControls::step(float dtime, Camera *camera)
 {
     v2u wndsize = m_rndsys->getWindowSize();
     s32 button_size = ButtonLayout::getButtonSize(wndsize, m_rndsys->getScaleFactor());
@@ -639,7 +638,7 @@ void TouchControls::step(float dtime)
 	// it's last in-world position when the player doesn't need it.
 	if (!m_draw_crosshair && (m_has_move_id || m_had_move_id)) {
 		v2i pointer_pos = getPointerPos();
-        m_shootline = m_camera->getRayFromScreenCoordinates(wndsize, pointer_pos);
+        m_shootline = camera->getRayFromScreenCoordinates(wndsize, pointer_pos);
 	}
 	m_had_move_id = false;
 }

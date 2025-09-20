@@ -1,3 +1,4 @@
+#include "client/media/resource.h"
 #include "texture_modifiers.h"
 #include "util/strfnd.h"
 #include "util/string.h"
