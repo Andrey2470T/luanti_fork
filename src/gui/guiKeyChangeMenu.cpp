@@ -104,8 +104,8 @@ void GUIKeyChangeMenu::regenerateGui(v2u screensize)
 		recti rect(0, 0, 600 * s, 40 * s);
 		rect += topleft + v2i(25 * s, 3 * s);
 		//gui::IGUIStaticText *t =
-		gui::StaticText::add(Environment, wstrgettext("Keybindings."), rect,
-				false, true, this, -1);
+        Environment->addStaticText(wstrgettext("Keybindings.").c_str(), rect,
+            false, true, this, -1);
         //t->setTextAlignment(gui::EGUIA_CENTER, EGUIA_UPPERLEFT);
 	}
 
@@ -119,8 +119,8 @@ void GUIKeyChangeMenu::regenerateGui(v2u screensize)
 		{
 			recti rect(0, 0, 150 * s, 20 * s);
 			rect += topleft + v2i(offset.X, offset.Y);
-			gui::StaticText::add(Environment, k->button_name, rect,
-					false, true, this, -1);
+            Environment->addStaticText(k->button_name.c_str(), rect,
+                false, true, this, -1);
 		}
 
 		{
@@ -282,8 +282,8 @@ bool GUIKeyChangeMenu::OnEvent(const core::Event& event)
 		if (key_in_use && !this->key_used_text) {
 			recti rect(0, 0, 600, 40);
 			rect += v2i(0, 0) + v2i(25, 30);
-			this->key_used_text = gui::StaticText::add(Environment,
-					wstrgettext("Key already in use"),
+            this->key_used_text = Environment->addStaticText(
+                    wstrgettext("Key already in use").c_str(),
 					rect, false, true, this, -1);
 		} else if (!key_in_use && this->key_used_text) {
 			this->key_used_text->remove();
@@ -313,7 +313,7 @@ bool GUIKeyChangeMenu::OnEvent(const core::Event& event)
         if (event.GUI.Type == EGET_ELEMENT_FOCUS_LOST
 			&& isVisible())
 		{
-            if (!canTakeFocus(event.GUI.Element.value()))
+            if (!canTakeFocus(Environment->getRootGUIElement()->getElementFromId(event.GUI.Element.value())))
 			{
 				infostream << "GUIKeyChangeMenu: Not allowing focus change."
 				<< std::endl;

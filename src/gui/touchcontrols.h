@@ -5,41 +5,32 @@
 
 #pragma once
 
-#include "irrlichttypes.h"
-#include "IEventReceiver.h"
-
+#include "IGUIElement.h"
+#include <Core/IEventReceiver.h>
+#include <Core/Events.h>
+#include <Core/MainWindow.h>
 #include <memory>
 #include <optional>
 #include <unordered_map>
-#include <vector>
-
 #include "itemdef.h"
 #include "touchscreenlayout.h"
 #include "util/basic_macros.h"
 
-namespace irr
+namespace gui
 {
-	class IrrlichtDevice;
-	namespace gui
-	{
-		class IGUIEnvironment;
-		class IGUIImage;
-		class IGUIStaticText;
-	}
-	namespace video
-	{
-		class IVideoDriver;
-	}
+	class IGUIEnvironment;
+	class IGUIImage;
+	class IGUIStaticText;
 }
-class ISimpleTextureSource;
 
-using namespace irr::core;
-using namespace irr::gui;
+using namespace gui;
 
+class ResourceCache;
+class Camera;
 
 enum class TapState
 {
-	None,
+    No,
 	ShortTap,
 	LongTap,
 };
@@ -57,9 +48,9 @@ enum class TapState
 struct button_info
 {
 	float repeat_counter;
-	EKEY_CODE keycode;
+    KEY_CODE keycode;
 	std::vector<size_t> pointer_ids;
-	std::shared_ptr<IGUIImage> gui_button = nullptr;
+    IGUIImage *gui_button = nullptr;
 
 	enum {
 		NOT_TOGGLEABLE,
@@ -73,7 +64,8 @@ struct button_info
 class TouchControls
 {
 public:
-	TouchControls(IrrlichtDevice *device, ISimpleTextureSource *tsrc);
+    TouchControls(RenderSystem *rndsys, ResourceCache *cache,
+        IEventReceiver *receiver, Camera *camera);
 	~TouchControls();
 	DISABLE_CLASS_COPY(TouchControls);
 
@@ -101,7 +93,7 @@ public:
 	 * The line starts at the camera and ends on the camera's far plane.
 	 * The coordinates do not contain the camera offset.
 	 */
-	line3d<f32> getShootline() { return m_shootline; }
+	line3f getShootline() { return m_shootline; }
 
 	float getJoystickDirection() { return m_joystick_direction; }
 	float getJoystickSpeed() { return m_joystick_speed; }
@@ -118,17 +110,19 @@ public:
 	std::optional<u16> getHotbarSelection();
 
 	bool isStatusTextOverriden() { return m_overflow_open; }
-	IGUIStaticText *getStatusText() { return m_status_text.get(); }
+    IGUIStaticText *getStatusText() { return m_status_text; }
 
 	ButtonLayout getLayout() { return m_layout; }
 	void applyLayout(const ButtonLayout &layout);
 
 private:
-	IrrlichtDevice *m_device = nullptr;
+    RenderSystem *m_rndsys = nullptr;
+    core::MainWindow *m_window = nullptr;
 	IGUIEnvironment *m_guienv = nullptr;
 	IEventReceiver *m_receiver = nullptr;
-	ISimpleTextureSource *m_texturesource = nullptr;
-	v2u m_screensize;
+	ResourceCache *m_cache = nullptr;
+    Camera *m_camera = nullptr;
+    v2u m_wndsize;
 	s32 m_button_size;
 	double m_touchscreen_threshold;
 	u16 m_long_tap_delay;
@@ -146,7 +140,7 @@ private:
 	 * The line ends on the camera's far plane.
 	 * The coordinates do not contain the camera offset.
 	 */
-	line3d<f32> m_shootline;
+	line3f m_shootline;
 
 	bool m_has_move_id = false;
 	size_t m_move_id;
@@ -168,26 +162,26 @@ private:
 	bool m_fixed_joystick = false;
 	bool m_joystick_triggers_aux1 = false;
 	bool m_draw_crosshair = false;
-	std::shared_ptr<IGUIImage> m_joystick_btn_off;
-	std::shared_ptr<IGUIImage> m_joystick_btn_bg;
-	std::shared_ptr<IGUIImage> m_joystick_btn_center;
+    IGUIImage *m_joystick_btn_off;
+    IGUIImage *m_joystick_btn_bg;
+    IGUIImage *m_joystick_btn_center;
 
 	std::vector<button_info> m_buttons;
-	std::shared_ptr<IGUIImage> m_overflow_btn;
+    IGUIImage *m_overflow_btn;
 
 	bool m_overflow_open = false;
-	std::shared_ptr<IGUIStaticText> m_overflow_bg;
+    IGUIStaticText *m_overflow_bg;
 	std::vector<button_info> m_overflow_buttons;
-	std::vector<std::shared_ptr<IGUIStaticText>> m_overflow_button_titles;
+    std::vector<IGUIStaticText *> m_overflow_button_titles;
 	std::vector<recti> m_overflow_button_rects;
 
-	std::shared_ptr<IGUIStaticText> m_status_text;
+    IGUIStaticText *m_status_text;
 
 	// Note: TouchControls intentionally uses IGUIImage instead of IGUIButton
 	// for its buttons. We only want static image display, not interactivity,
 	// from Irrlicht.
 
-	void emitKeyboardEvent(EKEY_CODE keycode, bool pressed);
+    void emitKeyboardEvent(KEY_CODE keycode, bool pressed);
 
 	void loadButtonTexture(IGUIImage *gui_button, const std::string &path);
 	void buttonEmitAction(button_info &btn, bool action);
@@ -228,9 +222,9 @@ private:
 	std::unordered_map<size_t, v2i> m_pointer_pos;
 
 	v2i getPointerPos();
-	void emitMouseEvent(EMOUSE_INPUT_EVENT type);
+    void emitMouseEvent(MouseInputEventType type);
 	TouchInteractionMode m_last_mode = TouchInteractionMode_END;
-	TapState m_tap_state = TapState::None;
+    TapState m_tap_state = TapState::No;
 
 	bool m_dig_pressed = false;
 	u64 m_dig_pressed_until = 0;

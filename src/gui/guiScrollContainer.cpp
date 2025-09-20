@@ -100,13 +100,15 @@ void GUIScrollContainer::setScrollBar(GUIScrollBar *scrollbar)
 
 void GUIScrollContainer::updateScrolling()
 {
-	s32 pos = m_scrollbar->getPos();
 	recti rect = getRelativePosition();
 
-	if (m_orientation == VERTICAL)
-		rect.ULC.Y = pos * m_scrollfactor;
-	else if (m_orientation == HORIZONTAL)
-		rect.ULC.X = pos * m_scrollfactor;
+    if (m_scrollbar) {
+        s32 pos = m_scrollbar->getPos();
+        if (m_orientation == VERTICAL)
+            rect.ULC.Y = pos * m_scrollfactor;
+        else if (m_orientation == HORIZONTAL)
+            rect.ULC.X = pos * m_scrollfactor;
+    }
 
 	setRelativePosition(rect);
 }

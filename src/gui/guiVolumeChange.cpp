@@ -73,7 +73,7 @@ void GUIVolumeChange::regenerateGui(v2u screensize)
 		recti rect(0, 0, 300 * s, 20 * s);
 		rect = rect + v2i(size.X / 2 - 150 * s, size.Y / 2 - 70 * s);
 
-		StaticText::add(Environment, fwgettext("Sound Volume: %d%%", volume),
+        Environment->addStaticText(fwgettext("Sound Volume: %d%%", volume).c_str(),
 				rect, false, true, this, ID_soundText);
 	}
 	{
@@ -85,8 +85,8 @@ void GUIVolumeChange::regenerateGui(v2u screensize)
 	{
 		recti rect(0, 0, 300 * s, 20 * s);
 		rect = rect + v2i(size.X / 2 - 150 * s, size.Y / 2);
-		auto e = make_irr<GUIScrollBar>(Environment, this,
-                ID_soundSlider, rect, true, false);
+        auto e = dynamic_cast<GUIScrollBar *>(Environment->addScrollBar(
+            true, rect, this, ID_soundSlider));
 		e->setMax(100);
 		e->setPos(volume);
 	}
@@ -136,7 +136,7 @@ bool GUIVolumeChange::OnEvent(const core::Event& event)
 		}
 
 		if (event.GUI.Type == EGET_BUTTON_CLICKED) {
-            if (event.GUI.Caller == ID_soundExitButton->getID()) {
+            if (event.GUI.Caller.value() == ID_soundExitButton) {
 				quitMenu();
 				return true;
 			}
@@ -145,7 +145,7 @@ bool GUIVolumeChange::OnEvent(const core::Event& event)
 
 		if (event.GUI.Type == EGET_ELEMENT_FOCUS_LOST
 				&& isVisible()) {
-            if (!canTakeFocus(event.GUI.Element.value())) {
+            if (!canTakeFocus(Environment->getRootGUIElement()->getElementFromId(event.GUI.Element.value()))) {
 				infostream << "GUIVolumeChange: Not allowing focus change."
 				<< std::endl;
 				// Returning true disables focus change
@@ -153,8 +153,9 @@ bool GUIVolumeChange::OnEvent(const core::Event& event)
 			}
 		}
 		if (event.GUI.Type == EGET_SCROLL_BAR_CHANGED) {
-            if (event.GUI.Caller == ID_soundSlider->getID()) {
-				s32 pos = static_cast<GUIScrollBar *>(event.GUI.Caller)->getPos();
+            if (event.GUI.Caller.value() == ID_soundSlider) {
+                s32 pos = static_cast<GUIScrollBar *>(
+                    Environment->getRootGUIElement()->getElementFromId(event.GUI.Caller.value()))->getPos();
 				g_settings->setFloat("sound_volume", (float) pos / 100);
 
 				gui::IGUIElement *e = getElementFromId(ID_soundText);

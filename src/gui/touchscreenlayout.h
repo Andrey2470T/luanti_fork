@@ -4,21 +4,19 @@
 
 #pragma once
 
-#include "irr_ptr.h"
-#include "irrlichttypes_bloated.h"
-#include "rect.h"
+#include <BasicIncludes.h>
+#include <Utils/Rect.h>
+#include <Image/Image.h>
 #include <iostream>
 #include <unordered_map>
 
-class ISimpleTextureSource;
-namespace irr::gui
+namespace gui
 {
 	class IGUIStaticText;
 }
-namespace irr::video
-{
-	class ITexture;
-}
+
+class RenderSystem;
+class ResourceCache;
 
 enum touch_gui_button_id : u8
 {
@@ -73,16 +71,16 @@ struct ButtonMeta {
 struct ButtonLayout {
 	static bool isButtonAllowed(touch_gui_button_id id);
 	static bool isButtonRequired(touch_gui_button_id id);
-	static s32 getButtonSize(v2u screensize);
+	static s32 getButtonSize(v2u screensize, f32 scalefactor);
 	static ButtonLayout loadFromSettings();
 
-	static img::Image *getTexture(touch_gui_button_id btn, ISimpleTextureSource *tsrc);
+    static img::Image *getTexture(touch_gui_button_id btn, ResourceCache *cache);
 	static void clearTextureCache();
 
 	std::unordered_map<touch_gui_button_id, ButtonMeta> layout;
 
 	recti getRect(touch_gui_button_id btn,
-			v2u screensize, s32 button_size, ISimpleTextureSource *tsrc);
+            v2u screensize, s32 button_size, ResourceCache *cache);
 
 	std::vector<touch_gui_button_id> getMissingButtons();
 
@@ -92,10 +90,13 @@ struct ButtonLayout {
 	static const ButtonLayout predefined;
 
 private:
-	static std::unordered_map<touch_gui_button_id, irr_ptr<img::Image>> texture_cache;
+    static std::unordered_map<touch_gui_button_id, img::Image *> texture_cache;
 };
 
-void layout_button_grid(v2u screensize, ISimpleTextureSource *tsrc,
+void layout_button_grid(
+        v2u screensize,
+        f32 scalefactor,
+        ResourceCache *cache,
 		const std::vector<touch_gui_button_id> &buttons,
 		// pos refers to the center of the button.
 		const std::function<void(touch_gui_button_id btn, v2i pos, recti rect)> &callback);

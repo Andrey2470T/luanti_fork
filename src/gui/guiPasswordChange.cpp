@@ -78,7 +78,7 @@ void GUIPasswordChange::regenerateGui(v2u screensize)
 	{
 		recti rect(0, 0, 150 * s, 20 * s);
 		rect += topleft_client + v2i(25 * s, ypos + 6 * s);
-		gui::StaticText::add(Environment, wstrgettext("Old Password"), rect,
+        Environment->addStaticText(wstrgettext("Old Password").c_str(), rect,
 				false, true, this, -1);
 	}
 	{
@@ -93,7 +93,7 @@ void GUIPasswordChange::regenerateGui(v2u screensize)
 	{
 		recti rect(0, 0, 150 * s, 20 * s);
 		rect += topleft_client + v2i(25 * s, ypos + 6 * s);
-		gui::StaticText::add(Environment, wstrgettext("New Password"), rect,
+        Environment->addStaticText(wstrgettext("New Password").c_str(), rect,
 				false, true, this, -1);
 	}
 	{
@@ -107,7 +107,7 @@ void GUIPasswordChange::regenerateGui(v2u screensize)
 	{
 		recti rect(0, 0, 150 * s, 20 * s);
 		rect += topleft_client + v2i(25 * s, ypos + 6 * s);
-		gui::StaticText::add(Environment, wstrgettext("Confirm Password"), rect,
+        Environment->addStaticText(wstrgettext("Confirm Password").c_str(), rect,
 				false, true, this, -1);
 	}
 	{
@@ -136,8 +136,8 @@ void GUIPasswordChange::regenerateGui(v2u screensize)
 	{
 		recti rect(0, 0, 300 * s, 20 * s);
 		rect += topleft_client + v2i(35 * s, ypos);
-		IGUIElement *e = gui::StaticText::add(
-				Environment, wstrgettext("Passwords do not match!"), rect,
+        IGUIElement *e = Environment->addStaticText(
+                wstrgettext("Passwords do not match!").c_str(), rect,
 				false, true, this, ID_message);
 		e->setVisible(false);
 	}

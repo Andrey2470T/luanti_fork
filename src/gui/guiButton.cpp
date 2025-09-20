@@ -38,7 +38,7 @@ GUIButton::GUIButton(IGUIEnvironment* environment, IGUIElement* parent,
 	for (size_t i = 0; i < 4; i++) {
 		Colors[i] = Environment->getSkin()->getColor((EGUI_DEFAULT_COLOR)i);
 	}
-	StaticText = gui::StaticText::add(Environment, Text.c_str(), recti(0,0,rectangle.getWidth(),rectangle.getHeight()), false, false, this, id);
+    StaticText = Environment->addStaticText(Text.c_str(), recti(0,0,rectangle.getWidth(),rectangle.getHeight()), false, false, this, id);
 	StaticText->setTextAlignment(EGUIA_CENTER, EGUIA_CENTER);
 	// END PATCH
 

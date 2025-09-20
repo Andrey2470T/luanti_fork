@@ -3,14 +3,13 @@
 // Copyright (C) 2024 grorp, Gregor Parzefall <grorp@posteo.de>
 
 #include "touchscreenlayout.h"
-#include "client/renderingengine.h"
-#include "client/texturesource.h"
+#include "client/media/resource.h"
 #include "convert_json.h"
 #include "gettext.h"
 #include "settings.h"
 #include <json/json.h>
 
-#include "render::TTFont.h"
+#include <Render/TTFont.h>
 #include "IGUIStaticText.h"
 
 const char *button_names[] = {
@@ -132,11 +131,9 @@ bool ButtonLayout::isButtonRequired(touch_gui_button_id id)
 	return id == overflow_id;
 }
 
-s32 ButtonLayout::getButtonSize(v2u screensize)
+s32 ButtonLayout::getButtonSize(v2u screensize, f32 scalefactor)
 {
-	return std::min(screensize.Y / 4.5f,
-			RenderingEngine::getDisplayDensity() * 65.0f *
-					g_settings->getFloat("hud_scaling"));
+	return std::min(screensize.Y / 4.5f, scalefactor);
 }
 
 const ButtonLayout ButtonLayout::predefined {{
@@ -184,21 +181,20 @@ ButtonLayout ButtonLayout::loadFromSettings()
 	return layout;
 }
 
-std::unordered_map<touch_gui_button_id, irr_ptr<img::Image>> ButtonLayout::texture_cache;
+std::unordered_map<touch_gui_button_id, img::Image *> ButtonLayout::texture_cache;
 
-img::Image *ButtonLayout::getTexture(touch_gui_button_id btn, ISimpleTextureSource *tsrc)
+img::Image *ButtonLayout::getTexture(touch_gui_button_id btn, ResourceCache *cache)
 {
 	if (texture_cache.count(btn) > 0)
-		return texture_cache.at(btn).get();
+        return texture_cache.at(btn);
 
-	img::Image *tex = tsrc->getTexture(button_image_names[btn]);
+    img::Image *tex = cache->getOrLoad<img::Image>(ResourceType::IMAGE, button_image_names[btn]);
 	if (!tex)
 		// necessary in the mainmenu
-		tex = tsrc->getTexture(porting::path_share + "/textures/base/pack/" +
+        tex = cache->getOrLoad<img::Image>(ResourceType::IMAGE, porting::path_share + "/textures/base/pack/" +
 				button_image_names[btn]);
-	irr_ptr<img::Image> ptr;
-	ptr.grab(tex);
-	texture_cache[btn] = ptr;
+
+    texture_cache[btn] = tex;
 	return tex;
 }
 
@@ -208,12 +204,12 @@ void ButtonLayout::clearTextureCache()
 }
 
 recti ButtonLayout::getRect(touch_gui_button_id btn,
-		v2u screensize, s32 button_size, ISimpleTextureSource *tsrc)
+        v2u screensize, s32 button_size, ResourceCache *cache)
 {
 	const ButtonMeta &meta = layout.at(btn);
 	v2i pos = meta.getPos(screensize, button_size);
 
-	v2u orig_size = getTexture(btn, tsrc)->getSize();
+    v2u orig_size = getTexture(btn, cache)->getSize();
 	v2i size((button_size * orig_size.X) / orig_size.Y, button_size);
 
 	return recti(pos - size / 2, v2i(size));
@@ -294,7 +290,10 @@ void ButtonLayout::deserializeJson(std::istream &is)
 	}
 }
 
-void layout_button_grid(v2u screensize, ISimpleTextureSource *tsrc,
+void layout_button_grid(
+        v2u screensize,
+        f32 scalefactor,
+        ResourceCache *cache,
 		const std::vector<touch_gui_button_id> &buttons,
 		// pos refers to the center of the button
 		const std::function<void(touch_gui_button_id btn, v2i pos, recti rect)> &callback)
@@ -310,12 +309,12 @@ void layout_button_grid(v2u screensize, ISimpleTextureSource *tsrc,
 			cols++;
 	}
 
-	s32 button_size = ButtonLayout::getButtonSize(screensize);
+    s32 button_size = ButtonLayout::getButtonSize(screensize, scalefactor);
 	v2i spacing(screensize.X / (cols + 1), screensize.Y / (rows + 1));
 	v2i pos(spacing);
 
 	for (touch_gui_button_id btn : buttons) {
-		v2u orig_size = ButtonLayout::getTexture(btn, tsrc)->getSize();
+        v2u orig_size = ButtonLayout::getTexture(btn, cache)->getSize();
 		v2i size((button_size * orig_size.X) / orig_size.Y, button_size);
 
 		recti rect(pos - size / 2, v2i(size));
@@ -337,9 +336,9 @@ void make_button_grid_title(gui::IGUIStaticText *text, touch_gui_button_id btn, 
 	std::wstring str = wstrgettext(button_titles[btn]);
 	text->setText(str.c_str());
 	render::TTFont *font = text->getActiveFont();
-	v2u dim = font->getDimension(str.c_str());
+    v2u dim = font->getTextSize(str.c_str());
 	dim = v2u(dim.X * 1.25f, dim.Y * 1.25f); // avoid clipping
 	text->setRelativePosition(recti(pos.X - dim.X / 2, rect.LRC.Y,
 			pos.X + dim.X / 2, rect.LRC.Y + dim.Y));
-	text->setTextAlignment(gui::EGUIA_CENTER, gui::GUIAlignment::UpperLeft);
+    text->setTextAlignment(EGUIA_CENTER, GUIAlignment::UpperLeft);
 }

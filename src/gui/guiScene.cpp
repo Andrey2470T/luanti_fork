@@ -37,8 +37,8 @@ GUIScene::GUIScene(Client *client, gui::IGUIEnvironment *env,
 
     std::string shadername = m_model->getSkeleton() ? "object_skinned" : "object";
     m_layer->shader = env->getResourceCache()->getOrLoad<render::Shader>(ResourceType::SHADER, shadername);
-    m_layer->textures.push_back(dynamic_cast<render::Texture *>(
-        env->getRenderSystem()->getAnimationManager()->getBonesTexture()->getGLTexture()));
+    m_layer->textures.push_back(
+        env->getRenderSystem()->getAnimationManager()->getBonesTexture()->getGLTexture());
     //m_smgr->getParameters()->setAttribute(scene::ALLOW_ZWRITE_ON_TRANSPARENT, true);
 }
 

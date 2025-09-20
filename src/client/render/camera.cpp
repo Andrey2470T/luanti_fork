@@ -1,5 +1,6 @@
 #include "camera.h"
 #include "client/core/client.h"
+#include <Utils/Plane3D.h>
 
 #define CAMERA_OFFSET_STEP 200
 
@@ -96,4 +97,30 @@ bool Camera::frustumCull(const v3f &position, f32 radiusSq) const
             return true;
     }
     return false;
+}
+
+//! Returns a 3d ray which would go through the 2d screen coordinates.
+line3f Camera::getRayFromScreenCoordinates(const v2u &wndsize, const v2i &pos) const
+{
+    line3f ln(0, 0, 0, 0, 0, 0);
+
+    f32 frustum_length = getFarValue();
+    f32 far_width = tanf(getFovX()) * frustum_length * 2.0f;
+    f32 far_height = tanf(getFovY()) * frustum_length * 2.0f;
+
+    v3f farLeftUp;
+    m_frustum.Planes[FP_FAR].getIntersectionWithPlanes(
+        m_frustum.Planes[FP_TOP], m_frustum.Planes[FP_LEFT], farLeftUp);
+
+    f32 dx = pos.X / (f32)wndsize.X;
+    f32 dy = pos.Y / (f32)wndsize.Y;
+
+    if (isOrthogonal())
+        ln.Start = m_position + (far_width * (dx - 0.5f)) + (far_height * (dy - 0.5f));
+    else
+        ln.Start = m_position;
+
+    ln.End = farLeftUp + (far_width * dx) + (far_height * dy);
+
+    return ln;
 }

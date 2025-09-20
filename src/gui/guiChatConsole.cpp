@@ -70,12 +70,6 @@ GUIChatConsole::GUIChatConsole(
     m_background_color.R(255);
     m_background_color.G(255);
     m_background_color.B(255);
-    /*else {
-		v3f console_color = g_settings->getV3F("console_color").value_or(v3f());
-		m_background_color.setRed(clamp_u8(myround(console_color.X)));
-		m_background_color.setGreen(clamp_u8(myround(console_color.Y)));
-		m_background_color.setBlue(clamp_u8(myround(console_color.Z)));
-    }*/
 
 	const u16 chat_font_size = g_settings->getU16("chat_font_size");
 

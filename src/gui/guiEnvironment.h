@@ -79,7 +79,7 @@ public:
 
 	//! adds a scrollbar. The returned pointer must not be dropped.
     virtual IGUIElement *addScrollBar(bool horizontal, const recti &rectangle,
-			IGUIElement *parent = 0, s32 id = -1) override;
+            IGUIElement *parent = 0, s32 id = -1, bool auto_scale = false) override;
 
 	//! Adds an image element.
 	virtual IGUIImage *addImage(img::Image *image, v2i pos,

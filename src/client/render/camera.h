@@ -187,4 +187,7 @@ public:
     void updateMatrices();
 
     bool frustumCull(const v3f &position, f32 radiusSq) const;
+
+    //! Returns a 3d ray which would go through the 2d screen coordinates.
+    line3f getRayFromScreenCoordinates(const v2u &wndsize, const v2i &pos) const;
 };

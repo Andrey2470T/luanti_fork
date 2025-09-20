@@ -5,31 +5,28 @@
 // Copyright (C) 2024 grorp, Gregor Parzefall
 
 #include "touchcontrols.h"
+#include "client/event/keypress.h"
+#include "gui/IGUIEnvironment.h"
 #include "touchscreenlayout.h"
 
 #include "gettime.h"
-#include "irr_v2d.h"
 #include "log.h"
 #include "porting.h"
 #include "settings.h"
-#include "client/guiscalingfilter.h"
-#include "client/keycode.h"
-#include "client/renderingengine.h"
-#include "client/texturesource.h"
+#include "client/render/rendersystem.h"
+#include "client/media/resource.h"
 #include "util/numeric.h"
-#include "irr_gui_ptr.h"
 #include "IGUIImage.h"
 #include "IGUIStaticText.h"
-#include "render::TTFont.h"
-#include <IrrlichtDevice.h>
-#include <ISceneCollisionManager.h>
+#include <Render/TTFont.h>
+#include "client/render/camera.h"
 
 #include <iostream>
 #include <algorithm>
 
 TouchControls *g_touchcontrols;
 
-void TouchControls::emitKeyboardEvent(EKEY_CODE keycode, bool pressed)
+void TouchControls::emitKeyboardEvent(KEY_CODE keycode, bool pressed)
 {
 	core::Event e{};
 	e.Type            = EET_KEY_INPUT_EVENT;
@@ -43,9 +40,7 @@ void TouchControls::emitKeyboardEvent(EKEY_CODE keycode, bool pressed)
 
 void TouchControls::loadButtonTexture(IGUIImage *gui_button, const std::string &path)
 {
-	auto rect = gui_button->getRelativePosition();
-	img::Image *texture = guiScalingImageButton(m_device->getVideoDriver(),
-			m_texturesource->getTexture(path), rect.getWidth(), rect.getHeight());
+    img::Image *texture = m_cache->getOrLoad<img::Image>(ResourceType::IMAGE, path);
 	gui_button->setImage(texture);
 	gui_button->setScaleImage(true);
 }
@@ -60,11 +55,11 @@ void TouchControls::buttonEmitAction(button_info &btn, bool action)
 	if (action) {
 		if (btn.toggleable == button_info::FIRST_TEXTURE) {
 			btn.toggleable = button_info::SECOND_TEXTURE;
-			loadButtonTexture(btn.gui_button.get(), btn.toggle_textures[1]);
+            loadButtonTexture(btn.gui_button, btn.toggle_textures[1]);
 
 		} else if (btn.toggleable == button_info::SECOND_TEXTURE) {
 			btn.toggleable = button_info::FIRST_TEXTURE;
-			loadButtonTexture(btn.gui_button.get(), btn.toggle_textures[0]);
+            loadButtonTexture(btn.gui_button, btn.toggle_textures[0]);
 		}
 	}
 }
@@ -75,7 +70,7 @@ bool TouchControls::buttonsHandlePress(std::vector<button_info> &buttons, size_t
 		return false;
 
 	for (button_info &btn : buttons) {
-		if (btn.gui_button.get() == element) {
+        if (btn.gui_button == element) {
 			assert(std::find(btn.pointer_ids.begin(), btn.pointer_ids.end(), pointer_id) == btn.pointer_ids.end());
 			btn.pointer_ids.push_back(pointer_id);
 
@@ -90,7 +85,6 @@ bool TouchControls::buttonsHandlePress(std::vector<button_info> &buttons, size_t
 
 	return false;
 }
-
 
 bool TouchControls::buttonsHandleRelease(std::vector<button_info> &buttons, size_t pointer_id)
 {
@@ -131,9 +125,9 @@ bool TouchControls::buttonsStep(std::vector<button_info> &buttons, float dtime)
 	return has_pointers;
 }
 
-static EKEY_CODE id_to_keycode(touch_gui_button_id id)
+static KEY_CODE id_to_keycode(touch_gui_button_id id)
 {
-	EKEY_CODE code;
+    KEY_CODE code;
 	// ESC isn't part of the keymap.
 	if (id == exit_id)
 		return core::KEY_ESCAPE;
@@ -201,19 +195,22 @@ static EKEY_CODE id_to_keycode(touch_gui_button_id id)
 }
 
 
-TouchControls::TouchControls(IrrlichtDevice *device, ISimpleTextureSource *tsrc):
-		m_device(device),
-		m_guienv(device->getGUIEnvironment()),
-		m_receiver(device->getEventReceiver()),
-		m_texturesource(tsrc)
+TouchControls::TouchControls(RenderSystem *rndsys, ResourceCache *cache,
+    IEventReceiver *receiver, Camera *camera):
+        m_rndsys(rndsys),
+        m_window(rndsys->getWindow()),
+        m_guienv(rndsys->getGUIEnvironment()),
+        m_receiver(receiver),
+        m_cache(cache),
+        m_camera(camera)
 {
 	m_touchscreen_threshold = g_settings->getU16("touchscreen_threshold");
 	m_long_tap_delay = g_settings->getU16("touch_long_tap_delay");
 	m_fixed_joystick = g_settings->getBool("fixed_virtual_joystick");
 	m_joystick_triggers_aux1 = g_settings->getBool("virtual_joystick_triggers_aux1");
 
-	m_screensize = m_device->getVideoDriver()->getScreenSize();
-	m_button_size = ButtonLayout::getButtonSize(m_screensize);
+    m_wndsize = m_rndsys->getWindowSize();
+    m_button_size = ButtonLayout::getButtonSize(m_wndsize, rndsys->getScaleFactor());
 	applyLayout(ButtonLayout::loadFromSettings());
 }
 
@@ -231,49 +228,48 @@ void TouchControls::applyLayout(const ButtonLayout &layout)
 	// Initialize joystick display "button".
 	// Joystick is placed on the bottom left of screen.
 	if (m_fixed_joystick) {
-		m_joystick_btn_off = grab_gui_element<IGUIImage>(makeButtonDirect(joystick_off_id,
+        m_joystick_btn_off = makeButtonDirect(joystick_off_id,
 				recti(m_button_size,
-						m_screensize.Y - m_button_size * 4,
+                        m_wndsize.Y - m_button_size * 4,
 						m_button_size * 4,
-						m_screensize.Y - m_button_size), true));
+                        m_wndsize.Y - m_button_size), true);
 	} else {
-		m_joystick_btn_off = grab_gui_element<IGUIImage>(makeButtonDirect(joystick_off_id,
+        m_joystick_btn_off = makeButtonDirect(joystick_off_id,
 				recti(m_button_size,
-						m_screensize.Y - m_button_size * 3,
+                        m_wndsize.Y - m_button_size * 3,
 						m_button_size * 3,
-						m_screensize.Y - m_button_size), true));
+                        m_wndsize.Y - m_button_size), true);
 	}
 
-	m_joystick_btn_bg = grab_gui_element<IGUIImage>(makeButtonDirect(joystick_bg_id,
+    m_joystick_btn_bg = makeButtonDirect(joystick_bg_id,
 			recti(m_button_size,
-					m_screensize.Y - m_button_size * 4,
+                    m_wndsize.Y - m_button_size * 4,
 					m_button_size * 4,
-					m_screensize.Y - m_button_size), false));
+                    m_wndsize.Y - m_button_size), false);
 
-	m_joystick_btn_center = grab_gui_element<IGUIImage>(makeButtonDirect(joystick_center_id,
-			recti(0, 0, m_button_size, m_button_size), false));
+    m_joystick_btn_center = makeButtonDirect(joystick_center_id,
+            recti(0, 0, m_button_size, m_button_size), false);
 
 	for (const auto &[id, meta] : m_layout.layout) {
 		if (!mayAddButton(id))
 			continue;
 
-		recti rect = m_layout.getRect(id, m_screensize, m_button_size, m_texturesource);
+        recti rect = m_layout.getRect(id, m_wndsize, m_button_size, m_cache);
 		if (id == toggle_chat_id)
 			// Chat is shown by default, so chat_hide_btn.png is shown first.
 			addToggleButton(m_buttons, id, "chat_hide_btn.png",
 					"chat_show_btn.png", rect, true);
 		else if (id == overflow_id)
-			m_overflow_btn = grab_gui_element<IGUIImage>(
-					makeButtonDirect(id, rect, true));
+            m_overflow_btn = makeButtonDirect(id, rect, true);
 		else
 			addButton(m_buttons, id, button_image_names[id], rect, true);
 	}
 
 	IGUIStaticText *background = m_guienv->addStaticText(L"",
-			recti(v2i(0, 0), dimension2du(m_screensize)));
-	background->setBackgroundColor(img::color8(140, 0, 0, 0));
+            recti(v2i(0, 0), m_wndsize.X, m_wndsize.Y));
+    background->setBackgroundColor(img::color8(img::PF_RGBA8, 0, 0, 0, 140));
 	background->setVisible(false);
-	m_overflow_bg = grab_gui_element<IGUIStaticText>(background);
+    m_overflow_bg = background;
 
 	auto overflow_buttons = m_layout.getMissingButtons();
 	overflow_buttons.erase(std::remove_if(
@@ -284,7 +280,7 @@ void TouchControls::applyLayout(const ButtonLayout &layout)
 				return !mayAddButton(id) || id == overflow_id;
 			}), overflow_buttons.end());
 
-	layout_button_grid(m_screensize, m_texturesource, overflow_buttons,
+    layout_button_grid(m_wndsize, m_rndsys->getScaleFactor(), m_cache, overflow_buttons,
 			[&] (touch_gui_button_id id, v2i pos, recti rect) {
 		if (id == toggle_chat_id)
 			// Chat is shown by default, so chat_hide_btn.png is shown first.
@@ -296,15 +292,14 @@ void TouchControls::applyLayout(const ButtonLayout &layout)
 		IGUIStaticText *text = m_guienv->addStaticText(L"", recti());
 		make_button_grid_title(text, id, pos, rect);
 		text->setVisible(false);
-		m_overflow_button_titles.push_back(grab_gui_element<IGUIStaticText>(text));
+        m_overflow_button_titles.push_back(text);
 
 		rect.addInternalPoint(text->getRelativePosition().ULC);
 		rect.addInternalPoint(text->getRelativePosition().LRC);
 		m_overflow_button_rects.push_back(rect);
 	});
 
-	m_status_text = grab_gui_element<IGUIStaticText>(
-			m_guienv->addStaticText(L"", recti(), false, false));
+    m_status_text = m_guienv->addStaticText(L"", recti(), false, false);
 	m_status_text->setVisible(false);
 
 	// applyLayout can be called at any time, also e.g. while the overflow menu
@@ -337,7 +332,7 @@ void TouchControls::addButton(std::vector<button_info> &buttons, touch_gui_butto
 
 	button_info &btn = buttons.emplace_back();
 	btn.keycode = id_to_keycode(id);
-	btn.gui_button = grab_gui_element<IGUIImage>(btn_gui_button);
+    btn.gui_button = btn_gui_button;
 }
 
 void TouchControls::addToggleButton(std::vector<button_info> &buttons, touch_gui_button_id id,
@@ -406,7 +401,7 @@ void TouchControls::handleReleaseEvent(size_t pointer_id)
 				m_tap_state != TapState::LongTap) {
 			m_tap_state = TapState::ShortTap;
 		} else {
-			m_tap_state = TapState::None;
+            m_tap_state = TapState::No;
 		}
 	}
 
@@ -444,10 +439,10 @@ void TouchControls::translateEvent(const core::Event &event)
 	const s32 Y = event.TouchInput.Y;
 	const v2i touch_pos = v2i(X, Y);
 	const v2i fixed_joystick_center = v2i(half_button_size * 5,
-			m_screensize.Y - half_button_size * 5);
+            m_wndsize.Y - half_button_size * 5);
 	const v2i dir_fixed = touch_pos - fixed_joystick_center;
 
-	if (event.TouchInput.Type == ETIE_PRESSED_DOWN) {
+    if (event.TouchInput.Type == TIE_PRESSED_DOWN) {
 		size_t pointer_id = event.TouchInput.ID;
 		m_pointer_downpos[pointer_id] = touch_pos;
 		m_pointer_pos[pointer_id] = touch_pos;
@@ -458,14 +453,14 @@ void TouchControls::translateEvent(const core::Event &event)
 
 		// handle overflow menu
 		if (!m_overflow_open) {
-			if (element == m_overflow_btn.get())  {
+            if (element == m_overflow_btn)  {
 				toggleOverflowMenu();
 				return;
 			}
 		} else {
 			for (size_t i = 0; i < m_overflow_buttons.size(); i++) {
 				if (m_overflow_button_rects[i].isPointInside(touch_pos)) {
-					element = m_overflow_buttons[i].gui_button.get();
+                    element = m_overflow_buttons[i].gui_button;
 					break;
 				}
 			}
@@ -493,7 +488,7 @@ void TouchControls::translateEvent(const core::Event &event)
 		// Select joystick when joystick tapped (fixed joystick position) or
 		// when left 1/3 of screen dragged (free joystick position)
 		if ((m_fixed_joystick && dir_fixed.getLengthSQ() <= fixed_joystick_range_sq) ||
-				(!m_fixed_joystick && X < m_screensize.X / 3.0f)) {
+                (!m_fixed_joystick && X < m_wndsize.X / 3.0f)) {
 			// If we don't already have a starting point for joystick, make this the one.
 			if (!m_has_joystick_id) {
 				m_has_joystick_id           = true;
@@ -525,11 +520,11 @@ void TouchControls::translateEvent(const core::Event &event)
 			}
 		}
 	}
-	else if (event.TouchInput.Type == ETIE_LEFT_UP) {
+    else if (event.TouchInput.Type == TIE_LEFT_UP) {
 		verbosestream << "Up event for pointerid: " << event.TouchInput.ID << std::endl;
 		handleReleaseEvent(event.TouchInput.ID);
 	} else {
-		assert(event.TouchInput.Type == ETIE_MOVED);
+        assert(event.TouchInput.Type == TIE_MOVED);
 
 		if (!(m_has_joystick_id && m_fixed_joystick) &&
 				m_pointer_pos[event.TouchInput.ID] == touch_pos)
@@ -547,7 +542,7 @@ void TouchControls::translateEvent(const core::Event &event)
 
 			// update camera_yaw and camera_pitch
 			const double d = g_settings->getFloat("touchscreen_sensitivity", 0.001f, 10.0f)
-					* 6.0f / RenderingEngine::getDisplayDensity();
+                    * 6.0f / m_rndsys->getDisplayDensity();
 			m_camera_yaw_change -= dir_free.X * d;
 			m_camera_pitch_change += dir_free.Y * d;
 
@@ -610,11 +605,11 @@ void TouchControls::applyJoystickStatus()
 
 void TouchControls::step(float dtime)
 {
-	v2u screensize = m_device->getVideoDriver()->getScreenSize();
-	s32 button_size = ButtonLayout::getButtonSize(screensize);
+    v2u wndsize = m_rndsys->getWindowSize();
+    s32 button_size = ButtonLayout::getButtonSize(wndsize, m_rndsys->getScaleFactor());
 
-	if (m_screensize != screensize || m_button_size != button_size) {
-		m_screensize = screensize;
+    if (m_wndsize != wndsize || m_button_size != button_size) {
+        m_wndsize = wndsize;
 		m_button_size = button_size;
 		applyLayout(m_layout);
 	}
@@ -627,7 +622,7 @@ void TouchControls::step(float dtime)
 	applyJoystickStatus();
 
 	// if a new placed pointer isn't moved for some time start digging
-	if (m_has_move_id && !m_move_has_really_moved && m_tap_state == TapState::None) {
+    if (m_has_move_id && !m_move_has_really_moved && m_tap_state == TapState::No) {
 		u64 delta = porting::getDeltaMs(m_move_downtime, porting::getTimeMs());
 
 		if (delta > m_long_tap_delay) {
@@ -644,10 +639,7 @@ void TouchControls::step(float dtime)
 	// it's last in-world position when the player doesn't need it.
 	if (!m_draw_crosshair && (m_has_move_id || m_had_move_id)) {
 		v2i pointer_pos = getPointerPos();
-		m_shootline = m_device
-				->getSceneManager()
-				->getSceneCollisionManager()
-				->getRayFromScreenCoordinates(pointer_pos);
+        m_shootline = m_camera->getRayFromScreenCoordinates(wndsize, pointer_pos);
 	}
 	m_had_move_id = false;
 }
@@ -732,13 +724,13 @@ void TouchControls::show()
 v2i TouchControls::getPointerPos()
 {
 	if (m_draw_crosshair)
-		return v2i(m_screensize.X / 2, m_screensize.Y / 2);
+        return v2i(m_wndsize.X / 2, m_wndsize.Y / 2);
 	// We can't just use m_pointer_pos[m_move_id] because applyContextControls
 	// may emit release events after m_pointer_pos[m_move_id] is erased.
 	return m_move_pos;
 }
 
-void TouchControls::emitMouseEvent(EMOUSE_INPUT_EVENT type)
+void TouchControls::emitMouseEvent(MouseInputEventType type)
 {
 	v2i pointer_pos = getPointerPos();
 
@@ -780,7 +772,7 @@ void TouchControls::applyContextControls(const TouchInteractionMode &mode)
 				// The button isn't currently pressed, we can press it.
 				m_dig_pressed_until = now + SIMULATED_CLICK_DURATION_MS;
 				// We're done with this short tap.
-				m_tap_state = TapState::None;
+                m_tap_state = TapState::No;
 			}  else {
 				// The button is already pressed, perhaps due to another short tap.
 				// Release it now, press it again during the next client step.
@@ -793,7 +785,7 @@ void TouchControls::applyContextControls(const TouchInteractionMode &mode)
 				// The button isn't currently pressed, we can press it.
 				m_place_pressed_until = now + SIMULATED_CLICK_DURATION_MS;
 				// We're done with this short tap.
-				m_tap_state = TapState::None;
+                m_tap_state = TapState::No;
 			}  else {
 				// The button is already pressed, perhaps due to another short tap.
 				// Release it now, press it again during the next client step.
@@ -811,7 +803,7 @@ void TouchControls::applyContextControls(const TouchInteractionMode &mode)
 			target_dig_pressed = true;
 		break;
 
-	case TapState::None:
+    case TapState::No:
 		break;
 	}
 

@@ -18,7 +18,7 @@ namespace gui
 //! constructor
 CGUICheckBox::CGUICheckBox(bool checked, IGUIEnvironment *environment, IGUIElement *parent, s32 id, recti rectangle) :
         IGUICheckBox(environment, parent, id, rectangle), CheckTime(0), Pressed(false), Checked(checked), Border(false), Background(false),
-        Sprite(std::make_unique<UISprite>(nullptr, Environment->getRenderSystem()->getRenderer(), environment->getResourceCache())),
+        Sprite(std::make_unique<UIRects>(Environment->getRenderSystem(), 0)),
         Text(std::make_unique<UITextSprite>(environment->getRenderSystem()->getFontManager(), EnrichedString(),
             environment->getRenderSystem()->getRenderer(), environment->getResourceCache()))
 {

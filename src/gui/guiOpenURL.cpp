@@ -99,8 +99,8 @@ void GUIOpenURLMenu::regenerateGui(v2u screensize)
 		std::wstring title = ok
 				? wstrgettext("Open URL?")
 				: wstrgettext("Unable to open URL");
-		gui::StaticText::add(Environment, title, rect,
-				false, true, this, -1);
+        Environment->addStaticText(title.c_str(), rect,
+            false, true, this, -1);
 	}
 
 	ypos += 50 * s;
@@ -179,7 +179,7 @@ bool GUIOpenURLMenu::OnEvent(const core::Event &event)
 	if (event.Type == EET_GUI_EVENT) {
 		if (event.GUI.Type == EGET_ELEMENT_FOCUS_LOST &&
 				isVisible()) {
-            if (!canTakeFocus(event.GUI.Element.value())) {
+            if (!canTakeFocus(Environment->getRootGUIElement()->getElementFromId(event.GUI.Element.value()))) {
 				infostream << "GUIOpenURLMenu: Not allowing focus change."
 					<< std::endl;
 				// Returning true disables focus change

@@ -192,7 +192,7 @@ public:
 	occurred. This pointer should not be dropped. See
 	IReferenceCounted::drop() for more information. */
     virtual IGUIElement *addScrollBar(bool horizontal, const recti &rectangle,
-			IGUIElement *parent = 0, s32 id = -1) = 0;
+            IGUIElement *parent = 0, s32 id = -1, bool auto_scale = false) = 0;
 
 	//! Adds an image element.
 	/** \param image Image to be displayed.

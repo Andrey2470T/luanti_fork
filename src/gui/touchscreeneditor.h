@@ -10,19 +10,20 @@
 #include <memory>
 #include <unordered_map>
 
-class ISimpleTextureSource;
-namespace irr::gui
+namespace gui
 {
 	class IGUIButton;
 	class IGUIImage;
 }
+
+class UIRects;
 
 class GUITouchscreenLayout : public GUIModalMenu
 {
 public:
 	GUITouchscreenLayout(gui::IGUIEnvironment* env,
             gui::IGUIElement* parent, s32 id,
-            IMenuManager *menumgr, ISimpleTextureSource *tsrc);
+            IMenuManager *menumgr);
 	~GUITouchscreenLayout();
 
 	void regenerateGui(v2u screensize);
@@ -34,8 +35,6 @@ protected:
 	std::string getNameByID(s32 id) { return ""; }
 
 private:
-	ISimpleTextureSource *m_tsrc;
-
 	ButtonLayout m_layout;
 	v2u m_last_screensize;
 	s32 m_button_size;
@@ -47,7 +46,7 @@ private:
 	};
 	Mode m_mode = Mode::Default;
 
-	std::unordered_map<touch_gui_button_id, std::shared_ptr<gui::IGUIImage>> m_gui_images;
+    std::unordered_map<touch_gui_button_id, gui::IGUIImage *> m_gui_images;
 	// unused if m_mode == Mode::Add
 	std::unordered_map<touch_gui_button_id, v2i> m_gui_images_target_pos;
 	void clearGUIImages();
@@ -67,16 +66,18 @@ private:
 
 	// add mode
 	ButtonLayout m_add_layout;
-	std::vector<std::shared_ptr<gui::IGUIStaticText>> m_add_button_titles;
+    std::vector<gui::IGUIStaticText *> m_add_button_titles;
 
 	// Menu GUI elements
-	std::shared_ptr<gui::IGUIStaticText> m_gui_help_text;
+    gui::IGUIStaticText *m_gui_help_text;
 
-	std::shared_ptr<gui::IGUIButton> m_gui_add_btn;
-	std::shared_ptr<gui::IGUIButton> m_gui_reset_btn;
-	std::shared_ptr<gui::IGUIButton> m_gui_done_btn;
+    gui::IGUIButton *m_gui_add_btn;
+    gui::IGUIButton *m_gui_reset_btn;
+    gui::IGUIButton *m_gui_done_btn;
 
-	std::shared_ptr<gui::IGUIButton> m_gui_remove_btn;
+    gui::IGUIButton *m_gui_remove_btn;
+
+    std::unique_ptr<UIRects> m_menu;
 
 	void regenerateMenu(v2u screensize);
 };

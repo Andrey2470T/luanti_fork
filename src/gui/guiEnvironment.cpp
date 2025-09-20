@@ -507,13 +507,7 @@ GUISkin *CGUIEnvironment::createSkin()
     render::TTFont *defaultfont = font_mgr->getFontOrCreate(
         render::FontMode::MONO, render::FontStyle::NORMAL);
 
-    //IGUISpriteBank *bank = 0;
     skin->setFont(defaultfont);
-
-    //if (bitfont)
-    //	bank = bitfont->getSpriteBank();
-
-    //skin->setSpriteBank(bank);
 
 	return skin;
 }
@@ -533,9 +527,9 @@ IGUIButton *CGUIEnvironment::addButton(const recti &rectangle, IGUIElement *pare
 }
 
 //! adds a scrollbar. The returned pointer must not be dropped.
-IGUIElement *CGUIEnvironment::addScrollBar(bool horizontal, const recti &rectangle, IGUIElement *parent, s32 id)
+IGUIElement *CGUIEnvironment::addScrollBar(bool horizontal, const recti &rectangle, IGUIElement *parent, s32 id, bool auto_scale)
 {
-    IGUIElement *bar = new GUIScrollBar(this, parent ? parent : this, id, rectangle, horizontal, false);
+    IGUIElement *bar = new GUIScrollBar(this, parent ? parent : this, id, rectangle, horizontal, auto_scale);
 	bar->drop();
 	return bar;
 }
@@ -600,11 +594,8 @@ IGUIListBox *CGUIEnvironment::addListBox(const recti &rectangle,
 	IGUIListBox *b = new CGUIListBox(this, parent ? parent : this, id, rectangle,
 			true, drawBackground, false);
 
-    /*if (CurrentSkin && CurrentSkin->getSpriteBank()) {
+    if (CurrentSkin && CurrentSkin->getSpriteBank())
 		b->setSpriteBank(CurrentSkin->getSpriteBank());
-	} else if (getBuiltInFont() && getBuiltInFont()->getType() == EGFT_BITMAP) {
-		b->setSpriteBank(((render::TTFontBitmap *)getBuiltInFont())->getSpriteBank());
-    }*/
 
 	b->drop();
 	return b;
@@ -694,9 +685,8 @@ render::TTFont *CGUIEnvironment::getFont(const std::string &filename)
 
     auto found_font = std::find(Fonts.begin(), Fonts.end(),
         [filename] (const SFont &font) { return filename == font.NamedPath; });
-    s32 index = std::distance(Fonts.begin(), found_font);
-	if (index != -1)
-		return Fonts[index].Font;
+    if (found_font != Fonts.end())
+        return Fonts[std::distance(Fonts.begin(), found_font)].Font;
 
 	// font doesn't exist, attempt to load it
 
@@ -707,24 +697,19 @@ render::TTFont *CGUIEnvironment::getFont(const std::string &filename)
         return nullptr;
 	}
 
-	render::TTFont *ifont = 0;
+    auto font = ResCache->getOrLoad<render::TTFont>(ResourceType::FONT, filename);
 
-    /*if (!ifont) {
-
-		CGUIFont *font = new CGUIFont(this, f.NamedPath.getPath());
-		ifont = (render::TTFont *)font;
-		if (!font->load(f.NamedPath.getPath())) {
-			font->drop();
-			return 0;
-		}
-	}
+    if (!font) {
+        errorstream << "Could not load font: " << fs::absolute(f.NamedPath) << std::endl;
+        return nullptr;
+    }
 
 	// add to fonts.
 
-    f.Font = ifont;
-    Fonts.push_back(f);*/
+    f.Font = font;
+    Fonts.push_back(f);
 
-	return ifont;
+    return font;
 }
 
 //! add an externally loaded font
@@ -735,9 +720,8 @@ render::TTFont *CGUIEnvironment::addFont(const std::string &name, render::TTFont
         f.NamedPath = name;
         auto found_font = std::find(Fonts.begin(), Fonts.end(),
             [name] (const SFont &font) { return name == font.NamedPath; });
-        s32 index = std::distance(Fonts.begin(), found_font);
-		if (index != -1)
-			return Fonts[index].Font;
+        if (found_font != Fonts.end())
+            return Fonts[std::distance(Fonts.begin(), found_font)].Font;
 		f.Font = font;
 		Fonts.push_back(f);
 	}
@@ -766,9 +750,8 @@ IGUISpriteBank *CGUIEnvironment::getSpriteBank(const std::string &filename)
 
     auto found_bank = std::find(Banks.begin(), Banks.end(),
         [filename] (const SSpriteBank &font) { return filename == font.NamedPath; });
-    s32 index = std::distance(Banks.begin(), found_bank);
-	if (index != -1)
-		return Banks[index].Bank;
+    if (found_bank != Banks.end())
+        return Banks[std::distance(Banks.begin(), found_bank)].Bank;
 
 	// we don't have this sprite bank, we should load it
     if (!fs::exists(fs::absolute(b.NamedPath))) {
@@ -792,8 +775,7 @@ IGUISpriteBank *CGUIEnvironment::addEmptySpriteBank(const std::string &name)
 
     auto found_bank = std::find(Banks.begin(), Banks.end(),
         [name] (const SSpriteBank &font) { return name == font.NamedPath; });
-    s32 index = std::distance(Banks.begin(), found_bank);
-	if (index != -1)
+    if (found_bank != Banks.end())
 		return 0;
 
 	// create a new sprite bank
@@ -859,12 +841,6 @@ void CGUIEnvironment::setFocusBehavior(u32 flags)
 u32 CGUIEnvironment::getFocusBehavior() const
 {
 	return FocusFlags;
-}
-
-//! creates an GUI Environment
-IGUIEnvironment *createGUIEnvironment(RenderSystem *rndsys, ResourceCache *cache)
-{
-    return new CGUIEnvironment(rndsys, rndsys->getWindowSize(), cache);
 }
 
 } // end namespace gui

@@ -42,9 +42,9 @@ public:
 
 protected:
 	//! Breaks the single text line.
-	virtual void breakText();
+    virtual void breakText();
 	//! sets the area of the given line
-	virtual void setTextRect(s32 line);
+    virtual void setTextRect(s32 line);
 	//! calculates the current scroll position
 	void calculateScrollPos();
 	//! calculated the FrameRect

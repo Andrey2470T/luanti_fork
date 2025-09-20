@@ -123,7 +123,7 @@ CGUITabControl::CGUITabControl(IGUIEnvironment *environment,
 		UpButton->setVisible(false);
 		UpButton->setSubElement(true);
         UpButton->setAlignment(EGUIA_LOWERRIGHT, EGUIA_LOWERRIGHT, GUIAlignment::UpperLeft, GUIAlignment::UpperLeft);
-		UpButton->setOverrideFont(Environment->getBuiltInFont());
+        UpButton->setOverrideFont(skin->getFont());
 		UpButton->grab();
 	}
 
@@ -134,7 +134,7 @@ CGUITabControl::CGUITabControl(IGUIEnvironment *environment,
 		DownButton->setVisible(false);
 		DownButton->setSubElement(true);
         DownButton->setAlignment(EGUIA_LOWERRIGHT, EGUIA_LOWERRIGHT, GUIAlignment::UpperLeft, GUIAlignment::UpperLeft);
-		DownButton->setOverrideFont(Environment->getBuiltInFont());
+        DownButton->setOverrideFont(skin->getFont());
 		DownButton->grab();
 	}
 
