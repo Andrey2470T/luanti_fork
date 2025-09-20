@@ -4,32 +4,32 @@
 
 #include "guiEngine.h"
 
-#include "client/fontengine.h"
-#include "client/guiscalingfilter.h"
-#include "client/renderingengine.h"
-#include "client/shader.h"
-#include "client/tile.h"
+#include "client/render/renderer.h"
+#include "client/sound/soundopenal.h"
+#include "client/ui/glyph_atlas.h"
+#include "client/render/rendersystem.h"
+#include "client/media/resource.h"
+#include "client/render/tilelayer.h"
 #include "clientdynamicinfo.h"
 #include "config.h"
 #include "content/content.h"
 #include "content/mods.h"
 #include "filesys.h"
+#include "gui/IGUIEnvironment.h"
+#include "gui/mainmenumanager.h"
 #include "guiMainMenu.h"
 #include "httpfetch.h"
-#include "irrlicht_changes/static_text.h"
 #include "log.h"
 #include "porting.h"
 #include "scripting_mainmenu.h"
 #include "settings.h"
-#include "sound.h"
 #include "version.h"
-#include <ICameraSceneNode.h>
-#include <IGUIStaticText.h>
-#include "client/imagefilters.h"
+#include "IGUIStaticText.h"
 #include "util/tracy_wrapper.h"
+#include "client/ui/extra_images.h"
 
 #if USE_SOUND
-	#include "client/sound/sound_openal.h"
+    #include "client/sound/soundopenal.h"
 #endif
 
 
@@ -43,47 +43,6 @@ void TextDestGuiEngine::gotText(const StringMap &fields)
 void TextDestGuiEngine::gotText(const std::wstring &text)
 {
 	m_engine->getScriptIface()->handleMainMenuEvent(wide_to_utf8(text));
-}
-
-/******************************************************************************/
-MenuTextureSource::~MenuTextureSource()
-{
-	u32 before = m_driver->getTextureCount();
-
-	for (const auto &it: m_to_delete) {
-		m_driver->removeTexture(it);
-	}
-	m_to_delete.clear();
-
-	infostream << "~MenuTextureSource() before cleanup: "<< before
-			<< " after: " << m_driver->getTextureCount() << std::endl;
-}
-
-/******************************************************************************/
-img::Image *MenuTextureSource::getTexture(const std::string &name, u32 *id)
-{
-	if (id)
-		*id = 0;
-
-	if (name.empty())
-		return NULL;
-
-	// return if already loaded
-	img::Image *retval = m_driver->findTexture(name.c_str());
-	if (retval)
-		return retval;
-
-	video::IImage *image = m_driver->createImageFromFile(name.c_str());
-	if (!image)
-		return NULL;
-
-	image = Align2Npot2(image, m_driver);
-	retval = m_driver->addTexture(name.c_str(), image);
-	image->drop();
-
-	if (retval)
-		m_to_delete.push_back(retval);
-	return retval;
 }
 
 /******************************************************************************/
@@ -105,28 +64,29 @@ void MenuMusicFetcher::addThePaths(const std::string &name,
 /** GUIEngine                                                                 */
 /******************************************************************************/
 GUIEngine::GUIEngine(JoystickController *joystick,
-		gui::IGUIElement *parent,
-		RenderingEngine *rendering_engine,
-		IMenuManager *menumgr,
-		MainMenuData *data,
-		bool &kill) :
-	m_rendering_engine(rendering_engine),
+        gui::IGUIElement *parent,
+        RenderSystem *rndsys, ResourceCache *cache,
+        IMenuManager *menumgr,
+        MainMenuData *data,
+        bool &kill) :
+    m_rndsys(rndsys),
 	m_parent(parent),
 	m_menumanager(menumgr),
-	m_smgr(rendering_engine->get_scene_manager()),
 	m_data(data),
-	m_kill(kill)
+    m_rescache(cache),
+    m_kill(kill),
+    m_background(std::make_unique<ImageSprite>(m_rndsys, m_rescache)),
+    m_overlay(std::make_unique<ImageSprite>(m_rndsys, m_rescache)),
+    m_header(std::make_unique<ImageSprite>(m_rndsys, m_rescache)),
+    m_footer(std::make_unique<ImageSprite>(m_rndsys, m_rescache))
 {
 	// initialize texture pointers
 	for (image_definition &texture : m_textures) {
-		texture.texture = NULL;
+        texture.texture = nullptr;
 	}
 	// is deleted by guiformspec!
 	auto buttonhandler = std::make_unique<TextDestGuiEngine>(this);
 	m_buttonhandler = buttonhandler.get();
-
-	// create texture source
-	m_texture_source = std::make_unique<MenuTextureSource>(rendering_engine->get_video_driver());
 
 	// create soundmanager
 #if USE_SOUND
@@ -141,26 +101,27 @@ GUIEngine::GUIEngine(JoystickController *joystick,
 	// create topleft header
 	m_toplefttext = L"";
 
-	recti rect(0, 0, g_fontengine->getTextWidth(m_toplefttext.c_str()),
-		g_fontengine->getTextHeight());
+    auto default_font = m_rndsys->getFontManager()->getDefaultFont();
+    recti rect(0, 0, default_font->getTextWidth(m_toplefttext.c_str()),
+        default_font->getTextHeight(m_toplefttext.c_str()));
 	rect += v2i(4, 0);
 
-	m_irr_toplefttext = gui::StaticText::add(rendering_engine->get_gui_env(),
-			m_toplefttext, rect, false, true, 0, -1);
+    auto guienv = m_rndsys->getGUIEnvironment();
+    m_irr_toplefttext = guienv->addStaticText(m_toplefttext.c_str(), rect, false, true, 0, -1);
 
 	// create formspecsource
 	auto formspecgui = std::make_unique<FormspecFormSource>("");
 	m_formspecgui = formspecgui.get();
 
 	/* Create menu */
-	m_menu = make_irr<GUIFormSpecMenu>(
+    m_menu = std::make_shared<GUIFormSpecMenu>(
 			joystick,
 			m_parent,
 			-1,
 			m_menumanager,
 			nullptr /* &client */,
-			m_rendering_engine->get_gui_env(),
-			m_texture_source.get(),
+            guienv,
+            m_rescache,
 			m_sound_manager.get(),
 			formspecgui.release(),
 			buttonhandler.release(),
@@ -201,11 +162,11 @@ GUIEngine::GUIEngine(JoystickController *joystick,
 /******************************************************************************/
 std::string findLocaleFileWithExtension(const std::string &path)
 {
-	if (fs::PathExists(path + ".mo"))
+    if (fs::exists(path + ".mo"))
 		return path + ".mo";
-	if (fs::PathExists(path + ".po"))
+    if (fs::exists(path + ".po"))
 		return path + ".po";
-	if (fs::PathExists(path + ".tr"))
+    if (fs::exists(path + ".tr"))
 		return path + ".tr";
 	return "";
 }
@@ -261,8 +222,8 @@ Translations *GUIEngine::getContentTranslations(const std::string &path,
 	m_last_translations = {};
 
 	std::string data;
-	if (fs::ReadFile(trans_path, data)) {
-		m_last_translations.loadTranslation(fs::GetFilenameFromPath(trans_path.c_str()), data);
+    if (mt_fs::ReadFile(trans_path, data)) {
+        m_last_translations.loadTranslation(mt_fs::GetFilenameFromPath(trans_path.c_str()), data);
 	}
 
 	return &m_last_translations;
@@ -295,25 +256,18 @@ bool GUIEngine::loadMainMenuScript()
 /******************************************************************************/
 void GUIEngine::run()
 {
-	IrrlichtDevice *device = m_rendering_engine->get_raw_device();
-	video::IVideoDriver *driver = device->getVideoDriver();
-
-	unsigned int text_height = g_fontengine->getTextHeight();
+    auto font_mgr = m_rndsys->getFontManager();
+    auto rnd = m_rndsys->getRenderer();
+    u32 text_height = font_mgr->getDefaultFont()->getFontHeight();
 
 	// Reset fog color
 	{
-		img::color8 fog_color;
-		video::E_FOG_TYPE fog_type = video::EFT_FOG_LINEAR;
+        FogType fog_type = FogType::Linear;
 		f32 fog_start = 0;
 		f32 fog_end = 0;
 		f32 fog_density = 0;
-		bool fog_pixelfog = false;
-		bool fog_rangefog = false;
-		driver->getFog(fog_color, fog_type, fog_start, fog_end, fog_density,
-				fog_pixelfog, fog_rangefog);
 
-		driver->setFog(RenderingEngine::MENU_SKY_COLOR, fog_type, fog_start,
-				fog_end, fog_density, fog_pixelfog, fog_rangefog);
+        rnd->setFogParams(fog_type, Renderer::menu_sky_color, fog_start, fog_end, fog_density);
 	}
 
 	const v2u initial_screen_size(
@@ -324,23 +278,24 @@ void GUIEngine::run()
 			g_settings->getBool("window_maximized");
 	auto last_window_info = ClientDynamicInfo::getCurrent();
 
-	FpsControl fps_control;
 	f32 dtime = 0.0f;
 
-	fps_control.reset();
+    auto draw_stats = rnd->getDrawStats();
+    draw_stats.fps.reset();
 
 	auto framemarker = FrameMarker("GUIEngine::run()-frame").started();
 
-	while (m_rendering_engine->run() && !m_startgame && !m_kill) {
+    auto wnd = m_rndsys->getWindow();
+    while (m_rndsys->run() && !m_startgame && !m_kill) {
 		framemarker.end();
-		fps_control.limit(device, &dtime);
+        draw_stats.fps.limit(wnd, &dtime);
 		framemarker.start();
 
-		if (device->isWindowVisible()) {
+        if (wnd->isVisible()) {
 			// check if we need to update the "upper left corner"-text
-			if (text_height != g_fontengine->getTextHeight()) {
+            if (text_height != font_mgr->getDefaultFont()->getFontHeight()) {
 				updateTopLeftTextSize();
-				text_height = g_fontengine->getTextHeight();
+                text_height = font_mgr->getDefaultFont()->getFontHeight();
 			}
 			auto window_info = ClientDynamicInfo::getCurrent();
 			if (!window_info.equal(last_window_info)) {
@@ -348,31 +303,29 @@ void GUIEngine::run()
 				last_window_info = window_info;
 			}
 
-			driver->beginScene(true, true, RenderingEngine::MENU_SKY_COLOR);
+            rnd->getContext()->clearBuffers(render::CBF_COLOR | render::CBF_DEPTH, Renderer::menu_sky_color);
 
 			if (m_clouds_enabled) {
-				drawClouds(dtime);
-				drawOverlay(driver);
+                g_menumgr->drawClouds(dtime);
+                drawOverlay();
 			} else {
-				drawBackground(driver);
+                drawBackground();
 			}
 
-			drawFooter(driver);
+            drawFooter();
 
-			m_rendering_engine->get_gui_env()->drawAll();
+            m_rndsys->getGUIEnvironment()->drawAll();
 
 			// The header *must* be drawn after the menu because it uses
 			// GUIFormspecMenu::getAbsoluteRect().
 			// The header *can* be drawn after the menu because it never intersects
 			// the menu.
-			drawHeader(driver);
-
-			driver->endScene();
+            drawHeader();
 		}
 
 		m_script->step();
 
-		sound_volume_control(m_sound_manager.get(), device->isWindowActive());
+        sound_volume_control(m_sound_manager.get(), wnd->isActive());
 		m_sound_manager->step(dtime);
 
 #ifdef __ANDROID__
@@ -383,7 +336,7 @@ void GUIEngine::run()
 
 	m_script->beforeClose();
 
-	RenderingEngine::autosaveScreensizeAndCo(initial_screen_size, initial_window_maximized);
+    m_rndsys->autosaveScreensizeAndCo(initial_screen_size, initial_window_maximized);
 }
 
 /******************************************************************************/
@@ -398,19 +351,6 @@ GUIEngine::~GUIEngine()
 	m_sound_manager.reset();
 
 	m_irr_toplefttext->remove();
-
-	// delete textures
-	for (image_definition &texture : m_textures) {
-		if (texture.texture)
-			m_rendering_engine->get_video_driver()->removeTexture(texture.texture);
-	}
-}
-
-/******************************************************************************/
-void GUIEngine::drawClouds(float dtime)
-{
-	g_menuclouds->step(dtime * 3);
-	g_menucloudsmgr->drawAll();
 }
 
 /******************************************************************************/
@@ -423,17 +363,20 @@ void GUIEngine::setFormspecPrepend(const std::string &fs)
 
 
 /******************************************************************************/
-void GUIEngine::drawBackground(video::IVideoDriver *driver)
+void GUIEngine::drawBackground()
 {
-	v2u screensize = driver->getScreenSize();
+    v2u screensize = m_rndsys->getWindowSize();
 
 	img::Image* texture = m_textures[TEX_LAYER_BACKGROUND].texture;
 
+    m_background->clear();
+
 	/* If no texture, draw background of solid color */
 	if(!texture){
-		img::color8 color(255,80,58,37);
+        img::color8 color(img::PF_RGBA8,80,58,37,255);
 		recti rect(0, 0, screensize.X, screensize.Y);
-		driver->draw2DRectangle(color, rect, NULL);
+        m_background->update(nullptr, toRectf(rect), color);
+        m_background->draw();
 		return;
 	}
 
@@ -448,10 +391,8 @@ void GUIEngine::drawBackground(video::IVideoDriver *driver)
 		{
 			for (unsigned int y = 0; y < screensize.Y; y += tilesize.Y )
 			{
-				draw2DImageFilterScaled(driver, texture,
-					recti(x, y, x+tilesize.X, y+tilesize.Y),
-					recti(0, 0, sourcesize.X, sourcesize.Y),
-					NULL, NULL, true);
+                m_background->update(texture, rectf(x, y, x+tilesize.X, y+tilesize.Y), img::white);
+                m_background->draw();
 			}
 		}
 		return;
@@ -471,16 +412,14 @@ void GUIEngine::drawBackground(video::IVideoDriver *driver)
 		(s32) screensize.Y - (s32) bg_size.Y
 	) / 2;
 	/* Draw background texture */
-	draw2DImageFilterScaled(driver, texture,
-		recti(offset.X, offset.Y, bg_size.X + offset.X, bg_size.Y + offset.Y),
-		recti(0, 0, sourcesize.X, sourcesize.Y),
-		NULL, NULL, true);
+    m_background->update(texture, rectf(offset.X, offset.Y, bg_size.X + offset.X, bg_size.Y + offset.Y), img::white);
+    m_background->draw();
 }
 
 /******************************************************************************/
-void GUIEngine::drawOverlay(video::IVideoDriver *driver)
+void GUIEngine::drawOverlay()
 {
-	v2u screensize = driver->getScreenSize();
+    v2u screensize = m_rndsys->getWindowSize();
 
 	img::Image* texture = m_textures[TEX_LAYER_OVERLAY].texture;
 
@@ -489,17 +428,14 @@ void GUIEngine::drawOverlay(video::IVideoDriver *driver)
 		return;
 
 	/* Draw background texture */
-	v2u sourcesize = texture->getSize();
-	draw2DImageFilterScaled(driver, texture,
-		recti(0, 0, screensize.X, screensize.Y),
-		recti(0, 0, sourcesize.X, sourcesize.Y),
-		NULL, NULL, true);
+    m_background->update(texture, rectf(0, 0, screensize.X, screensize.Y), img::white);
+    m_background->draw();
 }
 
 /******************************************************************************/
-void GUIEngine::drawHeader(video::IVideoDriver *driver)
+void GUIEngine::drawHeader()
 {
-	v2u screensize = driver->getScreenSize();
+    v2u screensize = m_rndsys->getWindowSize();
 
 	img::Image* texture = m_textures[TEX_LAYER_HEADER].texture;
 
@@ -549,16 +485,14 @@ void GUIEngine::drawHeader(video::IVideoDriver *driver)
 	// 2. Move
 	desired_rect.constrainTo(max_rect);
 
-	draw2DImageFilterScaled(driver, texture, desired_rect,
-		recti(v2i(0,0),
-		v2i(texture->getSize())),
-		NULL, NULL, true);
+    m_background->update(texture, toRectf(desired_rect), img::white);
+    m_background->draw();
 }
 
 /******************************************************************************/
-void GUIEngine::drawFooter(video::IVideoDriver *driver)
+void GUIEngine::drawFooter()
 {
-	v2u screensize = driver->getScreenSize();
+    v2u screensize = m_rndsys->getWindowSize();
 
 	img::Image* texture = m_textures[TEX_LAYER_FOOTER].texture;
 
@@ -580,10 +514,8 @@ void GUIEngine::drawFooter(video::IVideoDriver *driver)
 		rect += v2i(screensize.X/2,screensize.Y-footersize.Y);
 		rect -= v2i(footersize.X/2, 0);
 
-		draw2DImageFilterScaled(driver, texture, rect,
-			recti(v2i(0,0),
-			v2i(texture->getSize())),
-			NULL, NULL, true);
+        m_background->update(texture, toRectf(rect), img::white);
+        m_background->draw();
 	}
 }
 
@@ -591,18 +523,11 @@ void GUIEngine::drawFooter(video::IVideoDriver *driver)
 bool GUIEngine::setTexture(texture_layer layer, const std::string &texturepath,
 		bool tile_image, unsigned int minsize)
 {
-	video::IVideoDriver *driver = m_rendering_engine->get_video_driver();
-
-	if (m_textures[layer].texture) {
-		driver->removeTexture(m_textures[layer].texture);
-		m_textures[layer].texture = NULL;
-	}
-
-	if (texturepath.empty() || !fs::PathExists(texturepath)) {
+    if (texturepath.empty() || !fs::exists(texturepath)) {
 		return false;
 	}
 
-	m_textures[layer].texture = driver->getTexture(texturepath.c_str());
+    m_textures[layer].texture = m_rescache->getOrLoad<img::Image>(ResourceType::IMAGE, texturepath);
 	m_textures[layer].tile    = tile_image;
 	m_textures[layer].minsize = minsize;
 
@@ -631,7 +556,7 @@ bool GUIEngine::downloadFile(const std::string &url, const std::string &target)
 
 	if (!completed || !fetch_result.succeeded) {
 		target_file.close();
-		fs::DeleteSingleFileOrEmptyDirectory(target);
+        mt_fs::DeleteSingleFileOrEmptyDirectory(target);
 		return false;
 	}
 	// TODO: directly stream the response data into the file instead of first
@@ -655,13 +580,14 @@ void GUIEngine::setTopleftText(const std::string &text)
 /******************************************************************************/
 void GUIEngine::updateTopLeftTextSize()
 {
-	recti rect(0, 0, g_fontengine->getTextWidth(m_toplefttext.c_str()),
-		g_fontengine->getTextHeight());
+    auto default_font = m_rndsys->getFontManager()->getDefaultFont();
+    recti rect(0, 0, default_font->getTextWidth(m_toplefttext.c_str()),
+        default_font->getTextHeight(m_toplefttext.c_str()));
 	rect += v2i(4, 0);
 
 	m_irr_toplefttext->remove();
-	m_irr_toplefttext = gui::StaticText::add(m_rendering_engine->get_gui_env(),
-			m_toplefttext, rect, false, true, 0, -1);
+    m_irr_toplefttext = m_rndsys->getGUIEnvironment()->addStaticText(
+            m_toplefttext.c_str(), rect, false, true, 0, -1);
 }
 
 /******************************************************************************/

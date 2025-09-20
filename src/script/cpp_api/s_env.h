@@ -5,7 +5,7 @@
 #pragma once
 
 #include "cpp_api/s_base.h"
-#include "irr_v3d.h"
+#include <BasicIncludes.h>
 #include "mapnode.h"
 #include <unordered_set>
 #include <vector>

@@ -7,10 +7,9 @@
 /******************************************************************************/
 /* Includes                                                                   */
 /******************************************************************************/
-#include "irrlichttypes.h"
 #include "guiFormSpecMenu.h"
-#include "client/clouds.h"
-#include "client/sound.h"
+#include "client/render/clouds.h"
+#include "client/sound/sound.h"
 #include "util/enriched_string.h"
 #include "translation.h"
 
@@ -36,10 +35,11 @@ struct image_definition {
 /* forward declarations                                                       */
 /******************************************************************************/
 class GUIEngine;
-class RenderingEngine;
+class RenderSystem;
 class MainMenuScripting;
-class IWritableShaderSource;
+class ResourceCache;
 struct MainMenuData;
+class ImageSprite;
 
 /******************************************************************************/
 /* declarations                                                               */
@@ -72,35 +72,6 @@ private:
 	GUIEngine *m_engine = nullptr;
 };
 
-/** GUIEngine specific implementation of ISimpleTextureSource */
-class MenuTextureSource : public ISimpleTextureSource
-{
-public:
-	/**
-	 * default constructor
-	 * @param driver the video driver to load textures from
-	 */
-	MenuTextureSource(video::IVideoDriver *driver) : m_driver(driver) {};
-
-	/**
-	 * destructor, removes all loaded textures
-	 */
-	virtual ~MenuTextureSource();
-
-	/**
-	 * get a texture, loading it if required
-	 * @param name path to the texture
-	 * @param id receives the texture ID, always 0 in this implementation
-	 */
-	img::Image *getTexture(const std::string &name, u32 *id = NULL);
-
-private:
-	/** driver to get textures from */
-	video::IVideoDriver *m_driver = nullptr;
-	/** set of textures to delete */
-	std::vector<img::Image*> m_to_delete;
-};
-
 /** GUIEngine specific implementation of SoundFallbackPathProvider */
 class MenuMusicFetcher final : public SoundFallbackPathProvider
 {
@@ -127,7 +98,8 @@ public:
 	 */
 	GUIEngine(JoystickController *joystick,
 			gui::IGUIElement *parent,
-			RenderingEngine *rendering_engine,
+            RenderSystem *rndsys,
+            ResourceCache *cache,
 			IMenuManager *menumgr,
 			MainMenuData *data,
 			bool &kill);
@@ -177,17 +149,15 @@ private:
 	/** update size of topleftext element */
 	void updateTopLeftTextSize();
 
-	RenderingEngine                      *m_rendering_engine = nullptr;
+    RenderSystem                         *m_rndsys = nullptr;
 	/** parent gui element */
 	gui::IGUIElement                     *m_parent = nullptr;
 	/** manager to add menus to */
 	IMenuManager                         *m_menumanager = nullptr;
-	/** scene manager to add scene elements to */
-	scene::ISceneManager                 *m_smgr = nullptr;
 	/** pointer to data beeing transfered back to main game handling */
 	MainMenuData                         *m_data = nullptr;
-	/** texture source */
-	std::unique_ptr<ISimpleTextureSource> m_texture_source;
+    /** resource cache */
+    ResourceCache                        *m_rescache = nullptr;
 	/** sound manager */
 	std::unique_ptr<ISoundManager>        m_sound_manager;
 
@@ -196,7 +166,7 @@ private:
 	/** formspec input receiver */
 	TextDestGuiEngine                    *m_buttonhandler = nullptr;
 	/** the formspec menu */
-	irr_ptr<GUIFormSpecMenu>              m_menu;
+    std::shared_ptr<GUIFormSpecMenu>      m_menu;
 
 	/** reference to kill variable managed by SIGINT handler */
 	bool                                 &m_kill;
@@ -208,7 +178,12 @@ private:
 	std::unique_ptr<MainMenuScripting>    m_script;
 
 	/** script basefolder */
-	std::string                           m_scriptdir = "";
+    std::string                           m_scriptdir;
+
+    std::unique_ptr<ImageSprite>          m_background;
+    std::unique_ptr<ImageSprite>          m_overlay;
+    std::unique_ptr<ImageSprite>          m_header;
+    std::unique_ptr<ImageSprite>          m_footer;
 
 	void setFormspecPrepend(const std::string &fs);
 
@@ -216,22 +191,22 @@ private:
 	 * draw background layer
 	 * @param driver to use for drawing
 	 */
-	void drawBackground(video::IVideoDriver *driver);
+    void drawBackground();
 	/**
 	 * draw overlay layer
 	 * @param driver to use for drawing
 	 */
-	void drawOverlay(video::IVideoDriver *driver);
+    void drawOverlay();
 	/**
 	 * draw header layer
 	 * @param driver to use for drawing
 	 */
-	void drawHeader(video::IVideoDriver *driver);
+    void drawHeader();
 	/**
 	 * draw footer layer
 	 * @param driver to use for drawing
 	 */
-	void drawFooter(video::IVideoDriver *driver);
+    void drawFooter();
 
 	/**
 	 * load a texture for a specified layer
@@ -258,12 +233,9 @@ private:
 	void setTopleftText(const std::string &text);
 
 	/** pointer to gui element shown at topleft corner */
-	irr::gui::IGUIStaticText *m_irr_toplefttext = nullptr;
+    gui::IGUIStaticText *m_irr_toplefttext = nullptr;
 	/** and text that is in it */
 	EnrichedString m_toplefttext;
-
-	/** do preprocessing for cloud subsystem */
-	void drawClouds(float dtime);
 
 	/** is drawing of clouds enabled atm */
 	bool m_clouds_enabled = true;

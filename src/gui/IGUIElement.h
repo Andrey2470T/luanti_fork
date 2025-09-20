@@ -48,6 +48,8 @@ public:
 		}
 	}
 
+    virtual const c8* getTypeName() const { return ""; };
+
 	//! Returns parent of this element.
 	IGUIElement *getParent() const
 	{

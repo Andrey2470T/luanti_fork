@@ -17,6 +17,7 @@ struct AnimatedAtlasTile : public AtlasTile
 {
     u32 frame_length_ms;
 	u32 frame_count = 1;
+    u32 frame_offset = 0;
 	
 	u32 cur_frame = 0;
 

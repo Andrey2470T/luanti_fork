@@ -20,7 +20,7 @@ rectu AnimatedAtlasTile::getFrameCoords(u32 frame_num) const
 
 void AnimatedAtlasTile::updateFrame(f32 time)
 {
-    cur_frame = (u32)(time * 1000 / frame_length_ms) % frame_count;
+    cur_frame = (u32)(time * 1000 / frame_length_ms + frame_offset * frame_length_ms / frame_count) % frame_count;
 }
 
 Rectpack2DAtlas::Rectpack2DAtlas(ResourceCache *_cache, const std::string &name, u32 num, u32 maxTextureSize, img::Image *img, bool filtered,

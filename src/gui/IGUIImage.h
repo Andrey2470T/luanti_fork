@@ -21,7 +21,8 @@ public:
 			IGUIElement(EGUIET_IMAGE, environment, parent, id, rectangle) {}
 
 	//! Sets an image texture
-    virtual void setImage(img::Image *image, std::optional<AtlasTileAnim> animParams = std::nullopt) = 0;
+    virtual void setImage(img::Image *image, std::optional<AtlasTileAnim> animParams = std::nullopt,
+        std::optional<u32> offset = std::nullopt) = 0;
 
 	//! Gets the image texture
 	virtual img::Image *getImage() const = 0;
@@ -33,6 +34,10 @@ public:
 
 	//! Sets if the image should scale to fit the element
 	virtual void setScaleImage(bool scale) = 0;
+
+    virtual void setMiddleRect(const rectf &r) = 0;
+
+    virtual rectf getMiddleRect() const = 0;
 
 	//! Sets if the image should use its alpha channel to draw itself
 	virtual void setUseAlphaChannel(bool use) = 0;

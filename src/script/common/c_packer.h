@@ -4,9 +4,7 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
-#include "irrlichttypes.h"
+#include <BasicIncludes.h>
 #include "util/basic_macros.h"
 
 extern "C" {

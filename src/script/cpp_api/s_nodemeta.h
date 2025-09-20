@@ -6,7 +6,6 @@
 
 #include "cpp_api/s_base.h"
 #include "cpp_api/s_item.h"
-#include "irr_v3d.h"
 
 struct MoveAction;
 struct ItemStack;

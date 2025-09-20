@@ -97,6 +97,7 @@ public:
 
 class ResourceCache;
 class MeshBuffer;
+struct AnimatedAtlasTile;
 
 // Interface saving and handling sets of atlases of some type
 // Note: 'addTile' and 'addAnimatedTile' calls and atlases building
@@ -123,6 +124,9 @@ public:
 
     Atlas *getAtlas(u32 i) const;
     Atlas *getAtlasByTile(img::Image *tile, bool force_add=false, std::optional<AtlasTileAnim> anim=std::nullopt);
+
+    AtlasTile *getTileByImage(img::Image *tile);
+    AnimatedAtlasTile *getAnimatedTileByImage(img::Image *tile);
 
     u32 getAtlasCount() const
     {

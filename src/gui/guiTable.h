@@ -116,16 +116,16 @@ public:
 	void setDynamicData(const DynamicData &dyndata);
 
 	/* Returns "GUITable" */
-	virtual const c8* getTypeName() const;
+    const c8* getTypeName() const override;
 
 	/* Must be called when position or size changes */
-	virtual void updateAbsolutePosition();
+    void updateAbsolutePosition() override;
 
 	/* Irrlicht draw method */
-	virtual void draw();
+    void draw() override;
 
 	/* Irrlicht event handler */
-	virtual bool OnEvent(const core::Event &event);
+    bool OnEvent(const core::Event &event) override;
 
 protected:
 	enum ColumnType {

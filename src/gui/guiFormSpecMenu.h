@@ -9,8 +9,7 @@
 #include <stack>
 #include <unordered_set>
 
-#include "irrlichttypes_bloated.h"
-#include "irr_ptr.h"
+#include "client/event/eventreceiver.h"
 #include "inventory.h"
 #include "inventorymanager.h"
 #include "modalMenu.h"
@@ -20,11 +19,12 @@
 #include "util/string.h"
 #include "util/enriched_string.h"
 #include "StyleSpec.h"
-#include <ICursorControl.h> // gui::ECURSOR_ICON
-#include <IGUIStaticText.h>
+#include <Core/CursorControl.h>
+#include "IGUIStaticText.h"
+#include "IGUICheckBox.h"
 
 class InventoryManager;
-class ISimpleTextureSource;
+class ResourceCache;
 class Client;
 class GUIScrollContainer;
 class ISoundManager;
@@ -106,7 +106,7 @@ class GUIFormSpecMenu : public GUIModalMenu
 
 		FieldSpec(const std::string &name, const std::wstring &label,
 				const std::wstring &default_text, s32 id, int priority = 0,
-				gui::ECURSOR_ICON cursor_icon = ECI_NORMAL) :
+                CURSOR_ICON cursor_icon = CI_NORMAL) :
 			fname(name),
 			flabel(label),
 			fdefault(unescape_enriched(translate_string(default_text))),
@@ -130,15 +130,15 @@ class GUIFormSpecMenu : public GUIModalMenu
 		// Draw priority for formspec version < 3
 		int priority;
 		recti rect;
-		gui::ECURSOR_ICON fcursor_icon;
+        CURSOR_ICON fcursor_icon;
 		std::string sound;
 	};
 
 	struct TooltipSpec
 	{
 		TooltipSpec() = default;
-		TooltipSpec(const std::wstring &a_tooltip, irr::img::color8 a_bgcolor,
-				irr::img::color8 a_color):
+        TooltipSpec(const std::wstring &a_tooltip, img::color8 a_bgcolor,
+                img::color8 a_color):
 			tooltip(translate_string(a_tooltip)),
 			bgcolor(a_bgcolor),
 			color(a_color)
@@ -146,8 +146,8 @@ class GUIFormSpecMenu : public GUIModalMenu
 		}
 
 		std::wstring tooltip;
-		irr::img::color8 bgcolor;
-		irr::img::color8 color;
+        img::color8 bgcolor;
+        img::color8 color;
 	};
 
 public:
@@ -156,7 +156,7 @@ public:
 			IMenuManager *menumgr,
 			Client *client,
 			gui::IGUIEnvironment *guienv,
-			ISimpleTextureSource *tsrc,
+            ResourceCache *cache,
 			ISoundManager *sound_manager,
 			IFormSource* fs_src,
 			TextDest* txt_dst,
@@ -317,9 +317,10 @@ protected:
 	std::stack<v2f> container_stack;
 
 	InventoryManager *m_invmgr;
-	ISimpleTextureSource *m_tsrc;
+    ResourceCache *m_cache;
 	ISoundManager *m_sound_manager;
 	Client *m_client;
+    FontManager *m_fontmgr;
 
 	std::string m_formspec_string;
 	std::string m_formspec_prepend;
@@ -336,13 +337,15 @@ protected:
 	std::unordered_map<std::string, bool> m_dropdown_index_event;
 	std::vector<FieldSpec> m_fields;
 	std::vector<std::pair<FieldSpec, GUITable *>> m_tables;
-	std::vector<std::pair<FieldSpec, gui::IGUICheckBox *>> m_checkboxes;
+    std::vector<std::pair<FieldSpec, gui::IGUICheckBox *>> m_checkboxes;
 	std::map<std::string, TooltipSpec> m_tooltips;
 	std::vector<std::pair<gui::IGUIElement *, TooltipSpec>> m_tooltip_rects;
 	std::vector<std::pair<FieldSpec, GUIScrollBar *>> m_scrollbars;
 	std::vector<std::pair<FieldSpec, std::vector<std::string>>> m_dropdowns;
 	std::vector<gui::IGUIElement *> m_clickthrough_elements;
 	std::vector<std::pair<std::string, GUIScrollContainer *>> m_scroll_containers;
+
+    std::unique_ptr<UIRects> m_menu;
 
 	GUIInventoryList::ItemSpec *m_selected_item = nullptr;
 	u16 m_selected_amount = 0;
@@ -397,8 +400,8 @@ private:
 		v2u screensize;
 		GUITable::TableOptions table_options;
 		GUITable::TableColumns table_columns;
-		gui::IGUIElement *current_parent = nullptr;
-		irr_ptr<gui::IGUIElement> background_parent;
+        gui::IGUIElement *current_parent = nullptr;
+        std::shared_ptr<gui::IGUIElement> background_parent;
 
 		GUIInventoryList::Options inventorylist_options;
 
@@ -489,8 +492,8 @@ private:
 
 	void tryClose();
 
-	void showTooltip(const std::wstring &text, const irr::img::color8 &color,
-		const irr::img::color8 &bgcolor);
+    void showTooltip(const std::wstring &text, const img::color8 &color,
+        const img::color8 &bgcolor);
 
 	/**
 	 * In formspec version < 2 the elements were not ordered properly. Some element

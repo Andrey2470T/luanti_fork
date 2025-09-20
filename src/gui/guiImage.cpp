@@ -9,6 +9,7 @@
 #include "client/ui/extra_images.h"
 #include "client/render/rendersystem.h"
 #include "client/render/atlas.h"
+#include "client/render/rectpack2d_atlas.h"
 
 namespace gui
 {
@@ -32,13 +33,15 @@ CGUIImage::CGUIImage(IGUIEnvironment *environment, IGUIElement *parent, s32 id, 
 }
 
 //! sets an image
-void CGUIImage::setImage(img::Image *image, std::optional<AtlasTileAnim> animParams)
+void CGUIImage::setImage(img::Image *image, std::optional<AtlasTileAnim> animParams,
+    std::optional<u32> offset)
 {
 	if (image == Texture)
 		return;
 
 	Texture = image;
     AnimParams = animParams;
+    FrameOffset = offset;
 }
 
 //! Gets the image texture
@@ -67,6 +70,7 @@ void CGUIImage::draw()
 
 	GUISkin *skin = Environment->getSkin();
 
+    auto pool = Environment->getRenderSystem()->getPool(false);
 	if (Texture) {
 		recti sourceRect(SourceRect);
 		if (sourceRect.getWidth() == 0 || sourceRect.getHeight() == 0) {
@@ -88,14 +92,18 @@ void CGUIImage::draw()
         if (MiddleRect.getArea() == 0) {
             auto img = std::get<std::shared_ptr<ImageSprite>>(Image);
             img->update(Texture, toRectf(AbsoluteRect), Colors, &clippingRect, AnimParams);
+
+            if (FrameOffset)
+                pool->getAnimatedTileByImage(Texture)->frame_offset = FrameOffset.value();
             img->draw();
         }
         else {
             auto sliced_img = std::get<std::shared_ptr<Image2D9Slice>>(Image);
-            sliced_img->setTexture(
-                Environment->getRenderSystem()->getPool(false)->getAtlasByTile(Texture, true)->getTexture());
             sliced_img->updateRects(toRectf(sourceRect), MiddleRect, toRectf(AbsoluteRect),
                 Texture, Colors, &clippingRect, AnimParams);
+
+            if (FrameOffset)
+                pool->getAnimatedTileByImage(Texture)->frame_offset = FrameOffset.value();
             sliced_img->draw();
         }
 	} else if (DrawBackground) {
@@ -107,12 +115,18 @@ void CGUIImage::draw()
         if (MiddleRect.getArea() == 0) {
             auto img = std::get<std::shared_ptr<ImageSprite>>(Image);
             img->update(nullptr, toRectf(AbsoluteRect), Colors, &clippingRect, AnimParams);
+
+            if (FrameOffset)
+                pool->getAnimatedTileByImage(Texture)->frame_offset = FrameOffset.value();
             img->draw();
         }
         else {
             auto sliced_img = std::get<std::shared_ptr<Image2D9Slice>>(Image);
             sliced_img->updateRects(toRectf(SourceRect), MiddleRect, toRectf(AbsoluteRect),
                 nullptr, Colors, &clippingRect, AnimParams);
+
+            if (FrameOffset)
+                pool->getAnimatedTileByImage(Texture)->frame_offset = FrameOffset.value();
             sliced_img->draw();
         }
 	}

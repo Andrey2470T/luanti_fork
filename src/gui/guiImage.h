@@ -23,7 +23,8 @@ public:
 	virtual ~CGUIImage();
 
 	//! sets an image
-    void setImage(img::Image *image, std::optional<AtlasTileAnim> animParams = std::nullopt) override;
+    void setImage(img::Image *image, std::optional<AtlasTileAnim> animParams = std::nullopt,
+        std::optional<u32> offset = std::nullopt) override;
 
 	//! Gets the image texture
 	img::Image *getImage() const override;
@@ -34,12 +35,12 @@ public:
 	//! sets if the image should scale to fit the element
 	void setScaleImage(bool scale) override;
 
-    void setMiddleRect(const rectf &r)
+    void setMiddleRect(const rectf &r) override
     {
         MiddleRect = r;
     }
 
-    rectf getMiddleRect() const
+    rectf getMiddleRect() const override
     {
         return MiddleRect;
     }
@@ -98,6 +99,7 @@ protected:
 private:
 	img::Image *Texture;
     std::optional<AtlasTileAnim> AnimParams = std::nullopt;
+    std::optional<u32> FrameOffset = std::nullopt;
 	img::color8 Color;
 	bool UseAlphaChannel;
 	bool ScaleImage;

@@ -154,6 +154,26 @@ Atlas *AtlasPool::getAtlasByTile(img::Image *tile, bool force_add, std::optional
     return nullptr;
 }
 
+AtlasTile *AtlasPool::getTileByImage(img::Image *tile)
+{
+    auto atlas = getAtlasByTile(tile);
+
+    if (!atlas)
+        return nullptr;
+
+    return atlas->getTileByImage(tile);
+}
+
+AnimatedAtlasTile *AtlasPool::getAnimatedTileByImage(img::Image *tile)
+{
+    auto atlas_tile = getTileByImage(tile);
+
+    if (!atlas_tile)
+        return nullptr;
+
+    return dynamic_cast<AnimatedAtlasTile *>(atlas_tile);
+}
+
 img::Image *AtlasPool::addTile(const std::string &name)
 {
     if (type != AtlasType::RECTPACK2D)

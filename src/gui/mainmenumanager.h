@@ -104,6 +104,12 @@ public:
 		return false;
 	}
 
+	void drawClouds(float dtime)
+	{
+		m_menuclouds->step(dtime * 3);
+		g_menucloudsmgr->render(m_menucamera->getOffset());
+	}
+
 private:
     gui::IGUIEnvironment *m_guienv;
 	std::list<gui::IGUIElement*> m_stack;
