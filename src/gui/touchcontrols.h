@@ -27,6 +27,7 @@ using namespace gui;
 
 class ResourceCache;
 class Camera;
+class UITextSprite;
 
 enum class TapState
 {
@@ -110,7 +111,7 @@ public:
 	std::optional<u16> getHotbarSelection();
 
 	bool isStatusTextOverriden() { return m_overflow_open; }
-    IGUIStaticText *getStatusText() { return m_status_text; }
+    UITextSprite *getStatusText() { return m_status_text.get(); }
 
 	ButtonLayout getLayout() { return m_layout; }
 	void applyLayout(const ButtonLayout &layout);
@@ -174,7 +175,7 @@ private:
     std::vector<IGUIStaticText *> m_overflow_button_titles;
 	std::vector<recti> m_overflow_button_rects;
 
-    IGUIStaticText *m_status_text;
+    std::unique_ptr<UITextSprite> m_status_text;
 
 	// Note: TouchControls intentionally uses IGUIImage instead of IGUIButton
 	// for its buttons. We only want static image display, not interactivity,

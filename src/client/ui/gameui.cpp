@@ -8,6 +8,7 @@
 #include "client/map/clientmap.h"
 #include "client/network/packethandler.h"
 #include "client/render/renderer.h"
+#include "gui/IGUIStaticText.h"
 #include "gui/mainmenumanager.h"
 #include "gui/guiChatConsole.h"
 #include "client/ui/profilergraph.h"
@@ -18,6 +19,7 @@
 #include "clientmap.h"
 #include "fontengine.h"
 #include "hud.h" // HUD_FLAG_*
+#include "hud_elements.h"
 #include "nodedef.h"
 #include "profiler.h"
 #include "game.h"
@@ -112,14 +114,13 @@ void GameUI::init()
 }
 
 void GameUI::update(Client *client,
-	const CameraOrientation &cam, const PointedThing &pointed_old,
+    const PointedThing &pointed_old,
 	const GUIChatConsole *chat_console, float dtime)
 {
     v2u wndSize = rndsys->getWindowSize();
 
 	LocalPlayer *player = client->getEnv().getLocalPlayer();
-
-	s32 minimal_debug_height = 0;
+    v2f cam_orient = player->getCamera()->getOrientation();
 
     auto drawstats = rndsys->getRenderer()->getDrawStats();
     auto draw_control = rndsys->getDrawList()->getDrawControl();
@@ -163,9 +164,9 @@ void GameUI::update(Client *client,
 			<< "pos: (" << (player_position.X / BS)
 			<< ", " << (player_position.Y / BS)
 			<< ", " << (player_position.Z / BS)
-			<< ") | yaw: " << (wrapDegrees_0_360(cam.camera_yaw)) << "° "
-			<< yawToDirectionString(cam.camera_yaw)
-			<< " | pitch: " << (-wrapDegrees_180(cam.camera_pitch)) << "°"
+            << ") | yaw: " << (wrapDegrees_0_360(cam_orient.Y)) << "° "
+            << yawToDirectionString(cam_orient.Y)
+            << " | pitch: " << (-wrapDegrees_180(cam_orient.X)) << "°"
 			<< " | seed: " << ((u64)client->getMapSeed());
 
 		if (pointed_old.type == POINTEDTHING_NODE) {
@@ -204,7 +205,7 @@ void GameUI::update(Client *client,
 		}
 	}
 
-    UITextSprite *guitext_status;
+    UITextSprite *guitext_status = nullptr;
 	bool overriden = g_touchcontrols && g_touchcontrols->isStatusTextOverriden();
 	if (overriden) {
 		guitext_status = g_touchcontrols->getStatusText();
@@ -448,7 +449,7 @@ void GameUI::updateProfilers(f32 dtime)
         g_profiler->clear();
     }
 
-    auto drawstats = client->getRenderSystem()->getRenderer()->getDrawStats();
+    auto drawstats = rndsys->getRenderer()->getDrawStats();
     // Update graphs
     g_profiler->graphAdd("Time non-rendering [us]",
         drawstats.fps.busy_time - drawstats.drawtime);

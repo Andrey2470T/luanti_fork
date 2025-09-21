@@ -243,7 +243,7 @@ bool AuthDatabaseLevelDB::saveAuth(const AuthEntry &authEntry)
 	os << serializeString16(authEntry.password);
 
 	size_t privilege_count = authEntry.privileges.size();
-	FATAL_ERROR_IF(privilege_count > U16_MAX,
+	FATAL_ERROR_IF(privilege_count > T_MAX(u16),
 		"Unsupported number of privileges");
 	writeU16(os, privilege_count);
 	for (const std::string &privilege : authEntry.privileges) {

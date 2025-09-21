@@ -7,7 +7,6 @@
 #include "lua_api/l_internal.h"
 #include "common/c_converter.h"
 #include "cpp_api/s_security.h"
-#include "irr_v3d.h"
 #include "util/areastore.h"
 #include "filesys.h"
 #include <fstream>
@@ -255,7 +254,7 @@ int LuaAreaStore::l_to_file(lua_State *L)
 	std::ostringstream os(std::ios_base::binary);
 	ast->serialize(os);
 
-	lua_pushboolean(L, fs::safeWriteToFile(filename, os.str()));
+    lua_pushboolean(L, mt_fs::safeWriteToFile(filename, os.str()));
 	return 1;
 }
 

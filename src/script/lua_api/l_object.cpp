@@ -548,8 +548,8 @@ int ObjectRef::l_set_bone_position(lua_State *L)
 	if (!lua_isnoneornil(L, 3))
 		props.position.vector = check_v3f(L, 3);
 	if (!lua_isnoneornil(L, 4)) {
-		props.rotation.next_radians = check_v3f(L, 4) * core::DEGTORAD;
-		props.rotation.next = core::quaternion(props.rotation.next_radians);
+        props.rotation.next_radians = check_v3f(L, 4) * DEGTORAD;
+        props.rotation.next = Quaternion(props.rotation.next_radians);
 	}
 	props.position.absolute = true;
 	props.rotation.absolute = true;
@@ -574,7 +574,7 @@ int ObjectRef::l_get_bone_position(lua_State *L)
 	push_v3f(L, props.position.vector);
 	// In order to give modders back the euler angles they passed in,
 	// this **must not** compute equivalent euler angles from the quaternion
-	push_v3f(L, props.rotation.next_radians * core::RADTODEG);
+    push_v3f(L, props.rotation.next_radians * RADTODEG);
 	return 2;
 }
 
@@ -622,7 +622,7 @@ int ObjectRef::l_set_bone_override(lua_State *L)
 		lua_getfield(L, -1, "vec");
 		if (!lua_isnil(L, -1)) {
 			props.rotation.next_radians = check_v3f(L, -1);
-			props.rotation.next = core::quaternion(props.rotation.next_radians);
+            props.rotation.next = Quaternion(props.rotation.next_radians);
 		}
 		lua_pop(L, 1);
 
@@ -929,7 +929,7 @@ int ObjectRef::l_set_nametag_attributes(lua_State *L)
 
 	lua_getfield(L, 2, "color");
 	if (!lua_isnil(L, -1)) {
-		video::SColor color = prop->nametag_color;
+		img::color8 color = prop->nametag_color;
 		read_color(L, -1, &color);
 		prop->nametag_color = color;
 	}
@@ -938,7 +938,7 @@ int ObjectRef::l_set_nametag_attributes(lua_State *L)
 	lua_getfield(L, -1, "bgcolor");
 	if (!lua_isnil(L, -1)) {
 		if (lua_toboolean(L, -1)) {
-			video::SColor color;
+			img::color8 color;
 			if (read_color(L, -1, &color))
 				prop->nametag_bgcolor = color;
 		} else {
@@ -1090,7 +1090,7 @@ int ObjectRef::l_set_rotation(lua_State *L)
 	if (entitysao == nullptr)
 		return 0;
 
-	v3f rotation = check_v3f(L, 2) * core::RADTODEG;
+    v3f rotation = check_v3f(L, 2) * RADTODEG;
 
 	entitysao->setRotation(rotation);
 	return 0;
@@ -1105,7 +1105,7 @@ int ObjectRef::l_get_rotation(lua_State *L)
 	if (entitysao == nullptr)
 		return 0;
 
-	v3f rotation = entitysao->getRotation() * core::DEGTORAD;
+    v3f rotation = entitysao->getRotation() * DEGTORAD;
 
 	lua_newtable(L);
 	push_v3f(L, rotation);
@@ -1121,7 +1121,7 @@ int ObjectRef::l_set_yaw(lua_State *L)
 	if (entitysao == nullptr)
 		return 0;
 
-	float yaw = readParam<float>(L, 2) * core::RADTODEG;
+    float yaw = readParam<float>(L, 2) * RADTODEG;
 
 	entitysao->setRotation(v3f(0, yaw, 0));
 	return 0;
@@ -1136,7 +1136,7 @@ int ObjectRef::l_get_yaw(lua_State *L)
 	if (entitysao == nullptr)
 		return 0;
 
-	float yaw = entitysao->getRotation().Y * core::DEGTORAD;
+    float yaw = entitysao->getRotation().Y * DEGTORAD;
 
 	lua_pushnumber(L, yaw);
 	return 1;
@@ -1326,7 +1326,7 @@ int ObjectRef::l_set_look_vertical(lua_State *L)
 	if (playersao == nullptr)
 		return 0;
 
-	float pitch = readParam<float>(L, 2) * core::RADTODEG;
+    float pitch = readParam<float>(L, 2) * RADTODEG;
 
 	playersao->setLookPitchAndSend(pitch);
 	return 0;
@@ -1341,7 +1341,7 @@ int ObjectRef::l_set_look_horizontal(lua_State *L)
 	if (playersao == nullptr)
 		return 0;
 
-	float yaw = readParam<float>(L, 2) * core::RADTODEG;
+    float yaw = readParam<float>(L, 2) * RADTODEG;
 
 	playersao->setPlayerYawAndSend(yaw);
 	return 0;
@@ -1361,7 +1361,7 @@ int ObjectRef::l_set_look_pitch(lua_State *L)
 	if (playersao == nullptr)
 		return 0;
 
-	float pitch = readParam<float>(L, 2) * core::RADTODEG;
+    float pitch = readParam<float>(L, 2) * RADTODEG;
 
 	playersao->setLookPitchAndSend(pitch);
 	return 0;
@@ -1381,7 +1381,7 @@ int ObjectRef::l_set_look_yaw(lua_State *L)
 	if (playersao == nullptr)
 		return 0;
 
-	float yaw = readParam<float>(L, 2) * core::RADTODEG;
+    float yaw = readParam<float>(L, 2) * RADTODEG;
 
 	playersao->setPlayerYawAndSend(yaw);
 	return 0;
@@ -1750,7 +1750,7 @@ int ObjectRef::l_hud_add(lua_State *L)
 	read_hud_element(L, elem);
 
 	u32 id = getServer(L)->hudAdd(player, elem);
-	if (id == U32_MAX) {
+    if (id == T_MAX(u32)) {
 		delete elem;
 		return 0;
 	}
@@ -2061,12 +2061,12 @@ int ObjectRef::l_set_sky(lua_State *L)
 			lua_pop(L, 1);
 
 			// Prevent flickering clouds at dawn/dusk:
-			sky_params.fog_sun_tint = video::SColor(255, 255, 255, 255);
+            sky_params.fog_sun_tint = img::white;
 			lua_getfield(L, -1, "fog_sun_tint");
 			read_color(L, -1, &sky_params.fog_sun_tint);
 			lua_pop(L, 1);
 
-			sky_params.fog_moon_tint = video::SColor(255, 255, 255, 255);
+            sky_params.fog_moon_tint = img::white;
 			lua_getfield(L, -1, "fog_moon_tint");
 			read_color(L, -1, &sky_params.fog_moon_tint);
 			lua_pop(L, 1);
@@ -2100,7 +2100,7 @@ int ObjectRef::l_set_sky(lua_State *L)
 		StarParams star_params = player->getStarParams();
 
 		// Prevent erroneous background colors
-		sky_params.bgcolor = video::SColor(255, 255, 255, 255);
+        sky_params.bgcolor = img::white;
 		read_color(L, 2, &sky_params.bgcolor);
 
 		sky_params.type = luaL_checkstring(L, 3);

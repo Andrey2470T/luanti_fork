@@ -172,7 +172,7 @@ void TestMapSettingsManager::testMapSettingsManager()
 	};
 
 	std::string metafile_contents;
-	UASSERT(fs::ReadFile(test_mapmeta_path, metafile_contents));
+	UASSERT(mt_fs::ReadFile(test_mapmeta_path, metafile_contents));
 	std::string sha1_result = hashing::sha1(metafile_contents);
 	int resultdiff = memcmp(sha1_result.data(), expected_contents_hash, 20);
 
@@ -231,7 +231,7 @@ void TestMapSettingsManager::testMapMetaFailures()
 	// Check to see if it'll fail on a non-existent map meta file
 	{
 		test_mapmeta_path = "woobawooba/fgdfg/map_meta.txt";
-		UASSERT(!fs::PathExists(test_mapmeta_path));
+		UASSERT(!mt_fs::PathExists(test_mapmeta_path));
 
 		MapSettingsManager mgr1(test_mapmeta_path);
 		UASSERT(!mgr1.loadMapMeta());
@@ -240,7 +240,7 @@ void TestMapSettingsManager::testMapMetaFailures()
 	// Check to see if it'll fail on a corrupt map meta file
 	{
 		test_mapmeta_path = makeMetaFile(true);
-		UASSERT(fs::PathExists(test_mapmeta_path));
+		UASSERT(mt_fs::PathExists(test_mapmeta_path));
 
 		MapSettingsManager mgr2(test_mapmeta_path);
 		UASSERT(!mgr2.loadMapMeta());

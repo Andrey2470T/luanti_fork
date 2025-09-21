@@ -8,7 +8,7 @@
 #include "porting.h"
 #include "server.h"
 #if CHECK_CLIENT_BUILD()
-#include "client/client.h"
+#include "client/core/client.h"
 #endif
 #include "settings.h"
 
@@ -570,7 +570,7 @@ bool ScriptApiSecurity::checkPath(lua_State *L, const char *path,
 	// do not yet exist. But RemoveRelativePathComponents() would also be incorrect
 	// since that wouldn't normalize subpaths that *do* exist.
 	// This is required so that comparisons with other normalized paths work correctly.
-	std::string abs_path = fs::AbsolutePathPartial(path);
+    std::string abs_path = mt_fs::AbsolutePathPartial(path);
 	tracestream << "ScriptApiSecurity: path \"" << path << "\" resolved to \""
 		<< abs_path << "\"" << std::endl;
 
@@ -606,7 +606,7 @@ bool ScriptApiSecurity::checkPathWithGamedef(lua_State *L,
 
 	if (!g_settings_path.empty()) {
 		// Don't allow accessing the settings file
-		str = fs::AbsolutePathPartial(g_settings_path);
+        str = mt_fs::AbsolutePathPartial(g_settings_path);
 		if (str == abs_path)
 			return false;
 	}
@@ -626,12 +626,12 @@ bool ScriptApiSecurity::checkPathWithGamedef(lua_State *L,
 	if (write_required || write_allowed) {
 		const ModSpec *mod = gamedef->getModSpec(mod_name);
 		if (mod) {
-			str = fs::AbsolutePath(mod->path);
-			if (!str.empty() && fs::PathStartsWith(abs_path, str)) {
+            str = mt_fs::AbsolutePath(mod->path);
+            if (!str.empty() && mt_fs::PathStartsWith(abs_path, str)) {
 				// `mod_name` cannot be trusted here, so we catch the scenarios where this becomes a problem:
 				bool is_trusted = checkModNameWhitelisted(mod_name, "secure.trusted_mods") ||
 						checkModNameWhitelisted(mod_name, "secure.http_mods");
-				std::string filename = lowercase(fs::GetFilenameFromPath(abs_path.c_str()));
+                std::string filename = lowercase(mt_fs::GetFilenameFromPath(abs_path.c_str()));
 				// By writing to any of these a malicious mod could turn itself into
 				// an existing trusted mod by renaming or becoming a modpack.
 				bool is_dangerous_file = filename == "mod.conf" ||
@@ -663,8 +663,8 @@ bool ScriptApiSecurity::checkPathWithGamedef(lua_State *L,
 	if (!write_required) {
 		const SubgameSpec *game_spec = gamedef->getGameSpec();
 		if (game_spec && !game_spec->path.empty()) {
-			str = fs::AbsolutePath(game_spec->path);
-			if (!str.empty() && fs::PathStartsWith(abs_path, str))
+            str = mt_fs::AbsolutePath(game_spec->path);
+            if (!str.empty() && mt_fs::PathStartsWith(abs_path, str))
 				return true;
 		}
 	}
@@ -673,20 +673,20 @@ bool ScriptApiSecurity::checkPathWithGamedef(lua_State *L,
 	if (!write_required) {
 		const std::vector<ModSpec> &mods = gamedef->getMods();
 		for (const ModSpec &mod : mods) {
-			str = fs::AbsolutePath(mod.path);
-			if (!str.empty() && fs::PathStartsWith(abs_path, str))
+            str = mt_fs::AbsolutePath(mod.path);
+            if (!str.empty() && mt_fs::PathStartsWith(abs_path, str))
 				return true;
 		}
 	}
 
 	// Allow read/write access to all mod common dirs
-	str = fs::AbsolutePath(gamedef->getModDataPath());
-	if (!str.empty() && fs::PathStartsWith(abs_path, str)) {
+    str = mt_fs::AbsolutePath(gamedef->getModDataPath());
+    if (!str.empty() && mt_fs::PathStartsWith(abs_path, str)) {
 		set_write_allowed(true);
 		return true;
 	}
 
-	str = fs::AbsolutePath(gamedef->getWorldPath());
+    str = mt_fs::AbsolutePath(gamedef->getWorldPath());
 	if (!str.empty()) {
 		// Don't allow access to other paths in the world mod/game path.
 		// These have to be blocked so you can't override a trusted mod
@@ -694,12 +694,12 @@ bool ScriptApiSecurity::checkPathWithGamedef(lua_State *L,
 		// We add to the absolute path of the world instead of getting
 		// the absolute paths directly because that won't work if they
 		// don't exist.
-		if (fs::PathStartsWith(abs_path, str + DIR_DELIM + "worldmods") ||
-				fs::PathStartsWith(abs_path, str + DIR_DELIM + "game")) {
+        if (mt_fs::PathStartsWith(abs_path, str + DIR_DELIM + "worldmods") ||
+                mt_fs::PathStartsWith(abs_path, str + DIR_DELIM + "game")) {
 			return false;
 		}
 		// Allow all other paths in world path
-		if (fs::PathStartsWith(abs_path, str)) {
+        if (mt_fs::PathStartsWith(abs_path, str)) {
 			set_write_allowed(true);
 			return true;
 		}

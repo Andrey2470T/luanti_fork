@@ -5,10 +5,14 @@
 
 #include "l_client.h"
 #include "chatmessage.h"
-#include "client/client.h"
-#include "client/clientevent.h"
-#include "client/sound.h"
-#include "client/clientenvironment.h"
+#include "client/core/chatmessanger.h"
+#include "client/core/client.h"
+#include "client/core/clientevent.h"
+#include "client/core/clienteventhandler.h"
+#include "client/network/packethandler.h"
+#include "client/player/localplayer.h"
+#include "client/sound/sound.h"
+#include "client/core/clientenvironment.h"
 #include "common/c_content.h"
 #include "common/c_converter.h"
 #include "cpp_api/s_base.h"
@@ -81,7 +85,7 @@ int ModApiClient::l_display_chat_message(lua_State *L)
 		return 0;
 
 	std::string message = luaL_checkstring(L, 1);
-	getClient(L)->pushToChatQueue(new ChatMessage(utf8_to_wide(message)));
+    getClient(L)->getChatMessanger()->pushToChatQueue(new ChatMessage(utf8_to_wide(message)));
 	lua_pushboolean(L, true);
 	return 1;
 }
@@ -98,14 +102,14 @@ int ModApiClient::l_send_chat_message(lua_State *L)
 		return 0;
 
 	std::string message = luaL_checkstring(L, 1);
-	getClient(L)->sendChatMessage(utf8_to_wide(message));
+    getClient(L)->getChatMessanger()->sendChatMessage(utf8_to_wide(message));
 	return 0;
 }
 
 // clear_out_chat_queue()
 int ModApiClient::l_clear_out_chat_queue(lua_State *L)
 {
-	getClient(L)->clearOutChatQueue();
+    getClient(L)->getChatMessanger()->clearOutChatQueue();
 	return 0;
 }
 
@@ -137,7 +141,7 @@ int ModApiClient::l_show_formspec(lua_State *L)
 	event->type = CE_SHOW_LOCAL_FORMSPEC;
 	event->show_formspec.formname = new std::string(luaL_checkstring(L, 1));
 	event->show_formspec.formspec = new std::string(luaL_checkstring(L, 2));
-	getClient(L)->pushToEventQueue(event);
+    getClient(L)->getClientEventHandler()->pushToEventQueue(event);
 	lua_pushboolean(L, true);
 	return 1;
 }
@@ -221,9 +225,10 @@ int ModApiClient::l_get_meta(lua_State *L)
 int ModApiClient::l_get_server_info(lua_State *L)
 {
 	Client *client = getClient(L);
-	Address serverAddress = client->getServerAddress();
+    auto pkt_handler = client->getPacketHandler();
+    Address serverAddress = pkt_handler->getServerAddress();
 	lua_newtable(L);
-	lua_pushstring(L, client->getAddressName().c_str());
+    lua_pushstring(L, pkt_handler->getAddressName().c_str());
 	lua_setfield(L, -2, "address");
 	lua_pushstring(L, serverAddress.serializeString().c_str());
 	lua_setfield(L, -2, "ip");
@@ -287,9 +292,9 @@ int ModApiClient::l_get_node_def(lua_State *L)
 // get_privilege_list()
 int ModApiClient::l_get_privilege_list(lua_State *L)
 {
-	const Client *client = getClient(L);
+    Client *client = getClient(L);
 	lua_newtable(L);
-	for (const std::string &priv : client->getPrivilegeList()) {
+    for (const std::string &priv : client->getEnv().getLocalPlayer()->getPrivilegeList()) {
 		lua_pushboolean(L, true);
 		lua_setfield(L, -2, priv.c_str());
 	}

@@ -13,7 +13,7 @@ class TestFailedException { // don’t derive from std::exception to avoid accid
 public:
 	TestFailedException(std::string in_message, const char *in_file, int in_line)
 		: message(std::move(in_message))
-		, file(fs::GetFilenameFromPath(in_file))
+		, file(mt_fs::GetFilenameFromPath(in_file))
 		, line(in_line)
 	{}
 

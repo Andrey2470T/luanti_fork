@@ -4,17 +4,19 @@
 
 #include "l_camera.h"
 #include <cmath>
+#include "client/pipeline/pipeline.h"
+#include "client/player/localplayer.h"
 #include "script/common/c_converter.h"
 #include "l_internal.h"
-#include "client/content_cao.h"
-#include "client/camera.h"
-#include "client/client.h"
+#include "client/ao/renderCAO.h"
+#include "client/player/playercamera.h"
+#include "client/core/client.h"
 
-LuaCamera::LuaCamera(Camera *m) : m_camera(m)
+LuaCamera::LuaCamera(PlayerCamera *m) : m_camera(m)
 {
 }
 
-void LuaCamera::create(lua_State *L, Camera *m)
+void LuaCamera::create(lua_State *L, PlayerCamera *m)
 {
 	lua_getglobal(L, "core");
 	luaL_checktype(L, -1, LUA_TTABLE);
@@ -39,8 +41,8 @@ void LuaCamera::create(lua_State *L, Camera *m)
 // set_camera_mode(self, mode)
 int LuaCamera::l_set_camera_mode(lua_State *L)
 {
-	Camera *camera = getobject(L, 1);
-	GenericCAO *playercao = getClient(L)->getEnv().getLocalPlayer()->getCAO();
+    auto camera = getobject(L, 1);
+    RenderCAO *playercao = getClient(L)->getEnv().getLocalPlayer()->getCAO();
 	if (!camera)
 		return 0;
 	sanity_check(playercao);
@@ -57,7 +59,7 @@ int LuaCamera::l_set_camera_mode(lua_State *L)
 // get_camera_mode(self)
 int LuaCamera::l_get_camera_mode(lua_State *L)
 {
-	Camera *camera = getobject(L, 1);
+    PlayerCamera *camera = getobject(L, 1);
 	if (!camera)
 		return 0;
 
@@ -69,18 +71,18 @@ int LuaCamera::l_get_camera_mode(lua_State *L)
 // get_fov(self)
 int LuaCamera::l_get_fov(lua_State *L)
 {
-	Camera *camera = getobject(L, 1);
+    PlayerCamera *camera = getobject(L, 1);
 	if (!camera)
 		return 0;
 
 	lua_newtable(L);
-	lua_pushnumber(L, camera->getFovX() * core::RADTODEG);
+    lua_pushnumber(L, camera->getFovX() * RADTODEG);
 	lua_setfield(L, -2, "x");
-	lua_pushnumber(L, camera->getFovY() * core::RADTODEG);
+    lua_pushnumber(L, camera->getFovY() * RADTODEG);
 	lua_setfield(L, -2, "y");
-	lua_pushnumber(L, camera->getCameraNode()->getFOV() * core::RADTODEG);
+    lua_pushnumber(L, camera->getFovY() * RADTODEG);
 	lua_setfield(L, -2, "actual");
-	lua_pushnumber(L, camera->getFovMax() * core::RADTODEG);
+    lua_pushnumber(L, camera->getFovMax() * RADTODEG);
 	lua_setfield(L, -2, "max");
 	return 1;
 }
@@ -88,7 +90,7 @@ int LuaCamera::l_get_fov(lua_State *L)
 // get_pos(self)
 int LuaCamera::l_get_pos(lua_State *L)
 {
-	Camera *camera = getobject(L, 1);
+    Camera *camera = getobject(L, 1);
 	if (!camera)
 		return 0;
 
@@ -124,7 +126,7 @@ int LuaCamera::l_get_look_horizontal(lua_State *L)
 	LocalPlayer *player = getClient(L)->getEnv().getLocalPlayer();
 	sanity_check(player);
 
-	lua_pushnumber(L, (player->getYaw() + 90.f) * core::DEGTORAD);
+    lua_pushnumber(L, (player->getYaw() + 90.f) * DEGTORAD);
 	return 1;
 }
 
@@ -135,27 +137,27 @@ int LuaCamera::l_get_look_vertical(lua_State *L)
 	LocalPlayer *player = getClient(L)->getEnv().getLocalPlayer();
 	sanity_check(player);
 
-	lua_pushnumber(L, -1.0f * player->getPitch() * core::DEGTORAD);
+    lua_pushnumber(L, -1.0f * player->getPitch() * DEGTORAD);
 	return 1;
 }
 
 // get_aspect_ratio(self)
 int LuaCamera::l_get_aspect_ratio(lua_State *L)
 {
-	Camera *camera = getobject(L, 1);
+    PlayerCamera *camera = getobject(L, 1);
 	if (!camera)
 		return 0;
 
-	lua_pushnumber(L, camera->getCameraNode()->getAspectRatio());
+    lua_pushnumber(L, camera->getAspectRatio());
 	return 1;
 }
 
-Camera *LuaCamera::getobject(LuaCamera *ref)
+PlayerCamera *LuaCamera::getobject(LuaCamera *ref)
 {
 	return ref->m_camera;
 }
 
-Camera *LuaCamera::getobject(lua_State *L, int narg)
+PlayerCamera *LuaCamera::getobject(lua_State *L, int narg)
 {
 	LuaCamera *ref = checkObject<LuaCamera>(L, narg);
 	assert(ref);

@@ -460,14 +460,14 @@ void setPitchYawRollRad(matrix4 &m, v3f rot);
 
 inline void setPitchYawRoll(matrix4 &m, v3f rot)
 {
-    setPitchYawRollRad(m, rot.apply(degToRad));
+    setPitchYawRollRad(m, rot * DEGTORAD);
 }
 
 v3f getPitchYawRollRad(const matrix4 &m);
 
 inline v3f getPitchYawRoll(const matrix4 &m)
 {
-    return getPitchYawRollRad(m).apply(radToDeg);;
+    return getPitchYawRollRad(m) * RADTODEG;
 }
 
 // Muliply the RGB value of a color linearly, and clamp to black/white

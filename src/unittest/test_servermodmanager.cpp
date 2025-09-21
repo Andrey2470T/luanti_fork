@@ -44,7 +44,7 @@ void TestServerModManager::runTests(IGameDef *gamedef)
 	auto test_mods = getTestTempDirectory().append(DIR_DELIM "test_mods");
 	{
 		auto p = test_mods + (DIR_DELIM "test_mod" DIR_DELIM);
-		fs::CreateAllDirs(p);
+		mt_fs::CreateAllDirs(p);
 		std::ofstream ofs1(p + "mod.conf", std::ios::out | std::ios::binary);
 		ofs1 << "name = test_mod\n"
 			<< "description = Does nothing\n";
@@ -55,7 +55,7 @@ void TestServerModManager::runTests(IGameDef *gamedef)
 	setenv("MINETEST_MOD_PATH", test_mods.c_str(), 1);
 
 	m_worlddir = getTestTempDirectory().append(DIR_DELIM "world");
-	fs::CreateDir(m_worlddir);
+	mt_fs::CreateDir(m_worlddir);
 
 	TEST(testCreation);
 	TEST(testIsConsistent);

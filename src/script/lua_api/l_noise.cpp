@@ -294,9 +294,9 @@ int LuaPerlinNoiseMap::l_get_map_slice(lua_State *L)
 		lua_newtable(L);
 
 	write_array_slice_float(L, lua_gettop(L), n->result,
-		v3u16(n->sx, n->sy, n->sz),
-		v3u16(slice_offset.X, slice_offset.Y, slice_offset.Z),
-		v3u16(slice_size.X, slice_size.Y, slice_size.Z));
+        v3u(n->sx, n->sy, n->sz),
+        v3u(slice_offset.X, slice_offset.Y, slice_offset.Z),
+        v3u(slice_size.X, slice_size.Y, slice_size.Z));
 
 	return 1;
 }

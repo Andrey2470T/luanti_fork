@@ -508,13 +508,13 @@ void PlayerSAO::setHP(s32 target_hp, const PlayerHPChangeReason &reason, bool fr
 		return; // Nothing to do
 
 	// Protect against overflow.
-	s32 hp_change = std::max<s64>((s64)target_hp - (s64)m_hp, S32_MIN);
+	s32 hp_change = std::max<s64>((s64)target_hp - (s64)m_hp, T_MIN(s32));
 
 	hp_change = m_env->getScriptIface()->on_player_hpchange(this, hp_change, reason);
-	hp_change = std::min<s32>(hp_change, U16_MAX); // Protect against overflow
+	hp_change = std::min<s32>(hp_change, T_MAX(u16)); // Protect against overflow
 
 	s32 hp = (s32)m_hp + hp_change;
-	hp = rangelim(hp, 0, U16_MAX);
+	hp = rangelim(hp, 0, T_MAX(u16));
 
 	if (hp > m_prop.hp_max)
 		hp = m_prop.hp_max;
@@ -739,7 +739,7 @@ bool PlayerSAO::checkMovementCheat()
 	return cheated;
 }
 
-bool PlayerSAO::getCollisionBox(aabb3f *toset) const
+bool PlayerSAO::getCollisionBox(aabbf *toset) const
 {
 	//update collision box
 	toset->MinEdge = m_prop.collisionbox.MinEdge * BS;
@@ -750,7 +750,7 @@ bool PlayerSAO::getCollisionBox(aabb3f *toset) const
 	return true;
 }
 
-bool PlayerSAO::getSelectionBox(aabb3f *toset) const
+bool PlayerSAO::getSelectionBox(aabbf *toset) const
 {
 	if (!m_prop.is_visible) {
 		return false;

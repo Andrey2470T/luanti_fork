@@ -5,7 +5,6 @@
 #pragma once
 
 #include "lua_api/l_base.h"
-#include "irrlichttypes.h"
 
 class ServerActiveObject;
 class LuaEntitySAO;

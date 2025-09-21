@@ -118,7 +118,7 @@ void TestAuthDatabase::runTests(IGameDef *gamedef)
 	delete auth_provider;
 
 	// reset database
-	fs::DeleteSingleFileOrEmptyDirectory(test_dir + DIR_DELIM + "auth.txt");
+    mt_fs::DeleteSingleFileOrEmptyDirectory(test_dir + DIR_DELIM + "auth.txt");
 
 	rawstream << "-------- Files database (new objects)" << std::endl;
 
@@ -139,7 +139,7 @@ void TestAuthDatabase::runTests(IGameDef *gamedef)
 	delete auth_provider;
 
 	// reset database
-	fs::DeleteSingleFileOrEmptyDirectory(test_dir + DIR_DELIM + "auth.sqlite");
+    mt_fs::DeleteSingleFileOrEmptyDirectory(test_dir + DIR_DELIM + "auth.sqlite");
 
 	rawstream << "-------- SQLite3 database (new objects)" << std::endl;
 

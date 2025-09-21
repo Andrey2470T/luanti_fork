@@ -716,8 +716,8 @@ enum ToServerCommand : u16
 	TOSERVER_PLAYERPOS = 0x23,
 	/*
 		[0] u16 command
-		[2] v3s32 position*100
-		[2+12] v3s32 speed*100
+		[2] v3i position*100
+		[2+12] v3i speed*100
 		[2+12+12] s32 pitch*100
 		[2+12+12+4] s32 yaw*100
 		[2+12+12+4+4] u32 keyPressed

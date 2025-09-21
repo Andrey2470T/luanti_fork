@@ -114,7 +114,7 @@ void TestVoxelArea::test_extent()
 	VoxelArea v2(v3s16(32493, -32507, 32752), v3s16(32508, -32492, 32767));
     UASSERT(v2.getExtent() == v3i(16, 16, 16));
 
-	// side length bigger than S16_MAX
+	// side length bigger than T_MAX(S16)
 	VoxelArea v3({-20000, 12, 34}, {20000, 12, 34});
     UASSERT(v3.getExtent() == v3i(40001, 1, 1));
 
@@ -131,7 +131,7 @@ void TestVoxelArea::test_volume()
 	VoxelArea v2(v3s16(32493, -32507, 32752), v3s16(32508, -32492, 32767));
 	UASSERTEQ(u32, v2.getVolume(), 4096);
 
-	// volume bigger than S32_MAX
+	// volume bigger than T_MAX(s32)
 	VoxelArea v3({1, 1, 1}, {1337, 1337, 1337});
 	UASSERTEQ(u32, v3.getVolume(), 2389979753U);
 

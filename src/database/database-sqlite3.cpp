@@ -515,8 +515,8 @@ bool PlayerDatabaseSQLite3::loadPlayer(RemotePlayer *player, PlayerSAO *sao)
 	sao->setLookPitch(sqlite_to_float(m_stmt_player_load, 0));
 	sao->setPlayerYaw(sqlite_to_float(m_stmt_player_load, 1));
 	sao->setBasePosition(sqlite_to_v3f(m_stmt_player_load, 2));
-	sao->setHPRaw((u16) MYMIN(sqlite_to_int(m_stmt_player_load, 5), U16_MAX));
-	sao->setBreath((u16) MYMIN(sqlite_to_int(m_stmt_player_load, 6), U16_MAX), false);
+	sao->setHPRaw((u16) MYMIN(sqlite_to_int(m_stmt_player_load, 5), T_MAX(u16)));
+	sao->setBreath((u16) MYMIN(sqlite_to_int(m_stmt_player_load, 6), T_MAX(u16)), false);
 	sqlite3_reset(m_stmt_player_load);
 
 	// Load inventory

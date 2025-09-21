@@ -35,11 +35,11 @@ class ItemPartColor
 	/*
 	 * Optional color that overrides the global base color.
 	 */
-	video::SColor override_color;
+	img::color8 override_color;
 	/*
 	 * Stores the last color this mesh buffer was colorized as.
 	 */
-	video::SColor last_colorized;
+	img::color8 last_colorized;
 
 	// saves some bytes compared to two std::optionals
 	bool override_color_set = false;
@@ -49,16 +49,16 @@ public:
 
 	ItemPartColor() = default;
 
-	ItemPartColor(bool override, video::SColor color) :
+	ItemPartColor(bool override, img::color8 color) :
 		override_color(color), override_color_set(override)
 	{}
 
-	void applyOverride(video::SColor &dest) const {
+	void applyOverride(img::color8 &dest) const {
 		if (override_color_set)
 			dest = override_color;
 	}
 
-	bool needColorize(video::SColor target) {
+	bool needColorize(img::color8 target) {
 		if (last_colorized_set && target == last_colorized)
 			return false;
 		last_colorized_set = true;
@@ -99,9 +99,9 @@ public:
 
 	// Sets the vertex color of the wield mesh.
 	// Must only be used if the constructor was called with lighting = false
-	void setColor(video::SColor color);
+	void setColor(img::color8 color);
 
-	void setNodeLightColor(video::SColor color);
+	void setNodeLightColor(img::color8 color);
 
 	scene::IMesh *getMesh() { return m_meshnode->getMesh(); }
 
@@ -128,7 +128,7 @@ private:
 	 * The base color of this mesh. This is the default
 	 * for all mesh buffers.
 	 */
-	video::SColor m_base_color;
+	img::color8 m_base_color;
 
 	// Bounding box culling is disabled for this type of scene node,
 	// so this variable is just required so we can implement

@@ -13,7 +13,6 @@ class Client;
 class EnrichedString;
 class GUIChatConsole;
 struct PointedThing;
-struct CameraOrientation;
 class Hud;
 class RenderSystem;
 class ResourceCache;
@@ -63,9 +62,8 @@ public:
 	};
 
 	void init();
-    void update(Client *client,
-			const CameraOrientation &cam, const PointedThing &pointed_old,
-			const GUIChatConsole *chat_console, float dtime);
+    void update(Client *client, const PointedThing &pointed_old,
+                const GUIChatConsole *chat_console, float dtime);
 
     const u8 &getFlags() const
     {

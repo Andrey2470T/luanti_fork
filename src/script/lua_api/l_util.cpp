@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 // Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
-#include "irrlichttypes_extrabloated.h"
 #include "lua_api/l_util.h"
 #include "lua_api/l_internal.h"
 #include "lua_api/l_settings.h"
@@ -401,7 +400,7 @@ int ModApiUtil::l_mkdir(lua_State *L)
 	NO_MAP_LOCK_REQUIRED;
 	const char *path = luaL_checkstring(L, 1);
 	CHECK_SECURE_PATH(L, path, true);
-	lua_pushboolean(L, fs::CreateAllDirs(path));
+    lua_pushboolean(L, mt_fs::CreateAllDirs(path));
 	return 1;
 }
 
@@ -415,9 +414,9 @@ int ModApiUtil::l_rmdir(lua_State *L)
 	bool recursive = readParam<bool>(L, 2, false);
 
 	if (recursive)
-		lua_pushboolean(L, fs::RecursiveDelete(path));
+        lua_pushboolean(L, mt_fs::RecursiveDelete(path));
 	else
-		lua_pushboolean(L, fs::DeleteSingleFileOrEmptyDirectory(path));
+        lua_pushboolean(L, mt_fs::DeleteSingleFileOrEmptyDirectory(path));
 
 	return 1;
 }
@@ -431,7 +430,7 @@ int ModApiUtil::l_cpdir(lua_State *L)
 	CHECK_SECURE_PATH(L, source, false);
 	CHECK_SECURE_PATH(L, destination, true);
 
-	lua_pushboolean(L, fs::CopyDir(source, destination));
+    lua_pushboolean(L, mt_fs::CopyDir(source, destination));
 	return 1;
 }
 
@@ -444,7 +443,7 @@ int ModApiUtil::l_mvdir(lua_State *L)
 	CHECK_SECURE_PATH(L, source, true);
 	CHECK_SECURE_PATH(L, destination, true);
 
-	lua_pushboolean(L, fs::MoveDir(source, destination));
+    lua_pushboolean(L, mt_fs::MoveDir(source, destination));
 	return 1;
 }
 
@@ -458,12 +457,12 @@ int ModApiUtil::l_get_dir_list(lua_State *L)
 
 	CHECK_SECURE_PATH(L, path, false);
 
-	std::vector<fs::DirListNode> list = fs::GetDirListing(path);
+    std::vector<mt_fs::DirListNode> list = mt_fs::GetDirListing(path);
 
 	int index = 0;
 	lua_newtable(L);
 
-	for (const fs::DirListNode &dln : list) {
+    for (const mt_fs::DirListNode &dln : list) {
 		if (list_all || list_dirs == dln.dir) {
 			lua_pushstring(L, dln.name.c_str());
 			lua_rawseti(L, -2, ++index);
@@ -482,7 +481,7 @@ int ModApiUtil::l_safe_file_write(lua_State *L)
 
 	CHECK_SECURE_PATH(L, path, true);
 
-	bool ret = fs::safeWriteToFile(path, content);
+    bool ret = mt_fs::safeWriteToFile(path, content);
 	lua_pushboolean(L, ret);
 
 	return 1;
@@ -574,11 +573,11 @@ int ModApiUtil::l_colorspec_to_colorstring(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
 
-	video::SColor color(0);
+    img::color8 color;
 	if (read_color(L, 1, &color)) {
 		char colorstring[10];
 		snprintf(colorstring, 10, "#%02X%02X%02X%02X",
-			color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha());
+            color.R(), color.G(), color.B(), color.A());
 		lua_pushstring(L, colorstring);
 		return 1;
 	}
@@ -591,13 +590,13 @@ int ModApiUtil::l_colorspec_to_bytes(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
 
-	video::SColor color(0);
+    img::color8 color;
 	if (read_color(L, 1, &color)) {
 		u8 colorbytes[4] = {
-			(u8) color.getRed(),
-			(u8) color.getGreen(),
-			(u8) color.getBlue(),
-			(u8) color.getAlpha(),
+            (u8) color.R(),
+            (u8) color.G(),
+            (u8) color.B(),
+            (u8) color.A(),
 		};
 		lua_pushlstring(L, (const char*) colorbytes, 4);
 		return 1;
@@ -611,7 +610,7 @@ int ModApiUtil::l_colorspec_to_table(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
 
-	video::SColor color(0);
+    img::color8 color;
 	if (read_color(L, 1, &color)) {
 		push_ARGB8(L, color);
 		return 1;

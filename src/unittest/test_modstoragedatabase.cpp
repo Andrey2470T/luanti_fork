@@ -200,7 +200,7 @@ void TestModStorageDatabase::runTests(IGameDef *gamedef)
 	delete mod_storage_provider;
 
 	// reset database
-	fs::RecursiveDelete(test_dir + DIR_DELIM + "mod_storage");
+	mt_fs::RecursiveDelete(test_dir + DIR_DELIM + "mod_storage");
 
 	rawstream << "-------- Files database (new objects)" << std::endl;
 
@@ -221,7 +221,7 @@ void TestModStorageDatabase::runTests(IGameDef *gamedef)
 	delete mod_storage_provider;
 
 	// reset database
-	fs::DeleteSingleFileOrEmptyDirectory(test_dir + DIR_DELIM + "mod_storage.sqlite");
+	mt_fs::DeleteSingleFileOrEmptyDirectory(test_dir + DIR_DELIM + "mod_storage.sqlite");
 
 	rawstream << "-------- SQLite3 database (new objects)" << std::endl;
 

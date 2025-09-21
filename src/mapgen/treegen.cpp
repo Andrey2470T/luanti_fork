@@ -6,7 +6,6 @@
 
 #include <stack>
 #include "treegen.h"
-#include "irr_v3d.h"
 #include "util/pointer.h"
 #include "util/numeric.h"
 #include "servermap.h"
@@ -40,8 +39,8 @@ static void tree_single_leaves_placement(MMVManip &vmanip, v3f p0,
 	PseudoRandom ps, const TreeDef &def);
 static void tree_fruit_placement(MMVManip &vmanip, v3f p0, const TreeDef &def);
 
-static void setRotationAxisRadians(core::matrix4 &M, float angle, v3f axis);
-static v3f transposeMatrix(const core::matrix4 &M, v3f v);
+static void setRotationAxisRadians(matrix4 &M, float angle, v3f axis);
+static v3f transposeMatrix(const matrix4 &M, v3f v);
 
 void make_tree(MMVManip &vmanip, v3s16 p0, bool is_apple_tree,
 	const NodeDefManager *ndef, s32 seed)
@@ -180,13 +179,13 @@ treegen::error make_ltree(MMVManip &vmanip, v3s16 p0,
 	float angleOffset_in_radians = (s16)(ps.range(0, 1) % MAX_ANGLE_OFFSET) * M_PI / 180;
 
 	//initialize rotation matrix, position and stacks for branches
-	core::matrix4 rotation;
+    matrix4 rotation;
 	setRotationAxisRadians(rotation, M_PI / 2, v3f(0, 0, 1));
 	v3f position;
 	position.X = p0.X;
 	position.Y = p0.Y;
 	position.Z = p0.Z;
-	std::stack <core::matrix4> stack_orientation;
+    std::stack <matrix4> stack_orientation;
 	std::stack <v3f> stack_position;
 
 	//generate axiom
@@ -303,7 +302,7 @@ treegen::error make_ltree(MMVManip &vmanip, v3s16 p0,
 	s16 x,y,z;
 	for (s16 i = 0; i < (s16)axiom.size(); i++) {
 		char axiom_char = axiom.at(i);
-		core::matrix4 temp_rotation;
+        matrix4 temp_rotation;
 		temp_rotation.makeIdentity();
 		v3f dir;
 		switch (axiom_char) {
@@ -605,7 +604,7 @@ void tree_fruit_placement(MMVManip &vmanip, v3f p0, const TreeDef &tree_definiti
 }
 
 
-void setRotationAxisRadians(core::matrix4 &M, float angle, v3f axis)
+void setRotationAxisRadians(matrix4 &M, float angle, v3f axis)
 {
 	float c = std::cos(angle);
 	float s = std::sin(angle);
@@ -632,7 +631,7 @@ void setRotationAxisRadians(core::matrix4 &M, float angle, v3f axis)
 }
 
 
-v3f transposeMatrix(const core::matrix4 &M, v3f v)
+v3f transposeMatrix(const matrix4 &M, v3f v)
 {
 	v3f translated;
 	translated.X = M[0] * v.X + M[4] * v.Y + M[8]  * v.Z + M[12];

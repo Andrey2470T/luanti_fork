@@ -156,9 +156,9 @@ void Environment::continueRaycast(RaycastState *state, PointedThing *result_p)
 			new_nodes.MaxEdge.Z = new_nodes.MinEdge.Z;
 		}
 
-		if (new_nodes.MaxEdge.X == S16_MAX ||
-			new_nodes.MaxEdge.Y == S16_MAX ||
-			new_nodes.MaxEdge.Z == S16_MAX) {
+		if (new_nodes.MaxEdge.X == T_MAX(S16) ||
+			new_nodes.MaxEdge.Y == T_MAX(S16) ||
+			new_nodes.MaxEdge.Z == T_MAX(S16)) {
 			break; // About to go out of bounds
 		}
 

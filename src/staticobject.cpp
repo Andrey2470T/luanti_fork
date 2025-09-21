@@ -38,7 +38,7 @@ void StaticObjectList::serialize(std::ostream &os)
 {
 	// Check for problems first
 	auto problematic = [] (StaticObject &obj) -> bool {
-		if (obj.data.size() > U16_MAX) {
+		if (obj.data.size() > T_MAX(u16)) {
 			errorstream << "StaticObjectList::serialize(): "
 				"object has excessive static data (" << obj.data.size() <<
 				"), deleting it." << std::endl;
@@ -67,7 +67,7 @@ void StaticObjectList::serialize(std::ostream &os)
 	size_t count = m_stored.size() + m_active.size();
 	// Make sure it fits into u16, else it would get truncated and cause e.g.
 	// issue #2610 (Invalid block data in database: unsupported NameIdMapping version).
-	if (count > U16_MAX) {
+	if (count > T_MAX(u16)) {
 		errorstream << "StaticObjectList::serialize(): "
 			<< "too many objects (" << count << ") in list, "
 			<< "not writing them to disk." << std::endl;

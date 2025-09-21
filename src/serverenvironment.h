@@ -302,7 +302,7 @@ public:
 	bool getActiveObjectMessage(ActiveObjectMessage *dest);
 
 	virtual void getSelectedActiveObjects(
-		const core::line3d<f32> &shootline_on_map,
+        const line3f &shootline_on_map,
 		std::vector<PointedThing> &objects,
 		const std::optional<Pointabilities> &pointabilities
 	);
@@ -342,7 +342,7 @@ public:
 	}
 
 	// Find all active objects inside a box
-	void getObjectsInArea(std::vector<ServerActiveObject *> &objects, const aabb3f &box,
+    void getObjectsInArea(std::vector<ServerActiveObject *> &objects, const aabbf &box,
 			std::function<bool(ServerActiveObject *obj)> include_obj_cb)
 	{
 		return m_ao_manager.getObjectsInArea(box, objects, include_obj_cb);

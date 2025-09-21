@@ -5,7 +5,7 @@
 #pragma once
 #include <array>
 #include <vector>
-#include <irrlichttypes.h>
+#include <Types.h>
 #include <S3DVertex.h>
 
 /// Represents a triangle as three vertices.

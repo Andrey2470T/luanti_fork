@@ -20,6 +20,7 @@
 #include "IGUIStaticText.h"
 #include <Render/TTFont.h>
 #include "client/render/camera.h"
+#include "client/ui/text_sprite.h"
 
 #include <iostream>
 #include <algorithm>
@@ -298,7 +299,8 @@ void TouchControls::applyLayout(const ButtonLayout &layout)
 		m_overflow_button_rects.push_back(rect);
 	});
 
-    m_status_text = m_guienv->addStaticText(L"", recti(), false, false);
+    m_status_text = std::make_unique<UITextSprite>(
+        m_rndsys->getFontManager(), EnrichedString(), m_rndsys->getRenderer(), m_cache, false, false);
 	m_status_text->setVisible(false);
 
 	// applyLayout can be called at any time, also e.g. while the overflow menu

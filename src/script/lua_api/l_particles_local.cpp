@@ -4,14 +4,17 @@
 // Copyright (C) 2017 red-001 <red-001@outlook.ie>
 
 #include "lua_api/l_particles_local.h"
+#include "client/core/clientevent.h"
+#include "client/render/rendersystem.h"
 #include "common/c_content.h"
 #include "common/c_converter.h"
 #include "lua_api/l_internal.h"
 #include "lua_api/l_object.h"
 #include "lua_api/l_particleparams.h"
-#include "client/particles.h"
-#include "client/client.h"
-#include "client/clientevent.h"
+#include "client/render/particles.h"
+#include "client/core/client.h"
+#include "client/core/clientevent.h"
+#include "client/core/clienteventhandler.h"
 
 int ModApiParticlesLocal::l_add_particle(lua_State *L)
 {
@@ -80,7 +83,7 @@ int ModApiParticlesLocal::l_add_particle(lua_State *L)
 	ClientEvent *event = new ClientEvent();
 	event->type           = CE_SPAWN_PARTICLE;
 	event->spawn_particle = new ParticleParameters(p);
-	getClient(L)->pushToEventQueue(event);
+    getClient(L)->getClientEventHandler()->pushToEventQueue(event);
 
 	return 0;
 }
@@ -175,7 +178,7 @@ int ModApiParticlesLocal::l_add_particlespawner(lua_State *L)
 
 	p.node_tile = getintfield_default(L, 1, "node_tile", p.node_tile);
 
-	u64 id = getClient(L)->getParticleManager()->generateSpawnerId();
+    u64 id = getClient(L)->getRenderSystem()->getParticleManager()->generateSpawnerId();
 
 	auto event = new ClientEvent();
 	event->type                            = CE_ADD_PARTICLESPAWNER;
@@ -183,7 +186,7 @@ int ModApiParticlesLocal::l_add_particlespawner(lua_State *L)
 	event->add_particlespawner.attached_id = 0;
 	event->add_particlespawner.id          = id;
 
-	getClient(L)->pushToEventQueue(event);
+    getClient(L)->getClientEventHandler()->pushToEventQueue(event);
 	lua_pushnumber(L, id);
 
 	return 1;
@@ -198,7 +201,7 @@ int ModApiParticlesLocal::l_delete_particlespawner(lua_State *L)
 	event->type                      = CE_DELETE_PARTICLESPAWNER;
 	event->delete_particlespawner.id = id;
 
-	getClient(L)->pushToEventQueue(event);
+    getClient(L)->getClientEventHandler()->pushToEventQueue(event);
 	return 0;
 }
 

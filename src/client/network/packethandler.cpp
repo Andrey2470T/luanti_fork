@@ -150,8 +150,8 @@ void writePlayerPos(LocalPlayer *myplayer, f32 range, NetworkPacket *pkt)
 
     /*
         Format:
-        [0] v3s32 position*100
-        [12] v3s32 speed*100
+        [0] v3i position*100
+        [12] v3i speed*100
         [12+12] s32 pitch*100
         [12+12+4] s32 yaw*100
         [12+12+4+4] u32 keyPressed

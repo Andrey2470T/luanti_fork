@@ -270,7 +270,7 @@ void TestSerialization::testStreamRead()
 	UASSERT(readV2S16(is) == v2s16(500, 500));
 	UASSERT(readV3S16(is) == v3s16(4207, 604, -30));
     UASSERT(readV2S32(is) == v2i(1920, 1080));
-    UASSERT(readV3S32(is) == v3i(-400, 6400054, 290549855));
+    UASSERT(readv3i(is) == v3i(-400, 6400054, 290549855));
 
 	UASSERT(readV3F1000(is) == v3f(500, 10024.2f, -192.54f));
     UASSERT(readARGB8(is) == img::color8(img::PF_RGBA8, 255, 128, 50, 128));
@@ -312,7 +312,7 @@ void TestSerialization::testStreamWrite()
 	writeV2S16(os, v2s16(500, 500));
 	writeV3S16(os, v3s16(4207, 604, -30));
     writeV2S32(os, v2i(1920, 1080));
-    writeV3S32(os, v3i(-400, 6400054, 290549855));
+    writev3i(os, v3i(-400, 6400054, 290549855));
 
 	writeV3F1000(os, v3f(500, 10024.2f, -192.54f));
     writeARGB8(os, img::color8(img::PF_RGBA8, 255, 128, 50, 128));

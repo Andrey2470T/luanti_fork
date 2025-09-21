@@ -3,6 +3,8 @@
 // Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "clientmedia.h"
+#include "client/network/packethandler.h"
+#include "client/render/rendersystem.h"
 #include "gettext.h"
 #include "httpfetch.h"
 #include "client/core/client.h"
@@ -16,6 +18,7 @@
 #include <sstream>
 #include <FilesystemVersions.h>
 #include "network/networkprotocol.h"
+#include "client/render/loadscreen.h"
 
 static fs::path getMediaCacheDir()
 {
@@ -177,6 +180,9 @@ void ClientMediaDownloader::initialStep(Client *client)
 
 	// Check media cache
 	m_uncached_count = m_files.size();
+
+    auto rndsys = client->getRenderSystem();
+    bool menu_clouds = g_settings->getBool("menu_clouds");
 	for (auto &file_it : m_files) {
 		const std::string &name = file_it.first;
 		FileStatus *filestatus = file_it.second;
@@ -190,7 +196,8 @@ void ClientMediaDownloader::initialStep(Client *client)
 		u64 cur_time = porting::getTimeMs();
 		u64 dtime = porting::getDeltaMs(last_time, cur_time);
 		if (dtime >= chunk_time_ms) {
-			client->drawLoadScreen(loading_text, dtime / 1000.0f, 30);
+            rndsys->getLoadScreen()->draw(
+                rndsys->getWindowSize(), loading_text, dtime / 1000.0f, menu_clouds, 30, rndsys->getScaleFactor());
 			last_time = cur_time;
 		}
 	}
@@ -239,6 +246,7 @@ void ClientMediaDownloader::initialStep(Client *client)
 		// requests, so if there are lots of remote servers that are
 		// not responding, those will stall new media file transfers.
 
+        auto pkt_handler = client->getPacketHandler();
 		for (u32 i = 0; i < m_remotes.size(); ++i) {
 			assert(m_httpfetch_next_id == i);
 
@@ -257,13 +265,13 @@ void ClientMediaDownloader::initialStep(Client *client)
 				"Content-Type: application/octet-stream");
 
 			// Encapsulate possible IPv6 plain address in []
-			std::string addr = client->getAddressName();
+            std::string addr = pkt_handler->getAddressName();
 			if (addr.find(':', 0) != std::string::npos)
 				addr = '[' + addr + ']';
 			fetch_request.extra_headers.emplace_back(
 				std::string("Referer: minetest://") +
 				addr + ":" +
-				std::to_string(client->getServerAddress().getPort()));
+                std::to_string(pkt_handler->getServerAddress().getPort()));
 
 			httpfetch_async(fetch_request);
 
@@ -464,7 +472,7 @@ void ClientMediaDownloader::startConventionalTransfers(Client *client)
 		}
 		assert((s32) file_requests.size() ==
 				m_uncached_count - m_uncached_received_count);
-		client->request_media(file_requests);
+        client->getPacketHandler()->request_media(file_requests);
 	}
 }
 
@@ -771,5 +779,5 @@ void SingleMediaDownloader::startConventionalTransfer(Client *client)
 {
 	std::vector<std::string> requests;
 	requests.emplace_back(m_file_name);
-	client->request_media(requests);
+    client->getPacketHandler()->request_media(requests);
 }

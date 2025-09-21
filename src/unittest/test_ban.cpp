@@ -54,8 +54,8 @@ void TestBan::reinitTestEnv()
 	m_testbm = getTestTempDirectory().append(DIR_DELIM "testbm.txt");
 	m_testbm2 = getTestTempDirectory().append(DIR_DELIM "testbm2.txt");
 
-	fs::DeleteSingleFileOrEmptyDirectory(m_testbm);
-	fs::DeleteSingleFileOrEmptyDirectory(m_testbm2);
+    mt_fs::DeleteSingleFileOrEmptyDirectory(m_testbm);
+    mt_fs::DeleteSingleFileOrEmptyDirectory(m_testbm2);
 }
 
 void TestBan::testCreate()
@@ -65,13 +65,13 @@ void TestBan::testCreate()
 		BanManager bm(m_testbm);
 	}
 
-	UASSERT(fs::IsFile(m_testbm));
+    UASSERT(mt_fs::IsFile(m_testbm));
 
 	// test manual save
 	{
 		BanManager bm(m_testbm2);
 		bm.save();
-		UASSERT(fs::IsFile(m_testbm2));
+        UASSERT(mt_fs::IsFile(m_testbm2));
 	}
 }
 

@@ -6,10 +6,10 @@
 #include "l_internal.h"
 #include "lua_api/l_item.h"
 #include "script/common/c_converter.h"
-#include "client/localplayer.h"
+#include "client/player/localplayer.h"
 #include "hud.h"
 #include "common/c_content.h"
-#include "client/content_cao.h"
+#include "client/ao/renderCAO.h"
 
 LuaLocalPlayer::LuaLocalPlayer(LocalPlayer *m) : m_localplayer(m)
 {
@@ -215,7 +215,7 @@ int LuaLocalPlayer::l_get_last_look_vertical(lua_State *L)
 {
 	LocalPlayer *player = getobject(L, 1);
 
-	lua_pushnumber(L, -1.0 * player->last_pitch * core::DEGTORAD);
+    lua_pushnumber(L, -1.0 * player->last_pitch * DEGTORAD);
 	return 1;
 }
 
@@ -223,7 +223,7 @@ int LuaLocalPlayer::l_get_last_look_horizontal(lua_State *L)
 {
 	LocalPlayer *player = getobject(L, 1);
 
-	lua_pushnumber(L, (player->last_yaw + 90.) * core::DEGTORAD);
+    lua_pushnumber(L, (player->last_yaw + 90.) * DEGTORAD);
 	return 1;
 }
 
@@ -359,7 +359,7 @@ int LuaLocalPlayer::l_hud_add(lua_State *L)
 	read_hud_element(L, elem);
 
 	u32 id = player->addHud(elem);
-	if (id == U32_MAX) {
+    if (id == T_MAX(u32)) {
 		delete elem;
 		return 0;
 	}

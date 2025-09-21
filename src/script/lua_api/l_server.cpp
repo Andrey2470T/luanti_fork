@@ -282,7 +282,7 @@ int ModApiServer::l_get_player_window_information(lua_State *L)
 
 	auto dynamic = server->getClientDynamicInfo(player->getPeerId());
 
-	if (!dynamic || dynamic->render_target_size == v2u32())
+    if (!dynamic || dynamic->render_target_size == v2u())
 		return 0;
 
 	lua_newtable(L);

@@ -34,7 +34,7 @@ void TestVoxelAlgorithms::runTests(IGameDef *gamedef)
 void TestVoxelAlgorithms::testVoxelLineIterator()
 {
 	// Test some lines
-	std::vector<core::line3d<f32>> lines;
+    std::vector<line3f> lines;
 	for (f32 x = -9.1f; x < 9.0f; x += 3.124f)
 	for (f32 y = -9.2f; y < 9.0f; y += 3.123f)
 	for (f32 z = -9.3f; z < 9.0f; z += 3.122f) {
@@ -49,14 +49,14 @@ void TestVoxelAlgorithms::testVoxelLineIterator()
 	// Test every line
 	for (auto l : lines) {
 		// Initialize test
-		voxalgo::VoxelLineIterator iterator(l.start, l.getVector());
+        voxalgo::VoxelLineIterator iterator(l.Start, l.getVector());
 
 		//Test the first voxel
-		v3s16 start_voxel = floatToInt(l.start, 1.0f);
+        v3s16 start_voxel = floatToInt(l.Start, 1.0f);
 		UASSERT(iterator.m_current_node_pos == start_voxel);
 
 		// Values for testing
-		v3s16 end_voxel = floatToInt(l.end, 1.0f);
+        v3s16 end_voxel = floatToInt(l.End, 1.0f);
 		v3s16 voxel_vector = end_voxel - start_voxel;
 		int nodecount = abs(voxel_vector.X) + abs(voxel_vector.Y)
 			+ abs(voxel_vector.Z);
@@ -72,7 +72,7 @@ void TestVoxelAlgorithms::testVoxelLineIterator()
 			// The line must intersect with the voxel
 			v3f voxel_center = intToFloat(iterator.m_current_node_pos, 1);
 			constexpr f32 eps = 1.0e-5f;
-			aabb3f box(voxel_center - v3f(0.5f + eps),
+            aabbf box(voxel_center - v3f(0.5f + eps),
 				voxel_center + v3f(0.5f + eps));
 			UASSERT(box.intersectsWithLine(l));
 			// Update old voxel

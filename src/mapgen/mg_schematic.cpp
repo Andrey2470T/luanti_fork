@@ -526,7 +526,7 @@ bool Schematic::saveSchematicToFile(const std::string &filename,
 	if (!status)
 		return false;
 
-	return fs::safeWriteToFile(filename, os.str());
+    return mt_fs::safeWriteToFile(filename, os.str());
 }
 
 

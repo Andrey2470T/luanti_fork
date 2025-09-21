@@ -208,9 +208,10 @@ void GameFormSpec::deleteFormspec()
 }
 
 GameFormSpec::~GameFormSpec() {
-    if (formspec)
+    if (formspec) {
         formspec->quitMenu();
-	this->deleteFormspec();
+    }
+    deleteFormspec();
 }
 
 void GameFormSpec::showFormSpec(const std::string &_formspec, const std::string &_formname)
@@ -221,7 +222,7 @@ void GameFormSpec::showFormSpec(const std::string &_formspec, const std::string 
 		}
 	} else {
 		FormspecFormSource *fs_src =
-			new FormspecFormSource(formspec);
+            new FormspecFormSource(_formspec);
 		TextDestPlayerInventory *txt_dst =
             new TextDestPlayerInventory(client, formname);
 
@@ -234,7 +235,7 @@ void GameFormSpec::showFormSpec(const std::string &_formspec, const std::string 
 
 void GameFormSpec::showLocalFormSpec(const std::string &_formspec, const std::string &_formname)
 {
-	FormspecFormSource *fs_src = new FormspecFormSource(formspec);
+    FormspecFormSource *fs_src = new FormspecFormSource(_formspec);
 	LocalFormspecHandler *txt_dst =
         new LocalFormspecHandler(formname, client);
     GUIFormSpecMenu::create(formspec, client, rndsys->getGUIEnvironment(),
@@ -471,8 +472,6 @@ void GameFormSpec::disableDebugView()
  */
 bool GameFormSpec::handleCallbacks()
 {
-    auto cache = client->getResourceCache();
-
 	if (g_gamecallback->disconnect_requested) {
 		g_gamecallback->disconnect_requested = false;
 		return false;
@@ -480,32 +479,27 @@ bool GameFormSpec::handleCallbacks()
 
     auto guiroot = guienv->getRootGUIElement();
 	if (g_gamecallback->changepassword_requested) {
-		(void)make_irr<GUIPasswordChange>(guienv, guiroot, -1,
-                       &g_menumgr, client, cache);
+        (new GUIPasswordChange(guienv, guiroot, -1, g_menumgr.get(), client))->drop();
 		g_gamecallback->changepassword_requested = false;
 	}
 
 	if (g_gamecallback->changevolume_requested) {
-		(void)make_irr<GUIVolumeChange>(guienv, guiroot, -1,
-                     &g_menumgr, cache);
+        (new GUIVolumeChange(guienv, guiroot, -1, g_menumgr.get()))->drop();
 		g_gamecallback->changevolume_requested = false;
 	}
 
 	if (g_gamecallback->keyconfig_requested) {
-		(void)make_irr<GUIKeyChangeMenu>(guienv, guiroot, -1,
-                      &g_menumgr, cache);
+        (new GUIKeyChangeMenu(guienv, guiroot, -1, g_menumgr.get()))->drop();
 		g_gamecallback->keyconfig_requested = false;
 	}
 
 	if (g_gamecallback->touchscreenlayout_requested) {
-		(new GUITouchscreenLayout(guienv, guiroot, -1,
-                     &g_menumgr, cache))->drop();
+        (new GUITouchscreenLayout(guienv, guiroot, -1, g_menumgr.get()))->drop();
 		g_gamecallback->touchscreenlayout_requested = false;
 	}
 
 	if (!g_gamecallback->show_open_url_dialog.empty()) {
-		(void)make_irr<GUIOpenURLMenu>(guienv, guiroot, -1,
-                 &g_menumgr, cache, g_gamecallback->show_open_url_dialog);
+        (new GUIOpenURLMenu(guienv, guiroot, -1, g_menumgr.get(), g_gamecallback->show_open_url_dialog))->drop();
 		g_gamecallback->show_open_url_dialog.clear();
 	}
 

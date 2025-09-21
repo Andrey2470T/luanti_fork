@@ -60,7 +60,7 @@ void BanManager::save()
 	for (const auto &ip : m_ips)
 		ss << ip.first << "|" << ip.second << "\n";
 
-	if (!fs::safeWriteToFile(m_banfilepath, ss.str())) {
+    if (!mt_fs::safeWriteToFile(m_banfilepath, ss.str())) {
 		infostream << "BanManager: failed saving to " << m_banfilepath << std::endl;
 		throw SerializationError("BanManager::save(): Couldn't write file");
 	}

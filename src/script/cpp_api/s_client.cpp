@@ -4,8 +4,9 @@
 // Copyright (C) 2017 nerzhul, Loic Blot <loic.blot@unix-experience.fr>
 
 #include "s_client.h"
+#include "client/network/packethandler.h"
 #include "s_internal.h"
-#include "client/client.h"
+#include "client/core/client.h"
 #include "common/c_converter.h"
 #include "common/c_content.h"
 #include "lua_api/l_item.h"
@@ -23,7 +24,7 @@ void ScriptApiClient::on_mods_loaded()
 	try {
 		runCallbacks(0, RUN_CALLBACKS_MODE_FIRST);
 	} catch (LuaError &e) {
-		getClient()->setFatalError(e);
+        getClient()->getPacketHandler()->setFatalError(e);
 	}
 }
 
@@ -38,7 +39,7 @@ void ScriptApiClient::on_shutdown()
 	try {
 		runCallbacks(0, RUN_CALLBACKS_MODE_FIRST);
 	} catch (LuaError &e) {
-		getClient()->setFatalError(e);
+        getClient()->getPacketHandler()->setFatalError(e);
 	}
 }
 
@@ -54,7 +55,7 @@ bool ScriptApiClient::on_sending_message(const std::string &message)
 	try {
 		runCallbacks(1, RUN_CALLBACKS_MODE_OR_SC);
 	} catch (LuaError &e) {
-		getClient()->setFatalError(e);
+        getClient()->getPacketHandler()->setFatalError(e);
 		return true;
 	}
 	return readParam<bool>(L, -1);
@@ -72,7 +73,7 @@ bool ScriptApiClient::on_receiving_message(const std::string &message)
 	try {
 		runCallbacks(1, RUN_CALLBACKS_MODE_OR_SC);
 	} catch (LuaError &e) {
-		getClient()->setFatalError(e);
+        getClient()->getPacketHandler()->setFatalError(e);
 		return true;
 	}
 	return readParam<bool>(L, -1);
@@ -90,7 +91,7 @@ void ScriptApiClient::on_damage_taken(int32_t damage_amount)
 	try {
 		runCallbacks(1, RUN_CALLBACKS_MODE_OR_SC);
 	} catch (LuaError &e) {
-		getClient()->setFatalError(e);
+        getClient()->getPacketHandler()->setFatalError(e);
 	}
 }
 
@@ -106,7 +107,7 @@ void ScriptApiClient::on_hp_modification(int32_t newhp)
 	try {
 		runCallbacks(1, RUN_CALLBACKS_MODE_OR_SC);
 	} catch (LuaError &e) {
-		getClient()->setFatalError(e);
+        getClient()->getPacketHandler()->setFatalError(e);
 	}
 }
 
@@ -122,7 +123,7 @@ void ScriptApiClient::environment_step(float dtime)
 	try {
 		runCallbacks(1, RUN_CALLBACKS_MODE_FIRST);
 	} catch (LuaError &e) {
-		getClient()->setFatalError(e);
+        getClient()->getPacketHandler()->setFatalError(e);
 	}
 }
 
@@ -150,7 +151,7 @@ void ScriptApiClient::on_formspec_input(const std::string &formname,
 	try {
 		runCallbacks(2, RUN_CALLBACKS_MODE_OR_SC);
 	} catch (LuaError &e) {
-		getClient()->setFatalError(e);
+        getClient()->getPacketHandler()->setFatalError(e);
 	}
 }
 
@@ -170,7 +171,7 @@ bool ScriptApiClient::on_dignode(v3s16 p, MapNode node)
 	try {
 		runCallbacks(2, RUN_CALLBACKS_MODE_OR);
 	} catch (LuaError &e) {
-		getClient()->setFatalError(e);
+        getClient()->getPacketHandler()->setFatalError(e);
 		return true;
 	}
 	return lua_toboolean(L, -1);
@@ -192,7 +193,7 @@ bool ScriptApiClient::on_punchnode(v3s16 p, MapNode node)
 	try {
 		runCallbacks(2, RUN_CALLBACKS_MODE_OR);
 	} catch (LuaError &e) {
-		getClient()->setFatalError(e);
+        getClient()->getPacketHandler()->setFatalError(e);
 		return true;
 	}
 	return readParam<bool>(L, -1);
@@ -214,7 +215,7 @@ bool ScriptApiClient::on_placenode(const PointedThing &pointed, const ItemDefini
 	try {
 		runCallbacks(2, RUN_CALLBACKS_MODE_OR);
 	} catch (LuaError &e) {
-		getClient()->setFatalError(e);
+        getClient()->getPacketHandler()->setFatalError(e);
 		return true;
 	}
 	return readParam<bool>(L, -1);
@@ -236,7 +237,7 @@ bool ScriptApiClient::on_item_use(const ItemStack &item, const PointedThing &poi
 	try {
 		runCallbacks(2, RUN_CALLBACKS_MODE_OR);
 	} catch (LuaError &e) {
-		getClient()->setFatalError(e);
+        getClient()->getPacketHandler()->setFatalError(e);
 		return true;
 	}
 	return readParam<bool>(L, -1);
@@ -254,7 +255,7 @@ bool ScriptApiClient::on_inventory_open(Inventory *inventory)
 	try {
 		runCallbacks(1, RUN_CALLBACKS_MODE_OR);
 	} catch (LuaError &e) {
-		getClient()->setFatalError(e);
+        getClient()->getPacketHandler()->setFatalError(e);
 		return true;
 	}
 	return readParam<bool>(L, -1);

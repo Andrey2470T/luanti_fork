@@ -297,10 +297,9 @@ void GenericCAO::setAttachment(object_t parent_id, const std::string &bone,
 
     auto new_parent = m_env->getGenericCAO(parent_id);
     if (attachment_changed) {
-        TransformNodeTree *cur_tree;
+        TransformNodeTree *cur_tree = nullptr;
         TransformNode *parent_node;
         if (bone.empty()) {
-            TransformNodeTree *cur_tree;
             auto attach_node = new_parent->getAttachmentNode();
             parent_node = attach_node;
 
@@ -342,8 +341,8 @@ void GenericCAO::setAttachment(object_t parent_id, const std::string &bone,
                 });
 
                 if (found_bone != bones.end()) {
-                    cur_tree = found_bone->Tree;
-                    parent_node = found_bone;
+                    cur_tree = (*found_bone)->Tree;
+                    parent_node = (*found_bone);
                 }
             }
         }
@@ -426,6 +425,8 @@ const std::unordered_set<u16> GenericCAO::getAttachmentChildIds() const
         if (child_node->Type == TransformNodeType::OBJECT)
             childs_ids.emplace(dynamic_cast<Attachment *>(child_node)->ObjectId);
     }
+
+    return childs_ids;
 }
 
 void GenericCAO::step(float dtime, ClientEnvironment *env)

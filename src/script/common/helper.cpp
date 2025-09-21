@@ -8,8 +8,6 @@ extern "C" {
 
 #include "helper.h"
 #include <cmath>
-#include <irr_v2d.h>
-#include <irr_v3d.h>
 #include <string_view>
 #include "c_converter.h"
 #include "c_types.h"

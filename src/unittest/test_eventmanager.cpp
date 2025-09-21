@@ -4,7 +4,7 @@
 
 #include <unordered_map>
 #include "test.h"
-#include "client/event_manager.h"
+#include "client/event/eventmanager.h"
 
 class TestEventManager : public TestBase
 {

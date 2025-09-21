@@ -145,7 +145,6 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data)
             layer->use_default_shader = false;
             layer->shader = m_client->getResourceCache()->getOrLoad<render::Shader>(ResourceType::SHADER, shadername);
 
-            auto img_size = src_rect.getSize();
             u32 atlas_size = atlas->getTextureSize();
 
             u32 offset = mesh_layer.second.offset;

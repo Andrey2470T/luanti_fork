@@ -20,7 +20,6 @@
 #include "server/player_sao.h"
 #include "util/pointedthing.h"
 #include "debug.h" // For FATAL_ERROR
-#include <SColor.h>
 #include <json/json.h>
 #include "mapgen/treegen.h"
 
@@ -62,7 +61,7 @@ void read_item_definition(lua_State* L, int index,
 	lua_pop(L, 1);
 
 	int stack_max = getintfield_default(L, index, "stack_max", def.stack_max);
-	def.stack_max = rangelim(stack_max, 1, U16_MAX);
+    def.stack_max = rangelim(stack_max, 1, T_MAX(u16));
 
 	lua_getfield(L, index, "on_use");
 	def.usable = lua_isfunction(L, -1);
@@ -137,7 +136,7 @@ void read_item_definition(lua_State* L, int index,
 
 	int place_param2;
 	if (getintfield(L, index, "place_param2", place_param2))
-		def.place_param2 = rangelim(place_param2, 0, U8_MAX);
+        def.place_param2 = rangelim(place_param2, 0, T_MAX(u8));
 
 	getboolfield(L, index, "wallmounted_rotate_vertical", def.wallmounted_rotate_vertical);
 
@@ -292,7 +291,7 @@ void read_object_properties(lua_State *L, int index,
 
 	int hp_max = 0;
 	if (getintfield(L, -1, "hp_max", hp_max)) {
-		prop->hp_max = (u16)rangelim(hp_max, 0, U16_MAX);
+        prop->hp_max = (u16)rangelim(hp_max, 0, T_MAX(u16));
 		// hp_max = 0 is sometimes used as a hack to keep players dead, only validate for entities
 		if (prop->hp_max == 0 && sao->getType() != ACTIVEOBJECT_TYPE_PLAYER)
 			throw LuaError("The hp_max property may not be 0 for entities!");
@@ -375,7 +374,7 @@ void read_object_properties(lua_State *L, int index,
 		int table = lua_gettop(L);
 		prop->colors.clear();
 		for (lua_pushnil(L); lua_next(L, table); lua_pop(L, 1)) {
-            img::color8 color(255, 255, 255, 255);
+            img::color8 color(img::white);
 			read_color(L, -1, &color);
 			prop->colors.push_back(color);
 		}
@@ -998,7 +997,7 @@ void push_content_features(lua_State *L, const ContentFeatures &c)
 		lua_pushstring(L, c.palette_name.c_str());
 		lua_setfield(L, -2, "palette_name");
 
-		push_palette(L, c.palette);
+        push_palette(L, &c.palette->colors);
 		lua_setfield(L, -2, "palette");
 	}
 	lua_pushnumber(L, c.waving);
@@ -2261,7 +2260,7 @@ void read_hud_element(lua_State *L, HudElement *elem)
 	lua_pop(L, 1);
 
 	lua_getfield(L, 2, "size");
-	elem->size = lua_istable(L, -1) ? read_v2s32(L, -1) : v2s32();
+    elem->size = lua_istable(L, -1) ? read_v2s32(L, -1) : v2i();
 	lua_pop(L, 1);
 
 	elem->name    = getstringfield_default(L, 2, "name", "");
@@ -2278,7 +2277,7 @@ void read_hud_element(lua_State *L, HudElement *elem)
 		elem->item = getintfield_default(L, 2, "item", 0);
 	}
 	elem->dir     = getintfield_default(L, 2, "direction", 0);
-	elem->z_index = MYMAX(S16_MIN, MYMIN(S16_MAX,
+    elem->z_index = MYMAX(T_MIN(s16), MYMIN(T_MAX(s16),
 			getintfield_default(L, 2, "z_index", 0)));
 	elem->text2   = getstringfield_default(L, 2, "text2", "");
 
@@ -2304,7 +2303,7 @@ void read_hud_element(lua_State *L, HudElement *elem)
 	elem->style = getintfield_default(L, 2, "style", 0);
 
 	/* check for known deprecated element usage */
-	if ((elem->type  == HUD_ELEM_STATBAR) && (elem->size == v2s32()))
+    if ((elem->type  == HUD_ELEM_STATBAR) && (elem->size == v2i()))
 		log_deprecated(L,"Deprecated usage of statbar without size!");
 }
 
@@ -2431,7 +2430,7 @@ bool read_hud_change(lua_State *L, HudElementStat &stat, HudElement *elem, void 
 			*value = &elem->size;
 			break;
 		case HUD_STAT_Z_INDEX:
-			elem->z_index = MYMAX(S16_MIN, MYMIN(S16_MAX, luaL_checknumber(L, 4)));
+            elem->z_index = MYMAX(T_MIN(s16), MYMIN(T_MAX(s16), luaL_checknumber(L, 4)));
 			*value = &elem->z_index;
 			break;
 		case HUD_STAT_TEXT2:

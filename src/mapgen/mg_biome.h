@@ -123,7 +123,7 @@ public:
 	// Returns the next lower y position at which the biome could change.
 	// You can use this to optimize calls to getBiomeAtIndex().
 	virtual s16 getNextTransitionY(s16 y) const {
-		return y == S16_MIN ? y : (y - 1);
+		return y == T_MIN(s16) ? y : (y - 1);
 	};
 
 	// Result of calcBiomes bulk computation.

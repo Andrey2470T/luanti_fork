@@ -29,7 +29,7 @@
 #include "util/string.h"
 #include "translation.h"
 #if CHECK_CLIENT_BUILD()
-#include "client/client.h"
+#include "client/core/client.h"
 #endif
 
 const EnumString ModApiEnvBase::es_ClearObjectsMode[] =
@@ -101,7 +101,7 @@ int LuaRaycast::create_object(lua_State *L)
 		pointabilities = read_pointabilities(L, 5);
 	}
 
-	LuaRaycast *o = new LuaRaycast(core::line3d<f32>(pos1, pos2),
+    LuaRaycast *o = new LuaRaycast(line3f(pos1, pos2),
 		objects, liquids, pointabilities);
 
 	*(void **) (lua_newuserdata(L, sizeof(void *))) = o;
@@ -273,7 +273,7 @@ int ModApiEnv::l_get_node_raw(lua_State *L)
 	double x = lua_tonumber(L, 1);
 	double y = lua_tonumber(L, 2);
 	double z = lua_tonumber(L, 3);
-	v3s16 pos = doubleToInt(v3d(x, y, z), 1.0);
+    v3s16 pos = doubleToInt(v3f64(x, y, z), 1.0);
 	// Do it
 	bool pos_ok;
 	MapNode n = env->getMap().getNode(pos, &pos_ok);
@@ -536,7 +536,7 @@ int ModApiEnv::l_get_node_boxes(lua_State *L)
 	u8 neighbors = n.getNeighbors(pos, &env->getMap());
 	const NodeDefManager *ndef = env->getGameDef()->ndef();
 
-	std::vector<aabb3f> boxes;
+    std::vector<aabbf> boxes;
 	if (box_type == "node_box")
 		n.getNodeBoxes(ndef, &boxes, neighbors);
 	else if (box_type == "collision_box")
@@ -835,7 +835,7 @@ int ModApiEnv::l_find_node_near(lua_State *L)
 #if CHECK_CLIENT_BUILD()
 	// Client API limitations
 	if (Client *client = getClient(L))
-		radius = client->CSMClampRadius(pos, radius);
+        radius = client->CSMClampRadius(pos, radius);
 #endif
 
 	auto getNode = [&map] (v3s16 p) -> MapNode {
@@ -852,10 +852,10 @@ void ModApiEnvBase::checkArea(v3s16 &minp, v3s16 &maxp)
 		throw LuaError("Area volume exceeds allowed value of 4096000");
 	}
 
-	// Clamp to map range to avoid problems
-#define CLAMP(arg) core::clamp(arg, (s16)-MAX_MAP_GENERATION_LIMIT, (s16)MAX_MAP_GENERATION_LIMIT)
-	minp = v3s16(CLAMP(minp.X), CLAMP(minp.Y), CLAMP(minp.Z));
-	maxp = v3s16(CLAMP(maxp.X), CLAMP(maxp.Y), CLAMP(maxp.Z));
+    // Clamp to map range to avoid problems
+#define CLAMP(arg) std::clamp(arg, (s16)-MAX_MAP_GENERATION_LIMIT, (s16)MAX_MAP_GENERATION_LIMIT)
+    minp = v3s16(CLAMP(minp.X), CLAMP(minp.Y), CLAMP(minp.Z));
+    maxp = v3s16(CLAMP(maxp.X), CLAMP(maxp.Y), CLAMP(maxp.Z));
 #undef CLAMP
 }
 
@@ -946,8 +946,8 @@ int ModApiEnv::l_find_nodes_in_area(lua_State *L)
 
 #if CHECK_CLIENT_BUILD()
 	if (Client *client = getClient(L)) {
-		minp = client->CSMClampPos(minp);
-		maxp = client->CSMClampPos(maxp);
+        minp = client->CSMClampPos(minp);
+        maxp = client->CSMClampPos(maxp);
 	}
 #endif
 
@@ -1008,8 +1008,8 @@ int ModApiEnv::l_find_nodes_in_area_under_air(lua_State *L)
 
 #if CHECK_CLIENT_BUILD()
 	if (Client *client = getClient(L)) {
-		minp = client->CSMClampPos(minp);
-		maxp = client->CSMClampPos(maxp);
+        minp = client->CSMClampPos(minp);
+        maxp = client->CSMClampPos(maxp);
 	}
 #endif
 

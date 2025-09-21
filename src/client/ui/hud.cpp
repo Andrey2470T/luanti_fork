@@ -312,7 +312,7 @@ void drawItemStack(
 		driver->setTransform(video::ETS_WORLD, matrix);
 		driver->setViewPort(viewrect);
 
-		video::SColor basecolor =
+		img::color8 basecolor =
 			client->idef()->getItemstackColor(item, client);
 
 		const u32 mc = mesh->getMeshBufferCount();
@@ -320,7 +320,7 @@ void drawItemStack(
 			imesh->buffer_colors.resize(mc);
 		for (u32 j = 0; j < mc; ++j) {
 			scene::IMeshBuffer *buf = mesh->getMeshBuffer(j);
-			video::SColor c = basecolor;
+			img::color8 c = basecolor;
 
 			auto &p = imesh->buffer_colors[j];
 			p.applyOverride(c);
@@ -347,18 +347,18 @@ void drawItemStack(
 		draw_overlay = def.type == ITEM_NODE && inventory_image.empty();
 	} else { // Otherwise just draw as 2D
 		video::ITexture *texture = client->idef()->getInventoryTexture(item, client);
-		video::SColor color;
+		img::color8 color;
 		if (texture) {
 			color = client->idef()->getItemstackColor(item, client);
 		} else {
-			color = video::SColor(255, 255, 255, 255);
+			color = img::color8(255, 255, 255, 255);
 			ITextureSource *tsrc = client->getTextureSource();
 			texture = tsrc->getTexture("no_texture.png");
 			if (!texture)
 				return;
 		}
 
-		const video::SColor colors[] = { color, color, color, color };
+		const img::color8 colors[] = { color, color, color, color };
 
 		draw2DImageFilterScaled(driver, texture, rect,
 			recti({0, 0}, core::dimension2di(texture->getOriginalSize())),
@@ -400,13 +400,13 @@ void drawItemStack(
 		//   wear = 0.5: yellow
 		//   wear = 1.0: red
 
-		video::SColor color;
+		img::color8 color;
 		auto barParams = item.getWearBarParams(client->idef());
 		if (barParams.has_value()) {
 			f32 durabilityPercent = 1.0 - wear;
 			color = barParams->getWearBarColor(durabilityPercent);
 		} else {
-			color = video::SColor(255, 255, 255, 255);
+			color = img::color8(255, 255, 255, 255);
 			int wear_i = MYMIN(std::floor(wear * 600), 511);
 			wear_i = MYMIN(wear_i + 10, 511);
 
@@ -420,7 +420,7 @@ void drawItemStack(
 		progressrect2.LRC.X = progressmid;
 		driver->draw2DRectangle(color, progressrect2, clip);
 
-		color = video::SColor(255, 0, 0, 0);
+		color = img::color8(255, 0, 0, 0);
 		progressrect2 = progressrect;
 		progressrect2.ULC.X = progressmid;
 		driver->draw2DRectangle(color, progressrect2, clip);
@@ -486,7 +486,7 @@ void drawItemStack(
 			rect2 = recti(x1, y1, x2, y2);
 		}
 
-		video::SColor color(255, 255, 255, 255);
+		img::color8 color(255, 255, 255, 255);
 		font->draw(utf8_to_wide(text).c_str(), rect2, color, false, false, &viewrect);
 	}
 }

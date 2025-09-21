@@ -16,7 +16,7 @@
 #include "settings.h"
 #include "tool.h"
 #include "version.h"
-#include "irrlicht_changes/printing.h"
+#include <Utils/Printing.h>
 #include "network/connection.h"
 #include "network/networkpacket.h"
 #include "network/networkprotocol.h"
@@ -440,7 +440,7 @@ void Server::process_PlayerPos(RemotePlayer *player, PlayerSAO *playersao,
 	if (pkt->getRemainingBytes() < 12 + 12 + 4 + 4 + 4 + 1 + 1)
 		return;
 
-	v3s32 ps, ss;
+	v3i ps, ss;
 	s32 f32pitch, f32yaw;
 	u8 f32fov;
 

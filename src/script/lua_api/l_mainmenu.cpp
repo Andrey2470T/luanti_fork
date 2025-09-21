@@ -21,12 +21,12 @@
 #include "mapgen/mapgen.h"
 #include "settings.h"
 #include "clientdynamicinfo.h"
-#include "client/client.h"
-#include "client/renderingengine.h"
-#include "client/texturepaths.h"
+#include "client/core/client.h"
+#include "client/render/rendersystem.h"
 #include "network/networkprotocol.h"
 #include "content/mod_configuration.h"
 #include "threading/mutex_auto_lock.h"
+#include "client/media/resource.h"
 #include "common/c_converter.h"
 #include "gui/guiOpenURL.h"
 #include <extractZip.h>
@@ -318,7 +318,7 @@ int ModApiMainMenu::l_get_games(lua_State *L)
 		lua_pushinteger(L, game.release);
 		lua_settable(L,    top_lvl2);
 
-		auto menuicon = getImagePath(game.path + DIR_DELIM "menu" DIR_DELIM "icon.png");
+        auto menuicon = texturePathFinder(game.path + DIR_DELIM "menu" DIR_DELIM "icon.png");
 		lua_pushstring(L,  "menuicon_path");
 		lua_pushstring(L,  menuicon.c_str());
 		lua_settable(L,    top_lvl2);
@@ -442,7 +442,7 @@ int ModApiMainMenu::l_check_mod_configuration(lua_State *L)
 
 		modSpecs.emplace_back();
 		ModSpec &spec = modSpecs.back();
-		spec.name = fs::GetFilenameFromPath(modpath.c_str());
+        spec.name = mt_fs::GetFilenameFromPath(modpath.c_str());
 		spec.path = modpath;
 		spec.virtual_path = virtual_path;
 		if (!parseModContents(spec)) {
@@ -528,11 +528,10 @@ int ModApiMainMenu::l_show_keys_menu(lua_State *L)
 	sanity_check(engine != NULL);
 
 	GUIKeyChangeMenu *kmenu = new GUIKeyChangeMenu(
-			engine->m_rendering_engine->get_gui_env(),
+            engine->m_rndsys->getGUIEnvironment(),
 			engine->m_parent,
 			-1,
-			engine->m_menumanager,
-			engine->m_texture_source.get());
+            engine->m_menumanager);
 	kmenu->drop();
 	return 0;
 }
@@ -544,11 +543,10 @@ int ModApiMainMenu::l_show_touchscreen_layout(lua_State *L)
 	sanity_check(engine != NULL);
 
 	GUITouchscreenLayout *gui = new GUITouchscreenLayout(
-			engine->m_rendering_engine->get_gui_env(),
+            engine->m_rndsys->getGUIEnvironment(),
 			engine->m_parent,
 			-1,
-			engine->m_menumanager,
-			engine->m_texture_source.get());
+            engine->m_menumanager);
 	gui->drop();
 	return 0;
 }
@@ -622,7 +620,7 @@ int ModApiMainMenu::l_delete_world(lua_State *L)
 		return 1;
 	}
 	const WorldSpec &spec = worlds[world_id];
-	if (!fs::RecursiveDelete(spec.path)) {
+    if (!mt_fs::RecursiveDelete(spec.path)) {
 		lua_pushstring(L, "Failed to delete world");
 		return 1;
 	}
@@ -664,7 +662,7 @@ int ModApiMainMenu::l_get_mapgen_names(lua_State *L)
 /******************************************************************************/
 int ModApiMainMenu::l_get_user_path(lua_State *L)
 {
-	std::string path = fs::RemoveRelativePathComponents(porting::path_user);
+    std::string path = mt_fs::RemoveRelativePathComponents(porting::path_user);
 	lua_pushstring(L, path.c_str());
 	return 1;
 }
@@ -672,7 +670,7 @@ int ModApiMainMenu::l_get_user_path(lua_State *L)
 /******************************************************************************/
 int ModApiMainMenu::l_get_modpath(lua_State *L)
 {
-	std::string modpath = fs::RemoveRelativePathComponents(
+    std::string modpath = mt_fs::RemoveRelativePathComponents(
 		porting::path_user + DIR_DELIM + "mods" + DIR_DELIM);
 	lua_pushstring(L, modpath.c_str());
 	return 1;
@@ -687,7 +685,7 @@ int ModApiMainMenu::l_get_modpaths(lua_State *L)
 	lua_setfield(L, -2, "mods");
 
 	if (porting::path_share != porting::path_user) {
-		std::string modpath = fs::RemoveRelativePathComponents(
+        std::string modpath = mt_fs::RemoveRelativePathComponents(
 			porting::path_share + DIR_DELIM + "mods" + DIR_DELIM);
 		lua_pushstring(L, modpath.c_str());
 		lua_setfield(L, -2, "share");
@@ -695,7 +693,7 @@ int ModApiMainMenu::l_get_modpaths(lua_State *L)
 
 	for (const std::string &component : getEnvModPaths()) {
 		lua_pushstring(L, component.c_str());
-		lua_setfield(L, -2, fs::AbsolutePath(component).c_str());
+        lua_setfield(L, -2, mt_fs::AbsolutePath(component).c_str());
 	}
 	return 1;
 }
@@ -703,7 +701,7 @@ int ModApiMainMenu::l_get_modpaths(lua_State *L)
 /******************************************************************************/
 int ModApiMainMenu::l_get_clientmodpath(lua_State *L)
 {
-	std::string modpath = fs::RemoveRelativePathComponents(
+    std::string modpath = mt_fs::RemoveRelativePathComponents(
 		porting::path_user + DIR_DELIM + "clientmods" + DIR_DELIM);
 	lua_pushstring(L, modpath.c_str());
 	return 1;
@@ -712,7 +710,7 @@ int ModApiMainMenu::l_get_clientmodpath(lua_State *L)
 /******************************************************************************/
 int ModApiMainMenu::l_get_gamepath(lua_State *L)
 {
-	std::string gamepath = fs::RemoveRelativePathComponents(
+    std::string gamepath = mt_fs::RemoveRelativePathComponents(
 		porting::path_user + DIR_DELIM + "games" + DIR_DELIM);
 	lua_pushstring(L, gamepath.c_str());
 	return 1;
@@ -721,7 +719,7 @@ int ModApiMainMenu::l_get_gamepath(lua_State *L)
 /******************************************************************************/
 int ModApiMainMenu::l_get_texturepath(lua_State *L)
 {
-	std::string gamepath = fs::RemoveRelativePathComponents(
+    std::string gamepath = mt_fs::RemoveRelativePathComponents(
 		porting::path_user + DIR_DELIM + "textures");
 	lua_pushstring(L, gamepath.c_str());
 	return 1;
@@ -730,7 +728,7 @@ int ModApiMainMenu::l_get_texturepath(lua_State *L)
 /******************************************************************************/
 int ModApiMainMenu::l_get_texturepath_share(lua_State *L)
 {
-	std::string gamepath = fs::RemoveRelativePathComponents(
+    std::string gamepath = mt_fs::RemoveRelativePathComponents(
 		porting::path_share + DIR_DELIM + "textures");
 	lua_pushstring(L, gamepath.c_str());
 	return 1;
@@ -739,7 +737,7 @@ int ModApiMainMenu::l_get_texturepath_share(lua_State *L)
 /******************************************************************************/
 int ModApiMainMenu::l_get_cache_path(lua_State *L)
 {
-	lua_pushstring(L, fs::RemoveRelativePathComponents(porting::path_cache).c_str());
+    lua_pushstring(L, mt_fs::RemoveRelativePathComponents(porting::path_cache).c_str());
 	return 1;
 }
 
@@ -747,9 +745,9 @@ int ModApiMainMenu::l_get_cache_path(lua_State *L)
 int ModApiMainMenu::l_get_temp_path(lua_State *L)
 {
 	if (lua_isnoneornil(L, 1) || !lua_toboolean(L, 1))
-		lua_pushstring(L, fs::CreateTempDir().c_str());
+        lua_pushstring(L, mt_fs::CreateTempDir().c_str());
 	else
-		lua_pushstring(L, fs::CreateTempFile().c_str());
+        lua_pushstring(L, mt_fs::CreateTempFile().c_str());
 	return 1;
 }
 
@@ -760,7 +758,7 @@ int ModApiMainMenu::l_create_dir(lua_State *L)
 
 	CHECK_SECURE_PATH(L, path, true)
 
-	lua_pushboolean(L, fs::CreateAllDirs(path));
+    lua_pushboolean(L, mt_fs::CreateAllDirs(path));
 	return 1;
 }
 
@@ -771,7 +769,7 @@ int ModApiMainMenu::l_delete_dir(lua_State *L)
 
 	CHECK_SECURE_PATH(L, path, true)
 
-	lua_pushboolean(L, fs::RecursiveDelete(path));
+    lua_pushboolean(L, mt_fs::RecursiveDelete(path));
 	return 1;
 }
 
@@ -788,9 +786,9 @@ int ModApiMainMenu::l_copy_dir(lua_State *L)
 
 	bool retval;
 	if (keep_source)
-		retval = fs::CopyDir(source, destination);
+        retval = mt_fs::CopyDir(source, destination);
 	else
-		retval = fs::MoveDir(source, destination);
+        retval = mt_fs::MoveDir(source, destination);
 	lua_pushboolean(L, retval);
 	return 1;
 }
@@ -802,7 +800,7 @@ int ModApiMainMenu::l_is_dir(lua_State *L)
 
 	CHECK_SECURE_PATH(L, path, false)
 
-	lua_pushboolean(L, fs::IsDir(path));
+    lua_pushboolean(L, mt_fs::IsDir(path));
 	return 1;
 }
 
@@ -814,8 +812,6 @@ int ModApiMainMenu::l_extract_zip(lua_State *L)
 
 	CHECK_SECURE_PATH(L, zipfile, false)
 	CHECK_SECURE_PATH(L, destination, true)
-
-	auto fs = RenderingEngine::get_raw_device()->getFileSystem();
 
 	extractor::ZipExtractor extr;
 	bool ok = extr.extractArchive(zipfile, destination);
@@ -854,7 +850,7 @@ int ModApiMainMenu::l_show_path_select_dialog(lua_State *L)
 	bool is_file_select = readParam<bool>(L, 3);
 
 	GUIFileSelectMenu* fileOpenMenu =
-		new GUIFileSelectMenu(engine->m_rendering_engine->get_gui_env(),
+        new GUIFileSelectMenu(engine->m_rndsys->getGUIEnvironment(),
 				engine->m_parent,
 				-1,
 				engine->m_menumanager,
@@ -881,20 +877,15 @@ int ModApiMainMenu::l_download_file(lua_State *L)
 /******************************************************************************/
 int ModApiMainMenu::l_get_video_drivers(lua_State *L)
 {
-	auto drivers = RenderingEngine::getSupportedVideoDrivers();
-
 	lua_newtable(L);
-	for (u32 i = 0; i != drivers.size(); i++) {
-		auto &info = RenderingEngine::getVideoDriverInfo(drivers[i]);
 
-		lua_newtable(L);
-		lua_pushstring(L, info.name.c_str());
-		lua_setfield(L, -2, "name");
-		lua_pushstring(L, info.friendly_name.c_str());
-		lua_setfield(L, -2, "friendly_name");
+    lua_newtable(L);
+    lua_pushstring(L, "");
+    lua_setfield(L, -2, "name");
+    lua_pushstring(L, "");
+    lua_setfield(L, -2, "friendly_name");
 
-		lua_rawseti(L, -2, i + 1);
-	}
+    lua_rawseti(L, -2, -1);
 
 	return 1;
 }
@@ -954,22 +945,22 @@ int ModApiMainMenu::l_get_window_info(lua_State *L)
 /******************************************************************************/
 int ModApiMainMenu::l_get_active_driver(lua_State *L)
 {
-	auto drivertype = RenderingEngine::get_video_driver()->getDriverType();
-	lua_pushstring(L, RenderingEngine::getVideoDriverInfo(drivertype).name.c_str());
+    //auto drivertype = RenderingEngine::get_video_driver()->getDriverType();
+    //lua_pushstring(L, RenderingEngine::getVideoDriverInfo(drivertype).name.c_str());
 	return 1;
 }
 
 
 int ModApiMainMenu::l_get_active_renderer(lua_State *L)
 {
-	lua_pushstring(L, RenderingEngine::get_video_driver()->getName());
+    //lua_pushstring(L, RenderingEngine::get_video_driver()->getName());
 	return 1;
 }
 
 /******************************************************************************/
 int ModApiMainMenu::l_get_active_irrlicht_device(lua_State *L)
 {
-	const char *device_name = [] {
+    /*const char *device_name = [] {
 		switch (RenderingEngine::get_raw_device()->getType()) {
 		case EIDT_WIN32: return "WIN32";
 		case EIDT_X11: return "X11";
@@ -979,14 +970,14 @@ int ModApiMainMenu::l_get_active_irrlicht_device(lua_State *L)
 		default: return "Unknown";
 		}
 	}();
-	lua_pushstring(L, device_name);
+    lua_pushstring(L, device_name);*/
 	return 1;
 }
 
 /******************************************************************************/
 int ModApiMainMenu::l_irrlicht_device_supports_touch(lua_State *L)
 {
-	lua_pushboolean(L, RenderingEngine::get_raw_device()->supportsTouchEvents());
+    //lua_pushboolean(L, RenderingEngine::get_raw_device()->supportsTouchEvents());
 	return 1;
 }
 
@@ -1028,9 +1019,8 @@ int ModApiMainMenu::l_open_url_dialog(lua_State *L)
 	std::string url = luaL_checkstring(L, 1);
 
 	GUIOpenURLMenu* openURLMenu =
-			new GUIOpenURLMenu(engine->m_rendering_engine->get_gui_env(),
-				engine->m_parent, -1, engine->m_menumanager,
-				engine->m_texture_source.get(), url);
+            new GUIOpenURLMenu(engine->m_rndsys->getGUIEnvironment(),
+                engine->m_parent, -1, engine->m_menumanager, url);
 	openURLMenu->drop();
 	return 1;
 }

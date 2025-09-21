@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include "irr_v3d.h"
 #include "lua_api/l_base.h"
 
 class ServerMap;

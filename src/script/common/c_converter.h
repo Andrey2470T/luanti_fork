@@ -14,7 +14,8 @@
 #include <vector>
 #include <string_view>
 
-#include "irrlichttypes_bloated.h"
+#include <BasicIncludes.h>
+#include <Image/Color.h>
 #include "common/c_types.h"
 
 extern "C" {
@@ -79,10 +80,10 @@ v3s16               check_v3s16         (lua_State *L, int index);
 v3f                 read_v3f            (lua_State *L, int index);
 v2f                 read_v2f            (lua_State *L, int index);
 v2s16               read_v2s16          (lua_State *L, int index);
-v2s32               read_v2s32          (lua_State *L, int index);
-video::SColor       read_ARGB8          (lua_State *L, int index);
+v2i               read_v2s32          (lua_State *L, int index);
+img::color8       read_ARGB8          (lua_State *L, int index);
 bool                read_color          (lua_State *L, int index,
-                                         video::SColor *color);
+                                         img::color8 *color);
 bool                is_color_table      (lua_State *L, int index);
 
 /**
@@ -96,23 +97,23 @@ bool                is_color_table      (lua_State *L, int index);
  *
  * @return the box corresponding to lua table
  */
-aabb3f              read_aabb3f         (lua_State *L, int index, f32 scale);
+aabbf              read_aabb3f         (lua_State *L, int index, f32 scale);
 
 v3s16               read_v3s16          (lua_State *L, int index);
-std::vector<aabb3f> read_aabb3f_vector  (lua_State *L, int index, f32 scale);
+std::vector<aabbf> read_aabb3f_vector  (lua_State *L, int index, f32 scale);
 size_t              read_stringlist     (lua_State *L, int index,
                                          std::vector<std::string> *result);
 
 void                push_v2s16          (lua_State *L, v2s16 p);
-void                push_v2s32          (lua_State *L, v2s32 p);
-void                push_v2u32          (lua_State *L, v2u32 p);
+void                push_v2s32          (lua_State *L, v2i p);
+void                push_v2u32          (lua_State *L, v2u p);
 void                push_v3s16          (lua_State *L, v3s16 p);
-void                push_aabb3f         (lua_State *L, aabb3f box, f32 divisor = 1.0f);
-void                push_ARGB8          (lua_State *L, video::SColor color);
+void                push_aabb3f         (lua_State *L, aabbf box, f32 divisor = 1.0f);
+void                push_ARGB8          (lua_State *L, img::color8 color);
 void                pushFloatPos        (lua_State *L, v3f p);
 void                push_v3f            (lua_State *L, v3f p);
 void                push_v2f            (lua_State *L, v2f p);
-void                push_aabb3f_vector  (lua_State *L, const std::vector<aabb3f> &boxes,
+void                push_aabb3f_vector  (lua_State *L, const std::vector<aabbf> &boxes,
                                          f32 divisor = 1.0f);
 
 void                warn_if_field_exists(lua_State *L, int table,
@@ -121,7 +122,7 @@ void                warn_if_field_exists(lua_State *L, int table,
                                          std::string_view message);
 
 size_t write_array_slice_float(lua_State *L, int table_index, float *data,
-	v3u16 data_size, v3u16 slice_offset, v3u16 slice_size);
+    v3u data_size, v3u slice_offset, v3u slice_size);
 
 // This must match the implementation in builtin/game/misc_s.lua
 // Note that this returns a floating point result as Lua integers are 32-bit

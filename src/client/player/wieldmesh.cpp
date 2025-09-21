@@ -32,7 +32,7 @@ static scene::IMesh *createExtrusionMesh(int resolution_x, int resolution_y)
 	const f32 r = 0.5;
 
 	scene::IMeshBuffer *buf = new scene::SMeshBuffer();
-	video::SColor c(255,255,255,255);
+	img::color8 c(255,255,255,255);
 	v3f scale(1.0, 1.0, 0.1);
 
 	// Front and back
@@ -369,9 +369,9 @@ void WieldMeshSceneNode::setItem(const ItemStack &item, Client *client, bool che
 			1);
 		m_colors.emplace_back();
 		// overlay is white, if present
-		m_colors.emplace_back(true, video::SColor(0xFFFFFFFF));
+		m_colors.emplace_back(true, img::color8(0xFFFFFFFF));
 		// initialize the color
-		setColor(video::SColor(0xFFFFFFFF));
+		setColor(img::color8(0xFFFFFFFF));
 		return;
 	}
 
@@ -440,7 +440,7 @@ void WieldMeshSceneNode::setItem(const ItemStack &item, Client *client, bool che
 		}
 
 		// initialize the color
-		setColor(video::SColor(0xFFFFFFFF));
+		setColor(img::color8(0xFFFFFFFF));
 		return;
 	} else {
 		const std::string inventory_image = item.getInventoryImage(idef);
@@ -453,10 +453,10 @@ void WieldMeshSceneNode::setItem(const ItemStack &item, Client *client, bool che
 
 		m_colors.emplace_back();
 		// overlay is white, if present
-		m_colors.emplace_back(true, video::SColor(0xFFFFFFFF));
+		m_colors.emplace_back(true, img::color8(0xFFFFFFFF));
 
 		// initialize the color
-		setColor(video::SColor(0xFFFFFFFF));
+		setColor(img::color8(0xFFFFFFFF));
 		return;
 	}
 
@@ -464,7 +464,7 @@ void WieldMeshSceneNode::setItem(const ItemStack &item, Client *client, bool che
 	changeToMesh(nullptr);
 }
 
-void WieldMeshSceneNode::setColor(video::SColor c)
+void WieldMeshSceneNode::setColor(img::color8 c)
 {
 	scene::IMesh *mesh = m_meshnode->getMesh();
 	if (!mesh)
@@ -478,9 +478,9 @@ void WieldMeshSceneNode::setColor(video::SColor c)
 	if (mc > m_colors.size())
 		m_colors.resize(mc);
 	for (u32 j = 0; j < mc; j++) {
-		video::SColor bc(m_base_color);
+		img::color8 bc(m_base_color);
 		m_colors[j].applyOverride(bc);
-		video::SColor buffercolor(255,
+		img::color8 buffercolor(255,
 			bc.getRed() * red / 255,
 			bc.getGreen() * green / 255,
 			bc.getBlue() * blue / 255);
@@ -493,7 +493,7 @@ void WieldMeshSceneNode::setColor(video::SColor c)
 	}
 }
 
-void WieldMeshSceneNode::setNodeLightColor(video::SColor color)
+void WieldMeshSceneNode::setNodeLightColor(img::color8 color)
 {
 	if (!m_meshnode)
 		return;
@@ -550,7 +550,7 @@ void getItemMesh(Client *client, const ItemStack &item, ItemMesh *result)
 		mesh = getExtrudedMesh(tsrc, inventory_image, inventory_overlay);
 		result->buffer_colors.emplace_back();
 		// overlay is white, if present
-		result->buffer_colors.emplace_back(true, video::SColor(0xFFFFFFFF));
+		result->buffer_colors.emplace_back(true, img::color8(0xFFFFFFFF));
 		// Items with inventory images do not need shading
 		result->needs_shading = false;
 	} else if (def.type == ITEM_NODE && f.drawtype == NDT_AIRLIKE) {

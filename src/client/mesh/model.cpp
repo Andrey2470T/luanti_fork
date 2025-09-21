@@ -60,7 +60,6 @@ Model::Model(AnimationManager *_mgr, v3f pos, const std::vector<std::shared_ptr<
     mesh->addNewBuffer(new MeshBuffer(true, vType));
 
     // process meshes
-    u32 curOffset = 0;
     for (u8 i = 0; i < scene->mNumMaterials; i++) {
         processMesh(i, scene->mMeshes[i], layers.at(i));
     }

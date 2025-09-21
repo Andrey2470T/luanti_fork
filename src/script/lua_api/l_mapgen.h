@@ -5,7 +5,6 @@
 #pragma once
 
 #include "lua_api/l_base.h"
-#include "irr_v3d.h"
 
 typedef u16 biome_t;  // copy from mg_biome.h to avoid an unnecessary include
 

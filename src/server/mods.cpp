@@ -82,10 +82,10 @@ void ServerModManager::getModsMediaPaths(std::vector<std::string> &paths) const
 	const auto &mods = configuration.getMods();
 	for (auto it = mods.crbegin(); it != mods.crend(); it++) {
 		const ModSpec &spec = *it;
-		fs::GetRecursiveDirs(paths, spec.path + DIR_DELIM + "textures");
-		fs::GetRecursiveDirs(paths, spec.path + DIR_DELIM + "sounds");
-		fs::GetRecursiveDirs(paths, spec.path + DIR_DELIM + "media");
-		fs::GetRecursiveDirs(paths, spec.path + DIR_DELIM + "models");
-		fs::GetRecursiveDirs(paths, spec.path + DIR_DELIM + "locale");
+        mt_fs::GetRecursiveDirs(paths, spec.path + DIR_DELIM + "textures");
+        mt_fs::GetRecursiveDirs(paths, spec.path + DIR_DELIM + "sounds");
+        mt_fs::GetRecursiveDirs(paths, spec.path + DIR_DELIM + "media");
+        mt_fs::GetRecursiveDirs(paths, spec.path + DIR_DELIM + "models");
+        mt_fs::GetRecursiveDirs(paths, spec.path + DIR_DELIM + "locale");
 	}
 }

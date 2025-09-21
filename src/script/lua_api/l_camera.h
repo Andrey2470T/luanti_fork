@@ -6,7 +6,7 @@
 
 #include "l_base.h"
 
-class Camera;
+class PlayerCamera;
 
 class LuaCamera : public ModApiBase
 {
@@ -28,16 +28,16 @@ private:
 	static int l_get_look_horizontal(lua_State *L);
 	static int l_get_aspect_ratio(lua_State *L);
 
-	static Camera *getobject(LuaCamera *ref);
-	static Camera *getobject(lua_State *L, int narg);
+    static PlayerCamera *getobject(LuaCamera *ref);
+    static PlayerCamera *getobject(lua_State *L, int narg);
 
-	Camera *m_camera = nullptr;
+    PlayerCamera *m_camera = nullptr;
 
 public:
-	LuaCamera(Camera *m);
+    LuaCamera(PlayerCamera *m);
 	~LuaCamera() = default;
 
-	static void create(lua_State *L, Camera *m);
+    static void create(lua_State *L, PlayerCamera *m);
 
 	static void Register(lua_State *L);
 

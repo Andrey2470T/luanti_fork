@@ -453,7 +453,7 @@ NetworkPacket& NetworkPacket::operator>>(v3i& dst)
 {
 	checkReadOffset(m_read_offset, 12);
 
-	dst = readV3S32(&m_data[m_read_offset]);
+	dst = readv3i(&m_data[m_read_offset]);
 
 	m_read_offset += 12;
 	return *this;

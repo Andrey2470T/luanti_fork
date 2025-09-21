@@ -20,7 +20,6 @@ extern "C" {
 #include <vector>
 #include <array>
 
-#include "irrlichttypes_bloated.h"
 #include "util/string.h"
 #include "itemgroup.h"
 #include "itemdef.h"
@@ -70,7 +69,7 @@ void               push_content_features     (lua_State *L,
 void               push_nodebox              (lua_State *L,
                                               const NodeBox &box);
 void               push_palette              (lua_State *L,
-                                              const std::vector<video::SColor> *palette);
+                                              const std::vector<img::color8> *palette);
 
 TileDef            read_tiledef              (lua_State *L, int index,
                                               u8 drawtype, bool special);

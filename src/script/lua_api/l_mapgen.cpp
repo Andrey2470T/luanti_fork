@@ -164,7 +164,7 @@ Schematic *load_schematic(lua_State *L, int index, const NodeDefManager *ndef,
 		schem = SchematicManager::create(SCHEMATIC_NORMAL);
 
 		std::string filepath = lua_tostring(L, index);
-		if (!fs::IsPathAbsolute(filepath))
+        if (!mt_fs::IsPathAbsolute(filepath))
 			filepath = ModApiBase::getCurrentModPath(L) + DIR_DELIM + filepath;
 
 		if (!schem->loadSchematicFromFile(filepath, ndef,

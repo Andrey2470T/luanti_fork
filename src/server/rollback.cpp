@@ -235,7 +235,7 @@ bool RollbackManager::initDatabase()
 {
 	verbosestream << "RollbackManager: Database connection setup" << std::endl;
 
-	bool needs_create = !fs::PathExists(database_path);
+    bool needs_create = !mt_fs::PathExists(database_path);
 	SQLOK(sqlite3_open_v2(database_path.c_str(), &db,
 			SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL));
 

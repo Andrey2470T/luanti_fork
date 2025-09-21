@@ -4,7 +4,7 @@
 
 #include "test.h"
 
-#include "client/gameui.h"
+#include "client/ui/gameui.h"
 
 class TestGameUI : public TestBase
 {

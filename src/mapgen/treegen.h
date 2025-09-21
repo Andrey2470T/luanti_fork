@@ -7,7 +7,6 @@
 #pragma once
 
 #include <string>
-#include "irr_v3d.h"
 #include "nodedef.h"
 #include "mapnode.h"
 

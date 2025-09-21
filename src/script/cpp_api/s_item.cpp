@@ -13,7 +13,7 @@
 #include "util/pointedthing.h"
 #include "inventory.h"
 #include "inventorymanager.h"
-#include "irrlicht_changes/printing.h"
+#include <Utils/Printing.h>
 
 #define WRAP_LUAERROR(e, detail) \
 	LuaError(std::string(__FUNCTION__) + ": " + (e).what() + ". " detail)

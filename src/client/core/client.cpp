@@ -43,6 +43,7 @@
 #include "mapnode.h"
 #include "client/network/packethandler.h"
 #include "client/ao/clientActiveObject.h"
+#include "client/ao/genericCAO.h"
 #include <Image/ImageLoader.h>
 #include "client/render/drawlist.h"
 #include "client/render/loadscreen.h"

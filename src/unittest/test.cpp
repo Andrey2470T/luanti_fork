@@ -319,7 +319,7 @@ bool TestBase::testModule(IGameDef *gamedef)
 		<< "ms" << std::endl;
 
 	if (!m_test_dir.empty())
-		fs::RecursiveDelete(m_test_dir);
+		mt_fs::RecursiveDelete(m_test_dir);
 
 	return num_tests_failed == 0;
 }
@@ -329,7 +329,7 @@ std::string TestBase::getTestTempDirectory()
 	if (!m_test_dir.empty())
 		return m_test_dir;
 
-	m_test_dir = fs::CreateTempDir();
+	m_test_dir = mt_fs::CreateTempDir();
 	UASSERT(!m_test_dir.empty());
 	return m_test_dir;
 }

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 // Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
+#include "Image/Converting.h"
 extern "C" {
 #include <lua.h>
 #include <lauxlib.h>
@@ -106,7 +107,7 @@ void push_v2s16(lua_State *L, v2s16 p)
 	lua_setfield(L, -2, "y");
 }
 
-void push_v2s32(lua_State *L, v2s32 p)
+void push_v2i(lua_State *L, v2i p)
 {
 	lua_createtable(L, 0, 2);
 	lua_pushinteger(L, p.X);
@@ -115,7 +116,7 @@ void push_v2s32(lua_State *L, v2s32 p)
 	lua_setfield(L, -2, "y");
 }
 
-void push_v2u32(lua_State *L, v2u32 p)
+void push_v2u(lua_State *L, v2u p)
 {
 	lua_createtable(L, 0, 2);
 	lua_pushinteger(L, p.X);
@@ -124,9 +125,9 @@ void push_v2u32(lua_State *L, v2u32 p)
 	lua_setfield(L, -2, "y");
 }
 
-v2s32 read_v2s32(lua_State *L, int index)
+v2i read_v2i(lua_State *L, int index)
 {
-	v2s32 p;
+    v2i p;
 	CHECK_POS_TAB(index);
 	lua_getfield(L, index, "x");
 	p.X = lua_tonumber(L, -1);
@@ -190,17 +191,17 @@ v3f check_v3f(lua_State *L, int index)
 	return v3f(x, y, z);
 }
 
-v3d read_v3d(lua_State *L, int index)
+v3f64 read_v3d(lua_State *L, int index)
 {
 	read_v3_aux(L, index);
 	double x = lua_tonumber(L, -3);
 	double y = lua_tonumber(L, -2);
 	double z = lua_tonumber(L, -1);
 	lua_pop(L, 3);
-	return v3d(x, y, z);
+    return v3f64(x, y, z);
 }
 
-v3d check_v3d(lua_State *L, int index)
+v3f64 check_v3d(lua_State *L, int index)
 {
 	read_v3_aux(L, index);
 	CHECK_POS_COORD(-3, "x");
@@ -210,19 +211,19 @@ v3d check_v3d(lua_State *L, int index)
 	double y = lua_tonumber(L, -2);
 	double z = lua_tonumber(L, -1);
 	lua_pop(L, 3);
-	return v3d(x, y, z);
+    return v3f64(x, y, z);
 }
 
-void push_ARGB8(lua_State *L, video::SColor color)
+void push_ARGB8(lua_State *L, img::color8 color)
 {
 	lua_createtable(L, 0, 4);
-	lua_pushinteger(L, color.getAlpha());
+    lua_pushinteger(L, color.A());
 	lua_setfield(L, -2, "a");
-	lua_pushinteger(L, color.getRed());
+    lua_pushinteger(L, color.R());
 	lua_setfield(L, -2, "r");
-	lua_pushinteger(L, color.getGreen());
+    lua_pushinteger(L, color.G());
 	lua_setfield(L, -2, "g");
-	lua_pushinteger(L, color.getBlue());
+    lua_pushinteger(L, color.B());
 	lua_setfield(L, -2, "b");
 }
 
@@ -249,25 +250,25 @@ void push_v3s16(lua_State *L, v3s16 p)
 v3s16 read_v3s16(lua_State *L, int index)
 {
 	// Correct rounding at <0
-	v3d pf = read_v3d(L, index);
+    v3f64 pf = read_v3d(L, index);
 	return doubleToInt(pf, 1.0);
 }
 
 v3s16 check_v3s16(lua_State *L, int index)
 {
 	// Correct rounding at <0
-	v3d pf = check_v3d(L, index);
+    v3f64 pf = check_v3d(L, index);
 	return doubleToInt(pf, 1.0);
 }
 
-bool read_color(lua_State *L, int index, video::SColor *color)
+bool read_color(lua_State *L, int index, img::color8 *color)
 {
 	if (lua_istable(L, index)) {
 		*color = read_ARGB8(L, index);
 	} else if (lua_isnumber(L, index)) {
-		color->set(lua_tonumber(L, index));
+        *color = img::colorU32NumberToObject(lua_tonumber(L, index));
 	} else if (lua_isstring(L, index)) {
-		video::SColor parsed_color;
+		img::color8 parsed_color;
 		if (!parseColorString(lua_tostring(L, index), parsed_color, true))
 			return false;
 
@@ -279,25 +280,25 @@ bool read_color(lua_State *L, int index, video::SColor *color)
 	return true;
 }
 
-video::SColor read_ARGB8(lua_State *L, int index)
+img::color8 read_ARGB8(lua_State *L, int index)
 {
 	auto clamp_col = [](double c) -> u32 {
 		return std::fmax(0.0, std::fmin(255.0, c));
 	};
 
-	video::SColor color(0);
+    img::color8 color;
 	CHECK_TYPE(index, "ARGB color", LUA_TTABLE);
 	lua_getfield(L, index, "a");
-	color.setAlpha(lua_isnumber(L, -1) ? clamp_col(lua_tonumber(L, -1)) : 0xFF);
+    color.A(lua_isnumber(L, -1) ? clamp_col(lua_tonumber(L, -1)) : 0xFF);
 	lua_pop(L, 1);
 	lua_getfield(L, index, "r");
-	color.setRed(clamp_col(lua_tonumber(L, -1)));
+    color.R(clamp_col(lua_tonumber(L, -1)));
 	lua_pop(L, 1);
 	lua_getfield(L, index, "g");
-	color.setGreen(clamp_col(lua_tonumber(L, -1)));
+    color.G(clamp_col(lua_tonumber(L, -1)));
 	lua_pop(L, 1);
 	lua_getfield(L, index, "b");
-	color.setBlue(clamp_col(lua_tonumber(L, -1)));
+    color.B(clamp_col(lua_tonumber(L, -1)));
 	lua_pop(L, 1);
 	return color;
 }
@@ -324,10 +325,10 @@ bool is_color_table(lua_State *L, int index)
 	return is_color_table;
 }
 
-aabb3f read_aabb3f(lua_State *L, int index, f32 scale)
+aabbf read_aabb3f(lua_State *L, int index, f32 scale)
 {
 	// default value for accidental/historical reasons
-	aabb3f box{-1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f};
+    aabbf box{-1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f};
 	if(lua_istable(L, index)){
 		lua_rawgeti(L, index, 1);
 		box.MinEdge.X = lua_tonumber(L, -1) * scale;
@@ -352,7 +353,7 @@ aabb3f read_aabb3f(lua_State *L, int index, f32 scale)
 	return box;
 }
 
-void push_aabb3f(lua_State *L, aabb3f box, f32 divisor)
+void push_aabb3f(lua_State *L, aabbf box, f32 divisor)
 {
 	lua_createtable(L, 6, 0);
 	lua_pushnumber(L, box.MinEdge.X / divisor);
@@ -369,9 +370,9 @@ void push_aabb3f(lua_State *L, aabb3f box, f32 divisor)
 	lua_rawseti(L, -2, 6);
 }
 
-std::vector<aabb3f> read_aabb3f_vector(lua_State *L, int index, f32 scale)
+std::vector<aabbf> read_aabb3f_vector(lua_State *L, int index, f32 scale)
 {
-	std::vector<aabb3f> boxes;
+    std::vector<aabbf> boxes;
 	if(lua_istable(L, index)){
 		int n = lua_objlen(L, index);
 		// Check if it's a single box or a list of boxes
@@ -397,11 +398,11 @@ std::vector<aabb3f> read_aabb3f_vector(lua_State *L, int index, f32 scale)
 	return boxes;
 }
 
-void push_aabb3f_vector(lua_State *L, const std::vector<aabb3f> &boxes, f32 divisor)
+void push_aabb3f_vector(lua_State *L, const std::vector<aabbf> &boxes, f32 divisor)
 {
 	lua_createtable(L, boxes.size(), 0);
 	int i = 1;
-	for (const aabb3f &box : boxes) {
+    for (const aabbf &box : boxes) {
 		push_aabb3f(L, box, divisor);
 		lua_rawseti(L, -2, i++);
 	}
@@ -621,11 +622,11 @@ size_t write_array_slice_float(
 	lua_State *L,
 	int table_index,
 	float *data,
-	v3u16 data_size,
-	v3u16 slice_offset,
-	v3u16 slice_size)
+    v3u data_size,
+    v3u slice_offset,
+    v3u slice_size)
 {
-	v3u16 pmin, pmax(data_size);
+    v3u pmin, pmax(data_size);
 
 	if (slice_offset.X > 0) {
 		slice_offset.X--;

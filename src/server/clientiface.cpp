@@ -211,7 +211,7 @@ void RemoteClient::GetNextBlocks (
 	// (zoom is disabled by value 0)
 	float prop_zoom_fov = sao->getZoomFOV() < 0.001f ?
 		0.0f :
-		std::max(camera_fov, sao->getZoomFOV() * core::DEGTORAD);
+        std::max((f64)camera_fov, sao->getZoomFOV() * DEGTORAD);
 
 	const s16 full_d_max = std::min(adjustDist(m_max_send_distance, prop_zoom_fov),
 		wanted_range);

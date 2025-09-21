@@ -7,7 +7,7 @@
 #include "collision.h"
 #include "constants.h"
 #include "inventory.h"
-#include "irrlicht_changes/printing.h"
+#include <Utils/Printing.h>
 #include "player_sao.h"
 #include "scripting_server.h"
 #include "server.h"
@@ -152,7 +152,7 @@ void LuaEntitySAO::step(float dtime, bool send_recommended)
 		m_acceleration = v3f(0,0,0);
 	} else {
 		if(m_prop.physical){
-			aabb3f box = m_prop.collisionbox;
+            aabbf box = m_prop.collisionbox;
 			box.MinEdge *= BS;
 			box.MaxEdge *= BS;
 			v3f p_pos = m_base_position;
@@ -170,7 +170,7 @@ void LuaEntitySAO::step(float dtime, bool send_recommended)
 			m_acceleration = p_acceleration;
 		} else {
 			m_base_position += (m_velocity + m_acceleration * 0.5f * dtime) * dtime;
-			m_velocity += dtime * m_acceleration;
+            m_velocity += m_acceleration * dtime;
 		}
 
 		if (m_prop.automatic_face_movement_dir &&
@@ -192,7 +192,7 @@ void LuaEntitySAO::step(float dtime, bool send_recommended)
 	}
 
 	if (std::abs(m_prop.automatic_rotate) > 0.001f) {
-		m_rotation_add_yaw = modulo360f(m_rotation_add_yaw + dtime * core::RADTODEG *
+        m_rotation_add_yaw = modulo360f(m_rotation_add_yaw + dtime * RADTODEG *
 				m_prop.automatic_rotate);
 	}
 
@@ -394,7 +394,7 @@ std::string LuaEntitySAO::getDescription()
 
 void LuaEntitySAO::setHP(s32 hp, const PlayerHPChangeReason &reason)
 {
-	m_hp = rangelim(hp, 0, U16_MAX);
+	m_hp = rangelim(hp, 0, T_MAX(u16));
 
 	sendPunchCommand();
 
@@ -526,7 +526,7 @@ void LuaEntitySAO::sendPosition(bool do_interpolate, bool is_movement_end)
 	m_messages_out.emplace(getId(), false, str);
 }
 
-bool LuaEntitySAO::getCollisionBox(aabb3f *toset) const
+bool LuaEntitySAO::getCollisionBox(aabbf *toset) const
 {
 	if (m_prop.physical)
 	{
@@ -543,7 +543,7 @@ bool LuaEntitySAO::getCollisionBox(aabb3f *toset) const
 	return false;
 }
 
-bool LuaEntitySAO::getSelectionBox(aabb3f *toset) const
+bool LuaEntitySAO::getSelectionBox(aabbf *toset) const
 {
 	if (!m_prop.is_visible) {
 		return false;

@@ -25,7 +25,7 @@
 */
 
 ClientMap::ClientMap(Client *client, DistanceSortedDrawList *drawlist)
-    : Map(client->idef()), m_client(client), m_drawlist(drawlist),
+    : Map(client), m_client(client), m_drawlist(drawlist),
       m_mesh_update_manager(std::make_unique<MeshUpdateManager>(client)),
       m_mesh_grid({g_settings->getU16("client_mesh_chunk")}),
       m_unload_unused_data_timeout(std::max(g_settings->getFloat("client_unload_unused_data_timeout"), 0.0f)),
@@ -67,7 +67,7 @@ void ClientMap::getBlocksInViewRange(v3s16 cam_pos_nodes,
         range = m_drawlist->getDrawControl().wanted_range;
 
     v3s16 box_nodes_d = v3s16(1, 1, 1) * range;
-    // Define p_nodes_min/max as v3s32 becaudynamic_cast<ActiveObjectMgr<ClientActiveObject> *>(m_ao_mgr)->se 'cam_pos_nodes -/+ box_nodes_d'
+    // Define p_nodes_min/max as v3i becaudynamic_cast<ActiveObjectMgr<ClientActiveObject> *>(m_ao_mgr)->se 'cam_pos_nodes -/+ box_nodes_d'
 	// can exceed the range of v3s16 when a large view range is used near the
 	// world edges.
     v3i p_nodes_min(

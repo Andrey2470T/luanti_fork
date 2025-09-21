@@ -308,7 +308,7 @@ std::string UnitSAO::generateUpdateBoneOverrideCommand(
 	writeV3F32(os, props.position.vector);
 	v3f euler_rot;
 	props.rotation.next.toEuler(euler_rot);
-	writeV3F32(os, euler_rot * core::RADTODEG);
+    writeV3F32(os, euler_rot * RADTODEG);
 	writeV3F32(os, props.scale.vector);
 	writeF32(os, props.position.interp_timer);
 	writeF32(os, props.rotation.interp_timer);

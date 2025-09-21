@@ -29,7 +29,7 @@ static const u8 rot_to_wallmounted[] = {
 	MapNode
 */
 
-void MapNode::getColor(const ContentFeatures &f, video::SColor *color) const
+void MapNode::getColor(const ContentFeatures &f, img::color8 *color) const
 {
 	if (f.palette) {
 		*color = (*f.palette)[param2];

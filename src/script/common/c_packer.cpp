@@ -80,7 +80,7 @@ static inline bool suitable_key(lua_State *L, int idx)
 		assert(lua_type(L, idx) == LUA_TNUMBER);
 		// numbers must fit into an s32 and be integers (-> lua_rawseti)
 		lua_Number n = lua_tonumber(L, idx);
-		return std::floor(n) == n && n >= S32_MIN && n <= S32_MAX;
+        return std::floor(n) == n && n >= T_MIN(s32) && n <= T_MAX(s32);
 	}
 }
 
@@ -306,7 +306,7 @@ static VectorRef<PackedInstr> record_object(lua_State *L, int idx, PackedValue &
 	auto found = seen.find(ptr);
 	if (found == seen.end()) {
 		// first time, record index
-		assert(pv.i.size() <= S32_MAX);
+        assert(pv.i.size() <= T_MAX(s32));
 		seen[ptr] = pv.i.size();
 		return VectorRef<PackedInstr>();
 	}

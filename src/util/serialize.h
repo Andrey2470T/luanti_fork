@@ -245,7 +245,7 @@ inline v2i readV2S32(const u8 *data)
 	return p;
 }
 
-inline v3i readV3S32(const u8 *data)
+inline v3i readv3i(const u8 *data)
 {
     v3i p;
 	p.X = readS32(&data[0]);
@@ -357,7 +357,7 @@ inline void writeV2S32(u8 *data, v2i p)
 	writeS32(&data[4], p.Y);
 }
 
-inline void writeV3S32(u8 *data, v3i p)
+inline void writev3i(u8 *data, v3i p)
 {
 	writeS32(&data[0], p.X);
 	writeS32(&data[4], p.Y);
@@ -417,7 +417,7 @@ MAKE_STREAM_READ_FXN(f32,   F32,      4);
 MAKE_STREAM_READ_FXN(v2s16, V2S16,    4);
 MAKE_STREAM_READ_FXN(v3s16, V3S16,    6);
 MAKE_STREAM_READ_FXN(v2i, V2S32,    8);
-MAKE_STREAM_READ_FXN(v3i, V3S32,   12);
+MAKE_STREAM_READ_FXN(v3i, v3i,   12);
 MAKE_STREAM_READ_FXN(v3f,   V3F1000, 12);
 MAKE_STREAM_READ_FXN(v2f,   V2F32,    8);
 MAKE_STREAM_READ_FXN(v3f,   V3F32,   12);
@@ -436,7 +436,7 @@ MAKE_STREAM_WRITE_FXN(f32,   F32,      4);
 MAKE_STREAM_WRITE_FXN(v2s16, V2S16,    4);
 MAKE_STREAM_WRITE_FXN(v3s16, V3S16,    6);
 MAKE_STREAM_WRITE_FXN(v2i, V2S32,    8);
-MAKE_STREAM_WRITE_FXN(v3i, V3S32,   12);
+MAKE_STREAM_WRITE_FXN(v3i, v3i,   12);
 MAKE_STREAM_WRITE_FXN(v3f,   V3F1000, 12);
 MAKE_STREAM_WRITE_FXN(v2f,   V2F32,    8);
 MAKE_STREAM_WRITE_FXN(v3f,   V3F32,   12);
