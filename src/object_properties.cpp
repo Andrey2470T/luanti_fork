@@ -3,7 +3,7 @@
 // Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "object_properties.h"
-#include "irrlicht_changes/printing.h"
+#include <Utils/Printing.h>
 #include "exceptions.h"
 #include "log.h"
 #include "util/serialize.h"

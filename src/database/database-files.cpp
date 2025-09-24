@@ -19,7 +19,7 @@
 
 PlayerDatabaseFiles::PlayerDatabaseFiles(const std::string &savedir) : m_savedir(savedir)
 {
-	fs::CreateDir(m_savedir);
+    mt_fs::CreateDir(m_savedir);
 }
 
 void PlayerDatabaseFiles::deSerialize(RemotePlayer *p, std::istream &is,
@@ -135,7 +135,7 @@ void PlayerDatabaseFiles::serialize(RemotePlayer *p, std::ostream &os)
 
 void PlayerDatabaseFiles::savePlayer(RemotePlayer *player)
 {
-	fs::CreateDir(m_savedir);
+    mt_fs::CreateDir(m_savedir);
 
 	std::string savedir = m_savedir + DIR_DELIM;
 	std::string path = savedir + player->getName();
@@ -143,7 +143,7 @@ void PlayerDatabaseFiles::savePlayer(RemotePlayer *player)
 	RemotePlayer testplayer("", NULL);
 
 	for (u32 i = 0; i < PLAYER_FILE_ALTERNATE_TRIES && !path_found; i++) {
-		if (!fs::PathExists(path)) {
+        if (!mt_fs::PathExists(path)) {
 			path_found = true;
 			continue;
 		}
@@ -172,7 +172,7 @@ void PlayerDatabaseFiles::savePlayer(RemotePlayer *player)
 	// Open and serialize file
 	std::ostringstream ss(std::ios_base::binary);
 	serialize(player, ss);
-	if (!fs::safeWriteToFile(path, ss.str())) {
+    if (!mt_fs::safeWriteToFile(path, ss.str())) {
 		infostream << "Failed to write " << path << std::endl;
 	}
 
@@ -195,7 +195,7 @@ bool PlayerDatabaseFiles::removePlayer(const std::string &name)
 		is.close();
 
 		if (temp_player.getName() == name) {
-			fs::DeleteSingleFileOrEmptyDirectory(path);
+            mt_fs::DeleteSingleFileOrEmptyDirectory(path);
 			return true;
 		}
 
@@ -232,9 +232,9 @@ bool PlayerDatabaseFiles::loadPlayer(RemotePlayer *player, PlayerSAO *sao)
 
 void PlayerDatabaseFiles::listPlayers(std::vector<std::string> &res)
 {
-	std::vector<fs::DirListNode> files = fs::GetDirListing(m_savedir);
+    std::vector<mt_fs::DirListNode> files = mt_fs::GetDirListing(m_savedir);
 	// list files into players directory
-	for (std::vector<fs::DirListNode>::const_iterator it = files.begin(); it !=
+    for (std::vector<mt_fs::DirListNode>::const_iterator it = files.begin(); it !=
 		files.end(); ++it) {
 		// Ignore directories
 		if (it->dir)
@@ -352,7 +352,7 @@ bool AuthDatabaseFiles::writeAuthFile()
 		output << ":" << authEntry.last_login;
 		output << std::endl;
 	}
-	if (!fs::safeWriteToFile(path, output.str())) {
+    if (!mt_fs::safeWriteToFile(path, output.str())) {
 		infostream << "Failed to write " << path << std::endl;
 		return false;
 	}
@@ -459,12 +459,12 @@ void ModStorageDatabaseFiles::endSave()
 	if (m_modified.empty())
 		return;
 
-	if (!fs::CreateAllDirs(m_storage_dir)) {
+    if (!mt_fs::CreateAllDirs(m_storage_dir)) {
 		errorstream << "ModStorageDatabaseFiles: Unable to save. '"
 				<< m_storage_dir << "' cannot be created." << std::endl;
 		return;
 	}
-	if (!fs::IsDir(m_storage_dir)) {
+    if (!mt_fs::IsDir(m_storage_dir)) {
 		errorstream << "ModStorageDatabaseFiles: Unable to save. '"
 				<< m_storage_dir << "' is not a directory." << std::endl;
 		return;
@@ -475,7 +475,7 @@ void ModStorageDatabaseFiles::endSave()
 
 		const Json::Value &json = m_mod_storage[modname];
 
-		if (!fs::safeWriteToFile(m_storage_dir + DIR_DELIM + modname, fastWriteJson(json))) {
+        if (!mt_fs::safeWriteToFile(m_storage_dir + DIR_DELIM + modname, fastWriteJson(json))) {
 			errorstream << "ModStorageDatabaseFiles[" << modname
 					<< "]: failed to write file." << std::endl;
 			++it;
@@ -494,7 +494,7 @@ void ModStorageDatabaseFiles::listMods(std::vector<std::string> *res)
 	}
 
 	// List other metadata present in the filesystem.
-	for (const auto &entry : fs::GetDirListing(m_storage_dir)) {
+    for (const auto &entry : mt_fs::GetDirListing(m_storage_dir)) {
 		if (!entry.dir && m_mod_storage.count(entry.name) == 0)
 			res->push_back(entry.name);
 	}
@@ -509,7 +509,7 @@ Json::Value *ModStorageDatabaseFiles::getOrCreateJson(const std::string &modname
 	Json::Value meta(Json::objectValue);
 
 	std::string path = m_storage_dir + DIR_DELIM + modname;
-	if (fs::PathExists(path)) {
+    if (mt_fs::PathExists(path)) {
 		auto is = open_ifstream(path.c_str(), true);
 		Json::CharReaderBuilder builder;
 		builder.settings_["collectComments"] = false;

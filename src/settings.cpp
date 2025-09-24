@@ -376,7 +376,7 @@ bool Settings::updateConfigFile(const char *filename)
 	if (!was_modified)
 		return true;
 
-	if (!fs::safeWriteToFile(filename, os.str()))
+    if (!mt_fs::safeWriteToFile(filename, os.str()))
 		return false;
 
 	return true;

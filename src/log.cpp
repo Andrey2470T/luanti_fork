@@ -294,12 +294,12 @@ void FileLogOutput::setFile(const std::string &filename, s64 file_size_max)
 		std::string filename_secondary = filename + ".1";
 		actionstream << "The log file grew too big; it is moved to " <<
 			filename_secondary << std::endl;
-		fs::DeleteSingleFileOrEmptyDirectory(filename_secondary);
-		fs::Rename(filename, filename_secondary);
+        mt_fs::DeleteSingleFileOrEmptyDirectory(filename_secondary);
+        mt_fs::Rename(filename, filename_secondary);
 	}
 
 	// Intentionally not using open_ofstream() to keep the text mode
-	if (!fs::OpenStream(*m_stream.rdbuf(), filename.c_str(), std::ios::out | std::ios::app, true, false))
+    if (!mt_fs::OpenStream(*m_stream.rdbuf(), filename.c_str(), std::ios::out | std::ios::app, true, false))
 		throw FileNotGoodException("Failed to open log file");
 
 	m_stream << "\n\n"

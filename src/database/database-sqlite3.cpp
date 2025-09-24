@@ -19,7 +19,7 @@ SQLite format specification:
 #include "porting.h"
 #include "util/string.h"
 #include "remoteplayer.h"
-#include "irrlicht_changes/printing.h"
+#include <Utils/Printing.h>
 #include "server/player_sao.h"
 
 #include <cassert>
@@ -129,14 +129,14 @@ void Database_SQLite3::openDatabase()
 
 	// Open the database connection
 
-	if (!fs::CreateAllDirs(m_savedir)) {
+    if (!mt_fs::CreateAllDirs(m_savedir)) {
 		infostream << "Database_SQLite3: Failed to create directory \""
 			<< m_savedir << "\"" << std::endl;
 		throw FileNotGoodException("Failed to create database "
 				"save directory");
 	}
 
-	bool needs_create = !fs::PathExists(dbp);
+    bool needs_create = !mt_fs::PathExists(dbp);
 
 	SQLOK(sqlite3_open_v2(dbp.c_str(), &m_database,
 			SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL),
