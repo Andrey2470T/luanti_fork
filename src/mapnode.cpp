@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 // Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
-#include "irrlichttypes_bloated.h"
+#include <Image/Image.h>
 #include "mapnode.h"
 #include "porting.h"
 #include "nodedef.h"
@@ -32,7 +32,7 @@ static const u8 rot_to_wallmounted[] = {
 void MapNode::getColor(const ContentFeatures &f, img::color8 *color) const
 {
 	if (f.palette) {
-		*color = (*f.palette)[param2];
+        *color = (*f.palette).colors.at(param2);
 		return;
 	}
 	*color = f.color;
@@ -171,10 +171,10 @@ void MapNode::rotateAlongYAxis(const NodeDefManager *nodemgr, Rotation rot)
 }
 
 void transformNodeBox(const MapNode &n, const NodeBox &nodebox,
-	const NodeDefManager *nodemgr, std::vector<aabb3f> *p_boxes,
+    const NodeDefManager *nodemgr, std::vector<aabbf> *p_boxes,
 	u8 neighbors = 0)
 {
-	std::vector<aabb3f> &boxes = *p_boxes;
+    std::vector<aabbf> &boxes = *p_boxes;
 
 	if (nodebox.type == NODEBOX_FIXED || nodebox.type == NODEBOX_LEVELED) {
 		const auto &fixed = nodebox.fixed;
@@ -183,7 +183,7 @@ void transformNodeBox(const MapNode &n, const NodeBox &nodebox,
 		facedir &= 0x03;
 
 		boxes.reserve(boxes.size() + fixed.size());
-		for (aabb3f box : fixed) {
+        for (aabbf box : fixed) {
 			if (nodebox.type == NODEBOX_LEVELED)
 				box.MaxEdge.Y = (-0.5f + n.getLevel(nodemgr) / 64.0f) * BS;
 
@@ -246,7 +246,7 @@ void transformNodeBox(const MapNode &n, const NodeBox &nodebox,
 				for (v3f &vertex : vertices) {
 					vertex.rotateXZBy(90);
 				}
-				aabb3f box = aabb3f(vertices[0]);
+                aabbf box = aabbf(vertices[0]);
 				box.addInternalPoint(vertices[1]);
 				boxes.push_back(box);
 			} else {
@@ -265,7 +265,7 @@ void transformNodeBox(const MapNode &n, const NodeBox &nodebox,
 				for (v3f &vertex : vertices) {
 					vertex.rotateXZBy(-90);
 				}
-				aabb3f box = aabb3f(vertices[0]);
+                aabbf box = aabbf(vertices[0]);
 				box.addInternalPoint(vertices[1]);
 				boxes.push_back(box);
 			} else {
@@ -292,7 +292,7 @@ void transformNodeBox(const MapNode &n, const NodeBox &nodebox,
 					vertex.rotateXZBy(-90);
 			}
 
-			aabb3f box = aabb3f(vertices[0]);
+            aabbf box = aabbf(vertices[0]);
 			box.addInternalPoint(vertices[1]);
 			boxes.push_back(box);
 		}
@@ -341,7 +341,7 @@ void transformNodeBox(const MapNode &n, const NodeBox &nodebox,
 
 		boxes.reserve(boxes_size);
 
-		auto boxes_insert = [&](const std::vector<aabb3f> &boxes_src) {
+        auto boxes_insert = [&](const std::vector<aabbf> &boxes_src) {
 			boxes.insert(boxes.end(), boxes_src.begin(), boxes_src.end());
 		};
 
@@ -436,14 +436,14 @@ u8 MapNode::getNeighbors(v3s16 p, Map *map) const
 }
 
 void MapNode::getNodeBoxes(const NodeDefManager *nodemgr,
-	std::vector<aabb3f> *boxes, u8 neighbors) const
+    std::vector<aabbf> *boxes, u8 neighbors) const
 {
 	const ContentFeatures &f = nodemgr->get(*this);
 	transformNodeBox(*this, f.node_box, nodemgr, boxes, neighbors);
 }
 
 void MapNode::getCollisionBoxes(const NodeDefManager *nodemgr,
-	std::vector<aabb3f> *boxes, u8 neighbors) const
+    std::vector<aabbf> *boxes, u8 neighbors) const
 {
 	const ContentFeatures &f = nodemgr->get(*this);
 	if (f.collision_box.fixed.empty())
@@ -453,7 +453,7 @@ void MapNode::getCollisionBoxes(const NodeDefManager *nodemgr,
 }
 
 void MapNode::getSelectionBoxes(const NodeDefManager *nodemgr,
-	std::vector<aabb3f> *boxes, u8 neighbors) const
+    std::vector<aabbf> *boxes, u8 neighbors) const
 {
 	const ContentFeatures &f = nodemgr->get(*this);
 	transformNodeBox(*this, f.selection_box, nodemgr, boxes, neighbors);

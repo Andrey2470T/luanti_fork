@@ -917,7 +917,7 @@ int ModApiMainMenu::l_get_window_info(lua_State *L)
 	lua_newtable(L);
 	int top = lua_gettop(L);
 
-	auto info = ClientDynamicInfo::getCurrent();
+    auto info = ClientDynamicInfo::getCurrent(getScriptApiBase(L)->getClient()->getRenderSystem());
 
 	lua_pushstring(L, "size");
 	push_v2u32(L, info.render_target_size);

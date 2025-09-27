@@ -364,7 +364,7 @@ class CItemDefManager: public IWritableItemDefManager
 	struct ClientCached
 	{
         img::Image *inventory_texture;
-		ItemMesh wield_mesh;
+        //ItemMesh wield_mesh;
         img::Palette *palette;
 
 		ClientCached():
@@ -372,10 +372,10 @@ class CItemDefManager: public IWritableItemDefManager
 			palette(NULL)
 		{}
 
-		~ClientCached() {
+        /*~ClientCached() {
 			if (wield_mesh.mesh)
 				wield_mesh.mesh->drop();
-		}
+        }*/
 
 		DISABLE_CLASS_COPY(ClientCached);
 	};
@@ -467,7 +467,7 @@ protected:
 		cc->inventory_texture = NULL;
 		if (!inventory_image.empty())
             cc->inventory_texture = cache->getOrLoad<img::Image>(ResourceType::IMAGE, inventory_image);
-		getItemMesh(client, item, &(cc->wield_mesh));
+        //getItemMesh(client, item, &(cc->wield_mesh));
 
         cc->palette = cache->getOrLoad<img::Palette>(ResourceType::PALETTE, def.palette_image);
 
@@ -494,7 +494,8 @@ public:
 		ClientCached *cc = createClientCachedDirect(item, client);
 		if (!cc)
 			return nullptr;
-		return &(cc->wield_mesh);
+        return nullptr;
+        //return &(cc->wield_mesh);
 	}
 
 	// Get item palette

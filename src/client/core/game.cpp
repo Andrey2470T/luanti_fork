@@ -160,7 +160,7 @@ void Game::run()
 
 		framemarker.start();
 
-		const auto current_dynamic_info = ClientDynamicInfo::getCurrent();
+        const auto current_dynamic_info = ClientDynamicInfo::getCurrent(rndsys);
 		if (!current_dynamic_info.equal(client_display_info)) {
 			client_display_info = current_dynamic_info;
 			dynamic_info_send_timer = 0.2f;

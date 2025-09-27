@@ -6,7 +6,7 @@
 
 #include "voxelalgorithms.h"
 #include "util/pointedthing.h"
-#include "Utils/Line3D.h"
+#include <Utils/Line3D.h>
 
 //! Sorts PointedThings based on their distance.
 struct RaycastSort

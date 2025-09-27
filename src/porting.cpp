@@ -494,8 +494,8 @@ bool setSystemPaths()
 
 	for (auto i = trylist.begin(); i != trylist.end(); ++i) {
 		const std::string &trypath = *i;
-		if (!fs::PathExists(trypath) ||
-			!fs::PathExists(trypath + DIR_DELIM + "builtin")) {
+        if (!mt_fs::PathExists(trypath) ||
+            !mt_fs::PathExists(trypath + DIR_DELIM + "builtin")) {
 			warningstream << "system-wide share not found at \""
 					<< trypath << "\""<< std::endl;
 			continue;
@@ -579,15 +579,15 @@ bool setSystemPaths()
 
 	// Delete tmp folder if it exists (it only ever contained
 	// a temporary ogg file, which is no longer used).
-	if (fs::PathExists(local_cache_path + DIR_DELIM + "tmp"))
-		fs::RecursiveDelete(local_cache_path + DIR_DELIM + "tmp");
+    if (mt_fs::PathExists(local_cache_path + DIR_DELIM + "tmp"))
+        mt_fs::RecursiveDelete(local_cache_path + DIR_DELIM + "tmp");
 
 	// Bail if migration impossible
-	if (path_cache == local_cache_path || !fs::PathExists(local_cache_path)
-			|| fs::PathExists(path_cache)) {
+    if (path_cache == local_cache_path || !mt_fs::PathExists(local_cache_path)
+            || mt_fs::PathExists(path_cache)) {
 		return;
 	}
-	if (!fs::Rename(local_cache_path, path_cache)) {
+    if (!mt_fs::Rename(local_cache_path, path_cache)) {
 		errorstream << "Failed to migrate local cache path "
 			"to system path!" << std::endl;
 	}
@@ -598,9 +598,9 @@ static void createCacheDirTag()
 {
 	const auto path = path_cache + DIR_DELIM + "CACHEDIR.TAG";
 
-	if (fs::PathExists(path))
+    if (mt_fs::PathExists(path))
 		return;
-	fs::CreateAllDirs(path_cache);
+    mt_fs::CreateAllDirs(path_cache);
 	auto ofs = open_ofstream(path.c_str(), false);
 	if (!ofs.good())
 		return;
@@ -704,11 +704,11 @@ void initializePaths()
 	/* STATIC_LOCALEDIR may be a generalized path such as /usr/share/locale that
 	 * doesn't necessarily contain our locale files, so check data path first. */
 	path_locale = getDataPath("locale");
-	if (fs::PathExists(path_locale)) {
+    if (mt_fs::PathExists(path_locale)) {
 		found_localedir = true;
 		infostream << "Using in-place locale directory " << path_locale
 			<< " even though a static one was provided." << std::endl;
-	} else if (STATIC_LOCALEDIR[0] && fs::PathExists(STATIC_LOCALEDIR)) {
+    } else if (STATIC_LOCALEDIR[0] && mt_fs::PathExists(STATIC_LOCALEDIR)) {
 		found_localedir = true;
 		path_locale = STATIC_LOCALEDIR;
 		infostream << "Using static locale directory " << STATIC_LOCALEDIR
@@ -716,7 +716,7 @@ void initializePaths()
 	}
 #  else
 	path_locale = getDataPath("locale");
-	if (fs::PathExists(path_locale)) {
+    if (mt_fs::PathExists(path_locale)) {
 		found_localedir = true;
 	}
 #  endif
@@ -903,7 +903,7 @@ bool open_url(const std::string &url)
 
 bool open_directory(const std::string &path)
 {
-	if (!fs::IsDir(path)) {
+    if (!mt_fs::IsDir(path)) {
 		errorstream << "Unable to open directory as it does not exist: " << path << std::endl;
 		return false;
 	}

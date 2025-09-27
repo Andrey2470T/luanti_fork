@@ -7,14 +7,14 @@
 #if CHECK_CLIENT_BUILD()
 
 #include "settings.h"
-#include "client/renderingengine.h"
+#include "client/render/rendersystem.h"
 #include "gui/guiFormSpecMenu.h"
 #include "gui/touchcontrols.h"
 
-ClientDynamicInfo ClientDynamicInfo::getCurrent()
+ClientDynamicInfo ClientDynamicInfo::getCurrent(RenderSystem *rndsys)
 {
-    v2u screen_size = RenderingEngine::getWindowSize();
-    f32 density = RenderingEngine::getDisplayDensity();
+    v2u screen_size = rndsys->getWindowSize();
+    f32 density = rndsys->getDisplayDensity();
     f32 gui_scaling = g_settings->getFloat("gui_scaling", 0.5f, 20.0f);
     f32 hud_scaling = g_settings->getFloat("hud_scaling", 0.5f, 20.0f);
     f32 real_gui_scaling = gui_scaling * density;

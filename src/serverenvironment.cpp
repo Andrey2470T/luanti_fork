@@ -34,7 +34,7 @@
 #if USE_LEVELDB
 #include "database/database-leveldb.h"
 #endif
-#include "irrlicht_changes/printing.h"
+#include <Utils/Printing.h>
 #include "server/luaentity_sao.h"
 #include "server/player_sao.h"
 
@@ -198,7 +198,7 @@ void LBMManager::loadIntroductionTimes(const std::string &times,
 	// or are run at every load (introducement time hardcoded to U32_MAX).
 
 	LBMContentMapping &lbms_we_introduce_now = m_lbm_lookup[now];
-	LBMContentMapping &lbms_running_always = m_lbm_lookup[U32_MAX];
+    LBMContentMapping &lbms_running_always = m_lbm_lookup[T_MAX(u32)];
 
 	for (auto &m_lbm_def : m_lbm_defs) {
 		if (m_lbm_def.second->run_at_every_load) {
@@ -718,7 +718,7 @@ void ServerEnvironment::saveMeta()
 	args.setU64("day_count", m_day_count);
 	args.writeLines(ss);
 
-	if(!fs::safeWriteToFile(path, ss.str()))
+    if(!mt_fs::safeWriteToFile(path, ss.str()))
 	{
 		infostream<<"ServerEnvironment::saveMeta(): Failed to write "
 			<<path<<std::endl;
@@ -734,7 +734,7 @@ void ServerEnvironment::loadMeta()
 	std::string path = m_server->getWorldPath() + DIR_DELIM "env_meta.txt";
 
 	// If file doesn't exist, load default environment metadata
-	if (!fs::PathExists(path)) {
+    if (!mt_fs::PathExists(path)) {
 		infostream << "ServerEnvironment: Loading default environment metadata"
 			<< std::endl;
 		loadDefaultMeta();
@@ -1314,7 +1314,7 @@ void ServerEnvironment::clearObjects(ClearObjectsMode mode)
 	}
 
 	// Remove objects in all loadable blocks
-	u32 unload_interval = U32_MAX;
+    u32 unload_interval = T_MAX(u32);
 	if (mode == CLEAR_OBJECTS_MODE_FULL) {
 		unload_interval = g_settings->getS32("max_clearobjects_extra_loaded_blocks");
 		unload_interval = MYMAX(unload_interval, 1);
@@ -1838,7 +1838,7 @@ bool ServerEnvironment::getActiveObjectMessage(ActiveObjectMessage *dest)
 }
 
 void ServerEnvironment::getSelectedActiveObjects(
-	const core::line3d<f32> &shootline_on_map,
+    const line3f &shootline_on_map,
 	std::vector<PointedThing> &objects,
 	const std::optional<Pointabilities> &pointabilities)
 {
@@ -1847,12 +1847,12 @@ void ServerEnvironment::getSelectedActiveObjects(
 	auto process = [&] (ServerActiveObject *obj) -> bool {
 		if (obj->isGone())
 			return false;
-		aabb3f selection_box{{0.0f, 0.0f, 0.0f}};
+        aabbf selection_box{{0.0f, 0.0f, 0.0f}};
 		if (!obj->getSelectionBox(&selection_box))
 			return false;
 
 		v3f pos = obj->getBasePosition();
-		v3f rel_pos = shootline_on_map.start - pos;
+        v3f rel_pos = shootline_on_map.Start - pos;
 
 		v3f current_intersection;
 		v3f current_normal;
@@ -1888,7 +1888,7 @@ void ServerEnvironment::getSelectedActiveObjects(
 		}
 		if (pointable != PointabilityType::POINTABLE_NOT) {
 			current_intersection += pos;
-			f32 d_sq = (current_intersection - shootline_on_map.start).getLengthSQ();
+            f32 d_sq = (current_intersection - shootline_on_map.Start).getLengthSQ();
 			objects.emplace_back(
 				(s16) obj->getId(), current_intersection, current_normal,
 				current_raw_normal, d_sq, pointable);
@@ -2397,7 +2397,7 @@ bool ServerEnvironment::migratePlayersDatabase(const GameParams &game_params,
 
 	if (backend == "files") {
 		// Create backup directory
-		fs::CreateDir(players_backup_path);
+        mt_fs::CreateDir(players_backup_path);
 	}
 
 	try {
@@ -2423,7 +2423,7 @@ bool ServerEnvironment::migratePlayersDatabase(const GameParams &game_params,
 
 			// For files source, move player files to backup dir
 			if (backend == "files") {
-				fs::Rename(
+                mt_fs::Rename(
 					game_params.world_path + DIR_DELIM + "players" + DIR_DELIM + (*it),
 					players_backup_path + DIR_DELIM + (*it));
 			}
@@ -2439,7 +2439,7 @@ bool ServerEnvironment::migratePlayersDatabase(const GameParams &game_params,
 
 		// When migration is finished from file backend, remove players directory if empty
 		if (backend == "files") {
-			fs::DeleteSingleFileOrEmptyDirectory(game_params.world_path + DIR_DELIM
+            mt_fs::DeleteSingleFileOrEmptyDirectory(game_params.world_path + DIR_DELIM
 				+ "players");
 		}
 
@@ -2534,8 +2534,8 @@ bool ServerEnvironment::migrateAuthDatabase(
 			std::string auth_txt_path =
 					game_params.world_path + DIR_DELIM + "auth.txt";
 			std::string auth_bak_path = auth_txt_path + ".bak";
-			if (!fs::PathExists(auth_bak_path))
-				if (fs::Rename(auth_txt_path, auth_bak_path))
+            if (!mt_fs::PathExists(auth_bak_path))
+                if (mt_fs::Rename(auth_txt_path, auth_bak_path))
 					actionstream << "Renamed auth.txt to auth.txt.bak"
 							<< std::endl;
 				else

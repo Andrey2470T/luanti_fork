@@ -12,7 +12,7 @@
 #include "config.h"
 #include "constants.h"
 #include "environment.h"
-#include "irrlicht_changes/printing.h"
+#include <Utils/Printing.h>
 #include "filesys.h"
 #include "log.h"
 #include "servermap.h"

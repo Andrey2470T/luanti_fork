@@ -6,9 +6,9 @@
 
 #include "light.h"
 #include "util/pointer.h"
-#include "BasicIncludes.h"
-#include "Image/Color.h"
-#include "Utils/AABB.h"
+#include <BasicIncludes.h>
+#include <Image/Color.h>
+#include <Utils/AABB.h>
 
 class NodeDefManager;
 class Map;

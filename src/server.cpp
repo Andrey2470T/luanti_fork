@@ -6,7 +6,6 @@
 #include <iostream>
 #include <queue>
 #include <algorithm>
-#include "irr_v2d.h"
 #include "network/connection.h"
 #include "network/networkpacket.h"
 #include "network/networkprotocol.h"
@@ -328,7 +327,7 @@ Server::Server(
 	m_lag_gauge->set(g_settings->getFloat("dedicated_server_step"));
 
 	m_path_mod_data = porting::path_user + DIR_DELIM "mod_data";
-	if (!fs::CreateDir(m_path_mod_data))
+    if (!mt_fs::CreateDir(m_path_mod_data))
 		throw ServerError("Failed to create mod data dir");
 }
 
@@ -407,7 +406,7 @@ Server::~Server()
 	// Clean up files
 	for (auto &it : m_media) {
 		if (it.second.delete_at_shutdown) {
-			fs::DeleteSingleFileOrEmptyDirectory(it.second.path);
+            mt_fs::DeleteSingleFileOrEmptyDirectory(it.second.path);
 		}
 	}
 
@@ -444,7 +443,7 @@ void Server::init()
 	// Create world if it doesn't exist
 	try {
 		loadGameConfAndInitWorld(m_path_world,
-				fs::GetFilenameFromPath(m_path_world.c_str()),
+                mt_fs::GetFilenameFromPath(m_path_world.c_str()),
 				m_gamespec, false);
 	} catch (const BaseException &e) {
 		throw ServerError(std::string("Failed to initialize world: ") + e.what());
@@ -499,8 +498,8 @@ void Server::init()
 
 	// Apply texture overrides from texturepack/override.txt
 	std::vector<std::string> paths;
-	fs::GetRecursiveDirs(paths, g_settings->get("texture_path"));
-	fs::GetRecursiveDirs(paths, m_gamespec.path + DIR_DELIM + "textures");
+    mt_fs::GetRecursiveDirs(paths, g_settings->get("texture_path"));
+    mt_fs::GetRecursiveDirs(paths, m_gamespec.path + DIR_DELIM + "textures");
 	for (const std::string &path : paths) {
 		TextureOverrideSource override_source(path + DIR_DELIM + "override.txt");
 		m_nodedef->applyTextureOverrides(override_source.getNodeTileOverrides());
@@ -1814,7 +1813,7 @@ void Server::SendHUDChange(session_t peer_id, u32 id, HudElementStat stat, void 
 			pkt << *(v3f *) value;
 			break;
 		case HUD_STAT_SIZE:
-			pkt << *(v2s32 *) value;
+            pkt << *(v2i *) value;
 			break;
 		default: // all other types
 			pkt << *(u32 *) value;
@@ -2016,7 +2015,7 @@ void Server::SendLocalPlayerAnimations(session_t peer_id, v2f animation_frames[4
 		if (m_clients.getProtocolVersion(peer_id) >= 46) {
 			pkt << animation_frames[i];
 		} else {
-			pkt << v2s32::from(animation_frames[i]);
+            pkt << animation_frames[i];
 		}
 	}
 
@@ -2559,7 +2558,7 @@ bool Server::addMediaFile(const std::string &filename,
 
 	// Read data
 	std::string filedata;
-	if (!fs::ReadFile(filepath, filedata, true)) {
+    if (!mt_fs::ReadFile(filepath, filedata, true)) {
 		return false;
 	}
 
@@ -2594,14 +2593,14 @@ void Server::fillMediaCache()
 
 	// ordered in descending priority
 	paths.push_back(getBuiltinLuaPath() + DIR_DELIM + "locale");
-	fs::GetRecursiveDirs(paths, porting::path_user + DIR_DELIM + "textures" + DIR_DELIM + "server");
-	fs::GetRecursiveDirs(paths, m_gamespec.path + DIR_DELIM + "textures");
+    mt_fs::GetRecursiveDirs(paths, porting::path_user + DIR_DELIM + "textures" + DIR_DELIM + "server");
+    mt_fs::GetRecursiveDirs(paths, m_gamespec.path + DIR_DELIM + "textures");
 	m_modmgr->getModsMediaPaths(paths);
 
 	// Collect media file information from paths into cache
 	for (const std::string &mediapath : paths) {
-		std::vector<fs::DirListNode> dirlist = fs::GetDirListing(mediapath);
-		for (const fs::DirListNode &dln : dirlist) {
+        std::vector<mt_fs::DirListNode> dirlist = mt_fs::GetDirListing(mediapath);
+        for (const mt_fs::DirListNode &dln : dirlist) {
 			if (dln.dir) // Ignore dirs (already in paths)
 				continue;
 
@@ -2723,7 +2722,7 @@ void Server::sendRequestedMedia(session_t peer_id,
 
 		// Read data
 		std::string data;
-		if (!fs::ReadFile(m.path, data, true)) {
+        if (!mt_fs::ReadFile(m.path, data, true)) {
 			continue;
 		}
 		file_size_bunch_total += data.size();
@@ -2792,7 +2791,7 @@ void Server::stepPendingDynMediaCallbacks(float dtime)
 			// if no_announce isn't set we're definitely deleting the wrong file!
 			sanity_check(m_media[name].no_announce);
 
-			fs::DeleteSingleFileOrEmptyDirectory(m_media[name].path);
+            mt_fs::DeleteSingleFileOrEmptyDirectory(m_media[name].path);
 			m_media.erase(name);
 		}
 		getScriptIface()->freeDynamicMediaCallback(it->first);
@@ -3589,7 +3588,7 @@ void Server::deleteParticleSpawner(const std::string &playername, u32 id)
 namespace {
 	std::string writeToTempFile(std::string_view content)
 	{
-		auto filepath = fs::CreateTempFile();
+        auto filepath = mt_fs::CreateTempFile();
 		if (filepath.empty())
 			return "";
 		auto os = open_ofstream(filepath.c_str(), true);
@@ -3598,7 +3597,7 @@ namespace {
 		os << content;
 		os.close();
 		if (os.fail()) {
-			fs::DeleteSingleFileOrEmptyDirectory(filepath);
+            mt_fs::DeleteSingleFileOrEmptyDirectory(filepath);
 			return "";
 		}
 		return filepath;
@@ -3616,7 +3615,7 @@ bool Server::dynamicAddMedia(const DynamicMediaArgs &a)
 		sanity_check(!a.data);
 		filepath = *a.filepath;
 		if (filename.empty())
-			filename = fs::GetFilenameFromPath(filepath.c_str());
+            filename = mt_fs::GetFilenameFromPath(filepath.c_str());
 	} else {
 		sanity_check(a.data);
 		sanity_check(!filename.empty());
@@ -4180,7 +4179,7 @@ Translations *Server::getTranslationLanguage(const std::string &lang_code)
 	for (const auto &i : m_media) {
 		if (Translations::getFileLanguage(i.first) == lang_code) {
 			std::string data;
-			if (fs::ReadFile(i.second.path, data, true)) {
+            if (mt_fs::ReadFile(i.second.path, data, true)) {
 				translations->loadTranslation(i.first, data);
 			}
 		}
@@ -4305,7 +4304,7 @@ bool Server::migrateModStorageDatabase(const GameParams &game_params, const Sett
 		// Back up files
 		const std::string storage_path = game_params.world_path + DIR_DELIM + "mod_storage";
 		const std::string backup_path = game_params.world_path + DIR_DELIM + "mod_storage.bak";
-		if (!fs::Rename(storage_path, backup_path))
+        if (!mt_fs::Rename(storage_path, backup_path))
 			warningstream << "After migration, " << storage_path
 				<< " could not be renamed to " << backup_path << std::endl;
 	}

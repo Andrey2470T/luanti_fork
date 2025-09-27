@@ -3,9 +3,7 @@
 // Copyright (C) 2016 juhdanad, Daniel Juhasz <juhdanad@gmail.com>
 
 #include "raycast.h"
-#include "irr_v3d.h"
-#include "irr_aabb3d.h"
-#include <quaternion.h>
+#include <Utils/Quaternion.h>
 #include "constants.h"
 
 bool RaycastSort::operator() (const PointedThing &pt1,
@@ -42,11 +40,11 @@ bool RaycastSort::operator() (const PointedThing &pt1,
 }
 
 
-RaycastState::RaycastState(const core::line3d<f32> &shootline,
+RaycastState::RaycastState(const line3f &shootline,
 	bool objects_pointable, bool liquids_pointable,
 	const std::optional<Pointabilities> &pointabilities) :
 	m_shootline(shootline),
-	m_iterator(shootline.start / BS, shootline.getVector() / BS),
+    m_iterator(shootline.Start / BS, shootline.getVector() / BS),
 	m_previous_node(m_iterator.m_current_node_pos),
 	m_objects_pointable(objects_pointable),
 	m_liquids_pointable(liquids_pointable),
@@ -55,12 +53,12 @@ RaycastState::RaycastState(const core::line3d<f32> &shootline,
 }
 
 
-bool boxLineCollision(const aabb3f &box, const v3f start,
+bool boxLineCollision(const aabbf &box, const v3f start,
 	const v3f dir, v3f *collision_point, v3f *collision_normal)
 {
 	if (box.isPointInside(start)) {
 		*collision_point = start;
-		collision_normal->set(0, 0, 0);
+        *collision_normal = v3f(0, 0, 0);
 		return true;
 	}
 	float m = 0;
@@ -78,7 +76,7 @@ bool boxLineCollision(const aabb3f &box, const v3f start,
 					&& (collision_point->Y <= box.MaxEdge.Y)
 					&& (collision_point->Z >= box.MinEdge.Z)
 					&& (collision_point->Z <= box.MaxEdge.Z)) {
-				collision_normal->set((dir.X > 0) ? -1 : 1, 0, 0);
+                *collision_normal = v3f((dir.X > 0) ? -1 : 1, 0, 0);
 				return true;
 			}
 		}
@@ -97,7 +95,7 @@ bool boxLineCollision(const aabb3f &box, const v3f start,
 					&& (collision_point->X <= box.MaxEdge.X)
 					&& (collision_point->Z >= box.MinEdge.Z)
 					&& (collision_point->Z <= box.MaxEdge.Z)) {
-				collision_normal->set(0, (dir.Y > 0) ? -1 : 1, 0);
+                *collision_normal = v3f(0, (dir.Y > 0) ? -1 : 1, 0);
 				return true;
 			}
 		}
@@ -116,7 +114,7 @@ bool boxLineCollision(const aabb3f &box, const v3f start,
 					&& (collision_point->X <= box.MaxEdge.X)
 					&& (collision_point->Y >= box.MinEdge.Y)
 					&& (collision_point->Y <= box.MaxEdge.Y)) {
-				collision_normal->set(0, 0, (dir.Z > 0) ? -1 : 1);
+                *collision_normal = v3f(0, 0, (dir.Z > 0) ? -1 : 1);
 				return true;
 			}
 		}
@@ -124,13 +122,13 @@ bool boxLineCollision(const aabb3f &box, const v3f start,
 	return false;
 }
 
-bool boxLineCollision(const aabb3f &box, const v3f rotation,
+bool boxLineCollision(const aabbf &box, const v3f rotation,
 	const v3f start, const v3f dir,
 	v3f *collision_point, v3f *collision_normal, v3f *raw_collision_normal)
 {
 	// Inversely transform the ray rather than rotating the box faces;
 	// this allows us to continue using a simple ray - AABB intersection
-	core::quaternion rot(rotation * core::DEGTORAD);
+    Quaternion rot(rotation * DEGTORAD);
 	rot.makeInverse();
 
 	bool collision = boxLineCollision(box, rot * start, rot * dir, collision_point, collision_normal);

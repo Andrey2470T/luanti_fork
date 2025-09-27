@@ -6,7 +6,7 @@
 #include "config.h"
 
 #if USE_CMAKE_CONFIG_H
-	#include "cmake_config_githash.h"
+    #include "cmake_config_githash.h"
 #endif
 
 #ifndef VERSION_GITHASH

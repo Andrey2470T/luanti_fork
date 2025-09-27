@@ -4,9 +4,10 @@
 
 #pragma once
 
-#include "BasicIncludes.h"
+#include <BasicIncludes.h>
 #include "config.h"
 
+class RenderSystem;
 
 struct ClientDynamicInfo
 {
@@ -25,7 +26,7 @@ public:
 	}
 
 #if CHECK_CLIENT_BUILD()
-	static ClientDynamicInfo getCurrent();
+    static ClientDynamicInfo getCurrent(RenderSystem *rndsys);
 
 private:
     static v2f calculateMaxFSSize(v2u render_target_size, f32 density, f32 gui_scaling);

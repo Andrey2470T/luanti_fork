@@ -9,8 +9,9 @@
 #include "nodedef.h"
 #include "gamedef.h"
 #if CHECK_CLIENT_BUILD()
-#include "client/clientenvironment.h"
-#include "client/localplayer.h"
+#include "client/core/clientenvironment.h"
+#include "client/player/localplayer.h"
+#include "client/ao/genericCAO.h"
 #endif
 #include "serverenvironment.h"
 #include "server/serveractiveobject.h"
@@ -279,17 +280,18 @@ static void add_object_boxes(Environment *env,
 		c_env->getActiveObjects(pos_f, distance, clientobjects);
 
 		for (auto &clientobject : clientobjects) {
+            auto gcao = dynamic_cast<GenericCAO *>(clientobject.obj);
 			// Do collide with everything but itself and children
-			if (!self || (self != clientobject.obj &&
-					self != clientobject.obj->getParent())) {
+            if (!self || (self != clientobject.obj && gcao &&
+                    self != gcao->getParent())) {
 				process_object(clientobject.obj);
 			}
 		}
 
 		// add collision with local player
 		LocalPlayer *lplayer = c_env->getLocalPlayer();
-		auto *obj = (ClientActiveObject*) lplayer->getCAO();
-		if (!self || (self != obj && self != obj->getParent())) {
+        auto *obj = (GenericCAO*) lplayer->getCAO();
+        if (!self || (obj && self != obj && self != obj->getParent())) {
             aabbf lplayer_collisionbox = lplayer->getCollisionbox();
 			v3f lplayer_pos = lplayer->getPosition();
 			lplayer_collisionbox.MinEdge += lplayer_pos;

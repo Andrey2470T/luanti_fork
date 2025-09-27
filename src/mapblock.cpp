@@ -10,19 +10,20 @@
 #include "nodedef.h"
 #include "nodemetadata.h"
 #include "gamedef.h"
-#include "irrlicht_changes/printing.h"
+#include <Utils/Printing.h>
 #include "log.h"
 #include "nameidmapping.h"
 #include "content_mapnode.h"  // For legacy name-id mapping
 #include "content_nodemeta.h" // For legacy deserialization
 #include "serialization.h"
 #if CHECK_CLIENT_BUILD()
-#include "client/mapblock_mesh.h"
+#include "client/map/mapblockmesh.h"
 #endif
 #include "porting.h"
 #include "util/string.h"
 #include "util/serialize.h"
 #include "util/basic_macros.h"
+#include <climits>
 
 static const char *modified_reason_strings[] = {
 	"reallocate or initial",

@@ -103,7 +103,7 @@ bool MapSettingsManager::saveMapMeta()
 	}
 
 	// Paths set up by subgames.cpp, but not in unittests
-	if (!fs::CreateAllDirs(fs::RemoveLastPathComponent(m_map_meta_path))) {
+    if (!mt_fs::CreateAllDirs(mt_fs::RemoveLastPathComponent(m_map_meta_path))) {
 		errorstream << "saveMapMeta: could not create dirs to "
 			<< m_map_meta_path;
 		return false;

@@ -10,7 +10,7 @@
 #include "pathfinder.h"
 #include "map.h"
 #include "nodedef.h"
-#include "irrlicht_changes/printing.h"
+#include <Utils/Printing.h>
 
 //#define PATHFINDER_DEBUG
 //#define PATHFINDER_CALC_TIME
@@ -302,7 +302,7 @@ private:
 	v3s16 m_start;                /**< source position                          */
 	v3s16 m_destination;          /**< destination position                     */
 
-	core::aabbox3d<s16> m_limits{{0, 0, 0}}; /**< position limits in real map coordinates  */
+    aabbs16 m_limits{{0, 0, 0}}; /**< position limits in real map coordinates  */
 
 	/** contains all map data already collected and analyzed.
 		Access it via the getIndexElement/getIdxElem methods. */

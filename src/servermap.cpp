@@ -25,7 +25,7 @@
 #include "database/database-dummy.h"
 #include "database/database-sqlite3.h"
 #include "script/scripting_server.h"
-#include "irrlicht_changes/printing.h"
+#include <Utils/Printing.h>
 #if USE_LEVELDB
 #include "database/database-leveldb.h"
 #endif
@@ -101,9 +101,9 @@ ServerMap::ServerMap(const std::string &savedir, IGameDef *gamedef,
 
 	try {
 		// If directory exists, check contents and load if possible
-		if (fs::PathExists(m_savedir)) {
+        if (mt_fs::PathExists(m_savedir)) {
 			// If directory is empty, it is safe to save into it.
-			if (fs::GetDirListing(m_savedir).empty()) {
+            if (mt_fs::GetDirListing(m_savedir).empty()) {
 				infostream<<"ServerMap: Empty save directory is valid."
 						<<std::endl;
 				m_map_saving_enabled = true;

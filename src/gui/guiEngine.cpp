@@ -276,7 +276,7 @@ void GUIEngine::run()
 		);
 	const bool initial_window_maximized = !g_settings->getBool("fullscreen") &&
 			g_settings->getBool("window_maximized");
-	auto last_window_info = ClientDynamicInfo::getCurrent();
+    auto last_window_info = ClientDynamicInfo::getCurrent(m_rndsys);
 
 	f32 dtime = 0.0f;
 
@@ -297,7 +297,7 @@ void GUIEngine::run()
 				updateTopLeftTextSize();
                 text_height = font_mgr->getDefaultFont()->getFontHeight();
 			}
-			auto window_info = ClientDynamicInfo::getCurrent();
+            auto window_info = ClientDynamicInfo::getCurrent(m_rndsys);
 			if (!window_info.equal(last_window_info)) {
 				m_script->handleMainMenuEvent("WindowInfoChange");
 				last_window_info = window_info;

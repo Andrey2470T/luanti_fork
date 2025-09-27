@@ -116,9 +116,9 @@ void Environment::continueRaycast(RaycastState *state, PointedThing *result_p)
 				state->m_found.push(std::move(pointed));
 		}
 		// Set search range
-		core::aabbox3d<s16> maximal_exceed = nodedef->getSelectionBoxIntUnion();
-		state->m_search_range.MinEdge = -maximal_exceed.MaxEdge;
-		state->m_search_range.MaxEdge = -maximal_exceed.MinEdge;
+        aabbs16 maximal_exceed = nodedef->getSelectionBoxIntUnion();
+        state->m_search_range.MinEdge = -v3f(maximal_exceed.MaxEdge.X, maximal_exceed.MaxEdge.Y, maximal_exceed.MaxEdge.Z);
+        state->m_search_range.MaxEdge = -v3f(maximal_exceed.MinEdge.X, maximal_exceed.MinEdge.Y, maximal_exceed.MinEdge.Z);
 		// Setting is done
 		state->m_initialization_needed = false;
 	}
@@ -132,10 +132,12 @@ void Environment::continueRaycast(RaycastState *state, PointedThing *result_p)
 	}
 
 	Map &map = getMap();
-	std::vector<aabb3f> boxes;
+    std::vector<aabbf> boxes;
 	while (state->m_iterator.m_current_index <= lastIndex) {
 		// Test the nodes around the current node in search_range.
-		core::aabbox3d<s16> new_nodes = state->m_search_range;
+        aabbs16 new_nodes(
+            v3s16(state->m_search_range.MinEdge.X, state->m_search_range.MinEdge.Y, state->m_search_range.MinEdge.Z),
+            v3s16(state->m_search_range.MaxEdge.X, state->m_search_range.MaxEdge.Y, state->m_search_range.MaxEdge.Z));
 		new_nodes.MinEdge += state->m_iterator.m_current_node_pos;
 		new_nodes.MaxEdge += state->m_iterator.m_current_node_pos;
 
@@ -156,9 +158,9 @@ void Environment::continueRaycast(RaycastState *state, PointedThing *result_p)
 			new_nodes.MaxEdge.Z = new_nodes.MinEdge.Z;
 		}
 
-		if (new_nodes.MaxEdge.X == T_MAX(S16) ||
-			new_nodes.MaxEdge.Y == T_MAX(S16) ||
-			new_nodes.MaxEdge.Z == T_MAX(S16)) {
+        if (new_nodes.MaxEdge.X == T_MAX(s16) ||
+            new_nodes.MaxEdge.Y == T_MAX(s16) ||
+            new_nodes.MaxEdge.Z == T_MAX(s16)) {
 			break; // About to go out of bounds
 		}
 
@@ -200,8 +202,8 @@ void Environment::continueRaycast(RaycastState *state, PointedThing *result_p)
 			// Do calculations relative to the node center
 			// to translate the ray rather than the boxes
 			v3f npf = intToFloat(np, BS);
-			v3f rel_start = state->m_shootline.start - npf;
-			for (aabb3f &box : boxes) {
+            v3f rel_start = state->m_shootline.Start - npf;
+            for (aabbf &box : boxes) {
 				v3f intersection_point;
 				v3f intersection_normal;
 				if (!boxLineCollision(box, rel_start,
@@ -213,7 +215,7 @@ void Environment::continueRaycast(RaycastState *state, PointedThing *result_p)
 
 				intersection_point += npf; // translate back to world coords
 				f32 distanceSq = (intersection_point
-					- state->m_shootline.start).getLengthSQ();
+                    - state->m_shootline.Start).getLengthSQ();
 				// If this is the nearest collision, save it
 				if (min_distance_sq > distanceSq) {
 					min_distance_sq = distanceSq;

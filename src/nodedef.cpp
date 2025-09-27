@@ -4,11 +4,11 @@
 
 #include "nodedef.h"
 
-#include "client/render/renderer.h"
 #include "itemdef.h"
 #if CHECK_CLIENT_BUILD()
+#include "client/render/renderer.h"
 #include "client/mesh/meshoperations.h"
-#include "client/client.h"
+#include "client/core/client.h"
 #include "client/render/rendersystem.h"
 #include "client/media/resource.h"
 #include "client/render/tilelayer.h"
