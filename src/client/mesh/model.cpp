@@ -7,6 +7,7 @@
 #include "layeredmesh.h"
 #include "client/render/tilelayer.h"
 #include "client/media/resource.h"
+#include "client/mesh/layeredmesh.h"
 
 matrix4 convertFromAssimpMatrix(aiMatrix4x4 m)
 {
@@ -33,6 +34,10 @@ KeyChannelInterpMode convertFromAssimpInterp(aiAnimBehaviour b)
         return KeyChannelInterpMode::CONSTANT;
     };
 }
+
+Model::Model(AnimationManager *_mgr)
+    : mgr(_mgr)
+{}
 
 Model::Model(v3f pos, const std::vector<MeshLayer> &layers, MeshBuffer *buffer)
 {
@@ -239,7 +244,7 @@ void Model::processAnimations(const aiScene *scene)
     KeyChannelInterpMode posInterp, rotInterp, scaleInterp;
 
     auto getBoneID = [this] (std::string name) -> s32 {
-        auto boneIt = std::find(bones.begin(), bones.end(), [&name] (const Bone *bone)
+        auto boneIt = std::find_if(bones.begin(), bones.end(), [&name] (const Bone *bone)
         {
             return name == bone->Name;
         });

@@ -69,7 +69,7 @@ void populateInterlacedPipeline(RenderPipeline *pipeline, Client *client)
     auto shader = cache->getOrLoad<render::Shader>(ResourceType::SHADER, "3d_interlaced_merge");
 	auto texture_map = { TEXTURE_LEFT, TEXTURE_RIGHT, TEXTURE_MASK };
 
-    auto merge = pipeline->addStep<PostProcessingStep>(shader, texture_map);
+    auto merge = pipeline->addStep<PostProcessingStep>(client->getRenderSystem(), buffer, shader, texture_map);
 	merge->setRenderSource(buffer);
 	merge->setRenderTarget(pipeline->createOwned<ScreenTarget>());
     pipeline->addStep<DrawHUD>();

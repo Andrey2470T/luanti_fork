@@ -56,6 +56,9 @@
 #include "client/event/inputhandler.h"
 #include "gameinputhandler.h"
 #include "chat.h"
+#include "util/quicktune_shortcutter.h"
+#include "gui/guiChatConsole.h"
+#include "gui/guiScrollBar.h"
 
 /*
 	Client

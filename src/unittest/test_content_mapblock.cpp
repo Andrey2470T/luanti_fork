@@ -9,9 +9,8 @@
 
 #include "gamedef.h"
 #include "dummygamedef.h"
-#include "client/content_mapblock.h"
-#include "client/mapblock_mesh.h"
-#include "client/meshgen/collector.h"
+#include "client/map/meshgenerator.h"
+#include "client/map/mapblockmesh.h"
 #include "mesh_compare.h"
 #include "util/directiontables.h"
 
@@ -65,7 +64,7 @@ public:
 		for (TileDef &tiledef : f.tiledef)
 			tiledef.name = name + ".png";
 		for (TileSpec &tile : f.tiles)
-			tile.layers[0].texture_id = texture;
+            tile[0]->texture_id = texture;
 
 		return registerNode(itemdef, f);
 	}

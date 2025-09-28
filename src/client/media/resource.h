@@ -37,8 +37,19 @@ struct ResourceInfo
     std::unique_ptr<T> data;
 };
 
+class IResourceSubCache {
+public:
+    virtual ~IResourceSubCache() = default;
+    virtual void* get(const std::string &name) = 0;
+    virtual void* getByID(u32 id) = 0;
+    virtual void* getOrLoad(const std::string &name) = 0;
+    virtual u32 cacheResource(void* resource, const std::string &name = "") = 0;
+    virtual void clearResource(u32 id) = 0;
+    virtual void clearResource(void* resource) = 0;
+};
+
 template <class T>
-class ResourceSubCache
+class ResourceSubCache : public IResourceSubCache
 {
     std::vector<std::unique_ptr<ResourceInfo<T>>> cache;
 
@@ -50,12 +61,12 @@ public:
     ResourceSubCache(const std::vector<std::string> &_defpaths, const std::function<std::string(std::string)> &_findPathCallback,
         const std::function<T*(const std::string &)> &_loadCallback);
 
-    T *get(const std::string &name);
-    T *getByID(u32 id);
-    T *getOrLoad(const std::string &name);
-    u32 cacheResource(T *res, const std::string &name="");
-    void clearResource(u32 id);
-    void clearResource(T *res);
+    void *get(const std::string &name) override;
+    void *getByID(u32 id) override;
+    void *getOrLoad(const std::string &name) override;
+    u32 cacheResource(void *res, const std::string &name="") override;
+    void clearResource(u32 id) override;
+    void clearResource(void *res) override;
 };
 
 class Atlas;
@@ -67,13 +78,14 @@ namespace render
 
 class ResourceCache
 {
-    std::unique_ptr<ResourceSubCache<img::Image>> images;
+    std::unordered_map<ResourceType, std::unique_ptr<IResourceSubCache>> subcaches;
+    /*std::unique_ptr<ResourceSubCache<img::Image>> images;
     std::unique_ptr<ResourceSubCache<render::Texture2D>> textures;
     std::unique_ptr<ResourceSubCache<render::Shader>> shaders;
     std::unique_ptr<ResourceSubCache<Model>> models;
     std::unique_ptr<ResourceSubCache<img::Palette>> palettes;
     std::unique_ptr<ResourceSubCache<Atlas>> atlases;
-    std::unique_ptr<ResourceSubCache<render::TTFont>> fonts;
+    std::unique_ptr<ResourceSubCache<render::TTFont>> fonts;*/
     
     std::unique_ptr<ResourceLoader> loader;
 
@@ -124,11 +136,11 @@ ResourceSubCache<T>::ResourceSubCache(
 {}
 
 template<class T>
-T *ResourceSubCache<T>::get(const std::string &name)
+void *ResourceSubCache<T>::get(const std::string &name)
 {
-    auto it = std::find(cache.begin(), cache.end(), [name] (const std::unique_ptr<ResourceInfo<T>> &elem)
+    auto it = std::find_if(cache.begin(), cache.end(), [name] (const std::unique_ptr<ResourceInfo<T>> &elem)
     {
-        return elem.name == name;
+        return elem->name == name;
     });
 
     if (it == cache.end())
@@ -138,9 +150,9 @@ T *ResourceSubCache<T>::get(const std::string &name)
 }
 
 template<class T>
-T *ResourceSubCache<T>::getByID(u32 _id)
+void *ResourceSubCache<T>::getByID(u32 _id)
 {
-    if (_id > cache.size()-1) {
+    if (_id >= cache.size()) {
         infostream << "ResourceSubCache<T>::getByID(): Resource ID " << _id << " is out of range" << std::endl;
         return nullptr;
     }
@@ -149,7 +161,7 @@ T *ResourceSubCache<T>::getByID(u32 _id)
 }
 
 template<class T>
-T *ResourceSubCache<T>::getOrLoad(const std::string &name)
+void *ResourceSubCache<T>::getOrLoad(const std::string &name)
 {
     auto *cachedRes = get(name);
 
@@ -184,40 +196,48 @@ T *ResourceSubCache<T>::getOrLoad(const std::string &name)
         return nullptr;
     }
 
-    cache.emplace_back(name, target_path, res);
+    ResourceInfo<T> *info = new ResourceInfo<T>();
+    info->name = name;
+    info->path = target_path;
+    info->data.reset(res);
+    cache.emplace_back(info);
     return res;
 }
 
 template<class T>
-u32 ResourceSubCache<T>::cacheResource(T *res, const std::string &name)
+u32 ResourceSubCache<T>::cacheResource(void *res, const std::string &name)
 {
-    auto it = std::find(cache.begin(), cache.end(), [res] (const std::unique_ptr<ResourceInfo<T>> &elem)
+    auto it = std::find_if(cache.begin(), cache.end(), [res] (const std::unique_ptr<ResourceInfo<T>> &elem)
     {
-        return elem.get()->data.get() == res;
+        return elem.get()->data.get() == static_cast<T *>(res);
     });
 
     if (it != cache.end())
         return std::distance(cache.begin(), it);
 
-    cache.emplace_back(name, "", res);
+    ResourceInfo<T> *info = new ResourceInfo<T>();
+    info->name = name;
+    info->path = "";
+    info->data.reset(static_cast<T *>(res));
+    cache.emplace_back(info);
     return cache.size()-1;
 }
 
 template<class T>
 void ResourceSubCache<T>::clearResource(u32 id)
 {
-    if (id > cache.size()-1)
+    if (id >= cache.size())
         return;
 
     cache.erase(cache.begin() + id);
 }
 
 template<class T>
-void ResourceSubCache<T>::clearResource(T *res)
+void ResourceSubCache<T>::clearResource(void *res)
 {
-    auto it = std::find(cache.begin(), cache.end(), [res] (const std::unique_ptr<ResourceInfo<T>> &elem)
+    auto it = std::find_if(cache.begin(), cache.end(), [res] (const std::unique_ptr<ResourceInfo<T>> &elem)
     {
-        return elem.get()->data.get() == res;
+        return elem.get()->data.get() == static_cast<T *>(res);
     });
 
     if (it != cache.end())
@@ -228,44 +248,14 @@ template <class T>
 T *ResourceCache::get(ResourceType _type, const std::string &_name)
 {
     MutexAutoLock lock(resource_mutex);
-    switch (_type) {
-    case ResourceType::IMAGE:
-        return images->get(_name);
-    case ResourceType::TEXTURE:
-        return textures->get(_name);
-    case ResourceType::SHADER:
-        return shaders->get(_name);
-    case ResourceType::MODEL:
-        return models->get(_name);
-    case ResourceType::PALETTE:
-        return palettes->get(_name);
-    case ResourceType::ATLAS:
-        return atlases->get(_name);
-    case ResourceType::FONT:
-        return fonts->get(_name);
-    }
+    return static_cast<T *>(subcaches[_type]->get(_name));
 }
 
 template <class T>
 T *ResourceCache::getByID(ResourceType _type, u32 _id)
 {
     MutexAutoLock lock(resource_mutex);
-    switch (_type) {
-    case ResourceType::IMAGE:
-        return images->getByID(_id);
-    case ResourceType::TEXTURE:
-        return textures->getByID(_id);
-    case ResourceType::SHADER:
-        return shaders->getByID(_id);
-    case ResourceType::MODEL:
-        return models->getByID(_id);
-    case ResourceType::PALETTE:
-        return palettes->getByID(_id);
-    case ResourceType::ATLAS:
-        return atlases->getByID(_id);
-    case ResourceType::FONT:
-        return fonts->getByID(_id);
-    }
+    return static_cast<T *>(subcaches[_type]->getByID(_id));
 }
 
 template <class T>
@@ -273,11 +263,11 @@ T *ResourceCache::getOrLoad(ResourceType _type, const std::string &_name,
     bool apply_modifiers, bool load_for_mesh, bool apply_fallback)
 {
     MutexAutoLock lock(resource_mutex);
-    switch (_type) {
-    case ResourceType::IMAGE: {
+
+    if (_type == ResourceType::IMAGE) {
         img::Image *img = nullptr;
         if (!apply_modifiers)
-            img = images->getOrLoad(_name);
+            img = reinterpret_cast<img::Image *>(subcaches[_type]->getOrLoad(_name));
         else {
             if (load_for_mesh)
                 img = texgen->generateForMesh(_name);
@@ -287,90 +277,36 @@ T *ResourceCache::getOrLoad(ResourceType _type, const std::string &_name,
 
         if (!img && apply_fallback)
             img = createDummyImage();
-        return img;
+        return static_cast<T *>((void*)img);
     }
-    case ResourceType::TEXTURE: {
-        auto tex = textures->getOrLoad(_name);
+    else if (_type == ResourceType::TEXTURE) {
+        auto tex = reinterpret_cast<render::Texture2D *>(subcaches[_type]->getOrLoad(_name));
 
         if (!tex && apply_fallback)
             tex = createDummyTexture();
-        return tex;
+        return static_cast<T *>((void*)tex);
     }
-    case ResourceType::SHADER:
-        return shaders->getOrLoad(_name);
-    case ResourceType::MODEL:
-        return models->getOrLoad(_name);
-    case ResourceType::PALETTE:
-        return palettes->getOrLoad(_name);
-    case ResourceType::ATLAS:
-        return atlases->getOrLoad(_name);
-    case ResourceType::FONT:
-        return fonts->getOrLoad(_name);
-    }
+    else
+        return static_cast<T *>(subcaches[_type]->getOrLoad(_name));
 }
 
 template<class T>
 u32 ResourceCache::cacheResource(ResourceType _type, T *res, const std::string &name)
 {
     MutexAutoLock lock(resource_mutex);
-    switch (_type) {
-    case ResourceType::IMAGE:
-        return images->cacheResource(res, name);
-    case ResourceType::TEXTURE:
-        return textures->cacheResource(res, name);
-    case ResourceType::SHADER:
-        return shaders->cacheResource(res, name);
-    case ResourceType::MODEL:
-        return models->cacheResource(res, name);
-    case ResourceType::PALETTE:
-        return palettes->cacheResource(res, name);
-    case ResourceType::ATLAS:
-        return atlases->cacheResource(res, name);
-    case ResourceType::FONT:
-        return fonts->cacheResource(res, name);
-    }
+    return subcaches[_type]->cacheResource(res, name);
 }
 
 template<class T>
 void ResourceCache::clearResource(ResourceType _type, u32 id)
 {
     MutexAutoLock lock(resource_mutex);
-    switch (_type) {
-    case ResourceType::IMAGE:
-        return images->clearResource(id);
-    case ResourceType::TEXTURE:
-        return textures->clearResource(id);
-    case ResourceType::SHADER:
-        return shaders->clearResource(id);
-    case ResourceType::MODEL:
-        return models->clearResource(id);
-    case ResourceType::PALETTE:
-        return palettes->clearResource(id);
-    case ResourceType::ATLAS:
-        return atlases->clearResource(id);
-    case ResourceType::FONT:
-        return fonts->clearResource(id);
-    }
+    subcaches[_type]->clearResource(id);
 }
 
 template<class T>
 void ResourceCache::clearResource(ResourceType _type, T *res)
 {
     MutexAutoLock lock(resource_mutex);
-    switch (_type) {
-    case ResourceType::IMAGE:
-        return images->clearResource(res);
-    case ResourceType::TEXTURE:
-        return textures->clearResource(res);
-    case ResourceType::SHADER:
-        return shaders->clearResource(res);
-    case ResourceType::MODEL:
-        return models->clearResource(res);
-    case ResourceType::PALETTE:
-        return palettes->clearResource(res);
-    case ResourceType::ATLAS:
-        return atlases->clearResource(res);
-    case ResourceType::FONT:
-        return fonts->clearResource(res);
-    }
+    subcaches[_type]->clearResource(res);
 }

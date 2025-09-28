@@ -62,31 +62,31 @@ const render::VertexTypeDescriptor SkyboxVType{
 // Getters used for DefaultVType and TwoColorVType
 inline v3f svtGetPos(MeshBuffer *buf, u32 num)
 {
-	return buf->getAttrAt<v3f>(0, num);
+    return buf->getV3FAttr(0, num);
 }
 inline v2f svtGetPos2D(MeshBuffer *buf, u32 num)
 {
-    return buf->getAttrAt<v2f>(0, num);
+    return buf->getV2FAttr(0, num);
 }
 inline img::color8 svtGetColor(MeshBuffer *buf, u32 num)
 {
-	return buf->getAttrAt<img::color8>(1, num);
+    return buf->getRGBAAttr(1, num);
 }
 inline v3f svtGetNormal(MeshBuffer *buf, u32 num)
 {
-	return buf->getAttrAt<v3f>(2, num);
+    return buf->getV3FAttr(2, num);
 }
 inline v2f svtGetUV(MeshBuffer *buf, u32 num)
 {
-	return buf->getAttrAt<v2f>(3, num);
+    return buf->getV2FAttr(3, num);
 }
 inline v3f svtGetUV3D(MeshBuffer *buf, u32 num)
 {
-    return buf->getAttrAt<v3f>(3, num);
+    return buf->getV3FAttr(3, num);
 }
 inline u8 svtGetMType(MeshBuffer *buf, u32 num)
 {
-    return buf->getAttrAt<u8>(4, num);
+    return buf->getUInt8Attr(4, num);
 }
 inline img::color8 svtGetHWColor(MeshBuffer *buf, u32 num)
 {
@@ -94,36 +94,36 @@ inline img::color8 svtGetHWColor(MeshBuffer *buf, u32 num)
 
     if (buf->getVAO()->getVertexType().Name == "TwoColorNode3D")
         attr_n = 5;
-    return buf->getAttrAt<img::color8>(attr_n, num);
+    return buf->getRGBAttr(attr_n, num);
 }
 
 
 // Setters used for DefaultVType and TwoColorVType
 inline void svtSetPos(MeshBuffer *buf, const v3f &pos, u32 num)
 {
-	buf->setAttrAt<v3f>(pos, 0, num);
+    buf->setV3FAttr(pos, 0, num);
 }
 inline void svtSetPos2D(MeshBuffer *buf, const v2f &pos, u32 num)
 {
-    buf->setAttrAt<v2f>(pos, 0, num);
+    buf->setV2FAttr(pos, 0, num);
 }
 inline void svtSetColor(MeshBuffer *buf, const img::color8 &c, u32 num)
 {
-	buf->setAttrAt<img::color8>(c, 1, num);
+    buf->setRGBAAttr(c, 1, num);
 }
 inline void svtSetNormal(MeshBuffer *buf, const v3f &normal, u32 num)
 {
     auto vertexType = buf->getVAO()->getVertexType();
 
     if (vertexType.InitNormal)
-        buf->setAttrAt<v3f>(normal, 2, num);
+        buf->setV3FAttr(normal, 2, num);
 }
 inline void svtSetUV(MeshBuffer *buf, const v2f &uv, u32 num)
 {
     auto vertexType = buf->getVAO()->getVertexType();
 
     if (vertexType.InitUV && vertexType.UVCount == 2)
-        buf->setAttrAt<v2f>(uv, 3, num);
+        buf->setV2FAttr(uv, 3, num);
 }
 
 inline void svtSetUV3D(MeshBuffer *buf, const v3f &uv, u32 num)
@@ -131,12 +131,12 @@ inline void svtSetUV3D(MeshBuffer *buf, const v3f &uv, u32 num)
     auto vertexType = buf->getVAO()->getVertexType();
 
     if (vertexType.InitUV && vertexType.UVCount == 3)
-        buf->setAttrAt<v3f>(uv, 3, num);
+        buf->setV3FAttr(uv, 3, num);
 }
 
 inline void svtSetMType(MeshBuffer *buf, u8 mt, u32 num)
 {
-    buf->setAttrAt<u8>(mt, 4, num);
+    buf->setUInt8Attr(mt, 4, num);
 }
 
 inline void svtSetHWColor(MeshBuffer *buf, const img::color8 &hw_c, u32 num)
@@ -145,7 +145,7 @@ inline void svtSetHWColor(MeshBuffer *buf, const img::color8 &hw_c, u32 num)
 
     if (buf->getVAO()->getVertexType().Name == "TwoColorNode3D")
         attr_n = 5;
-    buf->setAttrAt<img::color8>(hw_c, attr_n, num);
+    buf->setRGBAttr(hw_c, attr_n, num);
 }
 
 
@@ -162,68 +162,71 @@ void fillEmptyCustomAttribs(MeshBuffer *buf, u8 firstCustomAtrribIndex)
 
             switch (attrib.ComponentType) {
             case BasicType::UINT8:
-                buf->setAttrAt<u8>(0, firstCustomAtrribIndex, lastVNum);
+                buf->setUInt8Attr(0, firstCustomAtrribIndex, lastVNum);
                 break;
              case BasicType::CHAR:
-                buf->setAttrAt<char>(0, firstCustomAtrribIndex, lastVNum);
+                buf->setCharAttr(0, firstCustomAtrribIndex, lastVNum);
                 break;
              case BasicType::UINT16:
-                buf->setAttrAt<u16>(0, firstCustomAtrribIndex, lastVNum);
+                buf->setUInt16Attr(0, firstCustomAtrribIndex, lastVNum);
                 break;
             case BasicType::SHORT:
-                buf->setAttrAt<s16>(0, firstCustomAtrribIndex, lastVNum);
+                buf->setShortAttr(0, firstCustomAtrribIndex, lastVNum);
                 break;
             case BasicType::UINT32:
-                buf->setAttrAt<u32>(0, firstCustomAtrribIndex, lastVNum);
+                buf->setUInt32Attr(0, firstCustomAtrribIndex, lastVNum);
                 break;
             case BasicType::INT:
-                buf->setAttrAt<s32>(0, firstCustomAtrribIndex, lastVNum);
+                buf->setIntAttr(0, firstCustomAtrribIndex, lastVNum);
                 break;
             case BasicType::FLOAT:
-                buf->setAttrAt<f32>(0.0f, firstCustomAtrribIndex, lastVNum);
+                buf->setFloatAttr(0.0f, firstCustomAtrribIndex, lastVNum);
                 break;
             case BasicType::UINT64:
-                buf->setAttrAt<u64>(0, firstCustomAtrribIndex, lastVNum);
+                buf->setUInt64Attr(0, firstCustomAtrribIndex, lastVNum);
                 break;
             case BasicType::LONG_INT:
-                 buf->setAttrAt<long int>(0, firstCustomAtrribIndex, lastVNum);
+                 buf->setLongIntAttr(0, firstCustomAtrribIndex, lastVNum);
                 break;
             case BasicType::DOUBLE:
-                buf->setAttrAt<f64>(0.0, firstCustomAtrribIndex, lastVNum);
+                buf->setDoubleAttr(0.0, firstCustomAtrribIndex, lastVNum);
                 break;
             default:
                 break;
             }
+            break;
         }
         case 2: {
             switch (attrib.ComponentType) {
             case BasicType::UINT32:
-                buf->setAttrAt<v2u>(v2u(), firstCustomAtrribIndex, lastVNum);
+                buf->setV2UAttr(v2u(), firstCustomAtrribIndex, lastVNum);
                 break;
             case BasicType::INT:
-                buf->setAttrAt<v2i>(v2i(), firstCustomAtrribIndex, lastVNum);
+                buf->setV2IAttr(v2i(), firstCustomAtrribIndex, lastVNum);
                 break;
             case BasicType::FLOAT:
-                buf->setAttrAt<v2f>(v2f(), firstCustomAtrribIndex, lastVNum);
+                buf->setV2FAttr(v2f(), firstCustomAtrribIndex, lastVNum);
                 break;
             default:
                 break;
             }
+            break;
         }
         case 3: {
             switch (attrib.ComponentType) {
             case BasicType::UINT32:
-                buf->setAttrAt<v3u>(v3u(), firstCustomAtrribIndex, lastVNum);
+                buf->setV3UAttr(v3u(), firstCustomAtrribIndex, lastVNum);
                 break;
             case BasicType::INT:
-                buf->setAttrAt<v3i>(v3i(), firstCustomAtrribIndex, lastVNum);
+                buf->setV3IAttr(v3i(), firstCustomAtrribIndex, lastVNum);
                 break;
             case BasicType::FLOAT:
-                buf->setAttrAt<v3f>(v3f(), firstCustomAtrribIndex, lastVNum);
+                buf->setV3FAttr(v3f(), firstCustomAtrribIndex, lastVNum);
                 break;
             default:
                 break;
             }
+            break;
         }
         }
     }
@@ -237,17 +240,17 @@ inline void appendSVT(
 {
     u32 newVNum = buf->getVertexCount();
     u8 firstCustomAttrIndex = 2;
-    buf->setAttrAt<v3f>(pos, 0, newVNum);
-    buf->setAttrAt<img::color8>(c, 1, newVNum);
+    buf->setV3FAttr(pos, 0, newVNum);
+    buf->setRGBAAttr(c, 1, newVNum);
 
     auto vertexType = buf->getVAO()->getVertexType();
 
     if (vertexType.InitNormal) {
-        buf->setAttrAt<v3f>(normal, 2, newVNum);
+        buf->setV3FAttr(normal, 2, newVNum);
         firstCustomAttrIndex = 3;
     }
     if (vertexType.InitUV) {
-        buf->setAttrAt<v2f>(uv, 3, newVNum);
+        buf->setV2FAttr(uv, 3, newVNum);
         firstCustomAttrIndex = 4;
     }
 
@@ -263,11 +266,11 @@ inline void appendNVT(
     assert(buf->getVAO()->getVertexType().Name == "Node3D");
 
     u32 newVNum = buf->getVertexCount();
-    buf->setAttrAt<v3f>(pos, 0, newVNum);
-    buf->setAttrAt<img::color8>(c, 1, newVNum);
-    buf->setAttrAt<v3f>(normal, 2, newVNum);
-    buf->setAttrAt<v2f>(uv, 3, newVNum);
-    buf->setAttrAt<u8>(matType, 4, newVNum);
+    buf->setV3FAttr(pos, 0, newVNum);
+    buf->setRGBAAttr(c, 1, newVNum);
+    buf->setV3FAttr(normal, 2, newVNum);
+    buf->setV2FAttr(uv, 3, newVNum);
+    buf->setUInt8Attr(matType, 4, newVNum);
 }
 // Appends the attributes of the two color vertex type in the end of the mesh buffer
 // Note: 'buf' already must have a preallocated storage for this new vertex!
@@ -278,12 +281,12 @@ inline void appendTCNVT(
     assert(buf->getVAO()->getVertexType().Name == "TwoColorNode3D");
 
     u32 newVNum = buf->getVertexCount();
-    buf->setAttrAt<v3f>(pos, 0, newVNum);
-    buf->setAttrAt<img::color8>(c, 1, newVNum);
-    buf->setAttrAt<v3f>(normal, 2, newVNum);
-    buf->setAttrAt<v2f>(uv, 3, newVNum);
-    buf->setAttrAt<u8>(matType, 4, newVNum);
-    buf->setAttrAt<img::color8>(hw_c, 5, newVNum);
+    buf->setV3FAttr(pos, 0, newVNum);
+    buf->setRGBAAttr(c, 1, newVNum);
+    buf->setV3FAttr(normal, 2, newVNum);
+    buf->setV2FAttr(uv, 3, newVNum);
+    buf->setUInt8Attr(matType, 4, newVNum);
+    buf->setRGBAAttr(hw_c, 5, newVNum);
 }
 
 // Appends the attributes of the standard 2D vertex type in the end of the mesh buffer
@@ -294,9 +297,9 @@ inline void appendVT2D(
     assert(buf->getVAO()->getVertexType().Name == "Standard2D");
 
     u32 newVNum = buf->getVertexCount();
-    buf->setAttrAt<v2f>(pos, 0, newVNum);
-    buf->setAttrAt<img::color8>(c, 1, newVNum);
-    buf->setAttrAt<v2f>(uv, 2, newVNum);
+    buf->setV2FAttr(pos, 0, newVNum);
+    buf->setRGBAAttr(c, 1, newVNum);
+    buf->setV2FAttr(uv, 2, newVNum);
 }
 
 inline void appendIndex(MeshBuffer *buf, u32 index)

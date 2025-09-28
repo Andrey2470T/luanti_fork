@@ -76,7 +76,7 @@ public:
         return texture->getName();
     }
     
-    bool addTile(const AtlasTile *tile);
+    bool addTile(AtlasTile *tile);
 
     AtlasTile *getTile(u32 i) const;
     AtlasTile *getTileByImage(img::Image *img) const;

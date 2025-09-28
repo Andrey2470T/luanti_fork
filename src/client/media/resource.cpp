@@ -3,6 +3,9 @@
 #include "porting.h"
 #include "settings.h"
 #include <Image/ImageLoader.h>
+#include "client/mesh/model.h"
+#include "client/render/atlas.h"
+#include "client/mesh/layeredmesh.h"
 
 std::vector<std::string> getTexturesDefaultPaths()
 {
@@ -31,6 +34,12 @@ std::vector<std::string> getShaderDefaultPaths()
 
     paths.push_back(basePath.string());
 
+    return paths;
+}
+
+std::vector<std::string> getNoPaths()
+{
+    std::vector<std::string> paths;
     return paths;
 }
 
@@ -79,54 +88,49 @@ ResourceCache::ResourceCache()
 {
     auto texDefPaths = getTexturesDefaultPaths();
     auto shaderDefPaths = getShaderDefaultPaths();
+    auto noPaths = getNoPaths();
 
     ResourceLoader *resLoader = loader.get();
-    images.reset(new ResourceSubCache<img::Image>(
-        texDefPaths,
-        &texturePathFinder,
-        [resLoader] (const std::string &name) -> img::Image*
-        {
-            return resLoader->loadImage(name);
-        }
-    ));
-    textures.reset(new ResourceSubCache<render::Texture2D>(
-        texDefPaths,
-        &texturePathFinder,
-        [resLoader] (const std::string &name) -> render::Texture2D*
-        {
-            return resLoader->loadTexture(name);
-        }
-    ));
-    shaders.reset(new ResourceSubCache<render::Shader>(
-        shaderDefPaths,
-        &shaderPathFinder,
-        [resLoader] (const std::string &name) -> render::Shader*
-        {
-            return resLoader->loadShader(name);
-        }
-    ));
-    models.reset(new ResourceSubCache<Model>(
-        {},
-        nullptr,
-        nullptr
-    ));
-    palettes.reset(new ResourceSubCache<img::Palette>(
-        {},
-        &fallbackPathFinder,
-        [resLoader] (const std::string &name) -> img::Palette*
-        {
-            return resLoader->loadPalette(name);
-        }
-    ));
-    atlases.reset(new ResourceSubCache<Atlas>(
-        {},
-        nullptr,
-        nullptr
-    ));
-    fonts.reset(new ResourceSubCache<render::TTFont>(
-        {},
-        nullptr,
-        nullptr
-     ));
+
+    std::function<std::string(const std::string&)> textureFinder = &texturePathFinder;
+    std::function<img::Image*(const std::string&)> imageLoader = [resLoader](const std::string &name) -> img::Image* {
+        return resLoader->loadImage(name);
+    };
+
+    std::function<render::Texture2D*(const std::string&)> textureLoader = [resLoader](const std::string &name) -> render::Texture2D* {
+        return resLoader->loadTexture(name);
+    };
+
+    std::function<std::string(const std::string&)> shaderFinder = &shaderPathFinder;
+    std::function<render::Shader*(const std::string&)> shaderLoader = [resLoader](const std::string &name) -> render::Shader* {
+        return resLoader->loadShader(name);
+    };
+
+    std::function<std::string(const std::string&)> fallbackFinder = &fallbackPathFinder;
+    std::function<img::Palette*(const std::string&)> paletteLoader = [resLoader](const std::string &name) -> img::Palette* {
+        return resLoader->loadPalette(name);
+    };
+
+    subcaches[ResourceType::IMAGE] = std::make_unique<ResourceSubCache<img::Image>>(
+        texDefPaths, textureFinder, imageLoader
+    );
+    subcaches[ResourceType::TEXTURE] = std::make_unique<ResourceSubCache<render::Texture2D>>(
+        texDefPaths, textureFinder, textureLoader
+    );
+    subcaches[ResourceType::SHADER] = std::make_unique<ResourceSubCache<render::Shader>>(
+        shaderDefPaths, shaderFinder, shaderLoader
+    );
+    subcaches[ResourceType::MODEL] = std::make_unique<ResourceSubCache<Model>>(
+        noPaths, nullptr, nullptr
+    );
+    subcaches[ResourceType::PALETTE] = std::make_unique<ResourceSubCache<img::Palette>>(
+        noPaths, fallbackFinder, paletteLoader
+    );
+    subcaches[ResourceType::ATLAS] = std::make_unique<ResourceSubCache<Atlas>>(
+        noPaths, nullptr, nullptr
+    );
+    subcaches[ResourceType::FONT] = std::make_unique<ResourceSubCache<render::TTFont>>(
+        noPaths, nullptr, nullptr
+    );
 }
 

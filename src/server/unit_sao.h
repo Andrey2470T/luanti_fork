@@ -30,10 +30,10 @@ public:
 		v3f res;
 		// First rotate by m_rotation, then rotate by the automatic rotate yaw
         (Quaternion(v3f(0, degToRad(-m_rotation_add_yaw), 0))
-            * Quaternion(rot.getRotationDegrees().apply(degToRad))).toEuler(res);
-        return res.apply(radToDeg);
+            * Quaternion(rot.getRotationDegrees() * DEGTORAD)).toEuler(res);
+        return res * RADTODEG;
 	}
-    v3f getRadRotation() { return m_rotation.apply(degToRad); }
+    v3f getRadRotation() { return m_rotation * DEGTORAD; }
 
 	// Deprecated
     f32 getRadYawDep() const { return degToRad(m_rotation.Y + 90.); }

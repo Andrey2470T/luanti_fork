@@ -34,7 +34,7 @@ Glyph *GlyphAtlas::getByChar(wchar_t ch) const
 {
     auto ch16 = wide_to_utf16(&ch);
 
-    auto it = std::find(tiles.begin(), tiles.end(), [&ch16] (const std::unique_ptr<AtlasTile> &tile)
+    auto it = std::find_if(tiles.begin(), tiles.end(), [&ch16] (const std::unique_ptr<AtlasTile> &tile)
     {
         Glyph *glyph = dynamic_cast<Glyph *>(tile.get());
 
@@ -241,9 +241,9 @@ bool FontManager::addFont(render::FontMode mode, render::FontStyle style, std::o
         if (!font)
             continue;
 
-        auto font_it = std::find_if(fonts.begin(), fonts.end(), [font] (const std::pair<render::TTFont *, std::unique_ptr<AtlasPool>> &p)
+        auto font_it = std::find_if(fonts.begin(), fonts.end(), [font] (const auto &p)
         {
-            return font == p.first;
+            return font == p.second.first;
         });
 
         if (font_it != fonts.end()) {

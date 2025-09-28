@@ -5,9 +5,9 @@
 
 v3f LayeredMeshTriangle::getCenter() const
 {
-    v3f pos1 = buf_ref->getAttrAt<v3f>(0, p1);
-    v3f pos2 = buf_ref->getAttrAt<v3f>(0, p2);
-    v3f pos3 = buf_ref->getAttrAt<v3f>(0, p3);
+    v3f pos1 = buf_ref->getV3FAttr(0, p1);
+    v3f pos2 = buf_ref->getV3FAttr(0, p2);
+    v3f pos3 = buf_ref->getV3FAttr(0, p3);
 
     return (pos1 + pos2 + pos3) / 3.0f;
 }
@@ -54,7 +54,7 @@ MeshLayer &LayeredMesh::findLayer(std::shared_ptr<TileLayer> layer, render::Vert
 
         auto &buf_layers = layers.at(i);
 
-        auto layer_found = std::find(buf_layers.begin(), buf_layers.end(),
+        auto layer_found = std::find_if(buf_layers.begin(), buf_layers.end(),
         [layer] (const MeshLayer &mlayer)
         {
             return *layer == *(mlayer.first);
@@ -72,7 +72,7 @@ MeshLayer &LayeredMesh::findLayer(std::shared_ptr<TileLayer> layer, render::Vert
         }
     }
 
-    buffers.emplace_back(vertexCount, indexCount, true, vType);
+    buffers.emplace_back(std::make_unique<MeshBuffer>(vertexCount, indexCount, true, vType));
     layers.emplace_back();
 
     LayeredMeshPart mesh_p;
@@ -92,7 +92,7 @@ void LayeredMesh::recalculateBoundingRadius()
 
     for (auto &buffer : buffers) {
         for (u32 k = 0; k < buffer->getVertexCount(); k++) {
-            v3f p = buffer->getAttrAt<v3f>(0, k);
+            v3f p = buffer->getV3FAttr(0, k);
 
             radius_sq = std::max(radius_sq, (p - center_pos).getLengthSQ());
         }
@@ -158,7 +158,7 @@ void LayeredMesh::updateIndexBuffers()
 			add_partial_layer = false;
 	    }
 	    
-        auto find_buf = std::find(buffers.begin(), buffers.end(),
+        auto find_buf = std::find_if(buffers.begin(), buffers.end(),
         [trig] (const std::unique_ptr<MeshBuffer> &buf_ptr)
         {
             return *trig.buf_ref == buf_ptr.get();
@@ -168,7 +168,7 @@ void LayeredMesh::updateIndexBuffers()
 	    if (add_partial_layer) {
             auto buf_layers = layers.at(buf_i);
 		
-	        auto find_layer = std::find(buf_layers.begin(), buf_layers.end(),
+            auto find_layer = std::find_if(buf_layers.begin(), buf_layers.end(),
 	        [trig] (const MeshLayer &cur_l)
 	        {
 		        return *trig.layer == *cur_l.first;

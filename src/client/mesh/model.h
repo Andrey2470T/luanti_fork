@@ -28,9 +28,7 @@ class Model
 
     AnimationManager *mgr;
 public:
-    Model(AnimationManager *_mgr)
-        : mgr(_mgr)
-    {}
+    Model(AnimationManager *_mgr);
     Model(v3f pos, const std::vector<MeshLayer> &layers, MeshBuffer *buffer);
     Model(AnimationManager *_mgr, v3f pos, const std::vector<std::shared_ptr<TileLayer>> &layers,
         const aiScene *scene);

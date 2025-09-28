@@ -35,7 +35,7 @@ enum MaterialType{
 #define MATERIAL_FLAG_WORLD_ALIGNED 0x20
 
 enum class TileRotation: u8 {
-	None,
+    RNone,
 	R90,
 	R180,
 	R270,
@@ -106,7 +106,7 @@ struct TileLayer
     f32 line_thickness = 1.0f;
 
 	//! Tile rotation.
-	TileRotation rotation = TileRotation::None;
+    TileRotation rotation = TileRotation::RNone;
 	//! This much light does the tile emit.
 	u8 emissive_light = 0;
 

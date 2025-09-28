@@ -4,6 +4,7 @@
 #include "network/address.h"
 #include "network/networkprotocol.h" // multiple enums
 #include "network/peerhandler.h"
+#include "network/connection.h"
 #include "gameparams.h"
 #include <map>
 #include <memory>
@@ -17,10 +18,6 @@ class PointedThing;
 class InventoryAction;
 class ClientDynamicInfo;
 class ModChannelMgr;
-
-namespace con {
-class IConnection;
-}
 
 /*
     Packet counter

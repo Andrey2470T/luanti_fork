@@ -334,7 +334,7 @@ void GenericCAO::setAttachment(object_t parent_id, const std::string &bone,
                 auto skeleton = rendercao->getModel()->getSkeleton();
                 auto bones = skeleton->getAllBones();
 
-                auto found_bone = std::find(bones.begin(), bones.end(),
+                auto found_bone = std::find_if(bones.begin(), bones.end(),
                 [bone] (const Bone *cur_bone)
                 {
                     return bone == cur_bone->Name;

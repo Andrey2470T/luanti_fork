@@ -2,9 +2,8 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 // Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
-#include "irrlichttypes_bloated.h"
-#include "irrlicht.h" // createDevice
-#include "irrlicht_changes/printing.h"
+#include <BasicIncludes.h>
+#include <Utils/Printing.h>
 #include "benchmark/benchmark.h"
 #include "chat_interface.h"
 #include "debug.h"
@@ -32,7 +31,7 @@
 #endif
 #if CHECK_CLIENT_BUILD()
 #include "gui/guiMainMenu.h"
-#include "client/clientlauncher.h"
+#include "client/core/clientlauncher.h"
 #include "gui/guiEngine.h"
 #include "gui/mainmenumanager.h"
 #endif
@@ -162,7 +161,7 @@ int main(int argc, char *argv[])
 	}
 
 	{
-		auto exe_name = argc > 0 ? lowercase(fs::GetFilenameFromPath(argv[0])) : "";
+        auto exe_name = argc > 0 ? lowercase(mt_fs::GetFilenameFromPath(argv[0])) : "";
 		if (str_starts_with(exe_name, "minetest")) {
 #if CHECK_CLIENT_BUILD()
 			const char *new_ = PROJECT_NAME;
@@ -552,7 +551,7 @@ static bool create_userdata_path()
 	}
 #else
 	// Create user data directory
-	success = fs::CreateAllDirs(porting::path_user);
+    success = mt_fs::CreateAllDirs(porting::path_user);
 #endif
 
 	return success;
@@ -570,7 +569,7 @@ namespace {
 			if (!checkpath.empty() && checkpath.back() != DIR_DELIM_CHAR)
 				checkpath.push_back(DIR_DELIM_CHAR);
 			checkpath.append(name);
-			if (fs::IsExecutable(checkpath))
+            if (mt_fs::IsExecutable(checkpath))
 				return checkpath;
 		}
 		return "";

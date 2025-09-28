@@ -95,10 +95,10 @@ set(render_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/render/tilelayer.cpp
 )
 
-set(shadows_SRCS
-	${CMAKE_CURRENT_SOURCE_DIR}/shadows/dynamicshadows.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/shadows/dynamicShadowsRender.cpp
-)
+#set(shadows_SRCS
+#	${CMAKE_CURRENT_SOURCE_DIR}/shadows/dynamicshadows.cpp
+#	${CMAKE_CURRENT_SOURCE_DIR}/shadows/dynamicShadowsRender.cpp
+#)
 
 set(sound_SRCS ${CMAKE_CURRENT_SOURCE_DIR}/sound/sound.cpp)
 

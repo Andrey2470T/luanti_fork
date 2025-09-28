@@ -7,6 +7,7 @@
 #include "environment.h"
 #include "util/numeric.h" // IntervalLimiter
 #include "client/ao/clientActiveObjectMgr.h" // client::ActiveObjectMgr
+#include "client/ao/clientActiveObject.h"
 #include "config.h"
 #include <set>
 
@@ -18,7 +19,6 @@
 class Client;
 class ClientMap;
 class ClientScripting;
-class ClientActiveObject;
 class GenericCAO;
 class RenderCAO;
 class LocalPlayer;

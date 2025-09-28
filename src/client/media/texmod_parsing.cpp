@@ -6,6 +6,7 @@
 #include "log.h"
 #include <Image/ImageLoader.h>
 #include <Image/Converting.h>
+#include <Utils/Printing.h>
 
 #define COMPLAIN_INVALID(description, mod) \
 do { \

@@ -3,6 +3,7 @@
 #include "chatmessage.h"
 #include "client/network/packethandler.h"
 #include "gui/guiChatConsole.h"
+#include "gui/guiScrollBar.h"
 #include "client.h"
 #include "client/network/packethandler.h"
 #include "gui/mainmenumanager.h"

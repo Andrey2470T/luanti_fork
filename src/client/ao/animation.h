@@ -21,6 +21,10 @@ struct KeyChannel {
         f32 time;
         std::map<u8, T> values;
 
+        Frame(f32 _time, const std::map<u8, T>& _values) : time(_time), values(_values) {}
+
+        Frame() = default;
+
         bool operator<(const Frame &other) const
         {
             return time < other.time;
@@ -40,30 +44,10 @@ struct KeyChannel {
 
     void append(f32 time, const std::map<u8, T> &values) {
         Frames.emplace(time, values);
-        sortFrameBonesValues(time);
     }
 
     void append(const KeyChannel<T> &other) {
         Frames.insert(other.Frames.begin(), other.Frames.end());
-
-        for (auto &f : other.Frames)
-            sortFrameBonesValues(f.time);
-    }
-
-    void sortFrameBonesValues(f32 time)
-    {
-        auto frame = std::find_if(Frames.begin(), Frames.end(), [&time] (const Frame &f)
-        {
-            return f.time == time;
-        });
-
-        if (frame == Frames.end())
-            return;
-
-        std::sort(frame->values.begin(), frame->values.end(), [] (const std::pair<u8, T> &b1, const std::pair<u8, T> &b2)
-        {
-            return b1.first < b2.first;
-        });
     }
 
     static Quaternion interpolateValue(Quaternion from, Quaternion to, f32 time) {
@@ -81,7 +65,7 @@ struct KeyChannel {
         if (Frames.empty())
             return std::nullopt;
 
-        const auto next = std::lower_bound(Frames.begin(), Frames.end(), time, [](const auto& frame, f32 time) {
+        auto next = std::lower_bound(Frames.begin(), Frames.end(), time, [](const auto& frame, f32 time) {
             return frame.time < time;
         });
         if (next == Frames.begin())
@@ -89,23 +73,27 @@ struct KeyChannel {
         if (next == Frames.end())
             return std::prev(next)->values;
 
-        const auto prev = std::prev(next);
+        auto prev = std::prev(next);
+        auto prev_values = std::prev(next)->values;
+        auto next_values = next->values;
 
         switch (InterpMode) {
         case KeyChannelInterpMode::CONSTANT:
-            return prev->values;
+            return prev_values;
         case KeyChannelInterpMode::LINEAR: {
             std::map<u8, T> vals;
 
-            for (u8 i = 0; i < std::min(prev->values.size(), next->values.size()); i++) {
-                vals.emplace_back(i, interpolateValue(
-                    prev->values[i].second, next->values[i].second,
+            for (u8 i = 0; i < std::min(prev_values.size(), next_values.size()); i++) {
+                vals[i] = interpolateValue(
+                    prev_values[i], next_values[i],
                     (time - prev->time) / (next->time - prev->time)
-                ));
+                );
             }
 
             return vals;
         }}
+
+        return prev_values;
     }
 };
 
@@ -260,5 +248,5 @@ public:
     }
     u32 getBonesCount();
     void addSkeleton(Skeleton *skeleton);
-    void addAnimation(const BoneAnimation *anim);
+    void addAnimation(BoneAnimation *anim);
 };

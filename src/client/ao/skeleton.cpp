@@ -140,8 +140,8 @@ void Skeleton::fillMeshAttribs(LayeredMesh *mesh)
                     break;
             }
 
-            buf->setAttrAt<v2i>(v2i(bones_ids[0], bones_ids[1]), 5, i);
-            buf->setAttrAt<v2i>(v2i(weights[0], weights[1]), 6, i);
+            buf->setV2IAttr(v2i(bones_ids[0], bones_ids[1]), 5, i);
+            buf->setV2IAttr(v2i(weights[0], weights[1]), 6, i);
         }
     }
 }

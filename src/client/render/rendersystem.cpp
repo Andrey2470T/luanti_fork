@@ -25,6 +25,9 @@
 #include "client/ui/gameformspec.h"
 #include "client/ui/profilergraph.h"
 #include "util/tracy_wrapper.h"
+#include "client/ao/nametag.h"
+#include "client/render/datatexture.h"
+#include "client/pipeline/pipeline.h"
 
 RenderSystem::RenderSystem(ResourceCache *_cache)
     : cache(_cache)

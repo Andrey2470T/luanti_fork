@@ -15,14 +15,10 @@
 #include "gui/touchcontrols.h"
 #include "util/enriched_string.h"
 #include "util/pointedthing.h"
-#include "client.h"
-#include "clientmap.h"
-#include "fontengine.h"
 #include "hud.h" // HUD_FLAG_*
 #include "hud_elements.h"
 #include "nodedef.h"
 #include "profiler.h"
-#include "game.h"
 #include "client/core/client.h"
 #include "client/render/rendersystem.h"
 #include "client/media/resource.h"
@@ -482,12 +478,12 @@ Nametag *GameUI::addNametag(
             const std::optional<img::color8> &bgcolor,
             const v3f &pos)
 {
-	nametags.emplace_back(client, text, textcolor, bgcolor, pos);
+    nametags.emplace_back(std::make_unique<Nametag>(client, text, textcolor, bgcolor, pos));
 	return nametags.back().get();
 }
 void GameUI::removeNametag(Nametag *nt)
 {
-	auto found = std::find(nametags.begin(), nametags.end(),
+    auto found = std::find_if(nametags.begin(), nametags.end(),
 	    [nt] (const std::unique_ptr<Nametag> &cur_nt)
 	    {
 		    return nt == cur_nt.get();

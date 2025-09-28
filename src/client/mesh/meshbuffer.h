@@ -87,7 +87,28 @@ public:
         return VAO.get();
 	}
 
-    template<typename T>
+    u8 getUInt8Attr(u32 attrN, u32 vertexN) const;
+    s8 getCharAttr(u32 attrN, u32 vertexN) const;
+    u16 getUInt16Attr(u32 attrN, u32 vertexN) const;
+    s16 getShortAttr(u32 attrN, u32 vertexN) const;
+    u32 getUInt32Attr(u32 attrN, u32 vertexN) const;
+    s32 getIntAttr(u32 attrN, u32 vertexN) const;
+    f32 getFloatAttr(u32 attrN, u32 vertexN) const;
+    u64 getUInt64Attr(u32 attrN, u32 vertexN) const;
+    s64 getLongIntAttr(u32 attrN, u32 vertexN) const;
+    f64 getDoubleAttr(u32 attrN, u32 vertexN) const;
+
+    v2u getV2UAttr(u32 attrN, u32 vertexN) const;
+    v2i getV2IAttr(u32 attrN, u32 vertexN) const;
+    v2f getV2FAttr(u32 attrN, u32 vertexN) const;
+
+    v3u getV3UAttr(u32 attrN, u32 vertexN) const;
+    v3i getV3IAttr(u32 attrN, u32 vertexN) const;
+    v3f getV3FAttr(u32 attrN, u32 vertexN) const;
+    img::color8 getRGBAttr(u32 attrN, u32 vertexN) const;
+
+    img::color8 getRGBAAttr(u32 attrN, u32 vertexN) const;
+    /*template<typename T>
     T getAttrAt(u32 attrN, u32 vertexN) const
 	{
 		u64 attrNum = countElemsBefore(vertexN, attrN);
@@ -100,7 +121,7 @@ public:
 			switch (vertexAttr.ComponentType)
 			{
 			case BasicType::UINT8:
-				return vdata->getUInt8(attrNum);
+                return *(reinterpret_cast<T *>((void *)&(vdata->getUInt8(attrNum)));
 			case BasicType::CHAR:
 				return vdata->getChar(attrNum);
 			case BasicType::UINT16:
@@ -157,7 +178,7 @@ public:
 		default:
             assert("MeshBuffer::getAttrAt() Couldn't extract the attribute");
 		}
-    }
+    }*/
 
     u32 getIndexAt(u32 pos) const;
 
@@ -173,102 +194,27 @@ public:
 
 	void recalculateBoundingBox();
 
-    template<typename T>
-    void setAttrAt(T value, u32 attrN, u32 vertexN)
-	{
-        u64 attrNum = countElemsBefore(vertexN, attrN);
+    void setUInt8Attr(u8 value, u32 attrN, u32 vertexN);
+    void setCharAttr(s8 value, u32 attrN, u32 vertexN);
+    void setUInt16Attr(u16 value, u32 attrN, u32 vertexN);
+    void setShortAttr(s16 value, u32 attrN, u32 vertexN);
+    void setUInt32Attr(u32 value, u32 attrN, u32 vertexN);
+    void setIntAttr(s32 value, u32 attrN, u32 vertexN);
+    void setFloatAttr(f32 value, u32 attrN, u32 vertexN);
+    void setUInt64Attr(u64 value, u32 attrN, u32 vertexN);
+    void setLongIntAttr(s64 value, u32 attrN, u32 vertexN);
+    void setDoubleAttr(f64 value, u32 attrN, u32 vertexN);
 
-		auto &vertexAttr = VAO->getVertexType().Attributes.at(attrN);
-        ByteArray *vdata = VBuffer.Data.get();
-		switch (vertexAttr.ComponentCount)
-		{
-		case 1: {
-			switch (vertexAttr.ComponentType)
-			{
-			case BasicType::UINT8:
-				vdata->setUInt8(value, attrNum);
-				return;
-			case BasicType::CHAR:
-				vdata->setChar(value, attrNum);
-				return;
-			case BasicType::UINT16:
-				vdata->setUInt16(value, attrNum);
-				return;
-			case BasicType::SHORT:
-				vdata->setShort(value, attrNum);
-				return;
-			case BasicType::UINT32:
-				vdata->setUInt32(value, attrNum);
-				return;
-			case BasicType::INT:
-				vdata->setInt(value, attrNum);
-				return;
-			case BasicType::FLOAT:
-				vdata->setFloat(value, attrNum);
-				return;
-			case BasicType::UINT64:
-				vdata->setUInt64(value, attrNum);
-				return;
-			case BasicType::LONG_INT:
-				vdata->setLongInt(value, attrNum);
-				return;
-			case BasicType::DOUBLE:
-				vdata->setDouble(value, attrNum);
-				return;
-			default:
-				return;
-			}
-		}
-		case 2: {
-			switch (vertexAttr.ComponentType)
-			{
-			case BasicType::UINT32:
-				vdata->setV2U(value, attrNum);
-				return;
-			case BasicType::INT:
-				vdata->setV2I(value, attrNum);
-				return;
-			case BasicType::FLOAT:
-				vdata->setV2F(value, attrNum);
-				return;
-			default:
-				return;
-			}
-		}
-		case 3: {
-			switch (vertexAttr.ComponentType)
-			{
-			case BasicType::UINT32:
-				vdata->setV3U(value, attrNum);
-				return;
-			case BasicType::INT:
-				vdata->setV3I(value, attrNum);
-				return;
-			case BasicType::FLOAT:
-				vdata->setV3F(value, attrNum);
-				return;
-            case BasicType::UINT8:
-                img::setColor8(vdata, value, attrNum, img::PF_RGB8);
-                return;
-			default:
-				return;
-			}
-		}
-		case 4: {
-			img::setColor8(vdata, value, attrNum);
-			return;
-		}
-		default:
-			return;
-		}
+    void setV2UAttr(const v2u &value, u32 attrN, u32 vertexN);
+    void setV2IAttr(const v2i &value, u32 attrN, u32 vertexN);
+    void setV2FAttr(const v2f &value, u32 attrN, u32 vertexN);
 
-        VBuffer.DataCount = std::max(VBuffer.DataCount, vertexN);
-        VBuffer.StartChange = VBuffer.StartChange != std::nullopt ?
-            std::min(VBuffer.StartChange.value(), vertexN) : vertexN;
-        VBuffer.EndChange = VBuffer.EndChange != std::nullopt ?
-            std::max(VBuffer.EndChange.value(), vertexN) : vertexN;
-        VBuffer.Dirty = true;
-    }
+    void setV3UAttr(const v3u &value, u32 attrN, u32 vertexN);
+    void setV3IAttr(const v3i &value, u32 attrN, u32 vertexN);
+    void setV3FAttr(const v3f &value, u32 attrN, u32 vertexN);
+    void setRGBAttr(const img::color8 &value, u32 attrN, u32 vertexN);
+
+    void setRGBAAttr(const img::color8 &value, u32 attrN, u32 vertexN);
 
     void setIndexAt(u32 index, u32 pos);
 
@@ -287,13 +233,16 @@ public:
         return VAO.get() == other_buffer->getVAO();
     }
 private:
-    inline u64 countElemsBefore(u32 vertexNumber, u32 attrNumber) const;
+    void checkAttr(BasicType requiredType, u8 requiredCmpsCount, u32 attrN) const;
+    void update(BasicType requiredType, u8 requiredCmpsCount, u32 attrN, u32 vertexN);
 
-    inline bool hasVBO() const
+    u64 countElemsBefore(u32 vertexNumber, u32 attrNumber) const;
+
+    bool hasVBO() const
     {
         return Type == MeshBufferType::VERTEX || Type == MeshBufferType::VERTEX_INDEX;
     }
-    inline bool hasIBO() const
+    bool hasIBO() const
     {
         return Type == MeshBufferType::INDEX || Type == MeshBufferType::VERTEX_INDEX;
     }

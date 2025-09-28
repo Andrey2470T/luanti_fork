@@ -65,7 +65,7 @@ RenderStep* addUpscaling(RenderPipeline *pipeline, RenderStep *previousStep, v2f
 
 	// Attach previous step to the buffer
 	TextureBufferOutput *buffer_output = pipeline->createOwned<TextureBufferOutput>(
-			buffer, std::vector<u8> {TEXTURE_LOWRES_COLOR}, TEXTURE_LOWRES_DEPTH);
+        buffer, std::unordered_map<u8, u8> {{0, TEXTURE_LOWRES_COLOR}}, std::pair<u8, u8> {0, TEXTURE_LOWRES_DEPTH});
 	previousStep->setRenderTarget(buffer_output);
 
 	// Add upscaling step

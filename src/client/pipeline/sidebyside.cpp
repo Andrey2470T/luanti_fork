@@ -68,7 +68,7 @@ void populateSideBySidePipeline(RenderPipeline *pipeline, Client *client, bool h
 	for (bool right : { false, true }) {
 		pipeline->addStep<OffsetCameraStep>(flipped ? !right : right);
 		auto output = pipeline->createOwned<TextureBufferOutput>(
-				buffer, std::vector<u8> {right ? TEXTURE_RIGHT : TEXTURE_LEFT}, TEXTURE_DEPTH);
+            buffer, std::unordered_map<u8, u8> {{0, right ? TEXTURE_RIGHT : TEXTURE_LEFT}}, std::pair<u8, u8> {0, TEXTURE_DEPTH});
 		pipeline->addStep<SetRenderTargetStep>(step3D, output);
 		pipeline->addStep(step3D);
         //pipeline->addStep<DrawWield>();

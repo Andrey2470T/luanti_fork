@@ -1,5 +1,3 @@
-#pragma once
-
 #include "animation.h"
 #include "client/render/datatexture.h"
 #include "skeleton.h"
@@ -54,7 +52,7 @@ void AnimationManager::addSkeleton(Skeleton *skeleton)
     skeletons.emplace_back(skeleton);
 }
 
-void AnimationManager::addAnimation(const BoneAnimation *anim)
+void AnimationManager::addAnimation(BoneAnimation *anim)
 {
     animations.emplace_back(anim);
 }

@@ -147,7 +147,7 @@ void DistanceSortedDrawList::updateList()
 
     // Resort the new mesh list
     mesh_sorter.camera_pos = cameraPos;
-    std::sort(new_meshes_list.begin(), new_meshes_list.end(), mesh_sorter);
+    new_meshes_list.sort(mesh_sorter);
 
     MutexAutoLock drawlist_lock(drawlist_mutex);
 
@@ -162,8 +162,12 @@ void DistanceSortedDrawList::updateList()
         for (auto &layer : all_layers) {
             if (layer.first->material_flags & MATERIAL_FLAG_TRANSPARENT)
                 continue;
-                
-            auto find_layer = std::find(layers.begin(), layers.end(), layer.first.get());
+
+            auto find_layer = std::find_if(layers.begin(), layers.end(),
+                [layer] (const BatchedLayer &cur_layer)
+                {
+                    return cur_layer.first == layer.first;
+            });
             
             if (find_layer == layers.end()) {
                 layers.emplace_back(layer.first, std::vector<std::pair<LayeredMeshPart, LayeredMesh *>>());
@@ -203,7 +207,7 @@ void DistanceSortedDrawList::resortShadowList()
     MutexAutoLock list_lock(shadow_meshes_mutex);
 
     mesh_sorter.camera_pos = cur_light_pos;
-    std::sort(shadow_meshes.begin(), shadow_meshes.end(), mesh_sorter);
+    shadow_meshes.sort(mesh_sorter);
 }
 
 void DistanceSortedDrawList::render()

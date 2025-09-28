@@ -15,7 +15,7 @@ static const img::color8 NULL_BGCOLOR{img::PF_RGBA8, 0, 1, 1, 1};
 ObjectProperties::ObjectProperties()
 {
 	textures.emplace_back("no_texture.png");
-	colors.emplace_back(255,255,255,255);
+    colors.emplace_back(img::white);
 }
 
 std::string ObjectProperties::dump() const

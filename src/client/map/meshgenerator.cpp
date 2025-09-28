@@ -141,7 +141,7 @@ inline void applyTileRotation(MeshBuffer *mesh, const std::array<TileSpec, 6> &t
             u32 uv_offset = face * j + offset;
             v2f uv = svtGetUV(mesh, uv_offset);
             switch (tile[0]->rotation) {
-            case TileRotation::None:
+            case TileRotation::RNone:
                 break;
             case TileRotation::R90:
                 svtSetUV(mesh, v2f(-uv.Y, uv.X), uv_offset);
@@ -1271,7 +1271,7 @@ void getNodeTile(MapNode mn, const v3s16 &p, const v3s16 &dir, MeshMakeData *dat
     u8 facedir = mn.getFaceDir(ndef, true);
 
     static constexpr auto
-        R0 = TileRotation::None,
+        R0 = TileRotation::RNone,
         R1 = TileRotation::R90,
         R2 = TileRotation::R180,
         R3 = TileRotation::R270;
@@ -1311,8 +1311,8 @@ void getNodeTile(MapNode mn, const v3s16 &p, const v3s16 &dir, MeshMakeData *dat
         {{0,R0},  {4,R2}, {1,R1}, {2,R2},  {0,R0},  {3,R2}, {0,R3}, {5,R2}}
     };
     getNodeTileN(mn, p, dir_to_tile[facedir][dir_i].tile, data, tile);
-    tile[0]->rotation = tile[0]->material_flags & MATERIAL_FLAG_WORLD_ALIGNED ? TileRotation::None : dir_to_tile[facedir][dir_i].rotation;
-    tile[1]->rotation = tile[1]->material_flags & MATERIAL_FLAG_WORLD_ALIGNED ? TileRotation::None : dir_to_tile[facedir][dir_i].rotation;
+    tile[0]->rotation = tile[0]->material_flags & MATERIAL_FLAG_WORLD_ALIGNED ? TileRotation::RNone : dir_to_tile[facedir][dir_i].rotation;
+    tile[1]->rotation = tile[1]->material_flags & MATERIAL_FLAG_WORLD_ALIGNED ? TileRotation::RNone : dir_to_tile[facedir][dir_i].rotation;
 }
 
 bool MapblockMeshGenerator::isSameRail(v3s16 dir)

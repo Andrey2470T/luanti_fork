@@ -31,7 +31,7 @@ Hud::Hud(Client *_client)
             HudElement *minimap = new HudElement{HUD_ELEM_MINIMAP, v2f(1, 0), "", v2f(), "", 0 , 0, 0, v2f(-1, 1),
                 v2f(-10, 10), v3f(), v2i(256, 256), 0, "", 0};
             u32 id = player->getFreeHudID();
-            hudsprites[id] =  std::unique_ptr<HudSprite>(new HudMinimap(client, minimap));
+            hudsprites[id] =  std::make_unique<HudMinimap>(client, minimap);
             builtinMinimapID = id;
         }
     }

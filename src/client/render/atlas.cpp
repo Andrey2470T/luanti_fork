@@ -29,7 +29,7 @@ void Atlas::createTexture(const std::string &name, u32 num, u32 size, u8 maxMipL
         texName, size, size, format, settings);
 }
 
-bool Atlas::addTile(const AtlasTile *tile)
+bool Atlas::addTile(AtlasTile *tile)
 {
     size_t tileHash = tile->hash();
 
@@ -38,7 +38,7 @@ bool Atlas::addTile(const AtlasTile *tile)
     if (it != hash_to_index.end())
         return false;
 
-    tiles.emplace_back(std::move(tile));
+    tiles.emplace_back(tile);
     hash_to_index[tileHash] = tiles.size();
     markDirty(tiles.size());
 
@@ -55,7 +55,7 @@ AtlasTile *Atlas::getTile(u32 i) const
 
 AtlasTile *Atlas::getTileByImage(img::Image *img) const
 {
-    auto find_tile = std::find(tiles.begin(), tiles.end(), [img] (const std::unique_ptr<AtlasTile> &tile)
+    auto find_tile = std::find_if(tiles.begin(), tiles.end(), [img] (const std::unique_ptr<AtlasTile> &tile)
     {
         return img == tile->image;
     });

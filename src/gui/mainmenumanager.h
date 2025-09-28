@@ -107,7 +107,7 @@ public:
 	void drawClouds(float dtime)
 	{
 		m_menuclouds->step(dtime * 3);
-		g_menucloudsmgr->render(m_menucamera->getOffset());
+        m_menuclouds->render(m_menucamera->getOffset());
 	}
 
 private:
