@@ -196,8 +196,9 @@ Minimap::Minimap(Client *_client, Renderer *_renderer, ResourceCache *_cache)
 
     m_minimap_shader = cache->getOrLoad<render::Shader>(ResourceType::SHADER, "minimap");
 
-    if (client->modsLoaded())
+    if (client->modsLoaded()) {
         client->getScript()->on_minimap_ready(this);
+    }
 
 	// Initialize and start thread
 	m_minimap_update_thread = std::make_unique<MinimapUpdateThread>();

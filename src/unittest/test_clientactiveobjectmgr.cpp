@@ -4,7 +4,9 @@
 
 #include "test.h"
 
-#include "client/activeobjectmgr.h"
+#include "client/ao/clientActiveObjectMgr.h"
+#include "client/ao/clientActiveObject.h"
+#include "client/ao/renderCAO.h"
 
 #include "catch.h"
 
@@ -17,25 +19,23 @@ public:
 	TestClientActiveObject() : ClientActiveObject(0, nullptr, nullptr) {}
 	~TestClientActiveObject() = default;
 	ActiveObjectType getType() const { return ACTIVEOBJECT_TYPE_TEST; }
-	virtual void addToScene(ITextureSource *tsrc, scene::ISceneManager *smgr) {}
 };
 
-class TestSelectableClientActiveObject : public ClientActiveObject
+class TestSelectableClientActiveObject : public RenderCAO
 {
 public:
-	TestSelectableClientActiveObject(aabb3f _selection_box)
-		: ClientActiveObject(0, nullptr, nullptr)
+    TestSelectableClientActiveObject(aabbf _selection_box)
+        : RenderCAO(nullptr, nullptr)
 		, selection_box(_selection_box)
 	{}
 
 	~TestSelectableClientActiveObject() = default;
 	ActiveObjectType getType() const override { return ACTIVEOBJECT_TYPE_TEST; }
-	void addToScene(ITextureSource *tsrc, scene::ISceneManager *smgr) override {}
-	bool getSelectionBox(aabb3f *toset) const override { *toset = selection_box; return true; }
+    bool getSelectionBox(aabbf *toset) const override { *toset = selection_box; return true; }
 	const v3f getPosition() const override { return position; }
 
 	v3f position;
-	aabb3f selection_box;
+    aabbf selection_box;
 };
 
 class TestClientActiveObjectMgr : public TestBase
@@ -129,7 +129,7 @@ void TestClientActiveObjectMgr::testGetActiveSelectableObjects()
 {
 	client::ActiveObjectMgr caomgr;
 	auto obj_u = std::make_unique<TestSelectableClientActiveObject>(
-			aabb3f{v3f{-1, -1, -1}, v3f{1, 1, 1}});
+            aabbf{v3f{-1, -1, -1}, v3f{1, 1, 1}});
 	auto obj = obj_u.get();
 	UASSERT(caomgr.registerObject(std::move(obj_u)));
 

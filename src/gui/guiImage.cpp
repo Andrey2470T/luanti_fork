@@ -28,7 +28,7 @@ CGUIImage::CGUIImage(IGUIEnvironment *environment, IGUIElement *parent, s32 id, 
     }
     else {
         Image = std::make_shared<Image2D9Slice>(environment->getResourceCache(),
-            environment->getRenderSystem()->getRenderer(), nullptr, std::array<img::color8, 4>{});
+            environment->getRenderSystem());
     }
 }
 

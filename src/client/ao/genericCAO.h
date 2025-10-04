@@ -105,7 +105,7 @@ public:
 
     virtual void processInitData(const std::string &data);
 
-    const v3f getPosition() const override final;
+    const v3f getPosition() const override;
 
     const v3f getVelocity() const override final { return m_velocity; }
 

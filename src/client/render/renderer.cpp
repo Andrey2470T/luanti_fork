@@ -240,6 +240,8 @@ matrix4 Renderer::getTransformMatrix(TMatrix type) const
     case TMatrix::Texture0:
         return byteArr.getM4x4(48);
     };
+
+    return matrix4();
 }
 
 void Renderer::setTransformMatrix(TMatrix type, const matrix4 &mat)

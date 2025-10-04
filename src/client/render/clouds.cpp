@@ -94,10 +94,10 @@ void Clouds::updateMesh()
 
 	// Colors with primitive shading
 
-    img::colorf c_top_f(img::PF_RGBA32F, 1, 1, 1, 1);
-    img::colorf c_side_1_f(img::PF_RGBA32F, 1, 1, 1, 1);
-    img::colorf c_side_2_f(img::PF_RGBA32F, 1, 1, 1, 1);
-    img::colorf c_bottom_f(img::PF_RGBA32F, 1, 1, 1, 1);
+    img::colorf c_top_f(1, 1, 1, 1);
+    img::colorf c_side_1_f(1, 1, 1, 1);
+    img::colorf c_side_2_f(1, 1, 1, 1);
+    img::colorf c_bottom_f(1, 1, 1, 1);
     const img::colorf shadow = img::color8ToColorf(m_params.color_shadow);
 
     c_side_1_f.R(c_side_1_f.R() * shadow.R() * 0.25f + 0.75f);

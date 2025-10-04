@@ -87,7 +87,7 @@ public:
 		sky.clouds = true;
 		sky.sky_color = getSkyColorDefaults();
         sky.fog_sun_tint = img::color8(img::PF_RGBA8, 255, 244, 125, 29);
-        sky.fog_moon_tint = colorfToColor8(img::colorf(img::PF_RGBA8, 0.5, 0.6, 0.8, 1));
+        sky.fog_moon_tint = colorfToColor8(img::colorf(0.5, 0.6, 0.8, 1));
 		sky.fog_tint_type = "default";
         sky.fog_color = img::color8(img::PF_RGBA8);
 		return sky;

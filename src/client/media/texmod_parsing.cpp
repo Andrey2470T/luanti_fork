@@ -657,7 +657,7 @@ bool TexModParser::parseResize(TextureGenerator *texgen, img::Image *dest, const
     u32 height = stoi(sf.next(""));
     CHECK_DIM(width, height, mod);
 
-    texgen->imgMdf->resize(dest, rectu(v2u(), width, height));
+    texgen->imgMdf->resize(&dest, rectu(v2u(), width, height));
 
     return true;
 }

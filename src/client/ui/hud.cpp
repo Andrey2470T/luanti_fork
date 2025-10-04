@@ -22,7 +22,8 @@
 #include "client/render/atlas.h"
 
 Hud::Hud(Client *_client)
-    : client(_client), player(client->getEnv().getLocalPlayer())
+    : client(_client), rnd_system(client->getRenderSystem()),
+    player(client->getEnv().getLocalPlayer()), cache(client->getResourceCache())
 {
     initCrosshair();
 
@@ -31,7 +32,7 @@ Hud::Hud(Client *_client)
             HudElement *minimap = new HudElement{HUD_ELEM_MINIMAP, v2f(1, 0), "", v2f(), "", 0 , 0, 0, v2f(-1, 1),
                 v2f(-10, 10), v3f(), v2i(256, 256), 0, "", 0};
             u32 id = player->getFreeHudID();
-            hudsprites[id] =  std::make_unique<HudMinimap>(client, minimap);
+            hudsprites.emplace_back(id, std::make_unique<HudMinimap>(client, minimap));
             builtinMinimapID = id;
         }
     }
@@ -39,9 +40,11 @@ Hud::Hud(Client *_client)
         HudElement *hotbar = new HudElement{HUD_ELEM_HOTBAR, v2f(0.5, 1), "", v2f(), "", 0 , 0, 0, v2f(0, -1),
             v2f(0, -4), v3f(), v2i(), 0, "", 0};
         u32 id = player->getFreeHudID();
-        hudsprites[id] = std::unique_ptr<HudSprite>(new HudHotbar(client, hotbar));
+        hudsprites.emplace_back(id, std::make_unique<HudHotbar>(client, hotbar));
         builtinHotbarID = id;
     }
+
+    resortElements();
 }
 
 bool Hud::hasElementOfType(HudElementType type)
@@ -87,15 +90,15 @@ void Hud::updateBuiltinElements()
 {
     if (g_settings->getBool("enable_minimap")) {
         if (client->getProtoVersion() < 44 && player->hud_flags & HUD_FLAG_MINIMAP_VISIBLE)
-            hudsprites[builtinMinimapID]->setVisible(true);
+            findSprite(builtinMinimapID)->setVisible(true);
         else
-            hudsprites[builtinMinimapID]->setVisible(false);
+            findSprite(builtinMinimapID)->setVisible(false);
     }
 
     if (client->getProtoVersion() < 46 && player->hud_flags & HUD_FLAG_HOTBAR_VISIBLE)
-        hudsprites[builtinHotbarID]->setVisible(true);
+        findSprite(builtinHotbarID)->setVisible(true);
     else
-        hudsprites[builtinHotbarID]->setVisible(false);
+        findSprite(builtinHotbarID)->setVisible(false);
 }
 
 void Hud::updateInvListSelections(std::optional<u32> slotID)
@@ -109,61 +112,68 @@ void Hud::updateInvListSelections(std::optional<u32> slotID)
 
 void Hud::addHUDElement(u32 id, const HudElement *elem)
 {
-    auto found_elem = hudsprites.find(id);
+    auto found_elem = std::find_if(hudsprites.begin(), hudsprites.end(),
+        [id](const auto& pair) { return pair.first == id; });
 
     if (found_elem != hudsprites.end())
         return;
 
     switch(elem->type) {
     case HUD_ELEM_IMAGE:
-        hudsprites.emplace(std::unique_ptr<HudSprite>(new HudImage(client, elem)));
+        hudsprites.emplace_back(id, std::make_unique<HudImage>(client, elem));
         break;
     case HUD_ELEM_TEXT:
-        hudsprites.emplace(std::unique_ptr<HudSprite>(new HudText(client, elem)));
+        hudsprites.emplace_back(id, std::make_unique<HudText>(client, elem));
         break;
     case HUD_ELEM_STATBAR:
-        hudsprites.emplace(std::unique_ptr<HudSprite>(new HudStatbar(client, elem)));
+        hudsprites.emplace_back(id, std::make_unique<HudStatbar>(client, elem));
         break;
     case HUD_ELEM_INVENTORY:
-        hudsprites.emplace(std::unique_ptr<HudSprite>(new HudInventoryList(client, elem)));
+        hudsprites.emplace_back(id, std::make_unique<HudInventoryList>(client, elem));
         break;
     case HUD_ELEM_WAYPOINT: {
         UISpriteBank *bank = new UISpriteBank(rnd_system, cache);
         bank->addTextSprite(rnd_system->getFontManager(), EnrichedString(), 0);
-        hudsprites.emplace(std::unique_ptr<HudSprite>(new HudWaypoint(client, elem, bank)));
+        hudsprites.emplace_back(id, std::make_unique<HudWaypoint>(client, elem, bank));
         break;
     }
     case HUD_ELEM_IMAGE_WAYPOINT: {
         UISpriteBank *bank = new UISpriteBank(rnd_system, cache);
         bank->addImageSprite(nullptr, 0);
-        hudsprites.emplace(std::unique_ptr<HudSprite>(new HudWaypoint(client, elem, bank)));
+        hudsprites.emplace_back(id, std::make_unique<HudWaypoint>(client, elem, bank));
         break;
     }
     case HUD_ELEM_COMPASS:
-        hudsprites.emplace(std::unique_ptr<HudSprite>(new HudCompass(client, elem)));
+        hudsprites.emplace_back(id, std::make_unique<HudCompass>(client, elem));
         break;
     case HUD_ELEM_MINIMAP:
-        hudsprites.emplace(std::unique_ptr<HudSprite>(new HudMinimap(client, elem)));
+        hudsprites.emplace_back(id, std::make_unique<HudMinimap>(client, elem));
         break;
     case HUD_ELEM_HOTBAR:
-        hudsprites.emplace(std::unique_ptr<HudSprite>(new HudHotbar(client, elem)));
+        hudsprites.emplace_back(id, std::make_unique<HudHotbar>(client, elem));
         break;
     }
+
+    resortElements();
 }
 
 void Hud::updateHUDElement(u32 id)
 {
-    auto found_elem = hudsprites.find(id);
+    auto found_elem = std::find_if(hudsprites.begin(), hudsprites.end(),
+        [id](const auto& pair) { return pair.first == id; });
 
     if (found_elem == hudsprites.end())
         return;
 
     found_elem->second->update();
+
+    resortElements();
 }
 
 void Hud::removeHUDElement(u32 id)
 {
-    auto found_elem = hudsprites.find(id);
+    auto found_elem = std::find_if(hudsprites.begin(), hudsprites.end(),
+        [id](const auto& pair) { return pair.first == id; });
 
     if (found_elem == hudsprites.end())
         return;
@@ -176,7 +186,7 @@ Minimap *Hud::getMinimap()
     if (!g_settings->getBool("enable_minimap"))
         return nullptr;
 
-    return dynamic_cast<HudMinimap *>(hudsprites[builtinMinimapID].get())->getUnderlyingMinimap();
+    return dynamic_cast<HudMinimap *>(findSprite(builtinMinimapID))->getUnderlyingMinimap();
 }
 
 void Hud::setHudVisible(bool visible)
@@ -199,6 +209,19 @@ void Hud::render()
         sprite.second->draw();
 }
 
+HudSprite *Hud::findSprite(u32 id)
+{
+    auto found = std::find_if(hudsprites.begin(), hudsprites.end(),
+    [id](const std::pair<u32, std::unique_ptr<HudSprite>> &s)
+    {
+        return s.first == id;
+    });
+
+    if (found == hudsprites.end())
+        return nullptr;
+    return found->second.get();
+}
+
 void Hud::initCrosshair()
 {
     v3f cross_color = g_settings->getV3F("crosshair_color").value_or(v3f());
@@ -210,6 +233,15 @@ void Hud::initCrosshair()
     auto guiPool = rnd_system->getPool(false);
     crosshair = std::make_unique<UISprite>(guiPool->getAtlasByTile(crosshair_image)->getTexture(),
         rnd_system->getRenderer(), cache, guiPool->getTileRect(crosshair_image), rectf(), std::array<img::color8, 4>{}, true);
+}
+
+void Hud::resortElements()
+{
+    std::sort(hudsprites.begin(), hudsprites.end(),
+    [](const std::pair<u32, std::unique_ptr<HudSprite>> &s1, const std::pair<u32, std::unique_ptr<HudSprite>> &s2)
+    {
+        return s1.second->getZIndex() < s2.second->getZIndex();
+    });
 }
 
 /*struct MeshTimeInfo {

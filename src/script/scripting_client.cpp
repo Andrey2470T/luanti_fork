@@ -4,7 +4,7 @@
 // Copyright (C) 2017 nerzhul, Loic Blot <loic.blot@unix-experience.fr>
 
 #include "scripting_client.h"
-#include "client/client.h"
+#include "client/core/client.h"
 #include "cpp_api/s_internal.h"
 #include "lua_api/l_client.h"
 #include "lua_api/l_env.h"
@@ -77,7 +77,7 @@ void ClientScripting::on_client_ready(LocalPlayer *localplayer)
 	LuaLocalPlayer::create(getStack(), localplayer);
 }
 
-void ClientScripting::on_camera_ready(Camera *camera)
+void ClientScripting::on_camera_ready(PlayerCamera *camera)
 {
 	LuaCamera::create(getStack(), camera);
 }

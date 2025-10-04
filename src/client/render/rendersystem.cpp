@@ -1,4 +1,5 @@
 #include "rendersystem.h"
+#include "client/event/inputhandler.h"
 #include "gui/touchcontrols.h"
 #include "settings.h"
 #include "client/ui/glyph_atlas.h"
@@ -120,6 +121,29 @@ void RenderSystem::buildGUIAtlas()
     }
 
     guiPool->buildRectpack2DAtlas();
+}
+
+bool RenderSystem::run()
+{
+    auto close = window->pollEventsFromQueue();
+
+    if (!close) {
+        while (auto event = window->popEvent()) {
+            bool processed = client->getInputHandler()->getReceiver()->OnEvent(*event);
+
+            if (!processed)
+                guienv->postEventFromUser(*event);
+
+            if (event->Type == ET_STRING_INPUT_EVENT && event->StringInput.Str) {
+                delete event->StringInput.Str;
+            }
+        }
+        if (auto focusElem = guienv->getFocus()) {
+            window->resetReceiveTextInputEvents(
+                focusElem->getAbsolutePosition(), focusElem->acceptsIME());
+        }
+    }
+    return close;
 }
 
 void RenderSystem::render()

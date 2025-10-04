@@ -36,18 +36,7 @@ class Hud
     u32 builtinMinimapID;
     u32 builtinHotbarID;
 
-    class HudSpriteSorter
-    {
-    public:
-        HudSpriteSorter() = default;
-
-        bool operator()(const std::unique_ptr<HudSprite> &s1, const std::unique_ptr<HudSprite> &s2)
-        {
-            return s1->getZIndex() < s2->getZIndex();
-        }
-    };
-
-    std::map<u32, std::unique_ptr<HudSprite>, HudSpriteSorter> hudsprites;
+    std::vector<std::pair<u32, std::unique_ptr<HudSprite>>> hudsprites;
 public:
     // Crosshair
     bool crosshair_hidden = false;
@@ -73,7 +62,9 @@ public:
 
     void render();
 private:
+    HudSprite *findSprite(u32 id);
     void initCrosshair();
+    void resortElements();
 };
 
 enum ItemRotationKind

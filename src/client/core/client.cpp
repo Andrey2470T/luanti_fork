@@ -51,7 +51,7 @@
 #include "database/database-sqlite3.h"
 #include "client/core/clienteventhandler.h"
 #include "chatmessanger.h"
-#include "itemdef.cpp"
+#include "itemdef.h"
 #include "client/event/eventmanager.h"
 #include "client/event/inputhandler.h"
 #include "gameinputhandler.h"
@@ -70,7 +70,7 @@ Client::Client(ResourceCache *resource_cache, RenderSystem *render_system,
         const std::string &password,
         ELoginRegister allow_login_or_register):
     m_eventmgr(std::make_unique<EventManager>()),
-    m_itemdef(std::make_unique<CItemDefManager>()),
+    m_itemdef(std::unique_ptr<IWritableItemDefManager>(createItemDefManager())),
     m_nodedef(std::make_unique<NodeDefManager>()),
     m_resource_cache(resource_cache),
     m_render_system(render_system),

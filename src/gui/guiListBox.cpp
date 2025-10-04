@@ -660,7 +660,7 @@ void CGUIListBox::setItemOverrideColor(u32 index, img::color8 color)
 
 void CGUIListBox::setItemOverrideColor(u32 index, EGUI_LISTBOX_COLOR colorType, img::color8 color)
 {
-    if (index >= Items.size() || (u8)colorType < 0 || colorType >= EGUI_LBC_COUNT)
+    if (index >= (u32)Items.size() || (u8)colorType < 0 || colorType >= EGUI_LBC_COUNT)
 		return;
 
     Items[index].OverrideColors[(u8)colorType].Use = true;
@@ -676,7 +676,7 @@ void CGUIListBox::clearItemOverrideColor(u32 index)
 
 void CGUIListBox::clearItemOverrideColor(u32 index, EGUI_LISTBOX_COLOR colorType)
 {
-    if (index >= Items.size() || (u8)colorType < 0 || colorType >= EGUI_LBC_COUNT)
+    if (index >= (u32)Items.size() || (u8)colorType < 0 || colorType >= EGUI_LBC_COUNT)
 		return;
 
     Items[index].OverrideColors[(u8)colorType].Use = false;
@@ -684,7 +684,7 @@ void CGUIListBox::clearItemOverrideColor(u32 index, EGUI_LISTBOX_COLOR colorType
 
 bool CGUIListBox::hasItemOverrideColor(u32 index, EGUI_LISTBOX_COLOR colorType) const
 {
-    if (index >= Items.size() || (u8)colorType < 0 || colorType >= EGUI_LBC_COUNT)
+    if (index >= (u32)Items.size() || (u8)colorType < 0 || colorType >= EGUI_LBC_COUNT)
 		return false;
 
     return Items[index].OverrideColors[(u8)colorType].Use;
@@ -692,7 +692,7 @@ bool CGUIListBox::hasItemOverrideColor(u32 index, EGUI_LISTBOX_COLOR colorType) 
 
 img::color8 CGUIListBox::getItemOverrideColor(u32 index, EGUI_LISTBOX_COLOR colorType) const
 {
-    if ((u32)index >= Items.size() || (u8)colorType < 0 || colorType >= EGUI_LBC_COUNT)
+    if ((u32)index >= (u32)Items.size() || (u8)colorType < 0 || colorType >= EGUI_LBC_COUNT)
 		return img::color8();
 
     return Items[index].OverrideColors[(u8)colorType].Color;

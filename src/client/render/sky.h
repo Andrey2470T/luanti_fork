@@ -246,17 +246,17 @@ private:
 	bool m_directional_colored_fog;
 	bool m_in_clouds = true; // Prevent duplicating bools to remember old values
 
-    img::colorf m_bgcolor_bright_f = img::colorf(img::PF_RGBA32F, 1.0f, 1.0f, 1.0f, 1.0f);
-    img::colorf m_skycolor_bright_f = img::colorf(img::PF_RGBA32F, 1.0f, 1.0f, 1.0f, 1.0f);
-    img::colorf m_cloudcolor_bright_f = img::colorf(img::PF_RGBA32F, 1.0f, 1.0f, 1.0f, 1.0f);
+    img::colorf m_bgcolor_bright_f = img::colorf(1.0f, 1.0f, 1.0f, 1.0f);
+    img::colorf m_skycolor_bright_f = img::colorf(1.0f, 1.0f, 1.0f, 1.0f);
+    img::colorf m_cloudcolor_bright_f = img::colorf(1.0f, 1.0f, 1.0f, 1.0f);
     img::color8 m_bgcolor;
     img::color8 m_skycolor;
     img::colorf m_cloudcolor_f;
 
 	// pure white: becomes "diffuse light component" for clouds
-    img::colorf m_cloudcolor_day_f = img::colorf(img::PF_RGBA32F, 1, 1, 1, 1);
+    img::colorf m_cloudcolor_day_f = img::colorf(1, 1, 1, 1);
 	// dawn-factoring version of pure white (note: R is above 1.0)
-    img::colorf m_cloudcolor_dawn_f = img::colorf(img::PF_RGBA32F,
+    img::colorf m_cloudcolor_dawn_f = img::colorf(
 		255.0f/240.0f,
 		223.0f/240.0f,
 		191.0f/255.0f

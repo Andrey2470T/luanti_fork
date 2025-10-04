@@ -352,6 +352,8 @@ u8 GameUI::toggleDebug(LocalPlayer *player)
     enableFlag(GUIF_SHOW_MINIMAL_DEBUG, debug_state > 0);
     enableFlag(GUIF_SHOW_BASIC_DEBUG, debug_state > 0 && has_basic_debug);
     enableFlag(GUIF_SHOW_PROFILER_GRAPH, debug_state == 2);
+
+    return debug_state;
 }
 
 void GameUI::toggleProfiler()

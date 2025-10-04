@@ -406,17 +406,12 @@ void PlayerCamera::update(f32 dtime)
 
 	// Compute absolute camera position and target
     m_position = m_playerbase_pos + m_head_offset + rel_cam_pos;
-    //m_headnode->getAbsoluteTransformation().transformVect(m_camera_position, rel_cam_pos);
     matrix4 rot_transform;
     rot_transform.buildRotateFromTo(v3f(0,0,1), m_direction);
     rot_transform.transformVect(m_direction, rel_cam_target - rel_cam_pos);
-    //m_camera_direction = m_headnode->getAbsoluteTransformation()
-    //		.rotateAndScaleVect(rel_cam_target - rel_cam_pos);
 
     v3f abs_cam_up;
     rot_transform.transformVect(abs_cam_up, rel_cam_up);
-    //v3f abs_cam_up = m_headnode->getAbsoluteTransformation()
-    //		.rotateAndScaleVect(rel_cam_up);
 
 	// Separate camera position for calculation
     v3f my_cp = m_position;

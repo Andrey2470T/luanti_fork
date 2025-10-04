@@ -18,7 +18,7 @@ class ResourceCache;
 class ClientLauncher
 {
 public:
-    ClientLauncher() = default;
+    ClientLauncher();
 
     ~ClientLauncher();
 

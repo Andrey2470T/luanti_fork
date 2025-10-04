@@ -132,7 +132,7 @@ template<class T>
 ResourceSubCache<T>::ResourceSubCache(
     const std::vector<std::string> &_defpaths, const std::function<std::string(std::string)> &_findPathCallback,
     const std::function<T*(const std::string &)> &_loadCallback)
-    : defpaths(_defpaths), findPathCallback(_findPathCallback), loadCallback(_loadCallback)
+    : findPathCallback(_findPathCallback), loadCallback(_loadCallback), defpaths(_defpaths)
 {}
 
 template<class T>

@@ -29,8 +29,7 @@ enum class GUIElementType : u8
     Window,
     Element,
     Root,
-    Count,
-    Force32Bit
+    Count
 };
 
 #define EGUI_ELEMENT_TYPE GUIElementType
@@ -52,7 +51,6 @@ enum class GUIElementType : u8
 #define EGUIET_ELEMENT GUIElementType::Element
 #define EGUIET_ROOT GUIElementType::Root
 #define EGUIET_COUNT GUIElementType::Count
-#define EGUIET_FORCE_32_BIT GUIElementType::Force32Bit
 
 
 enum class GUIAlignment : u8

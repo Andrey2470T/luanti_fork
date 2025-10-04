@@ -44,11 +44,11 @@ GUIButton::GUIButton(IGUIEnvironment* environment, IGUIElement* parent,
 
     ButtonBox->addSprite({}, 0, {});
     if (BgMiddle.getArea() == 0)
-        ButtonBox->addSprite<ImageSprite>(0, environment->getRenderSystem()->getRenderer(),
+        ButtonBox->addSprite<ImageSprite>(0, environment->getRenderSystem(),
             environment->getResourceCache());
     else
         ButtonBox->addSprite<Image2D9Slice>(0, environment->getResourceCache(),
-            environment->getRenderSystem()->getRenderer(), nullptr, std::array<img::color8, 4>{});
+            environment->getRenderSystem());
 }
 
 //! destructor

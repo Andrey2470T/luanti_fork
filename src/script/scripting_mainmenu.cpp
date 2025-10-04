@@ -76,24 +76,24 @@ void MainMenuScripting::registerLuaClasses(lua_State *L, int top)
 
 bool MainMenuScripting::mayModifyPath(const std::string &path)
 {
-	std::string path_temp = fs::AbsolutePathPartial(fs::TempPath());
-	if (fs::PathStartsWith(path, path_temp))
+    std::string path_temp = mt_fs::AbsolutePathPartial(mt_fs::TempPath());
+    if (mt_fs::PathStartsWith(path, path_temp))
 		return true;
 
-	std::string path_user = fs::AbsolutePathPartial(porting::path_user);
+    std::string path_user = mt_fs::AbsolutePathPartial(porting::path_user);
 
-	if (fs::PathStartsWith(path, path_user + DIR_DELIM "client"))
+    if (mt_fs::PathStartsWith(path, path_user + DIR_DELIM "client"))
 		return true;
-	if (fs::PathStartsWith(path, path_user + DIR_DELIM "games"))
+    if (mt_fs::PathStartsWith(path, path_user + DIR_DELIM "games"))
 		return true;
-	if (fs::PathStartsWith(path, path_user + DIR_DELIM "mods"))
+    if (mt_fs::PathStartsWith(path, path_user + DIR_DELIM "mods"))
 		return true;
-	if (fs::PathStartsWith(path, path_user + DIR_DELIM "textures"))
+    if (mt_fs::PathStartsWith(path, path_user + DIR_DELIM "textures"))
 		return true;
-	if (fs::PathStartsWith(path, path_user + DIR_DELIM "worlds"))
+    if (mt_fs::PathStartsWith(path, path_user + DIR_DELIM "worlds"))
 		return true;
 
-	if (fs::PathStartsWith(path, fs::AbsolutePathPartial(porting::path_cache)))
+    if (mt_fs::PathStartsWith(path, mt_fs::AbsolutePathPartial(porting::path_cache)))
 		return true;
 
 	return false;

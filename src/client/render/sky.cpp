@@ -750,7 +750,7 @@ void Sky::update(float time_of_day, float time_brightness,
 			// Horizon colors of sun and moon
 			f32 pointcolor_light = rangelim(m_time_brightness * 3, 0.2, 1);
 
-            img::colorf pointcolor_sun_f(img::PF_RGBA32F, 1, 1, 1, 1);
+            img::colorf pointcolor_sun_f(1, 1, 1, 1);
 			// Use tonemap only if default sun/moon tinting is used
 			// which keeps previous behavior.
             auto sun_base_color = m_sun->getBaseColor();
@@ -773,14 +773,14 @@ void Sky::update(float time_of_day, float time_brightness,
 
             img::colorf pointcolor_moon_f;
 			if (m_default_tint) {
-                pointcolor_moon_f = img::colorf(img::PF_RGBA32F,
+                pointcolor_moon_f = img::colorf(
 					0.5 * pointcolor_light,
 					0.6 * pointcolor_light,
 					0.8 * pointcolor_light,
 					1
 				);
 			} else {
-                pointcolor_moon_f = img::colorf(img::PF_RGBA32F,
+                pointcolor_moon_f = img::colorf(
                     (m_sky_params.fog_moon_tint.R() / 255.0f) * pointcolor_light,
                     (m_sky_params.fog_moon_tint.G() / 255.0f) * pointcolor_light,
                     (m_sky_params.fog_moon_tint.B() / 255.0f) * pointcolor_light,
@@ -827,7 +827,7 @@ void Sky::update(float time_of_day, float time_brightness,
 
 	m_cloud_brightness = m_cloud_brightness * cloud_color_change_fraction +
 		cloud_direct_brightness * (1.0 - cloud_color_change_fraction);
-    m_cloudcolor_f = img::colorf(img::PF_RGBA32F,
+    m_cloudcolor_f = img::colorf(
         m_cloudcolor_bright_f.R() * m_cloud_brightness,
         m_cloudcolor_bright_f.G() * m_cloud_brightness,
         m_cloudcolor_bright_f.B() * m_cloud_brightness,
@@ -839,11 +839,11 @@ void Sky::update(float time_of_day, float time_brightness,
 
     updateCloudyFogColor();
 
-    img::colorf suncolor_f(img::PF_RGBA32F, 1, 1, 0, 1);
+    img::colorf suncolor_f(1, 1, 0, 1);
     //suncolor_f.r = 1;
     //suncolor_f.g = MYMAX(0.3, MYMIN(1.0, 0.7 + m_time_brightness * 0.5));
     //suncolor_f.b = MYMAX(0.0, m_brightness * 0.95);
-    img::colorf suncolor2_f(img::PF_RGBA32F, 1, 1, 1, 1);
+    img::colorf suncolor2_f(1, 1, 1, 1);
     // The values below were probably meant to be suncolor2_f instead of a
     // reassignment of suncolor_f. However, the resulting colour was chosen
     // and is our long-running classic colour. So preserve, but comment-out
@@ -852,8 +852,8 @@ void Sky::update(float time_of_day, float time_brightness,
     suncolor_f.G(MYMAX(0.3, MYMIN(1.0, 0.85 + m_time_brightness * 0.5)));
     suncolor_f.B(MYMAX(0.0, m_brightness));
 
-    img::colorf mooncolor_f(img::PF_RGBA32F, 0.50, 0.57, 0.65, 1);
-    img::colorf mooncolor2_f(img::PF_RGBA32F, 0.85, 0.875, 0.9, 1);
+    img::colorf mooncolor_f(0.50, 0.57, 0.65, 1);
+    img::colorf mooncolor2_f(0.85, 0.875, 0.9, 1);
 
     float wicked_time_of_day = getWickedTimeOfDay(m_time_of_day);
 

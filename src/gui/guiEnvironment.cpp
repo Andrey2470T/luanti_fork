@@ -683,7 +683,7 @@ render::TTFont *CGUIEnvironment::getFont(const std::string &filename)
 	SFont f;
     f.NamedPath = filename;
 
-    auto found_font = std::find(Fonts.begin(), Fonts.end(),
+    auto found_font = std::find_if(Fonts.begin(), Fonts.end(),
         [filename] (const SFont &font) { return filename == font.NamedPath; });
     if (found_font != Fonts.end())
         return Fonts[std::distance(Fonts.begin(), found_font)].Font;
@@ -718,7 +718,7 @@ render::TTFont *CGUIEnvironment::addFont(const std::string &name, render::TTFont
 	if (font) {
 		SFont f;
         f.NamedPath = name;
-        auto found_font = std::find(Fonts.begin(), Fonts.end(),
+        auto found_font = std::find_if(Fonts.begin(), Fonts.end(),
             [name] (const SFont &font) { return name == font.NamedPath; });
         if (found_font != Fonts.end())
             return Fonts[std::distance(Fonts.begin(), found_font)].Font;
@@ -748,7 +748,7 @@ IGUISpriteBank *CGUIEnvironment::getSpriteBank(const std::string &filename)
 	SSpriteBank b;
     b.NamedPath = filename;
 
-    auto found_bank = std::find(Banks.begin(), Banks.end(),
+    auto found_bank = std::find_if(Banks.begin(), Banks.end(),
         [filename] (const SSpriteBank &font) { return filename == font.NamedPath; });
     if (found_bank != Banks.end())
         return Banks[std::distance(Banks.begin(), found_bank)].Bank;
@@ -773,7 +773,7 @@ IGUISpriteBank *CGUIEnvironment::addEmptySpriteBank(const std::string &name)
 	SSpriteBank b;
     b.NamedPath = name;
 
-    auto found_bank = std::find(Banks.begin(), Banks.end(),
+    auto found_bank = std::find_if(Banks.begin(), Banks.end(),
         [name] (const SSpriteBank &font) { return name == font.NamedPath; });
     if (found_bank != Banks.end())
 		return 0;

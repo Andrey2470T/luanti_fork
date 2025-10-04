@@ -174,10 +174,7 @@ public:
 
     void buildGUIAtlas();
 
-    bool run()
-    {
-        return window->pollEventsFromQueue();
-    }
+    bool run();
 
     void render();
 

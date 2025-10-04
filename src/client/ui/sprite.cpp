@@ -105,6 +105,7 @@ void UIShape::movePrimitive(u32 n, const v2f &shift)
         line->start_p += shift;
         line->end_p += shift;
         updateMaxArea(maxArea, line->start_p, line->end_p, maxAreaInit);
+        break;
     }
     case UIPrimitiveType::TRIANGLE: {
         auto trig = dynamic_cast<Triangle *>(prim);
@@ -112,18 +113,21 @@ void UIShape::movePrimitive(u32 n, const v2f &shift)
         trig->p2 += shift;
         trig->p3 += shift;
         updateMaxArea(maxArea, v2f(trig->p1.X, trig->p3.Y), trig->p2, maxAreaInit);
+        break;
     }
     case UIPrimitiveType::RECTANGLE: {
         auto rect = dynamic_cast<Rectangle *>(prim);
         rect->r.ULC += shift;
         rect->r.LRC += shift;
         updateMaxArea(maxArea, rect->r.ULC, rect->r.LRC, maxAreaInit);
+        break;
     }
     case UIPrimitiveType::ELLIPSE: {
         auto ellipse = dynamic_cast<Ellipse *>(prim);
         ellipse->center += shift;
         updateMaxArea(maxArea, ellipse->center - v2f(ellipse->a/2,
             ellipse->b/2), ellipse->center+v2f(ellipse->a/2, ellipse->b/2), maxAreaInit);
+        break;
     }
     }
 }
@@ -139,6 +143,7 @@ void UIShape::scalePrimitive(u32 n, const v2f &scale, std::optional<v2f> center)
         line->start_p = c + (line->start_p - c) * scale;
         line->end_p = c + (line->end_p - c) * scale;
         updateMaxArea(maxArea, line->start_p, line->end_p, maxAreaInit);
+        break;
     }
     case UIPrimitiveType::TRIANGLE: {
         auto trig = dynamic_cast<Triangle *>(prim);
@@ -148,6 +153,7 @@ void UIShape::scalePrimitive(u32 n, const v2f &scale, std::optional<v2f> center)
         trig->p2 = c + (trig->p2 - c) * scale;
         trig->p3 = c + (trig->p3 - c) * scale;
         updateMaxArea(maxArea, v2f(trig->p1.X, trig->p3.Y), trig->p2, maxAreaInit);
+        break;
     }
     case UIPrimitiveType::RECTANGLE: {
         auto rect = dynamic_cast<Rectangle *>(prim);
@@ -156,6 +162,7 @@ void UIShape::scalePrimitive(u32 n, const v2f &scale, std::optional<v2f> center)
         rect->r.ULC = c + (rect->r.ULC - c) * scale;
         rect->r.LRC = c + (rect->r.LRC - c) * scale;
         updateMaxArea(maxArea, rect->r.ULC, rect->r.LRC, maxAreaInit);
+        break;
     }
     case UIPrimitiveType::ELLIPSE: {
         auto ellipse = dynamic_cast<Ellipse *>(prim);
@@ -164,6 +171,7 @@ void UIShape::scalePrimitive(u32 n, const v2f &scale, std::optional<v2f> center)
         ellipse->b *= scale.Y;
         updateMaxArea(maxArea, ellipse->center - v2f(ellipse->a/2,
             ellipse->b/2), ellipse->center+v2f(ellipse->a/2, ellipse->b/2), maxAreaInit);
+        break;
     }
     }
 }
@@ -548,14 +556,14 @@ void UISpriteBank::shiftRectByLastSprite(rectf &r, u8 shift)
             r.ULC.X = maxArea.getCenter().X-rSize.X/2.0f;
             r.ULC.Y = maxArea.LRC.Y;
             r.LRC = r.ULC + rSize;
-            sprites_grid.emplace_back(std::vector{sprites.size()});
+            sprites_grid.emplace_back(sprites.size());
         }
     }
     else {
         auto size = r.getSize();
         r.ULC = center - size/2.0f;
         r.LRC = center + size/2.0f;
-        sprites_grid.emplace_back(std::vector{0});
+        sprites_grid.emplace_back();
     }
 }
 

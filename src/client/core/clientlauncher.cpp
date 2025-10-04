@@ -51,6 +51,9 @@ static void dump_start_data(const GameStartData &data)
 }
 #endif
 
+ClientLauncher::ClientLauncher()
+{}
+
 ClientLauncher::~ClientLauncher()
 {
     g_settings->deregisterAllChangedCallbacks(this);
@@ -97,6 +100,7 @@ bool ClientLauncher::run(GameStartData &start_data, const Settings &cmd_args)
     render_system->buildGUIAtlas();
 
     init_input();
+    render_system->getGUIEnvironment()->setUserEventReceiver(receiver.get());
 
     config_guienv();
 

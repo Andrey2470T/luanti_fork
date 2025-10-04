@@ -500,7 +500,7 @@ int ModApiServer::l_get_mod_data_path(lua_State *L)
 
 	const Server *srv = getServer(L);
 	std::string path = srv->getModDataPath() + DIR_DELIM + modname;
-	if (!fs::CreateAllDirs(path))
+    if (!mt_fs::CreateAllDirs(path))
 		throw LuaError("Failed to create dir");
 
 	lua_pushstring(L, path.c_str());

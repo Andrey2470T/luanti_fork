@@ -14,7 +14,7 @@
 
 class Client;
 class LocalPlayer;
-class Camera;
+class PlayerCamera;
 class Minimap;
 
 class ClientScripting:
@@ -26,7 +26,7 @@ class ClientScripting:
 public:
 	ClientScripting(Client *client);
 	void on_client_ready(LocalPlayer *localplayer);
-	void on_camera_ready(Camera *camera);
+    void on_camera_ready(PlayerCamera *camera);
 	void on_minimap_ready(Minimap *minimap);
 
 protected:

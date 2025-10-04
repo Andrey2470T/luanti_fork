@@ -100,8 +100,8 @@ void GUIInventoryList::draw()
 			&& selected_item->listname == m_listname
 			&& selected_item->i == item_i;
 		bool hovering = m_hovered_i == item_i;
-		ItemRotationKind rotation_kind = selected ? IT_ROT_SELECTED :
-			(hovering ? IT_ROT_HOVERED : IT_ROT_NONE);
+        //ItemRotationKind rotation_kind = selected ? IT_ROT_SELECTED :
+        //	(hovering ? IT_ROT_HOVERED : IT_ROT_NONE);
 
 		// layer 0
 		if (hovering) {
