@@ -72,7 +72,5 @@ public:
     {
         update(newImage, rect, {color, color, color, color}, cliprect);
     }
-
-    void draw() override;
 };
 

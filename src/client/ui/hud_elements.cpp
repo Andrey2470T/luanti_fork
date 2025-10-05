@@ -99,16 +99,22 @@ rectf getHudTextRect(RenderSystem *rnd_system, const std::string &text, const Hu
 }
 
 rectf getHudImageRect(ResourceCache *cache, RenderSystem *rnd_system, const std::string &imgname, const HudElement *elem,
-    bool scale_factor, std::optional<v2f> override_pos=std::nullopt)
+    bool scale_factor, img::Image **img, std::optional<v2f> override_pos=std::nullopt)
 {
-    auto img = cache->getOrLoad<img::Image>(ResourceType::IMAGE, imgname);
+    *img = cache->getOrLoad<img::Image>(ResourceType::IMAGE, imgname);
 
-    v2u imgSize = img->getSize();
+    v2u imgSize = (*img)->getSize();
     rectf imgRect(0, 0, imgSize.X, imgSize.Y);
 
     imgRect += calcHUDOffset(rnd_system, imgRect, elem, scale_factor, override_pos);
 
     return imgRect;
+}
+
+HudSprite::~HudSprite()
+{
+    cache->clearResource<img::Image>(ResourceType::IMAGE, img1);
+    cache->clearResource<img::Image>(ResourceType::IMAGE, img2);
 }
 
 HudText::HudText(Client *client, const HudElement *elem)
@@ -131,8 +137,8 @@ void HudText::update()
 HudStatbar::HudStatbar(Client *client, const HudElement *elem)
     : HudSprite(client->getResourceCache(), client->getRenderSystem(), elem)
 {
-    auto stat_img = cache->getOrLoad<img::Image>(ResourceType::IMAGE, elem->text);
-    auto guiTex = rnd_system->getPool(false)->getAtlasByTile(stat_img, true)->getTexture();
+    img1 = cache->getOrLoad<img::Image>(ResourceType::IMAGE, elem->text);
+    auto guiTex = rnd_system->getPool(false)->getAtlasByTile(img1, true)->getTexture();
     bar = std::make_unique<UISprite>(guiTex, rnd_system->getRenderer(), cache, true);
 
     update();
@@ -145,20 +151,19 @@ void HudStatbar::update()
     const img::color8 color = img::white;
     const std::array<img::color8, 4> colors = {color, color, color, color};
 
-    auto stat_img = cache->getOrLoad<img::Image>(ResourceType::IMAGE, elem->text);
-    if (!stat_img)
+    img1 = cache->getOrLoad<img::Image>(ResourceType::IMAGE, elem->text);
+    if (!img1)
         return;
 
-    img::Image *stat_img_bg = nullptr;
     if (!elem->text2.empty())
-        stat_img_bg = cache->getOrLoad<img::Image>(ResourceType::IMAGE, elem->text2);
+        img2 = cache->getOrLoad<img::Image>(ResourceType::IMAGE, elem->text2);
 
     auto guiPool = rnd_system->getPool(false);
-    rectf stat_img_src = guiPool->getTileRect(stat_img, false, true);
-    rectf stat_img_bg_src = guiPool->getTileRect(stat_img_bg, false, true);
+    rectf stat_img_src = guiPool->getTileRect(img1, false, true);
+    rectf stat_img_bg_src = guiPool->getTileRect(img2, false, true);
 
     f32 scale_f = rnd_system->getScaleFactor();
-    v2f srcd(stat_img->getSize().X, stat_img->getSize().Y);
+    v2f srcd(img1->getSize().X, img1->getSize().Y);
     v2f dstd;
     if (elem->size.isNull())
         dstd = srcd * scale_f;
@@ -234,13 +239,13 @@ void HudStatbar::update()
         // Draw half a texture
         shape->addRectangle(dsthalfrect + pos, colors, srchalfrect + stat_img_src.ULC);
 
-        if (stat_img_bg && elem->item > elem->number) {
+        if (img2 && elem->item > elem->number) {
             shape->addRectangle(dsthalfrect2 + pos, colors, srchalfrect2 + stat_img_bg_src.ULC);
             pos += steppos;
         }
     }
 
-    if (stat_img_bg && elem->item > elem->number) {
+    if (img2 && elem->item > elem->number) {
         // Draw "off state" textures
         s32 start_offset;
         if (elem->number % 2 == 1)
@@ -330,17 +335,15 @@ void HudWaypoint::updateBank(v3f newWorldPos)
     else {
         auto img_sprite = faceBank->getSprite(0);
 
-        auto img = cache->getOrLoad<img::Image>(ResourceType::IMAGE, elem->text);
+        rectf img_rect = getHudImageRect(cache, rnd_system, elem->text, elem, false, &img1, pixelPos);
         auto guiPool = rnd_system->getPool(false);
-        img_sprite->setTexture(rnd_system->getPool(false)->getAtlasByTile(img, true)->getTexture());
-
-        rectf img_rect = getHudImageRect(cache, rnd_system, elem->text, elem, false, pixelPos);
+        img_sprite->setTexture(rnd_system->getPool(false)->getAtlasByTile(img1, true)->getTexture());
 
         img::color8 color(img::PF_RGBA8, (elem->number >> 16) & 0xFF,
                           (elem->number >> 8)  & 0xFF,
                           (elem->number >> 0)  & 0xFF, 255);
 
-        rectf srcrect = guiPool->getTileRect(img, false, true);
+        rectf srcrect = guiPool->getTileRect(img1, false, true);
         img_sprite->getShape()->updateRectangle(0, img_rect, {color, color, color, color}, srcrect);
         img_sprite->updateMesh(true);
         img_sprite->updateMesh(false);
@@ -358,12 +361,12 @@ HudImage::HudImage(Client *client, const HudElement *elem)
 
 void HudImage::update()
 {
-    auto img = cache->getOrLoad<img::Image>(ResourceType::IMAGE, elem->text);
-    auto guiPool = rnd_system->getPool(false);
-    image->setTexture(guiPool->getAtlasByTile(img, true)->getTexture());
+    rectf img_rect = getHudImageRect(cache, rnd_system, elem->text, elem, true, &img1);
 
-    rectf srcrect = guiPool->getTileRect(img, false, true);
-    rectf img_rect = getHudImageRect(cache, rnd_system, elem->text, elem, true);
+    auto guiPool = rnd_system->getPool(false);
+    image->setTexture(guiPool->getAtlasByTile(img1, true)->getTexture());
+
+    rectf srcrect = guiPool->getTileRect(img1, false, true);
     image->getShape()->updateRectangle(0, img_rect, {img::white}, srcrect);
     image->updateMesh(true);
 }
@@ -371,8 +374,8 @@ void HudImage::update()
 HudCompass::HudCompass(Client *_client, const HudElement *elem)
     : HudSprite(_client->getResourceCache(), _client->getRenderSystem(), elem), client(_client)
 {
-    auto img = cache->getOrLoad<img::Image>(ResourceType::IMAGE, elem->text);
-    auto guiTex = rnd_system->getPool(false)->getAtlasByTile(img, true)->getTexture();
+    img1 = cache->getOrLoad<img::Image>(ResourceType::IMAGE, elem->text);
+    auto guiTex = rnd_system->getPool(false)->getAtlasByTile(img1, true)->getTexture();
     compass = std::make_unique<UISprite>(guiTex, rnd_system->getRenderer(), cache, true);
 
     update();
@@ -382,7 +385,7 @@ void HudCompass::update()
 {
     compass->clear();
 
-    auto img = cache->getOrLoad<img::Image>(ResourceType::IMAGE, elem->text);
+    img1 = cache->getOrLoad<img::Image>(ResourceType::IMAGE, elem->text);
 
     rectf destrect;
     destrect += calcHUDOffset(rnd_system, destrect, elem, false, std::nullopt);
@@ -401,16 +404,16 @@ void HudCompass::update()
 
     switch (elem->dir) {
     case HUD_COMPASS_ROTATE:
-        updateRotate(destrect, img, angle);
+        updateRotate(destrect, img1, angle);
         break;
     case HUD_COMPASS_ROTATE_REVERSE:
-        updateRotate(destrect, img, -angle);
+        updateRotate(destrect, img1, -angle);
         break;
     case HUD_COMPASS_TRANSLATE:
-        updateTranslate(destrect, img, angle);
+        updateTranslate(destrect, img1, angle);
         break;
     case HUD_COMPASS_TRANSLATE_REVERSE:
-        updateTranslate(destrect, img, -angle);
+        updateTranslate(destrect, img1, -angle);
         break;
     default:
         break;

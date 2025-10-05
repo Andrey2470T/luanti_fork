@@ -51,7 +51,7 @@ protected:
 	void setDirectoryName(const std::string &name);
 
 	//! Ensure filenames are converted correct depending on wide-char settings
-	void pathToStringW(std::wstring &result, const std::string &p);
+    //void pathToStringW(std::wstring &result, const std::string &p);
 
 	//! fills the listbox with files.
 	void fillListBox();

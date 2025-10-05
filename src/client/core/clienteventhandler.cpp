@@ -350,6 +350,11 @@ ClientEvent * ClientEventHandler::getClientEvent()
     return event;
 }
 
+void ClientEventHandler::pushToEventQueue(ClientEvent *event)
+{
+    clientEventQueue.push(event);
+}
+
 void ClientEventHandler::processEvents()
 {
     while (!clientEventQueue.empty()) {

@@ -18,9 +18,6 @@ public:
 			IGUIElement *parent, s32 id, const recti &rectangle,
 			bool background = false);
 
-	//! destructor
-	virtual ~CGUIStaticText();
-
 	//! draws the element and its children
 	void draw() override;
 

@@ -27,13 +27,13 @@ UITextSprite::UITextSprite(FontManager *font_manager, const EnrichedString &text
 UITextSprite::~UITextSprite()
 {
     if (overrideFont)
-        cache->clearResource<render::TTFont>(ResourceType::FONT, overrideFont);
+        cache->clearResource<render::TTFont>(ResourceType::FONT, overrideFont, true);
 }
 
 void UITextSprite::setOverrideFont(render::TTFont *font)
 {
     if (overrideFont)
-        cache->clearResource<render::TTFont>(ResourceType::FONT, overrideFont);
+        cache->clearResource<render::TTFont>(ResourceType::FONT, overrideFont, true);
 
     overrideFont = font;
     cache->cacheResource<render::TTFont>(ResourceType::FONT, overrideFont);

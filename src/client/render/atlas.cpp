@@ -121,10 +121,10 @@ bool Atlas::operator==(const Atlas *other) const
 AtlasPool::~AtlasPool()
 {
     for (auto &atlas : atlases)
-        cache->clearResource<Atlas>(ResourceType::ATLAS, atlas);
+        cache->clearResource<Atlas>(ResourceType::ATLAS, atlas, true);
 
     for (auto &tile : images)
-        cache->clearResource<img::Image>(ResourceType::IMAGE, tile);
+        cache->clearResource<img::Image>(ResourceType::IMAGE, tile, true);
 }
 
 Atlas *AtlasPool::getAtlas(u32 i) const

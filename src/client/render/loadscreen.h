@@ -43,8 +43,6 @@ class LoadScreen
 public:
     LoadScreen(ResourceCache *_cache, RenderSystem *_system, FontManager *_mgr);
 
-    ~LoadScreen();
-
     void draw(v2u screensize, const std::wstring &text, f32 dtime, bool menu_clouds,
         s32 percent, f32 scale_f, f32 *shutdown_progress=nullptr);
 private:

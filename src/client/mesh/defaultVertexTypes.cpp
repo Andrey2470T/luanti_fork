@@ -60,35 +60,35 @@ const render::VertexTypeDescriptor SkyboxVType{
 };
 
 // Getters used for DefaultVType and TwoColorVType
-inline v3f svtGetPos(MeshBuffer *buf, u32 num)
+v3f svtGetPos(MeshBuffer *buf, u32 num)
 {
     return buf->getV3FAttr(0, num);
 }
-inline v2f svtGetPos2D(MeshBuffer *buf, u32 num)
+v2f svtGetPos2D(MeshBuffer *buf, u32 num)
 {
     return buf->getV2FAttr(0, num);
 }
-inline img::color8 svtGetColor(MeshBuffer *buf, u32 num)
+img::color8 svtGetColor(MeshBuffer *buf, u32 num)
 {
     return buf->getRGBAAttr(1, num);
 }
-inline v3f svtGetNormal(MeshBuffer *buf, u32 num)
+v3f svtGetNormal(MeshBuffer *buf, u32 num)
 {
     return buf->getV3FAttr(2, num);
 }
-inline v2f svtGetUV(MeshBuffer *buf, u32 num)
+v2f svtGetUV(MeshBuffer *buf, u32 num)
 {
     return buf->getV2FAttr(3, num);
 }
-inline v3f svtGetUV3D(MeshBuffer *buf, u32 num)
+v3f svtGetUV3D(MeshBuffer *buf, u32 num)
 {
     return buf->getV3FAttr(3, num);
 }
-inline u8 svtGetMType(MeshBuffer *buf, u32 num)
+u8 svtGetMType(MeshBuffer *buf, u32 num)
 {
     return buf->getUInt8Attr(4, num);
 }
-inline img::color8 svtGetHWColor(MeshBuffer *buf, u32 num)
+img::color8 svtGetHWColor(MeshBuffer *buf, u32 num)
 {
     u32 attr_n = 4;
 
@@ -99,26 +99,26 @@ inline img::color8 svtGetHWColor(MeshBuffer *buf, u32 num)
 
 
 // Setters used for DefaultVType and TwoColorVType
-inline void svtSetPos(MeshBuffer *buf, const v3f &pos, u32 num)
+void svtSetPos(MeshBuffer *buf, const v3f &pos, u32 num)
 {
     buf->setV3FAttr(pos, 0, num);
 }
-inline void svtSetPos2D(MeshBuffer *buf, const v2f &pos, u32 num)
+void svtSetPos2D(MeshBuffer *buf, const v2f &pos, u32 num)
 {
     buf->setV2FAttr(pos, 0, num);
 }
-inline void svtSetColor(MeshBuffer *buf, const img::color8 &c, u32 num)
+void svtSetColor(MeshBuffer *buf, const img::color8 &c, u32 num)
 {
     buf->setRGBAAttr(c, 1, num);
 }
-inline void svtSetNormal(MeshBuffer *buf, const v3f &normal, u32 num)
+void svtSetNormal(MeshBuffer *buf, const v3f &normal, u32 num)
 {
     auto vertexType = buf->getVAO()->getVertexType();
 
     if (vertexType.InitNormal)
         buf->setV3FAttr(normal, 2, num);
 }
-inline void svtSetUV(MeshBuffer *buf, const v2f &uv, u32 num)
+void svtSetUV(MeshBuffer *buf, const v2f &uv, u32 num)
 {
     auto vertexType = buf->getVAO()->getVertexType();
 
@@ -126,7 +126,7 @@ inline void svtSetUV(MeshBuffer *buf, const v2f &uv, u32 num)
         buf->setV2FAttr(uv, 3, num);
 }
 
-inline void svtSetUV3D(MeshBuffer *buf, const v3f &uv, u32 num)
+void svtSetUV3D(MeshBuffer *buf, const v3f &uv, u32 num)
 {
     auto vertexType = buf->getVAO()->getVertexType();
 
@@ -134,12 +134,12 @@ inline void svtSetUV3D(MeshBuffer *buf, const v3f &uv, u32 num)
         buf->setV3FAttr(uv, 3, num);
 }
 
-inline void svtSetMType(MeshBuffer *buf, u8 mt, u32 num)
+void svtSetMType(MeshBuffer *buf, u8 mt, u32 num)
 {
     buf->setUInt8Attr(mt, 4, num);
 }
 
-inline void svtSetHWColor(MeshBuffer *buf, const img::color8 &hw_c, u32 num)
+void svtSetHWColor(MeshBuffer *buf, const img::color8 &hw_c, u32 num)
 {
     u32 attr_n = 4;
 
@@ -234,7 +234,7 @@ void fillEmptyCustomAttribs(MeshBuffer *buf, u8 firstCustomAtrribIndex)
 
 // Appends the attributes of the standard vertex type in the end of the mesh buffer
 // Note: 'buf' already must have a preallocated storage for this new vertex!
-inline void appendSVT(
+void appendSVT(
     MeshBuffer *buf, const v3f &pos, const img::color8 &c,
     const v3f &normal, const v2f &uv)
 {
@@ -259,7 +259,7 @@ inline void appendSVT(
 
 // Appends the attributes of the two color vertex type in the end of the mesh buffer
 // Note: 'buf' already must have a preallocated storage for this new vertex!
-inline void appendNVT(
+void appendNVT(
     MeshBuffer *buf, const v3f &pos, const img::color8 &c,
     const v3f &normal, const v2f &uv, u8 matType)
 {
@@ -274,7 +274,7 @@ inline void appendNVT(
 }
 // Appends the attributes of the two color vertex type in the end of the mesh buffer
 // Note: 'buf' already must have a preallocated storage for this new vertex!
-inline void appendTCNVT(
+void appendTCNVT(
     MeshBuffer *buf, const v3f &pos, const img::color8 &c,
     const v3f &normal, const v2f &uv, u8 matType, const img::color8 &hw_c)
 {
@@ -291,7 +291,7 @@ inline void appendTCNVT(
 
 // Appends the attributes of the standard 2D vertex type in the end of the mesh buffer
 // Note: 'buf' already must have a preallocated storage for this new vertex!
-inline void appendVT2D(
+void appendVT2D(
     MeshBuffer *buf, const v2f &pos, const img::color8 &c, const v2f &uv)
 {
     assert(buf->getVAO()->getVertexType().Name == "Standard2D");
@@ -302,7 +302,25 @@ inline void appendVT2D(
     buf->setV2FAttr(uv, 2, newVNum);
 }
 
-inline void appendIndex(MeshBuffer *buf, u32 index)
+void appendAOVT(
+    MeshBuffer *buf, const v3f &pos, const img::color8 &c,
+    const v3f &normal, const v2f &uv, u8 matType, u64 bones, u64 weights)
+{
+    assert(buf->getVAO()->getVertexType().Name == "AnimatedObject3D");
+
+    u8 firstCustomAttrIndex = 5;
+    u32 newVNum = buf->getVertexCount();
+    buf->setV3FAttr(pos, 0, newVNum);
+    buf->setRGBAAttr(c, 1, newVNum);
+    buf->setV3FAttr(normal, 2, newVNum);
+    buf->setV2FAttr(uv, 3, newVNum);
+    buf->setUInt8Attr(matType, 4, newVNum);
+
+    fillEmptyCustomAttribs(buf, firstCustomAttrIndex);
+}
+
+
+void appendIndex(MeshBuffer *buf, u32 index)
 {
     u32 newINum = buf->getIndexCount();
     buf->setIndexAt(index, newINum);

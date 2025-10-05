@@ -135,7 +135,27 @@ endif()
 
 if(BUILD_CLIENT)
 	find_package(Freetype REQUIRED)
-	find_package(assimp REQUIRED)
+	find_package(assimp 5.3.0)
+
+	if(assimp_FOUND)
+		message(STATUS "Assimp system version enabled")
+	else()
+		message(STATUS "Could not find Assimp system version, finding the local one")
+
+		if(NOT EXISTS "${CMAKE_SOURCE_DIR}/lib/assimp/CMakeLists.txt")
+			message(FATAL_ERROR
+				"Could not find Assimp local version in lib\n"
+				"Clone the repo: git clone -b v5.3.0 https://github.com/assimp/assimp.git in that subdirectory!")
+		endif()
+
+		set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+    	set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE BOOL "" FORCE)
+    	set(ASSIMP_BUILD_SAMPLES OFF CACHE BOOL "" FORCE)
+    	set(ASSIMP_INSTALL OFF CACHE BOOL "" FORCE)
+    	set(ASSIMP_INJECT_DEBUG_POSTFIX OFF CACHE BOOL "" FORCE)
+    
+    	add_subdirectory(lib/assimp)
+	endif()
 
 	#set(ASSIMP_FOUND TRUE)
 	#if (NOT Win32 AND NOT assimp_FOUND)
@@ -597,7 +617,7 @@ if(BUILD_CLIENT)
 	include_directories(SYSTEM
 		${FREETYPE_INCLUDE_DIRS}
 		${SOUND_INCLUDE_DIRS}
-		${ASSIMP_INCLUDE_DIRS}
+		#${ASSIMP_INCLUDE_DIRS}
 	)
 endif()
 
@@ -706,7 +726,7 @@ if(BUILD_CLIENT)
 		${LUA_BIT_LIBRARY}
 		sha256
 		${FREETYPE_LIBRARY}
-		${ASSIMP_LIBRARIES}
+		assimp
 		${PLATFORM_LIBS}
 		# on Android, Luanti depends on SDL2 directly
 		# on other platforms, only IrrlichtRedo depends on SDL2

@@ -18,11 +18,14 @@ protected:
     RenderSystem *rnd_system;
 
     const HudElement *elem;
+
+    img::Image *img1 = nullptr;
+    img::Image *img2 = nullptr;
 public:
     HudSprite(ResourceCache *_cache, RenderSystem *_rnd_system, const HudElement *_elem)
         : cache(_cache), rnd_system(_rnd_system), elem(_elem)
     {}
-    virtual ~HudSprite() = default;
+    virtual ~HudSprite();
 
     HudElementType getType() const
     {

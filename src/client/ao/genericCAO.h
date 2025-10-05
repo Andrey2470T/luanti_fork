@@ -111,8 +111,6 @@ public:
 
     const v3f getRotation() const { return m_rotation; };
 
-    bool isImmortal() const;
-
     const ObjectProperties &getProperties() const { return m_prop; }
 
     const std::string &getName() const { return m_name; }

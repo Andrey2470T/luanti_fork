@@ -20,7 +20,7 @@ class ClientActiveObject : public ActiveObject
 {
 public:
 	ClientActiveObject(u16 id, Client *client, ClientEnvironment *env);
-	virtual ~ClientActiveObject();
+    virtual ~ClientActiveObject() = default;
 
     virtual bool getCollisionBox(aabbf *toset) const { return false; }
     virtual bool getSelectionBox(aabbf *toset) const { return false; }

@@ -4,9 +4,14 @@
 #include "client/mesh/lighting.h"
 #include "client/mesh/meshoperations.h"
 
+Batcher3DVertexType Batcher3D::vType = B3DVT_SVT;
+matrix4 Batcher3D::curPosTransform = matrix4();
+matrix4 Batcher3D::curUVTransform = matrix4();
 bool Batcher3D::applyFaceShading = false;
 bool Batcher3D::smoothLighting = false;
 img::color8 Batcher3D::curLightColor = img::white;
+LightFrame Batcher3D::curLightFrame;
+u8 Batcher3D::curLightSource;
 
 void Batcher3D::appendVertex(MeshBuffer *buf, v3f pos,
     const img::color8 &color, const v3f &normal, v2f uv)

@@ -63,7 +63,7 @@ GameInputSystem::GameInputSystem(Client *_client)
 
 void GameInputSystem::processUserInput(f32 dtime)
 {
-    bool desired = shouldShowTouchControls();
+    bool desired = client->shouldShowTouchControls();
     if (desired && !g_touchcontrols) {
         //g_touchcontrols = new TouchControls(device, texture_src);
 

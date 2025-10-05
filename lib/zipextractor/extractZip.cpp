@@ -2,12 +2,12 @@
 
 #include <cstring>
 #include <algorithm>
-#include <experimental/filesystem>
+#include <filesystem>
 #include <SDL_log.h>
 
 #include <zlib.h>
 
-namespace fs = std::experimental::filesystem;
+namespace fs = std::filesystem;
 
 #define FILENAME(p) fs::path(p).filename()
 #define EXTENSION(p) fs::path(p).extension()

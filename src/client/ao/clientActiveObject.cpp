@@ -13,6 +13,5 @@ ClientActiveObject::ClientActiveObject(u16 id, Client *client,
 	ActiveObject(id),
 	m_client(client),
 	m_env(env)
-{
-}
+{}
 

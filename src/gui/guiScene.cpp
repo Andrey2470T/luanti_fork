@@ -45,14 +45,14 @@ GUIScene::GUIScene(Client *client, gui::IGUIEnvironment *env,
 GUIScene::~GUIScene()
 {
     if (m_model)
-        Environment->getResourceCache()->clearResource<Model>(ResourceType::MODEL, m_model);
+        Environment->getResourceCache()->clearResource<Model>(ResourceType::MODEL, m_model, true);
 }
 
 void GUIScene::setModel(Model *model)
 {
     auto cache = Environment->getResourceCache();
     if (m_model) {
-        cache->clearResource<Model>(ResourceType::MODEL, m_model);
+        cache->clearResource<Model>(ResourceType::MODEL, m_model, true);
     }
 
     m_model = model;

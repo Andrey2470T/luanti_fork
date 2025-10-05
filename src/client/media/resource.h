@@ -35,6 +35,7 @@ struct ResourceInfo
     std::string name;
     std::string path;
     std::unique_ptr<T> data;
+    u32 refcount = 1;
 };
 
 class IResourceSubCache {
@@ -44,8 +45,8 @@ public:
     virtual void* getByID(u32 id) = 0;
     virtual void* getOrLoad(const std::string &name) = 0;
     virtual u32 cacheResource(void* resource, const std::string &name = "") = 0;
-    virtual void clearResource(u32 id) = 0;
-    virtual void clearResource(void* resource) = 0;
+    virtual void clearResource(u32 id, bool force=false) = 0;
+    virtual void clearResource(void* resource, bool force=false) = 0;
 };
 
 template <class T>
@@ -65,8 +66,8 @@ public:
     void *getByID(u32 id) override;
     void *getOrLoad(const std::string &name) override;
     u32 cacheResource(void *res, const std::string &name="") override;
-    void clearResource(u32 id) override;
-    void clearResource(void *res) override;
+    void clearResource(u32 id, bool force=false) override;
+    void clearResource(void *res, bool force=false) override;
 };
 
 class Atlas;
@@ -79,13 +80,6 @@ namespace render
 class ResourceCache
 {
     std::unordered_map<ResourceType, std::unique_ptr<IResourceSubCache>> subcaches;
-    /*std::unique_ptr<ResourceSubCache<img::Image>> images;
-    std::unique_ptr<ResourceSubCache<render::Texture2D>> textures;
-    std::unique_ptr<ResourceSubCache<render::Shader>> shaders;
-    std::unique_ptr<ResourceSubCache<Model>> models;
-    std::unique_ptr<ResourceSubCache<img::Palette>> palettes;
-    std::unique_ptr<ResourceSubCache<Atlas>> atlases;
-    std::unique_ptr<ResourceSubCache<render::TTFont>> fonts;*/
     
     std::unique_ptr<ResourceLoader> loader;
 
@@ -107,9 +101,9 @@ public:
     u32 cacheResource(ResourceType _type, T *res, const std::string &name="");
 
     template<class T>
-    void clearResource(ResourceType _type, u32 id);
+    void clearResource(ResourceType _type, u32 id, bool force=false);
     template<class T>
-    void clearResource(ResourceType _type, T *res);
+    void clearResource(ResourceType _type, T *res, bool force=false);
 
     img::Image *createDummyImage()
     {
@@ -146,6 +140,8 @@ void *ResourceSubCache<T>::get(const std::string &name)
     if (it == cache.end())
         return nullptr;
 
+    ++(it->get()->refcount);
+
     return it->get()->data.get();
 }
 
@@ -156,6 +152,8 @@ void *ResourceSubCache<T>::getByID(u32 _id)
         infostream << "ResourceSubCache<T>::getByID(): Resource ID " << _id << " is out of range" << std::endl;
         return nullptr;
     }
+
+    ++(cache.at(_id).get()->refcount);
 
     return cache.at(_id).get()->data.get();
 }
@@ -224,24 +222,31 @@ u32 ResourceSubCache<T>::cacheResource(void *res, const std::string &name)
 }
 
 template<class T>
-void ResourceSubCache<T>::clearResource(u32 id)
+void ResourceSubCache<T>::clearResource(u32 id, bool force)
 {
     if (id >= cache.size())
         return;
 
-    cache.erase(cache.begin() + id);
+    auto it = cache.begin() + id;
+
+    if (force || it->get()->refcount == 1)
+        cache.erase(it);
+    else
+        --(it->get()->refcount);
 }
 
 template<class T>
-void ResourceSubCache<T>::clearResource(void *res)
+void ResourceSubCache<T>::clearResource(void *res, bool force)
 {
     auto it = std::find_if(cache.begin(), cache.end(), [res] (const std::unique_ptr<ResourceInfo<T>> &elem)
     {
         return elem.get()->data.get() == static_cast<T *>(res);
     });
 
-    if (it != cache.end())
+    if (force || it->get()->refcount == 1)
         cache.erase(it);
+    else
+        --(it->get()->refcount);
 }
 
 template <class T>
@@ -293,20 +298,24 @@ T *ResourceCache::getOrLoad(ResourceType _type, const std::string &_name,
 template<class T>
 u32 ResourceCache::cacheResource(ResourceType _type, T *res, const std::string &name)
 {
+    if (!res)
+        return 0;
     MutexAutoLock lock(resource_mutex);
     return subcaches[_type]->cacheResource(res, name);
 }
 
 template<class T>
-void ResourceCache::clearResource(ResourceType _type, u32 id)
+void ResourceCache::clearResource(ResourceType _type, u32 id, bool force)
 {
     MutexAutoLock lock(resource_mutex);
-    subcaches[_type]->clearResource(id);
+    subcaches[_type]->clearResource(id, force);
 }
 
 template<class T>
-void ResourceCache::clearResource(ResourceType _type, T *res)
+void ResourceCache::clearResource(ResourceType _type, T *res, bool force)
 {
+    if (!res)
+        return;
     MutexAutoLock lock(resource_mutex);
-    subcaches[_type]->clearResource(res);
+    subcaches[_type]->clearResource(res, force);
 }

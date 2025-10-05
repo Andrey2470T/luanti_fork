@@ -358,9 +358,6 @@ class GUISkin
 public:
     GUISkin(Renderer *_renderer, GUISkinType type=GUISkinType::WindowsClassic);
 
-    //! destructor
-    ~GUISkin();
-
     //! returns display density scaling factor
     f32 getScale() const { return Scale; }
 

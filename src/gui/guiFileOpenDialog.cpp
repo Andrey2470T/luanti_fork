@@ -143,7 +143,7 @@ const wchar_t *CGUIFileOpenDialog::getDirectoryNameW() const
 void CGUIFileOpenDialog::setFileName(const std::string &name)
 {
 	FileName = name;
-	pathToStringW(FileNameW, FileName);
+    //pathToStringW(FileNameW, FileName);
 }
 
 void CGUIFileOpenDialog::setDirectoryName(const std::string &name)
@@ -151,7 +151,7 @@ void CGUIFileOpenDialog::setDirectoryName(const std::string &name)
 	FileDirectory = name;
 	FileDirectoryFlat = name;
 	//FileSystem->flattenFilename(FileDirectoryFlat);
-	pathToStringW(FileDirectoryFlatW, FileDirectoryFlat);
+    //pathToStringW(FileDirectoryFlatW, FileDirectoryFlat);
 }
 
 //! called if an event happened.

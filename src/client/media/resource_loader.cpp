@@ -88,19 +88,30 @@ std::string getIncludePath(const std::string &name)
     return "";
 }
 
+#define PUT_CONSTANT(str, name, value) \
+    str += "#define "; \
+    str += name; \
+    str += " "; \
+    str += std::to_string(value); \
+    str += "\n";
+
 render::Shader *ResourceLoader::loadShader(const std::string &path)
 {
-	std::ostringstream header;
+    std::string header;
 
-	header << std::noboolalpha << std::showpoint;
+    //header << std::noboolalpha << std::showpoint;
 
-    header << "#version 330 core\n";
+    //header << "#version 330 core\n";
 
-	header << "#define ENABLE_WAVING_WATER " << (u8)enable_waving_water << "\n";
+    PUT_CONSTANT(header, "ENABLE_WAVING_WATER", (u8)enable_waving_water);
+    //header << "#define ENABLE_WAVING_WATER " << (u8)enable_waving_water << "\n";
 	if (enable_waving_water) {
-		header << "#define WATER_WAVE_HEIGHT " << water_wave_height << "\n";
-		header << "#define WATER_WAVE_LENGTH " << water_wave_length << "\n";
-		header << "#define WATER_WAVE_SPEED " << water_wave_speed << "\n";
+        PUT_CONSTANT(header, "WATER_WAVE_HEIGHT", water_wave_height);
+        //header << "#define WATER_WAVE_HEIGHT " << water_wave_height << "\n";
+        PUT_CONSTANT(header, "WATER_WAVE_LENGTH", water_wave_length);
+        //header << "#define WATER_WAVE_LENGTH " << water_wave_length << "\n";
+        PUT_CONSTANT(header, "WATER_WAVE_SPEED", water_wave_speed);
+        //header << "#define WATER_WAVE_SPEED " << water_wave_speed << "\n";
 	}
 	
 	header << "#define ENABLE_WAVING_LEAVES " << (u8)enable_waving_leaves << "\n";
@@ -148,6 +159,8 @@ render::Shader *ResourceLoader::loadShader(const std::string &path)
     // Note: PLAIN isn't a material actually used by tiles, rather just entities.
     header << "#define TILE_MATERIAL_PLAIN 10\n";
     header << "#define TILE_MATERIAL_PLAIN_ALPHA 11\n";
+
+    core::InfoStream << "ResourceLoader::loadShader() shader code:\n" << header.str() << "\n";
 	
 	std::string final_header = "#line 0\n"; // reset the line counter for meaningful diagnostics
 
@@ -155,6 +168,9 @@ render::Shader *ResourceLoader::loadShader(const std::string &path)
     vs_code = parseShader(path, "vertex");
     fs_code = parseShader(path, "fragment");
     gs_code = parseShader(path, "geometry");
+
+    if (vs_code.empty() || fs_code.empty())
+        return nullptr;
 
     std::string vertex_code = header.str() + final_header + vs_code;
     std::string fragment_code = header.str() + final_header + fs_code;
@@ -214,13 +230,18 @@ std::string ResourceLoader::parseShader(const std::string &path, const std::stri
     std::vector<std::string> lines;
 
     std::string fullname = "opengl_" + type + ".glsl";
-    fs::path fullpath(path);
+    fs::path fullpath(porting::path_share);
+    fullpath /= "client";
+    fullpath /= "shaders";
+    fullpath /= path;
     fullpath /= fullname;
 
     File::readLines(fullpath, lines);
 
-    if (lines.empty())
+    if (lines.empty()) {
+        errorstream << "ResourceLoader::loadShader(): failed to compile " << type << " shader: no code provided" << std::endl;
         return "";
+    }
 
     std::string res_code;
 

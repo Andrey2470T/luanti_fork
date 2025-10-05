@@ -1231,7 +1231,7 @@ void MapblockMeshGenerator::drawFencelikeNode()
 /*
     Gets nth node tile (0 <= n <= 5).
 */
-void getNodeTileN(MapNode mn, const v3s16 &p, u8 tileindex, MeshMakeData *data, TileSpec &tile)
+void MapblockMeshGenerator::getNodeTileN(MapNode mn, const v3s16 &p, u8 tileindex, MeshMakeData *data, TileSpec &tile)
 {
     const NodeDefManager *ndef = data->m_nodedef;
     const ContentFeatures &f = ndef->get(mn);
@@ -1248,7 +1248,7 @@ void getNodeTileN(MapNode mn, const v3s16 &p, u8 tileindex, MeshMakeData *data, 
 /*
     Gets node tile given a face direction.
 */
-void getNodeTile(MapNode mn, const v3s16 &p, const v3s16 &dir, MeshMakeData *data, TileSpec &tile)
+void MapblockMeshGenerator::getNodeTile(MapNode mn, const v3s16 &p, const v3s16 &dir, MeshMakeData *data, TileSpec &tile)
 {
     const NodeDefManager *ndef = data->m_nodedef;
 

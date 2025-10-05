@@ -56,8 +56,8 @@ public:
     GUISkin *createSkin() override;
 
 	//! Creates the image list from the given texture.
-	virtual IGUIImageList *createImageList(img::Image *texture,
-            v2i imageSize, bool useAlphaChannel) override;
+    //virtual IGUIImageList *createImageList(img::Image *texture,
+    //        v2i imageSize, bool useAlphaChannel) override;
 
 	//! returns the font
     render::TTFont *getFont(const std::string &filename) override;

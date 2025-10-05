@@ -597,4 +597,4 @@ void GenericCAO::processMessage(const std::string &data)
 }
 
 // Prototype
-static GenericCAO proto_GenericCAO(nullptr, nullptr);
+//static GenericCAO proto_GenericCAO(nullptr, nullptr);

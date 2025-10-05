@@ -98,6 +98,11 @@ public:
 		return m_is_player;
 	}
 
+    bool isImmortal() const
+    {
+        return itemgroup_get(getGroups(), "immortal");
+    }
+
     bool isVisible() const
 	{
 		return m_is_visible;

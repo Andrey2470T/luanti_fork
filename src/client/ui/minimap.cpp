@@ -214,9 +214,9 @@ Minimap::~Minimap()
     //m_meshbuffer.reset();
 
 	if (data->minimap_mask_round)
-        cache->clearResource<img::Image>(ResourceType::IMAGE, data->minimap_mask_round);
+        cache->clearResource<img::Image>(ResourceType::IMAGE, data->minimap_mask_round, true);
 	if (data->minimap_mask_square)
-        cache->clearResource<img::Image>(ResourceType::IMAGE, data->minimap_mask_square);
+        cache->clearResource<img::Image>(ResourceType::IMAGE, data->minimap_mask_square, true);
 
     // Dynamic textures are not cached
     delete data->texture;
@@ -478,7 +478,7 @@ render::Texture2D *Minimap::getMinimapTexture()
         );
         g_imgmodifier->copyTo(image, map_image, nullptr, &destRect);
 
-        cache->clearResource<img::Image>(ResourceType::IMAGE, image);
+        cache->clearResource<img::Image>(ResourceType::IMAGE, image, true);
 	}
 
     g_imgmodifier->copyTo(map_image, minimap_image, nullptr, nullptr, true);

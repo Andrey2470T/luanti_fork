@@ -98,6 +98,8 @@ protected:
 	bool m_clear {true};
 };
 
+#define NO_DEPTH_TEXTURE 255
+
 /**
  * Texture buffer represents a framebuffer with a multiple attached textures.
  *
@@ -138,8 +140,6 @@ public:
 	virtual void reset(PipelineContext &context) override;
 	void swapTextures(u8 texture_a, u8 texture_b);
 private:
-	static const u8 NO_DEPTH_TEXTURE = 255;
-
 	struct TextureDefinition
 	{
 		bool valid { false };
@@ -184,8 +184,6 @@ public:
     render::FrameBuffer *getRenderTarget(PipelineContext &context);
 
 private:
-	static const u8 NO_DEPTH_TEXTURE = 255;
-
 	TextureBuffer *buffer;
     std::unordered_map<u8, u8> texture_map;
     std::pair<u8, u8> depth_stencil { NO_DEPTH_TEXTURE, 0 };

@@ -10,8 +10,13 @@
 std::vector<std::string> getTexturesDefaultPaths()
 {
     std::vector<std::string> paths;
-    for (auto &entry : fs::recursive_directory_iterator(g_settings->get("texture_path")))
-        paths.push_back(entry.path().string());
+
+    fs::path texpath = g_settings->get("texture_path");
+
+    if (fs::exists(texpath)) {
+        for (auto &entry : fs::recursive_directory_iterator(texpath))
+            paths.push_back(entry.path().string());
+    }
 
     fs::path basePath = porting::path_share;
     basePath /= "textures";

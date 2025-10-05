@@ -283,14 +283,14 @@ bool CGUIListBox::OnEvent(const core::Event &event)
 				// dont change selection if the key buffer matches the current item
 				if (Selected > -1 && KeyBuffer.size() > 1) {
 					if (Items[Selected].Text.size() >= KeyBuffer.size() &&
-                            equal_ignore_case<wchar_t>(KeyBuffer, Items[Selected].Text.substr(0, KeyBuffer.size())))
+                        utils::equal_ignore_case<wchar_t>(KeyBuffer, Items[Selected].Text.substr(0, KeyBuffer.size())))
 						return true;
 				}
 
 				s32 current;
 				for (current = start + 1; current < (s32)Items.size(); ++current) {
 					if (Items[current].Text.size() >= KeyBuffer.size()) {
-                        if (equal_ignore_case<wchar_t>(KeyBuffer, Items[current].Text.substr(0, KeyBuffer.size()))) {
+                        if (utils::equal_ignore_case<wchar_t>(KeyBuffer, Items[current].Text.substr(0, KeyBuffer.size()))) {
 							if (Parent && Selected != current && !Selecting && !MoveOverSelect) {
 								core::Event e;
 								e.Type = EET_GUI_EVENT;
@@ -306,7 +306,7 @@ bool CGUIListBox::OnEvent(const core::Event &event)
 				}
 				for (current = 0; current <= start; ++current) {
 					if (Items[current].Text.size() >= KeyBuffer.size()) {
-                        if (equal_ignore_case<wchar_t>(KeyBuffer, Items[current].Text.substr(0, KeyBuffer.size()))) {
+                        if (utils::equal_ignore_case<wchar_t>(KeyBuffer, Items[current].Text.substr(0, KeyBuffer.size()))) {
 							if (Parent && Selected != current && !Selecting && !MoveOverSelect) {
 								Selected = current;
 								core::Event e;

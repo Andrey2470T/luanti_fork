@@ -70,7 +70,10 @@ public:
     void removeNode(v3s16 p);
 
 	// For debug printing
-	void PrintInfo(std::ostream &out) override;
+    void PrintInfo(std::ostream &out) override
+    {
+        out<<"ClientMap: ";
+    }
 
 	void onSettingChanged(std::string_view name, bool all);
 

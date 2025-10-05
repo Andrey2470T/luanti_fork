@@ -152,6 +152,12 @@ bool CGUIStaticText::isWordWrapEnabled() const
     return Text->isWordWrap();
 }
 
+void CGUIStaticText::setText(const wchar_t *text)
+{
+    IGUIElement::setText(text);
+    Text->setText(text);
+}
+
 void CGUIStaticText::setRightToLeft(bool rtl)
 {
     Text->enableRightToLeft(rtl);

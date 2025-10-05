@@ -125,9 +125,9 @@ public:
 	\return Pointer to the font. Returns 0 if the font could not be loaded.
 	This pointer should not be dropped. See IReferenceCounted::drop() for
 	more information. */
-	virtual IGUIImageList *createImageList(img::Image *texture,
-            v2i imageSize,
-			bool useAlphaChannel) = 0;
+    //virtual IGUIImageList *createImageList(img::Image *texture,
+    //        v2i imageSize,
+    //		bool useAlphaChannel) = 0;
 
 	//! Returns pointer to the font with the specified filename.
 	/** Loads the font if it was not loaded before.

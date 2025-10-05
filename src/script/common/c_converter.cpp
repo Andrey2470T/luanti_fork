@@ -3,6 +3,7 @@
 // Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "Image/Converting.h"
+#include "Utils/TypeConverter.h"
 extern "C" {
 #include <lua.h>
 #include <lauxlib.h>
@@ -105,6 +106,24 @@ void push_v2s16(lua_State *L, v2s16 p)
 	lua_setfield(L, -2, "x");
 	lua_pushinteger(L, p.Y);
 	lua_setfield(L, -2, "y");
+}
+
+void push_v2s32(lua_State *L, v2i p)
+{
+    lua_createtable(L, 0, 2);
+    lua_pushinteger(L, p.X);
+    lua_setfield(L, -2, "x");
+    lua_pushinteger(L, p.Y);
+    lua_setfield(L, -2, "y");
+}
+
+void push_v2u32(lua_State *L, v2u p)
+{
+    lua_createtable(L, 0, 2);
+    lua_pushinteger(L, p.X);
+    lua_setfield(L, -2, "x");
+    lua_pushinteger(L, p.Y);
+    lua_setfield(L, -2, "y");
 }
 
 void push_v2i(lua_State *L, v2i p)
@@ -278,6 +297,11 @@ bool read_color(lua_State *L, int index, img::color8 *color)
 	}
 
 	return true;
+}
+
+v2i read_v2s32(lua_State *L, int index)
+{
+    return toV2i(read_v2f(L, index));
 }
 
 img::color8 read_ARGB8(lua_State *L, int index)

@@ -130,8 +130,17 @@ void RenderCAO::addMesh()
 
 void RenderCAO::removeMesh()
 {
-    if (m_model)
-        m_cache->clearResource<Model>(ResourceType::MODEL, m_model);
+    if (m_model) {
+        auto mesh = m_model->getMesh();
+
+        for (u8 k = 0; k < mesh->getBufferLayersCount(0); k++) {
+            auto tile = mesh->getBufferLayer(0, k).first;
+
+            if (tile->tile_ref)
+                m_cache->clearResource<img::Image>(ResourceType::IMAGE, tile->tile_ref);
+        }
+        m_cache->clearResource<Model>(ResourceType::MODEL, m_model, true);
+    }
 
     m_model = nullptr;
 }

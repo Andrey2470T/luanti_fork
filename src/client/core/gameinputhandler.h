@@ -62,7 +62,6 @@ public:
     void processUserInput(f32 dtime);
     void processKeyInput();
     void processItemSelection(u16 *new_playeritem);
-    bool shouldShowTouchControls();
 
     void toggleFreeMove();
     void toggleFreeMoveAlt();

@@ -132,7 +132,7 @@ FontManager::FontManager(ResourceCache *_cache)
 FontManager::~FontManager()
 {
     for (auto &p : fonts)
-        cache->clearResource<render::TTFont>(ResourceType::FONT, p.second.first);
+        cache->clearResource<render::TTFont>(ResourceType::FONT, p.second.first, true);
 
     g_settings->deregisterAllChangedCallbacks(this);
 }

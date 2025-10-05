@@ -19,9 +19,6 @@ public:
 	//! constructor
     CGUIImage(IGUIEnvironment *environment, IGUIElement *parent, s32 id, recti rectangle, const rectf &middle=rectf());
 
-	//! destructor
-	virtual ~CGUIImage();
-
 	//! sets an image
     void setImage(img::Image *image, std::optional<AtlasTileAnim> animParams = std::nullopt,
         std::optional<u32> offset = std::nullopt) override;
