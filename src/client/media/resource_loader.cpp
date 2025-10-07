@@ -8,6 +8,7 @@
 #include "file.h"
 #include "log.h"
 #include "porting.h"
+#include <sstream>
 
 ResourceLoader::ResourceLoader()
 {
@@ -80,6 +81,7 @@ std::string getIncludePath(const std::string &name)
     for (auto &p : paths) {
         std::string fullname = name + ".glsl";
         fs::path fullpath(fs::path(p) / "includes" / fullname);
+        std::cout << "fullpath: " << fullpath << std::endl;
 
         if (fs::exists(fullpath))
             return fullpath.string();
@@ -89,66 +91,61 @@ std::string getIncludePath(const std::string &name)
 }
 
 #define PUT_CONSTANT(str, name, value) \
-    str += "#define "; \
-    str += name; \
-    str += " "; \
-    str += std::to_string(value); \
-    str += "\n";
+    str << "#define " << name << " " << value << "\n";
 
 render::Shader *ResourceLoader::loadShader(const std::string &path)
 {
-    std::string header;
+    std::ostringstream header;
 
-    //header << std::noboolalpha << std::showpoint;
+    header << std::noboolalpha << std::showpoint;
 
-    //header << "#version 330 core\n";
+    header << "#version 330 core\n";
 
-    PUT_CONSTANT(header, "ENABLE_WAVING_WATER", (u8)enable_waving_water);
-    //header << "#define ENABLE_WAVING_WATER " << (u8)enable_waving_water << "\n";
+    header << "#define ENABLE_WAVING_WATER " << (enable_waving_water ? 1 : 0) << "\n";
 	if (enable_waving_water) {
-        PUT_CONSTANT(header, "WATER_WAVE_HEIGHT", water_wave_height);
-        //header << "#define WATER_WAVE_HEIGHT " << water_wave_height << "\n";
-        PUT_CONSTANT(header, "WATER_WAVE_LENGTH", water_wave_length);
-        //header << "#define WATER_WAVE_LENGTH " << water_wave_length << "\n";
-        PUT_CONSTANT(header, "WATER_WAVE_SPEED", water_wave_speed);
-        //header << "#define WATER_WAVE_SPEED " << water_wave_speed << "\n";
+        //PUT_CONSTANT(header, "WATER_WAVE_HEIGHT", water_wave_height);
+        header << "#define WATER_WAVE_HEIGHT " << water_wave_height << "\n";
+        //PUT_CONSTANT(header, "WATER_WAVE_LENGTH", water_wave_length);
+        header << "#define WATER_WAVE_LENGTH " << water_wave_length << "\n";
+        //PUT_CONSTANT(header, "WATER_WAVE_SPEED", water_wave_speed);
+        header << "#define WATER_WAVE_SPEED " << water_wave_speed << "\n";
 	}
 	
-	header << "#define ENABLE_WAVING_LEAVES " << (u8)enable_waving_leaves << "\n";
-	header << "#define ENABLE_WAVING_PLANTS " << (u8)enable_waving_plants << "\n";
+	header << "#define ENABLE_WAVING_LEAVES " << (enable_waving_leaves ? 1 : 0) << "\n";
+	header << "#define ENABLE_WAVING_PLANTS " << (enable_waving_plants ? 1 : 0) << "\n";
 	
-	header << "#define ENABLE_TONE_MAPPING " << (u8)tone_mapping << "\n";
+	header << "#define ENABLE_TONE_MAPPING " << (tone_mapping ? 1 : 0) << "\n";
 
-    header << "#define ENABLE_DYNAMIC_SHADOWS " << (u8)enable_dynamic_shadows << "\n";
+    header << "#define ENABLE_DYNAMIC_SHADOWS " << (enable_dynamic_shadows ? 1 : 0) << "\n";
 	if (enable_dynamic_shadows) {
-		header << "#define COLORED_SHADOWS " << (u8)shadow_map_color << "\n";
-		header << "#define POISSON_FILTER " << (u8)shadow_poisson_filter << "\n";
-		header << "#define ENABLE_WATER_REFLECTIONS " << (u8)enable_water_reflections << "\n";
-		header << "#define ENABLE_TRANSLUCENT_FOLIAGE " << (u8)enable_translucent_foliage << "\n";
-		header << "#define ENABLE_NODE_SPECULAR " << (u8)enable_node_specular << "\n";
+		header << "#define COLORED_SHADOWS " << (shadow_map_color ? 1 : 0) << "\n";
+		header << "#define POISSON_FILTER " << (shadow_poisson_filter ? 1 : 0) << "\n";
+		header << "#define ENABLE_WATER_REFLECTIONS " << (enable_water_reflections ? 1 : 0) << "\n";
+		header << "#define ENABLE_TRANSLUCENT_FOLIAGE " << (enable_translucent_foliage ? 1 : 0) << "\n";
+		header << "#define ENABLE_NODE_SPECULAR " << (enable_node_specular ? 1 : 0) << "\n";
 
         header << "#define SHADOW_FILTER " << shadow_filters << "\n";
 		header << "#define SOFTSHADOWRADIUS " << shadow_soft_radius << "\n";
 	}
 
-    header << "#define ENABLE_BLOOM " << (u8)enable_bloom << "\n";
+    header << "#define ENABLE_BLOOM " << (enable_bloom ? 1 : 0) << "\n";
 	if (enable_bloom)
-		header << "#define ENABLE_BLOOM_DEBUG " << (u8)enable_bloom_debug << "\n";
+		header << "#define ENABLE_BLOOM_DEBUG " << (enable_bloom_debug ? 1 : 0) << "\n";
 
-	header << "#define ENABLE_AUTO_EXPOSURE " << (u8)enable_auto_exposure << "\n";
+	header << "#define ENABLE_AUTO_EXPOSURE " << (enable_auto_exposure ? 1 : 0) << "\n";
 
 	if (antialiasing == "ssaa") {
 		header << "#define ENABLE_SSAA 1\n";
 		header << "#define SSAA_SCALE " << fsaa << ".\n";
 	}
 
-	header << "#define ENABLE_DITHERING " << (u8)debanding << "\n";
+	header << "#define ENABLE_DITHERING " << (debanding ? 1 : 0) << "\n";
 
-	header << "#define VOLUMETRIC_LIGHT " << (u8)enable_volumetric_lighting << "\n";
+	header << "#define VOLUMETRIC_LIGHT " << (enable_volumetric_lighting ? 1 : 0) << "\n";
 
     header << "#define TILE_MATERIAL_BASIC 0\n";
     header << "#define TILE_MATERIAL_ALPHA 1\n";
-    header << "#define TILE_MATERIAL_LIQUID_TRANSPARENT 2\n",
+    header << "#define TILE_MATERIAL_LIQUID_TRANSPARENT 2\n";
     header << "#define TILE_MATERIAL_LIQUID_OPAQUE 3\n";
     header << "#define TILE_MATERIAL_WAVING_LEAVES 4\n";
     header << "#define TILE_MATERIAL_WAVING_PLANTS 5\n";
@@ -160,9 +157,7 @@ render::Shader *ResourceLoader::loadShader(const std::string &path)
     header << "#define TILE_MATERIAL_PLAIN 10\n";
     header << "#define TILE_MATERIAL_PLAIN_ALPHA 11\n";
 
-    core::InfoStream << "ResourceLoader::loadShader() shader code:\n" << header.str() << "\n";
-	
-	std::string final_header = "#line 0\n"; // reset the line counter for meaningful diagnostics
+	std::string final_header = "#line 0\n";
 
     std::string vs_code, fs_code, gs_code;
     vs_code = parseShader(path, "vertex");
@@ -175,6 +170,9 @@ render::Shader *ResourceLoader::loadShader(const std::string &path)
     std::string vertex_code = header.str() + final_header + vs_code;
     std::string fragment_code = header.str() + final_header + fs_code;
     std::string geometry_code;
+
+    //std::cout << "loadShader(): vertex code: " << vertex_code << std::endl;
+    //std::cout << "loadShader(): fragment code: " << fragment_code << std::endl;
 	
     if (!gs_code.empty())
          geometry_code = header.str() + final_header + gs_code;
@@ -247,22 +245,31 @@ std::string ResourceLoader::parseShader(const std::string &path, const std::stri
 
     for (auto &line : lines) {
         if (str_starts_with(line, "#include")) {
+            std::cout << "include on this line" << std::endl;
             auto s = line.find("<");
             auto e = line.find(">");
 
             if (s == std::string::npos || e == std::string::npos)
                 continue;
+            s++;
 
-            auto filename = line.substr(s, e);
+            auto filename = line.substr(s, e-s);
+            //std::cout << "include filename: " << filename << std::endl;
             auto include_p = getIncludePath(filename);
+            //std::cout << "include path after getIncludePath: " << include_p << std::endl;
 
             std::string include_code;
             File::read(include_p, include_code);
+            //std::cout << "include code: " << include_code << std::endl;
             res_code += include_code;
         }
-        else
+        else {
             res_code += line;
+            res_code += "\n";
+        }
     }
+
+    std::cout << "loadShader(): total code: " << res_code << std::endl;
 
     return res_code;
 }

@@ -596,5 +596,9 @@ void GenericCAO::processMessage(const std::string &data)
 	}
 }
 
+// Explicit template instantiations
+template class SmoothTranslator<v3f>;
+template class SmoothTranslator<f32>;
+
 // Prototype
 //static GenericCAO proto_GenericCAO(nullptr, nullptr);

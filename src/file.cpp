@@ -11,6 +11,7 @@ bool File::read(fs::path p, std::string &read_data)
         return false;
     }
 
+    is.seekg(0, std::ios::end);
     u32 size = is.tellg();
 
     read_data.resize(size);

@@ -56,7 +56,8 @@ const render::VertexTypeDescriptor SkyboxVType{
     3,
     4,
     true,
-    true
+    true,
+    2
 };
 
 // Getters used for DefaultVType and TwoColorVType
