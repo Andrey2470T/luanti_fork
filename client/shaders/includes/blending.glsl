@@ -19,7 +19,7 @@ vec4 AlphaBlend(vec4 src, vec4 dst)
         color = vec4(src.rgb * src.a + dst.rgb * (1.0 - src.a), dst.a);
     }
     else {
-        f32 resA = src.a + dst.a * (1.0 - src.a);
+        float resA = src.a + dst.a * (1.0 - src.a);
 
         if (resA == 0)
             return vec4(0, 0, 0, 0);
@@ -112,12 +112,12 @@ vec4 GrainMergeBlend(vec4 src, vec4 dst)
 
 vec4 DarkenOnlyBlend(vec4 src, vec4 dst)
 {
-	return vec4(min(src, dst), dst.a);
+	return vec4(min(src.rgb, dst.rgb), dst.a);
 }
 
 vec4 LightenOnlyBlend(vec4 src, vec4 dst)
 {
-	return vec4(max(src, dst), dst.a);
+	return vec4(max(src.rgb, dst.rgb), dst.a);
 }
 
 vec4 DoBlend(vec4 src, vec4 dst, int blendMode)
@@ -133,7 +133,7 @@ vec4 DoBlend(vec4 src, vec4 dst, int blendMode)
     else if (blendMode == 4)
         return DivisionBlend(src, dst);
     else if (blendMode == 5)
-        return SceeenBlend(src, dst);
+        return ScreenBlend(src, dst);
     else if (blendMode == 6)
         return OverlayBlend(src, dst);
     else if (blendMode == 7)
@@ -147,7 +147,7 @@ vec4 DoBlend(vec4 src, vec4 dst, int blendMode)
     else if (blendMode == 11)
         return DarkenOnlyBlend(src, dst);
     else if (blendMode == 12)
-        return LightOnlyBlend(src, dst);
+        return LightenOnlyBlend(src, dst);
 
     return vec4(0.0);
 }

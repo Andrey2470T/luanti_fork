@@ -1,11 +1,11 @@
-layout (std140) uniform mFogParams {
+layout (std140) uniform FogParams {
     int enable;
     int type;
     vec4 color;
     float start;
     float end;
     float density;
-};
+} mFogParams;
 
 float computeFog(vec3 viewPos)
 {

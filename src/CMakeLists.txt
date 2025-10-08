@@ -148,13 +148,15 @@ if(BUILD_CLIENT)
 				"Clone the repo: git clone -b v5.3.0 https://github.com/assimp/assimp.git in that subdirectory!")
 		endif()
 
+		message(STATUS "Enabled Assimp local version at lib/assimp")
+
 		set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
     	set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE BOOL "" FORCE)
     	set(ASSIMP_BUILD_SAMPLES OFF CACHE BOOL "" FORCE)
     	set(ASSIMP_INSTALL OFF CACHE BOOL "" FORCE)
     	set(ASSIMP_INJECT_DEBUG_POSTFIX OFF CACHE BOOL "" FORCE)
     
-    	add_subdirectory(lib/assimp)
+    	add_subdirectory(${CMAKE_SOURCE_DIR}/lib/assimp ${CMAKE_BINARY_DIR}/assimp)
 	endif()
 
 	#set(ASSIMP_FOUND TRUE)

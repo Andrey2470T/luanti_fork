@@ -103,11 +103,8 @@ render::Shader *ResourceLoader::loadShader(const std::string &path)
 
     header << "#define ENABLE_WAVING_WATER " << (enable_waving_water ? 1 : 0) << "\n";
 	if (enable_waving_water) {
-        //PUT_CONSTANT(header, "WATER_WAVE_HEIGHT", water_wave_height);
         header << "#define WATER_WAVE_HEIGHT " << water_wave_height << "\n";
-        //PUT_CONSTANT(header, "WATER_WAVE_LENGTH", water_wave_length);
         header << "#define WATER_WAVE_LENGTH " << water_wave_length << "\n";
-        //PUT_CONSTANT(header, "WATER_WAVE_SPEED", water_wave_speed);
         header << "#define WATER_WAVE_SPEED " << water_wave_speed << "\n";
 	}
 	
@@ -170,9 +167,6 @@ render::Shader *ResourceLoader::loadShader(const std::string &path)
     std::string vertex_code = header.str() + final_header + vs_code;
     std::string fragment_code = header.str() + final_header + fs_code;
     std::string geometry_code;
-
-    //std::cout << "loadShader(): vertex code: " << vertex_code << std::endl;
-    //std::cout << "loadShader(): fragment code: " << fragment_code << std::endl;
 	
     if (!gs_code.empty())
          geometry_code = header.str() + final_header + gs_code;
@@ -234,6 +228,9 @@ std::string ResourceLoader::parseShader(const std::string &path, const std::stri
     fullpath /= path;
     fullpath /= fullname;
 
+    if (type == "geometry" && !fs::exists(fullpath))
+        return "";
+
     File::readLines(fullpath, lines);
 
     if (lines.empty()) {
@@ -245,7 +242,6 @@ std::string ResourceLoader::parseShader(const std::string &path, const std::stri
 
     for (auto &line : lines) {
         if (str_starts_with(line, "#include")) {
-            std::cout << "include on this line" << std::endl;
             auto s = line.find("<");
             auto e = line.find(">");
 
@@ -254,22 +250,21 @@ std::string ResourceLoader::parseShader(const std::string &path, const std::stri
             s++;
 
             auto filename = line.substr(s, e-s);
-            //std::cout << "include filename: " << filename << std::endl;
             auto include_p = getIncludePath(filename);
-            //std::cout << "include path after getIncludePath: " << include_p << std::endl;
 
             std::string include_code;
-            File::read(include_p, include_code);
-            //std::cout << "include code: " << include_code << std::endl;
-            res_code += include_code;
+            bool read_success = File::read(include_p, include_code);
+
+            if (read_success) {
+                res_code += include_code;
+                res_code += "\n";
+            }
         }
         else {
             res_code += line;
             res_code += "\n";
         }
     }
-
-    std::cout << "loadShader(): total code: " << res_code << std::endl;
 
     return res_code;
 }
