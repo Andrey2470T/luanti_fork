@@ -140,7 +140,7 @@ static bool logOnce(const std::ostringstream &from, std::ostream &log_to)
 
 GenericCAO::GenericCAO(Client *client, ClientEnvironment *env):
     ClientActiveObject(0, client, env),
-    m_node_mgr(client->getRenderSystem()->getNodeManager())
+    m_node_mgr(client ? client->getRenderSystem()->getNodeManager() : nullptr)
 {}
 
 void GenericCAO::initialize(const std::string &data)

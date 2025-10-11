@@ -300,7 +300,8 @@ void TouchControls::applyLayout(const ButtonLayout &layout)
 	});
 
     m_status_text = std::make_unique<UITextSprite>(
-        m_rndsys->getFontManager(), EnrichedString(), m_rndsys->getRenderer(), m_cache, false, false);
+        m_rndsys->getFontManager(), m_rndsys->getGUIEnvironment()->getSkin(),
+        EnrichedString(), m_rndsys->getRenderer(), m_cache, false, false);
 	m_status_text->setVisible(false);
 
 	// applyLayout can be called at any time, also e.g. while the overflow menu

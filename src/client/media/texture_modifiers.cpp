@@ -187,7 +187,7 @@ img::Image *TextureGenerator::generateForMesh(const std::string &name)
 }
 
 // 'texmod_str_part' can be either some image e.g, "default_stone.png" or modifier e.g. "[multiply:red"
-bool TextureGenerator::generatePart(const std::string &texmod_str_part, img::Image *base_img)
+bool TextureGenerator::generatePart(const std::string &texmod_str_part, img::Image *&base_img)
 {
     if (base_img && base_img->getSize().getLengthSQ() == 0) {
         errorstream << "TextureGenerator::generatePart(): baseimg is zero-sized?!"
@@ -198,18 +198,22 @@ bool TextureGenerator::generatePart(const std::string &texmod_str_part, img::Ima
 
     // This is either an image or invalid name
     if (texmod_str_part[0] != '[') {
-        img::Image *img = resCache->getOrLoad<img::Image>(ResourceType::IMAGE, texmod_str_part, true);
+        //core::InfoStream << "generatePart: texmod_str_part is an image\n";
+        img::Image *img = resCache->getOrLoad<img::Image>(ResourceType::IMAGE, texmod_str_part, false, false, true);
 
         if (!img) {
+            //core::InfoStream << "generatePart: no image loaded:" << texmod_str_part << "\n";
             if (texmod_str_part.empty())
                 return true;
 
             errorstream << "TextureGenerator::generatePart(): Could not load image \""
 			    << texmod_str_part << "\" while building texture; "
 			    "Creating a dummy image" << std::endl;
+            return false;
         }
 
         if (!base_img) {
+            //core::InfoStream << "generatePart: create base image\n";
             auto size = img->getSize();
             base_img = new img::Image(img::PF_RGBA8, size.X, size.Y);
             imgMdf->copyTo(img, base_img);
@@ -219,6 +223,7 @@ bool TextureGenerator::generatePart(const std::string &texmod_str_part, img::Ima
     }
     // Then this is a texture modifier
     else {
+        //core::InfoStream << "generatePart: texmod_str_part is a modifier\n";
         if (!base_img && !str_starts_with(texmod_str_part, "[fill")) {
             errorstream << "TextureGenerator::generatePart(): base_img == nullptr" \
 					<< " for texmod_str_part\"" << texmod_str_part \

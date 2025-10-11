@@ -24,11 +24,11 @@ class UITextSprite : public UISprite
     bool clipText = true;
     bool rightToLeft = false;
 	
-	render::TTFont *overrideFont;
+    render::TTFont *overrideFont = nullptr;
 
     FontManager *mgr;
 public:
-    UITextSprite(FontManager *font_manager, const EnrichedString &text, Renderer *renderer,
+    UITextSprite(FontManager *font_manager, GUISkin *guiskin, const EnrichedString &text, Renderer *renderer,
         ResourceCache *resCache, bool border = false, bool wordWrap = true, bool fillBackground = false);
     ~UITextSprite();
 

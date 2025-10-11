@@ -53,6 +53,7 @@ GameUI::GameUI(Client *client)
 void GameUI::init()
 {
     auto font_mgr = rndsys->getFontManager();
+    auto skin = rndsys->getGUIEnvironment()->getSkin();
 
     debugtext = std::make_unique<UISpriteBank>(rndsys, cache);
 
@@ -61,7 +62,7 @@ void GameUI::init()
     debugtext->addTextSprite(font_mgr, EnrichedString(), 1);
 
 	// Chat text
-    chattext = std::make_unique<UITextSprite>(font_mgr, EnrichedString(),
+    chattext = std::make_unique<UITextSprite>(font_mgr, skin, EnrichedString(),
         rndsys->getRenderer(), cache);
 	u16 chat_font_size = g_settings->getU16("chat_font_size");
 	if (chat_font_size != 0) {
@@ -73,7 +74,7 @@ void GameUI::init()
 	// If in debug mode, object debug infos shown here, too.
 	// Located on the left on the screen, below chat.
     u32 chat_font_height = chattext->getActiveFont()->getLineHeight();
-    infotext = std::make_unique<UITextSprite>(font_mgr, EnrichedString(), rndsys->getRenderer(), cache);
+    infotext = std::make_unique<UITextSprite>(font_mgr, skin, EnrichedString(), rndsys->getRenderer(), cache);
     infotext->getShape()->move(v2f(100, chat_font_height * (g_settings->getU16("recent_chat_messages") + 3)));
         /*gui::StaticText::add(guienv, L"",
 		// Size is limited; text will be truncated after 6 lines.
@@ -84,12 +85,12 @@ void GameUI::init()
 
 	// Status text (displays info when showing and hiding GUI stuff, etc.)
     status_line = L"<Status>";
-    statustext = std::make_unique<UITextSprite>(font_mgr, EnrichedString(status_line),
+    statustext = std::make_unique<UITextSprite>(font_mgr, skin, EnrichedString(status_line),
         rndsys->getRenderer(), cache, false, false);
     statustext->setVisible(false);
 
 	// Profiler text (size is updated when text is updated)
-    profilertext = std::make_unique<UITextSprite>(font_mgr, EnrichedString("<Profiler>"),
+    profilertext = std::make_unique<UITextSprite>(font_mgr, skin, EnrichedString("<Profiler>"),
         rndsys->getRenderer(), cache, false, false);
     profilertext->setOverrideFont(font_mgr->getFontOrCreate(render::FontMode::MONO, render::FontStyle::NORMAL,
         font_mgr->getDefaultFontSize(render::FontMode::MONO) * 0.9f));

@@ -25,8 +25,10 @@ void Atlas::createTexture(const std::string &name, u32 num, u32 size, u8 maxMipL
     settings.hasMipMaps = maxMipLevel > 0 ? true : false;
     settings.maxMipLevel = maxMipLevel;
 
+    //core::InfoStream << "createTexture: " << name << ", " << size << "x" << size << ", " << format << "\n";
     texture = std::make_unique<render::StreamTexture2D>(
         texName, size, size, format, settings);
+    //core::InfoStream << "createTexture: created\n";
 }
 
 bool Atlas::addTile(AtlasTile *tile)
@@ -178,14 +180,18 @@ img::Image *AtlasPool::addTile(const std::string &name)
 {
     if (type != AtlasType::RECTPACK2D)
         return nullptr;
+    //core::InfoStream << "addTile: 1\n";
     auto img = cache->getOrLoad<img::Image>(ResourceType::IMAGE, name, true, true, true);
+    //core::InfoStream << "addTile: 2\n";
     auto imgIt = std::find(images.begin(), images.end(), img);
+    //core::InfoStream << "addTile: 3\n";
 
     // Add only unique tiles
     if (imgIt != images.end())
         return *imgIt;
 
     images.emplace_back(img);
+    //core::InfoStream << "addTile: 4\n";
 
     return img;
 }
@@ -254,6 +260,8 @@ void AtlasPool::buildRectpack2DAtlas()
 
     atlases.push_back(atlas);
 
+    //core::InfoStream << "buildRectpack2DAtlas: images count: " << (u32)images.size() << "\n";
+    //core::InfoStream << "buildRectpack2DAtlas: startImg: " << startImg << "\n";
     if (startImg <= images.size()-1) {
         ++atlasNum;
         buildRectpack2DAtlas();
@@ -268,12 +276,13 @@ void AtlasPool::buildGlyphAtlas(render::TTFont *ttfont)
     static u32 atlasNum = 0;
     static char16_t glyphOffset = 0;
 
+    //core::InfoStream << "cur glyphOffset: " << glyphOffset << "\n";
     GlyphAtlas *atlas = new GlyphAtlas(atlasNum, ttfont, glyphOffset);
     cache->cacheResource<Atlas>(ResourceType::ATLAS, atlas);
 
     atlases.push_back(atlas);
 
-    if (glyphOffset < MAX_GLYPHS_COUNT-1) {
+    if (glyphOffset < 127) {
         ++atlasNum;
         buildGlyphAtlas(ttfont);
     }

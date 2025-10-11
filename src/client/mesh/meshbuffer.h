@@ -11,7 +11,7 @@
 enum class MeshBufferType
 {
 	VERTEX,
-	INDEX,
+    //INDEX,
 	VERTEX_INDEX
 };
 
@@ -47,6 +47,8 @@ public:
 	{
 		for (auto &attr : VAO->getVertexType().Attributes)
 			VertexCmpCount += attr.ComponentCount;
+
+        initData(0, 0);
 	}
     // Creates either VERTEX or VERTEX_INDEX buffer types allocating the storage for 'vertexCount' and 'indexCount'
     MeshBuffer(u32 vertexCount, u32 indexCount=0, bool createIBO = true,
@@ -58,15 +60,15 @@ public:
         for (auto &attr : VAO->getVertexType().Attributes)
             VertexCmpCount += attr.ComponentCount;
 
-        reallocateData(vertexCount, indexCount);
+        initData(vertexCount, indexCount);
     }
     // Creates always INDEX type not creating a new VAO
-    MeshBuffer(const std::shared_ptr<render::Mesh> &sharedMesh)
+    /*MeshBuffer(const std::shared_ptr<render::Mesh> &sharedMesh)
         : Type(MeshBufferType::INDEX), VAO(sharedMesh)
     {
         for (auto &attr : VAO->getVertexType().Attributes)
             VertexCmpCount += attr.ComponentCount;
-    }
+    }*/
 
 	MeshBufferType getType() const
 	{
@@ -108,77 +110,6 @@ public:
     img::color8 getRGBAttr(u32 attrN, u32 vertexN) const;
 
     img::color8 getRGBAAttr(u32 attrN, u32 vertexN) const;
-    /*template<typename T>
-    T getAttrAt(u32 attrN, u32 vertexN) const
-	{
-		u64 attrNum = countElemsBefore(vertexN, attrN);
-
-		auto &vertexAttr = VAO->getVertexType().Attributes.at(attrN);
-        const ByteArray *vdata = VBuffer.Data.get();
-		switch (vertexAttr.ComponentCount)
-		{
-		case 1: {
-			switch (vertexAttr.ComponentType)
-			{
-			case BasicType::UINT8:
-                return *(reinterpret_cast<T *>((void *)&(vdata->getUInt8(attrNum)));
-			case BasicType::CHAR:
-				return vdata->getChar(attrNum);
-			case BasicType::UINT16:
-				return vdata->getUInt16(attrNum);
-			case BasicType::SHORT:
-				return vdata->getShort(attrNum);
-			case BasicType::UINT32:
-				return vdata->getUInt32(attrNum);
-			case BasicType::INT:
-				return vdata->getInt(attrNum);
-			case BasicType::FLOAT:
-				return vdata->getFloat(attrNum);
-			case BasicType::UINT64:
-				return vdata->getUInt64(attrNum);
-			case BasicType::LONG_INT:
-				return vdata->getLongInt(attrNum);
-			case BasicType::DOUBLE:
-				return vdata->getDouble(attrNum);
-			default:
-				return 0.0f;
-			}
-		}
-		case 2: {
-			switch (vertexAttr.ComponentType)
-			{
-			case BasicType::UINT32:
-				return vdata->getV2U(attrNum);
-			case BasicType::INT:
-				return vdata->getV2I(attrNum);
-			case BasicType::FLOAT:
-				return vdata->getV2F(attrNum);
-			default:
-				return T(0, 0);
-			}
-		}
-		case 3: {
-			switch (vertexAttr.ComponentType)
-			{
-			case BasicType::UINT32:
-				return vdata->getV3U(attrNum);
-			case BasicType::INT:
-				return vdata->getV3I(attrNum);
-			case BasicType::FLOAT:
-				return vdata->getV3F(attrNum);
-            case BasicType::UINT8:
-                return img::getColor8(vdata, attrNum, img::PF_RGB8);
-			default:
-				return T(0, 0, 0);
-			}
-		}
-		case 4: {
-			return img::getColor8(vdata, attrNum);
-		}
-		default:
-            assert("MeshBuffer::getAttrAt() Couldn't extract the attribute");
-		}
-    }*/
 
     u32 getIndexAt(u32 pos) const;
 
@@ -233,6 +164,7 @@ public:
         return VAO.get() == other_buffer->getVAO();
     }
 private:
+    void initData(u32 vertexCount=0, u32 indexCount=0);
     void checkAttr(BasicType requiredType, u8 requiredCmpsCount, u32 attrN) const;
     void update(BasicType requiredType, u8 requiredCmpsCount, u32 attrN, u32 vertexN);
 
@@ -244,6 +176,6 @@ private:
     }
     bool hasIBO() const
     {
-        return Type == MeshBufferType::INDEX || Type == MeshBufferType::VERTEX_INDEX;
+        return Type == MeshBufferType::VERTEX_INDEX;
     }
 };

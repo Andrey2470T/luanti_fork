@@ -16,7 +16,7 @@ GUIItemImage::GUIItemImage(gui::IGUIEnvironment *env, gui::IGUIElement *parent,
 	render::TTFont *font, Client *client) :
 	gui::IGUIElement(EGUIET_ELEMENT, env, parent, id, rectangle),
     m_item_name(item_name), m_font(font), m_client(client), m_label(),
-    m_text(std::make_unique<UITextSprite>(env->getRenderSystem()->getFontManager(),
+    m_text(std::make_unique<UITextSprite>(env->getRenderSystem()->getFontManager(), env->getSkin(),
         EnrichedString(), env->getRenderSystem()->getRenderer(), env->getResourceCache()))
 {
     m_text->setOverrideFont(m_font);

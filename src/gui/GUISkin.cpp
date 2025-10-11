@@ -18,6 +18,7 @@
 GUISkin::GUISkin(Renderer *_renderer, GUISkinType type)
     : renderer(_renderer), Type(type)
 {
+    core::InfoStream << "GUISkin 1\n";
     if ((Type == GUISkinType::WindowsClassic) || (Type == GUISkinType::WindowsMetallic))
 	{
         Colors[(u8)GUIDefaultColor::DarkShadows3D]      = img::color8(img::PF_RGBA8, 101,50,50,50);
@@ -153,9 +154,11 @@ GUISkin::GUISkin(Renderer *_renderer, GUISkinType type)
     Icons[(u8)GUIDefaultIcon::File] = 245;
     Icons[(u8)GUIDefaultIcon::Directory] = 246;
 
+    core::InfoStream << "GUISkin 1\n";
     for (u8 i = 0; i < (u8)GUIDefaultFont::Count; i++)
         Fonts[i] = nullptr;
     UseGradient = (Type == GUISkinType::WindowsMetallic) || (Type == GUISkinType::BurningSkin) ;
+    core::InfoStream << "GUISkin 1\n";
 }
 
 //! returns default color
@@ -199,8 +202,11 @@ render::TTFont *GUISkin::getFont(GUIDefaultFont which) const
 {
     if (((u8)which < (u8)GUIDefaultFont::Count) && Fonts[(u8)which])
         return Fonts[(u8)which];
-	else
+    else {
+        if (Fonts[(u8)which])
+            core::InfoStream << "getFont default font is present\n";
         return Fonts[(u8)GUIDefaultFont::Default];
+    }
 }
 
 
@@ -210,7 +216,11 @@ void GUISkin::setFont(render::TTFont *font, GUIDefaultFont which)
     if ((u8)which >= (u8)GUIDefaultFont::Count)
 		return;
 
+    core::InfoStream << "setFont " << (u8)which << "\n";
     Fonts[(u8)which] = font;
+
+    if (Fonts[(u8)which])
+        core::InfoStream << "setFont default font is present\n";
 }
 
 

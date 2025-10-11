@@ -36,7 +36,9 @@ CGUIEnvironment::CGUIEnvironment(RenderSystem *rndsys, v2u wnd_size, ResourceCac
         UserReceiver(0), FocusFlags((u8)EFF_SET_ON_LMOUSE_DOWN | (u8)EFF_SET_ON_TAB),
         RndSys(rndsys), ResCache(rescache)
 {
+    core::InfoStream << "CGUIEnvironment 4.1\n";
     GUISkin *skin = createSkin();
+    core::InfoStream << "CGUIEnvironment 4.2\n";
 	setSkin(skin);
 
 	// set tooltip default
@@ -49,6 +51,7 @@ CGUIEnvironment::CGUIEnvironment(RenderSystem *rndsys, v2u wnd_size, ResourceCac
 	// environment is root tab group
 	Environment = this;
 	setTabGroup(true);
+    core::InfoStream << "CGUIEnvironment 4.3\n";
 }
 
 //! destructor
@@ -501,13 +504,20 @@ If you no longer need the skin, you should call GUISkin::drop().
 See IReferenceCounted::drop() for more information. */
 GUISkin *CGUIEnvironment::createSkin()
 {
+    core::InfoStream << "createSkin 1\n";
     GUISkin *skin = new GUISkin(RndSys->getRenderer());
+    core::InfoStream << "createSkin 2\n";
 
     auto font_mgr = RndSys->getFontManager();
+    core::InfoStream << "createSkin 3\n";
     render::TTFont *defaultfont = font_mgr->getFontOrCreate(
         render::FontMode::MONO, render::FontStyle::NORMAL);
 
+    if (defaultfont)
+        core::InfoStream << "createSkin 4 default font is present\n";
+
     skin->setFont(defaultfont);
+    core::InfoStream << "createSkin 5\n";
 
 	return skin;
 }

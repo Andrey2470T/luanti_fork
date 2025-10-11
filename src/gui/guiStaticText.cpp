@@ -20,7 +20,7 @@ CGUIStaticText::CGUIStaticText(const wchar_t *text, bool border,
 		bool background) :
 		IGUIStaticText(environment, parent, id, rectangle),
         Text(std::make_unique<UITextSprite>(
-            Environment->getRenderSystem()->getFontManager(), EnrichedString(text),
+            Environment->getRenderSystem()->getFontManager(), Environment->getSkin(), EnrichedString(text),
             Environment->getRenderSystem()->getRenderer(), Environment->getResourceCache(),
             border, false, background))
 {

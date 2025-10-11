@@ -267,32 +267,45 @@ template <class T>
 T *ResourceCache::getOrLoad(ResourceType _type, const std::string &_name,
     bool apply_modifiers, bool load_for_mesh, bool apply_fallback)
 {
-    MutexAutoLock lock(resource_mutex);
+    //core::InfoStream << "getOrLoad: 1\n";
+    //core::InfoStream << "getOrLoad: 2\n";
 
     if (_type == ResourceType::IMAGE) {
-        img::Image *img = nullptr;
-        if (!apply_modifiers)
+        auto img = reinterpret_cast<img::Image *>(subcaches[_type]->get(_name));
+
+        if (img)
+            return static_cast<T *>((void*)img);
+        if (!apply_modifiers) {
+            //core::InfoStream << "getOrLoad: 3\n";
+            MutexAutoLock lock(resource_mutex);
             img = reinterpret_cast<img::Image *>(subcaches[_type]->getOrLoad(_name));
+        }
         else {
+            //core::InfoStream << "getOrLoad: 4\n";
             if (load_for_mesh)
                 img = texgen->generateForMesh(_name);
             else
                 img = texgen->generate(_name);
+            subcaches[_type]->cacheResource(img, _name);
         }
 
         if (!img && apply_fallback)
             img = createDummyImage();
+        //core::InfoStream << "getOrLoad: 5\n";
         return static_cast<T *>((void*)img);
     }
     else if (_type == ResourceType::TEXTURE) {
+        MutexAutoLock lock(resource_mutex);
         auto tex = reinterpret_cast<render::Texture2D *>(subcaches[_type]->getOrLoad(_name));
 
         if (!tex && apply_fallback)
             tex = createDummyTexture();
         return static_cast<T *>((void*)tex);
     }
-    else
+    else {
+        MutexAutoLock lock(resource_mutex);
         return static_cast<T *>(subcaches[_type]->getOrLoad(_name));
+    }
 }
 
 template<class T>

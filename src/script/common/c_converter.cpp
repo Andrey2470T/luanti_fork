@@ -287,7 +287,7 @@ bool read_color(lua_State *L, int index, img::color8 *color)
 	} else if (lua_isnumber(L, index)) {
         *color = img::colorU32NumberToObject(lua_tonumber(L, index));
 	} else if (lua_isstring(L, index)) {
-		img::color8 parsed_color;
+		img::color8 parsed_color(img::PF_RGBA8);
 		if (!parseColorString(lua_tostring(L, index), parsed_color, true))
 			return false;
 
@@ -310,7 +310,7 @@ img::color8 read_ARGB8(lua_State *L, int index)
 		return std::fmax(0.0, std::fmin(255.0, c));
 	};
 
-    img::color8 color;
+    img::color8 color(img::PF_RGBA8);
 	CHECK_TYPE(index, "ARGB color", LUA_TTABLE);
 	lua_getfield(L, index, "a");
     color.A(lua_isnumber(L, -1) ? clamp_col(lua_tonumber(L, -1)) : 0xFF);

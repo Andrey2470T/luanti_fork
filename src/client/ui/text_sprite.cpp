@@ -16,11 +16,12 @@ inline std::vector<UIPrimitiveType> getGlyphs(u32 count, bool background, bool b
     return glyphs;
 }
 
-UITextSprite::UITextSprite(FontManager *font_manager, const EnrichedString &text,
+UITextSprite::UITextSprite(FontManager *font_manager, GUISkin *guiskin, const EnrichedString &text,
     Renderer *renderer, ResourceCache *resCache, bool border, bool wordWrap, bool fillBackground)
-    : UISprite(getGlyphAtlasTexture(), renderer, resCache, false, false), drawBorder(border),
+    : UISprite(nullptr, renderer, resCache, false, false), skin(guiskin), drawBorder(border),
     drawBackground(fillBackground),  wordWrap(wordWrap), mgr(font_manager)
 {
+    setTexture(getGlyphAtlasTexture());
     setText(text);
 }
 
@@ -549,6 +550,7 @@ u32 UITextSprite::getBrokenTextWidth() const
 
 render::Texture2D *UITextSprite::getGlyphAtlasTexture() const
 {
+    core::InfoStream << "getGlyphAtlasTexture\n";
     auto font = getActiveFont();
     auto pool = mgr->getPoolOrCreate(font->getMode(), font->getStyle(), font->getCurrentSize());
 

@@ -357,16 +357,17 @@ void Clouds::update(f32 dtime, Camera *camera, Sky *sky, f32 &fog_range,
         camera_pos.X   = camera_pos.X + camera_offset.X * BS;
         camera_pos.Y   = camera_pos.Y + camera_offset.Y * BS;
         camera_pos.Z   = camera_pos.Z + camera_offset.Z * BS;
+
+
+        img::colorf ambient = img::color8ToColorf(m_params.color_ambient);
+        img::colorf bright = img::color8ToColorf(m_params.color_bright);
+
+        img::colorf cloud_color = sky->getCloudColor();
+        m_color.R(std::clamp(cloud_color.R() * bright.G(), ambient.R(), 1.0f));
+        m_color.G(std::clamp(cloud_color.G() * bright.G(), ambient.G(), 1.0f));
+        m_color.B(std::clamp(cloud_color.B() * bright.B(), ambient.B(), 1.0f));
+        m_color.A(bright.A());
     }
-
-    img::colorf ambient = img::color8ToColorf(m_params.color_ambient);
-    img::colorf bright = img::color8ToColorf(m_params.color_bright);
-
-    img::colorf cloud_color = sky->getCloudColor();
-    m_color.R(std::clamp(cloud_color.R() * bright.G(), ambient.R(), 1.0f));
-    m_color.G(std::clamp(cloud_color.G() * bright.G(), ambient.G(), 1.0f));
-    m_color.B(std::clamp(cloud_color.B() * bright.B(), ambient.B(), 1.0f));
-    m_color.A(bright.A());
 
 	// is the camera inside the cloud mesh?
     m_camera_pos = camera_pos;

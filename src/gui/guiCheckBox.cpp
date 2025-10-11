@@ -19,7 +19,8 @@ namespace gui
 CGUICheckBox::CGUICheckBox(bool checked, IGUIEnvironment *environment, IGUIElement *parent, s32 id, recti rectangle) :
         IGUICheckBox(environment, parent, id, rectangle), CheckTime(0), Pressed(false), Checked(checked), Border(false), Background(false),
         Sprite(std::make_unique<UIRects>(Environment->getRenderSystem(), 0)),
-        Text(std::make_unique<UITextSprite>(environment->getRenderSystem()->getFontManager(), EnrichedString(),
+        Text(std::make_unique<UITextSprite>(environment->getRenderSystem()->getFontManager(),
+            environment->getSkin(), EnrichedString(),
             environment->getRenderSystem()->getRenderer(), environment->getResourceCache()))
 {
 	// this element can be tabbed into

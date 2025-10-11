@@ -2,6 +2,7 @@
 #include "client/render/rendersystem.h"
 #include "client/render/renderer.h"
 #include "glyph_atlas.h"
+#include "gui/IGUIEnvironment.h"
 #include "text_sprite.h"
 #include "client/media/resource.h"
 #include "batcher2d.h"
@@ -122,8 +123,8 @@ HudText::HudText(Client *client, const HudElement *elem)
 {
     EnrichedString wtext = getHudWText(elem);
     RenderSystem *rnd_system = client->getRenderSystem();
-    text = std::make_unique<UITextSprite>(rnd_system->getFontManager(), wtext,
-        rnd_system->getRenderer(), client->getResourceCache());
+    text = std::make_unique<UITextSprite>(rnd_system->getFontManager(), rnd_system->getGUIEnvironment()->getSkin(),
+        wtext, rnd_system->getRenderer(), client->getResourceCache());
 }
 
 void HudText::update()

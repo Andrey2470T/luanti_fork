@@ -237,31 +237,42 @@ void MeshBuffer::setIndexAt(u32 index, u32 pos)
 void MeshBuffer::reallocateData(u32 vertexCount, u32 indexCount)
 {
     auto vType = VAO->getVertexType();
+
+    if (!VBuffer.Data || (hasIBO() && !IBuffer.Data))
+        return;
+
     if (vertexCount == VBuffer.Data->count() / vType.Attributes.size() && indexCount == IBuffer.Data->count())
         return;
 
-    if (hasIBO() && IBuffer.Data && indexCount > 0)
+    if (hasIBO())
         IBuffer.Data->reallocate(indexCount, sizeof(u32) * indexCount);
 
-    if (Type == MeshBufferType::INDEX)
-        return;
+    //if (Type == MeshBufferType::INDEX)
+    //    return;
 
     VBuffer.Data->reallocate(vType.Attributes.size() * vertexCount, render::sizeOfVertexType(vType) * vertexCount);
 }
 
 void MeshBuffer::uploadData()
 {
-    if (!VBuffer.Dirty && !IBuffer.Dirty)
+    if (!VBuffer.Dirty && (hasIBO() && !IBuffer.Dirty))
         return;
 
-    VAO->reallocate(VBuffer.Data.get(), VBuffer.DataCount, (const u32 *)IBuffer.Data.get(), IBuffer.DataCount);
+    const u32 *iboData = nullptr;
+    u32 iboCount = 0;
+
+    if (hasIBO()) {
+        iboData = (const u32 *)IBuffer.Data.get();
+        iboCount = IBuffer.DataCount;
+    }
+    VAO->reallocate(VBuffer.Data.get(), VBuffer.DataCount, iboData, iboCount);
     VBuffer.Dirty = false;
     IBuffer.Dirty = false;
 }
 
 void MeshBuffer::uploadVertexData()
 {
-    if (Type == MeshBufferType::INDEX || VBuffer.DataCount == 0 || !VBuffer.Dirty)
+    if (VBuffer.DataCount == 0 || !VBuffer.Dirty)
         return;
 
     u32 startV = VBuffer.StartChange.value();
@@ -289,9 +300,11 @@ void MeshBuffer::uploadIndexData()
 
 void MeshBuffer::clear()
 {
-    VBuffer.Data->clear();
-    VBuffer.DataCount = 0;
-    VBuffer.Dirty = false;
+    if (VBuffer.Data) {
+        VBuffer.Data->clear();
+        VBuffer.DataCount = 0;
+        VBuffer.Dirty = false;
+    }
 
     if (hasIBO() && IBuffer.Data) {
         IBuffer.Data->clear();
@@ -302,9 +315,7 @@ void MeshBuffer::clear()
 
 MeshBuffer *MeshBuffer::copy() const
 {
-    MeshBuffer *new_mesh = nullptr;
-    if (Type == MeshBufferType::INDEX) new_mesh = new MeshBuffer(VAO);
-    else new_mesh = new MeshBuffer(Type != MeshBufferType::VERTEX, getVAO()->getVertexType());
+    MeshBuffer *new_mesh = new MeshBuffer(Type != MeshBufferType::VERTEX, getVAO()->getVertexType());
 
     if (hasVBO())
         memcpy(new_mesh->VBuffer.Data.get()->data(), VBuffer.Data.get()->data(), getVertexCount());
@@ -317,13 +328,24 @@ MeshBuffer *MeshBuffer::copy() const
     return new_mesh;
 }
 
-inline void MeshBuffer::checkAttr(BasicType requiredType, u8 requiredCmpsCount, u32 attrN) const
+void MeshBuffer::initData(u32 vertexCount, u32 indexCount)
+{
+    auto vType = VAO->getVertexType();
+    if (!VBuffer.Data) {
+        VBuffer.Data = std::make_unique<ByteArray>(
+            vType.Attributes.size() * vertexCount, render::sizeOfVertexType(vType) * vertexCount);
+    }
+    if (hasIBO())
+        IBuffer.Data = std::make_unique<ByteArray>(indexCount, sizeof(u32) * indexCount);
+}
+
+void MeshBuffer::checkAttr(BasicType requiredType, u8 requiredCmpsCount, u32 attrN) const
 {
     auto &vertexAttr = VAO->getVertexType().Attributes.at(attrN);
     assert(vertexAttr.ComponentType == requiredType && vertexAttr.ComponentCount == requiredCmpsCount);
 }
 
-inline void MeshBuffer::update(BasicType requiredType, u8 requiredCmpsCount, u32 attrN, u32 vertexN)
+void MeshBuffer::update(BasicType requiredType, u8 requiredCmpsCount, u32 attrN, u32 vertexN)
 {
     checkAttr(requiredType, requiredCmpsCount, attrN);
 
@@ -335,7 +357,7 @@ inline void MeshBuffer::update(BasicType requiredType, u8 requiredCmpsCount, u32
     VBuffer.Dirty = true;
 }
 
-inline u64 MeshBuffer::countElemsBefore(u32 vertexNumber, u32 attrNumber) const
+u64 MeshBuffer::countElemsBefore(u32 vertexNumber, u32 attrNumber) const
 {
     auto vType = VAO->getVertexType();
     assert(hasVBO() && VBuffer.Data && vertexNumber <= VBuffer.Data->count() / vType.Attributes.size());

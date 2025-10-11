@@ -4,6 +4,7 @@
 #include "client/render/renderer.h"
 #include <Render/StreamTexture2D.h>
 #include "client/render/rendersystem.h"
+#include "gui/IGUIEnvironment.h"
 #include "text_sprite.h"
 #include "glyph_atlas.h"
 #include "extra_images.h"
@@ -379,28 +380,31 @@ void UISprite::rebuildMesh()
 {
     std::vector<UIPrimitiveType> prims(shape->getPrimitiveCount());
 
-    for (u32 i = 0; shape->getPrimitiveCount(); i++)
+    for (u32 i = 0; i < shape->getPrimitiveCount(); i++)
         prims[i] = shape->getPrimitiveType(i);
     mesh->reallocateData(
         UIShape::countRequiredVCount(prims),
         UIShape::countRequiredICount(prims)
     );
 
-    shape->appendToBuffer(mesh.get(), texture->getSize());
+    v2u texSize = texture ? texture->getSize() : v2u();
+    shape->appendToBuffer(mesh.get(), texSize);
     mesh->uploadData();
 }
 
 void UISprite::updateMesh(const std::vector<u32> &dirtyPrimitives, bool pos_or_colors)
 {
+    v2u texSize = texture ? texture->getSize() : v2u();
     for (auto n : dirtyPrimitives)
-        shape->updateBuffer(mesh.get(), n, pos_or_colors, texture->getSize());
+        shape->updateBuffer(mesh.get(), n, pos_or_colors, texSize);
     mesh->uploadVertexData();
 }
 
 void UISprite::updateMesh(bool pos_or_colors)
 {
+    v2u texSize = texture ? texture->getSize() : v2u();
     for (u32 i = 0; i < shape->getPrimitiveCount(); i++)
-        shape->updateBuffer(mesh.get(), i, pos_or_colors, texture->getSize());
+        shape->updateBuffer(mesh.get(), i, pos_or_colors, texSize);
     mesh->uploadVertexData();
 }
 
@@ -515,7 +519,8 @@ void UISpriteBank::addImageSprite(img::Image *img, u8 shift,
 void UISpriteBank::addTextSprite(FontManager *mgr, const EnrichedString &text, u8 shift, std::optional<v2f> pos,
     const img::color8 &textColor, const recti *clipRect)
 {
-    UITextSprite *textSprite = new UITextSprite(mgr, text, rndsys->getRenderer(), cache, {});
+    UITextSprite *textSprite = new UITextSprite(mgr, rndsys->getGUIEnvironment()->getSkin(),
+        text, rndsys->getRenderer(), cache, {});
 
     textSprite->setAlignment(GUIAlignment::Center, GUIAlignment::Center);
     textSprite->setColor(textColor);

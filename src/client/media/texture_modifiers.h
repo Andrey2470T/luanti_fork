@@ -66,7 +66,7 @@ public:
         return imgMdf;
     }
 private:
-    bool generatePart(const std::string &texmod_str_part, img::Image *base_img);
+    bool generatePart(const std::string &texmod_str_part, img::Image *&base_img);
 
     void upscaleToLargest(img::Image *img1, img::Image *img2);
 

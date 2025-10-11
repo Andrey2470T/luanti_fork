@@ -24,8 +24,8 @@
 #include "client/ui/gameui.h"
 
 RenderCAO::RenderCAO(Client *client, ClientEnvironment *env)
-    : GenericCAO(client, env), m_rndsys(client->getRenderSystem()), m_cache(client->getResourceCache()),
-      m_anim_mgr(client->getRenderSystem()->getAnimationManager()), m_camera(client->getEnv().getLocalPlayer()->getCamera())
+    : GenericCAO(client, env), m_rndsys(client ? client->getRenderSystem() : nullptr), m_cache(client ? client->getResourceCache() : nullptr),
+      m_anim_mgr(client ? client->getRenderSystem()->getAnimationManager() : nullptr), m_camera(client ? client->getEnv().getLocalPlayer()->getCamera() : nullptr)
 {
     initTileLayer();
 

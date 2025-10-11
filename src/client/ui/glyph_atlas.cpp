@@ -25,9 +25,12 @@ GlyphAtlas::GlyphAtlas(u32 num, render::TTFont *ttfont, char16_t &offset)
     createTexture(prefix, num, tex_size, 0, format);
         
     u16 slots = tex_size / size * tex_size / size;
-    slots_count = std::min<u16>(MAX_GLYPHS_COUNT-1 - offset, slots);
+    slots_count = std::min<u16>(127 - offset, slots);
     chars_offset = offset;
     offset += slots_count;
+
+    fill(num);
+    packTiles();
 }
 
 Glyph *GlyphAtlas::getByChar(wchar_t ch) const
@@ -50,9 +53,13 @@ Glyph *GlyphAtlas::getByChar(wchar_t ch) const
 void GlyphAtlas::fill(u32 num)
 {
     for (char16_t ch = chars_offset; ch < chars_offset + slots_count; ch++) {
-        if (!font->hasGlyph((wchar_t)ch))
+        //core::InfoStream << "fill(): ch = " << std::to_string(ch) << "\n";
+        bool has = font->hasGlyph((wchar_t)ch);
+        if (!has)
             continue;
                 
+        //u8 n = 1;
+        //auto img = font->getGlyphImage(ch);
         Glyph *newGlyph = new Glyph(ch, num, font);
         addTile(newGlyph);
     }
@@ -139,16 +146,25 @@ FontManager::~FontManager()
 
 render::TTFont *FontManager::getFont(render::FontMode mode, render::FontStyle style, std::optional<u32> size) const
 {
-    auto it = fonts.find(render::TTFont::hash(size.value(), true, style, mode));
+    if (!size.has_value())
+        size = defaultSizes[(u8)mode];
+    //core::InfoStream << "getFont 1\n";
+    u64 hash = render::TTFont::hash(size.value(), true, style, mode);
+    //core::InfoStream << "getFont 1.1\n";
+    auto it = fonts.find(hash);
+    //core::InfoStream << "getFont 2\n";
 
     if (it == fonts.end())
         return nullptr;
 
+    //core::InfoStream << "getFont 3\n";
     return it->second.first;
 }
 
 AtlasPool *FontManager::getPool(render::FontMode mode, render::FontStyle style, std::optional<u32> size)
 {
+    if (!size.has_value())
+        size = defaultSizes[(u8)mode];
     auto it = fonts.find(render::TTFont::hash(size.value(), true, style, mode));
 
     if (it == fonts.end())
@@ -159,20 +175,38 @@ AtlasPool *FontManager::getPool(render::FontMode mode, render::FontStyle style, 
 
 render::TTFont *FontManager::getFontOrCreate(render::FontMode mode, render::FontStyle style, std::optional<u32> size)
 {
+    if (!size.has_value())
+        size = defaultSizes[(u8)mode];
+    //core::InfoStream << "getFontOrCreate 1\n";
     auto font = getFont(mode, style, size);
+    //core::InfoStream << "getFontOrCreate 2\n";
 
     if (!font) {
+        //core::InfoStream << "getFontOrCreate 3\n";
         bool added = addFont(mode, style, size);
+        //core::InfoStream << "getFontOrCreate 4\n";
 
-        if (added)
+        if (added) {
+            core::InfoStream << "getFontOrCreate mode:" << (u32)mode << "\n";
+            core::InfoStream << "getFontOrCreate style:" << (u32)style << "\n";
+            core::InfoStream << "getFontOrCreate transparent:" << (u32)true << "\n";
+            core::InfoStream << "getFontOrCreate size:" << size.value() << "\n";
+            core::InfoStream << "getFontOrCreate hash:" << (u32)render::TTFont::hash(size.value(), true, style, mode) << "\n";
             font = fonts[render::TTFont::hash(size.value(), true, style, mode)].first;
+        }
+        //core::InfoStream << "getFontOrCreate 5\n";
     }
+
+    if (font)
+        core::InfoStream << "getFontOrCreate 2\n";
 
     return font;
 }
 
 AtlasPool *FontManager::getPoolOrCreate(render::FontMode mode, render::FontStyle style, std::optional<u32> size)
 {
+    if (!size.has_value())
+        size = defaultSizes[(u8)mode];
     auto pool = getPool(mode, style, size);
 
     if (!pool) {
@@ -187,6 +221,7 @@ AtlasPool *FontManager::getPoolOrCreate(render::FontMode mode, render::FontStyle
 
 bool FontManager::addFont(render::FontMode mode, render::FontStyle style, std::optional<u32> size)
 {
+    //core::InfoStream << "addFont 1\n";
     if (!size.has_value())
         size = defaultSizes[(u8)mode];
 
@@ -229,6 +264,7 @@ bool FontManager::addFont(render::FontMode mode, render::FontStyle style, std::o
         g_settings->get(path_setting),
         Settings::getLayer(SL_DEFAULTS)->get(path_setting)
     };
+    //core::InfoStream << "addFont 2\n";
 
     bool path_found = false;
     for (auto &path : paths) {
@@ -236,10 +272,15 @@ bool FontManager::addFont(render::FontMode mode, render::FontStyle style, std::o
             continue;
 
         path_found = true;
-        auto font = render::TTFont::load(path, size.value(), 0, true, true, font_shadow, font_shadow_alpha);
+        //core::InfoStream << "addFont 3\n";
+        core::InfoStream << "addFont 1\n";
+        auto font = render::TTFont::load(path, size.value(), 0, (u8)mode, true, font_shadow, font_shadow_alpha);
+        //core::InfoStream << "addFont 4\n";
+        core::InfoStream << "addFont 2\n";
 
         if (!font)
             continue;
+        core::InfoStream << "addFont 3\n";
 
         auto font_it = std::find_if(fonts.begin(), fonts.end(), [font] (const auto &p)
         {
@@ -250,11 +291,21 @@ bool FontManager::addFont(render::FontMode mode, render::FontStyle style, std::o
             delete font;
             continue;
         }
+        core::InfoStream << "addFont 4\n";
         u64 hash = render::TTFont::hash(font);
+        core::InfoStream << "addFont mode:" << (u32)font->getMode() << "\n";
+        core::InfoStream << "addFont style:" << (u32)font->getStyle() << "\n";
+        core::InfoStream << "addFont transparent:" << (u32)font->isTransparent() << "\n";
+        core::InfoStream << "addFont size:" << font->getCurrentSize() << "\n";
 
+        core::InfoStream << "addFont hash: " << (u32)hash << "\n";
         fonts[hash] = std::pair(font, std::make_unique<AtlasPool>(AtlasType::GLYPH, "", cache, 0, false));
+        core::InfoStream << "addFont 5\n";
+        //core::InfoStream << "addFont 6\n";
         cache->cacheResource<render::TTFont>(ResourceType::FONT, font);
+        //core::InfoStream << "addFont 7\n";
         fonts[hash].second->buildGlyphAtlas(font);
+        //core::InfoStream << "addFont 8\n";
     }
 
     if (!path_found) {

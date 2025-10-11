@@ -29,20 +29,30 @@
 #include "client/ao/nametag.h"
 #include "client/render/datatexture.h"
 #include "client/pipeline/pipeline.h"
+#include <Image/ImageLoader.h>
 
 RenderSystem::RenderSystem(ResourceCache *_cache)
     : cache(_cache)
 {
+    core::InfoStream << "RenderSystem 1\n";
     initWindow();
+    core::InfoStream << "RenderSystem 2\n";
     fontManager = std::make_unique<FontManager>(cache);
+    core::InfoStream << "RenderSystem 3\n";
 
     v2u viewport = window->getViewportSize();
     auto glParams = window->getGLParams();
     renderer = std::make_unique<Renderer>(cache, recti(0, 0, viewport.X, viewport.Y), glParams->maxTextureUnits);
+    core::InfoStream << "RenderSystem 4\n";
+
+    img::ImageLoader::init();
+    render::TTFont::init();
 
     guienv = std::make_unique<gui::CGUIEnvironment>(this, window->getWindowSize(), cache);
+    core::InfoStream << "RenderSystem 5\n";
 
     guiPool = std::make_unique<AtlasPool>(AtlasType::RECTPACK2D, "GUI", cache, window->getGLParams()->maxTextureSize, false);
+    core::InfoStream << "RenderSystem 6\n";
 
     g_settings->registerChangedCallback("fullscreen", settingChangedCallback, this);
     g_settings->registerChangedCallback("window_maximized", settingChangedCallback, this);
@@ -51,6 +61,9 @@ RenderSystem::RenderSystem(ResourceCache *_cache)
 
 RenderSystem::~RenderSystem()
 {
+    img::ImageLoader::free();
+    render::TTFont::free();
+
     g_settings->deregisterAllChangedCallbacks(this);
 }
 
@@ -85,11 +98,11 @@ AtlasPool *RenderSystem::getPool(bool basic) const
 
 void RenderSystem::setWindowIcon()
 {
-    fs::path icon_path = porting::path_share + "/textures/base/pack/logo.png";
-    img::Image *icon = cache->get<img::Image>(ResourceType::IMAGE, icon_path.string());
+    fs::path icon_name = "logo.png";
+    img::Image *icon = cache->get<img::Image>(ResourceType::IMAGE, icon_name);
 
     if (!icon) {
-        warningstream << "RenderSystem::setWindowIcon(): Could not load the window icon:" << icon_path << std::endl;
+        warningstream << "RenderSystem::setWindowIcon(): Could not load the window icon:" << icon_name << std::endl;
         return;
     }
 
@@ -116,8 +129,11 @@ void RenderSystem::buildGUIAtlas()
     auto texpaths = getTexturesDefaultPaths();
 
     for (auto &path : texpaths) {
-        for (auto &entry : fs::directory_iterator(path))
-            guiPool->addTile(entry.path());
+        //core::InfoStream << "path: " << path << "\n";
+        for (auto &entry : fs::directory_iterator(path)) {
+            //core::InfoStream << "entry: " << entry.path() << "\n";
+            guiPool->addTile(entry.path().filename());
+        }
     }
 
     guiPool->buildRectpack2DAtlas();
@@ -125,17 +141,19 @@ void RenderSystem::buildGUIAtlas()
 
 bool RenderSystem::run()
 {
-    auto close = window->pollEventsFromQueue();
+    auto open = window->pollEventsFromQueue();
 
-    if (!close) {
+    if (open) {
         while (auto event = window->popEvent()) {
-            bool processed = client->getInputHandler()->getReceiver()->OnEvent(*event);
+            if (client) {
+                bool processed = client->getInputHandler()->getReceiver()->OnEvent(*event);
 
-            if (!processed)
-                guienv->postEventFromUser(*event);
+                if (!processed)
+                    guienv->postEventFromUser(*event);
 
-            if (event->Type == ET_STRING_INPUT_EVENT && event->StringInput.Str) {
-                delete event->StringInput.Str;
+                if (event->Type == ET_STRING_INPUT_EVENT && event->StringInput.Str) {
+                    delete event->StringInput.Str;
+                }
             }
         }
         if (auto focusElem = guienv->getFocus()) {
@@ -143,7 +161,10 @@ bool RenderSystem::run()
                 focusElem->getAbsolutePosition(), focusElem->acceptsIME());
         }
     }
-    return close;
+
+    window->clearEventQueue();
+
+    return open;
 }
 
 void RenderSystem::render()
@@ -225,6 +246,7 @@ void RenderSystem::autosaveScreensizeAndCo(v2u initial_screen_size, bool initial
 
 void RenderSystem::initWindow()
 {
+    core::InfoStream << "RenderSystem 1.1\n";
     // Resolution selection
     bool fullscreen = g_settings->getBool("fullscreen");
 #ifdef __ANDROID__
@@ -273,7 +295,9 @@ void RenderSystem::initWindow()
 
     verbosestream << "Using the " << configured_name << " video driver" << std::endl;
 
+    core::InfoStream << "RenderSystem 1.2\n";
     window = std::make_unique<core::MainWindow>(params);
+    core::InfoStream << "RenderSystem 1.3\n";
 }
 
 void RenderSystem::settingChangedCallback(const std::string &name, void *data)

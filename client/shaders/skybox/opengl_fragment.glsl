@@ -1,5 +1,3 @@
-in highp vec3 vEyeVec;
-
 in lowp vec4 vColor;
 in highp vec3 vEyeVec;
 

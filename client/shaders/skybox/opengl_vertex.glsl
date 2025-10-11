@@ -15,5 +15,5 @@ void main(void)
 
 	vColor = color * hwcolor;
 
-	vEyeVec = -(mMatrices.worldView * pos).xyz;
+	vEyeVec = -(mMatrices.worldView * vec4(pos, 1.0)).xyz;
 }

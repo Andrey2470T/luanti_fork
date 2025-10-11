@@ -4,6 +4,7 @@
 // Copyright (C) 2018 nerzhul, Loic Blot <loic.blot@unix-experience.fr>
 
 #include "client/render/renderer.h"
+#include "gui/IGUIEnvironment.h"
 #include "porting.h"
 #include "profilergraph.h"
 #include "client/render/rendersystem.h"
@@ -17,7 +18,8 @@
 ProfilerGraph::ProfilerGraph(RenderSystem *_rndsys, ResourceCache *cache, u8 _number, img::color8 _color)
     : rndsys(_rndsys), color(_color), number(_number),
       lines(std::make_unique<MeshBuffer>(false, VType2D, render::MeshUsage::DYNAMIC)),
-      text(std::make_unique<UITextSprite>(rndsys->getFontManager(), EnrichedString(), rndsys->getRenderer(), cache))
+      text(std::make_unique<UITextSprite>(rndsys->getFontManager(), rndsys->getGUIEnvironment()->getSkin(),
+            EnrichedString(), rndsys->getRenderer(), cache))
 {
     text->setOverrideFont(rndsys->getFontManager()->getDefaultFont());
     text->enableWordWrap(true);
