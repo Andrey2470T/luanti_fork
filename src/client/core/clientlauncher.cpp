@@ -508,13 +508,14 @@ void ClientLauncher::main_menu(MainMenuData *menudata)
     infostream << "Waiting for other menus" << std::endl;
     auto framemarker = FrameMarker("ClientLauncher::main_menu()-wait-frame").started();
 
-    auto ctxt = render_system->getRenderer()->getContext();
     auto guienv = render_system->getGUIEnvironment();
     while (render_system->run() && !*kill) {
         if (!isMenuActive())
             break;
-        ctxt->clearBuffers(render::CBF_COLOR | render::CBF_DEPTH, img::gray);
+        render_system->beginDraw(render::CBF_COLOR | render::CBF_DEPTH, img::gray);
         guienv->drawAll();
+        render_system->endDraw();
+
         framemarker.end();
         // On some computers framerate doesn't seem to be automatically limited
         sleep_ms(25);

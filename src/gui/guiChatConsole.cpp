@@ -688,7 +688,7 @@ bool GUIChatConsole::OnEvent(const core::Event& event)
 		return true;
 	}
 	else if (event.Type == EET_GUI_EVENT && event.GUI.Type == EGET_SCROLL_BAR_CHANGED &&
-            event.GUI.Caller.value() == (u32)m_scrollbar->getID())
+            event.GUI.Caller == (void*)m_scrollbar.get())
 	{
 		m_chat_backend->getConsoleBuffer().scrollAbsolute(m_scrollbar->getPos());
 	}

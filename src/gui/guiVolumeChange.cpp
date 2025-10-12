@@ -135,8 +135,9 @@ bool GUIVolumeChange::OnEvent(const core::Event& event)
 			return true;
 		}
 
+        IGUIElement *caller = (IGUIElement *)event.GUI.Caller;
 		if (event.GUI.Type == EGET_BUTTON_CLICKED) {
-            if (event.GUI.Caller.value() == ID_soundExitButton) {
+            if (caller->getID() == ID_soundExitButton) {
 				quitMenu();
 				return true;
 			}
@@ -145,7 +146,7 @@ bool GUIVolumeChange::OnEvent(const core::Event& event)
 
 		if (event.GUI.Type == EGET_ELEMENT_FOCUS_LOST
 				&& isVisible()) {
-            if (!canTakeFocus(Environment->getRootGUIElement()->getElementFromId(event.GUI.Element.value()))) {
+            if (!canTakeFocus((IGUIElement *)event.GUI.Element)) {
 				infostream << "GUIVolumeChange: Not allowing focus change."
 				<< std::endl;
 				// Returning true disables focus change
@@ -153,9 +154,9 @@ bool GUIVolumeChange::OnEvent(const core::Event& event)
 			}
 		}
 		if (event.GUI.Type == EGET_SCROLL_BAR_CHANGED) {
-            if (event.GUI.Caller.value() == ID_soundSlider) {
+            if (caller->getID() == ID_soundSlider) {
                 s32 pos = static_cast<GUIScrollBar *>(
-                    Environment->getRootGUIElement()->getElementFromId(event.GUI.Caller.value()))->getPos();
+                    Environment->getRootGUIElement()->getElementFromId(caller->getID()))->getPos();
 				g_settings->setFloat("sound_volume", (float) pos / 100);
 
 				gui::IGUIElement *e = getElementFromId(ID_soundText);

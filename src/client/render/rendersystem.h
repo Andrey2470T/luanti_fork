@@ -174,6 +174,9 @@ public:
 
     void buildGUIAtlas();
 
+    void beginDraw(u16 flags, img::color8 color=img::black, f32 depth=1.0f, u8 stencil=0);
+    void endDraw();
+
     bool run();
 
     void render();

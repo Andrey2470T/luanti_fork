@@ -170,8 +170,8 @@ void GUIEditBox::sendGuiEvent(EGUI_EVENT_TYPE type)
 	if (Parent) {
 		core::Event e;
 		e.Type = EET_GUI_EVENT;
-        e.GUI.Caller = getID();
-        e.GUI.Element = std::nullopt;
+        e.GUI.Caller = this;
+        e.GUI.Element = 0;
 		e.GUI.Type = type;
 
 		Parent->OnEvent(e);
@@ -185,7 +185,7 @@ bool GUIEditBox::OnEvent(const core::Event &event)
 		switch (event.Type) {
 		case EET_GUI_EVENT:
 			if (event.GUI.Type == EGET_ELEMENT_FOCUS_LOST) {
-                if (event.GUI.Caller == getID()) {
+                if (event.GUI.Caller == this) {
 					m_mouse_marking = false;
 					setTextMarkers(0, 0);
 				}

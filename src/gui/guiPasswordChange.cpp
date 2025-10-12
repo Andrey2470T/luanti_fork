@@ -201,9 +201,10 @@ bool GUIPasswordChange::OnEvent(const core::Event &event)
 		}
 	}
 	if (event.Type == EET_GUI_EVENT) {
+        IGUIElement *caller = (IGUIElement *)event.GUI.Caller;
 		if (event.GUI.Type == EGET_ELEMENT_FOCUS_LOST &&
 				isVisible()) {
-            if (!canTakeFocus(Environment->getRootGUIElement()->getElementFromId(event.GUI.Element.value()))) {
+            if (!canTakeFocus((IGUIElement *)event.GUI.Element)) {
 				infostream << "GUIPasswordChange: Not allowing focus change."
 					<< std::endl;
 				// Returning true disables focus change
@@ -211,7 +212,7 @@ bool GUIPasswordChange::OnEvent(const core::Event &event)
 			}
 		}
 		if (event.GUI.Type == EGET_BUTTON_CLICKED) {
-            switch (event.GUI.Caller.value()) {
+            switch (caller->getID()) {
 			case ID_change:
 				acceptInput();
 				if (processInput())
@@ -223,7 +224,7 @@ bool GUIPasswordChange::OnEvent(const core::Event &event)
 			}
 		}
         if (event.GUI.Type == GET_EDITBOX_ENTER) {
-            switch (event.GUI.Caller.value()) {
+            switch (caller->getID()) {
 			case ID_oldPassword:
 			case ID_newPassword1:
 			case ID_newPassword2:

@@ -13,9 +13,10 @@
 #include "client/render/renderer.h"
 
 LoadScreen::LoadScreen(ResourceCache *_cache, RenderSystem *_system, FontManager *_mgr)
-    : cache(_cache), renderer(_system->getRenderer())
+    : cache(_cache), rndsys(_system)
 {
-    guitext = std::make_unique<UITextSprite>(_mgr, _system->getGUIEnvironment()->getSkin(), EnrichedString(L""), renderer, cache);
+    guitext = std::make_unique<UITextSprite>(_mgr, _system->getGUIEnvironment()->getSkin(),
+        EnrichedString(L""), rndsys->getRenderer(), cache);
     guitext->setAlignment(GUIAlignment::Center, GUIAlignment::UpperLeft);
 
     progress_img = cache->get<img::Image>(ResourceType::IMAGE, "progress_bar.png");
@@ -30,7 +31,7 @@ LoadScreen::LoadScreen(ResourceCache *_cache, RenderSystem *_system, FontManager
     auto basicPool = _system->getPool(true);
     render::Texture2D *tex = basicPool->getAtlasByTile(progress_img)->getTexture();
     progress_rect = std::make_unique<UISprite>(
-        tex, renderer, cache, std::vector{UIPrimitiveType::RECTANGLE, UIPrimitiveType::RECTANGLE}, true);
+        tex, rndsys->getRenderer(), cache, std::vector{UIPrimitiveType::RECTANGLE, UIPrimitiveType::RECTANGLE}, true);
 
     auto shape = progress_rect->getShape();
     shape->addRectangle(progress_img_size_f, {});
@@ -95,10 +96,12 @@ void LoadScreen::draw(v2u screensize, const std::wstring &text, f32 dtime, bool 
     FogType fogtype;
     img::color8 fogcolor;
     f32 fogstart, fogend, density;
-    renderer->getFogParams(fogtype, fogcolor, fogstart, fogend, density);
-    renderer->setFogParams(fogtype, Renderer::menu_sky_color, fogstart, fogend, density);
 
-    renderer->getContext()->clearBuffers(render::CBF_COLOR, Renderer::menu_sky_color);
+    auto rnd = rndsys->getRenderer();
+    rnd->getFogParams(fogtype, fogcolor, fogstart, fogend, density);
+    rnd->setFogParams(fogtype, Renderer::menu_sky_color, fogstart, fogend, density);
+
+    rndsys->beginDraw(render::CBF_COLOR | render::CBF_DEPTH, Renderer::menu_sky_color);
 
     if (draw_clouds)
         g_menumgr->drawClouds(dtime);
@@ -110,4 +113,6 @@ void LoadScreen::draw(v2u screensize, const std::wstring &text, f32 dtime, bool 
     progress_rect->setClipRect(recti());
 
     guitext->draw();
+
+    rndsys->endDraw();
 }

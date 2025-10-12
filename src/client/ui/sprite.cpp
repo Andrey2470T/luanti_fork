@@ -10,6 +10,7 @@
 #include "extra_images.h"
 
 std::array<u8, 4> primVCounts = {2, 3, 4, 9};
+std::array<u8, 4> primICounts = {2, 3, 6, 9};
 
 void updateMaxArea(rectf &curMaxArea, const v2f &primULC, const v2f &primLRC, bool &init)
 {
@@ -259,8 +260,8 @@ void UIShape::updateBuffer(MeshBuffer *buf, u32 primitiveNum, bool pos_or_colors
             svtSetColor(buf, rect->colors[3], startV+3);
         }
 
-        f32 invW = 1.0f / imgSize.X;
-        f32 invH = 1.0f / imgSize.Y;
+        f32 invW = 1.0f / (imgSize.X == 0 ? 1 : imgSize.X);
+        f32 invH = 1.0f / (imgSize.Y == 0 ? 1 : imgSize.Y);
         rectf uv(
             rect->texr.ULC.X * invW, rect->texr.ULC.Y * invH,
             rect->texr.LRC.X * invW, rect->texr.LRC.Y * invH
@@ -380,8 +381,12 @@ void UISprite::rebuildMesh()
 {
     std::vector<UIPrimitiveType> prims(shape->getPrimitiveCount());
 
-    for (u32 i = 0; i < shape->getPrimitiveCount(); i++)
+    for (u32 i = 0; i < shape->getPrimitiveCount(); i++) {
         prims[i] = shape->getPrimitiveType(i);
+        //core::InfoStream << "rebuildMesh: prim type: " << (u8)prims[i] << "\n";
+    }
+
+    //core::InfoStream << "rebuildMesh: vcount: " << UIShape::countRequiredVCount(prims) << ", icount:" <<  UIShape::countRequiredICount(prims) << "\n";
     mesh->reallocateData(
         UIShape::countRequiredVCount(prims),
         UIShape::countRequiredICount(prims)
@@ -413,6 +418,7 @@ void UISprite::draw()
     if (shape->getPrimitiveCount() == 0 || !visible)
         return;
 
+    renderer->setRenderState(false);
     renderer->setDefaultShader(true, true);
     renderer->setDefaultUniforms(1.0f, 1, 0.5f, img::BM_COUNT);
 

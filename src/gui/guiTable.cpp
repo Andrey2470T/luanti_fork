@@ -958,7 +958,7 @@ bool GUITable::OnEvent(const core::Event &event)
 	}
 	if (event.Type == EET_GUI_EVENT &&
             event.GUI.Type == EGET_SCROLL_BAR_CHANGED &&
-            event.GUI.Caller == m_scrollbar->getID()) {
+            event.GUI.Caller == m_scrollbar) {
 		// Don't pass events from our scrollbar to the parent
 		return true;
 	}
@@ -1115,8 +1115,8 @@ void GUITable::sendTableEvent(s32 column, bool doubleclick)
 	if (Parent) {
 		core::Event e;
 		e.Type = EET_GUI_EVENT;
-        e.GUI.Caller = getID();
-        e.GUI.Element = std::nullopt;
+        e.GUI.Caller = this;
+        e.GUI.Element = 0;
         e.GUI.Type = EGET_TABLE_CHANGED;
 		Parent->OnEvent(e);
 	}

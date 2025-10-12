@@ -179,7 +179,7 @@ bool GUIOpenURLMenu::OnEvent(const core::Event &event)
 	if (event.Type == EET_GUI_EVENT) {
 		if (event.GUI.Type == EGET_ELEMENT_FOCUS_LOST &&
 				isVisible()) {
-            if (!canTakeFocus(Environment->getRootGUIElement()->getElementFromId(event.GUI.Element.value()))) {
+            if (!canTakeFocus((IGUIElement *)event.GUI.Element)) {
 				infostream << "GUIOpenURLMenu: Not allowing focus change."
 					<< std::endl;
 				// Returning true disables focus change
@@ -188,7 +188,8 @@ bool GUIOpenURLMenu::OnEvent(const core::Event &event)
 		}
 
 		if (event.GUI.Type == EGET_BUTTON_CLICKED) {
-            switch (event.GUI.Caller.value()) {
+            IGUIElement *caller = (IGUIElement *)event.GUI.Caller;
+            switch (caller->getID()) {
 			case ID_open:
 				porting::open_url(url);
 				quitMenu();

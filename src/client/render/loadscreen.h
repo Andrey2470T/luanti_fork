@@ -20,7 +20,6 @@ namespace core
 
 class ResourceCache;
 class RenderSystem;
-class Renderer;
 class UISprite;
 class UITextSprite;
 class FontManager;
@@ -28,7 +27,7 @@ class FontManager;
 class LoadScreen
 {
 	ResourceCache *cache;
-    Renderer *renderer;
+    RenderSystem *rndsys;
 
 	std::unique_ptr<UITextSprite> guitext;
     std::unique_ptr<UISprite> progress_rect;

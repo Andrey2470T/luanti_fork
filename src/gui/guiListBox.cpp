@@ -243,7 +243,7 @@ bool CGUIListBox::OnEvent(const core::Event &event)
 				if (oldSelected != Selected && Parent && !Selecting && !MoveOverSelect) {
 					core::Event e;
 					e.Type = EET_GUI_EVENT;
-                    e.GUI.Caller = getID();
+                    e.GUI.Caller = this;
 					e.GUI.Element = 0;
 					e.GUI.Type = EGET_LISTBOX_CHANGED;
 					Parent->OnEvent(e);
@@ -254,7 +254,7 @@ bool CGUIListBox::OnEvent(const core::Event &event)
 				if (Parent) {
 					core::Event e;
 					e.Type = EET_GUI_EVENT;
-                    e.GUI.Caller = getID();
+                    e.GUI.Caller = this;
 					e.GUI.Element = 0;
 					e.GUI.Type = EGET_LISTBOX_SELECTED_AGAIN;
 					Parent->OnEvent(e);
@@ -294,7 +294,7 @@ bool CGUIListBox::OnEvent(const core::Event &event)
 							if (Parent && Selected != current && !Selecting && !MoveOverSelect) {
 								core::Event e;
 								e.Type = EET_GUI_EVENT;
-                                e.GUI.Caller = getID();
+                                e.GUI.Caller = this;
 								e.GUI.Element = 0;
 								e.GUI.Type = EGET_LISTBOX_CHANGED;
 								Parent->OnEvent(e);
@@ -311,7 +311,7 @@ bool CGUIListBox::OnEvent(const core::Event &event)
 								Selected = current;
 								core::Event e;
 								e.Type = EET_GUI_EVENT;
-                                e.GUI.Caller = getID();
+                                e.GUI.Caller = this;
 								e.GUI.Element = 0;
 								e.GUI.Type = EGET_LISTBOX_CHANGED;
 								Parent->OnEvent(e);
@@ -329,11 +329,11 @@ bool CGUIListBox::OnEvent(const core::Event &event)
 		case EET_GUI_EVENT:
 			switch (event.GUI.Type) {
             case EGET_SCROLL_BAR_CHANGED:
-                if (event.GUI.Caller == ScrollBar->getID())
+                if (event.GUI.Caller == ScrollBar)
 					return true;
 				break;
             case EGET_ELEMENT_FOCUS_LOST: {
-                if (event.GUI.Caller == getID())
+                if (event.GUI.Caller == this)
                     Selecting = false;
 			}
 			default:
@@ -399,7 +399,7 @@ void CGUIListBox::selectNew(s32 ypos, bool onlyHover)
 	if (Parent && !onlyHover) {
 		core::Event event;
 		event.Type = EET_GUI_EVENT;
-        event.GUI.Caller = getID();
+        event.GUI.Caller = this;
 		event.GUI.Element = 0;
 		event.GUI.Type = eventType;
 		Parent->OnEvent(event);

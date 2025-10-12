@@ -233,22 +233,22 @@ bool CGUIComboBox::OnEvent(const core::Event &event)
 			switch (event.GUI.Type) {
 			case EGET_ELEMENT_FOCUS_LOST:
 				if (ListBox &&
-                        (Environment->hasFocus(ListBox) || ListBox->isMyChild(getElementFromId(event.GUI.Caller.value(), true))) &&
-                        event.GUI.Element != getID() &&
-                        !isMyChild(getElementFromId(event.GUI.Element.value(), true)) &&
-                        !ListBox->isMyChild(getElementFromId(event.GUI.Element.value(), true))) {
+                        (Environment->hasFocus(ListBox) || ListBox->isMyChild((IGUIElement*)event.GUI.Caller)) &&
+                        event.GUI.Element != this &&
+                        !isMyChild((IGUIElement*)event.GUI.Element) &&
+                        !ListBox->isMyChild((IGUIElement*)event.GUI.Element)) {
 					openCloseMenu();
 				}
 				break;
 			case EGET_BUTTON_CLICKED:
-                if (event.GUI.Caller == ListButton->getID()) {
+                if (event.GUI.Caller == ListButton) {
 					openCloseMenu();
 					return true;
 				}
 				break;
 			case EGET_LISTBOX_SELECTED_AGAIN:
 			case EGET_LISTBOX_CHANGED:
-                if (event.GUI.Caller == ListBox->getID()) {
+                if (event.GUI.Caller == ListBox) {
 					setSelected(ListBox->getSelected());
 					if (Selected < 0 || Selected >= (s32)Items.size())
 						setSelected(-1);
@@ -323,8 +323,8 @@ void CGUIComboBox::sendSelectionChangedEvent()
 		core::Event event;
 
 		event.Type = EET_GUI_EVENT;
-        event.GUI.Caller = getID();
-        event.GUI.Element = std::nullopt;
+        event.GUI.Caller = this;
+        event.GUI.Element = 0;
 		event.GUI.Type = EGET_COMBO_BOX_CHANGED;
 		Parent->OnEvent(event);
 	}
@@ -410,8 +410,8 @@ void CGUIComboBox::openCloseMenu()
 		if (Parent) {
 			core::Event event;
 			event.Type = EET_GUI_EVENT;
-            event.GUI.Caller = getID();
-            event.GUI.Element = std::nullopt;
+            event.GUI.Caller = this;
+            event.GUI.Element = 0;
 			event.GUI.Type = EGET_LISTBOX_OPENED;
 
 			// Allow to prevent the listbox from opening.

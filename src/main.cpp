@@ -34,6 +34,7 @@
 #include "client/core/clientlauncher.h"
 #include "gui/guiEngine.h"
 #include "gui/mainmenumanager.h"
+#include <Image/ImageLoader.h>
 #endif
 
 // for version information only
@@ -712,11 +713,23 @@ static bool init_common(const Settings &cmd_args, int argc, char *argv[])
 	init_gettext(porting::path_locale.c_str(),
 		g_settings->get("language"), argc, argv);
 
+#if CHECK_CLIENT_BUILD()
+    infostream << "Initializing SDL2_Image and SDL2_ttfont..." << std::endl;
+    img::ImageLoader::init();
+    render::TTFont::init();
+#endif
+
 	return true;
 }
 
 static void uninit_common()
 {
+#if CHECK_CLIENT_BUILD()
+    infostream << "Uninitializing SDL2_Image and SDL2_ttfont..." << std::endl;
+    img::ImageLoader::free();
+    render::TTFont::free();
+#endif
+
 	httpfetch_cleanup();
 
 	sockets_cleanup();

@@ -313,7 +313,7 @@ bool GUIKeyChangeMenu::OnEvent(const core::Event& event)
         if (event.GUI.Type == EGET_ELEMENT_FOCUS_LOST
 			&& isVisible())
 		{
-            if (!canTakeFocus(Environment->getRootGUIElement()->getElementFromId(event.GUI.Element.value())))
+            if (!canTakeFocus((IGUIElement *)event.GUI.Element))
 			{
 				infostream << "GUIKeyChangeMenu: Not allowing focus change."
 				<< std::endl;
@@ -323,7 +323,8 @@ bool GUIKeyChangeMenu::OnEvent(const core::Event& event)
 		}
         if (event.GUI.Type == EGET_BUTTON_CLICKED)
 		{
-            switch (event.GUI.Caller.value())
+            IGUIElement *caller = (IGUIElement *)event.GUI.Caller;
+            switch (caller->getID())
 			{
 				case GUI_ID_BACK_BUTTON: //back
 					acceptInput();
@@ -335,7 +336,7 @@ bool GUIKeyChangeMenu::OnEvent(const core::Event& event)
 				default:
 					resetMenu();
 					for (key_setting *ks : key_settings) {
-                        if (ks->id == (s32)event.GUI.Caller.value()) {
+                        if (ks->id == caller->getID()) {
 							active_key = ks;
 							break;
 						}

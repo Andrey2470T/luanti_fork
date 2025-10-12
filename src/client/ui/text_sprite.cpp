@@ -126,7 +126,7 @@ void UITextSprite::draw()
         rectN += count;
     }
 
-    if (visible) {
+    if (visible && !text.empty()) {
         renderer->setTexture(texture);
         renderer->setDefaultUniforms(1.0f, 1, 0.5f, img::BM_COUNT);
 

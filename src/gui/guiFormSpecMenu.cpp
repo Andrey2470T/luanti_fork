@@ -91,16 +91,16 @@ inline u32 clamp_u8(s32 value)
 GUIFormSpecMenu::GUIFormSpecMenu(JoystickController *joystick,
         gui::IGUIElement *parent, s32 id, IMenuManager *menumgr,
         Client *client, gui::IGUIEnvironment *guienv, ResourceCache *cache,
-        ISoundManager *sound_manager, IFormSource *fsrc, TextDest *tdst,
+        RenderSystem *rndsys, ISoundManager *sound_manager, IFormSource *fsrc, TextDest *tdst,
         const std::string &formspecPrepend, bool remap_dbl_click):
 	GUIModalMenu(guienv, parent, id, menumgr, remap_dbl_click),
 	m_invmgr(client),
     m_cache(cache),
 	m_sound_manager(sound_manager),
 	m_client(client),
-    m_fontmgr(m_client->getRenderSystem()->getFontManager()),
+    m_fontmgr(rndsys->getFontManager()),
 	m_formspec_prepend(formspecPrepend),
-    m_menu(std::make_unique<UIRects>(m_client->getRenderSystem(), 0)),
+    m_menu(std::make_unique<UIRects>(rndsys, 0)),
     m_form_src(fsrc),
     m_text_dst(tdst),
     m_joystick(joystick)
@@ -142,7 +142,7 @@ void GUIFormSpecMenu::create(GUIFormSpecMenu *&cur_formspec, Client *client,
 
 	if (cur_formspec == nullptr) {
         cur_formspec = new GUIFormSpecMenu(joystick, guienv->getRootGUIElement(), -1, g_menumgr.get(),
-            client, guienv, client->getResourceCache(), sound_manager, fs_src,
+            client, guienv, client->getResourceCache(), client->getRenderSystem(), sound_manager, fs_src,
 			txt_dest, formspecPrepend);
 
 		/*
@@ -3370,8 +3370,8 @@ void GUIFormSpecMenu::getAndroidUIInput()
 			if (enter_after_edit && editbox->getParent()) {
 				core::Event enter;
 				enter.Type = EET_GUI_EVENT;
-                enter.GUI.Caller = editbox->getID();
-                enter.GUI.Element = std::nullopt;
+                enter.GUI.Caller = editbox;
+                enter.GUI.Element = 0;
                 enter.GUI.Type = EGET_EDITBOX_ENTER;
 				editbox->getParent()->OnEvent(enter);
 			}
@@ -4786,10 +4786,11 @@ bool GUIFormSpecMenu::OnEvent(const core::Event& event)
 	if (event.Type == EET_GUI_EVENT) {
         if (event.GUI.Type == EGET_TAB_CHANGED
 				&& isVisible()) {
+            IGUIElement *caller = (IGUIElement*)(event.GUI.Caller);
 			// find the element that was clicked
 			for (GUIFormSpecMenu::FieldSpec &s : m_fields) {
 				if ((s.ftype == f_TabHeader) &&
-                        (s.fid == event.GUI.Caller)) {
+                        (s.fid == caller->getID())) {
 					if (!s.sound.empty() && m_sound_manager)
 						m_sound_manager->playSound(0, SoundSpec(s.sound, 1.0f));
 					s.send = true;
@@ -4801,7 +4802,7 @@ bool GUIFormSpecMenu::OnEvent(const core::Event& event)
 		}
 		if (event.GUI.Type == EGET_ELEMENT_FOCUS_LOST
 				&& isVisible()) {
-            if (!canTakeFocus(Environment->getRootGUIElement()->getElementFromId(event.GUI.Element.value()))) {
+            if (!canTakeFocus((IGUIElement*)event.GUI.Element)) {
 				infostream<<"GUIFormSpecMenu: Not allowing focus change."
 						<<std::endl;
 				// Returning true disables focus change
@@ -4812,9 +4813,9 @@ bool GUIFormSpecMenu::OnEvent(const core::Event& event)
 				(event.GUI.Type == EGET_CHECKBOX_CHANGED) ||
                 (event.GUI.Type == EGET_COMBO_BOX_CHANGED) ||
 				(event.GUI.Type == EGET_SCROLL_BAR_CHANGED)) {
-            s32 caller_id = event.GUI.Caller.value();
+            IGUIElement *caller = (IGUIElement*)(event.GUI.Caller);
 
-			if (caller_id == 257) {
+            if (caller->getID() == 257) {
 				if (m_allowclose) {
 					acceptInput(quit_mode_accept);
 					quitMenu();
@@ -4831,7 +4832,7 @@ bool GUIFormSpecMenu::OnEvent(const core::Event& event)
 				// if its a button, set the send field so
 				// lua knows which button was pressed
 
-				if (caller_id != s.fid)
+                if (caller->getID() != s.fid)
 					continue;
 
 				if (s.ftype == f_Button || s.ftype == f_CheckBox) {
@@ -4901,15 +4902,16 @@ bool GUIFormSpecMenu::OnEvent(const core::Event& event)
 		if (event.GUI.Type == EGET_SCROLL_BAR_CHANGED) {
 			// move scroll_containers
 			for (const std::pair<std::string, GUIScrollContainer *> &c : m_scroll_containers)
-                c.second->onScrollEvent(Environment->getRootGUIElement()->getElementFromId(event.GUI.Caller.value()));
+                c.second->onScrollEvent((IGUIElement*)event.GUI.Caller);
 		}
 
         if (event.GUI.Type == EGET_EDITBOX_ENTER) {
-            if (event.GUI.Caller.value() > 257) {
+            IGUIElement *caller = (IGUIElement *)event.GUI.Caller;
+            if (caller->getID() > 257) {
 				bool close_on_enter = true;
 				for (GUIFormSpecMenu::FieldSpec &s : m_fields) {
 					if (s.ftype == f_Unknown &&
-                            s.fid == event.GUI.Caller) {
+                            s.fid == caller->getID()) {
 						current_field_enter_pending = s.fname;
 						std::unordered_map<std::string, bool>::const_iterator it =
 							field_close_on_enter.find(s.fname);
@@ -4934,13 +4936,13 @@ bool GUIFormSpecMenu::OnEvent(const core::Event& event)
 		}
 
 		if (event.GUI.Type == EGET_TABLE_CHANGED) {
-            int current_id = event.GUI.Caller.value();
-			if (current_id > 257) {
+            IGUIElement *caller = (IGUIElement *)event.GUI.Caller;
+            if (caller->getID() > 257) {
 				// find the element that was clicked
 				for (GUIFormSpecMenu::FieldSpec &s : m_fields) {
 					// if it's a table, set the send field
 					// so lua knows which table was changed
-					if ((s.ftype == f_Table) && (s.fid == current_id)) {
+                    if ((s.ftype == f_Table) && (s.fid == caller->getID())) {
 						s.send = true;
 						acceptInput();
 						s.send=false;

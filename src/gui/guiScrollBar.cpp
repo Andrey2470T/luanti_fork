@@ -76,13 +76,13 @@ bool GUIScrollBar::OnEvent(const core::Event &event)
 			break;
 		case EET_GUI_EVENT:
 			if (event.GUI.Type == EGET_BUTTON_CLICKED) {
-                if (event.GUI.Caller == up_button->getID())
+                if (event.GUI.Caller == up_button)
 					setPosInterpolated(getTargetPos() - small_step);
-                else if (event.GUI.Caller == down_button->getID())
+                else if (event.GUI.Caller == down_button)
 					setPosInterpolated(getTargetPos() + small_step);
 				return true;
 			} else if (event.GUI.Type == EGET_ELEMENT_FOCUS_LOST)
-                if (event.GUI.Caller == getID())
+                if (event.GUI.Caller == this)
 					is_dragging = false;
 			break;
 		case EET_MOUSE_INPUT_EVENT: {
@@ -219,8 +219,8 @@ void GUIScrollBar::interpolatePos()
 
 		core::Event e;
 		e.Type = EET_GUI_EVENT;
-        e.GUI.Caller = getID();
-        e.GUI.Element = std::nullopt;
+        e.GUI.Caller = this;
+        e.GUI.Element = 0;
 		e.GUI.Type = EGET_SCROLL_BAR_CHANGED;
 		Parent->OnEvent(e);
 	}
@@ -299,8 +299,8 @@ void GUIScrollBar::setPosAndSend(const s32 &pos)
 	if (scroll_pos != old_pos && Parent) {
 		core::Event e;
 		e.Type = EET_GUI_EVENT;
-        e.GUI.Caller = getID();
-        e.GUI.Element = std::nullopt;
+        e.GUI.Caller = this;
+        e.GUI.Element = 0;
 		e.GUI.Type = EGET_SCROLL_BAR_CHANGED;
 		Parent->OnEvent(e);
 	}

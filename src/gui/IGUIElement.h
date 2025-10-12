@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "Core/LogStream.h"
 #include "IReferenceCounted.h"
 #include <BasicIncludes.h>
 #include <Utils/Rect.h>
@@ -289,7 +290,7 @@ public:
 	{
 		while (!Children.empty()) {
 			auto child = Children.back();
-			child->remove();
+            child->remove();
 		}
 	}
 
@@ -505,6 +506,7 @@ public:
 			return true;
 		Children.erase(child->ParentPos);
 		child->ParentPos = Children.insert(Children.end(), child);
+        core::InfoStream << "bringToFront: element id = " << child->getID() << "\n";
 		return true;
 	}
 
@@ -518,6 +520,7 @@ public:
 			return true;
 		Children.erase(child->ParentPos);
 		child->ParentPos = Children.insert(Children.begin(), child);
+        core::InfoStream << "sendToBack: element id = " << child->getID() << "\n";
 		return true;
 	}
 
@@ -698,6 +701,7 @@ protected:
 			child->LastParentRect = getAbsolutePosition();
 			child->Parent = this;
 			child->ParentPos = Children.insert(Children.end(), child);
+            core::InfoStream << "bringToFront: element id = " << child->getID() << "\n";
 		}
 	}
 

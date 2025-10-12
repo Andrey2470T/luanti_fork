@@ -19,6 +19,7 @@ enum class UIPrimitiveType : u8
 };
 
 extern std::array<u8, 4> primVCounts;
+extern std::array<u8, 4> primICounts;
 
 void updateMaxArea(rectf &curMaxArea, const v2f &primULC, const v2f &primLRC, bool &init);
 

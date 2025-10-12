@@ -11,6 +11,10 @@ void Batcher2D::appendLine(MeshBuffer *buf, const v2f &startPos, const v2f &endP
 {
     appendVertex(buf, startPos, color);
     appendVertex(buf, endPos, color);
+
+    u32 curVCount = buf->getVertexCount();
+    appendIndex(buf, curVCount);
+    appendIndex(buf, curVCount+1);
 }
 
 void Batcher2D::appendTriangle(MeshBuffer *buf, const std::array<v2f, 3> &positions,
@@ -19,6 +23,11 @@ void Batcher2D::appendTriangle(MeshBuffer *buf, const std::array<v2f, 3> &positi
     appendVertex(buf, positions[0], color, uvs[0]);
     appendVertex(buf, positions[1], color, uvs[1]);
     appendVertex(buf, positions[2], color, uvs[2]);
+
+    u32 curVCount = buf->getVertexCount();
+    appendIndex(buf, curVCount);
+    appendIndex(buf, curVCount+1);
+    appendIndex(buf, curVCount+2);
 }
 
 void Batcher2D::appendRectangle(MeshBuffer *buf, const rectf &rect, const std::array<img::color8, 4> &colors,
@@ -42,7 +51,9 @@ void Batcher2D::appendEllipse(MeshBuffer *buf, f32 a, f32 b, const v2u &img_size
     const u32 angleStep = PI / 4;
     const u32 vertexCount = 8;
 
+    u32 curVCount = buf->getVertexCount();
     appendVertex(buf, center, c, v2f(0.5));
+    appendIndex(buf, curVCount);
     for (u8 i = 0; i < vertexCount; i++) {
         u32 curAngle = i * angleStep;
         v2f relPos(a * cos(curAngle), b * sin(curAngle));
@@ -51,6 +62,7 @@ void Batcher2D::appendEllipse(MeshBuffer *buf, f32 a, f32 b, const v2u &img_size
             a * cos(curAngle + uv_start_angle_offset * angleStep),
             b * sin(curAngle + uv_start_angle_offset * angleStep)) / v2f(img_size.X, img_size.Y);
         appendVertex(buf, center + relPos, c, v2f(0.5f) + uvRelPos);
+        appendIndex(buf, curVCount+i+1);
     }
 }
 

@@ -11,7 +11,6 @@
 enum class MeshBufferType
 {
 	VERTEX,
-    //INDEX,
 	VERTEX_INDEX
 };
 
@@ -22,8 +21,9 @@ class MeshBuffer
     struct SubMeshBuffer
     {
         std::unique_ptr<ByteArray> Data;
+        // 'DataCount' is a count of vertices/indices
         // As usually we allocate some data storage at once, 'DataCount' can be less 'Data.size()'
-        u32 DataCount;
+        u32 DataCount = 0;
         bool Dirty = false;
 
         // Range of changed elements (vertices or indices)
@@ -37,7 +37,6 @@ class MeshBuffer
     std::shared_ptr<render::Mesh> VAO;
 
 	aabbf BoundingBox;
-    u32 VertexCmpCount; // summary count of the components per the used vertex type
 public:
     // Creates either VERTEX or VERTEX_INDEX buffer types
     MeshBuffer(bool createIBO = true, const render::VertexTypeDescriptor &descr=render::DefaultVType,
@@ -45,9 +44,6 @@ public:
         : Type(createIBO ? MeshBufferType::VERTEX_INDEX : MeshBufferType::VERTEX),
           VAO(std::make_shared<render::Mesh>(descr, createIBO, usage))
 	{
-		for (auto &attr : VAO->getVertexType().Attributes)
-			VertexCmpCount += attr.ComponentCount;
-
         initData(0, 0);
 	}
     // Creates either VERTEX or VERTEX_INDEX buffer types allocating the storage for 'vertexCount' and 'indexCount'
@@ -57,18 +53,8 @@ public:
         : Type(createIBO ? MeshBufferType::VERTEX_INDEX : MeshBufferType::VERTEX),
         VAO(std::make_shared<render::Mesh>(nullptr, vertexCount, nullptr, indexCount, descr, createIBO, usage))
     {
-        for (auto &attr : VAO->getVertexType().Attributes)
-            VertexCmpCount += attr.ComponentCount;
-
         initData(vertexCount, indexCount);
     }
-    // Creates always INDEX type not creating a new VAO
-    /*MeshBuffer(const std::shared_ptr<render::Mesh> &sharedMesh)
-        : Type(MeshBufferType::INDEX), VAO(sharedMesh)
-    {
-        for (auto &attr : VAO->getVertexType().Attributes)
-            VertexCmpCount += attr.ComponentCount;
-    }*/
 
 	MeshBufferType getType() const
 	{
@@ -165,15 +151,11 @@ public:
     }
 private:
     void initData(u32 vertexCount=0, u32 indexCount=0);
-    void checkAttr(BasicType requiredType, u8 requiredCmpsCount, u32 attrN) const;
+    void checkVertex(BasicType requiredType, u8 requiredCmpsCount, u32 attrN, u32 vertexN) const;
     void update(BasicType requiredType, u8 requiredCmpsCount, u32 attrN, u32 vertexN);
 
     u64 countElemsBefore(u32 vertexNumber, u32 attrNumber) const;
 
-    bool hasVBO() const
-    {
-        return Type == MeshBufferType::VERTEX || Type == MeshBufferType::VERTEX_INDEX;
-    }
     bool hasIBO() const
     {
         return Type == MeshBufferType::VERTEX_INDEX;

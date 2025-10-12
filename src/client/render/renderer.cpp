@@ -1,6 +1,7 @@
 #include "renderer.h"
 #include <Render/Texture2D.h>
 #include <Image/ImageModifier.h>
+#include "Image/Converting.h"
 #include "client/mesh/meshbuffer.h"
 #include "client/media/resource.h"
 #include "client/render/rendersystem.h"
@@ -178,14 +179,14 @@ void Renderer::disableScissorTest()
 bool Renderer::fogEnabled() const
 {
     auto byteArr = fog_buffer->getUniformsData();
-    return byteArr.getInt(0);
+    return byteArr.getUInt8(0);
 }
 
 void Renderer::getFogParams(FogType &type, img::color8 &color, f32 &start, f32 &end, f32 &density) const
 {
     auto byteArr = fog_buffer->getUniformsData();
 
-    type = (FogType)byteArr.getInt(1);
+    type = (FogType)byteArr.getUInt8(1);
     color = img::getColor8(&byteArr, 2);
     start = byteArr.getFloat(6);
     end = byteArr.getFloat(7);
@@ -199,9 +200,9 @@ void Renderer::enableFog(bool enable)
 
     auto byteArr = fog_buffer->getUniformsData();
 
-    byteArr.setInt((s32)enable, 0);
+    byteArr.setUInt8((u8)enable, 0);
 
-    fog_buffer->uploadSubData(0, sizeof(s32));
+    fog_buffer->uploadSubData(0, sizeof(u8));
 }
 
 void Renderer::setFogParams(FogType type, img::color8 color, f32 start, f32 end, f32 density)
@@ -217,13 +218,13 @@ void Renderer::setFogParams(FogType type, img::color8 color, f32 start, f32 end,
 
     auto byteArr = fog_buffer->getUniformsData();
 
-    byteArr.setInt((s32)type, 1);
+    byteArr.setUInt8((u8)type, 1);
     img::setColor8(&byteArr, color, 2);
     byteArr.setFloat(start, 6);
     byteArr.setFloat(end, 7);
     byteArr.setFloat(density, 8);
 
-    fog_buffer->uploadSubData(sizeof(s32), fog_buffer_size-sizeof(s32));
+    fog_buffer->uploadSubData(sizeof(u8), byteArr.bytesCount()-sizeof(u8));
 }
 
 matrix4 Renderer::getTransformMatrix(TMatrix type) const
@@ -379,10 +380,26 @@ void Renderer::createDefaultShaders()
 
 void Renderer::createUBOs()
 {
-    ByteArray matrix_ba(16*4, matrix_buffer_size);
+    const u32 matrixCmpsCount = 16 * 4;
+    const u32 matrixDataSize = sizeof(f32) * matrixCmpsCount;
+    ByteArray matrix_ba(matrixCmpsCount, matrixDataSize);
+
+    for (u32 k = 0; k < matrixCmpsCount; k++)
+        matrix_ba.setFloat(0.0f, k);
+
     matrix_buffer = std::make_unique<UniformBuffer>(MATRIX_UBO_BINDING_POINT, matrix_ba);
 
-    ByteArray fog_ba(9, fog_buffer_size);
+    const u32 fogCmpsCount = 1 + 1 + 4 + 3;
+    const u32 fogDataSize = sizeof(u8) + sizeof(u8) + 4 * sizeof(u8) + 3 * sizeof(f32);
+    ByteArray fog_ba(fogCmpsCount, fogDataSize);
+
+    fog_ba.setUInt8(0, 0);
+    fog_ba.setUInt8(0, 1);
+    img::setColor8(&fog_ba, img::colorU32NumberToObject(0), 2);
+    fog_ba.setFloat(0.0f, 6);
+    fog_ba.setFloat(0.0f, 7);
+    fog_ba.setFloat(0.0f, 8);
+
     fog_buffer = std::make_unique<UniformBuffer>(FOG_UBO_BINDING_POINT, fog_ba);
 }
 

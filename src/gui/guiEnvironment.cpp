@@ -132,8 +132,8 @@ bool CGUIEnvironment::setFocus(IGUIElement *element)
 		currentFocus->grab();
 		core::Event e;
 		e.Type = EET_GUI_EVENT;
-        e.GUI.Caller = Focus->getID();
-        e.GUI.Element = element->getID();
+        e.GUI.Caller = Focus;
+        e.GUI.Element = element;
 		e.GUI.Type = EGET_ELEMENT_FOCUS_LOST;
 		if (Focus->OnEvent(e)) {
 			if (element)
@@ -153,8 +153,8 @@ bool CGUIEnvironment::setFocus(IGUIElement *element)
 		// send focused event
 		core::Event e;
 		e.Type = EET_GUI_EVENT;
-        e.GUI.Caller = element->getID();
-        e.GUI.Element = Focus->getID();
+        e.GUI.Caller = element;
+        e.GUI.Element = Focus;
 		e.GUI.Type = EGET_ELEMENT_FOCUSED;
 		if (element->OnEvent(e)) {
 			if (element)
@@ -195,8 +195,8 @@ bool CGUIEnvironment::removeFocus(IGUIElement *element)
 	if (Focus && Focus == element) {
 		core::Event e;
 		e.Type = EET_GUI_EVENT;
-        e.GUI.Caller = Focus->getID();
-        e.GUI.Element = std::nullopt;
+        e.GUI.Caller = Focus;
+        e.GUI.Element = 0;
 		e.GUI.Type = EGET_ELEMENT_FOCUS_LOST;
 		if (Focus->OnEvent(e)) {
 			return false;
@@ -254,7 +254,7 @@ bool CGUIEnvironment::OnEvent(const core::Event &event)
 {
 
 	bool ret = false;
-    if (UserReceiver && (event.Type != EET_MOUSE_INPUT_EVENT) && (event.Type != EET_KEY_INPUT_EVENT) && (event.Type != EET_GUI_EVENT || event.GUI.Caller != getID())) {
+    if (UserReceiver && (event.Type != EET_MOUSE_INPUT_EVENT) && (event.Type != EET_KEY_INPUT_EVENT) && (event.Type != EET_GUI_EVENT || event.GUI.Caller != this)) {
 		ret = UserReceiver->OnEvent(event);
 	}
 
@@ -372,15 +372,15 @@ void CGUIEnvironment::updateHoveredElement(v2i mousePos)
 		event.Type = EET_GUI_EVENT;
 
 		if (lastHovered) {
-            event.GUI.Caller = lastHovered->getID();
-            event.GUI.Element = std::nullopt;
+            event.GUI.Caller = lastHovered;
+            event.GUI.Element = 0;
 			event.GUI.Type = EGET_ELEMENT_LEFT;
 			lastHovered->OnEvent(event);
 		}
 
 		if (Hovered) {
-            event.GUI.Caller = Hovered->getID();
-            event.GUI.Element = Hovered->getID();
+            event.GUI.Caller = Hovered;
+            event.GUI.Element = Hovered;
 			event.GUI.Type = EGET_ELEMENT_HOVERED;
 			Hovered->OnEvent(event);
 		}

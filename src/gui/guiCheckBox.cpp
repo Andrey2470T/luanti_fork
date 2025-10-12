@@ -47,7 +47,7 @@ bool CGUICheckBox::OnEvent(const core::Event &event)
 				if (Parent) {
 					core::Event newEvent;
 					newEvent.Type = EET_GUI_EVENT;
-                    newEvent.GUI.Caller = getID();
+                    newEvent.GUI.Caller = this;
 					newEvent.GUI.Element = 0;
 					Checked = !Checked;
 					newEvent.GUI.Type = EGET_CHECKBOX_CHANGED;
@@ -58,7 +58,7 @@ bool CGUICheckBox::OnEvent(const core::Event &event)
 			break;
 		case EET_GUI_EVENT:
 			if (event.GUI.Type == EGET_ELEMENT_FOCUS_LOST) {
-                if (event.GUI.Caller == getID())
+                if (event.GUI.Caller == this)
 					Pressed = false;
 			}
 			break;
@@ -79,7 +79,7 @@ bool CGUICheckBox::OnEvent(const core::Event &event)
 
 					core::Event newEvent;
 					newEvent.Type = EET_GUI_EVENT;
-                    newEvent.GUI.Caller = getID();
+                    newEvent.GUI.Caller = this;
 					newEvent.GUI.Element = 0;
 					Checked = !Checked;
 					newEvent.GUI.Type = EGET_CHECKBOX_CHANGED;

@@ -3,95 +3,95 @@
 
 u8 MeshBuffer::getUInt8Attr(u32 attrN, u32 vertexN) const
 {
-    checkAttr(BasicType::UINT8, 1, attrN);
+    checkVertex(BasicType::UINT8, 1, attrN, vertexN);
     return VBuffer.Data->getUInt8(countElemsBefore(vertexN, attrN));
 }
 s8 MeshBuffer::getCharAttr(u32 attrN, u32 vertexN) const
 {
-    checkAttr(BasicType::CHAR, 1, attrN);
+    checkVertex(BasicType::CHAR, 1, attrN, vertexN);
     return VBuffer.Data->getChar(countElemsBefore(vertexN, attrN));
 }
 u16 MeshBuffer::getUInt16Attr(u32 attrN, u32 vertexN) const
 {
-    checkAttr(BasicType::UINT16, 1, attrN);
+    checkVertex(BasicType::UINT16, 1, attrN, vertexN);
     return VBuffer.Data->getUInt16(countElemsBefore(vertexN, attrN));
 }
 s16 MeshBuffer::getShortAttr(u32 attrN, u32 vertexN) const
 {
-    checkAttr(BasicType::SHORT, 1, attrN);
+    checkVertex(BasicType::SHORT, 1, attrN, vertexN);
     return VBuffer.Data->getShort(countElemsBefore(vertexN, attrN));
 }
 u32 MeshBuffer::getUInt32Attr(u32 attrN, u32 vertexN) const
 {
-    checkAttr(BasicType::UINT32, 1, attrN);
+    checkVertex(BasicType::UINT32, 1, attrN, vertexN);
     return VBuffer.Data->getUInt32(countElemsBefore(vertexN, attrN));
 }
 s32 MeshBuffer::getIntAttr(u32 attrN, u32 vertexN) const
 {
-    checkAttr(BasicType::INT, 1, attrN);
+    checkVertex(BasicType::INT, 1, attrN, vertexN);
     return VBuffer.Data->getInt(countElemsBefore(vertexN, attrN));
 }
 f32 MeshBuffer::getFloatAttr(u32 attrN, u32 vertexN) const
 {
-    checkAttr(BasicType::FLOAT, 1, attrN);
+    checkVertex(BasicType::FLOAT, 1, attrN, vertexN);
     return VBuffer.Data->getFloat(countElemsBefore(vertexN, attrN));
 }
 u64 MeshBuffer::getUInt64Attr(u32 attrN, u32 vertexN) const
 {
-    checkAttr(BasicType::UINT64, 1, attrN);
+    checkVertex(BasicType::UINT64, 1, attrN, vertexN);
     return VBuffer.Data->getUInt64(countElemsBefore(vertexN, attrN));
 }
 s64 MeshBuffer::getLongIntAttr(u32 attrN, u32 vertexN) const
 {
-    checkAttr(BasicType::LONG_INT, 1, attrN);
+    checkVertex(BasicType::LONG_INT, 1, attrN, vertexN);
     return VBuffer.Data->getLongInt(countElemsBefore(vertexN, attrN));
 }
 f64 MeshBuffer::getDoubleAttr(u32 attrN, u32 vertexN) const
 {
-    checkAttr(BasicType::DOUBLE, 1, attrN);
+    checkVertex(BasicType::DOUBLE, 1, attrN, vertexN);
     return VBuffer.Data->getDouble(countElemsBefore(vertexN, attrN));
 }
 
 v2u MeshBuffer::getV2UAttr(u32 attrN, u32 vertexN) const
 {
-    checkAttr(BasicType::UINT32, 2, attrN);
+    checkVertex(BasicType::UINT32, 2, attrN, vertexN);
     return VBuffer.Data->getV2U(countElemsBefore(vertexN, attrN));
 }
 v2i MeshBuffer::getV2IAttr(u32 attrN, u32 vertexN) const
 {
-    checkAttr(BasicType::INT, 2, attrN);
+    checkVertex(BasicType::INT, 2, attrN, vertexN);
     return VBuffer.Data->getV2I(countElemsBefore(vertexN, attrN));
 }
 v2f MeshBuffer::getV2FAttr(u32 attrN, u32 vertexN) const
 {
-    checkAttr(BasicType::FLOAT, 2, attrN);
+    checkVertex(BasicType::FLOAT, 2, attrN, vertexN);
     return VBuffer.Data->getV2F(countElemsBefore(vertexN, attrN));
 }
 
 v3u MeshBuffer::getV3UAttr(u32 attrN, u32 vertexN) const
 {
-    checkAttr(BasicType::UINT32, 3, attrN);
+    checkVertex(BasicType::UINT32, 3, attrN, vertexN);
     return VBuffer.Data->getV3U(countElemsBefore(vertexN, attrN));
 }
 v3i MeshBuffer::getV3IAttr(u32 attrN, u32 vertexN) const
 {
-    checkAttr(BasicType::INT, 3, attrN);
+    checkVertex(BasicType::INT, 3, attrN, vertexN);
     return VBuffer.Data->getV3I(countElemsBefore(vertexN, attrN));
 }
 v3f MeshBuffer::getV3FAttr(u32 attrN, u32 vertexN) const
 {
-    checkAttr(BasicType::FLOAT, 3, attrN);
+    checkVertex(BasicType::FLOAT, 3, attrN, vertexN);
     return VBuffer.Data->getV3F(countElemsBefore(vertexN, attrN));
 }
 img::color8 MeshBuffer::getRGBAttr(u32 attrN, u32 vertexN) const
 {
-    checkAttr(BasicType::UINT8, 3, attrN);
+    checkVertex(BasicType::UINT8, 3, attrN, vertexN);
     return img::getColor8(VBuffer.Data.get(), countElemsBefore(vertexN, attrN), img::PF_RGB8);
 }
 
 img::color8 MeshBuffer::getRGBAAttr(u32 attrN, u32 vertexN) const
 {
-    checkAttr(BasicType::UINT8, 4, attrN);
+    checkVertex(BasicType::UINT8, 4, attrN, vertexN);
     return img::getColor8(VBuffer.Data.get(), countElemsBefore(vertexN, attrN));
 }
 
@@ -103,7 +103,6 @@ u32 MeshBuffer::getIndexAt(u32 pos) const
 
 void MeshBuffer::recalculateBoundingBox()
 {
-    if (!hasVBO()) return;
 	u32 vcount = getVertexCount();
 	if (vcount) {
         BoundingBox.reset(getV3FAttr(0, 0));
@@ -226,7 +225,7 @@ void MeshBuffer::setIndexAt(u32 index, u32 pos)
 
     IBuffer.Data->setUInt32(index, pos);
 
-    IBuffer.DataCount = std::max(IBuffer.DataCount, pos);
+    IBuffer.DataCount = std::max(IBuffer.DataCount, pos+1);
     IBuffer.StartChange = IBuffer.StartChange != std::nullopt ?
         std::min(VBuffer.StartChange.value(), pos) : pos;
     IBuffer.EndChange = IBuffer.EndChange != std::nullopt ?
@@ -241,16 +240,13 @@ void MeshBuffer::reallocateData(u32 vertexCount, u32 indexCount)
     if (!VBuffer.Data || (hasIBO() && !IBuffer.Data))
         return;
 
-    if (vertexCount == VBuffer.Data->count() / vType.Attributes.size() && indexCount == IBuffer.Data->count())
+    if (vertexCount == VBuffer.Data->count() / vType.ComponentsCount && indexCount == IBuffer.Data->count())
         return;
 
     if (hasIBO())
         IBuffer.Data->reallocate(indexCount, sizeof(u32) * indexCount);
 
-    //if (Type == MeshBufferType::INDEX)
-    //    return;
-
-    VBuffer.Data->reallocate(vType.Attributes.size() * vertexCount, render::sizeOfVertexType(vType) * vertexCount);
+    VBuffer.Data->reallocate(vType.ComponentsCount * vertexCount, render::sizeOfVertexType(vType) * vertexCount);
 }
 
 void MeshBuffer::uploadData()
@@ -315,14 +311,13 @@ void MeshBuffer::clear()
 
 MeshBuffer *MeshBuffer::copy() const
 {
-    MeshBuffer *new_mesh = new MeshBuffer(Type != MeshBufferType::VERTEX, getVAO()->getVertexType());
+    MeshBuffer *new_mesh = new MeshBuffer(Type != MeshBufferType::VERTEX, VAO->getVertexType());
 
-    if (hasVBO())
-        memcpy(new_mesh->VBuffer.Data.get()->data(), VBuffer.Data.get()->data(), getVertexCount());
+    memcpy(new_mesh->VBuffer.Data.get()->data(), VBuffer.Data.get()->data(), getVertexCount());
     if (hasIBO())
         memcpy(new_mesh->IBuffer.Data.get()->data(), IBuffer.Data.get()->data(), getIndexCount());
 
-    new_mesh->reallocateData(hasVBO() ? getVertexCount() : 0, hasIBO() ? getIndexCount() : 0);
+    new_mesh->reallocateData(getVertexCount(), hasIBO() ? getIndexCount() : 0);
     new_mesh->setBoundingBox(getBoundingBox());
 
     return new_mesh;
@@ -331,25 +326,28 @@ MeshBuffer *MeshBuffer::copy() const
 void MeshBuffer::initData(u32 vertexCount, u32 indexCount)
 {
     auto vType = VAO->getVertexType();
-    if (!VBuffer.Data) {
-        VBuffer.Data = std::make_unique<ByteArray>(
-            vType.Attributes.size() * vertexCount, render::sizeOfVertexType(vType) * vertexCount);
-    }
+
+    VBuffer.Data = std::make_unique<ByteArray>(
+        vType.ComponentsCount * vertexCount, render::sizeOfVertexType(vType) * vertexCount);
+
     if (hasIBO())
         IBuffer.Data = std::make_unique<ByteArray>(indexCount, sizeof(u32) * indexCount);
 }
 
-void MeshBuffer::checkAttr(BasicType requiredType, u8 requiredCmpsCount, u32 attrN) const
+void MeshBuffer::checkVertex(BasicType requiredType, u8 requiredCmpsCount, u32 attrN, u32 vertexN) const
 {
-    auto &vertexAttr = VAO->getVertexType().Attributes.at(attrN);
+    auto vType = VAO->getVertexType();
+
+    assert(vertexN < VBuffer.Data->count() / vType.ComponentsCount);
+    auto &vertexAttr = vType.Attributes.at(attrN);
     assert(vertexAttr.ComponentType == requiredType && vertexAttr.ComponentCount == requiredCmpsCount);
 }
 
 void MeshBuffer::update(BasicType requiredType, u8 requiredCmpsCount, u32 attrN, u32 vertexN)
 {
-    checkAttr(requiredType, requiredCmpsCount, attrN);
+    checkVertex(requiredType, requiredCmpsCount, attrN, vertexN);
 
-    VBuffer.DataCount = std::max(VBuffer.DataCount, vertexN);
+    VBuffer.DataCount = std::max(VBuffer.DataCount, vertexN+1);
     VBuffer.StartChange = VBuffer.StartChange != std::nullopt ?
         std::min(VBuffer.StartChange.value(), vertexN) : vertexN;
     VBuffer.EndChange = VBuffer.EndChange != std::nullopt ?
@@ -360,8 +358,8 @@ void MeshBuffer::update(BasicType requiredType, u8 requiredCmpsCount, u32 attrN,
 u64 MeshBuffer::countElemsBefore(u32 vertexNumber, u32 attrNumber) const
 {
     auto vType = VAO->getVertexType();
-    assert(hasVBO() && VBuffer.Data && vertexNumber <= VBuffer.Data->count() / vType.Attributes.size());
+    assert(VBuffer.Data && vertexNumber < VBuffer.Data->count() / vType.ComponentsCount);
 
-	auto &attr = VAO->getVertexType().Attributes.at(attrNumber);
-	return VertexCmpCount * vertexNumber + attrNumber * attr.Offset;
+    auto &attr = vType.Attributes.at(attrNumber);
+    return vType.ComponentsCount * vertexNumber + attr.Offset;
 }

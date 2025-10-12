@@ -29,7 +29,7 @@
 #include "client/ao/nametag.h"
 #include "client/render/datatexture.h"
 #include "client/pipeline/pipeline.h"
-#include <Image/ImageLoader.h>
+#include <OpenGLIncludes.h>
 
 RenderSystem::RenderSystem(ResourceCache *_cache)
     : cache(_cache)
@@ -45,9 +45,6 @@ RenderSystem::RenderSystem(ResourceCache *_cache)
     renderer = std::make_unique<Renderer>(cache, recti(0, 0, viewport.X, viewport.Y), glParams->maxTextureUnits);
     core::InfoStream << "RenderSystem 4\n";
 
-    img::ImageLoader::init();
-    render::TTFont::init();
-
     guienv = std::make_unique<gui::CGUIEnvironment>(this, window->getWindowSize(), cache);
     core::InfoStream << "RenderSystem 5\n";
 
@@ -61,9 +58,6 @@ RenderSystem::RenderSystem(ResourceCache *_cache)
 
 RenderSystem::~RenderSystem()
 {
-    img::ImageLoader::free();
-    render::TTFont::free();
-
     g_settings->deregisterAllChangedCallbacks(this);
 }
 
@@ -100,6 +94,8 @@ void RenderSystem::setWindowIcon()
 {
     fs::path icon_name = "logo.png";
     img::Image *icon = cache->get<img::Image>(ResourceType::IMAGE, icon_name);
+
+    core::InfoStream << "setWindowIcon: width: " << icon->getWidth() << ", height: " << icon->getHeight() << ", format: " << icon->getFormat() << "\n";
 
     if (!icon) {
         warningstream << "RenderSystem::setWindowIcon(): Could not load the window icon:" << icon_name << std::endl;
@@ -139,12 +135,26 @@ void RenderSystem::buildGUIAtlas()
     guiPool->buildRectpack2DAtlas();
 }
 
+void RenderSystem::beginDraw(u16 flags, img::color8 color, f32 depth, u8 stencil)
+{
+    renderer->getContext()->clearBuffers(flags, color, depth, stencil);
+}
+
+void RenderSystem::endDraw()
+{
+    window->SwapWindow();
+}
+
 bool RenderSystem::run()
 {
     auto open = window->pollEventsFromQueue();
 
     if (open) {
-        while (auto event = window->popEvent()) {
+        while (true) {
+            auto event = window->popEvent();
+
+            if (!event)
+                break;
             if (client) {
                 bool processed = client->getInputHandler()->getReceiver()->OnEvent(*event);
 
@@ -202,7 +212,7 @@ void RenderSystem::render()
     */
     TimeTaker tt_draw("Draw scene", nullptr, PRECISION_MICRO);
 
-    renderer->getContext()->clearBuffers(render::CBF_COLOR | render::CBF_DEPTH, sky_color);
+    beginDraw(render::CBF_COLOR | render::CBF_DEPTH, sky_color);
 
     pp_core->run(sky_color, gameui->getFlags() & GUIF_SHOW_HUD);
 
@@ -210,6 +220,8 @@ void RenderSystem::render()
         Profiler graph
     */
     gameui->getProfilerGraphs()->draw();
+
+    endDraw();
 
     auto drawstats = renderer->getDrawStats();
     drawstats.drawtime = tt_draw.stop(true);

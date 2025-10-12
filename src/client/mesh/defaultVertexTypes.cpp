@@ -48,6 +48,7 @@ const render::VertexTypeDescriptor AOVType{
     2
 };
 
+// Skybox (clouds and stars) vertex type with the second (hardware) color (position, color, normal, uv, hw_color)
 const render::VertexTypeDescriptor SkyboxVType{
     "Skybox3D",
     {
@@ -75,15 +76,27 @@ img::color8 svtGetColor(MeshBuffer *buf, u32 num)
 }
 v3f svtGetNormal(MeshBuffer *buf, u32 num)
 {
-    return buf->getV3FAttr(2, num);
+    auto vertexType = buf->getVAO()->getVertexType();
+
+    if (vertexType.InitNormal)
+        return buf->getV3FAttr(2, num);
+    return v3f();
 }
 v2f svtGetUV(MeshBuffer *buf, u32 num)
 {
-    return buf->getV2FAttr(3, num);
+    auto vertexType = buf->getVAO()->getVertexType();
+    if (vertexType.Name == "Standard2D")
+        return buf->getV2FAttr(2, num);
+    else
+        return buf->getV2FAttr(3, num);
 }
 v3f svtGetUV3D(MeshBuffer *buf, u32 num)
 {
-    return buf->getV3FAttr(3, num);
+    auto vertexType = buf->getVAO()->getVertexType();
+
+    if (vertexType.InitUV && vertexType.UVCount == 3)
+        return buf->getV3FAttr(3, num);
+    return v3f();
 }
 u8 svtGetMType(MeshBuffer *buf, u32 num)
 {
@@ -93,9 +106,12 @@ img::color8 svtGetHWColor(MeshBuffer *buf, u32 num)
 {
     u32 attr_n = 4;
 
-    if (buf->getVAO()->getVertexType().Name == "TwoColorNode3D")
+    if (buf->getVAO()->getVertexType().Name == "TwoColorNode3D") {
         attr_n = 5;
-    return buf->getRGBAttr(attr_n, num);
+        return buf->getRGBAttr(attr_n, num);
+    }
+    else
+        return buf->getRGBAAttr(attr_n, num);
 }
 
 
@@ -123,8 +139,12 @@ void svtSetUV(MeshBuffer *buf, const v2f &uv, u32 num)
 {
     auto vertexType = buf->getVAO()->getVertexType();
 
-    if (vertexType.InitUV && vertexType.UVCount == 2)
-        buf->setV2FAttr(uv, 3, num);
+    if (vertexType.InitUV && vertexType.UVCount == 2) {
+        if (vertexType.Name == "Standard2D")
+            buf->setV2FAttr(uv, 2, num);
+        else
+            buf->setV2FAttr(uv, 3, num);
+    }
 }
 
 void svtSetUV3D(MeshBuffer *buf, const v3f &uv, u32 num)
@@ -144,9 +164,12 @@ void svtSetHWColor(MeshBuffer *buf, const img::color8 &hw_c, u32 num)
 {
     u32 attr_n = 4;
 
-    if (buf->getVAO()->getVertexType().Name == "TwoColorNode3D")
+    if (buf->getVAO()->getVertexType().Name == "TwoColorNode3D") {
         attr_n = 5;
-    buf->setRGBAttr(hw_c, attr_n, num);
+        buf->setRGBAttr(hw_c, attr_n, num);
+    }
+    else
+        buf->setRGBAAttr(hw_c, attr_n, num);
 }
 
 

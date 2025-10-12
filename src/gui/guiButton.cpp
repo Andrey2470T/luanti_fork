@@ -155,8 +155,8 @@ bool GUIButton::OnEvent(const core::Event& event)
 
                 core::Event newEvent;
                 newEvent.Type = EET_GUI_EVENT;
-                newEvent.GUI.Caller = getID();
-                newEvent.GUI.Element = std::nullopt;
+                newEvent.GUI.Caller = this;
+                newEvent.GUI.Element = 0;
                 newEvent.GUI.Type = EGET_BUTTON_CLICKED;
 				Parent->OnEvent(newEvent);
 			}
@@ -164,7 +164,7 @@ bool GUIButton::OnEvent(const core::Event& event)
 		}
 		break;
 	case EET_GUI_EVENT:
-        if (event.GUI.Caller == getID())
+        if (event.GUI.Caller == this)
 		{
             if (event.GUI.Type == EGET_ELEMENT_FOCUS_LOST)
 			{
@@ -222,8 +222,8 @@ bool GUIButton::OnEvent(const core::Event& event)
 
                 core::Event newEvent;
                 newEvent.Type = EET_GUI_EVENT;
-                newEvent.GUI.Caller = getID();
-                newEvent.GUI.Element = std::nullopt;
+                newEvent.GUI.Caller = this;
+                newEvent.GUI.Element = 0;
                 newEvent.GUI.Type = EGET_BUTTON_CLICKED;
 				Parent->OnEvent(newEvent);
 			}

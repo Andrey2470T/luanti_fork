@@ -122,6 +122,7 @@ GUIEngine::GUIEngine(JoystickController *joystick,
 			nullptr /* &client */,
             guienv,
             m_rescache,
+            m_rndsys,
 			m_sound_manager.get(),
 			formspecgui.release(),
 			buttonhandler.release(),
@@ -303,7 +304,7 @@ void GUIEngine::run()
 				last_window_info = window_info;
 			}
 
-            rnd->getContext()->clearBuffers(render::CBF_COLOR | render::CBF_DEPTH, Renderer::menu_sky_color);
+            m_rndsys->beginDraw(render::CBF_COLOR | render::CBF_DEPTH, Renderer::menu_sky_color);
 
 			if (m_clouds_enabled) {
                 g_menumgr->drawClouds(dtime);
@@ -321,6 +322,8 @@ void GUIEngine::run()
 			// The header *can* be drawn after the menu because it never intersects
 			// the menu.
             drawHeader();
+
+            m_rndsys->endDraw();
 		}
 
 		m_script->step();
@@ -368,8 +371,6 @@ void GUIEngine::drawBackground()
     v2u screensize = m_rndsys->getWindowSize();
 
 	img::Image* texture = m_textures[TEX_LAYER_BACKGROUND].texture;
-
-    m_background->clear();
 
 	/* If no texture, draw background of solid color */
 	if(!texture){

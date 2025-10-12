@@ -373,19 +373,19 @@ bool GUITouchscreenLayout::OnEvent(const core::Event& event)
 	if (event.Type == EET_GUI_EVENT) {
 		switch (event.GUI.Type) {
 		case EGET_BUTTON_CLICKED: {
-            if (event.GUI.Caller == m_gui_add_btn->getID()) {
+            if (event.GUI.Caller == m_gui_add_btn) {
 				m_mode = Mode::Add;
 				regenerateGui(screensize);
 				return true;
 			}
 
-            if (event.GUI.Caller == m_gui_reset_btn->getID()) {
+            if (event.GUI.Caller == m_gui_reset_btn) {
 				m_layout = ButtonLayout::predefined;
 				regenerateGui(screensize);
 				return true;
 			}
 
-            if (event.GUI.Caller == m_gui_done_btn->getID()) {
+            if (event.GUI.Caller == m_gui_done_btn) {
 				if (g_touchcontrols)
 					g_touchcontrols->applyLayout(m_layout);
 				std::ostringstream oss;
@@ -395,7 +395,7 @@ bool GUITouchscreenLayout::OnEvent(const core::Event& event)
 				return true;
 			}
 
-            if (event.GUI.Caller == m_gui_remove_btn->getID()) {
+            if (event.GUI.Caller == m_gui_remove_btn) {
 				m_layout.layout.erase(m_selected_btn);
 				regenerateGui(screensize);
 				return true;

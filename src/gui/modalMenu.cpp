@@ -221,7 +221,7 @@ void GUIModalMenu::enter(gui::IGUIElement *hovered)
     m_touch_hovered.reset(hovered);
 	core::Event gui_event{};
 	gui_event.Type = EET_GUI_EVENT;
-    gui_event.GUI.Caller = m_touch_hovered->getID();
+    gui_event.GUI.Caller = m_touch_hovered.get();
     gui_event.GUI.Type = EGET_ELEMENT_HOVERED;
 	gui_event.GUI.Element = gui_event.GUI.Caller;
 	m_touch_hovered->OnEvent(gui_event);
@@ -233,7 +233,7 @@ void GUIModalMenu::leave()
 		return;
 	core::Event gui_event{};
 	gui_event.Type = EET_GUI_EVENT;
-    gui_event.GUI.Caller = m_touch_hovered->getID();
+    gui_event.GUI.Caller = m_touch_hovered.get();
     gui_event.GUI.Type = EGET_ELEMENT_LEFT;
 	m_touch_hovered->OnEvent(gui_event);
 	m_touch_hovered.reset();
@@ -280,8 +280,7 @@ bool GUIModalMenu::preprocessEvent(const core::Event &event)
 
 	if (event.Type == EET_GUI_EVENT) {
         if (event.GUI.Type == EGET_LISTBOX_OPENED) {
-            gui::IGUIComboBox *dropdown = (gui::IGUIComboBox *)(
-                Environment->getRootGUIElement()->getElementFromID(event.GUI.Caller));
+            gui::IGUIComboBox *dropdown = (gui::IGUIComboBox *)(event.GUI.Caller);
 
 			std::string field_name = getNameByID(dropdown->getID());
 			if (field_name.empty())

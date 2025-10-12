@@ -267,21 +267,19 @@ template <class T>
 T *ResourceCache::getOrLoad(ResourceType _type, const std::string &_name,
     bool apply_modifiers, bool load_for_mesh, bool apply_fallback)
 {
-    //core::InfoStream << "getOrLoad: 1\n";
-    //core::InfoStream << "getOrLoad: 2\n";
-
     if (_type == ResourceType::IMAGE) {
         auto img = reinterpret_cast<img::Image *>(subcaches[_type]->get(_name));
 
         if (img)
             return static_cast<T *>((void*)img);
         if (!apply_modifiers) {
-            //core::InfoStream << "getOrLoad: 3\n";
             MutexAutoLock lock(resource_mutex);
             img = reinterpret_cast<img::Image *>(subcaches[_type]->getOrLoad(_name));
+
+            if (img)
+                core::InfoStream << "getOrLoad: name: " << _name << ", width: " << img->getWidth() << ", height: " << img->getHeight() << ", format: " << img->getFormat() << "\n";
         }
         else {
-            //core::InfoStream << "getOrLoad: 4\n";
             if (load_for_mesh)
                 img = texgen->generateForMesh(_name);
             else
@@ -291,7 +289,6 @@ T *ResourceCache::getOrLoad(ResourceType _type, const std::string &_name,
 
         if (!img && apply_fallback)
             img = createDummyImage();
-        //core::InfoStream << "getOrLoad: 5\n";
         return static_cast<T *>((void*)img);
     }
     else if (_type == ResourceType::TEXTURE) {

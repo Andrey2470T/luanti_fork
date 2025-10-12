@@ -1071,7 +1071,7 @@ bool GUIHyperText::OnEvent(const core::Event &event)
 	// Scroll bar
 	if (event.Type == EET_GUI_EVENT &&
 			event.GUI.Type == EGET_SCROLL_BAR_CHANGED &&
-            event.GUI.Caller == m_vscrollbar->getID()) {
+            event.GUI.Caller == m_vscrollbar) {
 		m_text_scrollpos.Y = -m_vscrollbar->getPos();
 	}
 
@@ -1110,8 +1110,8 @@ bool GUIHyperText::OnEvent(const core::Event &event)
 						if (Parent) {
 							core::Event newEvent;
 							newEvent.Type = EET_GUI_EVENT;
-                            newEvent.GUI.Caller = getID();
-                            newEvent.GUI.Element = std::nullopt;
+                            newEvent.GUI.Caller = this;
+                            newEvent.GUI.Element = 0;
 							newEvent.GUI.Type = EGET_BUTTON_CLICKED;
 							Parent->OnEvent(newEvent);
 						}

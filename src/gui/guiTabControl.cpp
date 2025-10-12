@@ -352,10 +352,10 @@ bool CGUITabControl::OnEvent(const core::Event &event)
 		case EET_GUI_EVENT:
 			switch (event.GUI.Type) {
 			case EGET_BUTTON_CLICKED:
-                if (event.GUI.Caller == UpButton->getID()) {
+                if (event.GUI.Caller == UpButton) {
 					scrollLeft();
 					return true;
-                } else if (event.GUI.Caller == DownButton->getID()) {
+                } else if (event.GUI.Caller == DownButton) {
 					scrollRight();
 					return true;
 				}
@@ -930,7 +930,7 @@ bool CGUITabControl::setActiveTab(s32 idx)
 	if (changed && Parent) {
 		core::Event event;
 		event.Type = EET_GUI_EVENT;
-        event.GUI.Caller = getID();
+        event.GUI.Caller = this;
 		event.GUI.Element = 0;
 		event.GUI.Type = EGET_TAB_CHANGED;
 		Parent->OnEvent(event);

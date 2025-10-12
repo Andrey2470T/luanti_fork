@@ -165,12 +165,12 @@ bool CGUIFileOpenDialog::OnEvent(const core::Event &event)
 				Dragging = false;
 				break;
 			case EGET_BUTTON_CLICKED:
-                if (event.GUI.Caller == CloseButton->getID() ||
-                        event.GUI.Caller == CancelButton->getID()) {
+                if (event.GUI.Caller == CloseButton ||
+                        event.GUI.Caller == CancelButton) {
 					sendCancelEvent();
 					remove();
 					return true;
-                } else if (event.GUI.Caller == OKButton->getID()) {
+                } else if (event.GUI.Caller == OKButton) {
                     if (!FileDirectory.empty()) {
 						sendSelectedEvent(EGET_DIRECTORY_SELECTED);
 					}
@@ -209,7 +209,7 @@ bool CGUIFileOpenDialog::OnEvent(const core::Event &event)
                 return true;
 			} break;
 			case EGET_EDITBOX_ENTER:
-                if (event.GUI.Caller == FileNameText->getID()) {
+                if (event.GUI.Caller == FileNameText) {
 					fs::path dir(FileNameText->getText());
                     if (fs::exists(dir)) {
 						fs::current_path(dir);
@@ -336,8 +336,8 @@ void CGUIFileOpenDialog::sendSelectedEvent(EGUI_EVENT_TYPE type)
 {
 	core::Event event;
 	event.Type = EET_GUI_EVENT;
-    event.GUI.Caller = getID();
-	event.GUI.Element = std::nullopt;
+    event.GUI.Caller = this;
+    event.GUI.Element = 0;
 	event.GUI.Type = type;
 	Parent->OnEvent(event);
 }
@@ -347,8 +347,8 @@ void CGUIFileOpenDialog::sendCancelEvent()
 {
 	core::Event event;
 	event.Type = EET_GUI_EVENT;
-    event.GUI.Caller = getID();
-	event.GUI.Element = std::nullopt;
+    event.GUI.Caller = this;
+    event.GUI.Element = 0;
 	event.GUI.Type = EGET_FILE_CHOOSE_DIALOG_CANCELLED;
 	Parent->OnEvent(event);
 }

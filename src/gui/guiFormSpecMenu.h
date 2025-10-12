@@ -151,17 +151,18 @@ class GUIFormSpecMenu : public GUIModalMenu
 	};
 
 public:
-	GUIFormSpecMenu(JoystickController *joystick,
-			gui::IGUIElement* parent, s32 id,
-			IMenuManager *menumgr,
-			Client *client,
-			gui::IGUIEnvironment *guienv,
+    GUIFormSpecMenu(JoystickController *joystick,
+            gui::IGUIElement* parent, s32 id,
+            IMenuManager *menumgr,
+            Client *client,
+            gui::IGUIEnvironment *guienv,
             ResourceCache *cache,
-			ISoundManager *sound_manager,
-			IFormSource* fs_src,
-			TextDest* txt_dst,
-			const std::string &formspecPrepend,
-			bool remap_dbl_click = true);
+            RenderSystem *rndsys,
+            ISoundManager *sound_manager,
+            IFormSource* fs_src,
+            TextDest* txt_dst,
+            const std::string &formspecPrepend,
+            bool remap_dbl_click = true);
 
 	~GUIFormSpecMenu();
 
