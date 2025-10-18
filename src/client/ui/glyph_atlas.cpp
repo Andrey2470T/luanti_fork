@@ -132,6 +132,7 @@ static std::vector<std::string> settings = {
 FontManager::FontManager(ResourceCache *_cache)
     : cache(_cache)
 {
+    readDefaultFontSizes();
     for (auto &name : settings)
         g_settings->registerChangedCallback(name, font_sizes_changed, this);
 }

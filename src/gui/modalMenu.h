@@ -6,6 +6,7 @@
 
 #include <Core/Events.h>
 #include "IGUIElement.h"
+#include "guiSharedPointer.h"
 #include "util/string.h"
 #ifdef __ANDROID__
 	#include <porting_android.h>
@@ -96,7 +97,7 @@ private:
 
 	// Stuff related to touchscreen input
 
-    std::unique_ptr<gui::IGUIElement> m_touch_hovered;
+    gui::GUISharedPointer<gui::IGUIElement> m_touch_hovered;
 
 	// Converts touches into clicks.
     bool simulateMouseEvent(core::TouchInputEventType touch_event, bool second_try=false);

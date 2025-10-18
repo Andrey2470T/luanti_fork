@@ -9,6 +9,7 @@
 #include "modalMenu.h"
 #include "chat.h"
 #include "config.h"
+#include "guiSharedPointer.h"
 
 class Client;
 class GUIScrollBar;
@@ -84,7 +85,7 @@ private:
 	ChatBackend* m_chat_backend;
 	Client* m_client;
 	IMenuManager* m_menumgr;
-	std::unique_ptr<GUIScrollBar> m_scrollbar;
+    gui::GUISharedPointer<GUIScrollBar> m_scrollbar;
 
 	// current screen size
 	v2u m_screensize;

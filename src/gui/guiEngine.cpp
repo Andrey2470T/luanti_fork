@@ -114,7 +114,7 @@ GUIEngine::GUIEngine(JoystickController *joystick,
 	m_formspecgui = formspecgui.get();
 
 	/* Create menu */
-    m_menu = std::make_shared<GUIFormSpecMenu>(
+    m_menu = gui::make_gui_shared<GUIFormSpecMenu>(
 			joystick,
 			m_parent,
 			-1,

@@ -6,6 +6,7 @@
 
 #include "guiButton.h"
 #include "guiImage.h"
+#include "guiSharedPointer.h"
 
 class GUIButtonImage : public GUIButton
 {
@@ -28,5 +29,5 @@ public:
 
 private:
     img::Image *m_foreground_image;
-    std::unique_ptr<gui::CGUIImage> m_image;
+    gui::GUISharedPointer<gui::CGUIImage> m_image;
 };

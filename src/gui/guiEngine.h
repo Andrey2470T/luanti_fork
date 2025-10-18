@@ -12,6 +12,7 @@
 #include "client/sound/sound.h"
 #include "util/enriched_string.h"
 #include "translation.h"
+#include "guiSharedPointer.h"
 
 /******************************************************************************/
 /* Structs and macros                                                         */
@@ -166,7 +167,7 @@ private:
 	/** formspec input receiver */
 	TextDestGuiEngine                    *m_buttonhandler = nullptr;
 	/** the formspec menu */
-    std::shared_ptr<GUIFormSpecMenu>      m_menu;
+    gui::GUISharedPointer<GUIFormSpecMenu>      m_menu;
 
 	/** reference to kill variable managed by SIGINT handler */
 	bool                                 &m_kill;

@@ -12,7 +12,7 @@
 #include "filesys.h"
 #include "exceptions.h"
 #include "remoteplayer.h"
-#include "irrlicht_changes/printing.h"
+#include <Utils/Printing.h>
 #include "server/player_sao.h"
 #include "util/serialize.h"
 #include "util/string.h"

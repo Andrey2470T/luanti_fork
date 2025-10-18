@@ -102,7 +102,7 @@ void RenderSystem::setWindowIcon()
         return;
     }
 
-    window->setIcon(std::shared_ptr<img::Image>(icon), g_imgmodifier);
+    window->setIcon(icon, g_imgmodifier);
 }
 
 Minimap *RenderSystem::getDefaultMinimap() const

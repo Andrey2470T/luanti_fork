@@ -247,7 +247,7 @@ static inline SpatialIndex::Point get_spatial_point(const v3s16 pos)
 
 bool SpatialAreaStore::insertArea(Area *a)
 {
-	if (a->id == U32_MAX)
+    if (a->id == T_MAX(u32))
 		a->id = getNextId();
 	if (!areas_map.insert(std::make_pair(a->id, *a)).second)
 		// ID is not unique

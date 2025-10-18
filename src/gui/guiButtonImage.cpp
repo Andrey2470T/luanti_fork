@@ -16,7 +16,7 @@ GUIButtonImage::GUIButtonImage(gui::IGUIEnvironment *environment,
     : GUIButton(environment, parent, id, rectangle, noclip)
 {
 	GUIButton::setScaleImage(true);
-    m_image = std::make_unique<CGUIImage>(environment, this, id, rectangle);
+    m_image = gui::make_gui_shared<CGUIImage>(environment, this, id, rectangle);
 	sendToBack(m_image.get());
 }
 

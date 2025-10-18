@@ -22,6 +22,7 @@
 #include <Core/CursorControl.h>
 #include "IGUIStaticText.h"
 #include "IGUICheckBox.h"
+#include "guiSharedPointer.h"
 
 class InventoryManager;
 class ResourceCache;
@@ -402,7 +403,7 @@ private:
 		GUITable::TableOptions table_options;
 		GUITable::TableColumns table_columns;
         gui::IGUIElement *current_parent = nullptr;
-        std::shared_ptr<gui::IGUIElement> background_parent;
+        gui::GUISharedPointer<gui::IGUIElement> background_parent;
 
 		GUIInventoryList::Options inventorylist_options;
 
