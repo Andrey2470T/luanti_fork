@@ -610,7 +610,7 @@ private:
     std::array<s32, (u8)GUIDefaultSize::Count>              Sizes;
     std::array<u32, (u8)GUIDefaultIcon::Count>              Icons;
     std::array<render::TTFont *, (u8)GUIDefaultFont::Count> Fonts;
-    gui::IGUISpriteBank                                     *Sprite;
+    gui::IGUISpriteBank                                     *Sprite = nullptr;
     std::array<std::wstring, (u8)GUIDefaultText::Count>     Texts;
 
     bool UseGradient;

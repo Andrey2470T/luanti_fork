@@ -320,6 +320,7 @@ protected:
 
 	InventoryManager *m_invmgr;
     ResourceCache *m_cache;
+    RenderSystem *m_rndsys;
 	ISoundManager *m_sound_manager;
 	Client *m_client;
     FontManager *m_fontmgr;

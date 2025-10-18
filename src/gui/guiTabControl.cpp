@@ -620,6 +620,7 @@ void CGUITabControl::draw()
             UISprite *tabButton = new UISprite(nullptr, rnd, cache, true);
             tabButton->setClipRect(AbsoluteClippingRect);
             skin->add3DTabButton(tabButton, false, toRectf(frameRect), VerticalAlignment);
+            tabButton->rebuildMesh();
             TabBoxes->addSprite(tabButton);
 
 			// draw text
@@ -664,6 +665,8 @@ void CGUITabControl::draw()
 			tr.ULC.X = right;
 			tr.LRC.X = AbsoluteRect.LRC.X;
             tabButton->getShape()->addRectangle(toRectf(tr), {color});
+
+            tabButton->rebuildMesh();
 		} else {
 			frameRect.ULC.X = left - 2;
 			frameRect.LRC.X = right + 2;
@@ -693,6 +696,8 @@ void CGUITabControl::draw()
 			tr.ULC.X = right;
 			tr.LRC.X = AbsoluteRect.LRC.X;
             tabButton->getShape()->addRectangle(toRectf(tr), {color});
+
+            tabButton->rebuildMesh();
 		}
 	} else {
 		// No active tab
@@ -723,6 +728,7 @@ void CGUITabControl::draw()
 	// drawing some border and background for the tab-area.
     skin->add3DTabBody(tabBody, Border, FillBackground, toRectf(AbsoluteRect), TabHeight, VerticalAlignment);
     tabBody->setClipRect(AbsoluteClippingRect);
+    tabBody->rebuildMesh();
     TabBoxes->addSprite(tabBody);
 
 	// enable scrollcontrols on need
@@ -731,10 +737,6 @@ void CGUITabControl::draw()
 	if (DownButton)
 		DownButton->setEnabled(needRightScroll);
 	refreshSprites();
-
-    for (u32 k = 0; k < TabBoxes->getSpriteCount(); k++) {
-        TabBoxes->getSprite(k)->rebuildMesh();
-    }
 
     TabBoxes->drawBank();
 

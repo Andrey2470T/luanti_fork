@@ -30,7 +30,6 @@ class UITextSprite : public UISprite
 public:
     UITextSprite(FontManager *font_manager, GUISkin *guiskin, const EnrichedString &text, Renderer *renderer,
         ResourceCache *resCache, bool border = false, bool wordWrap = true, bool fillBackground = false);
-    ~UITextSprite();
 
     void setOverrideFont(render::TTFont *font);
     render::TTFont *getOverrideFont() const

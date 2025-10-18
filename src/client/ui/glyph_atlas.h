@@ -62,14 +62,12 @@ public:
     render::TTFont *getFontOrCreate(render::FontMode mode, render::FontStyle style, std::optional<u32> size=std::nullopt);
     AtlasPool *getPoolOrCreate(render::FontMode mode, render::FontStyle style, std::optional<u32> size=std::nullopt);
 
-    bool addFont(render::FontMode mode, render::FontStyle style, std::optional<u32> size=std::nullopt);
-    void addFontInSkin(GUISkin *skin, render::FontMode mode, render::FontStyle style,
-        std::optional<u32> size=std::nullopt, GUIDefaultFont which=GUIDefaultFont::Default);
-
     img::Image *drawTextToImage(const std::wstring &text,
         render::FontMode mode, render::FontStyle style, std::optional<u32> size=std::nullopt,
         const img::color8 &color=img::color8(img::PF_RGBA8, 0, 0, 0, 255));
 private:
+    std::optional<u64> addFont(render::FontMode mode, render::FontStyle style, std::optional<u32> size=std::nullopt);
+
     void readDefaultFontSizes();
     static void font_sizes_changed(const std::string &name, void *userdata)
     {

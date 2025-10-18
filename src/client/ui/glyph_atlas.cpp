@@ -184,16 +184,16 @@ render::TTFont *FontManager::getFontOrCreate(render::FontMode mode, render::Font
 
     if (!font) {
         //core::InfoStream << "getFontOrCreate 3\n";
-        bool added = addFont(mode, style, size);
+        auto hash = addFont(mode, style, size);
         //core::InfoStream << "getFontOrCreate 4\n";
 
-        if (added) {
+        if (hash.has_value()) {
             core::InfoStream << "getFontOrCreate mode:" << (u32)mode << "\n";
             core::InfoStream << "getFontOrCreate style:" << (u32)style << "\n";
             core::InfoStream << "getFontOrCreate transparent:" << (u32)true << "\n";
             core::InfoStream << "getFontOrCreate size:" << size.value() << "\n";
             core::InfoStream << "getFontOrCreate hash:" << (u32)render::TTFont::hash(size.value(), true, style, mode) << "\n";
-            font = fonts[render::TTFont::hash(size.value(), true, style, mode)].first;
+            font = fonts[hash.value()].first;
         }
         //core::InfoStream << "getFontOrCreate 5\n";
     }
@@ -211,16 +211,16 @@ AtlasPool *FontManager::getPoolOrCreate(render::FontMode mode, render::FontStyle
     auto pool = getPool(mode, style, size);
 
     if (!pool) {
-        bool added = addFont(mode, style, size);
+        auto hash = addFont(mode, style, size);
 
-        if (added)
-            pool = fonts[render::TTFont::hash(size.value(), true, style, mode)].second.get();
+        if (hash.has_value())
+            pool = fonts[hash.value()].second.get();
     }
 
     return pool;
 }
 
-bool FontManager::addFont(render::FontMode mode, render::FontStyle style, std::optional<u32> size)
+std::optional<u64> FontManager::addFont(render::FontMode mode, render::FontStyle style, std::optional<u32> size)
 {
     //core::InfoStream << "addFont 1\n";
     if (!size.has_value())
@@ -268,8 +268,10 @@ bool FontManager::addFont(render::FontMode mode, render::FontStyle style, std::o
     //core::InfoStream << "addFont 2\n";
 
     bool path_found = false;
+    u64 hash = 0;
+
     for (auto &path : paths) {
-        if (!fs::exists(path))
+        if (!fs::exists(path) || path_found)
             continue;
 
         path_found = true;
@@ -283,17 +285,8 @@ bool FontManager::addFont(render::FontMode mode, render::FontStyle style, std::o
             continue;
         core::InfoStream << "addFont 3\n";
 
-        auto font_it = std::find_if(fonts.begin(), fonts.end(), [font] (const auto &p)
-        {
-            return font == p.second.first;
-        });
-
-        if (font_it != fonts.end()) {
-            delete font;
-            continue;
-        }
         core::InfoStream << "addFont 4\n";
-        u64 hash = render::TTFont::hash(font);
+        hash = render::TTFont::hash(font);
         core::InfoStream << "addFont mode:" << (u32)font->getMode() << "\n";
         core::InfoStream << "addFont style:" << (u32)font->getStyle() << "\n";
         core::InfoStream << "addFont transparent:" << (u32)font->isTransparent() << "\n";
@@ -311,20 +304,9 @@ bool FontManager::addFont(render::FontMode mode, render::FontStyle style, std::o
 
     if (!path_found) {
         warningstream << "FontManager::addFont() Couldn't find any path to the resource with name " << path_setting << std::endl;
-        return false;
+        return std::nullopt;
     }
-    return true;
-}
-
-void FontManager::addFontInSkin(GUISkin *skin, render::FontMode mode, render::FontStyle style,
-    std::optional<u32> size, GUIDefaultFont which)
-{
-    bool added = addFont(mode, style, size);
-
-    if (!added)
-        return;
-    u64 hash = render::TTFont::hash(size.value(), true, style, mode);
-    skin->setFont(fonts[hash].first, which);
+    return hash;
 }
 
 img::Image *FontManager::drawTextToImage(const std::wstring &text,

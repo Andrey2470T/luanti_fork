@@ -96,6 +96,7 @@ GUIFormSpecMenu::GUIFormSpecMenu(JoystickController *joystick,
 	GUIModalMenu(guienv, parent, id, menumgr, remap_dbl_click),
 	m_invmgr(client),
     m_cache(cache),
+    m_rndsys(rndsys),
 	m_sound_manager(sound_manager),
 	m_client(client),
     m_fontmgr(rndsys->getFontManager()),
@@ -1474,7 +1475,7 @@ void GUIFormSpecMenu::parsePwdField(parserData* data, const std::string &element
 		);
 
 	spec.send = true;
-	gui::IGUIEditBox *e = Environment->addEditBox(0, rect, true,
+    gui::IGUIEditBox *e = Environment->addEditBox(L"", rect, true,
 			data->current_parent, spec.fid);
 
 	if (spec.fname == m_focused_element) {
@@ -3110,7 +3111,7 @@ void GUIFormSpecMenu::regenerateGui(v2u screensize)
 	if (mydata.explicit_size) {
 		// compute scaling for specified form size
 		if (m_lock) {
-            v2u current_screensize = m_client->getRenderSystem()->getWindowSize();
+            v2u current_screensize = m_rndsys->getWindowSize();
             v2u delta = current_screensize - m_lockscreensize;
 
 			if (current_screensize.Y > m_lockscreensize.Y)
@@ -3419,7 +3420,7 @@ void GUIFormSpecMenu::drawSelectedItem()
 	v2i slotsize = m_selected_item->slotsize;
 	recti imgrect(0, 0, slotsize.X, slotsize.Y);
 	recti rect = imgrect + (m_pointer - imgrect.getCenter());
-    rect.constrainTo(m_client->getRenderSystem()->getRenderer()->getContext()->getViewportSize());
+    rect.constrainTo(m_rndsys->getRenderer()->getContext()->getViewportSize());
     //drawItemStack(driver, m_font, stack, rect, NULL, m_client, IT_ROT_DRAGGED);
 }
 
@@ -3448,8 +3449,7 @@ void GUIFormSpecMenu::drawMenu()
 	/*
 		Draw background color
 	*/
-    auto rndsys = m_client->getRenderSystem();
-    v2u wndSize = rndsys->getWindowSize();
+    v2u wndSize = m_rndsys->getWindowSize();
     recti allbg(0, 0, wndSize.X, wndSize.Y);
 
     u32 cur_render_rect = 0;
@@ -3517,7 +3517,7 @@ void GUIFormSpecMenu::drawMenu()
 	gui::IGUIElement *hovered =
 			Environment->getRootGUIElement()->getElementFromPoint(m_pointer);
 
-    auto cursor_control = rndsys->getWindow()->getCursorControl();
+    auto cursor_control = m_rndsys->getWindow()->getCursorControl();
     CURSOR_ICON current_cursor_icon = cursor_control.getCurrentIcon();
 
 	bool hovered_element_found = false;
@@ -3608,7 +3608,7 @@ void GUIFormSpecMenu::showTooltip(const std::wstring &text,
 	s32 tooltip_width = m_tooltip_element->getTextWidth() + m_btn_height;
 	s32 tooltip_height = m_tooltip_element->getTextHeight() + 5;
 
-    v2u screenSize = m_client->getRenderSystem()->getWindowSize();
+    v2u screenSize = m_rndsys->getWindowSize();
 	int tooltip_offset_x = m_btn_height;
 	int tooltip_offset_y = m_btn_height;
 
@@ -5070,7 +5070,7 @@ double GUIFormSpecMenu::calculateImgsize(const parserData &data)
 {
 	// must stay in sync with ClientDynamicInfo::calculateMaxFSSize
 
-    const double screen_dpi = m_client->getRenderSystem()->getDisplayDensity() * 96;
+    const double screen_dpi = m_rndsys->getDisplayDensity() * 96;
 	const double gui_scaling = g_settings->getFloat("gui_scaling", 0.5f, 42.0f);
 
 	// Fixed-size mode
