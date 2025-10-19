@@ -233,10 +233,12 @@ public:
         clipRect = r;
     }
 
-    void clear()
+    void clear(bool only_shape=false)
     {
         shape->clear();
-        mesh->clear();
+
+        if (!only_shape)
+            mesh->clear();
     }
     
     virtual void draw();

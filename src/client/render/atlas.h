@@ -9,15 +9,19 @@
 struct AtlasTile
 {
 	v2u pos;
-	v2u size;
+    v2u size{0, 0};
 	
 	img::Image *image;
 	
 	u32 atlasNum;
 
     AtlasTile(img::Image *img, u32 num)
-        : size(img->getClipSize()), image(img), atlasNum(num)
-    {}
+        : image(img), atlasNum(num)
+    {
+        if (img) {
+            size = image->getClipSize();
+        }
+    }
     virtual ~AtlasTile() = default;
 
     rectf toUV(u32 atlasSize) const;
@@ -29,6 +33,8 @@ struct AtlasTile
 
     size_t hash() const
     {
+        if (!image)
+            return 0;
     	return std::hash<img::Image*>{}(image);
     }
 };

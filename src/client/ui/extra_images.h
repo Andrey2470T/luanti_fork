@@ -46,15 +46,15 @@ class UIRects : public UISprite
 public:
     UIRects(RenderSystem *rndsys, u32 init_rects_count=0);
 
-	void addRect(const rectf &rect, const std::array<img::color8, 4> &colors=UISprite::defaultColors);
-    void addRect(const rectf &rect, const img::color8 &color)
+    void addRect(const rectf &rect, const std::array<img::color8, 4> &colors=UISprite::defaultColors, bool rebuild=false);
+    void addRect(const rectf &rect, const img::color8 &color, bool rebuild=false)
 	{
-		addRect(rect, {color, color, color, color});
+        addRect(rect, {color, color, color, color}, rebuild);
 	}
-	void updateRect(u32 n, const rectf &rect, const std::array<img::color8, 4> &colors=UISprite::defaultColors);
-	void updateRect(u32 n, const rectf &rect, const img::color8 &color=img::white)
+    void updateRect(u32 n, const rectf &rect, const std::array<img::color8, 4> &colors=UISprite::defaultColors, bool update=false);
+    void updateRect(u32 n, const rectf &rect, const img::color8 &color=img::white, bool update=false)
 	{
-		updateRect(n, rect, {color, color, color, color});
+        updateRect(n, rect, {color, color, color, color}, update);
 	}
 };
 

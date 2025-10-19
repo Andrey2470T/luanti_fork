@@ -4,7 +4,7 @@
 #include "settings.h"
 #include "client/media/resource.h"
 
-GlyphAtlas::GlyphAtlas(u32 num, render::TTFont *ttfont, char16_t &offset)
+GlyphAtlas::GlyphAtlas(u32 num, render::TTFont *ttfont, u32 &offset)
     : Atlas(), font(ttfont)
 {
     u32 size = font->getCurrentSize();
@@ -25,7 +25,7 @@ GlyphAtlas::GlyphAtlas(u32 num, render::TTFont *ttfont, char16_t &offset)
     createTexture(prefix, num, tex_size, 0, format);
         
     u16 slots = tex_size / size * tex_size / size;
-    slots_count = std::min<u16>(127 - offset, slots);
+    slots_count = std::min<u16>(ttfont->getGlyphsNum() - offset, slots);
     chars_offset = offset;
     offset += slots_count;
 
@@ -52,12 +52,9 @@ Glyph *GlyphAtlas::getByChar(wchar_t ch) const
 
 void GlyphAtlas::fill(u32 num)
 {
-    for (char16_t ch = chars_offset; ch < chars_offset + slots_count; ch++) {
+    for (wchar_t ch : font->getGlyphsSet()) {
         //core::InfoStream << "fill(): ch = " << std::to_string(ch) << "\n";
-        bool has = font->hasGlyph((wchar_t)ch);
-        if (!has)
-            continue;
-                
+
         //u8 n = 1;
         //auto img = font->getGlyphImage(ch);
         Glyph *newGlyph = new Glyph(ch, num, font);
@@ -298,6 +295,7 @@ std::optional<u64> FontManager::addFont(render::FontMode mode, render::FontStyle
         //core::InfoStream << "addFont 6\n";
         cache->cacheResource<render::TTFont>(ResourceType::FONT, font);
         //core::InfoStream << "addFont 7\n";
+        core::InfoStream << "addFont glyphs num: " << font->getGlyphsNum() << "\n";
         fonts[hash].second->buildGlyphAtlas(font);
         //core::InfoStream << "addFont 8\n";
     }

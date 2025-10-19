@@ -187,7 +187,7 @@ void *ResourceSubCache<T>::getOrLoad(const std::string &name)
     	infostream << "ResourceSubCache<T>::getOrLoad(): No loading callback provided" << std::endl;
         return nullptr;
     }
-    T *res = loadCallback(name);
+    T *res = loadCallback(target_path);
 
     if (!res) {
         infostream << "ResourceSubCache<T>::getOrLoad(): Couldn't load the resource with name " << name << std::endl;

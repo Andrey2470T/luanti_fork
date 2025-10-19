@@ -4,13 +4,11 @@
 #include <Render/TTFont.h>
 #include "gui/GUISkin.h"
 
-#define MAX_GLYPHS_COUNT 0xFFFF
-
 struct Glyph : public AtlasTile
 {
-	char16_t symbol;
+    wchar_t symbol;
 
-    Glyph(char16_t _symbol, u32 num, render::TTFont *font)
+    Glyph(wchar_t _symbol, u32 num, render::TTFont *font)
         : AtlasTile(font->getGlyphImage(_symbol), num),  symbol(_symbol)
     {}
 };
@@ -22,7 +20,7 @@ class GlyphAtlas : public Atlas
     u16 slots_count;
     char16_t chars_offset=0;
 public:
-    GlyphAtlas(u32 num, render::TTFont *ttfont, char16_t &offset);
+    GlyphAtlas(u32 num, render::TTFont *ttfont, u32 &offset);
 
     Glyph *getByChar(wchar_t ch) const;
     void fill(u32 num);

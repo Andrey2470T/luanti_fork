@@ -27,6 +27,15 @@ class UITextSprite : public UISprite
     render::TTFont *overrideFont = nullptr;
 
     FontManager *mgr;
+
+    struct GlyphPrimitiveParams {
+        rectf pos;
+        std::array<img::color8, 4> colors;
+        rectf uv;
+    };
+
+    std::vector<std::pair<render::Texture2D *, u32>> texture_to_charcount_map;
+    std::vector<std::pair<render::Texture2D *, std::vector<GlyphPrimitiveParams>>> texture_to_glyph_map;
 public:
     UITextSprite(FontManager *font_manager, GUISkin *guiskin, const EnrichedString &text, Renderer *renderer,
         ResourceCache *resCache, bool border = false, bool wordWrap = true, bool fillBackground = false);

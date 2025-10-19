@@ -89,6 +89,9 @@ void Atlas::drawTiles()
         if (!tile)
             continue;
 
+        if (!tile->image)
+            continue;
+
         texture->uploadSubData(tile->pos.X, tile->pos.Y, tile->image);
     }
 
@@ -180,8 +183,8 @@ img::Image *AtlasPool::addTile(const std::string &name)
 {
     if (type != AtlasType::RECTPACK2D)
         return nullptr;
-    //core::InfoStream << "addTile: 1\n";
     auto img = cache->getOrLoad<img::Image>(ResourceType::IMAGE, name, true, true, true);
+    core::InfoStream << "addTile: " << name << ", " << img->getSize() << "\n";
     //core::InfoStream << "addTile: 2\n";
     auto imgIt = std::find(images.begin(), images.end(), img);
     //core::InfoStream << "addTile: 3\n";
@@ -274,7 +277,7 @@ void AtlasPool::buildGlyphAtlas(render::TTFont *ttfont)
         return;
 
     static u32 atlasNum = 0;
-    static char16_t glyphOffset = 0;
+    static u32 glyphOffset = 0;
 
     //core::InfoStream << "cur glyphOffset: " << glyphOffset << "\n";
     GlyphAtlas *atlas = new GlyphAtlas(atlasNum, ttfont, glyphOffset);
@@ -282,7 +285,7 @@ void AtlasPool::buildGlyphAtlas(render::TTFont *ttfont)
 
     atlases.push_back(atlas);
 
-    if (glyphOffset < 127) {
+    if (glyphOffset < ttfont->getGlyphsNum()) {
         ++atlasNum;
         buildGlyphAtlas(ttfont);
     }

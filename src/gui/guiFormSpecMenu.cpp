@@ -3410,6 +3410,8 @@ void GUIFormSpecMenu::drawSelectedItem()
 		return;
     }*/
 
+    if (!m_selected_item)
+        return;
 	Inventory *inv = m_invmgr->getInventory(m_selected_item->inventoryloc);
 	sanity_check(inv);
 	InventoryList *list = inv->getList(m_selected_item->listname);
@@ -3453,17 +3455,29 @@ void GUIFormSpecMenu::drawMenu()
     recti allbg(0, 0, wndSize.X, wndSize.Y);
 
     u32 cur_render_rect = 0;
+
     if (m_bgfullscreen) {
         m_menu->addRect(toRectf(allbg), {m_fullscreen_bgcolor});
-        m_menu->setClipRect(allbg);
-        m_menu->drawPart();
         cur_render_rect++;
     }
+
     if (m_bgnonfullscreen) {
         m_menu->addRect(toRectf(AbsoluteRect), {m_bgcolor});
-        m_menu->setClipRect(AbsoluteClippingRect);
-        m_menu->drawPart(cur_render_rect);
         cur_render_rect++;
+    }
+
+    if (m_bgfullscreen || m_bgnonfullscreen) {
+        m_menu->rebuildMesh();
+
+        if (m_bgfullscreen) {
+            m_menu->setClipRect(allbg);
+            m_menu->drawPart();
+        }
+
+        if (m_bgnonfullscreen) {
+            m_menu->setClipRect(AbsoluteClippingRect);
+            m_menu->drawPart(cur_render_rect);
+        }
     }
 
 	/*
@@ -3525,7 +3539,8 @@ void GUIFormSpecMenu::drawMenu()
 	if (hovered) {
 		if (m_show_debug) {
 			recti rect = hovered->getAbsoluteClippingRect();
-            m_menu->addRect(toRectf(rect), {img::colorU32NumberToObject(0x22FFFF00)});
+            m_menu->clear();
+            m_menu->addRect(toRectf(rect), {img::colorU32NumberToObject(0x22FFFF00)}, true);
             m_menu->setClipRect(rect);
             m_menu->drawPart(cur_render_rect);
             cur_render_rect++;

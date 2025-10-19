@@ -21,7 +21,7 @@ UITextSprite::UITextSprite(FontManager *font_manager, GUISkin *guiskin, const En
     : UISprite(nullptr, renderer, resCache, false, false), skin(guiskin), drawBorder(border),
     drawBackground(fillBackground),  wordWrap(wordWrap), mgr(font_manager)
 {
-    setTexture(getGlyphAtlasTexture());
+    texture = getGlyphAtlasTexture();
     setText(text);
 }
 
@@ -64,10 +64,12 @@ void UITextSprite::enableWordWrap(bool wrap)
 u32 UITextSprite::getTextWidth() const
 {
     auto font = getActiveFont();
-    u32 width;
+    u32 width = 0;
 
-    if (wordWrap)
-        width = font->getTextWidth(brokenText[0].getString());
+    if (wordWrap) {
+        for (auto line : brokenText)
+            width = std::max(width, font->getTextWidth(line.getString()));
+    }
     else
         width = font->getTextWidth(text.getString());
 
@@ -120,18 +122,25 @@ void UITextSprite::draw()
     }
 
     if (visible && !text.empty()) {
-        renderer->setTexture(texture);
         renderer->setDefaultUniforms(1.0f, 1, 0.5f, img::BM_COUNT);
 
         if (clipText)
             setClipRect(clipRect);
-        drawPart(rectN, text.size());
+
+        for (auto &tex_to_charcount : texture_to_charcount_map) {
+            renderer->setTexture(tex_to_charcount.first);
+
+            drawPart(rectN, tex_to_charcount.second);
+            rectN += tex_to_charcount.second;
+        }
     }
 }
 
 void UITextSprite::updateBuffer(rectf &&r)
 {
     clear();
+    texture_to_charcount_map.clear();
+    texture_to_glyph_map.clear();
 
     if (drawBackground) {
         auto bg_color = getBackgroundColor();
@@ -167,10 +176,17 @@ void UITextSprite::updateBuffer(rectf &&r)
     if (!fontAtlases)
         return;
 
-    auto atlas = dynamic_cast<GlyphAtlas *>(fontAtlases->getAtlas(0));
+    auto find_atlas = [fontAtlases] (char16_t ch) -> GlyphAtlas *
+    {
+        for (u32 i = 0; i < fontAtlases->getAtlasCount(); i++) {
+            auto atlas = dynamic_cast<GlyphAtlas *>(fontAtlases->getAtlas(i));
 
-    if (!atlas)
-        return;
+            if (atlas->getByChar((wchar_t)ch))
+                return atlas;
+        }
+
+        return nullptr;
+    };
 
     for (const auto &str : brokenText) {
         if (hAlign == GUIAlignment::LowerRight)
@@ -229,34 +245,75 @@ void UITextSprite::updateBuffer(rectf &&r)
             offset.X += offx;
             offset.Y += offy;
 
-            Glyph *glyph = atlas->getByChar((wchar_t)ch);
+            auto atlas = find_atlas(ch);
 
-            if (!glyph)
+            if (!atlas)
                 continue;
 
-            rectf glyphUV(v2f(glyph->pos.X, glyph->pos.Y), v2f(glyph->size.X, glyph->size.Y));
-            rectf glyphPos(offset, v2f(glyph->size.X, glyph->size.Y));
-
+            render::Texture2D *atlas_tex = atlas->getTexture();
 
             u32 shadowOffset, shadowAlpha;
             font->getShadowParameters(&shadowOffset, &shadowAlpha);
 
+            auto charcount_it = std::find_if(texture_to_charcount_map.begin(), texture_to_charcount_map.end(),
+                [atlas_tex] (const auto &tex_to_charcount_p)
+                {
+                    return tex_to_charcount_p.first == atlas_tex;
+                });
+
+            if (charcount_it == texture_to_charcount_map.end())
+                texture_to_charcount_map.emplace_back(atlas_tex, shadowOffset ? 2 : 1);
+            else {
+                if (shadowOffset)
+                    charcount_it->second += 2;
+                else
+                    ++(charcount_it->second);
+            }
+
+            Glyph *glyph = atlas->getByChar((wchar_t)ch);
+
+            auto glyphparams_it = std::find_if(texture_to_glyph_map.begin(), texture_to_glyph_map.end(),
+                [atlas_tex] (const auto &tex_to_charcount_p)
+                {
+                    return tex_to_charcount_p.first == atlas_tex;
+                });
+
+            rectf glyphPos(offset, v2f(glyph->size.X, glyph->size.Y));
+
+            GlyphPrimitiveParams glyphparams;
+            glyphparams.uv = rectf(v2f(glyph->pos.X, glyph->pos.Y), v2f(glyph->size.X, glyph->size.Y));;
+
             if (shadowOffset) {
-                rectf glyphShadowPos(glyphPos.ULC + v2f(shadowOffset), glyphPos.LRC);
+                glyphparams.pos = rectf(glyphPos.ULC + v2f(shadowOffset), glyphPos.LRC);
 
                 std::array<img::color8, 4> shadowColors = {colors[0], colors[1], colors[2], colors[3]};
                 shadowColors[0].A(shadowAlpha);
                 shadowColors[1].A(shadowAlpha);
                 shadowColors[2].A(shadowAlpha);
                 shadowColors[3].A(shadowAlpha);
+                glyphparams.colors = shadowColors;
 
 
-                shape->addRectangle(glyphShadowPos, shadowColors, glyphUV);
+                if (glyphparams_it == texture_to_glyph_map.end()) {
+                    std::vector<GlyphPrimitiveParams> glyphparams_vec;
+                    glyphparams_vec.push_back(glyphparams);
+                    texture_to_glyph_map.emplace_back(atlas_tex, glyphparams_vec);
+                }
+                else
+                    glyphparams_it->second.push_back(glyphparams);
             }
 
+            glyphparams.pos = glyphPos;
             std::array<img::color8, 4> arrColors = {colors[0], colors[1], colors[2], colors[3]};
+            glyphparams.colors = arrColors;
 
-            shape->addRectangle(glyphPos, arrColors, glyphUV);
+            if (glyphparams_it == texture_to_glyph_map.end()) {
+                std::vector<GlyphPrimitiveParams> glyphparams_vec;
+                glyphparams_vec.push_back(glyphparams);
+                texture_to_glyph_map.emplace_back(atlas_tex, glyphparams_vec);
+            }
+            else
+                glyphparams_it->second.push_back(glyphparams);
 
             offset.X += advance;
             prevCh = ch;
@@ -321,8 +378,14 @@ void UITextSprite::updateBuffer(rectf &&r)
         rc.ULC.Y += height_line;
     }
 
+    for (auto &tex_to_glyph : texture_to_glyph_map) {
+        for (auto &glyphparams : tex_to_glyph.second)
+            shape->addRectangle(glyphparams.pos, glyphparams.colors, glyphparams.uv);
+    }
+
     rebuildMesh();
 }
+
 void UITextSprite::updateWrappedText()
 {
     brokenText.clear();

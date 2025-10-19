@@ -262,6 +262,7 @@ void GUITouchscreenLayout::drawMenu()
             m_menu->addRect(toRectf(rect), {error_color});
 	}
 
+    m_menu->rebuildMesh();
     m_menu->setClipRect(AbsoluteClippingRect);
     m_menu->draw();
 

@@ -166,6 +166,7 @@ void GUIInventoryList::draw()
 		}
 	}
 	
+    m_slots_rects->rebuildMesh();
     m_slots_rects->draw();
 
 	IGUIElement::draw();

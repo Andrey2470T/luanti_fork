@@ -52,12 +52,11 @@ std::string texturePathFinder(const std::string &name)
 {
     auto defpaths = getTexturesDefaultPaths();
 
-    for (auto &p : defpaths)
-        for (auto &ext : img::SIE) {
-            fs::path fs_p(fs::path(p) / (name + ext));
-            if (fs::exists(fs_p))
-                return p;
-        }
+    for (auto &p : defpaths) {
+        fs::path fs_p(fs::path(p) / name);
+        if (fs::exists(fs_p))
+            return fs_p;
+    }
 
     return "";
 }
@@ -71,7 +70,7 @@ std::string shaderPathFinder(const std::string &name)
         fs::path fs_p(fs::path(p) / name / "opengl_fragment.glsl");
 
         if (fs::exists(vs_p) && fs::exists(fs_p))
-            return p;
+            return fs::path(p) / name;
     }
 
     return "";

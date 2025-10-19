@@ -139,15 +139,16 @@ void CGUICheckBox::draw()
         skin->add3DSunkenPane(Sprite.get(), skin->getColor(col),
                 false, true, toRectf(checkRect));
 
+		// the checked icon
+        if (Checked)
+            Sprite->addRect(toRectf(frameRect));
+
         Sprite->rebuildMesh();
 
         Sprite->setClipRect(AbsoluteClippingRect);
         Sprite->draw();
 
-		// the checked icon
 		if (Checked) {
-            Sprite->addRect(toRectf(frameRect));
-            Sprite->drawPart(Sprite->getShape()->getPrimitiveCount()-1);
 			skin->drawIcon(this, EGDI_CHECK_BOX_CHECKED, checkRect.getCenter(),
 					CheckTime, core::TimeCounter::getRealTime(), false, &AbsoluteClippingRect);
 		}

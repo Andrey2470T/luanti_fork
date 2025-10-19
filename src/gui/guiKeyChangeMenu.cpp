@@ -197,7 +197,7 @@ void GUIKeyChangeMenu::drawMenu()
 		return;
 
     img::color8 bgcolor(img::PF_RGBA8, 0, 0, 0, 140);
-    box->updateRect(0, toRectf(AbsoluteRect), {bgcolor, bgcolor, bgcolor, bgcolor});
+    box->updateRect(0, toRectf(AbsoluteRect), {bgcolor, bgcolor, bgcolor, bgcolor}, true);
     box->setClipRect(AbsoluteClippingRect);
     box->draw();
 

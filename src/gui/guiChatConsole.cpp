@@ -395,7 +395,7 @@ void GUIChatConsole::drawPrompt()
 			);
             img::color8 cursor_color = img::white;
             auto cursor = dynamic_cast<UIRects *>(m_chat_bank->getSprite(3));
-            cursor->updateRect(0, toRectf(destrect), {cursor_color, cursor_color, cursor_color, cursor_color});
+            cursor->updateRect(0, toRectf(destrect), {cursor_color, cursor_color, cursor_color, cursor_color}, true);
             cursor->setClipRect(AbsoluteClippingRect);
 		}
 	}

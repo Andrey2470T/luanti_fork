@@ -483,6 +483,8 @@ void UISpriteBank::addSprite(const std::vector<ColoredRect> &rects, u8 shift, co
     if (!rects.empty()) {
         for (u32 k = 0; k < rects.size(); k++)
             rectsSprite->updateRect(k, rects.at(k).area, rects[k].colors);
+        rectsSprite->updateMesh(true);
+        rectsSprite->updateMesh(false);
 
         rectf old_maxarea = rectsSprite->getShape()->getMaxArea();
         rectf shifted_maxarea = old_maxarea;

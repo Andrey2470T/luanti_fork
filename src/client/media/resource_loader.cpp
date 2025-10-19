@@ -62,7 +62,7 @@ render::Texture2D *ResourceLoader::loadTexture(const std::string &path)
 	if (!img)
 		return nullptr;
 	
-	fs::path name = fs::path(path).stem();
+    fs::path name = fs::path(path).filename();
 
     return new render::Texture2D(name.string(), std::unique_ptr<img::Image>(img), render::TextureSettings());
 }
@@ -222,10 +222,7 @@ std::string ResourceLoader::parseShader(const std::string &path, const std::stri
     std::vector<std::string> lines;
 
     std::string fullname = "opengl_" + type + ".glsl";
-    fs::path fullpath(porting::path_share);
-    fullpath /= "client";
-    fullpath /= "shaders";
-    fullpath /= path;
+    fs::path fullpath(path);
     fullpath /= fullname;
 
     if (type == "geometry" && !fs::exists(fullpath))

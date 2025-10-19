@@ -107,17 +107,22 @@ UIRects::UIRects(RenderSystem *rndsys, u32 init_rects_count)
 		std::vector<UIPrimitiveType>(init_rects_count, UIPrimitiveType::RECTANGLE), false)
 {}
 
-void UIRects::addRect(const rectf &rect, const std::array<img::color8, 4> &colors)
+void UIRects::addRect(const rectf &rect, const std::array<img::color8, 4> &colors, bool rebuild)
 {
 	shape->addRectangle(rect, colors);
-	rebuildMesh();
+
+    if (rebuild)
+        rebuildMesh();
 }
 
-void UIRects::updateRect(u32 n, const rectf &rect, const std::array<img::color8, 4> &colors)
+void UIRects::updateRect(u32 n, const rectf &rect, const std::array<img::color8, 4> &colors, bool update)
 {
 	shape->updateRectangle(n, rect, colors);
-	updateMesh(true);
-	updateMesh(false);
+
+    if (update) {
+        updateMesh(true);
+        updateMesh(false);
+    }
 }
 
 ImageSprite::ImageSprite(RenderSystem *rndsys, ResourceCache *cache)
