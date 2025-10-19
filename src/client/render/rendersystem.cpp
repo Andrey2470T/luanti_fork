@@ -1,4 +1,5 @@
 #include "rendersystem.h"
+#include "Core/TimeCounter.h"
 #include "client/event/inputhandler.h"
 #include "gui/touchcontrols.h"
 #include "settings.h"
@@ -48,7 +49,7 @@ RenderSystem::RenderSystem(ResourceCache *_cache)
     guienv = std::make_unique<gui::CGUIEnvironment>(this, window->getWindowSize(), cache);
     core::InfoStream << "RenderSystem 5\n";
 
-    guiPool = std::make_unique<AtlasPool>(AtlasType::RECTPACK2D, "GUI", cache, window->getGLParams()->maxTextureSize, false);
+    guiPool = std::make_unique<AtlasPool>(AtlasType::RECTPACK2D, "GUI", cache, window->getGLParams()->maxTextureSize, false, false);
     core::InfoStream << "RenderSystem 6\n";
 
     g_settings->registerChangedCallback("fullscreen", settingChangedCallback, this);
@@ -79,7 +80,7 @@ void RenderSystem::initRenderEnvironment(Client *_client)
     gameui = std::make_unique<GameUI>(client);
     gameformspec = std::make_unique<GameFormSpec>();
 
-    basePool = std::make_unique<AtlasPool>(AtlasType::RECTPACK2D, "Basic", cache, window->getGLParams()->maxTextureSize, true);
+    basePool = std::make_unique<AtlasPool>(AtlasType::RECTPACK2D, "Basic", cache, window->getGLParams()->maxTextureSize, true, true);
 }
 
 AtlasPool *RenderSystem::getPool(bool basic) const
@@ -122,6 +123,7 @@ void RenderSystem::activateAtlas(img::Image *img, bool basic_pool)
 
 void RenderSystem::buildGUIAtlas()
 {
+    core::InfoStream << "buildGUIAtlas, time: " << TimeCounter::getRealTime() << " \n";
     auto texpaths = getTexturesDefaultPaths();
 
     for (auto &path : texpaths) {

@@ -290,7 +290,7 @@ std::optional<u64> FontManager::addFont(render::FontMode mode, render::FontStyle
         core::InfoStream << "addFont size:" << font->getCurrentSize() << "\n";
 
         core::InfoStream << "addFont hash: " << (u32)hash << "\n";
-        fonts[hash] = std::pair(font, std::make_unique<AtlasPool>(AtlasType::GLYPH, "", cache, 0, false));
+        fonts[hash] = std::pair(font, std::make_unique<AtlasPool>(AtlasType::GLYPH, "", cache, 0, false, false));
         core::InfoStream << "addFont 5\n";
         //core::InfoStream << "addFont 6\n";
         cache->cacheResource<render::TTFont>(ResourceType::FONT, font);

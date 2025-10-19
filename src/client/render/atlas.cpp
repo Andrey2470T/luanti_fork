@@ -1,4 +1,5 @@
 #include "atlas.h"
+#include "Core/TimeCounter.h"
 #include "rectpack2d_atlas.h"
 #include "client/ui/glyph_atlas.h"
 #include "client/media/resource.h"
@@ -183,8 +184,10 @@ img::Image *AtlasPool::addTile(const std::string &name)
 {
     if (type != AtlasType::RECTPACK2D)
         return nullptr;
-    auto img = cache->getOrLoad<img::Image>(ResourceType::IMAGE, name, true, true, true);
-    core::InfoStream << "addTile: " << name << ", " << img->getSize() << "\n";
+    core::InfoStream << "addTile, time: " << TimeCounter::getRealTime() << " \n";
+    auto img = cache->getOrLoad<img::Image>(
+        ResourceType::IMAGE, name, apply_modifiers, apply_modifiers, true);
+    core::InfoStream << "addTile: " << name << ", " << img->getSize() << ", time: " << TimeCounter::getRealTime() << "\n";
     //core::InfoStream << "addTile: 2\n";
     auto imgIt = std::find(images.begin(), images.end(), img);
     //core::InfoStream << "addTile: 3\n";
@@ -194,6 +197,7 @@ img::Image *AtlasPool::addTile(const std::string &name)
         return *imgIt;
 
     images.emplace_back(img);
+    core::InfoStream << "addTile end, time: " << TimeCounter::getRealTime() << " \n";
     //core::InfoStream << "addTile: 4\n";
 
     return img;
@@ -279,7 +283,6 @@ void AtlasPool::buildGlyphAtlas(render::TTFont *ttfont)
     static u32 atlasNum = 0;
     static u32 glyphOffset = 0;
 
-    //core::InfoStream << "cur glyphOffset: " << glyphOffset << "\n";
     GlyphAtlas *atlas = new GlyphAtlas(atlasNum, ttfont, glyphOffset);
     cache->cacheResource<Atlas>(ResourceType::ATLAS, atlas);
 
