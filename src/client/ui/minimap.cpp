@@ -421,7 +421,7 @@ void Minimap::blitMinimapPixelsToImageSurface(
         tilecolor.B(tilecolor.B() * f.minimap_color.B());
 
         g_imgmodifier->setPixel(map_image, x, data->mode.map_size - z - 1, tilecolor);
-        g_imgmodifier->setPixel(heightmap_image, x, data->mode.map_size - z - 1, img::color8(img::PF_R8, mmpixel->height));
+        g_imgmodifier->setPixel(heightmap_image, x, data->mode.map_size - z - 1, img::color8(img::PF_R8, (u8)mmpixel->height));
 	}
 }
 

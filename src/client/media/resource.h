@@ -2,6 +2,7 @@
 
 #include <mutex>
 #include <memory>
+#include "Core/TimeCounter.h"
 #include "resource_loader.h"
 #include "log.h"
 #include <functional>
@@ -187,6 +188,7 @@ void *ResourceSubCache<T>::getOrLoad(const std::string &name)
     	infostream << "ResourceSubCache<T>::getOrLoad(): No loading callback provided" << std::endl;
         return nullptr;
     }
+
     T *res = loadCallback(target_path);
 
     if (!res) {
@@ -274,6 +276,7 @@ T *ResourceCache::getOrLoad(ResourceType _type, const std::string &_name,
             return static_cast<T *>((void*)img);
         if (!apply_modifiers) {
             MutexAutoLock lock(resource_mutex);
+
             img = reinterpret_cast<img::Image *>(subcaches[_type]->getOrLoad(_name));
 
             if (img)
@@ -284,11 +287,13 @@ T *ResourceCache::getOrLoad(ResourceType _type, const std::string &_name,
                 img = texgen->generateForMesh(_name);
             else
                 img = texgen->generate(_name);
+
             subcaches[_type]->cacheResource(img, _name);
         }
 
         if (!img && apply_fallback)
             img = createDummyImage();
+
         return static_cast<T *>((void*)img);
     }
     else if (_type == ResourceType::TEXTURE) {

@@ -56,6 +56,8 @@ rectf UIShape::getPrimitiveArea(u32 n) const
         v2f areaCorner = v2f(ellipse->a, ellipse->b);
         return rectf(ellipse->center - areaCorner, ellipse->center + areaCorner);
     }
+    default:
+        return rectf();
     }
 }
 
@@ -131,6 +133,8 @@ void UIShape::movePrimitive(u32 n, const v2f &shift)
             ellipse->b/2), ellipse->center+v2f(ellipse->a/2, ellipse->b/2), maxAreaInit);
         break;
     }
+    default:
+        break;
     }
 }
 void UIShape::scalePrimitive(u32 n, const v2f &scale, std::optional<v2f> center)
@@ -175,6 +179,8 @@ void UIShape::scalePrimitive(u32 n, const v2f &scale, std::optional<v2f> center)
             ellipse->b/2), ellipse->center+v2f(ellipse->a/2, ellipse->b/2), maxAreaInit);
         break;
     }
+    default:
+        break;
     }
 }
 
@@ -291,6 +297,8 @@ void UIShape::updateBuffer(MeshBuffer *buf, u32 primitiveNum, bool pos_or_colors
         }
         break;
     }
+    default:
+        break;
     }
 }
 
@@ -325,6 +333,8 @@ void UIShape::appendToBuffer(MeshBuffer *buf, u32 primitiveNum, v2u imgSize)
         Batcher2D::appendEllipse(buf, ellipse->a, ellipse->b, imgSize, ellipse->center, ellipse->c);
         break;
     }
+    default:
+        break;
     }
 }
 
@@ -371,6 +381,8 @@ UISprite::UISprite(render::Texture2D *tex, Renderer *_renderer, ResourceCache *_
             break;
         case UIPrimitiveType::ELLIPSE:
             shape->addEllipse(0.0f, 0.0f, v2f(), img::black);
+            break;
+        default:
             break;
         }
     }
@@ -471,6 +483,8 @@ void UISprite::drawPart(u32 pOffset, u32 pCount)
         break;
     case UIPrimitiveType::ELLIPSE:
         vao->draw(render::PT_TRIANGLE_FAN, vcount, startVCount);
+        break;
+    default:
         break;
     }
 }
