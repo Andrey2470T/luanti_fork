@@ -17,7 +17,7 @@ DataTexture::DataTexture(const std::string &name, u32 _sampleSize, u32 _sampleCo
     settings.isRenderTarget = false;
 
     u32 data_dim = CALC_TEX_SIDE(sampleSize*sampleCount/4);
-    glTexture = std::make_unique<render::StreamTexture2D>(name, data_dim, data_dim, img::PF_RGBA8, settings);
+    glTexture = std::make_unique<render::StreamTexture2D>(name, data_dim, data_dim, img::PF_RGBA8, 0);
 }
 
 void DataTexture::addSample(ByteArray &data)

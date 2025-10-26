@@ -18,14 +18,9 @@ rectf AtlasTile::toUV(u32 atlasSize) const
 
 void Atlas::createTexture(const std::string &name, u32 size, u8 maxMipLevel)
 {
-    render::TextureSettings settings;
-    settings.isRenderTarget = false;
-    settings.hasMipMaps = maxMipLevel > 0 ? true : false;
-    settings.maxMipLevel = maxMipLevel;
-
     //core::InfoStream << "createTexture: " << name << ", " << size << "x" << size << ", " << format << "\n";
     texture = std::make_unique<render::StreamTexture2D>(
-        name, size, size, img::PF_RGBA8, settings);
+        name, size, size, img::PF_RGBA8, maxMipLevel);
     //core::InfoStream << "createTexture: created\n";
 }
 
@@ -81,6 +76,12 @@ void Atlas::drawTiles()
     if (!texture || dirty_tiles.empty())
         return;
 
+    //std::vector<rectu> mergedRegions;
+    //texture->mergeRegions(mergedRegions);
+
+    //texture->bind();
+    //texture->mapPBO();
+
     for (u32 dirty_i : dirty_tiles) {
         auto tile = getTile(dirty_i);
 
@@ -90,13 +91,20 @@ void Atlas::drawTiles()
         if (!tile->image)
             continue;
 
-        texture->uploadSubData(tile->pos.X, tile->pos.Y, tile->image);
+        auto glyph = dynamic_cast<Glyph *>(tile);
+        if (glyph) {
+            std::vector<wchar_t> chars = {L'a'};//, L'b', L'c', L'd', L'e', L'f', L'j'};//, L'k', L'l', L'm', L'n', L'o', L'p', L'r', L's', L't', L'q', L'z', L'x', L'y'};
+            if (std::find(chars.begin(), chars.end(), glyph->symbol) != chars.end())
+                texture->uploadSubData(tile->pos.X, tile->pos.Y, tile->image);
+        }
     }
 
-    texture->flush();
+    //texture->unmapPBO();
 
-    if (texture->hasMipMaps())
-        texture->regenerateMipMaps();
+    //texture->flush();
+
+    //if (texture->hasMipMaps())
+    //    texture->regenerateMipMaps();
 
     dirty_tiles.clear();
 }

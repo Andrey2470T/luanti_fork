@@ -95,7 +95,7 @@ vec2 wave_noise(vec3 p, float off) {
 // assuming near is always 1.0
 float getLinearDepth()
 {
-	return 2.0 * mShadowParams.shadowfar / (mShadowParams.shadowfar + 1.0 - (2.0 * gl_FragCoord.z - 1.0) * (mShadowParams.shadowfar - 1.0));
+	return 2.0 * ShadowParams.shadowfar / (ShadowParams.shadowfar + 1.0 - (2.0 * gl_FragCoord.z - 1.0) * (ShadowParams.shadowfar - 1.0));
 }
 
 vec3 getLightSpacePosition()
@@ -205,17 +205,17 @@ float getPenumbraRadius(sampler2D shadowsampler, vec2 smTexCoord, float realDist
 	// A factor from 0 to 1 to reduce blurring of short shadows
 	float sharpness_factor = 1.0;
 	// conversion factor from shadow depth to blur radius
-	float depth_to_blur = mShadowParams.shadowfar / SOFTSHADOWRADIUS / xyPerspectiveBias0;
+	float depth_to_blur = ShadowParams.shadowfar / SOFTSHADOWRADIUS / xyPerspectiveBias0;
 	if (depth > 0.0 && f_normal_length > 0.0)
 		// 5 is empirical factor that controls how fast shadow loses sharpness
 		sharpness_factor = clamp(5.0 * depth * depth_to_blur, 0.0, 1.0);
 	depth = 0.0;
 
-	float world_to_texture = mShadowParams.xyPerspectiveBias1 / perspective_factor / perspective_factor
-			* mShadowParams.textureresolution / 2.0 / mShadowParams.shadowfar;
+	float world_to_texture = ShadowParams.xyPerspectiveBias1 / perspective_factor / perspective_factor
+			* ShadowParams.textureresolution / 2.0 / ShadowParams.shadowfar;
 	float world_radius = 0.2; // shadow blur radius in world float coordinates, e.g. 0.2 = 0.02 of one node
 
-	return max(BASEFILTERRADIUS * mShadowParams.textureresolution / 4096.0,  sharpness_factor * world_radius * world_to_texture * SOFTSHADOWRADIUS);
+	return max(BASEFILTERRADIUS * ShadowParams.textureresolution / 4096.0,  sharpness_factor * world_radius * world_to_texture * SOFTSHADOWRADIUS);
 }
 
 #ifdef POISSON_FILTER
@@ -298,7 +298,7 @@ vec4 getShadowColor(sampler2D shadowsampler, vec2 smTexCoord, float realDistance
 
 	vec2 clampedpos;
 	vec4 visibility = vec4(0.0);
-	float scale_factor = radius / mShadowParams.textureresolution;
+	float scale_factor = radius / ShadowParams.textureresolution;
 
 	int samples = (1 + 1 * int(SOFTSHADOWRADIUS > 1.0)) * PCFSAMPLES; // scale max samples for the soft shadows
 	samples = int(clamp(pow(4.0 * radius + 1.0, 2.0), 1.0, float(samples)));
@@ -325,7 +325,7 @@ float getShadow(sampler2D shadowsampler, vec2 smTexCoord, float realDistance)
 
 	vec2 clampedpos;
 	float visibility = 0.0;
-	float scale_factor = radius / mShadowParams.textureresolution;
+	float scale_factor = radius / ShadowParams.textureresolution;
 
 	int samples = (1 + 1 * int(SOFTSHADOWRADIUS > 1.0)) * PCFSAMPLES; // scale max samples for the soft shadows
 	samples = int(clamp(pow(4.0 * radius + 1.0, 2.0), 1.0, float(samples)));
@@ -360,7 +360,7 @@ vec4 getShadowColor(sampler2D shadowsampler, vec2 smTexCoord, float realDistance
 	float x, y;
 	float bound = (1 + 0.5 * int(SOFTSHADOWRADIUS > 1.0)) * PCFBOUND; // scale max bound for soft shadows
 	bound = clamp(0.5 * (4.0 * radius - 1.0), 0.5, bound);
-	float scale_factor = radius / bound / mShadowParams.textureresolution;
+	float scale_factor = radius / bound / ShadowParams.textureresolution;
 	float n = 0.0;
 
 	// basic PCF filter
@@ -388,7 +388,7 @@ float getShadow(sampler2D shadowsampler, vec2 smTexCoord, float realDistance)
 	float x, y;
 	float bound = (1 + 0.5 * int(SOFTSHADOWRADIUS > 1.0)) * PCFBOUND; // scale max bound for soft shadows
 	bound = clamp(0.5 * (4.0 * radius - 1.0), 0.5, bound);
-	float scale_factor = radius / bound / mShadowParams.textureresolution;
+	float scale_factor = radius / bound / ShadowParams.textureresolution;
 	float n = 0.0;
 
 	// basic PCF filter
@@ -427,7 +427,7 @@ void main(void)
 	// Fragment normal, can differ from vNormal which is derived from vertex normals.
 	vec3 fNormal = vNormal;
 
-	if (mShadowParams.shadow_strength > 0.0) {
+	if (ShadowParams.shadow_strength > 0.0) {
 		float shadow_int = 0.0;
 		vec3 shadow_color = vec3(0.0, 0.0, 0.0);
 		vec3 posLightSpace = getLightSpacePosition();
@@ -488,7 +488,7 @@ void main(void)
 						mDayLight * shadow_color * shadow_int);                 // reflected filtered sunlight/moonlight
 
 
-		vec3 reflect_ray = -normalize(mShadowParams.lightDirection - fNormal * dot(mShadowParams.lightDirection, fNormal) * 2.0);
+		vec3 reflect_ray = -normalize(ShadowParams.lightDirection - fNormal * dot(ShadowParams.lightDirection, fNormal) * 2.0);
 
 		vec3 viewVec = normalize(vWorldPosition + mCameraOffset - mCameraPosition);
 
@@ -502,7 +502,7 @@ void main(void)
 		// This is an analogous method to the bumpmap, except we get the gradient information directly from gnoise.
 		vec2 gradient = wave_noise(wavePos, off);
 		fNormal = normalize(normalize(fNormal) + vec3(gradient.x, 0., gradient.y) * WATER_WAVE_HEIGHT * abs(fNormal.y) * 0.25);
-		reflect_ray = -normalize(mShadowParams.lightDirection - fNormal * dot(mShadowParams.lightDirection, fNormal) * 2.0);
+		reflect_ray = -normalize(ShadowParams.lightDirection - fNormal * dot(ShadowParams.lightDirection, fNormal) * 2.0);
 		float fresnel_factor = dot(fNormal, viewVec);
 
 		float brightness_factor = 1.0 - adjusted_night_ratio;
@@ -510,7 +510,7 @@ void main(void)
 		// A little trig hack. We go from the dot product of viewVec and normal to the dot product of viewVec and tangent to apply a fresnel effect.
 		fresnel_factor = clamp(pow(1.0 - fresnel_factor * fresnel_factor, 8.0), 0.0, 1.0) * 0.8 + 0.2;
 		col.rgb *= 0.5;
-		vec3 reflection_color = mix(vec3(max(mFogParams.color.r, max(mFogParams.color.g, mFogParams.color.b))), mFogParams.color.rgb, mShadowParams.shadow_strength);
+		vec3 reflection_color = mix(vec3(max(FogParams.color.r, max(FogParams.color.g, FogParams.color.b))), FogParams.color.rgb, ShadowParams.shadow_strength);
 
 		// Sky reflection
 		col.rgb += reflection_color * pow(fresnel_factor, 2.0) * 0.5 * brightness_factor;
@@ -523,7 +523,7 @@ void main(void)
 
 #if (defined(ENABLE_NODE_SPECULAR) && !MATERIAL_WATER_REFLECTIONS)
 		// Apply specular to blocks.
-		if (dot(mShadowParams.lightDirection, vNormal) < 0.0) {
+		if (dot(ShadowParams.lightDirection, vNormal) < 0.0) {
 			float intensity = 2.0 * (1.0 - (base.r * vColor.r));
 			const float specular_exponent = 5.0;
 			const float fresnel_exponent =  4.0;
@@ -536,16 +536,16 @@ void main(void)
 
 		if (materialType == TILE_MATERIAL_WAVING_PLANTS || materialType == TILE_MATERIAL_WAVING_LEAVES && defined(ENABLE_TRANSLUCENT_FOLIAGE)) {
 			// Simulate translucent foliage.
-			col.rgb += 4.0 * mDayLight * base.rgb * normalize(base.rgb * vColor.rgb * vColor.rgb) * f_adj_shadow_strength * pow(max(-dot(mShadowParams.lightDirection, viewVec), 0.0), 4.0) * max(1.0 - shadow_uncorrected, 0.0);
+			col.rgb += 4.0 * mDayLight * base.rgb * normalize(base.rgb * vColor.rgb * vColor.rgb) * f_adj_shadow_strength * pow(max(-dot(ShadowParams.lightDirection, viewVec), 0.0), 4.0) * max(1.0 - shadow_uncorrected, 0.0);
 		}
 	}
 #endif
 
 	// Applying fog
-	if (bool(mFogParams.enable))
+	if (bool(FogParams.enable))
 	{
 		float FogFactor = computeFog(vEyeVec);
-		vec4 FogColor = mFogParams.color;
+		vec4 FogColor = FogParams.color;
 		FogColor.a = 1.0;
 		col = mix(FogColor, col, FogFactor);
 	}
@@ -560,15 +560,15 @@ void main(void)
 	// As additions usually come for free following a multiplication, the new formula
 	// should be more efficient as well.
 	// Note: clarity = (1 - fogginess)
-	//float clarity = clamp(mFogParams.density
-	//	- mFogParams.density * length(vEyeVec) / mFogParams.end, 0.0, 1.0);
-	//float fogColorMax = max(max(mFogParams.color.r, mFogParams.color.g), mFogParams.color.b);
+	//float clarity = clamp(FogParams.density
+	//	- FogParams.density * length(vEyeVec) / FogParams.end, 0.0, 1.0);
+	//float fogColorMax = max(max(FogParams.color.r, FogParams.color.g), FogParams.color.b);
 	// Prevent zero division.
 	//if (fogColorMax < 0.0000001) fogColorMax = 1.0;
 	// For high clarity (light fog) we tint the fog color.
 	// For this to not make the fog color artificially dark we need to normalize using the
 	// fog color's brightest value. We then blend our base color with this to make the fog.
-	//col = mix(mFogParams.color * pow(mFogParams.color / fogColorMax, vec4(2.0 * clarity)), col, clarity);
+	//col = mix(FogParams.color * pow(FogParams.color / fogColorMax, vec4(2.0 * clarity)), col, clarity);
 	//col = vec4(col.rgb, base.a);
 
 	//gl_FragData[0] = col;

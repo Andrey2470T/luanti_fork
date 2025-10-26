@@ -55,9 +55,9 @@ const float BS = 10.0;
 
 vec4 getRelativePosition(in vec4 position)
 {
-	vec2 l = position.xy - mShadowParams.cameraPos.xy;
+	vec2 l = position.xy - ShadowParams.cameraPos.xy;
 	vec2 s = l / abs(l);
-	s = (1.0 - s * mShadowParams.cameraPos.xy);
+	s = (1.0 - s * ShadowParams.cameraPos.xy);
 	l /= s;
 	return vec4(l, s);
 }
@@ -65,7 +65,7 @@ vec4 getRelativePosition(in vec4 position)
 float getPerspectiveFactor(in vec4 relativePosition)
 {
 	float pDistance = length(relativePosition.xy);
-	float pFactor = pDistance * mShadowParams.xyPerspectiveBias0 + mShadowParams.xyPerspectiveBias1;
+	float pFactor = pDistance * ShadowParams.xyPerspectiveBias0 + ShadowParams.xyPerspectiveBias1;
 	return pFactor;
 }
 
@@ -74,8 +74,8 @@ vec4 applyPerspectiveDistortion(in vec4 position)
 	vec4 l = getRelativePosition(position);
 	float pFactor = getPerspectiveFactor(l);
 	l.xy /= pFactor;
-	position.xy = l.xy * l.zw + mShadowParams.cameraPos.xy;
-	position.z *= mShadowParams.zPerspectiveBias;
+	position.xy = l.xy * l.zw + ShadowParams.cameraPos.xy;
+	position.z *= ShadowParams.zPerspectiveBias;
 	return position;
 }
 
@@ -147,7 +147,7 @@ void main(void)
 	float disp_z;
 	// OpenGL < 4.3 does not support continued preprocessor lines
 	if (materialType == TILE_MATERIAL_WAVING_LEAVES && ENABLE_WAVING_LEAVES) || (materialType == TILE_MATERIAL_WAVING_PLANTS && ENABLE_WAVING_PLANTS) {
-		vec4 pos2 = mMatrices.world * pos;
+		vec4 pos2 = Matrices.world * pos;
 		float tOffset = (pos2.x + pos2.y) * 0.001 + pos2.z * 0.002;
 		disp_x = (smoothTriangleWave(mAnimationTimer * 23.0 + tOffset) +
 		smoothTriangleWave(mAnimationTimer * 11.0 + tOffset)) * 0.4;
@@ -161,7 +161,7 @@ void main(void)
 		// Generate waves with Perlin-type noise.
 		// The constants are calibrated such that they roughly
 		// correspond to the old sine waves.
-		vec3 wavePos = (mMatrices.world * pos).xyz + cameraOffset;
+		vec3 wavePos = (Matrices.world * pos).xyz + cameraOffset;
 		// The waves are slightly compressed along the z-axis to get
 		// wave-fronts along the x-axis.
 		wavePos.x /= WATER_WAVE_LENGTH * 3.0;
@@ -180,11 +180,11 @@ void main(void)
 			cpos.z += disp_z;
 		}
 	}
-	vWorldPosition = (mMatrices.world * cpos).xyz;
-	gl_Position = mMatrices.worldViewProj * cpos;
+	vWorldPosition = (Matrices.world * cpos).xyz;
+	gl_Position = Matrices.worldViewProj * cpos;
 
 	vPosition = gl_Position.xyz;
-	vEyeVec = -(mMatrices.worldView * cpos).xyz;
+	vEyeVec = -(Matrices.worldView * cpos).xyz;
 #ifdef SECONDSTAGE
 	normalPass = normalize((normal+1)/2);
 #endif
@@ -211,7 +211,7 @@ void main(void)
 	vColor = clamp(vColor, 0.0, 1.0);
 
 #ifdef ENABLE_DYNAMIC_SHADOWS
-	if (mShadowParams.shadow_strength > 0.0) {
+	if (ShadowParams.shadow_strength > 0.0) {
 		vec4 shadow_pos;
 	
 		if (materialType == TILE_MATERIAL_WAVING_PLANTS && ENABLE_WAVING_PLANTS) {
@@ -228,40 +228,40 @@ void main(void)
 		/* normalOffsetScale is in world coordinates (1/10th of a meter)
 		   z_bias is in light space coordinates */
 		float normalOffsetScale, z_bias;
-		float pFactor = getPerspectiveFactor(getRelativePosition(mShadowParams.shadowViewProj * mMatrices.world * shadow_pos));
+		float pFactor = getPerspectiveFactor(getRelativePosition(ShadowParams.shadowViewProj * Matrices.world * shadow_pos));
 		if (vFNormalLength > 0.0) {
 			nNormal = normalize(vNormal);
-			vCosLight = max(1e-5, dot(nNormal, -mShadowParams.lightDirection));
+			vCosLight = max(1e-5, dot(nNormal, -ShadowParams.lightDirection));
 			float sinLight = pow(1.0 - pow(vCosLight, 2.0), 0.5);
-			normalOffsetScale = 2.0 * pFactor * pFactor * sinLight * min(mShadowParams.shadowfar, 500.0) /
-					mShadowParams.xyPerspectiveBias1 / mShadowParams.textureresolution;
+			normalOffsetScale = 2.0 * pFactor * pFactor * sinLight * min(ShadowParams.shadowfar, 500.0) /
+					ShadowParams.xyPerspectiveBias1 / ShadowParams.textureresolution;
 			z_bias = 1.0 * sinLight / vCosLight;
 		}
 		else {
 			nNormal = vec3(0.0);
-			vCosLight = clamp(dot(mShadowParams.lightDirection, normalize(vec3(mShadowParams.lightDirection.x, 0.0, mShadowParams.lightDirection.z))), 1e-2, 1.0);
+			vCosLight = clamp(dot(ShadowParams.lightDirection, normalize(vec3(ShadowParams.lightDirection.x, 0.0, ShadowParams.lightDirection.z))), 1e-2, 1.0);
 			float sinLight = pow(1.0 - pow(vCosLight, 2.0), 0.5);
 			normalOffsetScale = 0.0;
 			z_bias = 3.6e3 * sinLight / vCosLight;
 		}
-		z_bias *= pFactor * pFactor / mShadowParams.textureresolution / mShadowParams.shadowfar;
+		z_bias *= pFactor * pFactor / ShadowParams.textureresolution / ShadowParams.shadowfar;
 
-		vShadowPosition = applyPerspectiveDistortion(mShadowParams.shadowViewProj * mMatrices.world * (shadow_pos + vec4(normalOffsetScale * nNormal, 0.0))).xyz;
+		vShadowPosition = applyPerspectiveDistortion(ShadowParams.shadowViewProj * Matrices.world * (shadow_pos + vec4(normalOffsetScale * nNormal, 0.0))).xyz;
 		if (!ENABLE_TRANSLUCENT_FOLIAGE || materialType != TILE_MATERIAL_WAVING_LEAVES)
 			vShadowPosition.z -= z_bias;
 
 		perspective_factor = pFactor;
 
-		if (mShadowParams.timeofday < 0.2) {
-			vAdjShadowStrength = mShadowParams.shadow_strength * 0.5 *
-				(1.0 - mtsmoothstep(0.18, 0.2, mShadowParams.timeofday));
-		} else if (mShadowParams.timeofday >= 0.8) {
-			vAdjShadowStrength = mShadowParams.shadow_strength * 0.5 *
-				mtsmoothstep(0.8, 0.83, mShadowParams.timeofday);
+		if (ShadowParams.timeofday < 0.2) {
+			vAdjShadowStrength = ShadowParams.shadow_strength * 0.5 *
+				(1.0 - mtsmoothstep(0.18, 0.2, ShadowParams.timeofday));
+		} else if (ShadowParams.timeofday >= 0.8) {
+			vAdjShadowStrength = ShadowParams.shadow_strength * 0.5 *
+				mtsmoothstep(0.8, 0.83, ShadowParams.timeofday);
 		} else {
-			vAdjShadowStrength = mShadowParams.shadow_strength *
-				mtsmoothstep(0.20, 0.25, mShadowParams.timeofday) *
-				(1.0 - mtsmoothstep(0.7, 0.8, mShadowParams.timeofday));
+			vAdjShadowStrength = ShadowParams.shadow_strength *
+				mtsmoothstep(0.20, 0.25, ShadowParams.timeofday) *
+				(1.0 - mtsmoothstep(0.7, 0.8, ShadowParams.timeofday));
 		}
 	}
 #endif

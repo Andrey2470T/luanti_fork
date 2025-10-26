@@ -41,9 +41,9 @@ void main(void)
 	sampleCoords = shiftCoords(sampleCoords, texSize, 1);
 	vBlendMode = unpackInt(dataTex, sampleCoords);
 
-	gl_Position = mMatrices.worldViewProj * transformedPos;
+	gl_Position = Matrices.worldViewProj * transformedPos;
 
 	vUV = uv;
 
-	vEyeVec = -(mMatrices.worldView * transformedPos).xyz;
+	vEyeVec = -(Matrices.worldView * transformedPos).xyz;
 }

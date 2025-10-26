@@ -306,16 +306,16 @@ void GUIEngine::run()
 
             m_rndsys->beginDraw(render::CBF_COLOR | render::CBF_DEPTH, Renderer::menu_sky_color);
 
-			if (m_clouds_enabled) {
+            /*if (m_clouds_enabled) {
                 g_menumgr->drawClouds(dtime);
                 drawOverlay();
-			} else {
+            } else {
                 drawBackground();
-			}
+            }
 
-            drawFooter();
+            drawFooter();*/
 
-            m_rndsys->getGUIEnvironment()->drawAll();
+            //m_rndsys->getGUIEnvironment()->drawAll();
 
 			// The header *must* be drawn after the menu because it uses
 			// GUIFormspecMenu::getAbsoluteRect().
@@ -452,8 +452,8 @@ void GUIEngine::drawHeader()
 	recti max_rect(4, 4, screensize.X - 8, formspec_rect.ULC.Y - 8);
 
 	// If no space (less than 16x16 px), draw nothing
-	if (max_rect.getWidth() < 16 || max_rect.getHeight() < 16)
-		return;
+    //if (max_rect.getWidth() < 16 || max_rect.getHeight() < 16)
+    //	return;
 
 	/*
 	 * Calculate the preferred rectangle

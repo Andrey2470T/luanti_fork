@@ -28,10 +28,10 @@ void main()
 	if (mAlphaDiscard == 0 && Color.a < mAlphaRef)
         discard;
 
-	if (bool(mFogParams.enable))
+	if (bool(FogParams.enable))
 	{
 		float FogFactor = computeFog(vViewPos);
-		vec4 FogColor = mFogParams.color;
+		vec4 FogColor = FogParams.color;
 		FogColor.a = 1.0;
 		Color = mix(FogColor, Color, FogFactor);
 	}

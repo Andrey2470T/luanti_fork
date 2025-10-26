@@ -41,7 +41,7 @@ void CGUIStaticText::draw()
 		return;
 
     Text->updateBuffer(rectf(v2f(AbsoluteRect.ULC.X, AbsoluteRect.ULC.Y), v2f(AbsoluteRect.LRC.X, AbsoluteRect.LRC.Y)));
-    Text->draw();
+    //Text->draw();
 }
 
 //! Sets another skin independent font.

@@ -658,12 +658,15 @@ void GUITable::draw()
         UISprite *border = new UISprite(nullptr, rnd, cache, true);
         border->setClipRect(AbsoluteClippingRect);
         skin->add3DSunkenPane(border, m_background, true, draw_background, toRectf(AbsoluteRect));
+        border->rebuildMesh();
         m_table_box->addSprite(border);
     }
     else if (draw_background) {
         UISprite *background = new UISprite(nullptr, rnd, cache, true);
         background->setClipRect(AbsoluteClippingRect);
-        background->getShape()->addRectangle(toRectf(AbsoluteRect), {m_background, m_background, m_background, m_background});
+        background->getShape()->addRectangle(toRectf(AbsoluteRect), {m_background});
+        background->rebuildMesh();
+
         m_table_box->addSprite(background);
     }
 
@@ -704,6 +707,7 @@ void GUITable::draw()
             UISprite *cell = new UISprite(nullptr, rnd, cache, true);
             cell->setClipRect(client_clip);
             cell->getShape()->addRectangle(toRectf(row_rect), {m_highlight, m_highlight, m_highlight, m_highlight});
+            cell->rebuildMesh();
             m_table_box->addSprite(cell);
 			color = m_highlight_text;
 		}
@@ -714,10 +718,6 @@ void GUITable::draw()
 		row_rect.ULC.Y += m_rowheight;
 		row_rect.LRC.Y += m_rowheight;
 	}
-
-    for (u32 k = 0; k < m_table_box->getSpriteCount(); k++) {
-        m_table_box->getSprite(k)->rebuildMesh();
-    }
 
     m_table_box->drawBank();
 

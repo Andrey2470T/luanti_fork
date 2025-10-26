@@ -60,9 +60,9 @@ const float BS = 10.0;
 
 vec4 getRelativePosition(in vec4 position)
 {
-	vec2 l = position.xy - mShadowParams.cameraPos.xy;
+	vec2 l = position.xy - ShadowParams.cameraPos.xy;
 	vec2 s = l / abs(l);
-	s = (1.0 - s * mShadowParams.cameraPos.xy);
+	s = (1.0 - s * ShadowParams.cameraPos.xy);
 	l /= s;
 	return vec4(l, s);
 }
@@ -70,7 +70,7 @@ vec4 getRelativePosition(in vec4 position)
 float getPerspectiveFactor(in vec4 relativePosition)
 {
 	float pDistance = length(relativePosition.xy);
-	float pFactor = pDistance * mShadowParams.xyPerspectiveBias0 + mShadowParams.xyPerspectiveBias1;
+	float pFactor = pDistance * ShadowParams.xyPerspectiveBias0 + ShadowParams.xyPerspectiveBias1;
 	return pFactor;
 }
 
@@ -79,8 +79,8 @@ vec4 applyPerspectiveDistortion(in vec4 position)
 	vec4 l = getRelativePosition(position);
 	float pFactor = getPerspectiveFactor(l);
 	l.xy /= pFactor;
-	position.xy = l.xy * l.zw + mShadowParams.cameraPos.xy;
-	position.z *= mShadowParams.zPerspectiveBias;
+	position.xy = l.xy * l.zw + ShadowParams.cameraPos.xy;
+	position.z *= ShadowParams.zPerspectiveBias;
 	return position;
 }
 
@@ -106,7 +106,7 @@ float directional_ambient(vec3 normal)
 
 void main(void)
 {
-	vUV0 = (mMatrices.texture0 * vec4(uv.xy, 1.0, 1.0)).st;
+	vUV0 = (Matrices.texture0 * vec4(uv.xy, 1.0, 1.0)).st;
 
 	// Calculate weighted transformations from each affected bone for the current frame
 	vec3 skinnedPos = pos;
@@ -131,12 +131,12 @@ void main(void)
 		if (mAnimateNormals)
 			skinnedNormal += weight * bone_transform * vec4(skinnedNormal, 0.0);
 	}
-	gl_Position = mMatrices.worldViewProj * vec4(skinnedPos, 1.0);
+	gl_Position = Matrices.worldViewProj * vec4(skinnedPos, 1.0);
 
 	vPosition = gl_Position.xyz;
-	vNormal = (mMatrices.world * vec4(skinnedNormal, 0.0)).xyz;
-	vWorldPosition = (mMatrices.world * vec4(skinnedPos, 1.0)).xyz;
-	vEyeVec = -(mMatrices.worldView * vec4(skinnedPos, 1.0)).xyz;
+	vNormal = (Matrices.world * vec4(skinnedNormal, 0.0)).xyz;
+	vWorldPosition = (Matrices.world * vec4(skinnedPos, 1.0)).xyz;
+	vEyeVec = -(Matrices.worldView * vec4(skinnedPos, 1.0)).xyz;
 
 	if (materialType == TILE_MATERIAL_PLAIN) || (materialType == TILE_MATERIAL_PLAIN_ALPHA)
 		vIDiff = 1.0;
@@ -166,47 +166,47 @@ void main(void)
 
 
 #ifdef ENABLE_DYNAMIC_SHADOWS
-	if (mShadowParams.shadow_strength > 0.0) {
+	if (ShadowParams.shadow_strength > 0.0) {
 		vec3 nNormal = normalize(vNormal);
 		vNormalLength = length(vNormal);
 
 		/* normalOffsetScale is in world coordinates (1/10th of a meter)
 		   z_bias is in light space coordinates */
 		float normalOffsetScale, z_bias;
-		float pFactor = getPerspectiveFactor(getRelativePosition(mShadowParams.shadowViewProj * skinnedPos));
+		float pFactor = getPerspectiveFactor(getRelativePosition(ShadowParams.shadowViewProj * skinnedPos));
 		if (vNormalLength > 0.0) {
 			nNormal = normalize(vNormal);
-			vCosLight = max(1e-5, dot(nNormal, -mShadowParams.lightDirection));
+			vCosLight = max(1e-5, dot(nNormal, -ShadowParams.lightDirection));
 			float sinLight = pow(1.0 - pow(vCosLight, 2.0), 0.5);
-			normalOffsetScale = 0.1 * pFactor * pFactor * sinLight * min(mShadowParams.shadowfar, 500.0) /
-					mShadowParams.xyPerspectiveBias1 / mShadowParams.textureresolution;
-			z_bias = 1e3 * sinLight / vCosLight * (0.5 + mShadowParams.textureresolution / 1024.0);
+			normalOffsetScale = 0.1 * pFactor * pFactor * sinLight * min(ShadowParams.shadowfar, 500.0) /
+					ShadowParams.xyPerspectiveBias1 / ShadowParams.textureresolution;
+			z_bias = 1e3 * sinLight / vCosLight * (0.5 + ShadowParams.textureresolution / 1024.0);
 		}
 		else {
 			nNormal = vec3(0.0);
-			vCosLight = clamp(dot(mShadowParams.lightDirection, normalize(vec3(mShadowParams.lightDirection.x, 0.0, mShadowParams.lightDirection.z))), 1e-2, 1.0);
+			vCosLight = clamp(dot(ShadowParams.lightDirection, normalize(vec3(ShadowParams.lightDirection.x, 0.0, ShadowParams.lightDirection.z))), 1e-2, 1.0);
 			float sinLight = pow(1.0 - pow(vCosLight, 2.0), 0.5);
 			normalOffsetScale = 0.0;
 			z_bias = 3.6e3 * sinLight / vCosLight;
 		}
-		z_bias *= pFactor * pFactor / mShadowParams.textureresolution / mShadowParams.shadowfar;
+		z_bias *= pFactor * pFactor / ShadowParams.textureresolution / ShadowParams.shadowfar;
 
 		// Possible breakage: the skinned position is in the absolute coords, not in the relative
-		vShadowPosition = applyPerspectiveDistortion(mShadowParams.shadowViewProj * vec4(skinnedPos + normalOffsetScale * nNormal, 1.0)).xyz;
-		//vShadowPosition = applyPerspectiveDistortion(mShadowParams.shadowViewProj * mMatrices.world * (vec4(pos, 1.0) + vec4(normalOffsetScale * nNormal, 0.0))).xyz;
+		vShadowPosition = applyPerspectiveDistortion(ShadowParams.shadowViewProj * vec4(skinnedPos + normalOffsetScale * nNormal, 1.0)).xyz;
+		//vShadowPosition = applyPerspectiveDistortion(ShadowParams.shadowViewProj * Matrices.world * (vec4(pos, 1.0) + vec4(normalOffsetScale * nNormal, 0.0))).xyz;
 		vShadowPosition.z -= z_bias;
 		vPerspectiveFactor = pFactor;
 
-		if (mShadowParams.timeofday < 0.2) {
-			vAdjShadowStrength = mShadowParams.shadow_strength * 0.5 *
-				(1.0 - mtsmoothstep(0.18, 0.2, mShadowParams.timeofday));
-		} else if (mShadowParams.timeofday >= 0.8) {
-			vAdjShadowStrength = mShadowParams.shadow_strength * 0.5 *
-				mtsmoothstep(0.8, 0.83, mShadowParams.timeofday);
+		if (ShadowParams.timeofday < 0.2) {
+			vAdjShadowStrength = ShadowParams.shadow_strength * 0.5 *
+				(1.0 - mtsmoothstep(0.18, 0.2, ShadowParams.timeofday));
+		} else if (ShadowParams.timeofday >= 0.8) {
+			vAdjShadowStrength = ShadowParams.shadow_strength * 0.5 *
+				mtsmoothstep(0.8, 0.83, ShadowParams.timeofday);
 		} else {
-			vAdjShadowStrength = mShadowParams.shadow_strength *
-				mtsmoothstep(0.20, 0.25, mShadowParams.timeofday) *
-				(1.0 - mtsmoothstep(0.7, 0.8, mShadowParams.timeofday));
+			vAdjShadowStrength = ShadowParams.shadow_strength *
+				mtsmoothstep(0.20, 0.25, ShadowParams.timeofday) *
+				(1.0 - mtsmoothstep(0.7, 0.8, ShadowParams.timeofday));
 		}
 	}
 #endif

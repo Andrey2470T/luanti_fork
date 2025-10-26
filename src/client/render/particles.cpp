@@ -601,6 +601,7 @@ ParticleManager::ParticleManager(RenderSystem *rnd_sys, ResourceCache *cache, Cl
     m_rnd_sys(rnd_sys), m_cache(cache), m_env(env)
 {
     m_shader = m_cache->getOrLoad<render::Shader>(ResourceType::SHADER, "particles");
+    m_rnd_sys->getRenderer()->setUniformBlocks(m_shader);
 
     m_datatex = std::make_unique<DataTexture>("ParticlesData", sizeof(ParticleSampleData), 0, 4*4 + 4 + 2*2 + 2*2 + 4);
     m_unit_quad_mesh = std::make_unique<MeshBuffer>(4, 6);
@@ -778,8 +779,6 @@ void ParticleManager::renderParticles()
     rnd->setTexture(dynamic_cast<render::Texture2D *>(m_rnd_sys->getPool(true)->getAtlas(0)->getTexture()));
 
     rnd->setDataTexParams(m_datatex.get());
-
-    rnd->setUniformBlocks();
 
     auto ctxt = rnd->getContext();
     ctxt->setActiveUnit(1, dynamic_cast<render::Texture *>(m_datatex->getGLTexture()));

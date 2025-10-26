@@ -2,6 +2,7 @@
 #include "client/ao/nametag.h"
 #include "client/core/client.h"
 #include "client/player/playercamera.h"
+#include "client/render/renderer.h"
 #include "client/ui/minimap.h"
 #include "itemgroup.h"
 #include "client/render/rendersystem.h"
@@ -746,6 +747,7 @@ void RenderCAO::initTileLayer()
 
     std::string shadername = m_model->getSkeleton() ? "object_skinned" : "object";
     m_tile_layer.shader = m_cache->getOrLoad<render::Shader>(ResourceType::SHADER, shadername);
+    m_rndsys->getRenderer()->setUniformBlocks(m_tile_layer.shader);
     m_tile_layer.textures.push_back(dynamic_cast<render::Texture *>(m_anim_mgr->getBonesTexture()->getGLTexture()));
 }
 

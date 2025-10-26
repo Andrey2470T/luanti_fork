@@ -42,6 +42,7 @@ Clouds::Clouds(RenderSystem *rndsys, ResourceCache *cache, u32 seed)
     m_mesh = std::make_unique<MeshBuffer>(true, SkyboxVType, render::MeshUsage::DYNAMIC);
 
     m_shader = m_cache->getOrLoad<render::Shader>(ResourceType::SHADER, "skybox");
+    m_rndsys->getRenderer()->setUniformBlocks(m_shader);
 }
 
 Clouds::~Clouds()
@@ -323,7 +324,6 @@ void Clouds::render(v3s16 camera_offset)
 
     rnd->setTransformMatrix(TMatrix::World, translate);
     rnd->setShader(m_shader);
-    rnd->setUniformBlocks();
     rnd->enableFog(true);
 
     rnd->draw(m_mesh.get());

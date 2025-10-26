@@ -26,10 +26,10 @@ void main(void)
 
 	vec4 col = vec4(base.rgb * vColor.rgb, 1.0);
 
-    if (bool(mFogParams.enable))
+    if (bool(FogParams.enable))
 	{
 		float FogFactor = computeFog(vEyeVec);
-		vec4 FogColor = mFogParams.color;
+		vec4 FogColor = FogParams.color;
 		FogColor.a = 1.0;
 		col = mix(FogColor, col, FogFactor);
 	}

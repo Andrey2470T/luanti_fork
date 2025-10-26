@@ -13,15 +13,15 @@ out vec3 vViewPos;
 
 void main()
 {
-	gl_Position = mMatrices.worldViewProj * vec4(pos, 1.0);
+	gl_Position = Matrices.worldViewProj * vec4(pos, 1.0);
 	gl_PointSize = mThickness;
 
 	vec4 TextureCoord0 = vec4(uv.x, uv.y, 1.0, 1.0);
-	vUV0 = vec4(mMatrices.texture0 * TextureCoord0).xy;
+	vUV0 = vec4(Matrices.texture0 * TextureCoord0).xy;
 
 	vVertexColor = color.bgra;
 
-	vec3 Position = (mMatrices.worldView * vec4(pos, 1.0)).xyz;
+	vec3 Position = (Matrices.worldView * vec4(pos, 1.0)).xyz;
 
-	vViewPos = (mMatrices.worldView * vec4(pos, 1.0)).xyz;
+	vViewPos = (Matrices.worldView * vec4(pos, 1.0)).xyz;
 }

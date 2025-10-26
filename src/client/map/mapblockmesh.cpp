@@ -4,6 +4,7 @@
 
 #include "mapblockmesh.h"
 #include "client/core/client.h"
+#include "client/render/renderer.h"
 #include "mapblock.h"
 #include "map.h"
 #include "profiler.h"
@@ -126,6 +127,7 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data)
 
 
     auto basicPool = m_client->getRenderSystem()->getPool(true);
+    auto rnd = m_client->getRenderSystem()->getRenderer();
     for (u8 buf_i = 0; buf_i < m_mesh->getBuffersCount(); buf_i++) {
         auto buffer = m_mesh->getBuffer(buf_i);
         for (u8 layer_i = 0; layer_i < m_mesh->getBufferLayersCount(buf_i); layer_i++) {
@@ -144,6 +146,7 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data)
 
             layer->use_default_shader = false;
             layer->shader = m_client->getResourceCache()->getOrLoad<render::Shader>(ResourceType::SHADER, shadername);
+            rnd->setUniformBlocks(layer->shader);
 
             u32 atlas_size = atlas->getTextureSize();
 

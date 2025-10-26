@@ -317,60 +317,6 @@ void UITextSprite::updateBuffer(rectf &&r)
 
             offset.X += advance;
             prevCh = ch;
-
-            // Calculate the glyph offset.
-            //s32 offx = Glyphs[n-1].offset.X;
-            //s32 offy = (font_metrics.ascender / 64) - Glyphs[n-1].offset.Y;
-
-            // Apply kerning.
-            //core::vector2di k = getKerning(currentChar, previousChar);
-            //offset.X += k.X;
-            //offset.Y += k.Y;
-
-                // Determine rendering information.
-                /*SGUITTGlyph& glyph = Glyphs[n-1];
-                CGUITTGlyphPage* const page = Glyph_Pages[glyph.glyph_page];
-                page->render_positions.push_back(v2i(offset.X + offx, offset.Y + offy));
-                page->render_source_rects.push_back(glyph.source_rect);
-                const size_t iterPos = iter - utext.begin();
-                if (iterPos < colors.size())
-                    page->render_colors.push_back(colors[iterPos]);
-                else
-                    page->render_colors.push_back(img::color8(255,255,255,255));
-                Render_Map[glyph.glyph_page] = page;
-            }*/
-
-            /*if (n > 0)
-            {
-                offset.X += getWidthFromCharacter(currentChar);
-            }
-            else if (fallback != 0)
-            {
-                // Let the fallback font draw it, this isn't super efficient but hopefully that doesn't matter
-                wchar_t l1[] = { (wchar_t) currentChar, 0 };
-
-                if (visible)
-                {
-                    // Apply kerning.
-                    offset += fallback->getKerning(*l1, (wchar_t) previousChar);
-
-                    const u32 current_color = iter - utext.begin();
-                    fallback->draw(std::wstring(l1),
-                                   recti({offset.X-1, offset.Y-1}, position.LRC), // ???
-                                   current_color < colors.size() ? colors[current_color] : img::color8(255, 255, 255, 255),
-                                   false, false, clip);
-                }
-
-                offset.X += fallback->getDimension(l1).Width;
-            }
-
-            previousChar = currentChar;
-            ++iter;
-        }
-        CGUITTFont *tmp = static_cast<CGUITTFont*>(font);
-        tmp->draw(str,
-            r, HAlign == EGUIA_CENTER, VAlign == EGUIA_CENTER,
-            (RestrainTextInside ? &AbsoluteClippingRect : NULL));*/
         }
 
 

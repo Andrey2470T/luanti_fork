@@ -3454,29 +3454,26 @@ void GUIFormSpecMenu::drawMenu()
     v2u wndSize = m_rndsys->getWindowSize();
     recti allbg(0, 0, wndSize.X, wndSize.Y);
 
-    u32 cur_render_rect = 0;
-
-    if (m_bgfullscreen) {
+    if (m_bgfullscreen)
         m_menu->addRect(toRectf(allbg), {m_fullscreen_bgcolor});
-        cur_render_rect++;
-    }
 
-    if (m_bgnonfullscreen) {
+    if (m_bgnonfullscreen)
         m_menu->addRect(toRectf(AbsoluteRect), {m_bgcolor});
-        cur_render_rect++;
-    }
 
+    u32 cur_render_rect = 0;
     if (m_bgfullscreen || m_bgnonfullscreen) {
         m_menu->rebuildMesh();
 
         if (m_bgfullscreen) {
             m_menu->setClipRect(allbg);
-            m_menu->drawPart();
+            m_menu->drawPart(cur_render_rect);
+            cur_render_rect++;
         }
 
         if (m_bgnonfullscreen) {
             m_menu->setClipRect(AbsoluteClippingRect);
             m_menu->drawPart(cur_render_rect);
+            cur_render_rect++;
         }
     }
 

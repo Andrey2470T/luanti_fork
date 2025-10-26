@@ -11,4 +11,4 @@ layout (std140) uniform mShadowParams {
 	float xyPerspectiveBias1;
 	float zPerspectiveBias;
 	vec3 shadowTint;
-}
+} ShadowParams;

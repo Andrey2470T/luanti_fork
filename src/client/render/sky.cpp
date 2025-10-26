@@ -337,6 +337,7 @@ Stars::Stars(RenderSystem *rndsys, ResourceCache *cache)
     m_seed((u64)myrand() << 32 | myrand())
 {
     m_shader = cache->getOrLoad<render::Shader>(ResourceType::SHADER, "skybox");
+    m_rndsys->getRenderer()->setUniformBlocks(m_shader);
     m_mesh = std::make_unique<MeshBuffer>(true, SkyboxVType);
 }
 void Stars::setCount(u16 count)
@@ -352,7 +353,6 @@ void Stars::draw()
 {
     auto rnd = m_rndsys->getRenderer();
     rnd->setShader(m_shader);
-    rnd->setUniformBlocks();
     rnd->setBlending(true);
 
     rnd->draw(m_mesh.get());

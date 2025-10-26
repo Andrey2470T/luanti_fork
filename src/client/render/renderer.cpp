@@ -150,15 +150,13 @@ void Renderer::setDefaultUniforms(f32 thickness, u8 alphaDiscard, f32 alphaRef, 
                 curShader->setUniformInt("mBlendMode", (s32)blendMode);
             }
         }
-
-        setUniformBlocks();
     }
 }
 
-void Renderer::setUniformBlocks()
+void Renderer::setUniformBlocks(Shader *shader)
 {
-    curShader->setUniformBlock("mMatrices", matrix_buffer.get());
-    curShader->setUniformBlock("mFogParams", fog_buffer.get());
+    shader->setUniformBlock("mMatrices", matrix_buffer.get());
+    shader->setUniformBlock("mFogParams", fog_buffer.get());
 }
 
 void Renderer::setClipRect(const recti &clipRect)

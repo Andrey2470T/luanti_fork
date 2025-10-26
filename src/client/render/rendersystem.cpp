@@ -170,6 +170,13 @@ bool RenderSystem::run()
                 }
             }
         }
+
+        if (window->shouldUpdateViewport) {
+            v2u wndSize = window->getWindowSize();
+            recti newViewport(0, 0, wndSize.X, wndSize.Y);
+            renderer->getContext()->setViewportSize(newViewport);
+            window->shouldUpdateViewport = false;
+        }
         if (auto focusElem = guienv->getFocus()) {
             window->resetReceiveTextInputEvents(
                 focusElem->getAbsolutePosition(), focusElem->acceptsIME());

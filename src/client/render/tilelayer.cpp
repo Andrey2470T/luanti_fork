@@ -44,7 +44,6 @@ void TileLayer::setupRenderState(Client *client) const
         rnd->setBlending(material_flags & MATERIAL_FLAG_TRANSPARENT);
         rnd->setShader(shader);
         shader->setUniformInt("mAlphaDiscard", alpha_discard);
-        rnd->setUniformBlocks();
     }
     else {
         rnd->setDefaultShader(material_flags & MATERIAL_FLAG_TRANSPARENT, true);

@@ -49,7 +49,7 @@ in float vIDiff;
 // assuming near is always 1.0
 float getLinearDepth()
 {
-	return 2.0 * mShadowParams.shadowfar / (mShadowParams.shadowfar + 1.0 - (2.0 * gl_FragCoord.z - 1.0) * (mShadowParams.shadowfar - 1.0));
+	return 2.0 * ShadowParams.shadowfar / (ShadowParams.shadowfar + 1.0 - (2.0 * gl_FragCoord.z - 1.0) * (ShadowParams.shadowfar - 1.0));
 }
 
 vec3 getLightSpacePosition()
@@ -152,17 +152,17 @@ float getPenumbraRadius(sampler2D shadowsampler, vec2 smTexCoord, float realDist
 	// A factor from 0 to 1 to reduce blurring of short shadows
 	float sharpness_factor = 1.0;
 	// conversion factor from shadow depth to blur radius
-	float depth_to_blur = mShadowParams.shadowfar / SOFTSHADOWRADIUS / mShadowParams.xyPerspectiveBias0;
+	float depth_to_blur = ShadowParams.shadowfar / SOFTSHADOWRADIUS / ShadowParams.xyPerspectiveBias0;
 	if (depth > 0.0 && vNormalLength > 0.0)
 		// 5 is empirical factor that controls how fast shadow loses sharpness
 		sharpness_factor = clamp(5 * depth * depth_to_blur, 0.0, 1.0);
 	depth = 0.0;
 
-	float world_to_texture = mShadowParams.xyPerspectiveBias1 / vPerspectiveFactor / vPerspectiveFactor
-			* mShadowParams.textureresolution / 2.0 / mShadowParams.shadowfar;
+	float world_to_texture = ShadowParams.xyPerspectiveBias1 / vPerspectiveFactor / vPerspectiveFactor
+			* ShadowParams.textureresolution / 2.0 / ShadowParams.shadowfar;
 	float world_radius = 0.2; // shadow blur radius in world float coordinates, e.g. 0.2 = 0.02 of one node
 
-	return max(BASEFILTERRADIUS * mShadowParams.textureresolution / 4096.0,  sharpness_factor * world_radius * world_to_texture * SOFTSHADOWRADIUS);
+	return max(BASEFILTERRADIUS * ShadowParams.textureresolution / 4096.0,  sharpness_factor * world_radius * world_to_texture * SOFTSHADOWRADIUS);
 }
 
 #ifdef POISSON_FILTER
@@ -245,7 +245,7 @@ vec4 getShadowColor(sampler2D shadowsampler, vec2 smTexCoord, float realDistance
 
 	vec2 clampedpos;
 	vec4 visibility = vec4(0.0);
-	float scale_factor = radius / mShadowParams.textureresolution;
+	float scale_factor = radius / ShadowParams.textureresolution;
 
 	int samples = (1 + 1 * int(SOFTSHADOWRADIUS > 1.0)) * PCFSAMPLES; // scale max samples for the soft shadows
 	samples = int(clamp(pow(4.0 * radius + 1.0, 2.0), 1.0, float(samples)));
@@ -272,7 +272,7 @@ float getShadow(sampler2D shadowsampler, vec2 smTexCoord, float realDistance)
 
 	vec2 clampedpos;
 	float visibility = 0.0;
-	float scale_factor = radius / mShadowParams.textureresolution;
+	float scale_factor = radius / ShadowParams.textureresolution;
 
 	int samples = (1 + 1 * int(SOFTSHADOWRADIUS > 1.0)) * PCFSAMPLES; // scale max samples for the soft shadows
 	samples = int(clamp(pow(4.0 * radius + 1.0, 2.0), 1.0, float(samples)));
@@ -307,7 +307,7 @@ vec4 getShadowColor(sampler2D shadowsampler, vec2 smTexCoord, float realDistance
 	float x, y;
 	float bound = (1 + 0.5 * int(SOFTSHADOWRADIUS > 1.0)) * PCFBOUND; // scale max bound for soft shadows
 	bound = clamp(0.5 * (4.0 * radius - 1.0), 0.5, bound);
-	float scale_factor = radius / bound / mShadowParams.textureresolution;
+	float scale_factor = radius / bound / ShadowParams.textureresolution;
 	float n = 0.0;
 
 	// basic PCF filter
@@ -335,7 +335,7 @@ float getShadow(sampler2D shadowsampler, vec2 smTexCoord, float realDistance)
 	float x, y;
 	float bound = (1 + 0.5 * int(SOFTSHADOWRADIUS > 1.0)) * PCFBOUND; // scale max bound for soft shadows
 	bound = clamp(0.5 * (4.0 * radius - 1.0), 0.5, bound);
-	float scale_factor = radius / bound / mShadowParams.textureresolution;
+	float scale_factor = radius / bound / ShadowParams.textureresolution;
 	float n = 0.0;
 
 	// basic PCF filter
@@ -371,7 +371,7 @@ void main(void)
 	col.rgb *= vIDiff;
 
 #ifdef ENABLE_DYNAMIC_SHADOWS
-	if (mShadowParams.shadow_strength > 0.0) {
+	if (ShadowParams.shadow_strength > 0.0) {
 		float shadow_int = 0.0;
 		vec3 shadow_color = vec3(0.0, 0.0, 0.0);
 		vec3 posLightSpace = getLightSpacePosition();
@@ -421,16 +421,16 @@ void main(void)
 		col.rgb =
 				adjusted_night_ratio * col.rgb + // artificial light
 				(1.0 - adjusted_night_ratio) * ( // natural light
-						col.rgb * (1.0 - shadow_int * (1.0 - shadow_color) * (1.0 - mShadowParams.shadowTint)) +  // filtered texture color
+						col.rgb * (1.0 - shadow_int * (1.0 - shadow_color) * (1.0 - ShadowParams.shadowTint)) +  // filtered texture color
 						mDayLight * shadow_color * shadow_int);                 // reflected filtered sunlight/moonlight
 	}
 #endif
 
 	// Applying fog
-	if (bool(mFogParams.enable))
+	if (bool(FogParams.enable))
 	{
 		float FogFactor = computeFog(vEyeVec);
-		vec4 FogColor = mFogParams.color;
+		vec4 FogColor = FogParams.color;
 		FogColor.a = 1.0;
 		col = mix(FogColor, col, FogFactor);
 	}

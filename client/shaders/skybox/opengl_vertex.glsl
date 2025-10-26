@@ -11,9 +11,9 @@ out highp vec3 vEyeVec;
 
 void main(void)
 {
-	gl_Position = mMatrices.worldViewProj * vec4(pos, 1.0);
+	gl_Position = Matrices.worldViewProj * vec4(pos, 1.0);
 
 	vColor = color * hwcolor;
 
-	vEyeVec = -(mMatrices.worldView * vec4(pos, 1.0)).xyz;
+	vEyeVec = -(Matrices.worldView * vec4(pos, 1.0)).xyz;
 }
