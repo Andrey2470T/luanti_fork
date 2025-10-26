@@ -38,7 +38,7 @@ RenderSystem::RenderSystem(ResourceCache *_cache)
     core::InfoStream << "RenderSystem 1\n";
     initWindow();
     core::InfoStream << "RenderSystem 2\n";
-    fontManager = std::make_unique<FontManager>(cache);
+    fontManager = std::make_unique<FontManager>(this, cache);
     core::InfoStream << "RenderSystem 3\n";
 
     v2u viewport = window->getViewportSize();
@@ -49,7 +49,8 @@ RenderSystem::RenderSystem(ResourceCache *_cache)
     guienv = std::make_unique<gui::CGUIEnvironment>(this, window->getWindowSize(), cache);
     core::InfoStream << "RenderSystem 5\n";
 
-    guiPool = std::make_unique<AtlasPool>(AtlasType::RECTPACK2D, "GUI", cache, window->getGLParams()->maxTextureSize, false, false);
+    guiPool = std::make_unique<AtlasPool>(AtlasType::RECTPACK2D, "GUI", cache,
+        window->getGLParams()->maxTextureSize, false, false, window->getScreenDPI());
     core::InfoStream << "RenderSystem 6\n";
 
     g_settings->registerChangedCallback("fullscreen", settingChangedCallback, this);
@@ -80,7 +81,8 @@ void RenderSystem::initRenderEnvironment(Client *_client)
     gameui = std::make_unique<GameUI>(client);
     gameformspec = std::make_unique<GameFormSpec>();
 
-    basePool = std::make_unique<AtlasPool>(AtlasType::RECTPACK2D, "Basic", cache, window->getGLParams()->maxTextureSize, true, true);
+    basePool = std::make_unique<AtlasPool>(AtlasType::RECTPACK2D, "Basic", cache,
+        window->getGLParams()->maxTextureSize, true, true, window->getScreenDPI());
 }
 
 AtlasPool *RenderSystem::getPool(bool basic) const
@@ -103,7 +105,7 @@ void RenderSystem::setWindowIcon()
         return;
     }
 
-    window->setIcon(icon, g_imgmodifier);
+    window->setIcon(icon);
 }
 
 Minimap *RenderSystem::getDefaultMinimap() const

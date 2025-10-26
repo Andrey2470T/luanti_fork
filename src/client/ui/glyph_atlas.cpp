@@ -1,14 +1,21 @@
 #include "glyph_atlas.h"
-#include <sstream>
 #include <Utils/String.h>
+#include <Image/ImageLoader.h>
+#include "client/media/filecache.h"
+#include "client/render/rendersystem.h"
+#include "porting.h"
 #include "settings.h"
 #include "client/media/resource.h"
+#include "convert_json.h"
+#include <json/json.h>
+#include "file.h"
+#include <fstream>
+#include <Utils/MathFuncs.h>
 
-GlyphAtlas::GlyphAtlas(u32 num, render::TTFont *ttfont, u32 &offset)
-    : Atlas(), font(ttfont)
+GlyphAtlas::GlyphAtlas(u32 num, render::TTFont *ttfont, u32 &offset, u32 _dpi)
+    : Atlas(), font(ttfont), dpi(_dpi)
 {
-    u32 size = font->getCurrentSize();
-    std::string prefix = composeAtlasName(font->getMode(), font->getStyle(), size);
+    u32 size = font->getCurrentPixelSize(dpi);
         
     u32 tex_size;
         
@@ -18,19 +25,19 @@ GlyphAtlas::GlyphAtlas(u32 num, render::TTFont *ttfont, u32 &offset)
     else if (size <= 168) tex_size = 2048;
     else tex_size = 4096;
 
-    img::PixelFormat format = img::PF_RGBA8;
-
-    if (font->getMode() == render::FontMode::GRAY)
-        format = img::PF_R8;
-    createTexture(prefix, num, tex_size, 0, format);
-        
     u16 slots = tex_size / size * tex_size / size;
     slots_count = std::min<u16>(ttfont->getGlyphsNum() - offset, slots);
     chars_offset = offset;
     offset += slots_count;
 
-    fill(num);
-    packTiles();
+    //if (!readCache(num)) {
+        std::string prefix = composeAtlasName(font->getMode(), font->getStyle(), tex_size, num);
+        createTexture(prefix, tex_size, 0);
+
+        fill(num);
+        packTiles();
+        drawTiles();
+    //}
 }
 
 Glyph *GlyphAtlas::getByChar(wchar_t ch) const
@@ -52,12 +59,14 @@ Glyph *GlyphAtlas::getByChar(wchar_t ch) const
 
 void GlyphAtlas::fill(u32 num)
 {
-    for (wchar_t ch : font->getGlyphsSet()) {
+    auto glyphs = font->getGlyphsSet();
+
+    for (u32 k = chars_offset; k < chars_offset + slots_count; k++) {
         //core::InfoStream << "fill(): ch = " << std::to_string(ch) << "\n";
 
         //u8 n = 1;
         //auto img = font->getGlyphImage(ch);
-        Glyph *newGlyph = new Glyph(ch, num, font);
+        Glyph *newGlyph = new Glyph(glyphs.at(k), num, font);
         addTile(newGlyph);
     }
 }
@@ -65,7 +74,7 @@ void GlyphAtlas::fill(u32 num)
 void GlyphAtlas::packTiles()
 {
     u32 texture_size = texture->getWidth();
-    u32 font_size = font->getCurrentSize();
+    u32 font_size = font->getCurrentPixelSize(dpi);
     for (u32 i = 0; i < tiles.size(); i++) {
         v2u pos(
             (i % (texture_size / font_size)) * font_size,
@@ -76,41 +85,169 @@ void GlyphAtlas::packTiles()
     }
 }
 
-std::string GlyphAtlas::composeAtlasName(render::FontMode mode, render::FontStyle style, u32 size)
+bool GlyphAtlas::readCache(u32 num)
 {
-    std::ostringstream name("TTFontGlyph.");
+    fs::path atlasPath = fs::path(porting::path_cache) / "atlases";
+    FileCache atlasCache(atlasPath);
+
+    std::string atlasName = composeAtlasName(font->getMode(), font->getStyle(), texture->getWidth(), num);
+
+    Json::Value root;
+    Json::Value atlasInfo;
+
+    std::ifstream atlasesFile(atlasPath / "atlases.json");
+
+    bool readable = atlasesFile.is_open();
+
+    if (readable) {
+        Json::CharReaderBuilder reader;
+        std::string errors;
+        readable = Json::parseFromStream(reader, atlasesFile, &root, &errors);
+        atlasesFile.close();
+
+        if (readable)
+            atlasInfo = root[atlasName];
+    }
+
+    if (!readable) {
+        warningstream << "GlyphAtlas::readCache() failed to read content about " << atlasName <<
+            " atlas from atlases.json, creating a new atlas" << std::endl;
+        return false;
+    }
+
+    for (const auto &tile : atlasInfo["tiles"]) {
+        Glyph *glyph = new Glyph(tile["symbol"].asInt(), num);
+        glyph->pos = v2u(tile["pos"]["x"].asUInt(), tile["pos"]["y"].asUInt());
+        glyph->size = v2u(tile["size"]["x"].asUInt(), tile["size"]["y"].asUInt());
+
+        tiles.emplace_back(glyph);
+    }
+
+    for (const auto &hti : atlasInfo["hash_to_index"])
+        hash_to_index[hti["hash"].asUInt64()] = hti["index"].asUInt();
+
+
+    auto imgCache = img::ImageLoader::load(atlasPath / atlasName / ".png");
+
+    if (!imgCache) {
+        tiles.clear();
+        hash_to_index.clear();
+        return false;
+    }
+
+    render::TextureSettings settings;
+    settings.isRenderTarget = false;
+    settings.hasMipMaps = false;
+    settings.maxMipLevel = 0;
+    texture = std::make_unique<render::StreamTexture2D>(atlasName, imgCache, settings);
+
+    return true;
+}
+
+void GlyphAtlas::saveToCache(u32 num)
+{
+    fs::path atlasPath = fs::path(porting::path_cache) / "atlases";
+    FileCache atlasCache(atlasPath);
+
+    std::string atlasName = composeAtlasName(font->getMode(), font->getStyle(), texture->getWidth(), num);
+
+    auto imgCache = texture->downloadData();
+    img::ImageLoader::save(imgCache.at(0), atlasPath / (atlasName + ".png"));
+
+    Json::Value root;
+
+    std::ifstream atlasesFile(atlasPath / "atlases.json");
+
+    if (atlasesFile.is_open()) {
+        Json::CharReaderBuilder reader;
+        std::string errors;
+        bool parsingSuccessful = Json::parseFromStream(reader, atlasesFile, &root, &errors);
+        atlasesFile.close();
+
+        if (!parsingSuccessful) {
+            warningstream << "GlyphAtlas::saveToCache() failed to read atlases.json content" << std::endl;
+            return;
+        }
+    }
+
+    Json::Value atlasInfo;
+
+    Json::Value tilesInfo(Json::arrayValue);
+    for (const auto &tile : tiles) {
+        Glyph *glyph = dynamic_cast<Glyph *>(tile.get());
+
+        Json::Value tileInfo;
+
+        Json::Value tilePos;
+        tilePos["x"] = glyph->pos.X;
+        tilePos["y"] = glyph->pos.Y;
+
+        tileInfo["pos"] = tilePos;
+
+        Json::Value sizePos;
+        sizePos["x"] = glyph->size.X;
+        sizePos["y"] = glyph->size.Y;
+
+        tileInfo["size"] = sizePos;
+        tileInfo["atlasNum"] = num;
+        tileInfo["symbol"] = glyph->symbol;
+
+        tilesInfo.append(tileInfo);
+    }
+
+    atlasInfo["tiles"] = tilesInfo;
+
+    Json::Value htisInfo(Json::arrayValue);
+    for (const auto &hti : hash_to_index) {
+        Json::Value htiInfo;
+        htiInfo["hash"] = hti.first;
+        htiInfo["index"] = hti.second;
+
+        htisInfo.append(htiInfo);
+    }
+
+    atlasInfo["hash_to_index"] = htisInfo;
+
+    root[atlasName] = atlasInfo;
+
+    File::write(atlasPath / "atlases.json", fastWriteJson(root));
+}
+
+std::string GlyphAtlas::composeAtlasName(render::FontMode mode, render::FontStyle style, u32 size, u32 num)
+{
+    std::ostringstream name("GlyphAtlas_");
 
     switch(mode) {
     case render::FontMode::MONO:
-        name << "Mono.";
+        name << "Mono_";
         break;
     case render::FontMode::GRAY:
-        name << "Gray.";
+        name << "Gray_";
         break;
     case render::FontMode::FALLBACK:
-        name << "Fallback.";
+        name << "Fallback_";
         break;
     }
 
     switch (style) {
     case render::FontStyle::NORMAL:
-        name << "Normal.";
+        name << "Normal_";
         break;
     case render::FontStyle::BOLD:
-        name << "Bold.";
+        name << "Bold_";
         break;
     case render::FontStyle::ITALIC:
-        name << "Italic.";
+        name << "Italic_";
         break;
     case render::FontStyle::STRIKETHROUGH:
-        name << "Strikethrough.";
+        name << "Strikethrough_";
         break;
     case render::FontStyle::UNDERLINE:
-        name << "Underline.";
+        name << "Underline_";
         break;
     }
 
-    name << "Size:" << size << "x" << size;
+    name << size << "x" << size << "_" << num;
 
     return name.str();
 }
@@ -126,8 +263,8 @@ static std::vector<std::string> settings = {
     "dpi_change_notifier", "display_density_factor", "gui_scaling",
 };
 
-FontManager::FontManager(ResourceCache *_cache)
-    : cache(_cache)
+FontManager::FontManager(RenderSystem *_rndsys, ResourceCache *_cache)
+    : rndsys(_rndsys), cache(_cache)
 {
     readDefaultFontSizes();
     for (auto &name : settings)
@@ -142,12 +279,18 @@ FontManager::~FontManager()
     g_settings->deregisterAllChangedCallbacks(this);
 }
 
+u32 FontManager::getScreenDpi() const
+{
+    return rndsys->getWindow()->getScreenDPI();
+}
+
 render::TTFont *FontManager::getFont(render::FontMode mode, render::FontStyle style, std::optional<u32> size) const
 {
     if (!size.has_value())
         size = defaultSizes[(u8)mode];
     //core::InfoStream << "getFont 1\n";
-    u64 hash = render::TTFont::hash(size.value(), true, style, mode);
+    u32 pointSize = (u32)round(size.value() * 72.0f / rndsys->getWindow()->getScreenDPI());
+    u64 hash = render::TTFont::hash(pointSize, true, style, mode);
     //core::InfoStream << "getFont 1.1\n";
     auto it = fonts.find(hash);
     //core::InfoStream << "getFont 2\n";
@@ -163,7 +306,8 @@ AtlasPool *FontManager::getPool(render::FontMode mode, render::FontStyle style, 
 {
     if (!size.has_value())
         size = defaultSizes[(u8)mode];
-    auto it = fonts.find(render::TTFont::hash(size.value(), true, style, mode));
+    u32 pointSize = (u32)round(size.value() * 72.0f / rndsys->getWindow()->getScreenDPI());
+    auto it = fonts.find(render::TTFont::hash(pointSize, true, style, mode));
 
     if (it == fonts.end())
         return nullptr;
@@ -189,14 +333,12 @@ render::TTFont *FontManager::getFontOrCreate(render::FontMode mode, render::Font
             core::InfoStream << "getFontOrCreate style:" << (u32)style << "\n";
             core::InfoStream << "getFontOrCreate transparent:" << (u32)true << "\n";
             core::InfoStream << "getFontOrCreate size:" << size.value() << "\n";
-            core::InfoStream << "getFontOrCreate hash:" << (u32)render::TTFont::hash(size.value(), true, style, mode) << "\n";
+            u32 pointSize = (u32)round(size.value() * 72.0f / rndsys->getWindow()->getScreenDPI());
+            core::InfoStream << "getFontOrCreate hash:" << (u32)render::TTFont::hash(pointSize, true, style, mode) << "\n";
             font = fonts[hash.value()].first;
         }
         //core::InfoStream << "getFontOrCreate 5\n";
     }
-
-    if (font)
-        core::InfoStream << "getFontOrCreate 2\n";
 
     return font;
 }
@@ -267,6 +409,7 @@ std::optional<u64> FontManager::addFont(render::FontMode mode, render::FontStyle
     bool path_found = false;
     u64 hash = 0;
 
+    u32 dpi = rndsys->getWindow()->getScreenDPI();
     for (auto &path : paths) {
         if (!fs::exists(path) || path_found)
             continue;
@@ -274,7 +417,8 @@ std::optional<u64> FontManager::addFont(render::FontMode mode, render::FontStyle
         path_found = true;
         //core::InfoStream << "addFont 3\n";
         core::InfoStream << "addFont 1\n";
-        auto font = render::TTFont::load(path, size.value(), 0, (u8)mode, true, font_shadow, font_shadow_alpha);
+        u32 pointSize = (u32)round(size.value() * 72.0f / dpi);
+        auto font = render::TTFont::load(path, pointSize, 0, (u8)mode, true, font_shadow, font_shadow_alpha);
         //core::InfoStream << "addFont 4\n";
         core::InfoStream << "addFont 2\n";
 
@@ -287,10 +431,11 @@ std::optional<u64> FontManager::addFont(render::FontMode mode, render::FontStyle
         core::InfoStream << "addFont mode:" << (u32)font->getMode() << "\n";
         core::InfoStream << "addFont style:" << (u32)font->getStyle() << "\n";
         core::InfoStream << "addFont transparent:" << (u32)font->isTransparent() << "\n";
-        core::InfoStream << "addFont size:" << font->getCurrentSize() << "\n";
+        core::InfoStream << "addFont size:" << font->getCurrentPixelSize(dpi) << "\n";
 
         core::InfoStream << "addFont hash: " << (u32)hash << "\n";
-        fonts[hash] = std::pair(font, std::make_unique<AtlasPool>(AtlasType::GLYPH, "", cache, 0, false, false));
+        fonts[hash] = std::pair(font, std::make_unique<AtlasPool>(
+            AtlasType::GLYPH, "", cache, 0, false, false, dpi));
         core::InfoStream << "addFont 5\n";
         //core::InfoStream << "addFont 6\n";
         cache->cacheResource<render::TTFont>(ResourceType::FONT, font);

@@ -171,7 +171,7 @@ void UITextSprite::updateBuffer(rectf &&r)
         rc.ULC.X = rc.LRC.X - getBrokenTextWidth();
     }
 
-    auto fontAtlases = mgr->getPool(font->getMode(), font->getStyle(), font->getCurrentSize());
+    auto fontAtlases = mgr->getPool(font->getMode(), font->getStyle(), font->getCurrentPixelSize(mgr->getScreenDpi()));
 
     if (!fontAtlases)
         return;
@@ -606,9 +606,8 @@ u32 UITextSprite::getBrokenTextWidth() const
 
 render::Texture2D *UITextSprite::getGlyphAtlasTexture() const
 {
-    core::InfoStream << "getGlyphAtlasTexture\n";
     auto font = getActiveFont();
-    auto pool = mgr->getPoolOrCreate(font->getMode(), font->getStyle(), font->getCurrentSize());
+    auto pool = mgr->getPoolOrCreate(font->getMode(), font->getStyle(), font->getCurrentPixelSize(mgr->getScreenDpi()));
 
     return pool->getAtlas(0)->getTexture(); // Beforehand assume each glyph atlas pool contains one atlas each
 }

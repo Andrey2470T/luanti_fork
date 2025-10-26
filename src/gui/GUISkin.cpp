@@ -216,11 +216,7 @@ void GUISkin::setFont(render::TTFont *font, GUIDefaultFont which)
     if ((u8)which >= (u8)GUIDefaultFont::Count)
 		return;
 
-    core::InfoStream << "setFont " << (u8)which << "\n";
     Fonts[(u8)which] = font;
-
-    if (Fonts[(u8)which])
-        core::InfoStream << "setFont default font is present\n";
 }
 
 

@@ -12,6 +12,12 @@
 #include <fstream>
 #include <cstdlib>
 
+FileCache::FileCache(const fs::path &dir)
+    : m_dir(dir)
+{
+    createDir();
+}
+
 void FileCache::createDir()
 {
     try {
@@ -48,7 +54,5 @@ bool FileCache::exists(const std::string &name)
 bool FileCache::updateCopyFile(const std::string &name, const std::string &src_path)
 {
     fs::path path = m_dir / name;
-
-	createDir();
     return fs::copy_file(src_path, path);
 }

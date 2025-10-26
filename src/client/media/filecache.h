@@ -15,7 +15,7 @@ public:
 	/*
 		'dir' is the file cache directory to use.
 	*/
-    FileCache(const fs::path &dir) : m_dir(dir) {}
+    FileCache(const fs::path &dir);
 
 	bool update(const std::string &name, std::string_view data);
 	bool load(const std::string &name, std::ostream &os);

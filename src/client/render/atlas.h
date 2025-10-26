@@ -60,7 +60,7 @@ protected:
 public:
     Atlas() = default;
 
-    void createTexture(const std::string &name, u32 num, u32 size, u8 maxMipLevel, img::PixelFormat format=img::PF_RGBA8);
+    void createTexture(const std::string &name, u32 size, u8 maxMipLevel);
     
     render::StreamTexture2D *getTexture() const
     {
@@ -122,11 +122,13 @@ class AtlasPool
     std::vector<Atlas *> atlases;
     std::vector<img::Image *> images;
     std::unordered_map<u32, AtlasTileAnim> animatedImages;
+
+    u32 dpi;
 public:
     AtlasPool(AtlasType _type, const std::string &_name, ResourceCache *_cache,
-        u32 _maxTextureSize, bool _filtered, bool _apply_modifiers)
+        u32 _maxTextureSize, bool _filtered, bool _apply_modifiers, u32 _dpi)
         : type(_type), prefixName(_name), cache(_cache), maxTextureSize(_maxTextureSize),
-          filtered(_filtered), apply_modifiers(_apply_modifiers)
+          filtered(_filtered), apply_modifiers(_apply_modifiers), dpi(_dpi)
     {}
 
     ~AtlasPool();

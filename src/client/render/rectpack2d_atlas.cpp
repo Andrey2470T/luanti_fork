@@ -57,7 +57,8 @@ Rectpack2DAtlas::Rectpack2DAtlas(ResourceCache *_cache, const std::string &name,
 
     splitToTwoSubAreas(rectu(tile->pos, actualSize, actualSize), rectu(tile->pos, tile->size), freeSpaces);
 
-    createTexture(name, num, actualSize, maxMipLevel);
+    std::string atlasName = name + "_" + std::to_string(num);
+    createTexture(atlasName, actualSize, maxMipLevel);
 }
 
 Rectpack2DAtlas::Rectpack2DAtlas(ResourceCache *_cache, const std::string &name, u32 num, u32 maxTextureSize, bool filtered,
@@ -117,7 +118,8 @@ Rectpack2DAtlas::Rectpack2DAtlas(ResourceCache *_cache, const std::string &name,
     actualSize = CALC_CLOSEST_POT_SIDE(atlasArea);
     packTiles();
 
-    createTexture(name, num, actualSize, maxMipLevel);
+    std::string atlasName = name + "_" + std::to_string(num);
+    createTexture(atlasName, actualSize, maxMipLevel);
     drawTiles();
 }
 

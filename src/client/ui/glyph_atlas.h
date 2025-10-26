@@ -8,6 +8,9 @@ struct Glyph : public AtlasTile
 {
     wchar_t symbol;
 
+    Glyph(wchar_t _symbol, u32 num)
+        : AtlasTile(nullptr, num), symbol(_symbol)
+    {}
     Glyph(wchar_t _symbol, u32 num, render::TTFont *font)
         : AtlasTile(font->getGlyphImage(_symbol), num),  symbol(_symbol)
     {}
@@ -19,31 +22,38 @@ class GlyphAtlas : public Atlas
     
     u16 slots_count;
     char16_t chars_offset=0;
+
+    u32 dpi;
 public:
-    GlyphAtlas(u32 num, render::TTFont *ttfont, u32 &offset);
+    GlyphAtlas(u32 num, render::TTFont *ttfont, u32 &offset, u32 _dpi);
 
     Glyph *getByChar(wchar_t ch) const;
     void fill(u32 num);
     
     void packTiles() override;
+
+    bool readCache(u32 num);
+    void saveToCache(u32 num);
 private:
-    std::string composeAtlasName(render::FontMode mode, render::FontStyle style, u32 size);
+    std::string composeAtlasName(render::FontMode mode, render::FontStyle style, u32 size, u32 num);
 };
 
 
 // Handling fonts caching and creating of the glyph atlases
 class FontManager
 {
+    RenderSystem *rndsys;
     ResourceCache *cache;
 
     std::map<u64, std::pair<render::TTFont *, std::unique_ptr<AtlasPool>>> fonts;
 
     std::array<u32, 3> defaultSizes;
 public:
-    FontManager(ResourceCache *_cache);
+    FontManager(RenderSystem *_rndsys, ResourceCache *_cache);
 
     ~FontManager();
 
+    u32 getScreenDpi() const;
     u32 getDefaultFontSize(render::FontMode mode) const
     {
         return defaultSizes.at((u32)mode);

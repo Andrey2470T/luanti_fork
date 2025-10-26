@@ -16,11 +16,8 @@ rectf AtlasTile::toUV(u32 atlasSize) const
 }
 
 
-void Atlas::createTexture(const std::string &name, u32 num, u32 size, u8 maxMipLevel, img::PixelFormat format)
+void Atlas::createTexture(const std::string &name, u32 size, u8 maxMipLevel)
 {
-    std::string texName = name + "Atlas";
-    texName += num;
-
     render::TextureSettings settings;
     settings.isRenderTarget = false;
     settings.hasMipMaps = maxMipLevel > 0 ? true : false;
@@ -28,7 +25,7 @@ void Atlas::createTexture(const std::string &name, u32 num, u32 size, u8 maxMipL
 
     //core::InfoStream << "createTexture: " << name << ", " << size << "x" << size << ", " << format << "\n";
     texture = std::make_unique<render::StreamTexture2D>(
-        texName, size, size, format, settings);
+        name, size, size, img::PF_RGBA8, settings);
     //core::InfoStream << "createTexture: created\n";
 }
 
@@ -42,8 +39,8 @@ bool Atlas::addTile(AtlasTile *tile)
         return false;
 
     tiles.emplace_back(tile);
-    hash_to_index[tileHash] = tiles.size();
-    markDirty(tiles.size());
+    hash_to_index[tileHash] = tiles.size() - 1;
+    markDirty(tiles.size() - 1);
 
     return true;
 }
@@ -96,9 +93,7 @@ void Atlas::drawTiles()
         texture->uploadSubData(tile->pos.X, tile->pos.Y, tile->image);
     }
 
-    texture->bind();
     texture->flush();
-    texture->unbind();
 
     if (texture->hasMipMaps())
         texture->regenerateMipMaps();
@@ -126,8 +121,14 @@ bool Atlas::operator==(const Atlas *other) const
 
 AtlasPool::~AtlasPool()
 {
-    for (auto &atlas : atlases)
+    if (type == AtlasType::GLYPH) {
+        for (u32 i = 0; i < atlases.size(); i++)
+            dynamic_cast<GlyphAtlas *>(atlases.at(i))->saveToCache(i);
+    }
+
+    for (auto &atlas : atlases) {
         cache->clearResource<Atlas>(ResourceType::ATLAS, atlas, true);
+    }
 
     for (auto &tile : images)
         cache->clearResource<img::Image>(ResourceType::IMAGE, tile, true);
@@ -283,7 +284,7 @@ void AtlasPool::buildGlyphAtlas(render::TTFont *ttfont)
     static u32 atlasNum = 0;
     static u32 glyphOffset = 0;
 
-    GlyphAtlas *atlas = new GlyphAtlas(atlasNum, ttfont, glyphOffset);
+    GlyphAtlas *atlas = new GlyphAtlas(atlasNum, ttfont, glyphOffset, dpi);
     cache->cacheResource<Atlas>(ResourceType::ATLAS, atlas);
 
     atlases.push_back(atlas);
