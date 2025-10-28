@@ -150,20 +150,6 @@ void GlyphAtlas::saveToCache(u32 num)
 
     auto imgCache = texture->downloadData();
 
-    auto img = imgCache.at(0);
-    auto data = img->getData();
-
-    auto pixelSize = img::pixelFormatInfo.at(img->getFormat()).size / 8;
-    for (u32 y = 0; y < 10; y++) {
-        for (u32 x = 0; x < 10; x++) {
-            u8 index = y * img->getPitch() + x * pixelSize;
-            u8 red = data[index];
-            u8 green = data[index+1];
-            u8 blue = data[index+2];
-            u8 alpha = data[index+3];
-        }
-    }
-
     img::ImageLoader::save(imgCache.at(0), atlasPath / (atlasName + ".png"));
 
     Json::Value root;

@@ -258,10 +258,10 @@ void MeshBuffer::uploadData()
     u32 iboCount = 0;
 
     if (hasIBO()) {
-        iboData = (const u32 *)IBuffer.Data.get();
+        iboData = (const u32 *)IBuffer.Data->data();
         iboCount = IBuffer.DataCount;
     }
-    VAO->reallocate(VBuffer.Data.get(), VBuffer.DataCount, iboData, iboCount);
+    VAO->reallocate(VBuffer.Data->data(), VBuffer.DataCount, iboData, iboCount);
     VBuffer.Dirty = false;
     IBuffer.Dirty = false;
 }
@@ -273,7 +273,7 @@ void MeshBuffer::uploadVertexData()
 
     u32 startV = VBuffer.StartChange.value();
     u32 endV = VBuffer.EndChange.value();
-    VAO->uploadVertexData(VBuffer.Data.get(), endV - startV + 1, startV);
+    VAO->uploadVertexData(VBuffer.Data->data(), endV - startV + 1, startV);
 
     VBuffer.StartChange = std::nullopt;
     VBuffer.EndChange = std::nullopt;
@@ -287,7 +287,7 @@ void MeshBuffer::uploadIndexData()
 
     u32 startI = IBuffer.StartChange.value();
     u32 endI = IBuffer.EndChange.value();
-    VAO->uploadIndexData((const u32 *)IBuffer.Data.get(), endI - startI + 1, startI);
+    VAO->uploadIndexData((const u32 *)IBuffer.Data->data(), endI - startI + 1, startI);
 
     IBuffer.StartChange = std::nullopt;
     IBuffer.EndChange = std::nullopt;
@@ -313,9 +313,9 @@ MeshBuffer *MeshBuffer::copy() const
 {
     MeshBuffer *new_mesh = new MeshBuffer(Type != MeshBufferType::VERTEX, VAO->getVertexType());
 
-    memcpy(new_mesh->VBuffer.Data.get()->data(), VBuffer.Data.get()->data(), getVertexCount());
+    memcpy(new_mesh->VBuffer.Data->data(), VBuffer.Data->data(), getVertexCount());
     if (hasIBO())
-        memcpy(new_mesh->IBuffer.Data.get()->data(), IBuffer.Data.get()->data(), getIndexCount());
+        memcpy(new_mesh->IBuffer.Data->data(), IBuffer.Data->data(), getIndexCount());
 
     new_mesh->reallocateData(getVertexCount(), hasIBO() ? getIndexCount() : 0);
     new_mesh->setBoundingBox(getBoundingBox());

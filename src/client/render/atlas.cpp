@@ -1,5 +1,6 @@
 #include "atlas.h"
 #include "Core/TimeCounter.h"
+#include "Image/ImageLoader.h"
 #include "rectpack2d_atlas.h"
 #include "client/ui/glyph_atlas.h"
 #include "client/media/resource.h"
@@ -91,13 +92,12 @@ void Atlas::drawTiles()
         if (!tile->image)
             continue;
 
-        auto glyph = dynamic_cast<Glyph *>(tile);
-        if (glyph) {
-            std::vector<wchar_t> chars = {L'a'};//, L'b', L'c', L'd', L'e', L'f', L'j'};//, L'k', L'l', L'm', L'n', L'o', L'p', L'r', L's', L't', L'q', L'z', L'x', L'y'};
-            if (std::find(chars.begin(), chars.end(), glyph->symbol) != chars.end())
-                texture->uploadSubData(tile->pos.X, tile->pos.Y, tile->image);
-        }
+        texture->uploadSubData(tile->pos.X, tile->pos.Y, tile->image);
     }
+
+    auto img = texture->downloadData();
+    std::string path = std::string("/home/andrey/minetests/luanti_fork/cache/atlases/") + texture->getName() + ".png";
+    img::ImageLoader::save(img.at(0), path);
 
     //texture->unmapPBO();
 
@@ -129,10 +129,10 @@ bool Atlas::operator==(const Atlas *other) const
 
 AtlasPool::~AtlasPool()
 {
-    if (type == AtlasType::GLYPH) {
+    /*if (type == AtlasType::GLYPH) {
         for (u32 i = 0; i < atlases.size(); i++)
             dynamic_cast<GlyphAtlas *>(atlases.at(i))->saveToCache(i);
-    }
+    }*/
 
     for (auto &atlas : atlases) {
         cache->clearResource<Atlas>(ResourceType::ATLAS, atlas, true);

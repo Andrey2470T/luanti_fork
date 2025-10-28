@@ -133,13 +133,9 @@ ImageSprite::ImageSprite(RenderSystem *rndsys, ResourceCache *cache)
 void ImageSprite::update(img::Image *newImage, const rectf &rect, const std::array<img::color8, 4> &colors,
     const recti *cliprect, std::optional<AtlasTileAnim> anim)
 {
-    rectf tile_rect;
+    setTexture(pool->getAtlasByTile(image, true, anim)->getTexture());
+    rectf tile_rect = pool->getTileRect(image, false, true);
 
-    if (newImage && image != newImage) {
-        image = newImage;
-        setTexture(pool->getAtlasByTile(image, true, anim)->getTexture());
-        tile_rect = pool->getTileRect(image, false, true);
-    }
     shape->updateRectangle(0, rect, colors, tile_rect);
     updateMesh(true);
     updateMesh(false);

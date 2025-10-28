@@ -33,7 +33,7 @@ void Batcher2D::appendTriangle(MeshBuffer *buf, const std::array<v2f, 3> &positi
 void Batcher2D::appendRectangle(MeshBuffer *buf, const rectf &rect, const std::array<img::color8, 4> &colors,
     const rectf &uv)
 {
-    std::array<u32, 6> indices = {0, 1, 2, 2, 3, 0};
+    std::array<u32, 6> indices = {0, 3, 2, 0, 2, 1};
 
     u32 curVCount = buf->getVertexCount();
     appendVertex(buf, rect.ULC, colors[0], uv.ULC);

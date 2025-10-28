@@ -66,11 +66,13 @@ void Renderer::setRenderState(bool mode3d)
 {
     use3DMode = mode3d;
 
-    context->enableDepthTest(true);
-    context->setDepthFunc(CF_LESS);
+    if (use3DMode) {
+        context->enableDepthTest(true);
+        context->setDepthFunc(CF_LESS);
 
-    context->enableCullFace(true);
-    context->setCullMode(CM_BACK);
+        context->enableCullFace(true);
+        context->setCullMode(CM_BACK);
+    }
 }
 
 void Renderer::setBlending(bool transparent, bool glBlend)
@@ -163,10 +165,12 @@ void Renderer::setClipRect(const recti &clipRect)
 {
     recti viewport = context->getViewportSize();
 
-    context->enableScissorTest(true);
-    context->setScissorBox(recti(
-        clipRect.ULC.X, viewport.getHeight()-clipRect.LRC.Y,
-        clipRect.getWidth(), clipRect.getHeight()));
+    if (clipRect != recti()) {
+        context->enableScissorTest(true);
+        context->setScissorBox(recti(
+            clipRect.ULC.X, viewport.getHeight()-clipRect.LRC.Y,
+            clipRect.getWidth(), clipRect.getHeight()));
+    }
 }
 
 void Renderer::disableScissorTest()

@@ -427,30 +427,30 @@ void UISprite::updateMesh(bool pos_or_colors)
 
 void UISprite::draw()
 {
-    if (shape->getPrimitiveCount() == 0 || !visible)
+    u32 primCount = shape->getPrimitiveCount();
+    if (primCount == 0 || !visible)
         return;
 
     renderer->setRenderState(false);
     renderer->setDefaultShader(true, true);
-    renderer->setDefaultUniforms(1.0f, 1, 0.5f, img::BM_COUNT);
-
     if (texture)
         renderer->setTexture(texture);
+    renderer->setDefaultUniforms(1.0f, 1, 0.5f, img::BM_COUNT);
 
     renderer->setClipRect(clipRect);
 
     auto prevType = shape->getPrimitiveType(0);
     u32 pOffset = 0;
     u32 pCount = 1;
-    for (u32 i = 0; i < shape->getPrimitiveCount(); i++) {
+    for (u32 i = 0; i < primCount; i++) {
         auto curType = shape->getPrimitiveType(i);
 
-        if (curType == prevType)
+        if (curType == prevType && (i + 1 < primCount))
             ++pCount;
         else {
             drawPart(pOffset, pCount);
 
-            pCount = 0;
+            pCount = 1;
             pOffset = i;
             prevType = curType;
         }
@@ -464,25 +464,37 @@ void UISprite::drawPart(u32 pOffset, u32 pCount)
 
     auto vao = mesh->getVAO();
 
-    u32 startVCount = 0;
-
-    for (u32 i = 0; i < pOffset; i++)
-        startVCount += primVCounts[(u8)shape->getPrimitiveType(i)];
-
+    u32 startCount = 0;
+    u32 count = 0;
     auto pType = shape->getPrimitiveType(pOffset);
-    u8 vcount = primVCounts[(u8)pType] * pCount;
+
     switch(pType) {
     case UIPrimitiveType::LINE:
-        vao->draw(render::PT_LINES, vcount, startVCount);
+    case UIPrimitiveType::TRIANGLE: {
+        for (u32 i = 0; i < pOffset; i++)
+            startCount += primVCounts[(u8)shape->getPrimitiveType(i)];
+
+        count = primVCounts[(u8)pType] * pCount;
+        break;
+    }
+    case UIPrimitiveType::RECTANGLE:
+    case UIPrimitiveType::ELLIPSE: {
+        for (u32 i = 0; i < pOffset; i++)
+            startCount += primICounts[(u8)shape->getPrimitiveType(i)];
+
+        count = primICounts[(u8)pType] * pCount;
+        break;
+    }}
+    switch(pType) {
+    case UIPrimitiveType::LINE:
+        vao->draw(render::PT_LINES, count, startCount);
         break;
     case UIPrimitiveType::TRIANGLE:
-        vao->draw(render::PT_TRIANGLES, vcount, startVCount);
-        break;
     case UIPrimitiveType::RECTANGLE:
-        vao->draw(render::PT_TRIANGLE_FAN, vcount, startVCount);
+        vao->draw(render::PT_TRIANGLES, count, startCount);
         break;
     case UIPrimitiveType::ELLIPSE:
-        vao->draw(render::PT_TRIANGLE_FAN, vcount, startVCount);
+        vao->draw(render::PT_TRIANGLE_FAN, count, startCount);
         break;
     default:
         break;

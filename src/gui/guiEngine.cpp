@@ -4,6 +4,7 @@
 
 #include "guiEngine.h"
 
+#include "client/mesh/defaultVertexTypes.h"
 #include "client/render/renderer.h"
 #include "client/sound/soundopenal.h"
 #include "client/ui/glyph_atlas.h"
@@ -254,6 +255,20 @@ bool GUIEngine::loadMainMenuScript()
 	return false;
 }
 
+void setVertex(ByteArray &ba, v2f pos, img::color8 c, v2f uv, u32 n)
+{
+    ba.setFloat(pos.X, n);
+    ba.setFloat(pos.Y, n+1);
+
+    ba.setUInt8(c.R(), n+2);
+    ba.setUInt8(c.G(), n+3);
+    ba.setUInt8(c.B(), n+4);
+    ba.setUInt8(c.A(), n+5);
+
+    ba.setFloat(uv.X, n+6);
+    ba.setFloat(uv.Y, n+7);
+}
+
 /******************************************************************************/
 void GUIEngine::run()
 {
@@ -287,6 +302,37 @@ void GUIEngine::run()
 	auto framemarker = FrameMarker("GUIEngine::run()-frame").started();
 
     auto wnd = m_rndsys->getWindow();
+
+    //auto glyphPool = m_rndsys->getFontManager()->getPool(render::FontMode::MONO, render::FontStyle::NORMAL);
+    rectf wnd_r(0, 0, wnd->getViewportSize().X, wnd->getViewportSize().Y);
+    auto tex = m_rndsys->getPool(false)->getAtlas(0)->getTexture();
+
+    rectf atlas_r(0, tex->getHeight(), tex->getWidth(), 0);
+    auto atlas_quad = std::make_unique<UISprite>(tex,
+        m_rndsys->getRenderer(), m_rescache, atlas_r, wnd_r, UISprite::defaultColors, true);
+
+    fs::path vertex_path = "/home/andrey/minetests/luanti_fork/client/shaders/shader2d_vertex.glsl";
+    fs::path fragment_path = "/home/andrey/minetests/luanti_fork/client/shaders/shader2d_fragment.glsl";
+    auto shader = std::make_unique<render::Shader>(vertex_path, fragment_path);
+
+    ByteArray mesh_vertexdata(8 * 4, render::sizeOfVertexType(VType2D) * 4);
+
+    setVertex(mesh_vertexdata, v2f(-1.0f, 1.0f), img::white, v2f(0.0f, 1.0f), 0);
+    setVertex(mesh_vertexdata, v2f(1.0f, 1.0f), img::white, v2f(1.0f, 1.0f), 8);
+    setVertex(mesh_vertexdata, v2f(1.0f, -1.0f), img::white, v2f(1.0f, 0.0f), 16);
+    setVertex(mesh_vertexdata, v2f(-1.0f, -1.0f), img::white, v2f(0.0f, 0.0f), 24);
+
+    ByteArray mesh_indexdata(6, sizeof(u32) * 6);
+    mesh_indexdata.setUInt32(0, 0);
+    mesh_indexdata.setUInt32(3, 1);
+    mesh_indexdata.setUInt32(2, 2);
+    mesh_indexdata.setUInt32(0, 3);
+    mesh_indexdata.setUInt32(2, 4);
+    mesh_indexdata.setUInt32(1, 5);
+
+    auto mesh = std::make_unique<render::Mesh>(
+            mesh_vertexdata.data(), mesh_vertexdata.bytesCount(), (u32 *)mesh_indexdata.data(), mesh_indexdata.bytesCount(), VType2D);
+
     while (m_rndsys->run() && !m_startgame && !m_kill) {
 		framemarker.end();
         draw_stats.fps.limit(wnd, &dtime);
@@ -306,6 +352,13 @@ void GUIEngine::run()
 
             m_rndsys->beginDraw(render::CBF_COLOR | render::CBF_DEPTH, Renderer::menu_sky_color);
 
+            //m_rndsys->getRenderer()->setShader(shader.get());
+            //atlas_quad->draw();
+            //m_rndsys->getRenderer()->getContext()->setBlendMode(GLBlendMode::ALPHA);
+            /*m_rndsys->getRenderer()->setTexture(tex);
+            m_rndsys->getRenderer()->getContext()->setMesh(mesh.get());
+            mesh->draw(render::PT_TRIANGLES, 6);*/
+            //atlas_quad->draw();
             /*if (m_clouds_enabled) {
                 g_menumgr->drawClouds(dtime);
                 drawOverlay();
