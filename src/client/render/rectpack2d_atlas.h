@@ -54,6 +54,8 @@ public:
     bool packSingleTile(img::Image *img, u32 num, std::optional<AtlasTileAnim> anim=std::nullopt);
 
     void updateAnimatedTiles(f32 time);
+
+    std::string getName(u32 size, u32 num) const override;
 private:
     void splitToTwoSubAreas(rectu area, rectu r, std::vector<rectu> &newFreeSpaces);
 

@@ -369,7 +369,7 @@ void GUIChatConsole::drawPrompt()
 
     auto text = dynamic_cast<UITextSprite *>(m_chat_bank->getSprite(2));
     text->setText(prompt_text);
-    text->setColor(img::white);
+    text->setOverrideColor(img::white);
     text->setClipRect(AbsoluteClippingRect);
     text->updateBuffer(rectf(
         font_width, y, font_width + text_width, y + font_height));

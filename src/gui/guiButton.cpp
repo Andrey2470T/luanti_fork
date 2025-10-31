@@ -312,13 +312,13 @@ void GUIButton::draw()
             auto img = dynamic_cast<ImageSprite *>(ButtonBox->getSprite(1));
             img->update(texture, toRectf(ScaleImage? AbsoluteRect : recti(pos, sourceRect.getSize())),
                 image_colors, &AbsoluteClippingRect);
-            img->draw();
+            //img->draw();
 		} else {
             auto sliced_img = dynamic_cast<Image2D9Slice *>(ButtonBox->getSprite(1));
             sliced_img->updateRects(toRectf(sourceRect), toRectf(BgMiddle),
                 toRectf(ScaleImage ? AbsoluteRect : recti(pos, sourceRect.getSize())),
                 texture, image_colors, &AbsoluteClippingRect);
-            sliced_img->draw();
+            //sliced_img->draw();
 		}
 		// END PATCH
 	}
@@ -330,15 +330,15 @@ void GUIButton::draw()
             v2i pos(buttonCenter);
 			// pressed / unpressed animation
 			EGUI_BUTTON_STATE state = Pressed ? EGBS_BUTTON_DOWN : EGBS_BUTTON_UP;
-			drawSprite(state, ClickTime, pos);
+            //drawSprite(state, ClickTime, pos);
 
 			// focused / unfocused animation
 			state = Environment->hasFocus(this) ? EGBS_BUTTON_FOCUSED : EGBS_BUTTON_NOT_FOCUSED;
-			drawSprite(state, FocusTime, pos);
+            //drawSprite(state, FocusTime, pos);
 
 			// mouse over / off animation
 			state = isHovered() ? EGBS_BUTTON_MOUSE_OVER : EGBS_BUTTON_MOUSE_OFF;
-			drawSprite(state, HoverTime, pos);
+            //drawSprite(state, HoverTime, pos);
 		}
 		else
 		{
@@ -347,7 +347,7 @@ void GUIButton::draw()
 		}
 	}
 
-	IGUIElement::draw();
+    //IGUIElement::draw();
 }
 
 void GUIButton::drawSprite(EGUI_BUTTON_STATE state, u32 startTime, const v2i& center)

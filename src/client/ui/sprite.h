@@ -241,8 +241,10 @@ public:
             mesh->clear();
     }
     
-    virtual void draw();
-
+    // Draws all or part of primitives
+    virtual void draw(std::optional<u32> primOffset=std::nullopt, std::optional<u32> primCount=std::nullopt);
+protected:
+    bool checkPrimitives(std::optional<u32> &offset, std::optional<u32> &count);
     void drawPart(u32 pOffset=0, u32 pCount=1);
 };
 

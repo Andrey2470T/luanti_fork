@@ -566,7 +566,7 @@ void Minimap::drawMinimap(recti rect)
         m_minimap_shader->setUniform4x4Matrix("mWorld", matrix);
     else
         renderer->setTransformMatrix(TMatrix::World, matrix);
-    drawPart();
+    draw(0, 1);
 
 	// Draw overlay
     render::Texture2D *minimap_overlay = data->minimap_shape_round ?
@@ -574,7 +574,7 @@ void Minimap::drawMinimap(recti rect)
     renderer->setDefaultShader(true, false);
     renderer->setDefaultUniforms(1.0f, 1, 0.5f, img::BM_COUNT);
     ctxt->setActiveUnit(0, minimap_overlay);
-    drawPart();
+    draw(0, 1);
 
 	// Draw player marker on minimap
 	if (data->minimap_shape_round) {
@@ -585,7 +585,7 @@ void Minimap::drawMinimap(recti rect)
 
     ctxt->setActiveUnit(0, data->player_marker);
     renderer->setTransformMatrix(TMatrix::World, matrix);
-    drawPart();
+    draw(0, 1);
 
 	// Reset transformations
     renderer->setTransformMatrix(TMatrix::Projection, oldProjMat);
@@ -593,7 +593,7 @@ void Minimap::drawMinimap(recti rect)
     ctxt->setViewportSize(oldViewPort);
 
 	// Draw player markers
-    drawPart();
+    draw(0, 1);
 }
 
 void Minimap::addMarker(v3f pos)

@@ -77,7 +77,7 @@ void GUIModalMenu::draw()
 		regenerateGui(screensize);
 	}
 
-    //drawMenu();
+    drawMenu();
 }
 
 /*

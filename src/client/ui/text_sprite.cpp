@@ -6,16 +6,6 @@
 #include "client/ui/glyph_atlas.h"
 #include "client/render/renderer.h"
 
-inline std::vector<UIPrimitiveType> getGlyphs(u32 count, bool background, bool border)
-{
-    std::vector<UIPrimitiveType> glyphs(count);
-
-    for (u32 i = 0; i < count; i++)
-        glyphs[i] = UIPrimitiveType::RECTANGLE;
-
-    return glyphs;
-}
-
 UITextSprite::UITextSprite(FontManager *font_manager, GUISkin *guiskin, const EnrichedString &text,
     Renderer *renderer, ResourceCache *resCache, bool border, bool wordWrap, bool fillBackground)
     : UISprite(nullptr, renderer, resCache, false, false), skin(guiskin), drawBorder(border),
@@ -37,19 +27,22 @@ void UITextSprite::setOverrideFont(render::TTFont *font)
     texture = getGlyphAtlasTexture();
 }
 
-void UITextSprite::setColor(const img::color8 &c)
+void UITextSprite::setOverrideColor(const img::color8 &c)
 {
-    text.setDefaultColor(c);
+    overrideColor = c;
+    overrideColorEnabled = true;
+    /*text.setDefaultColor(c);
 
     if (text.hasBackground())
         setBackgroundColor(text.getBackground());
     else
-        enableDrawBackground(false);
+        enableDrawBackground(false);*/
 }
 
 void UITextSprite::setBackgroundColor(const img::color8 &c)
 {
-    text.setBackground(c);
+    bgColor = c;
+    overrideBGColorEnabled = true;
     drawBackground = true;
 }
 
@@ -103,9 +96,9 @@ void UITextSprite::setText(const EnrichedString &_text)
     updateWrappedText();
 }
 
-void UITextSprite::draw()
+void UITextSprite::draw(std::optional<u32> primOffset, std::optional<u32> primCount)
 {
-    if (!visible)
+    if (!isVisible())
         return;
 
     renderer->setRenderState(false);
@@ -121,19 +114,18 @@ void UITextSprite::draw()
         rectN += count;
     }
 
-    if (visible && !text.empty()) {
-        renderer->setDefaultUniforms(1.0f, 1, 0.5f, img::BM_COUNT);
-
+    /*if (visible && !text.empty()) {
         if (clipText)
             setClipRect(clipRect);
 
         for (auto &tex_to_charcount : texture_to_charcount_map) {
             renderer->setTexture(tex_to_charcount.first);
+            renderer->setDefaultUniforms(1.0f, 1, 0.5f, img::BM_COUNT);
 
             drawPart(rectN, tex_to_charcount.second);
             rectN += tex_to_charcount.second;
         }
-    }
+    }*/
 }
 
 void UITextSprite::updateBuffer(rectf &&r)

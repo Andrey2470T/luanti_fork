@@ -142,7 +142,7 @@ void GUIFormSpecMenu::create(GUIFormSpecMenu *&cur_formspec, Client *client,
 	}
 
 	if (cur_formspec == nullptr) {
-        cur_formspec = new GUIFormSpecMenu(joystick, guienv->getRootGUIElement(), -1, g_menumgr.get(),
+        cur_formspec = new GUIFormSpecMenu(joystick, guiroot, -1, g_menumgr.get(),
             client, guienv, client->getResourceCache(), client->getRenderSystem(), sound_manager, fs_src,
 			txt_dest, formspecPrepend);
 
@@ -3466,13 +3466,13 @@ void GUIFormSpecMenu::drawMenu()
 
         if (m_bgfullscreen) {
             m_menu->setClipRect(allbg);
-            m_menu->drawPart(cur_render_rect);
+            m_menu->draw(cur_render_rect, 1);
             cur_render_rect++;
         }
 
         if (m_bgnonfullscreen) {
             m_menu->setClipRect(AbsoluteClippingRect);
-            m_menu->drawPart(cur_render_rect);
+            m_menu->draw(cur_render_rect, 1);
             cur_render_rect++;
         }
     }
@@ -3504,7 +3504,7 @@ void GUIFormSpecMenu::drawMenu()
 		if (child->isNotClipped() ||
 				AbsoluteClippingRect.isRectCollided(
 						child->getAbsolutePosition()))
-			child->draw();
+            child->draw();
 
 	for (gui::IGUIElement *e : m_clickthrough_elements)
 		e->setVisible(false);
@@ -3536,11 +3536,11 @@ void GUIFormSpecMenu::drawMenu()
 	if (hovered) {
 		if (m_show_debug) {
 			recti rect = hovered->getAbsoluteClippingRect();
-            m_menu->clear();
+            /*m_menu->clear();
             m_menu->addRect(toRectf(rect), {img::colorU32NumberToObject(0x22FFFF00)}, true);
             m_menu->setClipRect(rect);
-            m_menu->drawPart(cur_render_rect);
-            cur_render_rect++;
+            m_menu->draw(cur_render_rect, 1);
+            cur_render_rect++;*/
 		}
 
 		// find the formspec-element of the hovered IGUIElement (a parent)
@@ -3595,12 +3595,12 @@ void GUIFormSpecMenu::drawMenu()
             cursor_control.setActiveIcon(CI_NORMAL);
 	}
 
-	m_tooltip_element->draw();
+    //m_tooltip_element->draw();
 
 	/*
 		Draw dragged item stack
 	*/
-	drawSelectedItem();
+    //drawSelectedItem();
 
 	skin->setFont(old_font);
 }

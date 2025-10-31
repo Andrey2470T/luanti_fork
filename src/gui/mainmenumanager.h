@@ -32,6 +32,8 @@ public:
 	virtual void touchscreenLayout() = 0;
 };
 
+extern gui::IGUIStaticText *guiroot;
+
 // Handler for the modal menus
 
 class MainMenuManager : public IMenuManager

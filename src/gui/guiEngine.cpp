@@ -4,6 +4,7 @@
 
 #include "guiEngine.h"
 
+#include "Image/ImageLoader.h"
 #include "client/mesh/defaultVertexTypes.h"
 #include "client/render/renderer.h"
 #include "client/sound/soundopenal.h"
@@ -359,22 +360,22 @@ void GUIEngine::run()
             m_rndsys->getRenderer()->getContext()->setMesh(mesh.get());
             mesh->draw(render::PT_TRIANGLES, 6);*/
             //atlas_quad->draw();
-            /*if (m_clouds_enabled) {
-                g_menumgr->drawClouds(dtime);
-                drawOverlay();
+            if (m_clouds_enabled) {
+                //g_menumgr->drawClouds(dtime);
+                //drawOverlay();
             } else {
-                drawBackground();
+                //drawBackground();
             }
 
-            drawFooter();*/
+            //drawFooter();
 
-            //m_rndsys->getGUIEnvironment()->drawAll();
+            m_rndsys->getGUIEnvironment()->drawAll();
 
 			// The header *must* be drawn after the menu because it uses
 			// GUIFormspecMenu::getAbsoluteRect().
 			// The header *can* be drawn after the menu because it never intersects
 			// the menu.
-            drawHeader();
+            //drawHeader();
 
             m_rndsys->endDraw();
 		}
@@ -539,7 +540,15 @@ void GUIEngine::drawHeader()
 	// 2. Move
 	desired_rect.constrainTo(max_rect);
 
-    m_background->update(texture, toRectf(desired_rect), img::white);
+    auto wnd = m_rndsys->getWindow();
+
+    //auto glyphPool = m_rndsys->getFontManager()->getPool(render::FontMode::MONO, render::FontStyle::NORMAL);
+    rectf wnd_r(0, 0, wnd->getViewportSize().X, wnd->getViewportSize().Y);
+    auto logo = m_rescache->get<img::Image>(ResourceType::IMAGE, "logo.png");
+
+    //desired_rect.ULC.Y += 200;
+    //desired_rect.LRC.Y += 200;
+    m_background->update(logo, toRectf(desired_rect), img::white);
     m_background->draw();
 }
 
@@ -577,7 +586,7 @@ void GUIEngine::drawFooter()
 bool GUIEngine::setTexture(texture_layer layer, const std::string &texturepath,
 		bool tile_image, unsigned int minsize)
 {
-    if (texturepath.empty() || !fs::exists(texturepath)) {
+    if (texturepath.empty() || !mt_fs::PathExists(texturepath)) {
 		return false;
 	}
 

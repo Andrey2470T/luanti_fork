@@ -25,13 +25,13 @@ CGUIStaticText::CGUIStaticText(const wchar_t *text, bool border,
             border, false, background))
 {
 
-    img::color8 BGColor(img::PF_RGBA8, 255, 255, 255, 101);
+    /*img::color8 BGColor(img::PF_RGBA8, 255, 255, 255, 101);
 	if (environment && environment->getSkin()) {
         BGColor = environment->getSkin()->getColor(EGDC_3D_FACE);
 	}
 
     Text->setColor(img::color8(img::PF_RGBA8, 255, 255, 255, 101));
-    Text->setBackgroundColor(BGColor);
+    Text->setBackgroundColor(BGColor);*/
 }
 
 //! draws the element and its children
@@ -40,8 +40,10 @@ void CGUIStaticText::draw()
 	if (!IsVisible)
 		return;
 
-    Text->updateBuffer(rectf(v2f(AbsoluteRect.ULC.X, AbsoluteRect.ULC.Y), v2f(AbsoluteRect.LRC.X, AbsoluteRect.LRC.Y)));
+    //Text->updateBuffer(rectf(v2f(AbsoluteRect.ULC.X, AbsoluteRect.ULC.Y), v2f(AbsoluteRect.LRC.X, AbsoluteRect.LRC.Y)));
     //Text->draw();
+
+    IGUIElement::draw();
 }
 
 //! Sets another skin independent font.
@@ -65,7 +67,7 @@ render::TTFont *CGUIStaticText::getActiveFont() const
 //! Sets another color for the text.
 void CGUIStaticText::setOverrideColor(img::color8 color)
 {
-    Text->setColor(color);
+    Text->setOverrideColor(color);
 }
 
 //! Sets another color for the text.
@@ -121,23 +123,24 @@ void CGUIStaticText::setTextAlignment(EGUI_ALIGNMENT horizontal, EGUI_ALIGNMENT 
 
 img::color8 CGUIStaticText::getOverrideColor() const
 {
-    return Text->getColor();
+    return Text->getOverrideColor();
 }
 
 img::color8 CGUIStaticText::getActiveColor() const
 {
-    return Text->getColor();
+    return Text->getActiveColor();
 }
 
 //! Sets if the static text should use the override color or the
 //! color in the gui skin.
 void CGUIStaticText::enableOverrideColor(bool enable)
 {
+    Text->enableOverrideColor(enable);
 }
 
 bool CGUIStaticText::isOverrideColorEnabled() const
 {
-    return false;
+    return Text->isOverrideColorEnabled();
 }
 
 //! Enables or disables word wrap for using the static text as

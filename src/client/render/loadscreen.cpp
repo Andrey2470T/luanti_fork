@@ -106,10 +106,10 @@ void LoadScreen::draw(v2u screensize, const std::wstring &text, f32 dtime, bool 
     if (draw_clouds)
         g_menumgr->drawClouds(dtime);
 
-    progress_rect->drawPart(0, 1);
+    progress_rect->draw(0, 1);
 
     progress_rect->setClipRect(progress_cliprect);
-    progress_rect->drawPart(1, 1);
+    progress_rect->draw(1, 1);
     progress_rect->setClipRect(recti());
 
     guitext->draw();

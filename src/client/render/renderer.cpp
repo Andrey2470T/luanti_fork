@@ -163,13 +163,9 @@ void Renderer::setUniformBlocks(Shader *shader)
 
 void Renderer::setClipRect(const recti &clipRect)
 {
-    recti viewport = context->getViewportSize();
-
     if (clipRect != recti()) {
         context->enableScissorTest(true);
-        context->setScissorBox(recti(
-            clipRect.ULC.X, viewport.getHeight()-clipRect.LRC.Y,
-            clipRect.getWidth(), clipRect.getHeight()));
+        context->setScissorBox(clipRect);
     }
 }
 

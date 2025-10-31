@@ -53,6 +53,8 @@ RenderSystem::RenderSystem(ResourceCache *_cache)
         window->getGLParams()->maxTextureSize, false, false, window->getScreenDPI());
     core::InfoStream << "RenderSystem 6\n";
 
+    gui_scaling = g_settings->getFloat("gui_scaling", 0.5f, 20.0f);
+
     g_settings->registerChangedCallback("fullscreen", settingChangedCallback, this);
     g_settings->registerChangedCallback("window_maximized", settingChangedCallback, this);
     g_settings->registerChangedCallback("menu_clouds", settingChangedCallback, this);
@@ -91,6 +93,19 @@ AtlasPool *RenderSystem::getPool(bool basic) const
         return basePool.get();
     else
         return guiPool.get();
+}
+
+f32 RenderSystem::getDisplayDensity() const
+{
+    f32 user_factor = g_settings->getFloat("display_density_factor", 0.5f, 5.0f);
+#ifndef __ANDROID__
+    f32 dpi = window->getDisplayDensity();
+    if (dpi == 0.0f)
+        dpi = 96.0f;
+    return std::max(dpi / 96.0f * user_factor, 0.5f);
+#else // __ANDROID__
+    return porting::getDisplayDensity() * user_factor;
+#endif // __ANDROID__
 }
 
 void RenderSystem::setWindowIcon()

@@ -10,9 +10,9 @@ rectf AtlasTile::toUV(u32 atlasSize) const
 {
     return rectf(
         (f32)pos.X / atlasSize,
-        (f32)pos.Y / atlasSize,
+        (f32)(pos.Y + size.Y) / atlasSize,
         (f32)(pos.X + size.X) / atlasSize,
-        (f32)(pos.Y + size.Y) / atlasSize
+        (f32)pos.Y / atlasSize
         );
 }
 
@@ -196,6 +196,7 @@ img::Image *AtlasPool::addTile(const std::string &name)
     core::InfoStream << "addTile, time: " << TimeCounter::getRealTime() << " \n";
     auto img = cache->getOrLoad<img::Image>(
         ResourceType::IMAGE, name, apply_modifiers, apply_modifiers, true);
+    //img::ImageLoader::save(img, "/home/andrey/minetests/luanti_fork/cache/atlases/" + name);
     core::InfoStream << "addTile: " << name << ", " << img->getSize() << ", time: " << TimeCounter::getRealTime() << "\n";
     //core::InfoStream << "addTile: 2\n";
     auto imgIt = std::find(images.begin(), images.end(), img);
@@ -242,8 +243,9 @@ rectf AtlasPool::getTileRect(img::Image *tile, bool toUV, bool force_add, std::o
             if (toUV)
                 return atlasTile->toUV(atlas->getTextureSize());
             else {
-                v2f pos_f(atlasTile->pos.X, atlasTile->pos.Y);
-                return rectf(pos_f, pos_f + v2f(atlasTile->size.X, atlasTile->size.Y));
+                v2f ulc_f(atlasTile->pos.X, atlasTile->pos.Y + atlasTile->size.Y);
+                v2f lrc_f(atlasTile->pos.X + atlasTile->size.X, atlasTile->pos.Y);
+                return rectf(ulc_f, lrc_f);
             }
         }
     }
@@ -256,8 +258,9 @@ rectf AtlasPool::getTileRect(img::Image *tile, bool toUV, bool force_add, std::o
         if (toUV)
             return lastTile->toUV(lastAtlas->getTextureSize());
         else {
-            v2f pos_f(lastTile->pos.X, lastTile->pos.Y);
-            return rectf(pos_f, pos_f + v2f(lastTile->size.X, lastTile->size.Y));
+            v2f ulc_f(lastTile->pos.X, lastTile->pos.Y + lastTile->size.Y);
+            v2f lrc_f(lastTile->pos.X + lastTile->size.X, lastTile->pos.Y);
+            return rectf(ulc_f, lrc_f);
         }
     }
     return rectf();
@@ -272,7 +275,7 @@ void AtlasPool::buildRectpack2DAtlas()
     static u32 startImg = 0;
 
     Rectpack2DAtlas *atlas = new Rectpack2DAtlas(cache, prefixName, atlasNum, maxTextureSize, filtered, images, animatedImages, startImg);
-    cache->cacheResource<Atlas>(ResourceType::ATLAS, atlas);
+    cache->cacheResource<Atlas>(ResourceType::ATLAS, atlas, atlas->getName(atlas->getTextureSize(), atlasNum));
 
     atlases.push_back(atlas);
 
@@ -293,7 +296,7 @@ void AtlasPool::buildGlyphAtlas(render::TTFont *ttfont)
     static u32 glyphOffset = 0;
 
     GlyphAtlas *atlas = new GlyphAtlas(atlasNum, ttfont, glyphOffset, dpi);
-    cache->cacheResource<Atlas>(ResourceType::ATLAS, atlas);
+    cache->cacheResource<Atlas>(ResourceType::ATLAS, atlas, atlas->getName(atlas->getTextureSize(), atlasNum));
 
     atlases.push_back(atlas);
 
@@ -348,7 +351,8 @@ void AtlasPool::forceAddTile(img::Image *img, std::optional<AtlasTileAnim> anim)
 
         if (!rectpackAtlas->packSingleTile(img, lastAtlasN, anim)) {
             Rectpack2DAtlas *atlas = new Rectpack2DAtlas(cache, prefixName, lastAtlasN+1, maxTextureSize, img, filtered, anim);
-            cache->cacheResource<Atlas>(ResourceType::ATLAS, atlas);
+            cache->cacheResource<Atlas>(ResourceType::ATLAS, atlas,
+                atlas->getName(atlas->getTextureSize(), atlases.size()));
 
             atlases.push_back(atlas);
         }

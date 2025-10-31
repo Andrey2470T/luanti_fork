@@ -294,7 +294,7 @@ void CGUIFileOpenDialog::draw()
 		if (font) {
             auto sprite1 = dynamic_cast<UITextSprite *>(DialogBank->getSprite(1));
             sprite1->setText(Text);
-            sprite1->setColor(skin->getColor(EGDC_ACTIVE_CAPTION));
+            sprite1->setOverrideColor(skin->getColor(EGDC_ACTIVE_CAPTION));
             sprite1->updateBuffer(toRectf(rect));
             sprite1->setClipRect(AbsoluteClippingRect);
 		}

@@ -31,7 +31,7 @@ GlyphAtlas::GlyphAtlas(u32 num, render::TTFont *ttfont, u32 &offset, u32 _dpi)
     offset += slots_count;
 
     //if (!readCache(num)) {
-        std::string prefix = composeAtlasName(font->getMode(), font->getStyle(), tex_size, num);
+        std::string prefix = getName(tex_size, num);
         createTexture(prefix, tex_size, 0);
 
         fill(num);
@@ -90,7 +90,7 @@ bool GlyphAtlas::readCache(u32 num)
     fs::path atlasPath = fs::path(porting::path_cache) / "atlases";
     FileCache atlasCache(atlasPath);
 
-    std::string atlasName = composeAtlasName(font->getMode(), font->getStyle(), texture->getWidth(), num);
+    std::string atlasName = getName(texture->getWidth(), num);
 
     Json::Value root;
     Json::Value atlasInfo;
@@ -146,7 +146,7 @@ void GlyphAtlas::saveToCache(u32 num)
     fs::path atlasPath = fs::path(porting::path_cache) / "atlases";
     FileCache atlasCache(atlasPath);
 
-    std::string atlasName = composeAtlasName(font->getMode(), font->getStyle(), texture->getWidth(), num);
+    std::string atlasName = getName(texture->getWidth(), num);
 
     auto imgCache = texture->downloadData();
 
@@ -211,11 +211,11 @@ void GlyphAtlas::saveToCache(u32 num)
     File::write(atlasPath / "atlases.json", fastWriteJson(root));
 }
 
-std::string GlyphAtlas::composeAtlasName(render::FontMode mode, render::FontStyle style, u32 size, u32 num)
+std::string GlyphAtlas::getName(u32 size, u32 num) const
 {
     std::ostringstream name("GlyphAtlas_");
 
-    switch(mode) {
+    switch(font->getMode()) {
     case render::FontMode::MONO:
         name << "Mono_";
         break;
@@ -227,7 +227,7 @@ std::string GlyphAtlas::composeAtlasName(render::FontMode mode, render::FontStyl
         break;
     }
 
-    switch (style) {
+    switch (font->getStyle()) {
     case render::FontStyle::NORMAL:
         name << "Normal_";
         break;
@@ -436,7 +436,7 @@ std::optional<u64> FontManager::addFont(render::FontMode mode, render::FontStyle
             AtlasType::GLYPH, "", cache, 0, false, false, dpi));
         core::InfoStream << "addFont 5\n";
         //core::InfoStream << "addFont 6\n";
-        cache->cacheResource<render::TTFont>(ResourceType::FONT, font);
+        cache->cacheResource<render::TTFont>(ResourceType::FONT, font, font->getName());
         //core::InfoStream << "addFont 7\n";
         core::InfoStream << "addFont glyphs num: " << font->getGlyphsNum() << "\n";
         fonts[hash].second->buildGlyphAtlas(font);

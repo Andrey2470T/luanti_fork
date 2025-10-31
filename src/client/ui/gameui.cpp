@@ -231,7 +231,7 @@ void GameUI::update(Client *client,
         f32 d = statustext_time / statustext_time_max;
         fade_color.A(static_cast<u32>(
             fade_color.A() * (1.0f - d * d)));
-        guitext_status->setColor(fade_color);
+        guitext_status->setOverrideColor(fade_color);
 	}
 
 	// Hide chat when disabled by server or when console is visible

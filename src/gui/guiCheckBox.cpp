@@ -19,7 +19,7 @@ namespace gui
 CGUICheckBox::CGUICheckBox(bool checked, IGUIEnvironment *environment, IGUIElement *parent, s32 id, recti rectangle) :
         IGUICheckBox(environment, parent, id, rectangle), CheckTime(0), Pressed(false), Checked(checked), Border(false), Background(false),
         Sprite(std::make_unique<UIRects>(Environment->getRenderSystem(), 0)),
-        Text(std::make_unique<UITextSprite>(environment->getRenderSystem()->getFontManager(),
+        Label(std::make_unique<UITextSprite>(environment->getRenderSystem()->getFontManager(),
             environment->getSkin(), EnrichedString(),
             environment->getRenderSystem()->getRenderer(), environment->getResourceCache()))
 {
@@ -116,11 +116,11 @@ void CGUICheckBox::draw()
 		}
 
 		// draw the border
-		if (Border) {
+        if (Border) {
             skin->add3DSunkenPane(Sprite.get(), img::white, true, false, toRectf(frameRect));
 			frameRect.ULC.X += skin->getSize(EGDS_TEXT_DISTANCE_X);
 			frameRect.LRC.X -= skin->getSize(EGDS_TEXT_DISTANCE_X);
-		}
+        }
 
 		const s32 height = skin->getSize(EGDS_CHECK_BOX_WIDTH);
 
@@ -139,35 +139,33 @@ void CGUICheckBox::draw()
         skin->add3DSunkenPane(Sprite.get(), skin->getColor(col),
                 false, true, toRectf(checkRect));
 
-		// the checked icon
-        if (Checked)
-            Sprite->addRect(toRectf(frameRect));
-
         Sprite->rebuildMesh();
 
         Sprite->setClipRect(AbsoluteClippingRect);
         Sprite->draw();
 
+        // the checked icon
 		if (Checked) {
-			skin->drawIcon(this, EGDI_CHECK_BOX_CHECKED, checkRect.getCenter(),
-					CheckTime, core::TimeCounter::getRealTime(), false, &AbsoluteClippingRect);
+            //skin->drawIcon(this, EGDI_CHECK_BOX_CHECKED, checkRect.getCenter(),
+            //        CheckTime, core::TimeCounter::getRealTime(), false, &AbsoluteClippingRect);
 		}
 
 		// associated text
-        if (Text->getText().size()) {
+        if (Text.size()) {
 			checkRect = frameRect;
 			checkRect.ULC.X += height + 5;
 
 			render::TTFont *font = skin->getFont();
 			if (font) {
-                Text->setOverrideFont(font);
-                Text->setColor(skin->getColor(isEnabled() ? EGDC_BUTTON_TEXT : EGDC_GRAY_TEXT));
-                Text->updateBuffer(toRectf(checkRect));
-                Text->draw();
+                Label->setText(Text);
+                Label->setOverrideFont(font);
+                Label->setOverrideColor(skin->getColor(isEnabled() ? EGDC_BUTTON_TEXT : EGDC_GRAY_TEXT));
+                Label->updateBuffer(toRectf(checkRect));
+                Label->draw();
 			}
 		}
 	}
-	IGUIElement::draw();
+    IGUIElement::draw();
 }
 
 //! set if box is checked

@@ -425,11 +425,13 @@ void UISprite::updateMesh(bool pos_or_colors)
     mesh->uploadVertexData();
 }
 
-void UISprite::draw()
+void UISprite::draw(std::optional<u32> primOffset, std::optional<u32> primCount)
 {
-    u32 primCount = shape->getPrimitiveCount();
-    if (primCount == 0 || !visible)
+    if (!checkPrimitives(primOffset, primCount))
         return;
+
+    u32 primOffset_v = primOffset.value();
+    u32 primCount_v = primCount.value();
 
     renderer->setRenderState(false);
     renderer->setDefaultShader(true, true);
@@ -439,13 +441,13 @@ void UISprite::draw()
 
     renderer->setClipRect(clipRect);
 
-    auto prevType = shape->getPrimitiveType(0);
-    u32 pOffset = 0;
+    auto prevType = shape->getPrimitiveType(primOffset_v);
+    u32 pOffset = primOffset_v;
     u32 pCount = 1;
-    for (u32 i = 0; i < primCount; i++) {
+    for (u32 i = primOffset_v; i < primCount_v; i++) {
         auto curType = shape->getPrimitiveType(i);
 
-        if (curType == prevType && (i + 1 < primCount))
+        if (curType == prevType && (i + 1 < primCount_v))
             ++pCount;
         else {
             drawPart(pOffset, pCount);
@@ -457,11 +459,22 @@ void UISprite::draw()
     }
 }
 
+bool UISprite::checkPrimitives(std::optional<u32> &offset, std::optional<u32> &count)
+{
+    if (!offset.has_value())
+        offset = 0;
+    if (!count.has_value())
+        count = shape->getPrimitiveCount();
+    u32 totalPCount = shape->getPrimitiveCount();
+    if (totalPCount == 0 || !visible || offset.value() > totalPCount-1
+        || offset.value() + count.value() > totalPCount)
+        return false;
+
+    return true;
+}
+
 void UISprite::drawPart(u32 pOffset, u32 pCount)
 {
-    if (!visible)
-        return;
-
     auto vao = mesh->getVAO();
 
     u32 startCount = 0;
@@ -557,7 +570,7 @@ void UISpriteBank::addTextSprite(FontManager *mgr, const EnrichedString &text, u
         text, rndsys->getRenderer(), cache, {});
 
     textSprite->setAlignment(GUIAlignment::Center, GUIAlignment::Center);
-    textSprite->setColor(textColor);
+    textSprite->setOverrideColor(textColor);
 
     auto font = textSprite->getActiveFont();
     rectf resRect(0, 0, font->getTextWidth(text.getString()), font->getTextHeight(text.getString()));

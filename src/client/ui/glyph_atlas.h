@@ -34,8 +34,8 @@ public:
 
     bool readCache(u32 num);
     void saveToCache(u32 num);
-private:
-    std::string composeAtlasName(render::FontMode mode, render::FontStyle style, u32 size, u32 num);
+
+    std::string getName(u32 size, u32 num) const override;
 };
 
 

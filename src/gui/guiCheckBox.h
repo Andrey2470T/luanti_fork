@@ -53,7 +53,7 @@ private:
 	bool Background;
 
     std::unique_ptr<UIRects> Sprite;
-    std::unique_ptr<UITextSprite> Text;
+    std::unique_ptr<UITextSprite> Label;
 };
 
 } // end namespace gui

@@ -237,6 +237,11 @@ void Rectpack2DAtlas::updateAnimatedTiles(f32 time)
         drawTiles();
 }
 
+std::string Rectpack2DAtlas::getName(u32 size, u32 num) const
+{
+    return texture->getName();
+}
+
 void Rectpack2DAtlas::splitToTwoSubAreas(rectu area, rectu r, std::vector<rectu> &newFreeSpaces)
 {
     if (area.getSize() == r.getSize())

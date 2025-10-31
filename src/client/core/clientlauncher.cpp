@@ -32,6 +32,7 @@
 /* mainmenumanager.h
  */
 std::unique_ptr<MainMenuManager> g_menumgr;
+gui::IGUIStaticText *guiroot = nullptr;
 
 // Passed to menus to allow disconnecting and exiting
 MainGameCallback *g_gamecallback = nullptr;
@@ -63,6 +64,8 @@ ClientLauncher::~ClientLauncher()
 
     if (g_menumgr)
         assert(g_menumgr->menuCount() == 0);
+
+    guiroot = nullptr;
 
     g_menumgr.reset();
 
@@ -148,7 +151,7 @@ bool ClientLauncher::run(GameStartData &start_data, const Settings &cmd_args)
                 custom gui elements directly on the screen.
                 Otherwise they won't be automatically drawn.
             */
-            render_system->getGUIEnvironment()->addStaticText(L"",
+            guiroot = render_system->getGUIEnvironment()->addStaticText(L"",
                recti(0, 0, 10000, 10000));
 
             bool should_run_game = launch_game(error_message, reconnect_requested,
@@ -531,7 +534,7 @@ void ClientLauncher::main_menu(MainMenuData *menudata)
     cur_control.setRelativeMode(false);
 
     /* show main menu */
-    GUIEngine mymenu(&input->joystick, guienv->getRootGUIElement(), render_system.get(), resource_cache.get(),
+    GUIEngine mymenu(&input->joystick, guiroot, render_system.get(), resource_cache.get(),
         g_menumgr.get(), menudata, *kill);
 
     /* Save the settings when leaving the mainmenu.

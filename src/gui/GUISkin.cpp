@@ -400,7 +400,7 @@ void GUISkin::addColored3DSunkenPane(UISprite *sprite, img::color8 bgcolor,
         addRect(sprite, bgcolor, rect);
     }
 
-	if (flat)
+    if (flat)
 	{
 		// draw flat sunken pane
 
@@ -421,7 +421,7 @@ void GUISkin::addColored3DSunkenPane(UISprite *sprite, img::color8 bgcolor,
         addRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], rect);
 
         // bottom
-		rect = r;
+        rect = r;
         ++rect.ULC.X;
         rect.ULC.Y = r.LRC.Y - 1;
         --rect.LRC.X;
@@ -453,7 +453,7 @@ void GUISkin::addColored3DSunkenPane(UISprite *sprite, img::color8 bgcolor,
         addRect(sprite, colors[(u8)GUIDefaultColor::DarkShadows3D], rect);
 
         // right
-		rect = r;
+        rect = r;
         rect.ULC.X = rect.LRC.X - 1;
         ++rect.ULC.Y;
         addRect(sprite, colors[(u8)GUIDefaultColor::HighLight3D], rect);
@@ -464,7 +464,7 @@ void GUISkin::addColored3DSunkenPane(UISprite *sprite, img::color8 bgcolor,
         addRect(sprite, colors[(u8)GUIDefaultColor::Light3D], rect);
 
         // bottom
-		rect = r;
+        rect = r;
         ++rect.ULC.X;
         rect.ULC.Y = r.LRC.Y - 1;
         --rect.LRC.X;
@@ -474,7 +474,7 @@ void GUISkin::addColored3DSunkenPane(UISprite *sprite, img::color8 bgcolor,
         --rect.LRC.X;
         --rect.LRC.Y;
         addRect(sprite, colors[(u8)GUIDefaultColor::Light3D], rect);
-	}
+    }
 }
 // END PATCH
 

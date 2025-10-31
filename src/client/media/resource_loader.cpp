@@ -41,6 +41,9 @@ ResourceLoader::ResourceLoader()
 img::Image *ResourceLoader::loadImage(const std::string &path)
 {
     img::Image *img = img::ImageLoader::load(path);
+    //fs::path p = fs::path(path).filename();
+    //if (img)
+        //img::ImageLoader::save(img, "/home/andrey/minetests/luanti_fork/cache/atlases/" + p.string());
 
 	if (!img) {
 		errorstream << "ResourceLoader: Couldn't load the image (" << path << ")" << std::endl;

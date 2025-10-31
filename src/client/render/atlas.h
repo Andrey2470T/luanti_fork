@@ -62,6 +62,8 @@ public:
 
     void createTexture(const std::string &name, u32 size, u8 maxMipLevel);
     
+    virtual std::string getName(u32 size, u32 num) const = 0;
+
     render::StreamTexture2D *getTexture() const
     {
     	return texture.get();
@@ -75,11 +77,6 @@ public:
     u32 getTilesCount() const
     {
         return tiles.size();
-    }
-
-    std::string getName() const
-    {
-        return texture->getName();
     }
     
     bool addTile(AtlasTile *tile);

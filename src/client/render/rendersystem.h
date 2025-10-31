@@ -139,17 +139,14 @@ public:
     {
         return window->getWindowSize();
     }
-    f32 getDisplayDensity() const
-    {
-        return display_density;
-    }
+    f32 getDisplayDensity() const;
     f32 getGUIScaling() const
     {
     	return gui_scaling;
     }
     f32 getScaleFactor() const
     {
-        return gui_scaling * display_density;
+        return gui_scaling * getDisplayDensity();
     }
 
     void setGUIScaling(f32 scaling)

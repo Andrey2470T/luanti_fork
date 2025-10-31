@@ -18,12 +18,16 @@ class UITextSprite : public UISprite
 
     GUIAlignment hAlign = GUIAlignment::UpperLeft;
     GUIAlignment vAlign = GUIAlignment::UpperLeft;
+    bool overrideColorEnabled = false;
+    bool overrideBGColorEnabled = false;
 	bool drawBorder;
 	bool drawBackground;
-	bool wordWrap;
+    bool wordWrap = false;
     bool clipText = true;
     bool rightToLeft = false;
 	
+    img::color8 overrideColor = img::color8(img::PF_RGBA8, 255, 255, 255, 101);
+    img::color8 bgColor = img::color8(img::PF_RGBA8, 210, 210, 210, 101);
     render::TTFont *overrideFont = nullptr;
 
     FontManager *mgr;
@@ -50,16 +54,31 @@ public:
         return overrideFont ? overrideFont : skin->getFont();
     }
 
-    void setColor(const img::color8 &c);
-    img::color8 getColor() const
+    void setOverrideColor(const img::color8 &c);
+    img::color8 getOverrideColor() const
     {
-        return text.getDefaultColor();
+        return overrideColor;
     }
 
     void setBackgroundColor(const img::color8 &c);
     img::color8 getBackgroundColor() const
     {
-        return drawBackground ? text.getBackground() : skin->getColor(GUIDefaultColor::Face3D);
+        return drawBackground ? bgColor : skin->getColor(GUIDefaultColor::Face3D);
+    }
+
+    img::color8 getActiveColor() const
+    {
+        return overrideColorEnabled ? overrideColor : skin->getColor(EGDC_BUTTON_TEXT);
+    }
+
+    void enableOverrideColor(bool enable)
+    {
+        overrideColorEnabled = enable;
+    }
+
+    bool isOverrideColorEnabled() const
+    {
+        return overrideColorEnabled;
     }
 
     u32 getLinesCount() const
@@ -116,10 +135,10 @@ public:
     void setText(const EnrichedString &text);
     void setText(const std::wstring &text)
     {
-        setText(EnrichedString(text, getColor()));
+        setText(EnrichedString(text));
     }
 
-    void draw() override;
+    void draw(std::optional<u32> primOffset=std::nullopt, std::optional<u32> primCount=std::nullopt) override;
 
     void updateBuffer(rectf &&r);
 private:

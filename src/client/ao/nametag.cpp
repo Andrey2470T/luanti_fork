@@ -53,6 +53,6 @@ void Nametag::updateBank(v3f newWorldPos)
     }
 
     text_sprite->setBackgroundColor(bgcolor);
-    text_sprite->setColor(textcolor);
+    text_sprite->setOverrideColor(textcolor);
     text_sprite->updateBuffer(rectf(screen_pos-textsize_f/2.0f, textsize_f.X, textsize_f.Y));
 }

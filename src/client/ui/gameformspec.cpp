@@ -24,6 +24,7 @@
 #include "settings.h"
 #include "client/map/clientmap.h"
 #include "client/network/packethandler.h"
+#include "gui/mainmenumanager.h"
 
 /*
 	Text input system
@@ -458,7 +459,7 @@ void GameFormSpec::update()
 	}
 
 	if (isMenuActive())
-        guienv->getRootGUIElement()->bringToFront(formspec);
+        guiroot->bringToFront(formspec);
 }
 
 void GameFormSpec::disableDebugView()
@@ -477,7 +478,7 @@ bool GameFormSpec::handleCallbacks()
 		return false;
 	}
 
-    auto guiroot = guienv->getRootGUIElement();
+    //auto guiroot = guienv->getRootGUIElement();
 	if (g_gamecallback->changepassword_requested) {
         (new GUIPasswordChange(guienv, guiroot, -1, g_menumgr.get(), client))->drop();
 		g_gamecallback->changepassword_requested = false;

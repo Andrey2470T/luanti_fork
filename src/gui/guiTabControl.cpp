@@ -738,9 +738,9 @@ void CGUITabControl::draw()
 		DownButton->setEnabled(needRightScroll);
 	refreshSprites();
 
-    TabBoxes->drawBank();
+    //TabBoxes->drawBank();
 
-	IGUIElement::draw();
+    //IGUIElement::draw();
 }
 
 //! Set the height of the tabs
