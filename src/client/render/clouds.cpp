@@ -311,7 +311,7 @@ void Clouds::render(v3s16 camera_offset)
     if (!m_visible || m_params.density <= 0.0f)
         return; // no need to do anything
 
-	//updateMesh();
+    updateMesh();
 
     auto rnd = m_rndsys->getRenderer();
     rnd->setRenderState(true);
@@ -326,6 +326,8 @@ void Clouds::render(v3s16 camera_offset)
     rnd->setShader(m_shader);
     rnd->enableFog(true);
 
+    u32 vertex_count = m_mesh->getVertexCount();
+    u32 index_count = m_mesh->getIndexCount();
     rnd->draw(m_mesh.get());
     //driver->drawMeshBuffer(m_meshbuffer.get());
 
@@ -411,7 +413,7 @@ void Clouds::readSettings()
 	// refer to vertex_count in updateMesh()
 	m_enable_3d = g_settings->getBool("enable_3d_clouds");
 	const u16 maximum = !m_enable_3d ? 62 : 25;
-	m_cloud_radius_i = rangelim(g_settings->getU16("cloud_radius"), 8, maximum);
+    m_cloud_radius_i = 4;//rangelim(g_settings->getU16("cloud_radius"), 8, maximum);
 
 	invalidateMesh();
 }

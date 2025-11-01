@@ -325,33 +325,19 @@ void ClientLauncher::config_guienv()
     skin->setSize(GUIDefaultSize::ScrollbarSize, (s32)(21.0f * density));
     skin->setSize(GUIDefaultSize::WindowButtonWidth, (s32)(15.0f * density));
 
-    static u32 orig_sprite_id = skin->getIcon(GUIDefaultIcon::CheckBoxChecked);
-    static std::unordered_map<std::string, u32> sprite_ids;
+    static u32 orig_sprite_res = skin->getIcon(GUIDefaultIcon::CheckBoxChecked);
 
     if (density > 1.5f) {
         // Texture dimensions should be a power of 2
-        std::string path = porting::path_share + "/textures/base/pack/";
+        u32 res = 16;
         if (density > 3.5f)
-            path.append("checkbox_64.png");
+            res = 64;
         else if (density > 2.0f)
-            path.append("checkbox_32.png");
-        else
-            path.append("checkbox_16.png");
+            res = 32;
 
-        auto cached_id = sprite_ids.find(path);
-        if (cached_id != sprite_ids.end()) {
-            skin->setIcon(GUIDefaultIcon::CheckBoxChecked, cached_id->second);
-        } else {
-            gui::IGUISpriteBank *sprites = skin->getSpriteBank();
-            img::Image *texture = resource_cache->getOrLoad<img::Image>(ResourceType::IMAGE, path);
-            s32 id = sprites->addTextureAsSprite(texture);
-            if (id != -1) {
-                skin->setIcon(GUIDefaultIcon::CheckBoxChecked, id);
-                sprite_ids.emplace(path, id);
-            }
-        }
+        skin->setIcon(GUIDefaultIcon::CheckBoxChecked, res);
     } else {
-        skin->setIcon(GUIDefaultIcon::CheckBoxChecked, orig_sprite_id);
+        skin->setIcon(GUIDefaultIcon::CheckBoxChecked, orig_sprite_res);
     }
 }
 

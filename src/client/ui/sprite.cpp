@@ -439,7 +439,8 @@ void UISprite::draw(std::optional<u32> primOffset, std::optional<u32> primCount)
         renderer->setTexture(texture);
     renderer->setDefaultUniforms(1.0f, 1, 0.5f, img::BM_COUNT);
 
-    renderer->setClipRect(clipRect);
+    if (clipRect != recti())
+        renderer->setClipRect(clipRect);
 
     auto prevType = shape->getPrimitiveType(primOffset_v);
     u32 pOffset = primOffset_v;
@@ -457,6 +458,12 @@ void UISprite::draw(std::optional<u32> primOffset, std::optional<u32> primCount)
             prevType = curType;
         }
     }
+
+    if (clipRect != recti())
+        renderer->setClipRect(recti());
+
+    if (texture)
+        renderer->setTexture(nullptr);
 }
 
 bool UISprite::checkPrimitives(std::optional<u32> &offset, std::optional<u32> &count)
@@ -515,7 +522,7 @@ void UISprite::drawPart(u32 pOffset, u32 pCount)
 }
 
 // if auto-align is enabled, the rects areas must be absolute, otherwise - relative to the ulc
-void UISpriteBank::addSprite(const std::vector<ColoredRect> &rects, u8 shift, const recti *clipRect)
+UIRects *UISpriteBank::addSprite(const std::vector<ColoredRect> &rects, u8 shift, const recti *clipRect)
 {
     UIRects *rectsSprite = new UIRects(rndsys, rects.size());
 
@@ -539,10 +546,12 @@ void UISpriteBank::addSprite(const std::vector<ColoredRect> &rects, u8 shift, co
         rectsSprite->setClipRect(*clipRect);
 
     sprites.emplace_back(rectsSprite);
+
+    return rectsSprite;
 }
 
 // 'pos' is used for auto_align = false
-void UISpriteBank::addImageSprite(img::Image *img, u8 shift,
+ImageSprite *UISpriteBank::addImageSprite(img::Image *img, u8 shift,
     std::optional<rectf> rect, const recti *clipRect, std::optional<AtlasTileAnim> anim)
 {
     ImageSprite *imageSprite = new ImageSprite(rndsys, cache);
@@ -561,13 +570,15 @@ void UISpriteBank::addImageSprite(img::Image *img, u8 shift,
     updateMaxArea(maxArea, resRect.ULC, resRect.LRC, maxAreaInit);
 
     sprites.emplace_back(imageSprite);
+
+    return imageSprite;
 }
 
-void UISpriteBank::addTextSprite(FontManager *mgr, const EnrichedString &text, u8 shift, std::optional<v2f> pos,
-    const img::color8 &textColor, const recti *clipRect)
+UITextSprite *UISpriteBank::addTextSprite(FontManager *mgr, const EnrichedString &text, u8 shift, std::optional<v2f> pos,
+    const img::color8 &textColor, const recti *clipRect, bool wordWrap)
 {
     UITextSprite *textSprite = new UITextSprite(mgr, rndsys->getGUIEnvironment()->getSkin(),
-        text, rndsys->getRenderer(), cache, {});
+        text, rndsys->getRenderer(), cache, false, wordWrap);
 
     textSprite->setAlignment(GUIAlignment::Center, GUIAlignment::Center);
     textSprite->setOverrideColor(textColor);
@@ -586,6 +597,8 @@ void UISpriteBank::addTextSprite(FontManager *mgr, const EnrichedString &text, u
         textSprite->setClipRect(*clipRect);
 
     sprites.emplace_back(textSprite);
+
+    return textSprite;
 }
 
 void UISpriteBank::shiftRectByLastSprite(rectf &r, u8 shift)

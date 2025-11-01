@@ -174,15 +174,16 @@ bool RenderSystem::run()
 
             if (!event)
                 break;
-            if (client) {
-                bool processed = client->getInputHandler()->getReceiver()->OnEvent(*event);
 
-                if (!processed)
-                    guienv->postEventFromUser(*event);
+            bool processed = false;
+            if (client)
+                processed = client->getInputHandler()->getReceiver()->OnEvent(*event);
 
-                if (event->Type == ET_STRING_INPUT_EVENT && event->StringInput.Str) {
-                    delete event->StringInput.Str;
-                }
+            if (!processed)
+                guienv->postEventFromUser(*event);
+
+            if (event->Type == ET_STRING_INPUT_EVENT && event->StringInput.Str) {
+                delete event->StringInput.Str;
             }
         }
 

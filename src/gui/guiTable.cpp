@@ -719,10 +719,10 @@ void GUITable::draw()
 		row_rect.LRC.Y += m_rowheight;
 	}
 
-    //m_table_box->drawBank();
+    m_table_box->drawBank();
 
 	// Draw children
-    //IGUIElement::draw();
+    IGUIElement::draw();
 }
 
 void GUITable::drawCell(const Cell *cell, img::color8 color,

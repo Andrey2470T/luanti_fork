@@ -105,19 +105,17 @@ void UITextSprite::draw(std::optional<u32> primOffset, std::optional<u32> primCo
     renderer->setDefaultShader(true, true);
     renderer->setDefaultUniforms(1.0f, 1, 0.5f, img::BM_COUNT);
 
+    if (clipRect != recti())
+        renderer->setClipRect(clipRect);
+
     u32 rectN = 0;
     if (drawBackground || drawBorder) {
-        setClipRect(clipRect);
-
         u32 count = drawBackground && drawBorder ? 2 : 1;
         drawPart(rectN, count);
         rectN += count;
     }
 
-    /*if (visible && !text.empty()) {
-        if (clipText)
-            setClipRect(clipRect);
-
+    if (visible && !text.empty()) {
         for (auto &tex_to_charcount : texture_to_charcount_map) {
             renderer->setTexture(tex_to_charcount.first);
             renderer->setDefaultUniforms(1.0f, 1, 0.5f, img::BM_COUNT);
@@ -125,7 +123,12 @@ void UITextSprite::draw(std::optional<u32> primOffset, std::optional<u32> primCo
             drawPart(rectN, tex_to_charcount.second);
             rectN += tex_to_charcount.second;
         }
-    }*/
+
+        renderer->setTexture(nullptr);
+    }
+
+    if (clipRect != recti())
+        renderer->setClipRect(recti());
 }
 
 void UITextSprite::updateBuffer(rectf &&r)
@@ -180,14 +183,21 @@ void UITextSprite::updateBuffer(rectf &&r)
         return nullptr;
     };
 
+    v2f offset = rc.ULC;
+
+    auto colors = text.getColors();
+
+    std::array<img::color8, 4> arrColors = {img::white};
+
+    for (u32 k = 0; k < std::min<u32>(colors.size(), 4); k++)
+        arrColors.at(k) = colors.at(k);
+
     for (const auto &str : brokenText) {
         if (hAlign == GUIAlignment::LowerRight)
             rc.ULC.X = r.LRC.X - font->getTextWidth(str.getString());
 
-        auto colors = text.getColors();
 
         v2u textSize;
-        v2f offset = rc.ULC;
 
         bool hcenter = hAlign == GUIAlignment::Center;
         bool vcenter = vAlign == GUIAlignment::Center;
@@ -208,10 +218,10 @@ void UITextSprite::updateBuffer(rectf &&r)
 
         char16_t prevCh = 0;
         for (const char16_t &ch : str16) {
-            if (ch == ' ' || ch == '\r')  // the whitespace is invisible, the carriage is ignored
-                continue;
+            //if (ch == '\r')  // the whitespace is invisible, the carriage is ignored
+            //    continue;
 
-            visible = true;
+            /*visible = true;
             bool lineBreak=false;
             if (ch == '\n') // Unix breaks
                 lineBreak = true;
@@ -226,7 +236,7 @@ void UITextSprite::updateBuffer(rectf &&r)
                     offset.X += (rc.getWidth() - textSize.X) / 2.0f;
 
                 continue;
-            }
+            }*/
 
             // Calculate the glyph offset.
             s32 offx, offy, advance;
@@ -235,7 +245,7 @@ void UITextSprite::updateBuffer(rectf &&r)
 
             offset.X += font->getKerningSizeForTwoChars((wchar_t)ch, (wchar_t)prevCh);
             offset.X += offx;
-            offset.Y += offy;
+            //offset.Y += offy;
 
             auto atlas = find_atlas(ch);
 
@@ -270,15 +280,17 @@ void UITextSprite::updateBuffer(rectf &&r)
                     return tex_to_charcount_p.first == atlas_tex;
                 });
 
-            rectf glyphPos(offset, v2f(glyph->size.X, glyph->size.Y));
+            rectf glyphPos(offset, glyph->size.X, glyph->size.Y);
 
             GlyphPrimitiveParams glyphparams;
-            glyphparams.uv = rectf(v2f(glyph->pos.X, glyph->pos.Y), v2f(glyph->size.X, glyph->size.Y));;
+            glyphparams.uv = rectf(
+                v2f(glyph->pos.X, glyph->pos.Y + glyph->size.Y),
+                v2f(glyph->pos.X + glyph->size.X, glyph->pos.Y));
 
             if (shadowOffset) {
-                glyphparams.pos = rectf(glyphPos.ULC + v2f(shadowOffset), glyphPos.LRC);
+                glyphparams.pos += v2f(shadowOffset);
 
-                std::array<img::color8, 4> shadowColors = {colors[0], colors[1], colors[2], colors[3]};
+                std::array<img::color8, 4> shadowColors = arrColors;
                 shadowColors[0].A(shadowAlpha);
                 shadowColors[1].A(shadowAlpha);
                 shadowColors[2].A(shadowAlpha);
@@ -296,7 +308,6 @@ void UITextSprite::updateBuffer(rectf &&r)
             }
 
             glyphparams.pos = glyphPos;
-            std::array<img::color8, 4> arrColors = {colors[0], colors[1], colors[2], colors[3]};
             glyphparams.colors = arrColors;
 
             if (glyphparams_it == texture_to_glyph_map.end()) {
@@ -311,9 +322,10 @@ void UITextSprite::updateBuffer(rectf &&r)
             prevCh = ch;
         }
 
-
-        rc.LRC.Y += height_line;
-        rc.ULC.Y += height_line;
+        offset.X = rc.ULC.X;
+        offset.Y = rc.ULC.Y + height_line;
+        //rc.LRC.Y += height_line;
+        //rc.ULC.Y += height_line;
     }
 
     for (auto &tex_to_glyph : texture_to_glyph_map) {

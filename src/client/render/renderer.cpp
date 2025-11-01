@@ -167,6 +167,8 @@ void Renderer::setClipRect(const recti &clipRect)
         context->enableScissorTest(true);
         context->setScissorBox(clipRect);
     }
+    else
+        context->enableScissorTest(false);
 }
 
 void Renderer::disableScissorTest()

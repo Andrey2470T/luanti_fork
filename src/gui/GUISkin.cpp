@@ -138,7 +138,7 @@ GUISkin::GUISkin(Renderer *_renderer, GUISkinType type)
     Icons[(u8)GUIDefaultIcon::CursorLeft] = 231;
     Icons[(u8)GUIDefaultIcon::CursorRight] = 232;
     Icons[(u8)GUIDefaultIcon::MenuMore] = 232;
-    Icons[(u8)GUIDefaultIcon::CheckBoxChecked] = 233;
+    Icons[(u8)GUIDefaultIcon::CheckBoxChecked] = 16;
     Icons[(u8)GUIDefaultIcon::Dropdown] = 234;
     Icons[(u8)GUIDefaultIcon::SmallCursorUp] = 235;
     Icons[(u8)GUIDefaultIcon::SmallCursorDown] = 236;

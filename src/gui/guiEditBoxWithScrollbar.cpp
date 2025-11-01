@@ -13,6 +13,7 @@
 #include <Core/Keycodes.h>
 #include "client/ui/sprite.h"
 #include "util/enriched_string.h"
+#include "client/ui/extra_images.h"
 
 /*
 todo:
@@ -92,19 +93,19 @@ void GUIEditBoxWithScrollBar::draw()
 
     m_editbox_bank->clear();
 
-    if (!m_border && m_background) {
-        m_editbox_bank->addSprite({{toRectf(AbsoluteRect), {bg_color}}}, 0);
+    if ((!m_border && m_background) || (m_border && m_writable)) {
+        UIRects *editBoxRects = m_editbox_bank->addSprite({}, 0, &AbsoluteClippingRect);
+
+        if (!m_border && m_background)
+            editBoxRects->addRect(toRectf(AbsoluteRect), {bg_color});
+
+        // draw the border
+        if (m_border && m_writable)
+            skin->add3DSunkenPane(editBoxRects, bg_color, false, m_background, toRectf(AbsoluteRect));
+
+        editBoxRects->rebuildMesh();
     }
 
-	// draw the border
-
-	if (m_border) {
-
-        if (m_writable) {
-            skin->add3DSunkenPane(m_editbox_bank->getSprite(0), bg_color, false, m_background, toRectf(AbsoluteRect));
-            m_editbox_bank->getSprite(0)->rebuildMesh();
-        }
-	}
 	calculateFrameRect();
 
 	recti local_clip_rect = m_frame_rect;

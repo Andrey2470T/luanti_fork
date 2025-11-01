@@ -7,6 +7,7 @@
 #include "GUISkin.h"
 #include "IGUIEnvironment.h"
 #include <Core/TimeCounter.h>
+#include "client/media/resource.h"
 #include "client/ui/extra_images.h"
 #include "client/ui/text_sprite.h"
 #include "client/render/rendersystem.h"
@@ -18,10 +19,11 @@ namespace gui
 //! constructor
 CGUICheckBox::CGUICheckBox(bool checked, IGUIEnvironment *environment, IGUIElement *parent, s32 id, recti rectangle) :
         IGUICheckBox(environment, parent, id, rectangle), CheckTime(0), Pressed(false), Checked(checked), Border(false), Background(false),
-        Sprite(std::make_unique<UIRects>(Environment->getRenderSystem(), 0)),
+        CheckBoxBank(std::make_unique<UISpriteBank>(environment->getRenderSystem(), environment->getResourceCache(), false))
+        /*Sprite(std::make_unique<UIRects>(Environment->getRenderSystem(), 0)),
         Label(std::make_unique<UITextSprite>(environment->getRenderSystem()->getFontManager(),
             environment->getSkin(), EnrichedString(),
-            environment->getRenderSystem()->getRenderer(), environment->getResourceCache()))
+            environment->getRenderSystem()->getRenderer(), environment->getResourceCache(), false, false))*/
 {
 	// this element can be tabbed into
 	setTabStop(true);
@@ -104,20 +106,23 @@ void CGUICheckBox::draw()
 		return;
 
 	GUISkin *skin = Environment->getSkin();
+
+    CheckBoxBank->clear();
+
 	if (skin) {
-        Sprite->clear();
+        UIRects *CheckBoxRects = CheckBoxBank->addSprite({}, 0, &AbsoluteClippingRect);
 
 		recti frameRect(AbsoluteRect);
 
 		// draw background
 		if (Background) {
             img::color8 bgColor = skin->getColor(EGDC_3D_FACE);
-            Sprite->addRect(toRectf(frameRect), {bgColor, bgColor, bgColor, bgColor});
+            CheckBoxRects->addRect(toRectf(frameRect), {bgColor, bgColor, bgColor, bgColor});
 		}
 
 		// draw the border
         if (Border) {
-            skin->add3DSunkenPane(Sprite.get(), img::white, true, false, toRectf(frameRect));
+            skin->add3DSunkenPane(CheckBoxRects, img::white, true, false, toRectf(frameRect));
 			frameRect.ULC.X += skin->getSize(EGDS_TEXT_DISTANCE_X);
 			frameRect.LRC.X -= skin->getSize(EGDS_TEXT_DISTANCE_X);
         }
@@ -136,18 +141,21 @@ void CGUICheckBox::draw()
 		if (isEnabled())
 			col = Pressed ? EGDC_FOCUSED_EDITABLE : EGDC_EDITABLE;
 
-        skin->add3DSunkenPane(Sprite.get(), skin->getColor(col),
+        skin->add3DSunkenPane(CheckBoxRects, skin->getColor(col),
                 false, true, toRectf(checkRect));
 
-        Sprite->rebuildMesh();
-
-        Sprite->setClipRect(AbsoluteClippingRect);
-        Sprite->draw();
+        CheckBoxRects->rebuildMesh();
+        CheckBoxRects->draw();
 
         // the checked icon
 		if (Checked) {
-            //skin->drawIcon(this, EGDI_CHECK_BOX_CHECKED, checkRect.getCenter(),
-            //        CheckTime, core::TimeCounter::getRealTime(), false, &AbsoluteClippingRect);
+            u32 sprite_res = skin->getIcon(GUIDefaultIcon::CheckBoxChecked);
+            std::string tex_name = "checkbox_" + std::to_string(sprite_res) + ".png";
+            auto sprite_tex = Environment->getResourceCache()->get<img::Image>(ResourceType::IMAGE, tex_name);
+
+            if (sprite_tex) {
+                CheckBoxBank->addImageSprite(sprite_tex, 0, toRectf(checkRect), &AbsoluteClippingRect);
+            }
 		}
 
 		// associated text
@@ -157,14 +165,15 @@ void CGUICheckBox::draw()
 
 			render::TTFont *font = skin->getFont();
 			if (font) {
-                Label->setText(Text);
-                Label->setOverrideFont(font);
-                Label->setOverrideColor(skin->getColor(isEnabled() ? EGDC_BUTTON_TEXT : EGDC_GRAY_TEXT));
-                Label->updateBuffer(toRectf(checkRect));
-                Label->draw();
+                img::color8 text_c = skin->getColor(isEnabled() ? EGDC_BUTTON_TEXT : EGDC_GRAY_TEXT);
+                CheckBoxBank->addTextSprite(
+                    Environment->getRenderSystem()->getFontManager(), EnrichedString(Text), 0, toV2f(checkRect.ULC), text_c, nullptr, false);
 			}
 		}
 	}
+
+    CheckBoxBank->drawBank();
+
     IGUIElement::draw();
 }
 

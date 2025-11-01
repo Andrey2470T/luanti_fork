@@ -3536,11 +3536,11 @@ void GUIFormSpecMenu::drawMenu()
 	if (hovered) {
 		if (m_show_debug) {
 			recti rect = hovered->getAbsoluteClippingRect();
-            /*m_menu->clear();
+            m_menu->clear();
             m_menu->addRect(toRectf(rect), {img::colorU32NumberToObject(0x22FFFF00)}, true);
             m_menu->setClipRect(rect);
             m_menu->draw(cur_render_rect, 1);
-            cur_render_rect++;*/
+            cur_render_rect++;
 		}
 
 		// find the formspec-element of the hovered IGUIElement (a parent)
@@ -3595,7 +3595,7 @@ void GUIFormSpecMenu::drawMenu()
             cursor_control.setActiveIcon(CI_NORMAL);
 	}
 
-    //m_tooltip_element->draw();
+    m_tooltip_element->draw();
 
 	/*
 		Draw dragged item stack

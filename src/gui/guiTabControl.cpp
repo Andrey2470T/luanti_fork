@@ -626,7 +626,8 @@ void CGUITabControl::draw()
 			// draw text
 			recti textClipRect(frameRect); // TODO: exact size depends on borders in draw3DTabButton which we don't get with current interface
 			textClipRect.clipAgainst(AbsoluteClippingRect);
-            TabBoxes->addTextSprite(font_mgr, EnrichedString(text), 0, toV2f(frameRect.ULC), Tabs[i]->getTextColor(), &textClipRect);
+
+            TabBoxes->addTextSprite(font_mgr, EnrichedString(text), 0, toV2f(frameRect.ULC), Tabs[i]->getTextColor(), &textClipRect, false);
 		}
 	}
 
@@ -648,7 +649,7 @@ void CGUITabControl::draw()
 			// draw text
 			recti textClipRect(frameRect); // TODO: exact size depends on borders in draw3DTabButton which we don't get with current interface
 			textClipRect.clipAgainst(AbsoluteClippingRect);
-            TabBoxes->addTextSprite(font_mgr, EnrichedString(activeTab->getText()), 0, toV2f(frameRect.ULC), activeTab->getTextColor(), &textClipRect);
+            TabBoxes->addTextSprite(font_mgr, EnrichedString(activeTab->getText()), 0, toV2f(frameRect.ULC), activeTab->getTextColor(), &textClipRect, false);
 
 			tr.ULC.X = AbsoluteRect.ULC.X;
 			tr.LRC.X = left - 1;
@@ -679,7 +680,7 @@ void CGUITabControl::draw()
             TabBoxes->addSprite(tabButton);
 
 			// draw text
-            TabBoxes->addTextSprite(font_mgr, EnrichedString(activeTab->getText()), 0, toV2f(frameRect.ULC), activeTab->getTextColor(), &frameRect);
+            TabBoxes->addTextSprite(font_mgr, EnrichedString(activeTab->getText()), 0, toV2f(frameRect.ULC), activeTab->getTextColor(), &frameRect, false);
 
             tabButton = new UISprite(nullptr, rnd, cache, true);
             tabButton->setClipRect(AbsoluteClippingRect);
@@ -738,9 +739,9 @@ void CGUITabControl::draw()
 		DownButton->setEnabled(needRightScroll);
 	refreshSprites();
 
-    //TabBoxes->drawBank();
+    TabBoxes->drawBank();
 
-    //IGUIElement::draw();
+    IGUIElement::draw();
 }
 
 //! Set the height of the tabs

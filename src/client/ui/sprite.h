@@ -261,6 +261,9 @@ struct ColoredRect
 
 typedef std::pair<u32, u32> AtlasTileAnim;
 
+class UIRects;
+class ImageSprite;
+
 class UISpriteBank
 {
     RenderSystem *rndsys;
@@ -296,11 +299,12 @@ public:
     {
         sprites.emplace_back(sprite);
     }
-    void addSprite(const std::vector<ColoredRect> &rects, u8 shift, const recti *clipRect=nullptr);
-    void addImageSprite(img::Image *img, u8 shift, std::optional<rectf> rect=std::nullopt, const recti *clipRect=nullptr,
+    UIRects *addSprite(const std::vector<ColoredRect> &rects, u8 shift, const recti *clipRect=nullptr);
+    ImageSprite *addImageSprite(img::Image *img, u8 shift, std::optional<rectf> rect=std::nullopt, const recti *clipRect=nullptr,
         std::optional<AtlasTileAnim> anim=std::nullopt);
-    void addTextSprite(FontManager *mgr, const EnrichedString &text, u8 shift,
-        std::optional<v2f> pos=std::nullopt, const img::color8 &textColor=img::white, const recti *clipRect=nullptr);
+    UITextSprite *addTextSprite(FontManager *mgr, const EnrichedString &text, u8 shift,
+        std::optional<v2f> pos=std::nullopt, const img::color8 &textColor=img::white, const recti *clipRect=nullptr,
+        bool wordWrap = true);
 
     u32 getSpriteCount() const
     {

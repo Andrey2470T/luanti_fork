@@ -101,8 +101,9 @@ void GUIBox::draw()
 
     m_box->updateMesh(true);
     m_box->updateMesh(false);
+
     m_box->setClipRect(AbsoluteClippingRect);
-    m_box->draw(0, 1);
+    m_box->draw();
 
     IGUIElement::draw();
 }

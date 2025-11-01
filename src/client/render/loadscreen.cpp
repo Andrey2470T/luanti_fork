@@ -110,7 +110,6 @@ void LoadScreen::draw(v2u screensize, const std::wstring &text, f32 dtime, bool 
 
     progress_rect->setClipRect(progress_cliprect);
     progress_rect->draw(1, 1);
-    progress_rect->setClipRect(recti());
 
     guitext->draw();
 
