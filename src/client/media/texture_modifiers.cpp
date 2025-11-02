@@ -244,9 +244,9 @@ void TextureGenerator::upscaleToLargest(img::Image *img1, img::Image *img2)
 
     if (size1 != size2) {
         if (size1.X < size2.X || size1.Y < size2.Y)
-            imgMdf->resize(&img1, rectu(size2), img::RF_BICUBIC);
+            imgMdf->resize(&img1, size2, img::RF_BICUBIC);
         else
-            imgMdf->resize(&img2, rectu(size1), img::RF_BICUBIC);
+            imgMdf->resize(&img2, size1, img::RF_BICUBIC);
     }
 }
 
@@ -286,7 +286,7 @@ img::Image *TextureGenerator::createInventoryCubeImage(
         auto img_size = image->getSize();
 
         if (img_size.X != size || img_size.Y != size)
-            imgMdf->resize(&image, rectu(v2u(size)), img::RF_BICUBIC);
+            imgMdf->resize(&image, v2u(size), img::RF_BICUBIC);
 
         for (u32 v = 0; v < size; v++) {
             for (u32 u = 0; u < size; u++) {

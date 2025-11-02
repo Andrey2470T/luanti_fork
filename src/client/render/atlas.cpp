@@ -95,9 +95,9 @@ void Atlas::drawTiles()
         texture->uploadSubData(tile->pos.X, tile->pos.Y, tile->image);
     }
 
-    auto img = texture->downloadData();
-    std::string path = std::string("/home/andrey/minetests/luanti_fork/cache/atlases/") + texture->getName() + ".png";
-    img::ImageLoader::save(img.at(0), path);
+    //auto img = texture->downloadData();
+    //std::string path = std::string("/home/andrey/minetests/luanti_fork/cache/atlases/") + texture->getName() + ".png";
+    //img::ImageLoader::save(img.at(0), path);
 
     //texture->unmapPBO();
 
@@ -279,8 +279,6 @@ void AtlasPool::buildRectpack2DAtlas()
 
     atlases.push_back(atlas);
 
-    //core::InfoStream << "buildRectpack2DAtlas: images count: " << (u32)images.size() << "\n";
-    //core::InfoStream << "buildRectpack2DAtlas: startImg: " << startImg << "\n";
     if (startImg <= images.size()-1) {
         ++atlasNum;
         buildRectpack2DAtlas();

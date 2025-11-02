@@ -627,7 +627,8 @@ void CGUITabControl::draw()
 			recti textClipRect(frameRect); // TODO: exact size depends on borders in draw3DTabButton which we don't get with current interface
 			textClipRect.clipAgainst(AbsoluteClippingRect);
 
-            TabBoxes->addTextSprite(font_mgr, EnrichedString(text), 0, toV2f(frameRect.ULC), Tabs[i]->getTextColor(), &textClipRect, false);
+            UITextSprite *TabText = TabBoxes->addTextSprite(font_mgr, EnrichedString(text), 0, toV2f(frameRect.ULC), Tabs[i]->getTextColor(), &textClipRect, false);
+            TabText->setAlignment(GUIAlignment::Center, GUIAlignment::Center);
 		}
 	}
 
@@ -649,7 +650,8 @@ void CGUITabControl::draw()
 			// draw text
 			recti textClipRect(frameRect); // TODO: exact size depends on borders in draw3DTabButton which we don't get with current interface
 			textClipRect.clipAgainst(AbsoluteClippingRect);
-            TabBoxes->addTextSprite(font_mgr, EnrichedString(activeTab->getText()), 0, toV2f(frameRect.ULC), activeTab->getTextColor(), &textClipRect, false);
+            UITextSprite *TabText = TabBoxes->addTextSprite(font_mgr, EnrichedString(activeTab->getText()), 0, toV2f(frameRect.ULC), activeTab->getTextColor(), &textClipRect, false);
+            TabText->setAlignment(GUIAlignment::Center, GUIAlignment::Center);
 
 			tr.ULC.X = AbsoluteRect.ULC.X;
 			tr.LRC.X = left - 1;
@@ -680,7 +682,8 @@ void CGUITabControl::draw()
             TabBoxes->addSprite(tabButton);
 
 			// draw text
-            TabBoxes->addTextSprite(font_mgr, EnrichedString(activeTab->getText()), 0, toV2f(frameRect.ULC), activeTab->getTextColor(), &frameRect, false);
+            UITextSprite *TabText = TabBoxes->addTextSprite(font_mgr, EnrichedString(activeTab->getText()), 0, toV2f(frameRect.ULC), activeTab->getTextColor(), &frameRect, false);
+            TabText->setAlignment(GUIAlignment::Center, GUIAlignment::Center);
 
             tabButton = new UISprite(nullptr, rnd, cache, true);
             tabButton->setClipRect(AbsoluteClippingRect);

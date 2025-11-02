@@ -53,12 +53,13 @@ Rectpack2DAtlas::Rectpack2DAtlas(ResourceCache *_cache, const std::string &name,
         animatedTiles.push_back(tiles.size()-1);
 
     actualSize = std::max(tile->size.X, tile->size.Y);
-    tile->pos = v2u(0, actualSize);
+    tile->pos = v2u(0);
 
     splitToTwoSubAreas(rectu(tile->pos, actualSize, actualSize), rectu(tile->pos, tile->size), freeSpaces);
 
     std::string atlasName = name + "_" + std::to_string(num);
     createTexture(atlasName, actualSize, maxMipLevel);
+    drawTiles();
 }
 
 Rectpack2DAtlas::Rectpack2DAtlas(ResourceCache *_cache, const std::string &name, u32 num, u32 maxTextureSize, bool filtered,
@@ -161,8 +162,8 @@ bool Rectpack2DAtlas::packSingleTile(img::Image *img, u32 num, std::optional<Atl
     rectu tileRect(0, 0, newTile->size.X, newTile->size.Y);
     std::vector<rectu> newFreeSpaces;
     for (auto &space : freeSpaces) {
-        tileRect.ULC = space.ULC;
-        tileRect.LRC += space.ULC;
+        tileRect += space.ULC;
+
         if (canFit(space, tileRect)) {
             newTile->pos = space.ULC;
             splitToTwoSubAreas(space, tileRect, newFreeSpaces);
@@ -176,17 +177,20 @@ bool Rectpack2DAtlas::packSingleTile(img::Image *img, u32 num, std::optional<Atl
 
     // If couldn't pack, try to increase the atlas size
     if (!packed) {
-        u32 newAtlasSize = CALC_CLOSEST_POT_SIDE(getTextureSize() + newTile->size.Y);
+        u32 oldAtlasSize = getTextureSize();
+        u32 newAtlasSize = CALC_CLOSEST_POT_SIDE((oldAtlasSize + newTile->size.Y)*(oldAtlasSize + newTile->size.Y));
 
         if (newAtlasSize > maxSize)
             return false;
 
         getTexture()->resize(newAtlasSize, newAtlasSize, g_imgmodifier);
 
-        newTile->pos = v2u(0, newAtlasSize);
-        rectu upper_space(newTile->size.X, newAtlasSize, newAtlasSize, newAtlasSize-newTile->size.Y);
-        rectu right_space(actualSize, newAtlasSize-newTile->size.Y, newAtlasSize, 0);
-        freeSpaces.push_back(upper_space);
+        newTile->pos = v2u(0, oldAtlasSize);
+        rectu upper_right_space(newTile->size.X, oldAtlasSize, newAtlasSize, newAtlasSize);
+        rectu right_space(oldAtlasSize, 0, newAtlasSize, oldAtlasSize);
+        rectu upper_left_space(0, oldAtlasSize+newTile->size.Y, newTile->size.X, newAtlasSize);
+        freeSpaces.push_back(upper_right_space);
+        freeSpaces.push_back(upper_left_space);
         freeSpaces.push_back(right_space);
 
         actualSize = newAtlasSize;
@@ -199,6 +203,8 @@ bool Rectpack2DAtlas::packSingleTile(img::Image *img, u32 num, std::optional<Atl
     }
     if (anim)
         animatedTiles.push_back(tiles.size()-1);
+
+    drawTiles();
 
     return true;
 }

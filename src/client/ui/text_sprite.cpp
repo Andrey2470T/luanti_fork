@@ -218,26 +218,6 @@ void UITextSprite::updateBuffer(rectf &&r)
 
         char16_t prevCh = 0;
         for (const char16_t &ch : str16) {
-            //if (ch == '\r')  // the whitespace is invisible, the carriage is ignored
-            //    continue;
-
-            /*visible = true;
-            bool lineBreak=false;
-            if (ch == '\n') // Unix breaks
-                lineBreak = true;
-
-            if (lineBreak)
-            {
-                prevCh = 0;
-                offset.Y += font->getFontHeight();
-                offset.X = rc.ULC.X;
-
-                if (hcenter)
-                    offset.X += (rc.getWidth() - textSize.X) / 2.0f;
-
-                continue;
-            }*/
-
             // Calculate the glyph offset.
             s32 offx, offy, advance;
             font->getGlyphMetrics((wchar_t)ch, &offx, &offy, &advance);
@@ -245,7 +225,6 @@ void UITextSprite::updateBuffer(rectf &&r)
 
             offset.X += font->getKerningSizeForTwoChars((wchar_t)ch, (wchar_t)prevCh);
             offset.X += offx;
-            //offset.Y += offy;
 
             auto atlas = find_atlas(ch);
 
@@ -324,8 +303,6 @@ void UITextSprite::updateBuffer(rectf &&r)
 
         offset.X = rc.ULC.X;
         offset.Y = rc.ULC.Y + height_line;
-        //rc.LRC.Y += height_line;
-        //rc.ULC.Y += height_line;
     }
 
     for (auto &tex_to_glyph : texture_to_glyph_map) {

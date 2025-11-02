@@ -8,6 +8,7 @@
 
 struct AtlasTile
 {
+    // Left lower corner
 	v2u pos;
     v2u size{0, 0};
 	

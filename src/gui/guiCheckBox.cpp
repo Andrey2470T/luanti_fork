@@ -166,8 +166,9 @@ void CGUICheckBox::draw()
 			render::TTFont *font = skin->getFont();
 			if (font) {
                 img::color8 text_c = skin->getColor(isEnabled() ? EGDC_BUTTON_TEXT : EGDC_GRAY_TEXT);
-                CheckBoxBank->addTextSprite(
+                UITextSprite *CheckBoxText = CheckBoxBank->addTextSprite(
                     Environment->getRenderSystem()->getFontManager(), EnrichedString(Text), 0, toV2f(checkRect.ULC), text_c, nullptr, false);
+                CheckBoxText->setAlignment(GUIAlignment::Center, GUIAlignment::Center);
 			}
 		}
 	}

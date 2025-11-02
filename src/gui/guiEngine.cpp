@@ -340,7 +340,7 @@ void GUIEngine::run()
 			// GUIFormspecMenu::getAbsoluteRect().
 			// The header *can* be drawn after the menu because it never intersects
 			// the menu.
-            //drawHeader();
+            drawHeader();
 
             m_rndsys->endDraw();
 		}
@@ -457,10 +457,11 @@ void GUIEngine::drawHeader()
 {
     v2u screensize = m_rndsys->getWindowSize();
 
-	img::Image* texture = m_textures[TEX_LAYER_HEADER].texture;
+    //img::Image* texture = m_textures[TEX_LAYER_HEADER].texture;
+    auto header_img = m_rescache->get<img::Image>(ResourceType::IMAGE, "menu_header.png");
 
 	// If no texture, draw nothing
-	if (!texture)
+    if (!header_img)
 		return;
 
 	/*
@@ -478,10 +479,10 @@ void GUIEngine::drawHeader()
 	 * Calculate the preferred rectangle
 	 */
 	f32 mult = (((f32)screensize.X / 2.0)) /
-			((f32)texture->getSize().X);
+            ((f32)header_img->getSize().X);
 
-	v2i splashsize(((f32)texture->getSize().X) * mult,
-			((f32)texture->getSize().Y) * mult);
+    v2i splashsize(((f32)header_img->getSize().X) * mult,
+            ((f32)header_img->getSize().Y) * mult);
 
 	s32 free_space = (((s32)screensize.Y)-320)/2;
 
@@ -505,7 +506,7 @@ void GUIEngine::drawHeader()
 	// 2. Move
 	desired_rect.constrainTo(max_rect);
 
-    m_background->update(texture, toRectf(desired_rect), img::white);
+    m_background->update(header_img, toRectf(desired_rect), img::white);
     m_background->draw();
 }
 
@@ -543,7 +544,7 @@ void GUIEngine::drawFooter()
 bool GUIEngine::setTexture(texture_layer layer, const std::string &texturepath,
 		bool tile_image, unsigned int minsize)
 {
-    if (texturepath.empty() || !mt_fs::PathExists(texturepath)) {
+    if (texturepath.empty() || !fs::exists(texturepath)) {
 		return false;
 	}
 
