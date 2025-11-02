@@ -27,9 +27,9 @@ in vec3 vPosition;
 in vec3 vWorldPosition;
 in lowp vec4 vColor;
 #ifdef GL_ES
-in mediump vec2 vUV0;
+in mediump ivec2 vTexCoord;
 #else
-centroid in vec2 vUV0;
+centroid in ivec2 vTexCoord;
 #endif
 in highp vec3 vEyeVec;
 in float vNightRatio;
@@ -358,7 +358,7 @@ out vec4 outColor;
 
 void main(void)
 {
-	vec4 base = texture2D(baseTexture, vUV0).rgba;
+	vec4 base = texelFetch(baseTexture, vTexCoord, 0).rgba;
 	// If alpha is zero, we can just discard the pixel. This fixes transparency
 	// on GPUs like GC7000L, where GL_ALPHA_TEST is not implemented in mesa,
 	// and also on GLES 2, where GL_ALPHA_TEST is missing entirely.

@@ -1,4 +1,5 @@
 #include "rectpack2d_atlas.h"
+#include "Image/ImageLoader.h"
 #include "renderer.h"
 #include "settings.h"
 #include "client/media/resource.h"
@@ -54,6 +55,7 @@ Rectpack2DAtlas::Rectpack2DAtlas(ResourceCache *_cache, const std::string &name,
 
     actualSize = std::max(tile->size.X, tile->size.Y);
     tile->pos = v2u(0);
+    //tile->pos = v2u(0, actualSize);
 
     splitToTwoSubAreas(rectu(tile->pos, actualSize, actualSize), rectu(tile->pos, tile->size), freeSpaces);
 
@@ -175,14 +177,24 @@ bool Rectpack2DAtlas::packSingleTile(img::Image *img, u32 num, std::optional<Atl
 
     freeSpaces = newFreeSpaces;
 
+    //static u32 counter = 0;
+
     // If couldn't pack, try to increase the atlas size
     if (!packed) {
         u32 oldAtlasSize = getTextureSize();
         u32 newAtlasSize = CALC_CLOSEST_POT_SIDE((oldAtlasSize + newTile->size.Y)*(oldAtlasSize + newTile->size.Y));
+        //u32 newAtlasSize = CALC_CLOSEST_POT_SIDE(getTextureSize() + newTile->size.Y);
 
-        if (newAtlasSize > maxSize)
+        if (newAtlasSize > maxSize) {
+            delete newTile;
             return false;
+        }
 
+        //if (counter == 0) {
+        {
+            auto img = getTexture()->downloadData().at(0);
+            img::ImageLoader::save(img, "/home/andrey/minetests/luanti_fork/cache/atlases/gui_before.png");
+        }
         getTexture()->resize(newAtlasSize, newAtlasSize, g_imgmodifier);
 
         newTile->pos = v2u(0, oldAtlasSize);
@@ -191,6 +203,10 @@ bool Rectpack2DAtlas::packSingleTile(img::Image *img, u32 num, std::optional<Atl
         rectu upper_left_space(0, oldAtlasSize+newTile->size.Y, newTile->size.X, newAtlasSize);
         freeSpaces.push_back(upper_right_space);
         freeSpaces.push_back(upper_left_space);
+        /*newTile->pos = v2u(0, newAtlasSize);
+        rectu upper_space(newTile->size.X, newAtlasSize, newAtlasSize, newAtlasSize-newTile->size.Y);
+        rectu right_space(actualSize, newAtlasSize-newTile->size.Y, newAtlasSize, 0);
+        freeSpaces.push_back(upper_space);*/
         freeSpaces.push_back(right_space);
 
         actualSize = newAtlasSize;
@@ -205,6 +221,13 @@ bool Rectpack2DAtlas::packSingleTile(img::Image *img, u32 num, std::optional<Atl
         animatedTiles.push_back(tiles.size()-1);
 
     drawTiles();
+
+    //if (counter == 0) {
+    {
+        auto img = getTexture()->downloadData().at(0);
+        img::ImageLoader::save(img, "/home/andrey/minetests/luanti_fork/cache/atlases/gui_after.png");
+        //counter++;
+    }
 
     return true;
 }

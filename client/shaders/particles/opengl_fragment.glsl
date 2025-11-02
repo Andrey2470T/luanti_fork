@@ -9,7 +9,7 @@ in lowp vec4 vColor;
 in highp vec3 vEyeVec;
 in ivec2 vTileCoords;
 in ivec2 vTileSize;
-in vec2 vUV;
+in vec2 vTexCoord;
 in int vBlendMode;
 
 #include <fog>
@@ -19,8 +19,8 @@ out vec4 outColor;
 void main(void)
 {
 	// Calculate the pixel coords of the tile
-	int atlas_x = vTileCoords.x + vUV.x * vTileSize.x;
-	int atlas_y = vTileCoords.y + vUV.y * vTileCoords.y;
+	int atlas_x = vTexCoord.x + vTileCoords.x;
+	int atlas_y = vTexCoord.y + vTileCoords.y;
 
 	vec4 base = texelFetch(baseTexture, vec2(atlas_x, atlas_y), 0).rgba;
 
@@ -34,7 +34,8 @@ void main(void)
 		col = mix(FogColor, col, FogFactor);
 	}
 
-	col = DoBlend(col, texelFetch(framebuffer, gl_FragCoord.xy, 0), vBlendMode);
+	ivec2 fbCoords = ivec2(gl_FragCoord.x, gl_FragCoord.y);
+	col = DoBlend(col, texelFetch(framebuffer, fbCoords, 0), vBlendMode);
 
 	outColor = col;
 }

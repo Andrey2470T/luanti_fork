@@ -206,13 +206,13 @@ u32 UIShape::countRequiredICount(const std::vector<UIPrimitiveType> &primitives)
     return count;
 }
 
-void UIShape::appendToBuffer(MeshBuffer *buf, v2u imgSize)
+void UIShape::appendToBuffer(MeshBuffer *buf, v2u imgSize, bool toUV)
 {
     for (u32 i = 0; i < primitives.size(); i++)
-        appendToBuffer(buf, i, imgSize);
+        appendToBuffer(buf, i, imgSize, toUV);
 }
 
-void UIShape::updateBuffer(MeshBuffer *buf, u32 primitiveNum, bool pos_or_colors, v2u imgSize)
+void UIShape::updateBuffer(MeshBuffer *buf, u32 primitiveNum, bool pos_or_colors, v2u imgSize, bool toUV)
 {
     if (primitiveNum > primitives.size()-1)
         return;
@@ -266,12 +266,14 @@ void UIShape::updateBuffer(MeshBuffer *buf, u32 primitiveNum, bool pos_or_colors
             svtSetColor(buf, rect->colors[3], startV+3);
         }
 
-        f32 invW = 1.0f / (imgSize.X == 0 ? 1 : imgSize.X);
-        f32 invH = 1.0f / (imgSize.Y == 0 ? 1 : imgSize.Y);
-        rectf uv(
-            rect->texr.ULC.X * invW, rect->texr.ULC.Y * invH,
-            rect->texr.LRC.X * invW, rect->texr.LRC.Y * invH
-        );
+        rectf uv = rect->texr;
+
+        if (toUV) {
+            f32 invW = 1.0f / (imgSize.X == 0 ? 1 : imgSize.X);
+            f32 invH = 1.0f / (imgSize.Y == 0 ? 1 : imgSize.Y);
+            uv.ULC = v2f(rect->texr.ULC.X * invW, rect->texr.ULC.Y * invH);
+            uv.LRC = v2f(rect->texr.LRC.X * invW, rect->texr.LRC.Y * invH);
+        }
         svtSetUV(buf, uv.ULC, startV);
         svtSetUV(buf, v2f(uv.LRC.X, uv.ULC.Y), startV+1);
         svtSetUV(buf, uv.LRC, startV+2);
@@ -302,7 +304,7 @@ void UIShape::updateBuffer(MeshBuffer *buf, u32 primitiveNum, bool pos_or_colors
     }
 }
 
-void UIShape::appendToBuffer(MeshBuffer *buf, u32 primitiveNum, v2u imgSize)
+void UIShape::appendToBuffer(MeshBuffer *buf, u32 primitiveNum, v2u imgSize, bool toUV)
 {
     if (primitiveNum > primitives.size()-1)
         return;
@@ -323,7 +325,7 @@ void UIShape::appendToBuffer(MeshBuffer *buf, u32 primitiveNum, v2u imgSize)
     case UIPrimitiveType::RECTANGLE: {
         auto rect = dynamic_cast<Rectangle *>(p);
         if (rect->texr != rectf())
-            Batcher2D::appendImageRectangle(buf, imgSize, rect->texr, rect->r, rect->colors, false);
+            Batcher2D::appendImageRectangle(buf, imgSize, rect->texr, rect->r, rect->colors, false, toUV);
         else
             Batcher2D::appendRectangle(buf, rect->r, rect->colors);
         break;
@@ -339,20 +341,20 @@ void UIShape::appendToBuffer(MeshBuffer *buf, u32 primitiveNum, v2u imgSize)
 }
 
 UISprite::UISprite(render::Texture2D *tex, Renderer *_renderer, ResourceCache *_cache,
-    bool streamTexture, bool staticUsage)
+    bool streamTexture, bool staticUsage, bool toUV)
     : renderer(_renderer), cache(_cache), mesh(std::make_unique<MeshBuffer>(true, VType2D,
         staticUsage ? render::MeshUsage::STATIC : render::MeshUsage::DYNAMIC)),
-      shape(std::make_unique<UIShape>()), texture(tex), streamTex(streamTexture)
+      shape(std::make_unique<UIShape>()), texture(tex), streamTex(streamTexture), toUV(toUV)
 {}
 
 // Creates a single rectangle mesh
 UISprite::UISprite(render::Texture2D *tex, Renderer *_renderer,
     ResourceCache *_cache, const rectf &uvRect, const rectf &posRect,
-    const std::array<img::color8, 4> &colors, bool streamTexture, bool staticUsage)
+    const std::array<img::color8, 4> &colors, bool streamTexture, bool staticUsage, bool toUV)
     : renderer(_renderer), cache(_cache),
     mesh(std::make_unique<MeshBuffer>(UIShape::countRequiredVCount({UIPrimitiveType::RECTANGLE}),
         UIShape::countRequiredICount({UIPrimitiveType::RECTANGLE}), true, VType2D, staticUsage ? render::MeshUsage::STATIC : render::MeshUsage::DYNAMIC)),
-    shape(std::make_unique<UIShape>()), texture(tex), streamTex(streamTexture)
+    shape(std::make_unique<UIShape>()), texture(tex), streamTex(streamTexture), toUV(toUV)
 {
     shape->addRectangle(posRect, colors, uvRect);
     rebuildMesh();
@@ -362,11 +364,11 @@ const std::array<img::color8, 4> UISprite::defaultColors = {img::white, img::whi
 
 // Creates (without buffer filling) multiple-primitive mesh
 UISprite::UISprite(render::Texture2D *tex, Renderer *_renderer, ResourceCache *_cache,
-    const std::vector<UIPrimitiveType> &primitives, bool streamTexture, bool staticUsage)
+    const std::vector<UIPrimitiveType> &primitives, bool streamTexture, bool staticUsage, bool toUV)
     : renderer(_renderer), cache(_cache),
     mesh(std::make_unique<MeshBuffer>(UIShape::countRequiredVCount(primitives),
         UIShape::countRequiredICount(primitives), true, VType2D, staticUsage ? render::MeshUsage::STATIC : render::MeshUsage::DYNAMIC)),
-    shape(std::make_unique<UIShape>()), texture(tex), streamTex(streamTexture)
+    shape(std::make_unique<UIShape>()), texture(tex), streamTex(streamTexture), toUV(toUV)
 {
     for (auto primType : primitives) {
         switch(primType) {
@@ -405,7 +407,7 @@ void UISprite::rebuildMesh()
     );
 
     v2u texSize = texture ? texture->getSize() : v2u();
-    shape->appendToBuffer(mesh.get(), texSize);
+    shape->appendToBuffer(mesh.get(), texSize, toUV);
     mesh->uploadData();
 }
 
@@ -413,7 +415,7 @@ void UISprite::updateMesh(const std::vector<u32> &dirtyPrimitives, bool pos_or_c
 {
     v2u texSize = texture ? texture->getSize() : v2u();
     for (auto n : dirtyPrimitives)
-        shape->updateBuffer(mesh.get(), n, pos_or_colors, texSize);
+        shape->updateBuffer(mesh.get(), n, pos_or_colors, texSize, toUV);
     mesh->uploadVertexData();
 }
 
@@ -421,7 +423,7 @@ void UISprite::updateMesh(bool pos_or_colors)
 {
     v2u texSize = texture ? texture->getSize() : v2u();
     for (u32 i = 0; i < shape->getPrimitiveCount(); i++)
-        shape->updateBuffer(mesh.get(), i, pos_or_colors, texSize);
+        shape->updateBuffer(mesh.get(), i, pos_or_colors, texSize, toUV);
     mesh->uploadVertexData();
 }
 

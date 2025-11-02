@@ -5,13 +5,13 @@ layout (location = 2) in vec2 uv;
 uniform float mThickness;
 uniform mat4 mProjection;
 
-out vec2 vUV0;
+out vec2 vTexCoord;
 out vec4 vVertexColor;
 
 void main()
 {
 	gl_Position = mProjection * vec4(pos, 0.0, 1.0);
 	gl_PointSize = mThickness;
-	vUV0 = uv;
+	vTexCoord = uv;
 	vVertexColor = color.bgra;
 }

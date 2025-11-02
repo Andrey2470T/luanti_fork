@@ -8,7 +8,7 @@ uniform sampler2D mTexture0;
 uniform sampler2D mFramebuffer;
 uniform int mBlendMode;
 
-in vec2 vUV0;
+in vec2 vTexCoord;
 in vec4 vVertexColor;
 in vec3 vViewPos;
 
@@ -19,7 +19,7 @@ void main()
 	vec4 Color = vVertexColor;
 
 	if (bool(mTextureUsage0)) {
-		Color *= texture2D(mTexture0, vUV0);
+		Color *= texelFetch(mTexture0, ivec2(vTexCoord.x, vTexCoord.y), 0);
 	}
 	
 	if (bool(FogParams.enable))
@@ -30,7 +30,8 @@ void main()
 		Color = mix(FogColor, Color, FogFactor);
 	}
 	
-	Color = DoBlend(Color, texture2D(mFramebuffer, vUV0), mBlendMode);
+	ivec2 fbCoords = ivec2(gl_FragCoord.x, gl_FragCoord.y);
+	Color = DoBlend(Color, texelFetch(mFramebuffer, fbCoords, 0), mBlendMode);
 
 	outColor = Color;
 }

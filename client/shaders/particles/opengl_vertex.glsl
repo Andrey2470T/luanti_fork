@@ -1,7 +1,7 @@
 layout (location = 0) in vec3 pos;
 layout (location = 1) in vec4 color;
 layout (location = 2) in vec3 normal;
-layout (location = 3) in vec2 uv;
+layout (location = 3) in vec2 texCoords; // relatively to the current tile size
 
 #include <matrices>
 #include <data_unpack>
@@ -16,7 +16,7 @@ out lowp vec4 vColor;
 out highp vec3 vEyeVec;
 out ivec2 vTileCoords;
 out ivec2 vTileSize;
-out vec2 vUV;
+out vec2 vTexCoord;
 out int vBlendMode;
 
 void main(void)
@@ -43,7 +43,7 @@ void main(void)
 
 	gl_Position = Matrices.worldViewProj * transformedPos;
 
-	vUV = uv;
+	vTexCoord = texCoords;
 
 	vEyeVec = -(Matrices.worldView * transformedPos).xyz;
 }

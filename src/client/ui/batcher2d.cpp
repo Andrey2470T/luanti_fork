@@ -67,18 +67,24 @@ void Batcher2D::appendEllipse(MeshBuffer *buf, f32 a, f32 b, const v2u &img_size
 }
 
 void Batcher2D::appendImageRectangle(MeshBuffer *buf, const v2u &imgSize,
-    const rectf &srcRect, const rectf &destRect, const std::array<img::color8, 4> &colors, bool flip)
+    const rectf &srcRect, const rectf &destRect, const std::array<img::color8, 4> &colors, bool flip, bool toUV)
 {
-    f32 invW = 1.0f / imgSize.X;
-    f32 invH = 1.0f / imgSize.Y;
-
     f32 topY = flip ? srcRect.LRC.Y : srcRect.ULC.Y;
     f32 bottomY = flip ? srcRect.ULC.Y : srcRect.LRC.Y;
 
-    rectf tcoords{
-        v2f(srcRect.ULC.X * invW, topY * invH),
-        v2f(srcRect.LRC.X * invW, bottomY * invH)
-    };
+    rectf tcoords;
+
+    if (toUV) {
+        f32 invW = 1.0f / imgSize.X;
+        f32 invH = 1.0f / imgSize.Y;
+
+        tcoords.ULC = v2f(srcRect.ULC.X * invW, topY * invH);
+        tcoords.LRC = v2f(srcRect.LRC.X * invW, bottomY * invH);
+    }
+    else {
+        tcoords.ULC = v2f(srcRect.ULC.X, topY);
+        tcoords.LRC = v2f(srcRect.LRC.X, bottomY);
+    }
 
     appendRectangle(buf, destRect, colors, tcoords);
 }

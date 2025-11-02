@@ -30,9 +30,9 @@ in vec3 vWorldPosition;
 in lowp vec4 vColor;
 in lowp vec3 vHWColor;
 #ifdef GL_ES
-in mediump vec2 vTexCoord;
+in mediump ivec2 vTexCoord;
 #else
-centroid in vec2 vTexCoord;
+centroid in ivec2 vTexCoord;
 #endif
 
 #ifdef ENABLE_DYNAMIC_SHADOWS
@@ -411,7 +411,7 @@ out vec4 outColor;
 
 void main(void)
 {
-	vec4 base = texture2D(baseTexture, vTexCoord).rgba;
+	vec4 base = texelFetch(baseTexture, vTexCoord, 0).rgba;
 	base.rgb *= vHWColor;
 	// If alpha is zero, we can just discard the pixel. This fixes transparency
 	// on GPUs like GC7000L, where GL_ALPHA_TEST is not implemented in mesa,

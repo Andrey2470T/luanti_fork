@@ -1,7 +1,7 @@
 layout (location = 0) in vec3 pos;
 layout (location = 1) in vec4 color;
 layout (location = 2) in vec3 normal;
-layout (location = 3) in vec2 uv;
+layout (location = 3) in ivec2 uv;
 layout (location = 4) in int materialType;
 
 #include <matrices>
@@ -17,9 +17,9 @@ out vec3 vPosition;
 out vec3 vWorldPosition;
 out lowp vec4 vColor;
 #ifdef GL_ES
-out mediump vec2 vUV0;
+out mediump ivec2 vTexCoord;
 #else
-centroid out vec2 vUV0;
+centroid out ivec2 vTexCoord;
 #endif
 
 #ifdef ENABLE_DYNAMIC_SHADOWS
@@ -88,7 +88,7 @@ float directional_ambient(vec3 normal)
 
 void main(void)
 {
-	vUV0 = (Matrices.texture0 * vec4(uv.xy, 1.0, 1.0)).st;
+	vTexCoord = uv;//(Matrices.texture0 * vec4(texCoords.xy, 1.0, 1.0)).st;
 
 	gl_Position = Matrices.worldViewProj * vec4(pos, 1.0);
 

@@ -154,9 +154,9 @@ public:
 
     friend class UISprite;
 private:
-    void appendToBuffer(MeshBuffer *buf, v2u imgSize=v2u());
-    void updateBuffer(MeshBuffer *buf, u32 primitiveNum, bool pos_or_colors=true, v2u imgSize=v2u());
-    void appendToBuffer(MeshBuffer *buf, u32 primitiveNum, v2u imgSize=v2u());
+    void appendToBuffer(MeshBuffer *buf, v2u imgSize=v2u(), bool toUV=false);
+    void updateBuffer(MeshBuffer *buf, u32 primitiveNum, bool pos_or_colors=true, v2u imgSize=v2u(), bool toUV=false);
+    void appendToBuffer(MeshBuffer *buf, u32 primitiveNum, v2u imgSize=v2u(), bool toUV=false);
 };
 
 // 2D mesh consisting from some count of rectangles
@@ -173,6 +173,7 @@ protected:
 
     bool streamTex = false;
     bool visible = true;
+    bool toUV = false;
 
     recti clipRect;
     
@@ -181,16 +182,16 @@ public:
 
     // Creates an empty sprite
     UISprite(render::Texture2D *tex, Renderer *_renderer, ResourceCache *_cache,
-        bool streamTexture=false, bool staticUsage=true);
+        bool streamTexture=false, bool staticUsage=true, bool toUV=false);
 
     // Creates a single rectangle mesh
     UISprite(render::Texture2D *tex, Renderer *_renderer,
         ResourceCache *_cache, const rectf &srcRect, const rectf &destRect,
-        const std::array<img::color8, 4> &colors=defaultColors, bool streamTexture=false, bool staticUsage=true);
+        const std::array<img::color8, 4> &colors=defaultColors, bool streamTexture=false, bool staticUsage=true, bool toUV=false);
 
     // Creates (without buffer filling) multiple-primitive mesh
     UISprite(render::Texture2D *tex, Renderer *_renderer, ResourceCache *_cache,
-        const std::vector<UIPrimitiveType> &primitives, bool streamTexture=false, bool staticUsage=true);
+        const std::vector<UIPrimitiveType> &primitives, bool streamTexture=false, bool staticUsage=true, bool toUV=false);
 
     virtual ~UISprite() = default;
 

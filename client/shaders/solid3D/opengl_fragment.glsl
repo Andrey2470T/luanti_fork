@@ -5,7 +5,7 @@ uniform sampler2D mTexture0;
 
 #include <fog>
 
-in vec2 vUV0;
+in vec2 vTexCoord;
 in vec4 vVertexColor;
 in float vFogCoord;
 in vec3 vViewPos;
@@ -17,7 +17,7 @@ void main()
 	vec4 Color = vVertexColor;
 
 	if (bool(mTextureUsage0))
-		Color *= texture2D(mTexture0, vUV0);
+		Color *= texelFetch(mTexture0, ivec2(vTexCoord.x, vTexCoord.y), 0);
 
 	if (bool(FogParams.enable))
 	{
