@@ -324,10 +324,10 @@ void GUIEngine::run()
             m_rndsys->beginDraw(render::CBF_COLOR | render::CBF_DEPTH, Renderer::menu_sky_color);
 
             if (m_clouds_enabled) {
-                //g_menumgr->drawClouds(dtime);
-                //drawOverlay();
+                g_menumgr->drawClouds(dtime);
+                drawOverlay();
             } else {
-                //drawBackground();
+                drawBackground();
             }
 
             //g_menumgr->drawClouds(dtime);
@@ -457,11 +457,11 @@ void GUIEngine::drawHeader()
 {
     v2u screensize = m_rndsys->getWindowSize();
 
-    //img::Image* texture = m_textures[TEX_LAYER_HEADER].texture;
-    auto header_img = m_rescache->get<img::Image>(ResourceType::IMAGE, "menu_header.png");
+    img::Image* texture = m_textures[TEX_LAYER_HEADER].texture;
+    //auto header_img = m_rescache->get<img::Image>(ResourceType::IMAGE, "menu_header.png");
 
 	// If no texture, draw nothing
-    if (!header_img)
+    if (!texture)
 		return;
 
 	/*
@@ -479,10 +479,10 @@ void GUIEngine::drawHeader()
 	 * Calculate the preferred rectangle
 	 */
 	f32 mult = (((f32)screensize.X / 2.0)) /
-            ((f32)header_img->getSize().X);
+            ((f32)texture->getSize().X);
 
-    v2i splashsize(((f32)header_img->getSize().X) * mult,
-            ((f32)header_img->getSize().Y) * mult);
+    v2i splashsize(((f32)texture->getSize().X) * mult,
+            ((f32)texture->getSize().Y) * mult);
 
 	s32 free_space = (((s32)screensize.Y)-320)/2;
 
@@ -506,7 +506,7 @@ void GUIEngine::drawHeader()
 	// 2. Move
 	desired_rect.constrainTo(max_rect);
 
-    m_background->update(header_img, toRectf(desired_rect), img::white);
+    m_background->update(texture, toRectf(desired_rect), img::white);
     m_background->draw();
 }
 
