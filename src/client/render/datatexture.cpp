@@ -17,7 +17,7 @@ DataTexture::DataTexture(const std::string &name, u32 _sampleSize, u32 _sampleCo
     settings.isRenderTarget = false;
 
     u32 data_dim = CALC_TEX_SIDE(sampleSize*sampleCount/4);
-    glTexture = std::make_unique<render::StreamTexture2D>(name, data_dim, data_dim, img::PF_RGBA8, 0);
+    glTexture = std::make_unique<render::Texture2D>(name, data_dim, data_dim, img::PF_RGBA8, 0);
 }
 
 void DataTexture::addSample(ByteArray &data)
@@ -27,8 +27,6 @@ void DataTexture::addSample(ByteArray &data)
 
     u8 *bytedata = reinterpret_cast<u8 *>(data.data());
     img::Image *tmpImg = new img::Image(img::PF_RGBA8, sampleDim, sampleDim, bytedata, false);
-
-    glTexture->bind();
 
     if (unfilledAreas.empty()) {
         texDim = CALC_TEX_SIDE(sampleCount);
@@ -44,8 +42,6 @@ void DataTexture::addSample(ByteArray &data)
 
     glTexture->uploadSubData(targetCoords.X*sampleDim, targetCoords.Y*sampleDim, tmpImg, g_imgmodifier);
 
-    glTexture->unbind();
-
     delete tmpImg;
 }
 
@@ -57,11 +53,8 @@ void DataTexture::updateSample(u32 n, ByteArray &data)
     img::Image *tmpImg = new img::Image(img::PF_RGBA8, sampleDim, sampleDim, bytedata, false);
 
     v2u targetCoords = calculateCoords(n);
-    glTexture->bind();
 
     glTexture->uploadSubData(targetCoords.X*sampleDim, targetCoords.Y*sampleDim, tmpImg, g_imgmodifier);
-
-    glTexture->unbind();
 
     delete tmpImg;
 }
@@ -73,8 +66,6 @@ void DataTexture::removeSample(u32 n)
     sampleCount--;
 
     ByteArray newArray;
-
-    glTexture->bind();
 
     u8 *newData = new u8[sampleCount*sampleSize];
     u8 *curData = glTexture->downloadData().at(0)->getData();
@@ -96,8 +87,6 @@ void DataTexture::removeSample(u32 n)
     img::Image *tmpImg = new img::Image(img::PF_RGBA8, texDim*sampleDim, texDim*sampleDim, newData, true);
 
     glTexture->uploadSubData(0, 0, tmpImg, g_imgmodifier);
-
-    glTexture->unbind();
 
     delete tmpImg;
 }

@@ -2,7 +2,7 @@
 #include "batcher2d.h"
 #include "client/mesh/defaultVertexTypes.h"
 #include "client/render/renderer.h"
-#include <Render/StreamTexture2D.h>
+#include <Render/Texture2D.h>
 #include "client/render/rendersystem.h"
 #include "gui/IGUIEnvironment.h"
 #include "text_sprite.h"

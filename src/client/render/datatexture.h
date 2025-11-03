@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Render/StreamTexture2D.h>
+#include <Render/Texture2D.h>
 #include <Utils/ByteArray.h>
 
 // Texture type specialized for saving large bulks of dynamic video data
@@ -11,7 +11,7 @@ class DataTexture
 
     std::vector<v2u> unfilledAreas; // free areas for new samples
 
-    std::unique_ptr<render::StreamTexture2D> glTexture;
+    std::unique_ptr<render::Texture2D> glTexture;
 public:
     u32 sampleCount;
     u32 sampleDim; // image quad size (in pixels) of one sample
@@ -24,7 +24,7 @@ public:
         return sampleCount;
     }
 
-    render::StreamTexture2D *getGLTexture() const
+    render::Texture2D *getGLTexture() const
     {
         return glTexture.get();
     }
@@ -32,11 +32,6 @@ public:
     void addSample(ByteArray &data);
     void updateSample(u32 n, ByteArray &data);
     void removeSample(u32 n);
-
-    void flush()
-    {
-        glTexture->flush();
-    }
 private:
     void calculateFreeAreas();
     v2u calculateCoords(u32 sampleN);

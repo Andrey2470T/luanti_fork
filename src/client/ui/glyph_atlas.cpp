@@ -135,7 +135,7 @@ bool GlyphAtlas::readCache(u32 num)
         return false;
     }
 
-    texture = std::make_unique<render::StreamTexture2D>(atlasName,
+    texture = std::make_unique<render::Texture2D>(atlasName,
         imgCache->getWidth(), imgCache->getHeight(), imgCache->getFormat(), 0);
 
     return true;

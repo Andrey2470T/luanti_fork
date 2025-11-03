@@ -19,10 +19,8 @@ rectf AtlasTile::toUV(u32 atlasSize) const
 
 void Atlas::createTexture(const std::string &name, u32 size, u8 maxMipLevel)
 {
-    //core::InfoStream << "createTexture: " << name << ", " << size << "x" << size << ", " << format << "\n";
-    texture = std::make_unique<render::StreamTexture2D>(
+    texture = std::make_unique<render::Texture2D>(
         name, size, size, img::PF_RGBA8, maxMipLevel);
-    //core::InfoStream << "createTexture: created\n";
 }
 
 bool Atlas::addTile(AtlasTile *tile)
@@ -77,12 +75,6 @@ void Atlas::drawTiles()
     if (!texture || dirty_tiles.empty())
         return;
 
-    //std::vector<rectu> mergedRegions;
-    //texture->mergeRegions(mergedRegions);
-
-    //texture->bind();
-    //texture->mapPBO();
-
     for (u32 dirty_i : dirty_tiles) {
         auto tile = getTile(dirty_i);
 
@@ -95,16 +87,8 @@ void Atlas::drawTiles()
         texture->uploadSubData(tile->pos.X, tile->pos.Y, tile->image);
     }
 
-    //auto img = texture->downloadData();
-    //std::string path = std::string("/home/andrey/minetests/luanti_fork/cache/atlases/") + texture->getName() + ".png";
-    //img::ImageLoader::save(img.at(0), path);
-
-    //texture->unmapPBO();
-
-    //texture->flush();
-
-    //if (texture->hasMipMaps())
-    //    texture->regenerateMipMaps();
+    if (texture->hasMipMaps())
+        texture->regenerateMipMaps();
 
     dirty_tiles.clear();
 }
@@ -129,11 +113,6 @@ bool Atlas::operator==(const Atlas *other) const
 
 AtlasPool::~AtlasPool()
 {
-    /*if (type == AtlasType::GLYPH) {
-        for (u32 i = 0; i < atlases.size(); i++)
-            dynamic_cast<GlyphAtlas *>(atlases.at(i))->saveToCache(i);
-    }*/
-
     for (auto &atlas : atlases) {
         cache->clearResource<Atlas>(ResourceType::ATLAS, atlas, true);
     }
@@ -196,11 +175,9 @@ img::Image *AtlasPool::addTile(const std::string &name)
     core::InfoStream << "addTile, time: " << TimeCounter::getRealTime() << " \n";
     auto img = cache->getOrLoad<img::Image>(
         ResourceType::IMAGE, name, apply_modifiers, apply_modifiers, true);
-    //img::ImageLoader::save(img, "/home/andrey/minetests/luanti_fork/cache/atlases/" + name);
+
     core::InfoStream << "addTile: " << name << ", " << img->getSize() << ", time: " << TimeCounter::getRealTime() << "\n";
-    //core::InfoStream << "addTile: 2\n";
     auto imgIt = std::find(images.begin(), images.end(), img);
-    //core::InfoStream << "addTile: 3\n";
 
     // Add only unique tiles
     if (imgIt != images.end())
@@ -208,7 +185,6 @@ img::Image *AtlasPool::addTile(const std::string &name)
 
     images.emplace_back(img);
     core::InfoStream << "addTile end, time: " << TimeCounter::getRealTime() << " \n";
-    //core::InfoStream << "addTile: 4\n";
 
     return img;
 }

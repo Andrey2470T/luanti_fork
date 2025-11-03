@@ -6,7 +6,7 @@
 
 #include <BasicIncludes.h>
 #include <Image/Image.h>
-#include <Render/StreamTexture2D.h>
+#include <Render/Texture2D.h>
 #include <Render/Shader.h>
 #include "sprite.h"
 

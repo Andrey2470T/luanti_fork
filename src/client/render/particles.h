@@ -66,8 +66,6 @@ public:
     { return m_parent ? m_pt->blendmode : m_p.texture.blendmode; }
 
     void updateDataInTexture();
-
-    static bool particles_changed;
 private:
     void calcTileRect(const std::string &newImg);
     void updateVertexColor(ClientEnvironment *env);

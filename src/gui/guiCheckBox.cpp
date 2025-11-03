@@ -20,10 +20,6 @@ namespace gui
 CGUICheckBox::CGUICheckBox(bool checked, IGUIEnvironment *environment, IGUIElement *parent, s32 id, recti rectangle) :
         IGUICheckBox(environment, parent, id, rectangle), CheckTime(0), Pressed(false), Checked(checked), Border(false), Background(false),
         CheckBoxBank(std::make_unique<UISpriteBank>(environment->getRenderSystem(), environment->getResourceCache(), false))
-        /*Sprite(std::make_unique<UIRects>(Environment->getRenderSystem(), 0)),
-        Label(std::make_unique<UITextSprite>(environment->getRenderSystem()->getFontManager(),
-            environment->getSkin(), EnrichedString(),
-            environment->getRenderSystem()->getRenderer(), environment->getResourceCache(), false, false))*/
 {
 	// this element can be tabbed into
 	setTabStop(true);

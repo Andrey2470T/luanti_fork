@@ -4,7 +4,7 @@
 #include "util/enriched_string.h"
 #include "gui/GUIEnums.h"
 #include <Render/TTFont.h>
-#include <Render/StreamTexture2D.h>
+#include <Render/Texture2D.h>
 #include "gui/GUISkin.h"
 
 class FontManager;

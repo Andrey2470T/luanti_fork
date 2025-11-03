@@ -2,7 +2,7 @@
 
 #include <memory>
 #include <Image/Image.h>
-#include <Render/StreamTexture2D.h>
+#include <Render/Texture2D.h>
 #include <Render/TTFont.h>
 #include <list>
 
@@ -51,7 +51,7 @@ enum class AtlasType : u8
 class Atlas
 {
 protected:
-    std::unique_ptr<render::StreamTexture2D> texture;
+    std::unique_ptr<render::Texture2D> texture;
     
     // Saves only unique tiles (determined by the hash)
     std::unordered_map<size_t, u32> hash_to_index;
@@ -65,7 +65,7 @@ public:
     
     virtual std::string getName(u32 size, u32 num) const = 0;
 
-    render::StreamTexture2D *getTexture() const
+    render::Texture2D *getTexture() const
     {
     	return texture.get();
     }

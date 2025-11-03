@@ -30,8 +30,6 @@ using BlendMode = ParticleParamTypes::BlendMode;
 	Particle
 */
 
-bool Particle::particles_changed = false;
-
 Particle::Particle(RenderSystem *rnd_sys,
     ResourceCache *cache,
     u32 num,
@@ -71,7 +69,6 @@ Particle::Particle(RenderSystem *rnd_sys,
     m_data_tex->addSample(newData);
 
     m_particle_data_changed = false;
-    particles_changed = true;
 }
 
 Particle::~Particle()
@@ -156,8 +153,6 @@ void Particle::updateDataInTexture()
     m_data_tex->updateSample(m_particle_num, newData);
 
     m_particle_data_changed = false;
-
-    particles_changed = true;
 }
 
 void Particle::calcTileRect(const std::string &newImg)
@@ -669,11 +664,6 @@ void ParticleManager::stepParticles(float dtime)
 			++i;
 		}
 	}
-
-    if (Particle::particles_changed) {
-        Particle::particles_changed = false;
-        m_datatex->flush();
-    }
 }
 
 void ParticleManager::clearAll()
