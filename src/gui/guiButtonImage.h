@@ -28,6 +28,6 @@ public:
 			const wchar_t *tooltiptext = L"");
 
 private:
-    img::Image *m_foreground_image;
+    img::Image *m_foreground_image = nullptr;
     gui::GUISharedPointer<gui::CGUIImage> m_image;
 };

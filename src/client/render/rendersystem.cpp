@@ -86,6 +86,11 @@ void RenderSystem::initRenderEnvironment(Client *_client)
         window->getGLParams()->maxTextureSize, true, true);
 }
 
+Hud *RenderSystem::getHud() const
+{
+    return gameui->getHud();
+}
+
 AtlasPool *RenderSystem::getPool(bool basic) const
 {
     if (basic)

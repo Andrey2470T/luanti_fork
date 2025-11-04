@@ -76,8 +76,6 @@ Client::Client(ResourceCache *resource_cache, RenderSystem *render_system,
     m_render_system(render_system),
     m_input(input),
     m_packet_handler(std::make_unique<ClientPacketHandler>(this, allow_login_or_register)),
-    m_clientevent_handler(std::make_unique<ClientEventHandler>(this)),
-    m_inputsys(std::make_unique<GameInputSystem>(this)),
 	m_env(this),
     m_chat_msger(std::make_unique<ChatMessanger>(this)),
     m_password(password),
@@ -94,6 +92,12 @@ Client::Client(ResourceCache *resource_cache, RenderSystem *render_system,
 	m_mod_storage_database->beginSave();
 
     m_cache_save_interval = g_settings->getU16("server_map_save_interval");
+}
+
+void Client::initInput()
+{
+    m_clientevent_handler = std::make_unique<ClientEventHandler>(this);
+    m_inputsys = std::make_unique<GameInputSystem>(this);
 }
 
 bool Client::initSound()
@@ -414,10 +418,12 @@ void Client::step(f32 dtime)
 	*/
     m_chat_msger->sendFromQueue();
 
-    m_inputsys->processUserInput(dtime);
-    // Update camera before player movement to avoid camera lag of one frame
-    m_inputsys->updateCameraDirection(dtime);
-    m_inputsys->updatePlayerControl();
+    if (m_inputsys) {
+        m_inputsys->processUserInput(dtime);
+        // Update camera before player movement to avoid camera lag of one frame
+        m_inputsys->updateCameraDirection(dtime);
+        m_inputsys->updatePlayerControl();
+    }
 
 	/*
 		Handle environment
@@ -426,7 +432,10 @@ void Client::step(f32 dtime)
 
 	// Step environment (also handles player controls)
     m_env.step(dtime);
-	m_sound->step(dtime);
+
+    if (m_sound) {
+        m_sound->step(dtime);
+    }
 
 	/*
 		Get events
@@ -464,7 +473,9 @@ void Client::step(f32 dtime)
 	/*
 		Send player position to server
 	*/
-    m_packet_handler->sendPlayerPos(m_render_system->getDrawList()->getDrawControl().wanted_range, dtime);
+    if (m_render_system->getDrawList()) {
+        m_packet_handler->sendPlayerPos(m_render_system->getDrawList()->getDrawControl().wanted_range, dtime);
+    }
 
 	/*
 		Load fetched media
@@ -580,8 +591,10 @@ void Client::step(f32 dtime)
 		m_localdb->beginSave();
 	}
 
-    m_clientevent_handler->processEvents();
-    updateSound(dtime);
+    if (m_clientevent_handler)
+        m_clientevent_handler->processEvents();
+    if (m_sound)
+        updateSound(dtime);
 }
 
 bool Client::loadMedia(const std::string &data, const std::string &filename,

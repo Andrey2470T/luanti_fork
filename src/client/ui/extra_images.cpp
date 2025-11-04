@@ -136,7 +136,6 @@ void ImageSprite::update(img::Image *newImage, const rectf &rect, const std::arr
     }
     rectf tile_rect = pool->getTileRect(image, false, true);
 
-    //rectf atlas_r(896, 1096, texture->getWidth(), 0);
     shape->updateRectangle(0, rect, colors, tile_rect);
     updateMesh();
 

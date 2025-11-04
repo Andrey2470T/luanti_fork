@@ -116,6 +116,7 @@ public:
     {
         return gameui.get();
     }
+    Hud *getHud() const;
     gui::IGUIEnvironment *getGUIEnvironment() const
     {
         return guienv.get();

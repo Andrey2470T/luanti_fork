@@ -370,6 +370,8 @@ bool Game::createClient(const GameStartData &start_data)
 
     client->getRenderSystem()->initRenderEnvironment(client.get());
 
+    client->initInput();
+
     if (!client->initGui())
         return false;
 

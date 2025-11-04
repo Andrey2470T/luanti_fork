@@ -85,7 +85,7 @@ void CGUIImage::draw()
             clippingRect = AbsoluteClippingRect;
 			checkBounds(clippingRect);
 		} else {
-            clippingRect = recti(AbsoluteRect.ULC, sourceRect.getSize());
+            clippingRect = recti(AbsoluteRect.ULC, sourceRect.getWidth(), sourceRect.getHeight());
 			checkBounds(clippingRect);
 			clippingRect.clipAgainst(AbsoluteClippingRect);
 		}

@@ -85,6 +85,8 @@ public:
 	~Client();
 	DISABLE_CLASS_COPY(Client);
 
+    void initInput();
+
     bool initSound();
 
     bool shouldShowTouchControls();
