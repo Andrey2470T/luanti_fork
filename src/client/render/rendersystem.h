@@ -69,6 +69,7 @@ public:
     RenderSystem(ResourceCache *_cache);
     ~RenderSystem();
 
+    void initLoadScreen();
     void initRenderEnvironment(Client *_client);
 
     core::MainWindow *getWindow() const

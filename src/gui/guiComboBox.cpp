@@ -389,7 +389,7 @@ void CGUIComboBox::draw()
 
     Border->clear();
     skin->add3DSunkenPane(Border.get(), skin->getColor(EGDC_3D_HIGH_LIGHT),
-            true, true, toRectf(frameRect));
+            true, true, toRectT<f32>(frameRect));
     Border->rebuildMesh();
     Border->setClipRect(AbsoluteClippingRect);
     Border->draw();

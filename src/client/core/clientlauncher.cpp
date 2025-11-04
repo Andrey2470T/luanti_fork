@@ -98,10 +98,8 @@ bool ClientLauncher::run(GameStartData &start_data, const Settings &cmd_args)
 
     render_system->setResizable(true);
 
-    core::InfoStream << "ClientLauncher: buildGUIAtlas\n";
     render_system->buildGUIAtlas();
 
-    core::InfoStream << "ClientLauncher: setWindowIcon\n";
     render_system->setWindowIcon();
 
     init_input();
@@ -128,7 +126,6 @@ bool ClientLauncher::run(GameStartData &start_data, const Settings &cmd_args)
     bool retval = true;
     bool *kill = porting::signal_handler_killstatus();
 
-    core::InfoStream << "ClientLauncher: 1\n";
     while (render_system->run() && !*kill &&
         !g_gamecallback->shutdown_requested) {
         // Set the window caption
@@ -139,7 +136,6 @@ bool ClientLauncher::run(GameStartData &start_data, const Settings &cmd_args)
             " [" + gl_version + "]";
 
         render_system->getWindow()->setCaption(utf8_to_wide(caption));
-        core::InfoStream << "ClientLauncher: 2\n";
 
 #ifdef NDEBUG
         try {
@@ -175,7 +171,6 @@ bool ClientLauncher::run(GameStartData &start_data, const Settings &cmd_args)
             if (!render_system->run() || *kill)
                 break;
 
-            core::InfoStream << "ClientLauncher: 3\n";
             the_game(
                 kill,
                 input.get(),
@@ -185,7 +180,6 @@ bool ClientLauncher::run(GameStartData &start_data, const Settings &cmd_args)
                 error_message,
                 &reconnect_requested
             );
-            core::InfoStream << "ClientLauncher: 4\n";
 #ifdef NDEBUG
         } catch (std::exception &e) {
             error_message = "Some exception: ";
@@ -217,7 +211,6 @@ bool ClientLauncher::run(GameStartData &start_data, const Settings &cmd_args)
                 retval = false;
             break;
         }
-        core::InfoStream << "ClientLauncher: 5\n";
     } // Menu-game loop
 
     // If profiler was enabled print it one last time
@@ -226,8 +219,6 @@ bool ClientLauncher::run(GameStartData &start_data, const Settings &cmd_args)
         g_profiler->print(infostream);
         g_profiler->clear();
     }
-
-    core::InfoStream << "ClientLauncher: end\n";
 
     return retval;
 }

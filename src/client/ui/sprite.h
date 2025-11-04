@@ -69,6 +69,8 @@ class UIShape
 	};
 
     std::vector<std::unique_ptr<Primitive>> primitives;
+    std::vector<u32> dirtyPrimitives;
+
     rectf maxArea;
     bool maxAreaInit = false;
 public:
@@ -88,18 +90,22 @@ public:
     }
 	void addLine(const v2f &start_p, const v2f &end_p, const img::color8 &start_c, const img::color8 &end_c) {
         primitives.emplace_back((Primitive *)(new Line(start_p, end_p, start_c, end_c)));
+        dirtyPrimitives.push_back(primitives.size()-1);
         updateMaxArea(maxArea, start_p, end_p, maxAreaInit);
     }
     void addTriangle(const v2f &p1, const v2f &p2, const v2f &p3, const img::color8 &c1, const img::color8 &c2, const img::color8 &c3) {
         primitives.emplace_back((Primitive *)(new Triangle(p1, p2, p3, c1, c2, c3)));
+        dirtyPrimitives.push_back(primitives.size()-1);
         updateMaxArea(maxArea, v2f(p1.X, p3.Y), p2, maxAreaInit);
     }
     void addRectangle(const rectf &r, const std::array<img::color8, 4> &colors, const rectf &texr=rectf()) {
         primitives.emplace_back((Primitive *)(new Rectangle(r, colors, texr)));
+        dirtyPrimitives.push_back(primitives.size()-1);
         updateMaxArea(maxArea, r.ULC, r.LRC, maxAreaInit);
     }
     void addEllipse(f32 a, f32 b, const v2f &center, const img::color8 &c) {
         primitives.emplace_back((Primitive *)(new Ellipse(a, b, center, c)));
+        dirtyPrimitives.push_back(primitives.size()-1);
         updateMaxArea(maxArea, center - v2f(a/2, b/2), center+v2f(a/2, b/2), maxAreaInit);
     }
 
@@ -134,6 +140,7 @@ public:
     void clear()
     {
         primitives.clear();
+        dirtyPrimitives.clear();
         maxArea = rectf();
         maxAreaInit = false;
     }
@@ -155,7 +162,8 @@ public:
     friend class UISprite;
 private:
     void appendToBuffer(MeshBuffer *buf, v2u imgSize=v2u(), bool toUV=false);
-    void updateBuffer(MeshBuffer *buf, u32 primitiveNum, bool pos_or_colors=true, v2u imgSize=v2u(), bool toUV=false);
+    void updateBuffer(MeshBuffer *buf, bool positions=true, bool colors=true, v2u imgSize=v2u(), bool toUV=false);
+    void updateBuffer(MeshBuffer *buf, u32 primitiveNum, bool positions=true, bool colors=true, v2u imgSize=v2u(), bool toUV=false);
     void appendToBuffer(MeshBuffer *buf, u32 primitiveNum, v2u imgSize=v2u(), bool toUV=false);
 };
 
@@ -226,8 +234,7 @@ public:
     }
 
     void rebuildMesh();
-    void updateMesh(const std::vector<u32> &dirtyPrimitives, bool pos_or_colors=true);
-    void updateMesh(bool pos_or_colors=true);
+    void updateMesh(bool positions=true, bool colors=true);
 
     void setClipRect(const recti &r)
     {

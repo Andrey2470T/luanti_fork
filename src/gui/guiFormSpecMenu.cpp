@@ -846,7 +846,7 @@ void GUIFormSpecMenu::parseImage(parserData* data, const std::string &element)
         gui::IGUIImage *image = Environment->addImage(rect, data->current_parent, spec.fid, nullptr, true);
 
         image->setImage(texture);
-        image->setMiddleRect(toRectf(middle));
+        image->setMiddleRect(toRectT<f32>(middle));
 		e = image;
 	}
 	else {
@@ -921,7 +921,7 @@ void GUIFormSpecMenu::parseAnimatedImage(parserData *data, const std::string &el
     if (parts.size() >= 7)
         frame_offset = stoi(parts[6]) - 1;
     e->setImage(m_cache->getOrLoad<img::Image>(ResourceType::IMAGE, texture_name), anim_params, frame_offset);
-    e->setMiddleRect(toRectf(middle));
+    e->setMiddleRect(toRectT<f32>(middle));
 
 	auto style = getDefaultStyleForElement("animated_image", spec.fname, "image");
 	e->setNotClipped(style.getBool(StyleSpec::NOCLIP, false));
@@ -3455,10 +3455,10 @@ void GUIFormSpecMenu::drawMenu()
     recti allbg(0, 0, wndSize.X, wndSize.Y);
 
     if (m_bgfullscreen)
-        m_menu->addRect(toRectf(allbg), {m_fullscreen_bgcolor});
+        m_menu->addRect(toRectT<f32>(allbg), {m_fullscreen_bgcolor});
 
     if (m_bgnonfullscreen)
-        m_menu->addRect(toRectf(AbsoluteRect), {m_bgcolor});
+        m_menu->addRect(toRectT<f32>(AbsoluteRect), {m_bgcolor});
 
     u32 cur_render_rect = 0;
     if (m_bgfullscreen || m_bgnonfullscreen) {
@@ -3537,7 +3537,7 @@ void GUIFormSpecMenu::drawMenu()
 		if (m_show_debug) {
 			recti rect = hovered->getAbsoluteClippingRect();
             m_menu->clear();
-            m_menu->addRect(toRectf(rect), {img::colorU32NumberToObject(0x22FFFF00)}, true);
+            m_menu->addRect(toRectT<f32>(rect), {img::colorU32NumberToObject(0x22FFFF00)}, true);
             m_menu->setClipRect(rect);
             m_menu->draw(cur_render_rect, 1);
             cur_render_rect++;

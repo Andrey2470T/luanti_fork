@@ -93,14 +93,13 @@ void GUIBox::draw()
 		lowerright_rect.Y
 	);
 
-    m_box->updateRect(0, toRectf(main_rect), {m_colors[0], m_colors[1], m_colors[3], m_colors[2]});
+    m_box->updateRect(0, toRectT<f32>(main_rect), {m_colors[0], m_colors[1], m_colors[3], m_colors[2]});
 
     for (size_t i = 0; i < 4; i++)
-        m_box->updateRect(i+1, toRectf(border_rects[i]),
+        m_box->updateRect(i+1, toRectT<f32>(border_rects[i]),
             {m_bordercolors[i], m_bordercolors[i], m_bordercolors[i], m_bordercolors[i]});
 
-    m_box->updateMesh(true);
-    m_box->updateMesh(false);
+    m_box->updateMesh();
 
     m_box->setClipRect(AbsoluteClippingRect);
     m_box->draw();

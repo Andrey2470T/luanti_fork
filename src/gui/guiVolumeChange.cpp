@@ -105,7 +105,7 @@ void GUIVolumeChange::drawMenu()
 		return;
 
     img::color8 bgcolor(img::PF_RGBA8, 0, 0, 0, 140);
-    volumeChangeBox->getShape()->updateRectangle(0, toRectf(AbsoluteRect), {bgcolor, bgcolor, bgcolor, bgcolor});
+    volumeChangeBox->getShape()->updateRectangle(0, toRectT<f32>(AbsoluteRect), {bgcolor, bgcolor, bgcolor, bgcolor});
     volumeChangeBox->updateMesh();
     volumeChangeBox->setClipRect(AbsoluteClippingRect);
     volumeChangeBox->draw();

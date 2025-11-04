@@ -60,15 +60,15 @@ void GUIBackgroundImage::draw()
 		rect = AbsoluteRect;
 	}
 
-    recti srcrect(v2i(0, 0), toV2i(texture->getSize()));
+    recti srcrect(v2i(0, 0), toV2T<s32>(texture->getSize()));
 
 	if (m_middle.getArea() == 0) {
         auto img = std::get<std::shared_ptr<ImageSprite>>(Image);
-        img->update(texture, toRectf(rect), UISprite::defaultColors, &srcrect);
+        img->update(texture, toRectT<f32>(rect), UISprite::defaultColors, &srcrect);
         img->draw();
 	} else {
         auto img = std::get<std::shared_ptr<Image2D9Slice>>(Image);
-        img->updateRects(toRectf(srcrect), toRectf(rect), toRectf(m_middle));
+        img->updateRects(toRectT<f32>(srcrect), toRectT<f32>(rect), toRectT<f32>(m_middle));
         img->draw();
 	}
 

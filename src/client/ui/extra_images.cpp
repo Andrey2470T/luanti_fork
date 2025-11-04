@@ -98,8 +98,7 @@ void Image2D9Slice::createSlices()
         for (u8 y = 0; y < 3; y++)
             createSlice(x, y);
 
-    updateMesh(true);
-    updateMesh(false);
+    updateMesh();
 }
 
 UIRects::UIRects(RenderSystem *rndsys, u32 init_rects_count)
@@ -119,10 +118,8 @@ void UIRects::updateRect(u32 n, const rectf &rect, const std::array<img::color8,
 {
 	shape->updateRectangle(n, rect, colors);
 
-    if (update) {
-        updateMesh(true);
-        updateMesh(false);
-    }
+    if (update)
+        updateMesh();
 }
 
 ImageSprite::ImageSprite(RenderSystem *rndsys, ResourceCache *cache)
@@ -141,8 +138,7 @@ void ImageSprite::update(img::Image *newImage, const rectf &rect, const std::arr
 
     //rectf atlas_r(896, 1096, texture->getWidth(), 0);
     shape->updateRectangle(0, rect, colors, tile_rect);
-    updateMesh(true);
-    updateMesh(false);
+    updateMesh();
 
     if (cliprect)
         setClipRect(*cliprect);

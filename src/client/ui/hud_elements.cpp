@@ -346,8 +346,7 @@ void HudWaypoint::updateBank(v3f newWorldPos)
 
         rectf srcrect = guiPool->getTileRect(img1, false, true);
         img_sprite->getShape()->updateRectangle(0, img_rect, {color, color, color, color}, srcrect);
-        img_sprite->updateMesh(true);
-        img_sprite->updateMesh(false);
+        img_sprite->updateMesh();
     }
 }
 
@@ -369,7 +368,7 @@ void HudImage::update()
 
     rectf srcrect = guiPool->getTileRect(img1, false, true);
     image->getShape()->updateRectangle(0, img_rect, {img::white}, srcrect);
-    image->updateMesh(true);
+    image->updateMesh(true, false);
 }
 
 HudCompass::HudCompass(Client *_client, const HudElement *elem)

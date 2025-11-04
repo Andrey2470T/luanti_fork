@@ -91,7 +91,7 @@ void CGUIImage::draw()
 		}
         if (MiddleRect.getArea() == 0) {
             auto img = std::get<std::shared_ptr<ImageSprite>>(Image);
-            img->update(Texture, toRectf(AbsoluteRect), Colors, &clippingRect, AnimParams);
+            img->update(Texture, toRectT<f32>(AbsoluteRect), Colors, &clippingRect, AnimParams);
 
             if (FrameOffset)
                 pool->getAnimatedTileByImage(Texture)->frame_offset = FrameOffset.value();
@@ -99,7 +99,7 @@ void CGUIImage::draw()
         }
         else {
             auto sliced_img = std::get<std::shared_ptr<Image2D9Slice>>(Image);
-            sliced_img->updateRects(toRectf(sourceRect), MiddleRect, toRectf(AbsoluteRect),
+            sliced_img->updateRects(toRectT<f32>(sourceRect), MiddleRect, toRectT<f32>(AbsoluteRect),
                 Texture, Colors, &clippingRect, AnimParams);
 
             if (FrameOffset)
@@ -114,7 +114,7 @@ void CGUIImage::draw()
         std::array<img::color8, 4> Colors = {color, color, color, color};
         if (MiddleRect.getArea() == 0) {
             auto img = std::get<std::shared_ptr<ImageSprite>>(Image);
-            img->update(nullptr, toRectf(AbsoluteRect), Colors, &clippingRect, AnimParams);
+            img->update(nullptr, toRectT<f32>(AbsoluteRect), Colors, &clippingRect, AnimParams);
 
             if (FrameOffset)
                 pool->getAnimatedTileByImage(Texture)->frame_offset = FrameOffset.value();
@@ -122,7 +122,7 @@ void CGUIImage::draw()
         }
         else {
             auto sliced_img = std::get<std::shared_ptr<Image2D9Slice>>(Image);
-            sliced_img->updateRects(toRectf(SourceRect), MiddleRect, toRectf(AbsoluteRect),
+            sliced_img->updateRects(toRectT<f32>(SourceRect), MiddleRect, toRectT<f32>(AbsoluteRect),
                 nullptr, Colors, &clippingRect, AnimParams);
 
             if (FrameOffset)

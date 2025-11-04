@@ -28,7 +28,7 @@ void GUIButtonImage::setForegroundImage(img::Image *image,
 
     m_foreground_image = image;
     m_image->setImage(m_foreground_image);
-    m_image->setMiddleRect(toRectf(middle));
+    m_image->setMiddleRect(toRectT<f32>(middle));
 }
 
 //! Set element properties from a StyleSpec
@@ -41,7 +41,7 @@ void GUIButtonImage::setFromStyle(const StyleSpec &style)
                 Environment->getResourceCache());
 
         setForegroundImage(texture,
-                style.getRect(StyleSpec::FGIMG_MIDDLE, toRecti(m_image->getMiddleRect())));
+                style.getRect(StyleSpec::FGIMG_MIDDLE, toRectT<s32>(m_image->getMiddleRect())));
 	} else {
 		setForegroundImage();
 	}

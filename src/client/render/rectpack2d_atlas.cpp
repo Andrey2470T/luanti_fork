@@ -160,9 +160,9 @@ bool Rectpack2DAtlas::packSingleTile(img::Image *img, u32 num, std::optional<Atl
     // At first try to place the tile in one of the free spaces
     bool packed = false;
 
-    rectu tileRect(0, 0, newTile->size.X, newTile->size.Y);
     std::vector<rectu> newFreeSpaces;
     for (auto &space : freeSpaces) {
+        rectu tileRect(0, 0, newTile->size.X, newTile->size.Y);
         tileRect += space.ULC;
 
         if (canFit(space, tileRect)) {
@@ -263,7 +263,7 @@ void Rectpack2DAtlas::splitToTwoSubAreas(rectu area, rectu r, std::vector<rectu>
     u32 r_h = r.getHeight();
 
     if (area_w == r_w) {
-        newFreeSpaces.emplace_back(area.ULC.X, area.ULC.Y-r_h, area.LRC.X, area.LRC.Y);
+        newFreeSpaces.emplace_back(area.ULC.X, area.ULC.Y+r_h, area.LRC.X, area.LRC.Y);
         return;
     }
 
@@ -272,8 +272,8 @@ void Rectpack2DAtlas::splitToTwoSubAreas(rectu area, rectu r, std::vector<rectu>
         return;
     }
 
-    newFreeSpaces.emplace_back(area.ULC.X, area.ULC.Y-r_h, area.LRC.X, area.LRC.Y);
-    newFreeSpaces.emplace_back(area.ULC.X+r_w, area.ULC.Y, area.LRC.X, area.ULC.Y-r_h);
+    newFreeSpaces.emplace_back(area.ULC.X, area.ULC.Y+r_h, area.LRC.X, area.LRC.Y);
+    newFreeSpaces.emplace_back(area.ULC.X+r_w, area.ULC.Y, area.LRC.X, area.ULC.Y+r_h);
 }
 
 void Rectpack2DAtlas::recreateImageWithFrame(img::Image **img)

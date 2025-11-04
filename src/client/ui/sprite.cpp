@@ -68,6 +68,8 @@ void UIShape::updateLine(u32 n, const v2f &start_p, const v2f &end_p, const img:
     line->end_p = end_p;
     line->start_c = start_c;
     line->end_c = end_c;
+
+    dirtyPrimitives.push_back(n);
     updateMaxArea(maxArea, start_p, end_p, maxAreaInit);
 }
 void UIShape::updateTriangle(u32 n, const v2f &p1, const v2f &p2, const v2f &p3, const img::color8 &c1, const img::color8 &c2, const img::color8 &c3)
@@ -79,6 +81,8 @@ void UIShape::updateTriangle(u32 n, const v2f &p1, const v2f &p2, const v2f &p3,
     trig->c1 = c1;
     trig->c2 = c2;
     trig->c3 = c3;
+
+    dirtyPrimitives.push_back(n);
     updateMaxArea(maxArea, v2f(p1.X, p3.Y), p2, maxAreaInit);
 }
 void UIShape::updateRectangle(u32 n, const rectf &r, const std::array<img::color8, 4> &colors, const rectf &texr)
@@ -87,6 +91,8 @@ void UIShape::updateRectangle(u32 n, const rectf &r, const std::array<img::color
     rect->r = r;
     rect->colors = colors;
     rect->texr = texr;
+
+    dirtyPrimitives.push_back(n);
     updateMaxArea(maxArea, r.ULC, r.LRC, maxAreaInit);
 }
 void UIShape::updateEllipse(u32 n, f32 a, f32 b, const v2f &center, const img::color8 &c)
@@ -96,6 +102,8 @@ void UIShape::updateEllipse(u32 n, f32 a, f32 b, const v2f &center, const img::c
     ellipse->b = b;
     ellipse->center = center;
     ellipse->c = c;
+
+    dirtyPrimitives.push_back(n);
     updateMaxArea(maxArea, center - v2f(a/2, b/2), center+v2f(a/2, b/2), maxAreaInit);
 }
 
@@ -134,8 +142,10 @@ void UIShape::movePrimitive(u32 n, const v2f &shift)
         break;
     }
     default:
-        break;
+        return;
     }
+
+    dirtyPrimitives.push_back(n);
 }
 void UIShape::scalePrimitive(u32 n, const v2f &scale, std::optional<v2f> center)
 {
@@ -180,8 +190,10 @@ void UIShape::scalePrimitive(u32 n, const v2f &scale, std::optional<v2f> center)
         break;
     }
     default:
-        break;
+        return;
     }
+
+    dirtyPrimitives.push_back(n);
 }
 
 u32 UIShape::countRequiredVCount(const std::vector<UIPrimitiveType> &primitives)
@@ -208,13 +220,25 @@ u32 UIShape::countRequiredICount(const std::vector<UIPrimitiveType> &primitives)
 
 void UIShape::appendToBuffer(MeshBuffer *buf, v2u imgSize, bool toUV)
 {
-    for (u32 i = 0; i < primitives.size(); i++)
-        appendToBuffer(buf, i, imgSize, toUV);
+    for (auto dirtyPrim : dirtyPrimitives)
+        appendToBuffer(buf, dirtyPrim, imgSize, toUV);
+
+    dirtyPrimitives.clear();
 }
 
-void UIShape::updateBuffer(MeshBuffer *buf, u32 primitiveNum, bool pos_or_colors, v2u imgSize, bool toUV)
+void UIShape::updateBuffer(MeshBuffer *buf, bool positions, bool colors, v2u imgSize, bool toUV)
 {
-    if (primitiveNum > primitives.size()-1)
+    for (auto dirtyPrim : dirtyPrimitives)
+        updateBuffer(buf, dirtyPrim, positions, colors, imgSize, toUV);
+
+    dirtyPrimitives.clear();
+}
+
+void UIShape::updateBuffer(MeshBuffer *buf, u32 primitiveNum, bool positions, bool colors, v2u imgSize, bool toUV)
+{
+    auto foundDirtyPrim = std::find(dirtyPrimitives.begin(), dirtyPrimitives.end(), primitiveNum);
+
+    if (foundDirtyPrim == dirtyPrimitives.end())
         return;
 
     Primitive *p = primitives.at(primitiveNum).get();
@@ -227,11 +251,11 @@ void UIShape::updateBuffer(MeshBuffer *buf, u32 primitiveNum, bool pos_or_colors
     switch (p->type) {
     case UIPrimitiveType::LINE: {
         auto line = dynamic_cast<Line *>(p);
-        if (pos_or_colors) {
+        if (positions) {
             svtSetPos2D(buf, line->start_p, startV);
             svtSetPos2D(buf, line->end_p, startV+1);
         }
-        else {
+        if (colors) {
             svtSetColor(buf, line->start_c, startV);
             svtSetColor(buf, line->end_c, startV+1);
         }
@@ -239,12 +263,12 @@ void UIShape::updateBuffer(MeshBuffer *buf, u32 primitiveNum, bool pos_or_colors
     }
     case UIPrimitiveType::TRIANGLE: {
         auto trig = dynamic_cast<Triangle *>(p);
-        if (pos_or_colors) {
+        if (positions) {
             svtSetPos2D(buf, trig->p1, startV);
             svtSetPos2D(buf, trig->p2, startV+1);
             svtSetPos2D(buf, trig->p3, startV+2);
         }
-        else {
+        if (colors) {
             svtSetColor(buf, trig->c1, startV);
             svtSetColor(buf, trig->c2, startV+1);
             svtSetColor(buf, trig->c3, startV+2);
@@ -253,13 +277,13 @@ void UIShape::updateBuffer(MeshBuffer *buf, u32 primitiveNum, bool pos_or_colors
     }
     case UIPrimitiveType::RECTANGLE: {
         auto rect = dynamic_cast<Rectangle *>(p);
-        if (pos_or_colors) {
+        if (positions) {
             svtSetPos2D(buf, rect->r.ULC, startV);
             svtSetPos2D(buf, v2f(rect->r.LRC.X, rect->r.ULC.Y), startV+1);
             svtSetPos2D(buf, rect->r.LRC, startV+2);
             svtSetPos2D(buf, v2f(rect->r.ULC.X, rect->r.LRC.Y), startV+3);
         }
-        else {
+        if (colors) {
             svtSetColor(buf, rect->colors[0], startV);
             svtSetColor(buf, rect->colors[1], startV+1);
             svtSetColor(buf, rect->colors[2], startV+2);
@@ -284,17 +308,17 @@ void UIShape::updateBuffer(MeshBuffer *buf, u32 primitiveNum, bool pos_or_colors
     case UIPrimitiveType::ELLIPSE: {
         auto ellipse = dynamic_cast<Ellipse *>(p);
 
-        if (pos_or_colors)
+        if (positions)
             svtSetPos2D(buf, ellipse->center, startV);
-        else
+        if (colors)
             svtSetColor(buf, ellipse->c, startV);
 
         for (u8 i = 0; i < primVCounts[(u8)UIPrimitiveType::ELLIPSE]-1; i++) {
             u32 curAngle = i * PI / 4;
             v2f relPos(ellipse->a * cos(curAngle), ellipse->b * sin(curAngle));
-            if (pos_or_colors)
+            if (positions)
                 svtSetPos2D(buf, ellipse->center + relPos, startV+i+1);
-            else
+            if (colors)
                 svtSetColor(buf, ellipse->c, startV+i+1);
         }
         break;
@@ -306,7 +330,9 @@ void UIShape::updateBuffer(MeshBuffer *buf, u32 primitiveNum, bool pos_or_colors
 
 void UIShape::appendToBuffer(MeshBuffer *buf, u32 primitiveNum, v2u imgSize, bool toUV)
 {
-    if (primitiveNum > primitives.size()-1)
+    auto foundDirtyPrim = std::find(dirtyPrimitives.begin(), dirtyPrimitives.end(), primitiveNum);
+
+    if (foundDirtyPrim == dirtyPrimitives.end())
         return;
 
     Primitive *p = primitives.at(primitiveNum).get();
@@ -395,12 +421,9 @@ void UISprite::rebuildMesh()
 {
     std::vector<UIPrimitiveType> prims(shape->getPrimitiveCount());
 
-    for (u32 i = 0; i < shape->getPrimitiveCount(); i++) {
+    for (u32 i = 0; i < shape->getPrimitiveCount(); i++)
         prims[i] = shape->getPrimitiveType(i);
-        //core::InfoStream << "rebuildMesh: prim type: " << (u8)prims[i] << "\n";
-    }
 
-    //core::InfoStream << "rebuildMesh: vcount: " << UIShape::countRequiredVCount(prims) << ", icount:" <<  UIShape::countRequiredICount(prims) << "\n";
     mesh->reallocateData(
         UIShape::countRequiredVCount(prims),
         UIShape::countRequiredICount(prims)
@@ -411,19 +434,11 @@ void UISprite::rebuildMesh()
     mesh->uploadData();
 }
 
-void UISprite::updateMesh(const std::vector<u32> &dirtyPrimitives, bool pos_or_colors)
+void UISprite::updateMesh(bool positions, bool colors)
 {
     v2u texSize = texture ? texture->getSize() : v2u();
-    for (auto n : dirtyPrimitives)
-        shape->updateBuffer(mesh.get(), n, pos_or_colors, texSize, toUV);
-    mesh->uploadVertexData();
-}
 
-void UISprite::updateMesh(bool pos_or_colors)
-{
-    v2u texSize = texture ? texture->getSize() : v2u();
-    for (u32 i = 0; i < shape->getPrimitiveCount(); i++)
-        shape->updateBuffer(mesh.get(), i, pos_or_colors, texSize, toUV);
+    shape->updateBuffer(mesh.get(), positions, colors, texSize, toUV);
     mesh->uploadVertexData();
 }
 
@@ -447,7 +462,7 @@ void UISprite::draw(std::optional<u32> primOffset, std::optional<u32> primCount)
     auto prevType = shape->getPrimitiveType(primOffset_v);
     u32 pOffset = primOffset_v;
     u32 pCount = 1;
-    for (u32 i = primOffset_v; i < primCount_v; i++) {
+    for (u32 i = primOffset_v; i < primOffset_v+primCount_v; i++) {
         auto curType = shape->getPrimitiveType(i);
 
         if (curType == prevType && (i + 1 < primCount_v))
@@ -531,8 +546,7 @@ UIRects *UISpriteBank::addSprite(const std::vector<ColoredRect> &rects, u8 shift
     if (!rects.empty()) {
         for (u32 k = 0; k < rects.size(); k++)
             rectsSprite->updateRect(k, rects.at(k).area, rects[k].colors);
-        rectsSprite->updateMesh(true);
-        rectsSprite->updateMesh(false);
+        rectsSprite->updateMesh();
 
         rectf old_maxarea = rectsSprite->getShape()->getMaxArea();
         rectf shifted_maxarea = old_maxarea;

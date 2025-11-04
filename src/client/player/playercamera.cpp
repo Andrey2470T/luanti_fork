@@ -39,7 +39,7 @@
 #define WIELDMESH_AMPLITUDE_Y 10.0f
 
 PlayerCamera::PlayerCamera(Client *client):
-    Camera(toV2u(client->getRenderSystem()->getRenderer()->getContext()->getViewportSize().getSize())),
+    Camera(toV2T<u32>(client->getRenderSystem()->getRenderer()->getContext()->getViewportSize().getSize())),
     m_draw_control(client->getRenderSystem()->getDrawList()->getDrawControl()), m_client(client)
 {
     //auto smgr = rendering_engine->get_scene_manager();

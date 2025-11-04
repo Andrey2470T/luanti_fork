@@ -280,10 +280,10 @@ void CGUIFileOpenDialog::draw()
 	auto sprite0 = DialogBank->getSprite(0);
 	sprite0->clear();
 
-    rectf cliprect = toRectf(AbsoluteClippingRect);
-    skin->add3DWindowBackground(sprite0, true, skin->getColor(EGDC_ACTIVE_BORDER), toRectf(rect), &cliprect);
+    rectf cliprect = toRectT<f32>(AbsoluteClippingRect);
+    skin->add3DWindowBackground(sprite0, true, skin->getColor(EGDC_ACTIVE_BORDER), toRectT<f32>(rect), &cliprect);
     sprite0->rebuildMesh();
-    AbsoluteClippingRect = toRecti(cliprect);
+    AbsoluteClippingRect = toRectT<s32>(cliprect);
     sprite0->setClipRect(AbsoluteClippingRect);
 
 	if (Text.size()) {
@@ -295,7 +295,7 @@ void CGUIFileOpenDialog::draw()
             auto sprite1 = dynamic_cast<UITextSprite *>(DialogBank->getSprite(1));
             sprite1->setText(Text);
             sprite1->setOverrideColor(skin->getColor(EGDC_ACTIVE_CAPTION));
-            sprite1->updateBuffer(toRectf(rect));
+            sprite1->updateBuffer(toRectT<f32>(rect));
             sprite1->setClipRect(AbsoluteClippingRect);
 		}
 	}

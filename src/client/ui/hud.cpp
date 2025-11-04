@@ -72,8 +72,7 @@ void Hud::updateCrosshair()
 
         crosshair->getShape()->updateRectangle(0, r,
             {crosshair_color, crosshair_color, crosshair_color, crosshair_color});
-        crosshair->updateMesh(true);
-        crosshair->updateMesh(false);
+        crosshair->updateMesh();
     };
 
     std::string imgname;

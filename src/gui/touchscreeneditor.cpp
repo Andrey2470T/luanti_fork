@@ -244,7 +244,7 @@ void GUITouchscreenLayout::drawMenu()
 
     m_menu->clear();
 
-    m_menu->addRect(toRectf(AbsoluteRect), {bgcolor});
+    m_menu->addRect(toRectT<f32>(AbsoluteRect), {bgcolor});
 
 	// Done here instead of in OnPostRender to avoid drag&drop lagging behind
 	// input by one frame.
@@ -254,12 +254,12 @@ void GUITouchscreenLayout::drawMenu()
 	bool draw_selection = m_gui_images.count(m_selected_btn) > 0;
 	if (draw_selection)
         m_menu->addRect(
-            toRectf(m_gui_images.at(m_selected_btn)->getAbsolutePosition()),
+            toRectT<f32>(m_gui_images.at(m_selected_btn)->getAbsolutePosition()),
             {selection_color});
 
 	if (m_mode == Mode::Dragging) {
 		for (const auto &rect : m_error_rects)
-            m_menu->addRect(toRectf(rect), {error_color});
+            m_menu->addRect(toRectT<f32>(rect), {error_color});
 	}
 
     m_menu->rebuildMesh();

@@ -278,9 +278,6 @@ T *ResourceCache::getOrLoad(ResourceType _type, const std::string &_name,
             MutexAutoLock lock(resource_mutex);
 
             img = reinterpret_cast<img::Image *>(subcaches[_type]->getOrLoad(_name));
-
-            if (img)
-                core::InfoStream << "getOrLoad: name: " << _name << ", width: " << img->getWidth() << ", height: " << img->getHeight() << ", format: " << img->getFormat() << "\n";
         }
         else {
             if (load_for_mesh)

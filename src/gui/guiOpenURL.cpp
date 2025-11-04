@@ -151,7 +151,7 @@ void GUIOpenURLMenu::drawMenu()
 		return;
 
     img::color8 bgcolor(img::PF_RGBA8, 0, 0, 0, 140);
-    openURLBox->getShape()->updateRectangle(0, toRectf(AbsoluteRect), {bgcolor});
+    openURLBox->getShape()->updateRectangle(0, toRectT<f32>(AbsoluteRect), {bgcolor});
     openURLBox->updateMesh();
     openURLBox->setClipRect(AbsoluteClippingRect);
     openURLBox->draw();

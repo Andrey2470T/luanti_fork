@@ -440,8 +440,8 @@ void GUITable::setTable(const TableOptions &options,
 			Row *row = &m_rows[i];
 			row->cellcount = rows[i].cells.size();
 			row->cells = new Cell[row->cellcount];
-			memcpy((void*) row->cells, (void*) &rows[i].cells[0],
-					row->cellcount * sizeof(Cell));
+            for (s32 j = 0; j < row->cellcount; ++j)
+                row->cells[j] = rows[i].cells[j];
 			row->indent = rows[i].indent;
 			row->visible_index = i;
 			m_visible_rows.push_back(i);
@@ -656,14 +656,14 @@ void GUITable::draw()
     if (m_border) {
         UISprite *border = new UISprite(nullptr, rnd, cache, true);
         border->setClipRect(AbsoluteClippingRect);
-        skin->add3DSunkenPane(border, m_background, true, draw_background, toRectf(AbsoluteRect));
+        skin->add3DSunkenPane(border, m_background, true, draw_background, toRectT<f32>(AbsoluteRect));
         border->rebuildMesh();
         m_table_box->addSprite(border);
     }
     else if (draw_background) {
         UISprite *background = new UISprite(nullptr, rnd, cache, true);
         background->setClipRect(AbsoluteClippingRect);
-        background->getShape()->addRectangle(toRectf(AbsoluteRect), {m_background});
+        background->getShape()->addRectangle(toRectT<f32>(AbsoluteRect), {m_background});
         background->rebuildMesh();
 
         m_table_box->addSprite(background);
@@ -705,7 +705,7 @@ void GUITable::draw()
 		if (is_sel) {
             UISprite *cell = new UISprite(nullptr, rnd, cache, true);
             cell->setClipRect(client_clip);
-            cell->getShape()->addRectangle(toRectf(row_rect), {m_highlight, m_highlight, m_highlight, m_highlight});
+            cell->getShape()->addRectangle(toRectT<f32>(row_rect), {m_highlight, m_highlight, m_highlight, m_highlight});
             cell->rebuildMesh();
             m_table_box->addSprite(cell);
 			color = m_highlight_text;
@@ -745,11 +745,11 @@ void GUITable::drawCell(const Cell *cell, img::color8 color,
 		if (m_font) {
             if (cell->content_type == COLUMN_TYPE_TEXT) {
                 m_table_box->addTextSprite(
-                    font_mgr, EnrichedString(m_strings[cell->content_index]), 0, toV2f(text_rect.ULC), color, &client_clip);
+                    font_mgr, EnrichedString(m_strings[cell->content_index]), 0, toV2T<f32>(text_rect.ULC), color, &client_clip, false);
             }
             else { // tree
                 m_table_box->addTextSprite(
-                    font_mgr, EnrichedString(cell->content_index ? L"+" : L"-"), 0, toV2f(text_rect.ULC), color, &client_clip);
+                    font_mgr, EnrichedString(cell->content_index ? L"+" : L"-"), 0, toV2T<f32>(text_rect.ULC), color, &client_clip, false);
             }
 		}
 	}
@@ -773,7 +773,7 @@ void GUITable::drawCell(const Cell *cell, img::color8 color,
 			if (imgh < rowh)
 				dest_rect += v2i(0, (rowh - imgh) / 2);
 
-            m_table_box->addImageSprite(image, 0, toRectf(dest_rect), &client_clip);
+            m_table_box->addImageSprite(image, 0, toRectT<f32>(dest_rect), &client_clip);
 		}
 	}
 }

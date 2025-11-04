@@ -113,12 +113,12 @@ void CGUICheckBox::draw()
 		// draw background
 		if (Background) {
             img::color8 bgColor = skin->getColor(EGDC_3D_FACE);
-            CheckBoxRects->addRect(toRectf(frameRect), {bgColor, bgColor, bgColor, bgColor});
+            CheckBoxRects->addRect(toRectT<f32>(frameRect), {bgColor, bgColor, bgColor, bgColor});
 		}
 
 		// draw the border
         if (Border) {
-            skin->add3DSunkenPane(CheckBoxRects, img::white, true, false, toRectf(frameRect));
+            skin->add3DSunkenPane(CheckBoxRects, img::white, true, false, toRectT<f32>(frameRect));
 			frameRect.ULC.X += skin->getSize(EGDS_TEXT_DISTANCE_X);
 			frameRect.LRC.X -= skin->getSize(EGDS_TEXT_DISTANCE_X);
         }
@@ -138,7 +138,7 @@ void CGUICheckBox::draw()
 			col = Pressed ? EGDC_FOCUSED_EDITABLE : EGDC_EDITABLE;
 
         skin->add3DSunkenPane(CheckBoxRects, skin->getColor(col),
-                false, true, toRectf(checkRect));
+                false, true, toRectT<f32>(checkRect));
 
         CheckBoxRects->rebuildMesh();
         CheckBoxRects->draw();
@@ -150,7 +150,7 @@ void CGUICheckBox::draw()
             auto sprite_tex = Environment->getResourceCache()->get<img::Image>(ResourceType::IMAGE, tex_name);
 
             if (sprite_tex) {
-                CheckBoxBank->addImageSprite(sprite_tex, 0, toRectf(checkRect), &AbsoluteClippingRect);
+                CheckBoxBank->addImageSprite(sprite_tex, 0, toRectT<f32>(checkRect), &AbsoluteClippingRect);
             }
 		}
 
@@ -163,7 +163,7 @@ void CGUICheckBox::draw()
 			if (font) {
                 img::color8 text_c = skin->getColor(isEnabled() ? EGDC_BUTTON_TEXT : EGDC_GRAY_TEXT);
                 UITextSprite *CheckBoxText = CheckBoxBank->addTextSprite(
-                    Environment->getRenderSystem()->getFontManager(), EnrichedString(Text), 0, toV2f(checkRect.ULC), text_c, nullptr, false);
+                    Environment->getRenderSystem()->getFontManager(), EnrichedString(Text), 0, toV2T<f32>(checkRect.ULC), text_c, nullptr, false);
                 CheckBoxText->setAlignment(GUIAlignment::Center, GUIAlignment::Center);
 			}
 		}

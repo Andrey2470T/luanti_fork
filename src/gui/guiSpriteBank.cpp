@@ -137,7 +137,7 @@ void CGUISpriteBank::draw2DSprite(u32 index, const v2i &pos,
 		p -= r.getSize() / 2;
 	}
 
-    SpriteBank->update(tex, toRectf(r), color, clip);
+    SpriteBank->update(tex, toRectT<f32>(r), color, clip);
     SpriteBank->draw();
 }
 
@@ -157,7 +157,7 @@ void CGUISpriteBank::draw2DSprite(u32 index, const recti &destRect,
 	if (rn >= Rectangles.size())
 		return;
 
-    SpriteBank->update(tex, toRectf(destRect), {colors[0], colors[1], colors[2], colors[3]}, clip);
+    SpriteBank->update(tex, toRectT<f32>(destRect), {colors[0], colors[1], colors[2], colors[3]}, clip);
     SpriteBank->draw();
 }
 

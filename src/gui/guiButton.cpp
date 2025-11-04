@@ -265,13 +265,13 @@ void GUIButton::draw()
 		if (!Pressed)
 		{
 			// PATCH
-            skin->addColored3DButtonPaneStandard(sprite0, toRectf(AbsoluteRect), Colors);
+            skin->addColored3DButtonPaneStandard(sprite0, toRectT<f32>(AbsoluteRect), Colors);
 			// END PATCH
 		}
 		else
 		{
 			// PATCH
-            skin->addColored3DButtonPanePressed(sprite0, toRectf(AbsoluteRect), Colors);
+            skin->addColored3DButtonPanePressed(sprite0, toRectT<f32>(AbsoluteRect), Colors);
 			// END PATCH
 		}
         sprite0->rebuildMesh();
@@ -289,7 +289,7 @@ void GUIButton::draw()
 		v2i pos(buttonCenter);
 		recti sourceRect(ButtonImages[(u32)imageState].SourceRect);
 		if ( sourceRect.getWidth() == 0 && sourceRect.getHeight() == 0 )
-            sourceRect = recti(v2i(0,0), toV2i(ButtonImages[(u32)imageState].Texture->getSize()));
+            sourceRect = recti(v2i(0,0), toV2T<s32>(ButtonImages[(u32)imageState].Texture->getSize()));
 
 		pos.X -= sourceRect.getWidth() / 2;
 		pos.Y -= sourceRect.getHeight() / 2;
@@ -310,13 +310,13 @@ void GUIButton::draw()
         std::array<img::color8, 4> image_colors = { BgColor, BgColor, BgColor, BgColor };
 		if (BgMiddle.getArea() == 0) {
             auto img = dynamic_cast<ImageSprite *>(ButtonBox->getSprite(1));
-            img->update(texture, toRectf(ScaleImage? AbsoluteRect : recti(pos, sourceRect.getSize())),
+            img->update(texture, toRectT<f32>(ScaleImage? AbsoluteRect : recti(pos, sourceRect.getSize())),
                 image_colors, &AbsoluteClippingRect);
             img->draw();
 		} else {
             auto sliced_img = dynamic_cast<Image2D9Slice *>(ButtonBox->getSprite(1));
-            sliced_img->updateRects(toRectf(sourceRect), toRectf(BgMiddle),
-                toRectf(ScaleImage ? AbsoluteRect : recti(pos, sourceRect.getSize())),
+            sliced_img->updateRects(toRectT<f32>(sourceRect), toRectT<f32>(BgMiddle),
+                toRectT<f32>(ScaleImage ? AbsoluteRect : recti(pos, sourceRect.getSize())),
                 texture, image_colors, &AbsoluteClippingRect);
             sliced_img->draw();
 		}

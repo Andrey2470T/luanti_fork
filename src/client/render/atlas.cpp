@@ -176,11 +176,10 @@ img::Image *AtlasPool::addTile(const std::string &name)
 {
     if (type != AtlasType::RECTPACK2D)
         return nullptr;
-    core::InfoStream << "addTile, time: " << TimeCounter::getRealTime() << " \n";
+
     auto img = cache->getOrLoad<img::Image>(
         ResourceType::IMAGE, name, apply_modifiers, apply_modifiers, true);
 
-    core::InfoStream << "addTile: " << name << ", " << img->getSize() << ", time: " << TimeCounter::getRealTime() << "\n";
     auto imgIt = std::find(images.begin(), images.end(), img);
 
     // Add only unique tiles
@@ -188,7 +187,6 @@ img::Image *AtlasPool::addTile(const std::string &name)
         return *imgIt;
 
     images.emplace_back(img);
-    core::InfoStream << "addTile end, time: " << TimeCounter::getRealTime() << " \n";
 
     return img;
 }

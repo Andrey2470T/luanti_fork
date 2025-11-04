@@ -941,7 +941,7 @@ void TextDrawer::draw(const recti &clip_rect,
     m_box->clear();
 
 	if (m_text.background_type == ParsedText::BACKGROUND_COLOR)
-        m_box->addSprite({{toRectf(clip_rect), {m_text.background_color}}}, 0);
+        m_box->addSprite({{toRectT<f32>(clip_rect), {m_text.background_color}}}, 0);
 
     auto font_mgr = m_guienv->getRenderSystem()->getFontManager();
 
@@ -964,7 +964,7 @@ void TextDrawer::draw(const recti &clip_rect,
 					break;
 
 				if (el.type == ParsedText::ELEMENT_TEXT)
-                    m_box->addTextSprite(font_mgr, EnrichedString(el.text), 0, toV2f(rect.ULC), color, &clip_rect);
+                    m_box->addTextSprite(font_mgr, EnrichedString(el.text), 0, toV2T<f32>(rect.ULC), color, &clip_rect);
 
 				if (el.underline &&  el.drawwidth) {
 					s32 linepos = el.pos.Y + offset.Y +
@@ -975,7 +975,7 @@ void TextDrawer::draw(const recti &clip_rect,
 							el.pos.X + offset.X + el.drawwidth,
 							linepos + (el.baseline >> 3));
 
-                    m_box->addSprite({{toRectf(linerect), {color}}}, 0, &clip_rect);
+                    m_box->addSprite({{toRectT<f32>(linerect), {color}}}, 0, &clip_rect);
 				}
 			} break;
 
@@ -983,7 +983,7 @@ void TextDrawer::draw(const recti &clip_rect,
 				img::Image *texture =
                         m_guienv->getResourceCache()->getOrLoad<img::Image>(ResourceType::IMAGE, wide_to_utf8(el.text));
                 if (texture)
-                    m_box->addImageSprite(texture, 0, toRectf(rect), &clip_rect);
+                    m_box->addImageSprite(texture, 0, toRectT<f32>(rect), &clip_rect);
 			} break;
 
 			case ParsedText::ELEMENT_ITEM: {

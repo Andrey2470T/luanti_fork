@@ -91,9 +91,8 @@ void GUIScene::draw()
 
     m_background->clear();
     Environment->getSkin()->add3DSunkenPane(
-            m_background.get(), m_bgcolor, false, true, toRectf(borderRect));
-    m_background->updateMesh(true);
-    m_background->updateMesh(false);
+            m_background.get(), m_bgcolor, false, true, toRectT<f32>(borderRect));
+    m_background->updateMesh();
     m_background->draw();
 
     v2i size = getAbsoluteClippingRect().getSize();

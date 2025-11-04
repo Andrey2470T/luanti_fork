@@ -444,7 +444,7 @@ void CGUIListBox::draw()
 
     listBoxBank->addSprite({{rectf(), {}}}, 0);
     skin->add3DSunkenPane(listBoxBank->getSprite(0), skin->getColor(EGDC_3D_HIGH_LIGHT), true,
-            DrawBack, toRectf(frameRect));
+            DrawBack, toRectT<f32>(frameRect));
     listBoxBank->getSprite(0)->setClipRect(clientClip);
     listBoxBank->getSprite(0)->rebuildMesh();
 
@@ -467,7 +467,7 @@ void CGUIListBox::draw()
 		if (frameRect.LRC.Y >= AbsoluteRect.ULC.Y &&
 				frameRect.ULC.Y <= AbsoluteRect.LRC.Y) {
 			if (i == Selected && hl)
-                listBoxBank->addSprite({{toRectf(frameRect), {skin->getColor(EGDC_HIGH_LIGHT)}}}, 0, &clientClip);
+                listBoxBank->addSprite({{toRectT<f32>(frameRect), {skin->getColor(EGDC_HIGH_LIGHT)}}}, 0, &clientClip);
 
 			recti textRect = frameRect;
 			textRect.ULC.X += 3;
@@ -501,7 +501,7 @@ void CGUIListBox::draw()
 				}
 
                 listBoxBank->addTextSprite(Environment->getRenderSystem()->getFontManager(), EnrichedString(Items[i].Text),
-                    0, toV2f(textRect.ULC), textColor, &clientClip);
+                    0, toV2T<f32>(textRect.ULC), textColor, &clientClip);
 
 				textRect.ULC.X -= ItemsIconWidth + 3;
 			}

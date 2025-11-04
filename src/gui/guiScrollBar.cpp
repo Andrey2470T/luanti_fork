@@ -174,7 +174,7 @@ void GUIScrollBar::draw()
 	slider_rect = AbsoluteRect;
     img::color8 color = skin->getColor(EGDC_SCROLLBAR);
     auto shape = box->getShape();
-    shape->updateRectangle(0, toRectf(slider_rect), {color, color, color, color});
+    shape->updateRectangle(0, toRectT<f32>(slider_rect), {color, color, color, color});
 
     if (equals(range(), 0.0f)) {
 		if (is_horizontal) {
@@ -189,7 +189,7 @@ void GUIScrollBar::draw()
 					slider_rect.ULC.Y + thumb_size;
 		}
         shape->removePrimitive(1);
-        skin->add3DButtonPaneStandard(box.get(), toRectf(slider_rect));
+        skin->add3DButtonPaneStandard(box.get(), toRectT<f32>(slider_rect));
 	}
 
     box->updateMesh();

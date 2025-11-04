@@ -150,7 +150,7 @@ void GUIPasswordChange::drawMenu()
 		return;
 
     img::color8 bgcolor(img::PF_RGBA8, 0, 0, 0, 140);
-    m_box->updateRect(0, toRectf(AbsoluteRect), bgcolor, true);
+    m_box->updateRect(0, toRectT<f32>(AbsoluteRect), bgcolor, true);
     m_box->setClipRect(AbsoluteClippingRect);
     m_box->draw();
 

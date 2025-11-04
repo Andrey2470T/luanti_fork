@@ -42,7 +42,7 @@ void GUIItemImage::draw()
     img::color8 color = img::white;
 
     m_text->setText(m_label);
-    m_text->updateBuffer(toRectf(AbsoluteRect));
+    m_text->updateBuffer(toRectT<f32>(AbsoluteRect));
     m_text->setClipRect(AbsoluteClippingRect);
     m_text->draw();
 

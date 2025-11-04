@@ -381,7 +381,7 @@ void GUIEngine::drawBackground()
 	if(!texture){
         img::color8 color(img::PF_RGBA8,80,58,37,255);
 		recti rect(0, 0, screensize.X, screensize.Y);
-        m_background->update(nullptr, toRectf(rect), color);
+        m_background->update(nullptr, toRectT<f32>(rect), color);
         m_background->draw();
 		return;
 	}
@@ -492,7 +492,7 @@ void GUIEngine::drawHeader()
 	// 2. Move
 	desired_rect.constrainTo(max_rect);
 
-    m_background->update(texture, toRectf(desired_rect), img::white);
+    m_background->update(texture, toRectT<f32>(desired_rect), img::white);
     m_background->draw();
 }
 
@@ -521,7 +521,7 @@ void GUIEngine::drawFooter()
 		rect += v2i(screensize.X/2,screensize.Y-footersize.Y);
 		rect -= v2i(footersize.X/2, 0);
 
-        m_background->update(texture, toRectf(rect), img::white);
+        m_background->update(texture, toRectT<f32>(rect), img::white);
         m_background->draw();
 	}
 }

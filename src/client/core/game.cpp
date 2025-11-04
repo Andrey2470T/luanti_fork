@@ -104,6 +104,8 @@ bool Game::startup(bool *kill, InputHandler *input, RenderSystem *rndsys, Resour
 
     g_client_translations->clear();
 
+    rndsys->initLoadScreen();
+
     showOverlayMessage(N_("Loading..."), 0, 0);
 
     // Create a server if not connecting to an existing one

@@ -32,8 +32,8 @@ class LoadScreen
 	std::unique_ptr<UITextSprite> guitext;
     std::unique_ptr<UISprite> progress_rect;
 
-    img::Image *progress_bg_img;
-    img::Image *progress_img;
+    rectf progress_bg_img_rect;
+    rectf progress_img_rect;
 
     recti progress_cliprect;
 

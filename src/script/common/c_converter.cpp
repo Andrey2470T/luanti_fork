@@ -301,7 +301,7 @@ bool read_color(lua_State *L, int index, img::color8 *color)
 
 v2i read_v2s32(lua_State *L, int index)
 {
-    return toV2i(read_v2f(L, index));
+    return toV2T<s32>(read_v2f(L, index));
 }
 
 img::color8 read_ARGB8(lua_State *L, int index)

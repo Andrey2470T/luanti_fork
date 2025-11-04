@@ -105,9 +105,9 @@ void GUIInventoryList::draw()
 
 		// layer 0
 		if (hovering) {
-            m_slots_rects->addRect(toRectf(rect), {m_options.slotbg_h});
+            m_slots_rects->addRect(toRectT<f32>(rect), {m_options.slotbg_h});
 		} else {
-            m_slots_rects->addRect(toRectf(rect), {m_options.slotbg_n});
+            m_slots_rects->addRect(toRectT<f32>(rect), {m_options.slotbg_n});
 		}
 
 		// Draw inv slot borders

@@ -30,28 +30,22 @@
 #include "client/ao/nametag.h"
 #include "client/render/datatexture.h"
 #include "client/pipeline/pipeline.h"
-#include <OpenGLIncludes.h>
 
 RenderSystem::RenderSystem(ResourceCache *_cache)
     : cache(_cache)
 {
-    core::InfoStream << "RenderSystem 1\n";
     initWindow();
-    core::InfoStream << "RenderSystem 2\n";
+
     fontManager = std::make_unique<FontManager>(this, cache);
-    core::InfoStream << "RenderSystem 3\n";
 
     v2u viewport = window->getViewportSize();
     auto glParams = window->getGLParams();
     renderer = std::make_unique<Renderer>(cache, recti(0, 0, viewport.X, viewport.Y), glParams->maxTextureUnits);
-    core::InfoStream << "RenderSystem 4\n";
 
     guienv = std::make_unique<gui::CGUIEnvironment>(this, window->getWindowSize(), cache);
-    core::InfoStream << "RenderSystem 5\n";
 
     guiPool = std::make_unique<AtlasPool>(AtlasType::RECTPACK2D, "GUI", cache,
         window->getGLParams()->maxTextureSize, false, false);
-    core::InfoStream << "RenderSystem 6\n";
 
     gui_scaling = g_settings->getFloat("gui_scaling", 0.5f, 20.0f);
     updateDisplayDensity();
@@ -66,13 +60,17 @@ RenderSystem::~RenderSystem()
     g_settings->deregisterAllChangedCallbacks(this);
 }
 
+void RenderSystem::initLoadScreen()
+{
+    load_screen = std::make_unique<LoadScreen>(cache, this, fontManager.get());
+}
+
 void RenderSystem::initRenderEnvironment(Client *_client)
 {
     client = _client;
     sky = std::make_unique<Sky>(this, cache);
     clouds = std::make_unique<Clouds>(this, cache, myrand());
 
-    load_screen = std::make_unique<LoadScreen>(cache, this, fontManager.get());
     pp_core = std::make_unique<PipelineCore>(client, g_settings->getBool("enable_dynamic_shadows"));
 
     drawlist = std::make_unique<DistanceSortedDrawList>(client);
@@ -267,7 +265,6 @@ void RenderSystem::autosaveScreensizeAndCo(v2u initial_screen_size, bool initial
 
 void RenderSystem::initWindow()
 {
-    core::InfoStream << "RenderSystem 1.1\n";
     // Resolution selection
     bool fullscreen = g_settings->getBool("fullscreen");
 #ifdef __ANDROID__
@@ -316,9 +313,7 @@ void RenderSystem::initWindow()
 
     verbosestream << "Using the " << configured_name << " video driver" << std::endl;
 
-    core::InfoStream << "RenderSystem 1.2\n";
     window = std::make_unique<core::MainWindow>(params);
-    core::InfoStream << "RenderSystem 1.3\n";
 }
 
 void RenderSystem::updateDisplayDensity()

@@ -97,11 +97,11 @@ void GUIEditBoxWithScrollBar::draw()
         UIRects *editBoxRects = m_editbox_bank->addSprite({}, 0, &AbsoluteClippingRect);
 
         if (!m_border && m_background)
-            editBoxRects->addRect(toRectf(AbsoluteRect), {bg_color});
+            editBoxRects->addRect(toRectT<f32>(AbsoluteRect), {bg_color});
 
         // draw the border
         if (m_border && m_writable)
-            skin->add3DSunkenPane(editBoxRects, bg_color, false, m_background, toRectf(AbsoluteRect));
+            skin->add3DSunkenPane(editBoxRects, bg_color, false, m_background, toRectT<f32>(AbsoluteRect));
 
         editBoxRects->rebuildMesh();
     }
@@ -182,8 +182,8 @@ void GUIEditBoxWithScrollBar::draw()
 
 
 				// draw normal text
-                m_editbox_bank->addTextSprite(font_mgr, EnrichedString(*txt_line), 0, toV2f(m_current_text_rect.ULC),
-                    m_override_color_enabled ? m_override_color : skin->getColor(EGDC_BUTTON_TEXT), &local_clip_rect);
+                m_editbox_bank->addTextSprite(font_mgr, EnrichedString(*txt_line), 0, toV2T<f32>(m_current_text_rect.ULC),
+                    m_override_color_enabled ? m_override_color : skin->getColor(EGDC_BUTTON_TEXT), &local_clip_rect, false);
 
 				// draw mark and marked text
 				if (focus && m_mark_begin != m_mark_end && i >= hline_start && i < hline_start + hline_count) {
@@ -218,14 +218,14 @@ void GUIEditBoxWithScrollBar::draw()
 
 
 					// draw mark
-                    m_editbox_bank->addSprite({{toRectf(m_current_text_rect), {skin->getColor(EGDC_HIGH_LIGHT)}}}, 0, &local_clip_rect);
+                    m_editbox_bank->addSprite({{toRectT<f32>(m_current_text_rect), {skin->getColor(EGDC_HIGH_LIGHT)}}}, 0, &local_clip_rect);
 
 					// draw marked text
 					s = txt_line->substr(lineStartPos, lineEndPos - lineStartPos);
 
 					if (s.size())
-                        m_editbox_bank->addTextSprite(font_mgr, EnrichedString(s), 0, toV2f(m_current_text_rect.ULC),
-                            m_override_color_enabled ? m_override_color : skin->getColor(EGDC_HIGH_LIGHT_TEXT),  &local_clip_rect);
+                        m_editbox_bank->addTextSprite(font_mgr, EnrichedString(s), 0, toV2T<f32>(m_current_text_rect.ULC),
+                            m_override_color_enabled ? m_override_color : skin->getColor(EGDC_HIGH_LIGHT_TEXT),  &local_clip_rect, false);
 				}
 			}
 
@@ -250,8 +250,8 @@ void GUIEditBoxWithScrollBar::draw()
 				setTextRect(cursor_line);
 				m_current_text_rect.ULC.X += charcursorpos;
 
-                m_editbox_bank->addTextSprite(font_mgr, EnrichedString(""), 0, toV2f(m_current_text_rect.ULC),
-                    m_override_color_enabled ? m_override_color : skin->getColor(EGDC_BUTTON_TEXT), &local_clip_rect);
+                m_editbox_bank->addTextSprite(font_mgr, EnrichedString(""), 0, toV2T<f32>(m_current_text_rect.ULC),
+                    m_override_color_enabled ? m_override_color : skin->getColor(EGDC_BUTTON_TEXT), &local_clip_rect, false);
 			}
 		}
 	}
@@ -295,7 +295,7 @@ s32 GUIEditBoxWithScrollBar::getCursorPos(s32 x, s32 y)
 	if (!txt_line)
 		return 0;
 
-    s32 idx = font->getCharFromPos(txt_line->c_str(), x - m_current_text_rect.ULC.X).value();
+    s32 idx = font->getCharFromPos(txt_line->c_str(), x - m_current_text_rect.ULC.X);
 
 	// click was on or left of the line
 	if (idx != -1)

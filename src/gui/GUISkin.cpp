@@ -18,33 +18,32 @@
 GUISkin::GUISkin(Renderer *_renderer, GUISkinType type)
     : renderer(_renderer), Type(type)
 {
-    core::InfoStream << "GUISkin 1\n";
     if ((Type == GUISkinType::WindowsClassic) || (Type == GUISkinType::WindowsMetallic))
 	{
-        Colors[(u8)GUIDefaultColor::DarkShadows3D]      = img::color8(img::PF_RGBA8, 101,50,50,50);
-        Colors[(u8)GUIDefaultColor::Shadow3D]           = img::color8(img::PF_RGBA8, 101,130,130,130);
-        Colors[(u8)GUIDefaultColor::Face3D]             = img::color8(img::PF_RGBA8, 220,100,100,100);
-        Colors[(u8)GUIDefaultColor::HighLight3D]        = img::color8(img::PF_RGBA8, 101,255,255,255);
-        Colors[(u8)GUIDefaultColor::Light3D]            = img::color8(img::PF_RGBA8, 101,210,210,210);
-        Colors[(u8)GUIDefaultColor::ActiveBorder]       = img::color8(img::PF_RGBA8, 101,16,14,115);
+        Colors[(u8)GUIDefaultColor::DarkShadows3D]      = img::color8(img::PF_RGBA8, 50,50,50,101);
+        Colors[(u8)GUIDefaultColor::Shadow3D]           = img::color8(img::PF_RGBA8, 130,130,130,101);
+        Colors[(u8)GUIDefaultColor::Face3D]             = img::color8(img::PF_RGBA8, 100,100,100,220);
+        Colors[(u8)GUIDefaultColor::HighLight3D]        = img::color8(img::PF_RGBA8, 255,255,255,101);
+        Colors[(u8)GUIDefaultColor::Light3D]            = img::color8(img::PF_RGBA8, 210,210,210,101);
+        Colors[(u8)GUIDefaultColor::ActiveBorder]       = img::color8(img::PF_RGBA8, 16,14,115,101);
         Colors[(u8)GUIDefaultColor::ActiveCaption]      = img::color8(img::PF_RGBA8, 255,255,255,255);
-        Colors[(u8)GUIDefaultColor::AppWorkspace]       = img::color8(img::PF_RGBA8, 101,100,100,100);
-        Colors[(u8)GUIDefaultColor::ButtonText]         = img::color8(img::PF_RGBA8, 240,10,10,10);
-        Colors[(u8)GUIDefaultColor::GrayText]           = img::color8(img::PF_RGBA8, 240,130,130,130);
-        Colors[(u8)GUIDefaultColor::HighLight]          = img::color8(img::PF_RGBA8, 101,8,36,107);
-        Colors[(u8)GUIDefaultColor::HighLightText]      = img::color8(img::PF_RGBA8, 240,255,255,255);
-        Colors[(u8)GUIDefaultColor::InactiveBorder]     = img::color8(img::PF_RGBA8, 101,165,165,165);
-        Colors[(u8)GUIDefaultColor::InactiveCaption]    = img::color8(img::PF_RGBA8, 255,30,30,30);
-        Colors[(u8)GUIDefaultColor::Tooltip]            = img::color8(img::PF_RGBA8, 200,0,0,0);
-        Colors[(u8)GUIDefaultColor::TooltipBackground]  = img::color8(img::PF_RGBA8, 200,255,255,225);
-        Colors[(u8)GUIDefaultColor::Scrollbar]          = img::color8(img::PF_RGBA8, 101,230,230,230);
-        Colors[(u8)GUIDefaultColor::Window]             = img::color8(img::PF_RGBA8, 101,255,255,255);
-        Colors[(u8)GUIDefaultColor::WindowSymbol]       = img::color8(img::PF_RGBA8, 200,10,10,10);
-        Colors[(u8)GUIDefaultColor::Icon]               = img::color8(img::PF_RGBA8, 200,255,255,255);
-        Colors[(u8)GUIDefaultColor::IconHighLight]      = img::color8(img::PF_RGBA8, 200,8,36,107);
-        Colors[(u8)GUIDefaultColor::GrayWindowSymbol]   = img::color8(img::PF_RGBA8, 240,100,100,100);
+        Colors[(u8)GUIDefaultColor::AppWorkspace]       = img::color8(img::PF_RGBA8, 100,100,100,101);
+        Colors[(u8)GUIDefaultColor::ButtonText]         = img::color8(img::PF_RGBA8, 10,10,10,240);
+        Colors[(u8)GUIDefaultColor::GrayText]           = img::color8(img::PF_RGBA8, 130,130,130,240);
+        Colors[(u8)GUIDefaultColor::HighLight]          = img::color8(img::PF_RGBA8, 8,36,107,101);
+        Colors[(u8)GUIDefaultColor::HighLightText]      = img::color8(img::PF_RGBA8, 255,255,255,240);
+        Colors[(u8)GUIDefaultColor::InactiveBorder]     = img::color8(img::PF_RGBA8, 165,165,165,101);
+        Colors[(u8)GUIDefaultColor::InactiveCaption]    = img::color8(img::PF_RGBA8, 30,30,30,255);
+        Colors[(u8)GUIDefaultColor::Tooltip]            = img::color8(img::PF_RGBA8, 0,0,0,200);
+        Colors[(u8)GUIDefaultColor::TooltipBackground]  = img::color8(img::PF_RGBA8, 255,255,225,200);
+        Colors[(u8)GUIDefaultColor::Scrollbar]          = img::color8(img::PF_RGBA8, 230,230,230,101);
+        Colors[(u8)GUIDefaultColor::Window]             = img::color8(img::PF_RGBA8, 255,255,255,101);
+        Colors[(u8)GUIDefaultColor::WindowSymbol]       = img::color8(img::PF_RGBA8, 10,10,10,200);
+        Colors[(u8)GUIDefaultColor::Icon]               = img::color8(img::PF_RGBA8, 255,255,255,200);
+        Colors[(u8)GUIDefaultColor::IconHighLight]      = img::color8(img::PF_RGBA8, 8,36,107,200);
+        Colors[(u8)GUIDefaultColor::GrayWindowSymbol]   = img::color8(img::PF_RGBA8, 100,100,100,240);
         Colors[(u8)GUIDefaultColor::Editable] 			= img::color8(img::PF_RGBA8, 255,255,255,255);
-        Colors[(u8)GUIDefaultColor::GrayEditable]		= img::color8(img::PF_RGBA8, 255,120,120,120);
+        Colors[(u8)GUIDefaultColor::GrayEditable]		= img::color8(img::PF_RGBA8, 120,120,120,255);
         Colors[(u8)GUIDefaultColor::FocusedEditable]	= img::color8(img::PF_RGBA8, 255,240,240,255);
 
 
@@ -65,33 +64,42 @@ GUISkin::GUISkin(Renderer *_renderer, GUISkinType type)
 	}
 	else
 	{
+        auto toRGBA = [] (const img::color8 &c)
+        {
+            img::color8 newC = c;
+
+            newC.A(c.B());
+            newC.B(c.A());
+
+            return newC;
+        };
 		//0x80a6a8af
-        Colors[(u8)GUIDefaultColor::Shadow3D]           =	img::colorU32NumberToObject(0x60767982);
+        Colors[(u8)GUIDefaultColor::Shadow3D]           =	toRGBA(img::colorU32NumberToObject(0x60767982));
         //Colors[GUIDefaultColor::Face3D]			=	0xc0c9ccd4;		// tab background
-        Colors[(u8)GUIDefaultColor::Face3D]             =	img::colorU32NumberToObject(0xc0cbd2d9);		// tab background
-        Colors[(u8)GUIDefaultColor::Shadow3D]			=	img::colorU32NumberToObject(0x50e4e8f1);		// tab background, and left-top highlight
-        Colors[(u8)GUIDefaultColor::HighLight3D]		=	img::colorU32NumberToObject(0x40c7ccdc);
-        Colors[(u8)GUIDefaultColor::Light3D]			=	img::colorU32NumberToObject(0x802e313a);
-        Colors[(u8)GUIDefaultColor::ActiveBorder]		=	img::colorU32NumberToObject(0x80404040);		// window title
-        Colors[(u8)GUIDefaultColor::ActiveCaption]      =	img::colorU32NumberToObject(0xffd0d0d0);
-        Colors[(u8)GUIDefaultColor::AppWorkspace]		=	img::colorU32NumberToObject(0xc0646464);		// unused
-        Colors[(u8)GUIDefaultColor::ButtonText]         =	img::colorU32NumberToObject(0xd0161616);
-        Colors[(u8)GUIDefaultColor::GrayText]			=	img::colorU32NumberToObject(0x3c141414);
-        Colors[(u8)GUIDefaultColor::HighLight]			=	img::colorU32NumberToObject(0x6c606060);
-        Colors[(u8)GUIDefaultColor::HighLightText]      =	img::colorU32NumberToObject(0xd0e0e0e0);
-        Colors[(u8)GUIDefaultColor::InactiveBorder]     =	img::colorU32NumberToObject(0xf0a5a5a5);
-        Colors[(u8)GUIDefaultColor::InactiveCaption]	=	img::colorU32NumberToObject(0xffd2d2d2);
-        Colors[(u8)GUIDefaultColor::Tooltip]			=	img::colorU32NumberToObject(0xf00f2033);
-        Colors[(u8)GUIDefaultColor::TooltipBackground]	= 	img::colorU32NumberToObject(0xc0cbd2d9);
-        Colors[(u8)GUIDefaultColor::Scrollbar]			= 	img::colorU32NumberToObject(0xf0e0e0e0);
-        Colors[(u8)GUIDefaultColor::Window]				= 	img::colorU32NumberToObject(0xf0f0f0f0);
-        Colors[(u8)GUIDefaultColor::WindowSymbol]		= 	img::colorU32NumberToObject(0xd0161616);
-        Colors[(u8)GUIDefaultColor::Icon]				= 	img::colorU32NumberToObject(0xd0161616);
-        Colors[(u8)GUIDefaultColor::IconHighLight]      = 	img::colorU32NumberToObject(0xd0606060);
-        Colors[(u8)GUIDefaultColor::GrayWindowSymbol]   = 	img::colorU32NumberToObject(0x3c101010);
-        Colors[(u8)GUIDefaultColor::Editable] 			= 	img::colorU32NumberToObject(0xf0ffffff);
-        Colors[(u8)GUIDefaultColor::GrayEditable]		= 	img::colorU32NumberToObject(0xf0cccccc);
-        Colors[(u8)GUIDefaultColor::FocusedEditable]	= 	img::colorU32NumberToObject(0xf0fffff0);
+        Colors[(u8)GUIDefaultColor::Face3D]             =	toRGBA(img::colorU32NumberToObject(0xc0cbd2d9));		// tab background
+        Colors[(u8)GUIDefaultColor::Shadow3D]			=	toRGBA(img::colorU32NumberToObject(0x50e4e8f1));		// tab background, and left-top highlight
+        Colors[(u8)GUIDefaultColor::HighLight3D]		=	toRGBA(img::colorU32NumberToObject(0x40c7ccdc));
+        Colors[(u8)GUIDefaultColor::Light3D]			=	toRGBA(img::colorU32NumberToObject(0x802e313a));
+        Colors[(u8)GUIDefaultColor::ActiveBorder]		=	toRGBA(img::colorU32NumberToObject(0x80404040));		// window title
+        Colors[(u8)GUIDefaultColor::ActiveCaption]      =	toRGBA(img::colorU32NumberToObject(0xffd0d0d0));
+        Colors[(u8)GUIDefaultColor::AppWorkspace]		=	toRGBA(img::colorU32NumberToObject(0xc0646464));		// unused
+        Colors[(u8)GUIDefaultColor::ButtonText]         =	toRGBA(img::colorU32NumberToObject(0xd0161616));
+        Colors[(u8)GUIDefaultColor::GrayText]			=	toRGBA(img::colorU32NumberToObject(0x3c141414));
+        Colors[(u8)GUIDefaultColor::HighLight]			=	toRGBA(img::colorU32NumberToObject(0x6c606060));
+        Colors[(u8)GUIDefaultColor::HighLightText]      =	toRGBA(img::colorU32NumberToObject(0xd0e0e0e0));
+        Colors[(u8)GUIDefaultColor::InactiveBorder]     =	toRGBA(img::colorU32NumberToObject(0xf0a5a5a5));
+        Colors[(u8)GUIDefaultColor::InactiveCaption]	=	toRGBA(img::colorU32NumberToObject(0xffd2d2d2));
+        Colors[(u8)GUIDefaultColor::Tooltip]			=	toRGBA(img::colorU32NumberToObject(0xf00f2033));
+        Colors[(u8)GUIDefaultColor::TooltipBackground]	= 	toRGBA(img::colorU32NumberToObject(0xc0cbd2d9));
+        Colors[(u8)GUIDefaultColor::Scrollbar]			= 	toRGBA(img::colorU32NumberToObject(0xf0e0e0e0));
+        Colors[(u8)GUIDefaultColor::Window]				= 	toRGBA(img::colorU32NumberToObject(0xf0f0f0f0));
+        Colors[(u8)GUIDefaultColor::WindowSymbol]		= 	toRGBA(img::colorU32NumberToObject(0xd0161616));
+        Colors[(u8)GUIDefaultColor::Icon]				= 	toRGBA(img::colorU32NumberToObject(0xd0161616));
+        Colors[(u8)GUIDefaultColor::IconHighLight]      = 	toRGBA(img::colorU32NumberToObject(0xd0606060));
+        Colors[(u8)GUIDefaultColor::GrayWindowSymbol]   = 	toRGBA(img::colorU32NumberToObject(0x3c101010));
+        Colors[(u8)GUIDefaultColor::Editable] 			= 	toRGBA(img::colorU32NumberToObject(0xf0ffffff));
+        Colors[(u8)GUIDefaultColor::GrayEditable]		= 	toRGBA(img::colorU32NumberToObject(0xf0cccccc));
+        Colors[(u8)GUIDefaultColor::FocusedEditable]	= 	toRGBA(img::colorU32NumberToObject(0xf0fffff0));
 
         Sizes[(u8)GUIDefaultSize::ScrollbarSize] = 14;
         Sizes[(u8)GUIDefaultSize::MenuHeight] = 48;
@@ -154,11 +162,10 @@ GUISkin::GUISkin(Renderer *_renderer, GUISkinType type)
     Icons[(u8)GUIDefaultIcon::File] = 245;
     Icons[(u8)GUIDefaultIcon::Directory] = 246;
 
-    core::InfoStream << "GUISkin 1\n";
     for (u8 i = 0; i < (u8)GUIDefaultFont::Count; i++)
         Fonts[i] = nullptr;
     UseGradient = (Type == GUISkinType::WindowsMetallic) || (Type == GUISkinType::BurningSkin) ;
-    core::InfoStream << "GUISkin 1\n";
+
 }
 
 //! returns default color
@@ -202,11 +209,8 @@ render::TTFont *GUISkin::getFont(GUIDefaultFont which) const
 {
     if (((u8)which < (u8)GUIDefaultFont::Count) && Fonts[(u8)which])
         return Fonts[(u8)which];
-    else {
-        if (Fonts[(u8)which])
-            core::InfoStream << "getFont default font is present\n";
+    else
         return Fonts[(u8)GUIDefaultFont::Default];
-    }
 }
 
 

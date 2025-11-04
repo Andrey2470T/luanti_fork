@@ -130,7 +130,7 @@ v2u GUIEditBox::getTextDimension()
 		ret.addInternalPoint(m_current_text_rect.LRC);
 	}
 
-    return toV2u(ret.getSize());
+    return toV2T<u32>(ret.getSize());
 }
 
 //! Turns the border on or off
