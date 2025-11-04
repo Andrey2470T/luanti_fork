@@ -22,10 +22,8 @@ class GlyphAtlas : public Atlas
     
     u16 slots_count;
     char16_t chars_offset=0;
-
-    u32 dpi;
 public:
-    GlyphAtlas(u32 num, render::TTFont *ttfont, u32 &offset, u32 _dpi);
+    GlyphAtlas(u32 num, render::TTFont *ttfont, u32 &offset);
 
     Glyph *getByChar(wchar_t ch) const;
     void fill(u32 num);

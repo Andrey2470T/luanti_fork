@@ -72,25 +72,25 @@ void Atlas::markDirty(u32 i)
 
 void Atlas::drawTiles()
 {
-    if (!texture || dirty_tiles.empty())
-        return;
+	if (!texture || dirty_tiles.empty())
+		return;
 
-    for (u32 dirty_i : dirty_tiles) {
-        auto tile = getTile(dirty_i);
+	for (u32 dirty_i : dirty_tiles) {
+		auto tile = getTile(dirty_i);
 
-        if (!tile)
-            continue;
+		if (!tile)
+			continue;
 
-        if (!tile->image)
-            continue;
+		if (!tile->image)
+			continue;
 
-        texture->uploadSubData(tile->pos.X, tile->pos.Y, tile->image);
-    }
+		texture->uploadSubData(tile->pos.X, tile->pos.Y, tile->image);
+	}
 
-    if (texture->hasMipMaps())
-        texture->regenerateMipMaps();
+	if (texture->hasMipMaps())
+		texture->regenerateMipMaps();
 
-    dirty_tiles.clear();
+	dirty_tiles.clear();
 }
 
 bool Atlas::operator==(const Atlas *other) const
@@ -113,7 +113,11 @@ bool Atlas::operator==(const Atlas *other) const
 
 AtlasPool::~AtlasPool()
 {
+    u32 atlasCounter = 0;
     for (auto &atlas : atlases) {
+        auto atlasImg = atlas->getTexture()->downloadData().at(0);
+        img::ImageLoader::save(atlasImg,
+            "/home/andrey/minetests/luanti_fork/cache/atlases/" + atlas->getName(atlas->getTextureSize(), atlasCounter++) + ".png");
         cache->clearResource<Atlas>(ResourceType::ATLAS, atlas, true);
     }
 
@@ -269,7 +273,7 @@ void AtlasPool::buildGlyphAtlas(render::TTFont *ttfont)
     static u32 atlasNum = 0;
     static u32 glyphOffset = 0;
 
-    GlyphAtlas *atlas = new GlyphAtlas(atlasNum, ttfont, glyphOffset, dpi);
+    GlyphAtlas *atlas = new GlyphAtlas(atlasNum, ttfont, glyphOffset);
     cache->cacheResource<Atlas>(ResourceType::ATLAS, atlas, atlas->getName(atlas->getTextureSize(), atlasNum));
 
     atlases.push_back(atlas);

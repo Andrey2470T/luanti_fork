@@ -256,20 +256,6 @@ bool GUIEngine::loadMainMenuScript()
 	return false;
 }
 
-void setVertex(ByteArray &ba, v2f pos, img::color8 c, v2f uv, u32 n)
-{
-    ba.setFloat(pos.X, n);
-    ba.setFloat(pos.Y, n+1);
-
-    ba.setUInt8(c.R(), n+2);
-    ba.setUInt8(c.G(), n+3);
-    ba.setUInt8(c.B(), n+4);
-    ba.setUInt8(c.A(), n+5);
-
-    ba.setFloat(uv.X, n+6);
-    ba.setFloat(uv.Y, n+7);
-}
-
 /******************************************************************************/
 void GUIEngine::run()
 {
@@ -324,8 +310,8 @@ void GUIEngine::run()
             m_rndsys->beginDraw(render::CBF_COLOR | render::CBF_DEPTH, Renderer::menu_sky_color);
 
             if (m_clouds_enabled) {
-                g_menumgr->drawClouds(dtime);
-                drawOverlay();
+                //g_menumgr->drawClouds(dtime);
+                //drawOverlay();
             } else {
                 drawBackground();
             }

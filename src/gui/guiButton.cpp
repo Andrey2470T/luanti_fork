@@ -330,20 +330,20 @@ void GUIButton::draw()
             v2i pos(buttonCenter);
 			// pressed / unpressed animation
 			EGUI_BUTTON_STATE state = Pressed ? EGBS_BUTTON_DOWN : EGBS_BUTTON_UP;
-            //drawSprite(state, ClickTime, pos);
+            drawSprite(state, ClickTime, pos);
 
 			// focused / unfocused animation
 			state = Environment->hasFocus(this) ? EGBS_BUTTON_FOCUSED : EGBS_BUTTON_NOT_FOCUSED;
-            //drawSprite(state, FocusTime, pos);
+            drawSprite(state, FocusTime, pos);
 
 			// mouse over / off animation
 			state = isHovered() ? EGBS_BUTTON_MOUSE_OVER : EGBS_BUTTON_MOUSE_OFF;
-            //drawSprite(state, HoverTime, pos);
+            drawSprite(state, HoverTime, pos);
 		}
 		else
 		{
 			// draw disabled
-//			drawSprite(EGBS_BUTTON_DISABLED, 0, pos);
+            //drawSprite(EGBS_BUTTON_DISABLED, 0, pos);
 		}
 	}
 

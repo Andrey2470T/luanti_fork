@@ -228,8 +228,7 @@ void GUITable::setTable(const TableOptions &options,
 		// Since row height scales with font size, this gives better results than
 		// just using display density and gui_scaling when a non-standard font
 		// size is used (e.g. Android default of 14).
-        desired_image_scale = std::max(1.0f,
-            m_font->getCurrentPixelSize(Environment->getRenderSystem()->getWindow()->getScreenDPI()) / 16.0f);
+        desired_image_scale = std::max(1.0f, m_font->getCurrentSize() / 16.0f);
 	}
 
 	// Get em width. Pedantically speaking, the width of "M" is not

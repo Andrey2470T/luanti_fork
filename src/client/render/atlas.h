@@ -120,13 +120,11 @@ class AtlasPool
     std::vector<Atlas *> atlases;
     std::vector<img::Image *> images;
     std::unordered_map<u32, AtlasTileAnim> animatedImages;
-
-    u32 dpi;
 public:
     AtlasPool(AtlasType _type, const std::string &_name, ResourceCache *_cache,
-        u32 _maxTextureSize, bool _filtered, bool _apply_modifiers, u32 _dpi)
+        u32 _maxTextureSize, bool _filtered, bool _apply_modifiers)
         : type(_type), prefixName(_name), cache(_cache), maxTextureSize(_maxTextureSize),
-          filtered(_filtered), apply_modifiers(_apply_modifiers), dpi(_dpi)
+          filtered(_filtered), apply_modifiers(_apply_modifiers)
     {}
 
     ~AtlasPool();

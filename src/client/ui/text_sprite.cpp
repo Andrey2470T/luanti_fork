@@ -150,23 +150,7 @@ void UITextSprite::updateBuffer(rectf &&r)
     if (brokenText.empty())
         return;
 
-    rectf rc = r;
-    u32 height_line = font->getLineHeight();
-    u32 height_total = height_line * brokenText.size();
-    if (vAlign == GUIAlignment::Center && wordWrap)
-    {
-        rc.ULC.Y = r.getCenter().Y - (height_total / 2);
-    }
-    else if (vAlign == GUIAlignment::LowerRight)
-    {
-        rc.ULC.Y = rc.LRC.Y - (f32)height_total;
-    }
-    if (hAlign == GUIAlignment::LowerRight)
-    {
-        rc.ULC.X = rc.LRC.X - getBrokenTextWidth();
-    }
-
-    auto fontAtlases = mgr->getPool(font->getMode(), font->getStyle(), font->getCurrentPixelSize(mgr->getScreenDpi()));
+    auto fontAtlases = mgr->getPool(font->getMode(), font->getStyle(), font->getCurrentSize());
 
     if (!fontAtlases)
         return;
@@ -183,7 +167,21 @@ void UITextSprite::updateBuffer(rectf &&r)
         return nullptr;
     };
 
-    v2f offset = rc.ULC;
+    v2f offset = r.ULC;
+
+    u32 width_total = getBrokenTextWidth();
+    u32 height_line = font->getLineHeight();
+    u32 height_total = height_line * brokenText.size();
+
+    if (hAlign == GUIAlignment::Center)
+        offset.X += (r.getWidth() - width_total) / 2.0f;
+    else if (hAlign == GUIAlignment::LowerRight)
+        offset.X += r.getWidth() - width_total;
+
+    if (vAlign == GUIAlignment::Center)
+        offset.Y += (r.getHeight() - height_total) / 2.0f;
+    else if (vAlign == GUIAlignment::LowerRight)
+        offset.Y += r.getHeight() - height_total;
 
     auto colors = text.getColors();
 
@@ -192,40 +190,12 @@ void UITextSprite::updateBuffer(rectf &&r)
     for (u32 k = 0; k < std::min<u32>(colors.size(), 4); k++)
         arrColors.at(k) = colors.at(k);
 
+    v2f line_offset = offset;
+
     for (const auto &str : brokenText) {
-        if (hAlign == GUIAlignment::LowerRight)
-            rc.ULC.X = r.LRC.X - font->getTextWidth(str.getString());
-
-
-        v2u textSize;
-
-        bool hcenter = hAlign == GUIAlignment::Center;
-        bool vcenter = vAlign == GUIAlignment::Center;
-
-        // Determine offset positions.
-        if (hcenter || vcenter)
-        {
-            textSize = font->getTextSize(text.getString());
-
-            if (hcenter)
-                offset.X = ((rc.getWidth() - textSize.X) / 2.0f) + offset.X;
-
-            if (vcenter)
-                offset.Y = ((rc.getHeight() - textSize.Y) / 2.0f) + offset.Y;
-        }
-
         std::u16string str16 = wide_to_utf16(str.getString());
 
-        char16_t prevCh = 0;
         for (const char16_t &ch : str16) {
-            // Calculate the glyph offset.
-            s32 offx, offy, advance;
-            font->getGlyphMetrics((wchar_t)ch, &offx, &offy, &advance);
-            offy = font->getFontAscent() - offy;
-
-            offset.X += font->getKerningSizeForTwoChars((wchar_t)ch, (wchar_t)prevCh);
-            offset.X += offx;
-
             auto atlas = find_atlas(ch);
 
             if (!atlas)
@@ -259,12 +229,16 @@ void UITextSprite::updateBuffer(rectf &&r)
                     return tex_to_charcount_p.first == atlas_tex;
                 });
 
-            rectf glyphPos(offset, glyph->size.X, glyph->size.Y);
+            // Calculate the glyph offset.
+            s32 minx, maxx, miny, maxy, advance;
+            font->getGlyphMetrics((wchar_t)ch, &minx, &maxx, &miny, &maxy, &advance);
+
+            rectf glyphPos(line_offset, glyph->size.X, glyph->size.Y);
 
             GlyphPrimitiveParams glyphparams;
             glyphparams.uv = rectf(
-                v2f(glyph->pos.X, glyph->pos.Y + glyph->size.Y),
-                v2f(glyph->pos.X + glyph->size.X, glyph->pos.Y));
+                glyph->pos.X, glyph->pos.Y + glyph->size.Y,
+                glyph->pos.X + glyph->size.X, glyph->pos.Y);
 
             if (shadowOffset) {
                 glyphparams.pos += v2f(shadowOffset);
@@ -297,12 +271,11 @@ void UITextSprite::updateBuffer(rectf &&r)
             else
                 glyphparams_it->second.push_back(glyphparams);
 
-            offset.X += advance;
-            prevCh = ch;
+            line_offset.X += advance;
         }
 
-        offset.X = rc.ULC.X;
-        offset.Y = rc.ULC.Y + height_line;
+        line_offset.X = offset.X;
+        line_offset.Y = offset.Y + height_line;
     }
 
     for (auto &tex_to_glyph : texture_to_glyph_map) {
@@ -534,7 +507,7 @@ u32 UITextSprite::getBrokenTextWidth() const
 render::Texture2D *UITextSprite::getGlyphAtlasTexture() const
 {
     auto font = getActiveFont();
-    auto pool = mgr->getPoolOrCreate(font->getMode(), font->getStyle(), font->getCurrentPixelSize(mgr->getScreenDpi()));
+    auto pool = mgr->getPoolOrCreate(font->getMode(), font->getStyle(), font->getCurrentSize());
 
     return pool->getAtlas(0)->getTexture(); // Beforehand assume each glyph atlas pool contains one atlas each
 }

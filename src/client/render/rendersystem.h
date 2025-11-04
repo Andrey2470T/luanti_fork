@@ -139,14 +139,17 @@ public:
     {
         return window->getWindowSize();
     }
-    f32 getDisplayDensity() const;
+    f32 getDisplayDensity() const
+    {
+        return display_density;
+    }
     f32 getGUIScaling() const
     {
     	return gui_scaling;
     }
     f32 getScaleFactor() const
     {
-        return gui_scaling * getDisplayDensity();
+        return gui_scaling * display_density;
     }
 
     void setGUIScaling(f32 scaling)
@@ -179,6 +182,8 @@ public:
     void render();
 
     void autosaveScreensizeAndCo(v2u initial_screen_size, bool initial_wnd_maximized);
+
+    void updateDisplayDensity();
 private:
     void initWindow();
 

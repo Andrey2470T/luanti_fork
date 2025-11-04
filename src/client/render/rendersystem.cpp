@@ -50,10 +50,11 @@ RenderSystem::RenderSystem(ResourceCache *_cache)
     core::InfoStream << "RenderSystem 5\n";
 
     guiPool = std::make_unique<AtlasPool>(AtlasType::RECTPACK2D, "GUI", cache,
-        window->getGLParams()->maxTextureSize, false, false, window->getScreenDPI());
+        window->getGLParams()->maxTextureSize, false, false);
     core::InfoStream << "RenderSystem 6\n";
 
     gui_scaling = g_settings->getFloat("gui_scaling", 0.5f, 20.0f);
+    updateDisplayDensity();
 
     g_settings->registerChangedCallback("fullscreen", settingChangedCallback, this);
     g_settings->registerChangedCallback("window_maximized", settingChangedCallback, this);
@@ -84,7 +85,7 @@ void RenderSystem::initRenderEnvironment(Client *_client)
     gameformspec = std::make_unique<GameFormSpec>();
 
     basePool = std::make_unique<AtlasPool>(AtlasType::RECTPACK2D, "Basic", cache,
-        window->getGLParams()->maxTextureSize, true, true, window->getScreenDPI());
+        window->getGLParams()->maxTextureSize, true, true);
 }
 
 AtlasPool *RenderSystem::getPool(bool basic) const
@@ -95,25 +96,10 @@ AtlasPool *RenderSystem::getPool(bool basic) const
         return guiPool.get();
 }
 
-f32 RenderSystem::getDisplayDensity() const
-{
-    f32 user_factor = g_settings->getFloat("display_density_factor", 0.5f, 5.0f);
-#ifndef __ANDROID__
-    f32 dpi = window->getDisplayDensity();
-    if (dpi == 0.0f)
-        dpi = 96.0f;
-    return std::max(dpi / 96.0f * user_factor, 0.5f);
-#else // __ANDROID__
-    return porting::getDisplayDensity() * user_factor;
-#endif // __ANDROID__
-}
-
 void RenderSystem::setWindowIcon()
 {
     fs::path icon_name = "logo.png";
     img::Image *icon = cache->get<img::Image>(ResourceType::IMAGE, icon_name);
-
-    core::InfoStream << "setWindowIcon: width: " << icon->getWidth() << ", height: " << icon->getHeight() << ", format: " << icon->getFormat() << "\n";
 
     if (!icon) {
         warningstream << "RenderSystem::setWindowIcon(): Could not load the window icon:" << icon_name << std::endl;
@@ -140,15 +126,11 @@ void RenderSystem::activateAtlas(img::Image *img, bool basic_pool)
 
 void RenderSystem::buildGUIAtlas()
 {
-    core::InfoStream << "buildGUIAtlas, time: " << TimeCounter::getRealTime() << " \n";
     auto texpaths = getTexturesDefaultPaths();
 
     for (auto &path : texpaths) {
-        //core::InfoStream << "path: " << path << "\n";
-        for (auto &entry : fs::directory_iterator(path)) {
-            //core::InfoStream << "entry: " << entry.path() << "\n";
+        for (auto &entry : fs::directory_iterator(path))
             guiPool->addTile(entry.path().filename());
-        }
     }
 
     guiPool->buildRectpack2DAtlas();
@@ -339,6 +321,19 @@ void RenderSystem::initWindow()
     core::InfoStream << "RenderSystem 1.3\n";
 }
 
+void RenderSystem::updateDisplayDensity()
+{
+    f32 user_factor = g_settings->getFloat("display_density_factor", 0.5f, 5.0f);
+#ifndef __ANDROID__
+    f32 dpi = window->getDisplayDensity();
+    if (dpi == 0.0f)
+        dpi = 96.0f;
+    display_density = std::max(dpi / 96.0f * user_factor, 0.5f);
+#else // __ANDROID__
+    display_density = porting::getDisplayDensity() * user_factor;
+#endif // __ANDROID__
+}
+
 void RenderSystem::settingChangedCallback(const std::string &name, void *data)
 {
     auto system = static_cast<RenderSystem*>(data);
@@ -357,15 +352,7 @@ void RenderSystem::settingChangedCallback(const std::string &name, void *data)
     else if (name == "gui_scaling")
         system->setGUIScaling(g_settings->getFloat("gui_scaling", 0.5f, 20.0f));
     else if (name == "display_density_factor") {
-        f32 user_factor = g_settings->getFloat("display_density_factor", 0.5f, 5.0f);
-#ifndef __ANDROID__
-        f32 dpi = wnd->getDisplayDensity();
-        if (dpi == 0.0f)
-            dpi = 96.0f;
-        system->setDisplyDensity(std::max(dpi / 96.0f * user_factor, 0.5f));
-#else // __ANDROID__
-        system->setDisplayDensity(porting::getDisplayDensity() * user_factor);
-#endif // __ANDROID__
+        system->updateDisplayDensity();
     }
     else if (name == "menu_clouds")
         system->enableMenuClouds(g_settings->getBool("menu_clouds"));
