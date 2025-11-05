@@ -1486,7 +1486,7 @@ void GUIFormSpecMenu::parsePwdField(parserData* data, const std::string &element
         int font_height = m_fontmgr->getDefaultFont()->getFontHeight();
 		rect.ULC.Y -= font_height;
 		rect.LRC.Y = rect.ULC.Y + font_height;
-        Environment->addStaticText(spec.flabel.c_str(), rect, false, true,
+        Environment->addStaticText(spec.flabel.c_str(), rect, false, false,
 			data->current_parent, 0);
 	}
 
@@ -1517,12 +1517,12 @@ void GUIFormSpecMenu::createTextField(parserData *data, FieldSpec &spec,
 	recti &rect, bool is_multiline)
 {
 	bool is_editable = !spec.fname.empty();
-	if (!is_editable && !is_multiline) {
+    if (!is_editable && !is_multiline) {
 		// spec field id to 0, this stops submit searching for a value that isn't there
-        Environment->addStaticText(spec.flabel.c_str(), rect, false, true,
-				data->current_parent, 0);
+        Environment->addStaticText(spec.flabel.c_str(), rect, false, false,
+                data->current_parent, 0);
 		return;
-	}
+    }
 
 	if (is_editable) {
 		spec.send = true;
@@ -1532,15 +1532,15 @@ void GUIFormSpecMenu::createTextField(parserData *data, FieldSpec &spec,
 		spec.flabel.swap(spec.fdefault);
 	}
 
-	gui::IGUIEditBox *e = nullptr;
+    gui::IGUIEditBox *e = nullptr;
 	if (is_multiline) {
 		e = new GUIEditBoxWithScrollBar(spec.fdefault.c_str(), true, Environment,
                 data->current_parent, spec.fid, rect, is_editable, true);
-	} else if (is_editable) {
-		e = Environment->addEditBox(spec.fdefault.c_str(), rect, true,
-				data->current_parent, spec.fid);
-		e->grab();
-	}
+    } else if (is_editable) {
+        e = Environment->addEditBox(spec.fdefault.c_str(), rect, true,
+                data->current_parent, spec.fid);
+        e->grab();
+    }
 
 	auto style = getDefaultStyleForElement(is_multiline ? "textarea" : "field", spec.fname);
 
@@ -1571,18 +1571,18 @@ void GUIFormSpecMenu::createTextField(parserData *data, FieldSpec &spec,
         e->setOverrideFont(style.getFont(m_fontmgr));
 
 		e->drop();
-	}
+    }
 
-	if (!spec.flabel.empty()) {
+    if (!spec.flabel.empty()) {
         int font_height = m_fontmgr->getDefaultFont()->getFontHeight();
 		rect.ULC.Y -= font_height;
 		rect.LRC.Y = rect.ULC.Y + font_height;
         IGUIElement *t = Environment->addStaticText(spec.flabel.c_str(),
-				rect, false, true, data->current_parent, 0);
+                rect, false, false, data->current_parent, 0);
 
 		if (t)
-			t->setNotClipped(style.getBool(StyleSpec::NOCLIP, false));
-	}
+            t->setNotClipped(style.getBool(StyleSpec::NOCLIP, false));
+    }
 }
 
 void GUIFormSpecMenu::parseSimpleField(parserData *data,

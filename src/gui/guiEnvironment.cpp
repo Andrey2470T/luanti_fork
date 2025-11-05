@@ -640,7 +640,7 @@ IGUIEditBox *CGUIEnvironment::addEditBox(const wchar_t *text,
 		IGUIElement *parent, s32 id)
 {
     IGUIEditBox *d = new GUIEditBoxWithScrollBar(text, border, this,
-			parent ? parent : this, id, rectangle);
+            parent ? parent : this, id, rectangle, true, false);
 
 	d->drop();
 	return d;

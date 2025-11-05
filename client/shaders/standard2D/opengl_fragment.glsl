@@ -13,10 +13,11 @@ void main()
 	vec4 Color = vVertexColor;
 
 	if (bool(mTextureUsage0)) {
-		//vec2 texSize = textureSize(mTexture0, 0);
 		vec4 texColor = texelFetch(mTexture0, ivec2(vTexCoord.x, vTexCoord.y), 0);
-		Color.rgb *= texColor.rgb;
-		Color.a = texColor.a;
+
+		Color *= texColor;
+		//if (texColor.r == 0 && texColor.g == 0 && texColor.b == 0 && texColor.a == 1)
+		//	Color.a = 0;
 	}
 
 	outColor = Color;

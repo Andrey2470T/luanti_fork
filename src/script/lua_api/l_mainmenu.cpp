@@ -3,6 +3,7 @@
 // Copyright (C) 2013 sapier
 
 #include "lua_api/l_mainmenu.h"
+#include "client/render/renderer.h"
 #include "lua_api/l_internal.h"
 #include "common/c_content.h"
 #include "cpp_api/s_async.h"
@@ -917,7 +918,7 @@ int ModApiMainMenu::l_get_window_info(lua_State *L)
 	lua_newtable(L);
 	int top = lua_gettop(L);
 
-    auto info = ClientDynamicInfo::getCurrent(getScriptApiBase(L)->getClient()->getRenderSystem());
+    auto info = ClientDynamicInfo::getCurrent(getGuiEngine(L)->m_rndsys);
 
 	lua_pushstring(L, "size");
 	push_v2u32(L, info.render_target_size);
@@ -945,39 +946,46 @@ int ModApiMainMenu::l_get_window_info(lua_State *L)
 /******************************************************************************/
 int ModApiMainMenu::l_get_active_driver(lua_State *L)
 {
-    //auto drivertype = RenderingEngine::get_video_driver()->getDriverType();
-    //lua_pushstring(L, RenderingEngine::getVideoDriverInfo(drivertype).name.c_str());
+    auto glVersion = getGuiEngine(L)->m_rndsys->getWindow()->getOpenGLVersion();
+
+    std::string driverName;
+    switch(glVersion.Type) {
+    case OGL_TYPE_DESKTOP:
+        driverName = "opengl3";
+        break;
+    case OGL_TYPE_ES:
+    case OGL_TYPE_WEB:
+        driverName = "ogles2";
+        break;
+    }
+
+    lua_pushstring(L, driverName.c_str());
+
 	return 1;
 }
 
 
 int ModApiMainMenu::l_get_active_renderer(lua_State *L)
 {
-    //lua_pushstring(L, RenderingEngine::get_video_driver()->getName());
+    auto glVersionStr = getGuiEngine(L)->m_rndsys->getWindow()->getGLVersionString();
+    lua_pushstring(L, glVersionStr.c_str());
+
 	return 1;
 }
 
 /******************************************************************************/
 int ModApiMainMenu::l_get_active_irrlicht_device(lua_State *L)
 {
-    /*const char *device_name = [] {
-		switch (RenderingEngine::get_raw_device()->getType()) {
-		case EIDT_WIN32: return "WIN32";
-		case EIDT_X11: return "X11";
-		case EIDT_OSX: return "OSX";
-		case EIDT_SDL: return "SDL";
-		case EIDT_ANDROID: return "ANDROID";
-		default: return "Unknown";
-		}
-	}();
-    lua_pushstring(L, device_name);*/
+    lua_pushstring(L, "SDL");
+
 	return 1;
 }
 
 /******************************************************************************/
 int ModApiMainMenu::l_irrlicht_device_supports_touch(lua_State *L)
 {
-    //lua_pushboolean(L, RenderingEngine::get_raw_device()->supportsTouchEvents());
+    lua_pushboolean(L, true);
+
 	return 1;
 }
 

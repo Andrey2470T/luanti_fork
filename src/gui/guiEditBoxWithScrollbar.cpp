@@ -76,7 +76,7 @@ void GUIEditBoxWithScrollBar::updateAbsolutePosition()
 //! draws the element and its children
 void GUIEditBoxWithScrollBar::draw()
 {
-	if (!IsVisible)
+    if (!IsVisible)
 		return;
 
 	const bool focus = Environment->hasFocus(this);
@@ -223,7 +223,7 @@ void GUIEditBoxWithScrollBar::draw()
 					// draw marked text
 					s = txt_line->substr(lineStartPos, lineEndPos - lineStartPos);
 
-					if (s.size())
+                    if (s.size())
                         m_editbox_bank->addTextSprite(font_mgr, EnrichedString(s), 0, toV2T<f32>(m_current_text_rect.ULC),
                             m_override_color_enabled ? m_override_color : skin->getColor(EGDC_HIGH_LIGHT_TEXT),  &local_clip_rect, false);
 				}
@@ -259,7 +259,7 @@ void GUIEditBoxWithScrollBar::draw()
     m_editbox_bank->drawBank();
 
 	// draw children
-	IGUIElement::draw();
+    IGUIElement::draw();
 }
 
 

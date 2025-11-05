@@ -463,11 +463,12 @@ void CGUIListBox::draw()
 
 	bool hl = (HighlightWhenNotFocused || Environment->hasFocus(this) || Environment->hasFocus(ScrollBar));
 
+    auto itemColor = skin->getColor(EGDC_HIGH_LIGHT);
 	for (s32 i = 0; i < (s32)Items.size(); ++i) {
 		if (frameRect.LRC.Y >= AbsoluteRect.ULC.Y &&
 				frameRect.ULC.Y <= AbsoluteRect.LRC.Y) {
 			if (i == Selected && hl)
-                listBoxBank->addSprite({{toRectT<f32>(frameRect), {skin->getColor(EGDC_HIGH_LIGHT)}}}, 0, &clientClip);
+                listBoxBank->addSprite({{toRectT<f32>(frameRect), {itemColor, itemColor, itemColor, itemColor}}}, 0, &clientClip);
 
 			recti textRect = frameRect;
 			textRect.ULC.X += 3;
@@ -501,7 +502,7 @@ void CGUIListBox::draw()
 				}
 
                 listBoxBank->addTextSprite(Environment->getRenderSystem()->getFontManager(), EnrichedString(Items[i].Text),
-                    0, toV2T<f32>(textRect.ULC), textColor, &clientClip);
+                    0, toV2T<f32>(textRect.ULC), textColor, &clientClip, false);
 
 				textRect.ULC.X -= ItemsIconWidth + 3;
 			}

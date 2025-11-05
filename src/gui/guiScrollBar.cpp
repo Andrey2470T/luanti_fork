@@ -178,21 +178,21 @@ void GUIScrollBar::draw()
 
     box->getShape()->addRectangle(toRectT<f32>(slider_rect), {color, color, color, color});
 
-    if (equals(range(), 0.0f)) {
-		if (is_horizontal) {
-			slider_rect.ULC.X = AbsoluteRect.ULC.X +
-							draw_center - thumb_size / 2;
-			slider_rect.LRC.X =
-					slider_rect.ULC.X + thumb_size;
-		} else {
-			slider_rect.ULC.Y = AbsoluteRect.ULC.Y +
-							draw_center - thumb_size / 2;
-			slider_rect.LRC.Y =
-					slider_rect.ULC.Y + thumb_size;
-		}
+    if (!equals(range(), 0.0f)) {
+	if (is_horizontal) {
+		slider_rect.ULC.X = AbsoluteRect.ULC.X +
+						draw_center - thumb_size / 2;
+		slider_rect.LRC.X =
+				slider_rect.ULC.X + thumb_size;
+	} else {
+		slider_rect.ULC.Y = AbsoluteRect.ULC.Y +
+						draw_center - thumb_size / 2;
+		slider_rect.LRC.Y =
+				slider_rect.ULC.Y + thumb_size;
+	}
 
         skin->add3DButtonPaneStandard(box.get(), toRectT<f32>(slider_rect));
-	}
+}
 
     box->rebuildMesh();
     box->setClipRect(AbsoluteClippingRect);
@@ -254,7 +254,7 @@ s32 GUIScrollBar::getPosFromMousePos(const v2i &pos) const
 		w = RelativeRect.getHeight() - border_size * 2 - thumb_size;
 		p = pos.Y - AbsoluteRect.ULC.Y - border_size - offset;
 	}
-    return equals(range(), 0.0f) ? s32(f32(p) / f32(w) * range() + 0.5f) + min_pos : 0;
+    return !equals(range(), 0.0f) ? s32(f32(p) / f32(w) * range() + 0.5f) + min_pos : 0;
 }
 
 void GUIScrollBar::updatePos()
@@ -282,8 +282,8 @@ void GUIScrollBar::setPosRaw(const s32 &pos)
     thumb_size = std::clamp(thumb_size, thumb_min, thumb_area);
     scroll_pos = std::clamp(pos, min_pos, max_pos);
 
-    f32 f = equals(range(), 0.0f) ? (f32(thumb_area) - f32(thumb_size)) / range()
-					 : 1.0f;
+    f32 f = !equals(range(), 0.0f) ? (f32(thumb_area) - f32(thumb_size)) / range()
+				 : 1.0f;
 	draw_center = s32((f32(scroll_pos - min_pos) * f) + (f32(thumb_size) * 0.5f)) +
 		border_size;
 }
@@ -340,7 +340,7 @@ void GUIScrollBar::setMax(const s32 &max)
 	if (min_pos > max_pos)
 		min_pos = max_pos;
 
-    bool enable = equals(range(), 0.0f);
+    bool enable = !equals(range(), 0.0f);
 	up_button->setEnabled(enable);
 	down_button->setEnabled(enable);
 	updatePos();
@@ -352,7 +352,7 @@ void GUIScrollBar::setMin(const s32 &min)
 	if (max_pos < min_pos)
 		max_pos = min_pos;
 
-    bool enable = equals(range(), 0.0f);
+    bool enable = !equals(range(), 0.0f);
 	up_button->setEnabled(enable);
 	down_button->setEnabled(enable);
 	updatePos();

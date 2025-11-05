@@ -79,15 +79,13 @@ void CGUIImage::draw()
 
         recti clippingRect;
         std::array<img::color8, 4> Colors = UISprite::defaultColors;
+
+        clippingRect = AbsoluteClippingRect;
+        checkBounds(clippingRect);
 		if (ScaleImage) {
             Colors = {Color, Color, Color, Color};
-
-            clippingRect = AbsoluteClippingRect;
-			checkBounds(clippingRect);
 		} else {
-            clippingRect = recti(AbsoluteRect.ULC, sourceRect.getWidth(), sourceRect.getHeight());
-			checkBounds(clippingRect);
-			clippingRect.clipAgainst(AbsoluteClippingRect);
+            clippingRect.clipAgainst(AbsoluteClippingRect);
 		}
         if (MiddleRect.getArea() == 0) {
             auto img = std::get<std::shared_ptr<ImageSprite>>(Image);
