@@ -310,7 +310,7 @@ void GUIEngine::run()
             m_rndsys->beginDraw(render::CBF_COLOR | render::CBF_DEPTH, Renderer::menu_sky_color);
 
             if (m_clouds_enabled) {
-                //g_menumgr->drawClouds(dtime);
+                g_menumgr->drawClouds(dtime);
                 //drawOverlay();
             } else {
                 drawBackground();

@@ -78,7 +78,7 @@ void CGUIImage::draw()
 		}
 
         recti clippingRect;
-        std::array<img::color8, 4> Colors;
+        std::array<img::color8, 4> Colors = UISprite::defaultColors;
 		if (ScaleImage) {
             Colors = {Color, Color, Color, Color};
 
