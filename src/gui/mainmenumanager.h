@@ -8,6 +8,7 @@
 	All kinds of stuff that needs to be exposed from main.cpp
 */
 #include "client/render/rendersystem.h"
+#include "client/render/renderer.h"
 #include "gui/IGUIEnvironment.h"
 #include "modalMenu.h"
 #include <cassert>
@@ -40,15 +41,17 @@ class MainMenuManager : public IMenuManager
 {
 public:
     MainMenuManager(RenderSystem *rndsys, ResourceCache *rescache)
-        : m_guienv(rndsys->getGUIEnvironment()),
+        : m_rndsys(rndsys),
+          m_guienv(rndsys->getGUIEnvironment()),
           m_menuclouds(std::make_unique<Clouds>(rndsys, rescache, rand())),
-          m_menucamera(std::make_unique<Camera>())
+          m_menucamera(std::make_unique<Camera>(rndsys->getWindowSize()))
     {
-        m_menuclouds->setHeight(100.0f);
+        //m_menuclouds->setHeight(100.0f);
         f32 fog_range = 0.0f;
-        m_menuclouds->update(0.0f, m_menucamera.get(), nullptr, fog_range, img::color8(img::PF_RGBA8, 240, 240, 255, 255));
+        //m_menuclouds->update(0.0f, m_menucamera.get(), nullptr, fog_range, img::color8(img::PF_RGBA8, 240, 240, 255, 255));
         m_menucamera->setDirection(v3f(0, 60, 100));
         m_menucamera->setFarValue(10000);
+        m_menucamera->updateMatrices();
     }
 
 	virtual void createdMenu(gui::IGUIElement *menu)
@@ -109,10 +112,11 @@ public:
 	void drawClouds(float dtime)
 	{
 		m_menuclouds->step(dtime * 3);
-        m_menuclouds->render(m_menucamera->getOffset());
+        m_menuclouds->render(m_menucamera.get());
 	}
 
 private:
+    RenderSystem *m_rndsys;
     gui::IGUIEnvironment *m_guienv;
 	std::list<gui::IGUIElement*> m_stack;
 

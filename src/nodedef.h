@@ -308,7 +308,7 @@ struct ContentFeatures
 #if CHECK_CLIENT_BUILD()
 	// 0     1     2     3     4     5
 	// up    down  right left  back  front
-	TileSpec tiles[6];
+    TileSpec tiles[6];
 	// Special tiles
 	TileSpec special_tiles[CF_SPECIAL_COUNT];
 	u8 solidness; // Used when choosing which face is drawn

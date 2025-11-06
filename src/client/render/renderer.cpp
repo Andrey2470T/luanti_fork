@@ -67,11 +67,14 @@ void Renderer::setRenderState(bool mode3d)
     use3DMode = mode3d;
 
     if (use3DMode) {
-        context->enableDepthTest(true);
+        context->enableDepthTest(false);
+        context->enableCullFace(false);
+        context->setBlendMode(GLBlendMode::ALPHA);
+        /*context->enableDepthTest(true);
         context->setDepthFunc(CF_LESS);
 
         context->enableCullFace(true);
-        context->setCullMode(CM_BACK);
+        context->setCullMode(CM_BACK);*/
     }
 }
 
@@ -261,6 +264,7 @@ void Renderer::setTransformMatrix(TMatrix type, const matrix4 &mat)
         byteArr.setM4x4(projM * viewM * worldM, 0);
         byteArr.setM4x4(viewM * worldM, 16);
         byteArr.setM4x4(worldM, 32);
+        matrix_buffer->uploadSubData(0, sizeof(f32) * 16 * 3);
         break;
     }
     case TMatrix::View: {
@@ -268,16 +272,19 @@ void Renderer::setTransformMatrix(TMatrix type, const matrix4 &mat)
 
         byteArr.setM4x4(projM * viewM * worldM, 0);
         byteArr.setM4x4(viewM * worldM, 16);
+        matrix_buffer->uploadSubData(0, sizeof(f32) * 16 * 2);
         break;
     }
     case TMatrix::Projection: {
         projM = mat;
 
         byteArr.setM4x4(projM * viewM * worldM, 0);
+        matrix_buffer->uploadSubData(0, sizeof(f32) * 16);
         break;
     }
     case TMatrix::Texture0:
         byteArr.setM4x4(mat, 48);
+        matrix_buffer->uploadSubData(sizeof(f32) * 16 * 3, sizeof(f32) * 16);
         break;
     };
 }

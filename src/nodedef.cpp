@@ -318,6 +318,14 @@ void ContentFeatures::reset()
 		Cached stuff
 	*/
 #if CHECK_CLIENT_BUILD()
+    for (u8 i = 0; i < 6; i++) {
+        tiles[i][0] = std::make_shared<TileLayer>();
+        tiles[i][1] = std::make_shared<TileLayer>();
+    }
+    for (u8 i = 0; i < CF_SPECIAL_COUNT; i++) {
+        special_tiles[i][0] = std::make_shared<TileLayer>();
+        special_tiles[i][1] = std::make_shared<TileLayer>();
+    }
 	solidness = 2;
 	visual_solidness = 0;
 	backface_culling = true;

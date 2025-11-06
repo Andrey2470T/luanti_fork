@@ -40,6 +40,38 @@ Clouds::Clouds(RenderSystem *rndsys, ResourceCache *cache, u32 seed)
 	updateBox();
 
     m_mesh = std::make_unique<MeshBuffer>(true, SkyboxVType, render::MeshUsage::DYNAMIC);
+    m_mesh->reallocateData(4, 6);
+    //Batcher3D::appendUnitBox(m_mesh.get(), {img::white, img::white, img::white, img::white});
+    svtSetPos(m_mesh.get(), v3f(-0.5, 0.5, 0), 0);
+    svtSetColor(m_mesh.get(), img::white, 0);
+    svtSetNormal(m_mesh.get(), v3f(), 0);
+    svtSetUV(m_mesh.get(), v2f(), 0);
+    svtSetHWColor(m_mesh.get(), img::white, 0);
+
+    svtSetPos(m_mesh.get(), v3f(0.5, 0.5, 0), 1);
+    svtSetColor(m_mesh.get(), img::white, 1);
+    svtSetNormal(m_mesh.get(), v3f(), 1);
+    svtSetUV(m_mesh.get(), v2f(), 1);
+    svtSetHWColor(m_mesh.get(), img::white, 1);
+
+    svtSetPos(m_mesh.get(), v3f(0.5, -0.5, 0), 2);
+    svtSetColor(m_mesh.get(), img::white, 2);
+    svtSetNormal(m_mesh.get(), v3f(), 2);
+    svtSetUV(m_mesh.get(), v2f(), 2);
+    svtSetHWColor(m_mesh.get(), img::white, 2);
+
+    svtSetPos(m_mesh.get(), v3f(-0.5, -0.5, 0), 3);
+    svtSetColor(m_mesh.get(), img::white, 3);
+    svtSetNormal(m_mesh.get(), v3f(), 3);
+    svtSetUV(m_mesh.get(), v2f(), 3);
+    svtSetHWColor(m_mesh.get(), img::white, 3);
+
+    std::array<u32, 6> indices = {0, 3, 2, 0, 2, 1};
+
+    for (u32 i = 0; i < 6; i++)
+        appendIndex(m_mesh.get(), indices[i]);
+
+    m_mesh->uploadData();
 
     m_shader = m_cache->getOrLoad<render::Shader>(ResourceType::SHADER, "skybox");
     m_rndsys->getRenderer()->setUniformBlocks(m_shader);
@@ -180,8 +212,9 @@ void Clouds::updateMesh()
 			switch (i)
 			{
 			case 0:	// top
-                for (v3f &n : normals) {
-                    n = v3f(0, 1, 0);
+                for (u32 j = 0; j < 4; j++) {
+                    normals[j] = v3f(0, 1, 0);
+                    colors[j] = c_top;
 				}
                 positions[0] = v3f(-rx, ry,-rz);
                 positions[1] = v3f(-rx, ry, rz);
@@ -302,38 +335,36 @@ void Clouds::updateMesh()
 		}
 	}
 
+    m_mesh->uploadData();
+
     tracestream << "Cloud::updateMesh(): " << m_mesh->getVertexCount() << " vertices"
 		<< std::endl;
 }
 
-void Clouds::render(v3s16 camera_offset)
+void Clouds::render(Camera *camera)
 {
     if (!m_visible || m_params.density <= 0.0f)
         return; // no need to do anything
 
-    updateMesh();
+    //updateMesh();
 
     auto rnd = m_rndsys->getRenderer();
     rnd->setRenderState(true);
 
     v2f off_origin = m_origin - m_mesh_origin;
     v3f rel(off_origin.X, 0, off_origin.Y);
-    rel -= intToFloat(camera_offset, BS);
+    rel -= intToFloat(camera->getOffset(), BS);
     matrix4 translate;
-    translate.setTranslation(rel);
+    translate.setTranslation(v3f(0, 0, 10));
 
+    rnd->setTransformMatrix(TMatrix::View, camera->getViewMatrix());
+    rnd->setTransformMatrix(TMatrix::Projection, camera->getProjectionMatrix());
     rnd->setTransformMatrix(TMatrix::World, translate);
+
     rnd->setShader(m_shader);
     rnd->enableFog(true);
-
-    u32 vertex_count = m_mesh->getVertexCount();
-    u32 index_count = m_mesh->getIndexCount();
+    
     rnd->draw(m_mesh.get());
-    //driver->drawMeshBuffer(m_meshbuffer.get());
-
-	// Restore fog settings
-    //driver->setFog(fog_color, fog_type, fog_start, fog_end, fog_density,
-    //		fog_pixelfog, fog_rangefog);
 }
 
 void Clouds::step(float dtime)
@@ -341,7 +372,6 @@ void Clouds::step(float dtime)
     m_origin = m_origin + m_params.speed * dtime * BS;
 }
 
-//void Clouds::update(const v3f &camera_p, v3s16 camera_offset, const img::colorf &color_diffuse)
 void Clouds::update(f32 dtime, Camera *camera, Sky *sky, f32 &fog_range,
     std::optional<img::color8> color_override)
 {
@@ -413,7 +443,7 @@ void Clouds::readSettings()
 	// refer to vertex_count in updateMesh()
 	m_enable_3d = g_settings->getBool("enable_3d_clouds");
 	const u16 maximum = !m_enable_3d ? 62 : 25;
-    m_cloud_radius_i = 4;//rangelim(g_settings->getU16("cloud_radius"), 8, maximum);
+    m_cloud_radius_i = rangelim(g_settings->getU16("cloud_radius"), 8, maximum);
 
 	invalidateMesh();
 }

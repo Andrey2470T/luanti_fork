@@ -68,10 +68,14 @@ void RenderSystem::initLoadScreen()
 void RenderSystem::initRenderEnvironment(Client *_client)
 {
     client = _client;
-    sky = std::make_unique<Sky>(this, cache);
-    clouds = std::make_unique<Clouds>(this, cache, myrand());
+
+    basePool = std::make_unique<AtlasPool>(AtlasType::RECTPACK2D, "Basic", cache,
+        window->getGLParams()->maxTextureSize, true, true);
 
     pp_core = std::make_unique<PipelineCore>(client, g_settings->getBool("enable_dynamic_shadows"));
+
+    sky = std::make_unique<Sky>(this, cache);
+    clouds = std::make_unique<Clouds>(this, cache, myrand());
 
     drawlist = std::make_unique<DistanceSortedDrawList>(client);
     particle_manager = std::make_unique<ParticleManager>(this, cache, &client->getEnv());
@@ -81,9 +85,6 @@ void RenderSystem::initRenderEnvironment(Client *_client)
 
     gameui = std::make_unique<GameUI>(client);
     gameformspec = std::make_unique<GameFormSpec>();
-
-    basePool = std::make_unique<AtlasPool>(AtlasType::RECTPACK2D, "Basic", cache,
-        window->getGLParams()->maxTextureSize, true, true);
 }
 
 Hud *RenderSystem::getHud() const

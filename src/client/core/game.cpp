@@ -353,10 +353,7 @@ bool Game::createClient(const GameStartData &start_data)
 		return false;
 	}
 
-    //ShadowRenderer::preInit(shader_src);
-
-	// Update cached textures, meshes and materials
-	client->afterContentReceived();
+    //ShadowRenderer::preInit(shader_src)
 
 	/* Pre-calculated values
 	 */
@@ -391,6 +388,9 @@ bool Game::createClient(const GameStartData &start_data)
 	str += "]";
 
     wnd->setCaption(utf8_to_wide(str));
+
+    // Update cached textures, meshes and materials
+    client->afterContentReceived();
 
 	return true;
 }

@@ -59,7 +59,7 @@ public:
     void update(f32 dtime, Camera *camera, Sky *sky, f32 &fog_range,
         std::optional<img::color8> color_override=std::nullopt);
 
-    void render(v3s16 camera_offset);
+    void render(Camera *camera);
 
 	void readSettings();
 

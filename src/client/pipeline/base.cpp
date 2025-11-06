@@ -54,7 +54,7 @@ void Draw3D::run(PipelineContext &context)
     auto camera = context.client->getEnv().getLocalPlayer()->getCamera();
 
     rnd_sys->getSky()->render(camera);
-    rnd_sys->getClouds()->render(camera->getOffset());
+    rnd_sys->getClouds()->render(camera);
     rnd_sys->getDrawList()->render();
     rnd_sys->getParticleManager()->renderParticles();
 }
