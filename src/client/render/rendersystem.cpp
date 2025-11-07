@@ -204,19 +204,19 @@ void RenderSystem::render()
 
     if (renderer->fogEnabled()) {
         renderer->setFogParams(
-                FogType::Linear,
-                fog_color,
-                draw_control.fog_range * sky->getFogStart(),
-                draw_control.fog_range * 1.0f,
-                0.0f // unused
+            FogType::Linear,
+            img::color8ToColorf(fog_color),
+            draw_control.fog_range * sky->getFogStart(),
+            draw_control.fog_range * 1.0f,
+            0.0f // unused
         );
     } else {
         renderer->setFogParams(
-                FogType::Linear,
-                fog_color,
-                FOG_RANGE_ALL,
-                FOG_RANGE_ALL + 100 * BS,
-                0.0f // unused
+            FogType::Linear,
+            img::color8ToColorf(fog_color),
+            FOG_RANGE_ALL,
+            FOG_RANGE_ALL + 100 * BS,
+            0.0f // unused
         );
     }
 

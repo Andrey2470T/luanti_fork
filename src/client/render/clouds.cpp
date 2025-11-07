@@ -40,38 +40,6 @@ Clouds::Clouds(RenderSystem *rndsys, ResourceCache *cache, u32 seed)
 	updateBox();
 
     m_mesh = std::make_unique<MeshBuffer>(true, SkyboxVType, render::MeshUsage::DYNAMIC);
-    m_mesh->reallocateData(4, 6);
-    //Batcher3D::appendUnitBox(m_mesh.get(), {img::white, img::white, img::white, img::white});
-    svtSetPos(m_mesh.get(), v3f(-0.5, 0.5, 0), 0);
-    svtSetColor(m_mesh.get(), img::white, 0);
-    svtSetNormal(m_mesh.get(), v3f(), 0);
-    svtSetUV(m_mesh.get(), v2f(), 0);
-    svtSetHWColor(m_mesh.get(), img::white, 0);
-
-    svtSetPos(m_mesh.get(), v3f(0.5, 0.5, 0), 1);
-    svtSetColor(m_mesh.get(), img::white, 1);
-    svtSetNormal(m_mesh.get(), v3f(), 1);
-    svtSetUV(m_mesh.get(), v2f(), 1);
-    svtSetHWColor(m_mesh.get(), img::white, 1);
-
-    svtSetPos(m_mesh.get(), v3f(0.5, -0.5, 0), 2);
-    svtSetColor(m_mesh.get(), img::white, 2);
-    svtSetNormal(m_mesh.get(), v3f(), 2);
-    svtSetUV(m_mesh.get(), v2f(), 2);
-    svtSetHWColor(m_mesh.get(), img::white, 2);
-
-    svtSetPos(m_mesh.get(), v3f(-0.5, -0.5, 0), 3);
-    svtSetColor(m_mesh.get(), img::white, 3);
-    svtSetNormal(m_mesh.get(), v3f(), 3);
-    svtSetUV(m_mesh.get(), v2f(), 3);
-    svtSetHWColor(m_mesh.get(), img::white, 3);
-
-    std::array<u32, 6> indices = {0, 3, 2, 0, 2, 1};
-
-    for (u32 i = 0; i < 6; i++)
-        appendIndex(m_mesh.get(), indices[i]);
-
-    m_mesh->uploadData();
 
     m_shader = m_cache->getOrLoad<render::Shader>(ResourceType::SHADER, "skybox");
     m_rndsys->getRenderer()->setUniformBlocks(m_shader);
@@ -199,7 +167,7 @@ void Clouds::updateMesh()
 
         std::array<v3f, 4> positions;
         std::array<v3f, 4> normals;
-        std::array<img::color8, 4> colors;
+        std::array<img::color8, 4> colors = {c_top, c_top, c_top, c_top};
 
 		const f32 rx = cloud_size / 2.0f;
 		// if clouds are flat, the top layer should be at the given height
@@ -346,7 +314,7 @@ void Clouds::render(Camera *camera)
     if (!m_visible || m_params.density <= 0.0f)
         return; // no need to do anything
 
-    //updateMesh();
+    updateMesh();
 
     auto rnd = m_rndsys->getRenderer();
     rnd->setRenderState(true);
@@ -355,16 +323,33 @@ void Clouds::render(Camera *camera)
     v3f rel(off_origin.X, 0, off_origin.Y);
     rel -= intToFloat(camera->getOffset(), BS);
     matrix4 translate;
-    translate.setTranslation(v3f(0, 0, 10));
+    translate.setTranslation(rel);
 
     rnd->setTransformMatrix(TMatrix::View, camera->getViewMatrix());
     rnd->setTransformMatrix(TMatrix::Projection, camera->getProjectionMatrix());
     rnd->setTransformMatrix(TMatrix::World, translate);
 
     rnd->setShader(m_shader);
-    rnd->enableFog(true);
+
+    const f32 cloud_full_radius = cloud_size * m_cloud_radius_i;
+
+    // Get fog parameters for setting them back later
+    img::colorf fog_color;
+    FogType fog_type = FogType::Linear;
+    f32 fog_start = 0;
+    f32 fog_end = 0;
+    f32 fog_density = 0;
+
+    rnd->getFogParams(fog_type, fog_color, fog_start, fog_end, fog_density);
+
+    // Set our own fog, unless it was already disabled
+    rnd->setFogParams(fog_type, fog_color, cloud_full_radius * 0.5,
+        cloud_full_radius*1.2, fog_density);
     
     rnd->draw(m_mesh.get());
+
+    // Restore fog settings
+    rnd->setFogParams(fog_type, fog_color, fog_start, fog_end, fog_density);
 }
 
 void Clouds::step(float dtime)

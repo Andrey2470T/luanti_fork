@@ -17,7 +17,6 @@ enum Batcher3DVertexType
 class Batcher3D
 {
 public:
-    static Batcher3DVertexType vType;
     static matrix4 curPosTransform;
     static matrix4 curUVTransform;
 

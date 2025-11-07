@@ -57,5 +57,9 @@ void appendAOVT(
     MeshBuffer *buf, const v3f &pos, const img::color8 &c,
     const v3f &normal=v3f(), const v2f &uv=v2f(), u8 matType=0, u64 bones=0, u64 weights=0
 );
+void appendSBVT(
+    MeshBuffer *buf, const v3f &pos, const img::color8 &c,
+    const v3f &normal=v3f(), const v2f &uv=v2f(), const img::color8 &hw_c=img::color8()
+);
 
 void appendIndex(MeshBuffer *buf, u32 index);

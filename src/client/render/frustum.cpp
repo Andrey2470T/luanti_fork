@@ -12,7 +12,6 @@ Frustum::Frustum(const v2u &viewportSize, bool isOrtogonal)
 			HeightOfViewVolume = (f32)viewportSize.Y;
 		}
 	}
-
 }
 
 void Frustum::recalculatePlanes(const matrix4 &mat)

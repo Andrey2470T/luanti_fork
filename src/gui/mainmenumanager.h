@@ -46,9 +46,9 @@ public:
           m_menuclouds(std::make_unique<Clouds>(rndsys, rescache, rand())),
           m_menucamera(std::make_unique<Camera>(rndsys->getWindowSize()))
     {
-        //m_menuclouds->setHeight(100.0f);
+        m_menuclouds->setHeight(100.0f);
         f32 fog_range = 0.0f;
-        //m_menuclouds->update(0.0f, m_menucamera.get(), nullptr, fog_range, img::color8(img::PF_RGBA8, 240, 240, 255, 255));
+        m_menuclouds->update(0.0f, m_menucamera.get(), nullptr, fog_range, img::color8(img::PF_RGBA8, 240, 240, 255, 255));
         m_menucamera->setDirection(v3f(0, 60, 100));
         m_menucamera->setFarValue(10000);
         m_menucamera->updateMatrices();

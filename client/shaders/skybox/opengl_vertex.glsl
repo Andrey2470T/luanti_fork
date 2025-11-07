@@ -13,7 +13,7 @@ void main(void)
 {
 	gl_Position = Matrices.worldViewProj * vec4(pos, 1.0);
 
-	vColor = color * hwcolor;
+	vColor = color;
 
 	vEyeVec = -(Matrices.worldView * vec4(pos, 1.0)).xyz;
 }

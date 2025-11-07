@@ -87,8 +87,6 @@ void MapblockMeshGenerator::getSpecialTile(int index, TileSpec *tile_ret)
 
 void MapblockMeshGenerator::prepareDrawing(const TileSpec &tile)
 {
-    Batcher3D::vType = B3DVT_SVT;
-
     matrix4 posTransform;
     posTransform.setTranslation(cur_node.origin+cur_node.translation);
     posTransform.setRotationDegrees(cur_node.rotation);

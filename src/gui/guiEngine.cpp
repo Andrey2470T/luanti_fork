@@ -263,15 +263,15 @@ void GUIEngine::run()
     auto rnd = m_rndsys->getRenderer();
     u32 text_height = font_mgr->getDefaultFont()->getFontHeight();
 
-	// Reset fog color
-	{
-        FogType fog_type = FogType::Linear;
-		f32 fog_start = 0;
-		f32 fog_end = 0;
-		f32 fog_density = 0;
+    bool fog_enabled = g_settings->getBool("enable_fog");
+    rnd->enableFog(fog_enabled);
 
-        rnd->setFogParams(fog_type, Renderer::menu_sky_color, fog_start, fog_end, fog_density);
-	}
+    FogType fog_type = FogType::Linear;
+    f32 fog_start = 0;
+    f32 fog_end = 0;
+    f32 fog_density = 0;
+
+    rnd->setFogParams(fog_type, img::color8ToColorf(Renderer::menu_sky_color), fog_start, fog_end, fog_density);
 
 	const v2u initial_screen_size(
 			g_settings->getU16("screen_w"),
@@ -309,24 +309,22 @@ void GUIEngine::run()
 
             m_rndsys->beginDraw(render::CBF_COLOR | render::CBF_DEPTH, Renderer::menu_sky_color);
 
-            //if (m_clouds_enabled) {
+            if (m_clouds_enabled) {
                 g_menumgr->drawClouds(dtime);
-                //drawOverlay();
-           // } else {
-            //    drawBackground();
-           // }
+                drawOverlay();
+            } else {
+                drawBackground();
+            }
 
-            //g_menumgr->drawClouds(dtime);
+            drawFooter();
 
-            //drawFooter();
-
-            //m_rndsys->getGUIEnvironment()->drawAll();
+            m_rndsys->getGUIEnvironment()->drawAll();
 
 			// The header *must* be drawn after the menu because it uses
 			// GUIFormspecMenu::getAbsoluteRect().
 			// The header *can* be drawn after the menu because it never intersects
 			// the menu.
-            //drawHeader();
+            drawHeader();
 
             m_rndsys->endDraw();
 		}

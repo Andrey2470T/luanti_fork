@@ -332,17 +332,29 @@ void appendAOVT(
 {
     assert(buf->getVAO()->getVertexType().Name == "AnimatedObject3D");
 
-    u8 firstCustomAttrIndex = 5;
     u32 newVNum = buf->getVertexCount();
     buf->setV3FAttr(pos, 0, newVNum);
     buf->setRGBAAttr(c, 1, newVNum);
     buf->setV3FAttr(normal, 2, newVNum);
     buf->setV2FAttr(uv, 3, newVNum);
     buf->setUInt8Attr(matType, 4, newVNum);
-
-    fillEmptyCustomAttribs(buf, firstCustomAttrIndex);
+    buf->setUInt64Attr(bones, 5, newVNum);
+    buf->setUInt64Attr(weights, 6, newVNum);
 }
 
+void appendSBVT(
+    MeshBuffer *buf, const v3f &pos, const img::color8 &c,
+    const v3f &normal, const v2f &uv, const img::color8 &hw_c)
+{
+    assert(buf->getVAO()->getVertexType().Name == "Skybox3D");
+
+    u32 newVNum = buf->getVertexCount();
+    buf->setV3FAttr(pos, 0, newVNum);
+    buf->setRGBAAttr(c, 1, newVNum);
+    buf->setV3FAttr(normal, 2, newVNum);
+    buf->setV2FAttr(uv, 3, newVNum);
+    buf->setRGBAAttr(hw_c, 4, newVNum);
+}
 
 void appendIndex(MeshBuffer *buf, u32 index)
 {

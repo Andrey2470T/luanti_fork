@@ -64,8 +64,6 @@ void SelectionMesh::updateMesh(const v3f &new_pos, const v3s16 &camera_offset,
     mesh = std::make_unique<LayeredMesh>(v3f(max_box.getRadius()), pos_with_offset, DefaultVType);
     mesh->getRotation() = rotation;
 
-    Batcher3D::vType = B3DVT_SVT;
-
     std::shared_ptr<TileLayer> layer = std::make_shared<TileLayer>();
     layer->thing = RenderThing::BOX;
     layer->alpha_discard = 1;
@@ -149,7 +147,6 @@ void BlockBounds::updateMesh(Client *client, DistanceSortedDrawList *drawlist)
 
     drawlist->removeLayeredMesh(mesh.get());
 
-    Batcher3D::vType = B3DVT_SVT;
     u16 mesh_chunk_size = std::max<u16>(1, g_settings->getU16("client_mesh_chunk"));
 
     auto player = client->getEnv().getLocalPlayer();

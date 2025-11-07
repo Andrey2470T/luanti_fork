@@ -92,12 +92,12 @@ void LoadScreen::draw(v2u screensize, const std::wstring &text, f32 dtime, bool 
     }
 
     FogType fogtype;
-    img::color8 fogcolor;
+    img::colorf fogcolor;
     f32 fogstart, fogend, density;
 
     auto rnd = rndsys->getRenderer();
     rnd->getFogParams(fogtype, fogcolor, fogstart, fogend, density);
-    rnd->setFogParams(fogtype, Renderer::menu_sky_color, fogstart, fogend, density);
+    rnd->setFogParams(fogtype, img::color8ToColorf(Renderer::menu_sky_color), fogstart, fogend, density);
 
     rndsys->beginDraw(render::CBF_COLOR | render::CBF_DEPTH, Renderer::menu_sky_color);
 

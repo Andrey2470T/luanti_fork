@@ -81,7 +81,10 @@ class Renderer
     DrawStats stats;
 
     // Necessary as the matrix_buffer saves combined matrices (e.g. projection * view)
-    matrix4 projM, viewM, worldM;
+    matrix4 projM;
+    matrix4 viewM;
+    matrix4 worldM;
+    matrix4 texM;
 
     bool use3DMode = true; // if false, then this is the 2d mode
     bool transparentPass = false;
@@ -122,9 +125,9 @@ public:
 
     // Fog UBO settings
     bool fogEnabled() const;
-    void getFogParams(FogType &type, img::color8 &color, f32 &start, f32 &end, f32 &density) const;
+    void getFogParams(FogType &type, img::colorf &color, f32 &start, f32 &end, f32 &density) const;
     void enableFog(bool enable);
-    void setFogParams(FogType type, img::color8 color, f32 start, f32 end, f32 density);
+    void setFogParams(FogType type, img::colorf color, f32 start, f32 end, f32 density);
 
     // Transformation matrices UBO settings
     matrix4 getTransformMatrix(TMatrix type) const;

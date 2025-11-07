@@ -14,8 +14,8 @@ void main(void)
 		float FogFactor = computeFog(vEyeVec);
 		vec4 FogColor = FogParams.color;
 		FogColor.a = 1.0;
-		col = mix(FogColor, col, FogFactor);
+		col = mix(col, FogColor, FogFactor);
 	}
 
-	outColor = vec4(1.0, 0.0, 0.0, 1.0);
+	outColor = col;
 }

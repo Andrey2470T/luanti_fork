@@ -4,7 +4,6 @@
 #include "client/mesh/lighting.h"
 #include "client/mesh/meshoperations.h"
 
-Batcher3DVertexType Batcher3D::vType = B3DVT_SVT;
 matrix4 Batcher3D::curPosTransform = matrix4();
 matrix4 Batcher3D::curUVTransform = matrix4();
 bool Batcher3D::applyFaceShading = false;
@@ -31,20 +30,17 @@ void Batcher3D::appendVertex(MeshBuffer *buf, v3f pos,
     if (applyFaceShading)
         MeshOperations::applyFacesShading(newColor, normal);
 
-    switch(vType) {
-    case B3DVT_SVT:
-        appendSVT(buf, pos, color, normal, uv);
-        break;
-    case B3DVT_NVT:
+    auto vType = buf->getVAO()->getVertexType();
+    if (vType.Name == "Node3D")
         appendNVT(buf, pos, color, normal, uv);
-        break;
-    case B3DVT_TCNVT:
+    else if (vType.Name == "TwoColorNode3D")
         appendTCNVT(buf, pos, color, normal, uv);
-        break;
-    case B3DVT_AOVT:
+    else if (vType.Name == "AnimatedObject3D")
         appendAOVT(buf, pos, color, normal, uv);
-        break;
-    }
+    else if (vType.Name == "Skybox3D")
+        appendSBVT(buf, pos, color, normal, uv);
+    else
+        appendSVT(buf, pos, color, normal, uv);
 }
 
 void Batcher3D::appendLine(MeshBuffer *buf, const v3f &startPos, const v3f &endPos,
@@ -137,7 +133,7 @@ void Batcher3D::appendFace(MeshBuffer *buf, const std::array<v3f, 4> &positions,
         used_normals = {normal, normal, normal, normal};
     }
 
-    std::array<u32, 6> indices = {0, 1, 2, 2, 1, 3};
+    std::array<u32, 6> indices = {0, 3, 2, 0, 2, 1};
 
     u32 curVCount = buf->getVertexCount();
     appendVertex(buf, positions[0], colors[0], used_normals[0], uvs.ULC);
