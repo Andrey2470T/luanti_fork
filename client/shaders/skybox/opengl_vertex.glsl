@@ -15,5 +15,5 @@ void main(void)
 
 	vColor = color;
 
-	vEyeVec = -(Matrices.worldView * vec4(pos, 1.0)).xyz;
+	vEyeVec = (Matrices.worldView * vec4(pos, 1.0)).xyz;
 }

@@ -73,6 +73,10 @@ void Renderer::setRenderState(bool mode3d)
         context->enableCullFace(true);
         context->setCullMode(CM_BACK);
     }
+    else {
+        context->enableDepthTest(false);
+        context->enableCullFace(false);
+    }
 }
 
 void Renderer::setBlending(bool transparent, bool glBlend)
