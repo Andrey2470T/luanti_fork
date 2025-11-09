@@ -6,9 +6,6 @@
 
 using namespace rectpack2D;
 
-#define CALC_MAX_MIP_LEVEL(side) \
-    (u8)std::ceil(std::log2((f32)side))
-
 #define CALC_CLOSEST_POT_SIDE(area) \
     std::pow(2u, (u32)std::ceil(std::log2(std::sqrt((f32)area))))
 
@@ -58,6 +55,4 @@ public:
     std::string getName(u32 size, u32 num) const override;
 private:
     void splitToTwoSubAreas(rectu area, rectu r, std::vector<rectu> &newFreeSpaces);
-
-    void recreateImageWithFrame(img::Image **img);
 };

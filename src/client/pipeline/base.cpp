@@ -8,6 +8,7 @@
 #include "client/mesh/lighting.h"
 #include "client/player/playercamera.h"
 #include "constants.h"
+#include "gui/IGUIEnvironment.h"
 #include "settings.h"
 #include "postprocess.h"
 #include "client/render/rendersystem.h"
@@ -61,11 +62,12 @@ void Draw3D::run(PipelineContext &context)
 
 void DrawHUD::run(PipelineContext &context)
 {
+    auto rnd_sys = context.client->getRenderSystem();
+
     if (context.show_hud) {
        // if (context.shadow_renderer)
         //    context.shadow_renderer->drawDebug();
 
-        auto rnd_sys = context.client->getRenderSystem();
         rnd_sys->getGameUI()->render();
     }
         /*context.hud->resizeHotbar();
@@ -75,8 +77,8 @@ void DrawHUD::run(PipelineContext &context)
 
         context.hud->drawLuaElements(context.client->getCamera()->getOffset());
         context.client->getCamera()->drawNametags();
-    }
-    context.device->getGUIEnvironment()->drawAll();*/
+    }*/
+    rnd_sys->getGUIEnvironment()->drawAll();
 }
 
 /*void RenderShadowMapStep::run(PipelineContext &context)
@@ -143,28 +145,30 @@ void ScreenQuad::setShader(bool set_default, std::optional<render::Shader *> new
 
 void ScreenQuad::configureTexturesSettings()
 {
+    if (!update_tex_params)
+        return;
     render::TextureSettings settings;
     settings.isRenderTarget = false;
     settings.hasMipMaps = false;
-    settings.minF = render::TMF_NEAREST_MIPMAP_NEAREST;
-    settings.magF = render::TMAGF_NEAREST;
     settings.anisotropyFilter = 0;
     settings.wrapU = render::TW_CLAMP_TO_EDGE;
     settings.wrapV = render::TW_CLAMP_TO_EDGE;
 
-    for (u8 index : texture_map)
+    for (u8 index : texture_map) {
+        settings.minF = update_filters[index].first;
+        settings.magF = update_filters[index].second;
         textures->getTexture(index)->updateParameters(settings, false, true);
+    }
+
+    update_tex_params = false;
 }
 
 void ScreenQuad::setBilinearFilter(u8 index, bool value)
 {
-    auto texture = textures->getTexture(index);
+    update_filters[index].first = value ? render::TMF_LINEAR_MIPMAP_NEAREST : render::TMF_NEAREST_MIPMAP_NEAREST;
+    update_filters[index].second = value ? render::TMAGF_LINEAR : render::TMAGF_NEAREST;
 
-    render::TextureSettings settings;
-    settings.minF = value ? render::TMF_LINEAR_MIPMAP_NEAREST : render::TMF_NEAREST_MIPMAP_NEAREST;
-    settings.magF = value ? render::TMAGF_LINEAR : render::TMAGF_NEAREST;
-
-    texture->updateParameters(settings, false, false);
+    update_tex_params = true;
 }
 
 void ScreenQuad::setPostprocessUniforms(Client *client)

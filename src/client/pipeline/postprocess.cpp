@@ -22,7 +22,6 @@ PostProcessingStep::PostProcessingStep(RenderSystem *_rnd_sys, RenderSource *_so
     quad = std::make_unique<ScreenQuad>(rnd_sys, source);
     quad->setTextureMap(_texture_map);
     quad->setShader(false, shader);
-    quad->configureTexturesSettings();
     quad->set_postprocess_uniforms = true;
 }
 
@@ -38,6 +37,7 @@ void PostProcessingStep::setRenderTarget(RenderTarget *_target)
 
 void PostProcessingStep::reset(PipelineContext &context)
 {
+    quad->configureTexturesSettings();
 }
 
 void PostProcessingStep::run(PipelineContext &context)

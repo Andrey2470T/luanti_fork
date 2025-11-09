@@ -390,7 +390,14 @@ void TextureGenerator::blitImages(img::Image *src, img::Image *dest, const v2u &
 
     imgMdf->setBlendMode(img::BM_ALPHA);
 
-    rectu srcRect(v2u(0), size->X, size->Y);
-    rectu dstRect(dstPos, size->X, size->Y);
+    v2u srcSize;
+
+    if (!size)
+        srcSize = src->getClipSize();
+    else
+        srcSize = *size;
+
+    rectu srcRect(v2u(), srcSize.X, srcSize.Y);
+    rectu dstRect(dstPos, srcSize.X, srcSize.Y);
     imgMdf->copyTo(src, dest, &srcRect, &dstRect);
 }

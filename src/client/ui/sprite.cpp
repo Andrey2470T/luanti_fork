@@ -572,7 +572,10 @@ ImageSprite *UISpriteBank::addImageSprite(img::Image *img, u8 shift,
 {
     ImageSprite *imageSprite = new ImageSprite(rndsys, cache);
 
-    rectf resRect(v2f(), img->getClipSize().X, img->getClipSize().Y);
+    rectf resRect;
+
+    if (img)
+        resRect.LRC = v2f(img->getClipSize().X, img->getClipSize().Y);
 
     if (rect) {
         if (auto_align)

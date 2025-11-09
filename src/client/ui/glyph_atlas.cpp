@@ -31,7 +31,7 @@ GlyphAtlas::GlyphAtlas(u32 num, render::TTFont *ttfont, u32 &offset)
     offset += slots_count;
 
     std::string prefix = getName(tex_size, num);
-    createTexture(prefix, tex_size, 0);
+    createTexture(prefix, tex_size);
 
     fill(num);
     packTiles();

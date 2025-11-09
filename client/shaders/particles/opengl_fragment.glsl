@@ -7,10 +7,10 @@ uniform sampler2D framebuffer;
 
 in lowp vec4 vColor;
 in highp vec3 vEyeVec;
-in ivec2 vTileCoords;
-in ivec2 vTileSize;
+flat in ivec2 vTileCoords;
+flat in ivec2 vTileSize;
 in vec2 vTexCoord;
-in int vBlendMode;
+flat in int vBlendMode;
 
 #include <fog>
 

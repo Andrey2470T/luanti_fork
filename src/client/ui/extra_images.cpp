@@ -132,7 +132,11 @@ void ImageSprite::update(img::Image *newImage, const rectf &rect, const std::arr
 {
     if (image != newImage) {
         image = newImage;
-        setTexture(pool->getAtlasByTile(image, true, anim)->getTexture());
+
+        if (image)
+            setTexture(pool->getAtlasByTile(image, true, anim)->getTexture());
+        else
+            setTexture(nullptr);
     }
     rectf tile_rect = pool->getTileRect(image, false, true);
 

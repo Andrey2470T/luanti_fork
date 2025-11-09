@@ -288,8 +288,10 @@ T *ResourceCache::getOrLoad(ResourceType _type, const std::string &_name,
             subcaches[_type]->cacheResource(img, _name);
         }
 
-        if (!img && apply_fallback)
+        if (!img && apply_fallback) {
+            infostream << "ResourceCache::getOrLoad(): Couldn't create image \"" << _name << "\", creating a dummy 1x1 one\n";
             img = createDummyImage();
+        }
 
         return static_cast<T *>((void*)img);
     }

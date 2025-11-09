@@ -17,10 +17,10 @@ rectf AtlasTile::toUV(u32 atlasSize) const
 }
 
 
-void Atlas::createTexture(const std::string &name, u32 size, u8 maxMipLevel)
+void Atlas::createTexture(const std::string &name, u32 size)
 {
     texture = std::make_unique<render::Texture2D>(
-        name, size, size, img::PF_RGBA8, maxMipLevel);
+        name, size, size, img::PF_RGBA8, 0);
 }
 
 bool Atlas::addTile(AtlasTile *tile)

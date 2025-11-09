@@ -61,7 +61,7 @@ protected:
 public:
     Atlas() = default;
 
-    void createTexture(const std::string &name, u32 size, u8 maxMipLevel);
+    void createTexture(const std::string &name, u32 size);
     
     virtual std::string getName(u32 size, u32 num) const = 0;
 

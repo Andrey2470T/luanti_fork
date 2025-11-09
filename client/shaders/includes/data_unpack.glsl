@@ -1,6 +1,3 @@
-#extension GL_EXT_gpu_shader4 : enable // for bitwise operators
-#extension GL_ARB_shader_bit_encoding : enable // for floatBitsToInt and intBitsToFloat
-
 // Returns the sample pixel coords
 ivec2 getSampleCoords(sampler2D dataTex, int sampleCount, int sampleDim, int texDim, int sampleN)
 {
@@ -18,10 +15,10 @@ int unpackInt(sampler2D dataTex, ivec2 coords)
 	vec4 int_v = texelFetch(dataTex, coords, 0);
 
 	int int_n;
-	int_n |= int_v.r << 24;
-	int_n |= int_v.g << 16;
-	int_n |= int_v.b << 8;
-	int_n |= int_v.a;
+	int_n = int_n | (int_v.r << 24);
+	int_n = int_n | (int_v.g << 16);
+	int_n = int_n | (int_v.b << 8);
+	int_n = int_n | int_v.a;
 
 	return int_n;
 }

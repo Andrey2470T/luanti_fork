@@ -99,7 +99,7 @@ GUIChatConsole::GUIChatConsole(
 	m_scrollbar->setLargeStep(1);
 	m_scrollbar->setSmallStep(1);
 
-    m_chat_bank->addImageSprite(nullptr, 0);
+    m_chat_bank->addImageSprite(m_background, 0);
     m_chat_bank->addTextSprite(env->getRenderSystem()->getFontManager(), EnrichedString(), 0);
     m_chat_bank->addTextSprite(env->getRenderSystem()->getFontManager(), EnrichedString(), 0);
     m_chat_bank->addSprite({}, 0);

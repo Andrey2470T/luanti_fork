@@ -73,6 +73,9 @@ class ScreenQuad
     render::Shader *shader;
     bool use_default = true;
 
+    bool update_tex_params = true;
+    std::map<u32, std::pair<render::TextureMinFilter, render::TextureMagFilter>> update_filters;
+
     v2u prev_size;
 
     f32 user_exposure_compensation;

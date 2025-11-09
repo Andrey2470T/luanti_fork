@@ -1,3 +1,5 @@
+#extension GL_EXT_gpu_shader4 : enable // for bitwise operators
+
 layout (location = 0) in vec3 pos;
 layout (location = 1) in vec4 color;
 layout (location = 2) in vec3 normal;
@@ -5,8 +7,6 @@ layout (location = 3) in vec2 uv;
 layout (location = 4) in int materialType;
 layout (location = 5) in vec2i bones;	// packed bones IDs (8 u8 numbers)
 layout (location = 6) in vec2i weights; // packed weights (8 u8 numbers)
-
-#extension GL_EXT_gpu_shader4 : enable // for bitwise operators
 
 #define BONES_MAX 128
 #define BONES_IDS_MAX 8 // per a vertex

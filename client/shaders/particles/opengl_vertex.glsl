@@ -1,3 +1,6 @@
+#extension GL_EXT_gpu_shader4 : enable // for bitwise operators
+#extension GL_ARB_shader_bit_encoding : enable // for floatBitsToInt and intBitsToFloat
+
 layout (location = 0) in vec3 pos;
 layout (location = 1) in vec4 color;
 layout (location = 2) in vec3 normal;
