@@ -65,8 +65,6 @@ void DataTexture::removeSample(u32 n)
 
     sampleCount--;
 
-    ByteArray newArray;
-
     u8 *newData = new u8[sampleCount*sampleSize];
     u8 *curData = glTexture->downloadData().at(0)->getData();
 

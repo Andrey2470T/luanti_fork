@@ -76,26 +76,15 @@ public:
 	}
 
     u8 getUInt8Attr(u32 attrN, u32 vertexN) const;
-    s8 getCharAttr(u32 attrN, u32 vertexN) const;
     u16 getUInt16Attr(u32 attrN, u32 vertexN) const;
-    s16 getShortAttr(u32 attrN, u32 vertexN) const;
     u32 getUInt32Attr(u32 attrN, u32 vertexN) const;
-    s32 getIntAttr(u32 attrN, u32 vertexN) const;
     f32 getFloatAttr(u32 attrN, u32 vertexN) const;
-    u64 getUInt64Attr(u32 attrN, u32 vertexN) const;
-    s64 getLongIntAttr(u32 attrN, u32 vertexN) const;
-    f64 getDoubleAttr(u32 attrN, u32 vertexN) const;
-
-    v2u getV2UAttr(u32 attrN, u32 vertexN) const;
-    v2i getV2IAttr(u32 attrN, u32 vertexN) const;
     v2f getV2FAttr(u32 attrN, u32 vertexN) const;
-
-    v3u getV3UAttr(u32 attrN, u32 vertexN) const;
-    v3i getV3IAttr(u32 attrN, u32 vertexN) const;
     v3f getV3FAttr(u32 attrN, u32 vertexN) const;
+    matrix4 getM4x4Attr(u32 attrN, u32 vertexN) const;
     img::color8 getRGBAttr(u32 attrN, u32 vertexN) const;
-
     img::color8 getRGBAAttr(u32 attrN, u32 vertexN) const;
+    img::colorf getRGBAFAttr(u32 attrN, u32 vertexN) const;
 
     u32 getIndexAt(u32 pos) const;
 
@@ -112,26 +101,14 @@ public:
 	void recalculateBoundingBox();
 
     void setUInt8Attr(u8 value, u32 attrN, u32 vertexN);
-    void setCharAttr(s8 value, u32 attrN, u32 vertexN);
     void setUInt16Attr(u16 value, u32 attrN, u32 vertexN);
-    void setShortAttr(s16 value, u32 attrN, u32 vertexN);
     void setUInt32Attr(u32 value, u32 attrN, u32 vertexN);
-    void setIntAttr(s32 value, u32 attrN, u32 vertexN);
     void setFloatAttr(f32 value, u32 attrN, u32 vertexN);
-    void setUInt64Attr(u64 value, u32 attrN, u32 vertexN);
-    void setLongIntAttr(s64 value, u32 attrN, u32 vertexN);
-    void setDoubleAttr(f64 value, u32 attrN, u32 vertexN);
-
-    void setV2UAttr(const v2u &value, u32 attrN, u32 vertexN);
-    void setV2IAttr(const v2i &value, u32 attrN, u32 vertexN);
     void setV2FAttr(const v2f &value, u32 attrN, u32 vertexN);
-
-    void setV3UAttr(const v3u &value, u32 attrN, u32 vertexN);
-    void setV3IAttr(const v3i &value, u32 attrN, u32 vertexN);
     void setV3FAttr(const v3f &value, u32 attrN, u32 vertexN);
-    void setRGBAttr(const img::color8 &value, u32 attrN, u32 vertexN);
-
+    void setM4x4Attr(const matrix4 &value, u32 attrN, u32 vertexN);
     void setRGBAAttr(const img::color8 &value, u32 attrN, u32 vertexN);
+    void setRGBAFAttr(const img::colorf &value, u32 attrN, u32 vertexN);
 
     void setIndexAt(u32 index, u32 pos);
 
@@ -151,13 +128,12 @@ public:
     }
 private:
     void initData(u32 vertexCount=0, u32 indexCount=0);
-    void checkVertex(BasicType requiredType, u8 requiredCmpsCount, u32 attrN, u32 vertexN) const;
-    void update(BasicType requiredType, u8 requiredCmpsCount, u32 attrN, u32 vertexN);
-
-    u64 countElemsBefore(u32 vertexNumber, u32 attrNumber) const;
 
     bool hasIBO() const
     {
         return Type == MeshBufferType::VERTEX_INDEX;
     }
+
+    void markDirty(u32 vertexN, bool vBuffer=true);
+    void unmarkDirty(bool vBuffer=true);
 };

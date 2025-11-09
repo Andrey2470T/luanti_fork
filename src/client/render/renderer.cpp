@@ -183,18 +183,18 @@ void Renderer::disableScissorTest()
 bool Renderer::fogEnabled() const
 {
     ByteArray &byteArr = fog_buffer->getUniformsData();
-    return byteArr.getInt(0);
+    return byteArr.getUInt32(0, 0);
 }
 
 void Renderer::getFogParams(FogType &type, img::colorf &color, f32 &start, f32 &end, f32 &density) const
 {
     ByteArray &byteArr = fog_buffer->getUniformsData();
 
-    type = (FogType)byteArr.getInt(1);
-    color = img::getColorF32(&byteArr, 2);
-    start = byteArr.getFloat(6);
-    end = byteArr.getFloat(7);
-    density = byteArr.getFloat(8);
+    type = (FogType)byteArr.getUInt32(0, 1);
+    color = byteArr.getColorf(0, 2);
+    start = byteArr.getFloat(0, 3);
+    end = byteArr.getFloat(0, 4);
+    density = byteArr.getFloat(0, 5);
 }
 
 void Renderer::enableFog(bool enable)
@@ -204,9 +204,9 @@ void Renderer::enableFog(bool enable)
 
     ByteArray &byteArr = fog_buffer->getUniformsData();
 
-    byteArr.setInt((s32)enable, 0);
+    byteArr.setUInt32((u32)enable, 0, 0);
 
-    fog_buffer->uploadSubData(0, sizeof(s32));
+    fog_buffer->uploadSubData(0, sizeof(u32));
 }
 
 void Renderer::setFogParams(FogType type, img::colorf color, f32 start, f32 end, f32 density)
@@ -222,13 +222,13 @@ void Renderer::setFogParams(FogType type, img::colorf color, f32 start, f32 end,
 
     ByteArray &byteArr = fog_buffer->getUniformsData();
 
-    byteArr.setInt((s32)type, 1);
-    img::setColorF32(&byteArr, color, 2);
-    byteArr.setFloat(start, 6);
-    byteArr.setFloat(end, 7);
-    byteArr.setFloat(density, 8);
+    byteArr.setUInt32((u32)type, 0, 1);
+    byteArr.setColorf(color, 0, 2);
+    byteArr.setFloat(start, 0, 3);
+    byteArr.setFloat(end, 0, 4);
+    byteArr.setFloat(density, 0, 5);
 
-    fog_buffer->uploadSubData(sizeof(s32), byteArr.bytesCount()-sizeof(s32));
+    fog_buffer->uploadSubData(sizeof(u32), byteArr.bytesCount()-sizeof(u32));
 }
 
 matrix4 Renderer::getTransformMatrix(TMatrix type) const
@@ -260,31 +260,31 @@ void Renderer::setTransformMatrix(TMatrix type, const matrix4 &mat)
     case TMatrix::World: {
         worldM = mat;
 
-        byteArr.setM4x4(projM * viewM * worldM, 0);
-        byteArr.setM4x4(viewM * worldM, 16);
-        byteArr.setM4x4(worldM, 32);
+        byteArr.setM4x4(projM * viewM * worldM, 0, 0);
+        byteArr.setM4x4(viewM * worldM, 0, 1);
+        byteArr.setM4x4(worldM, 0, 2);
         matrix_buffer->uploadSubData(0, sizeof(f32) * 16 * 3);
         break;
     }
     case TMatrix::View: {
         viewM = mat;
 
-        byteArr.setM4x4(projM * viewM * worldM, 0);
-        byteArr.setM4x4(viewM * worldM, 16);
+        byteArr.setM4x4(projM * viewM * worldM, 0, 0);
+        byteArr.setM4x4(viewM * worldM, 0, 1);
         matrix_buffer->uploadSubData(0, sizeof(f32) * 16 * 2);
         break;
     }
     case TMatrix::Projection: {
         projM = mat;
 
-        byteArr.setM4x4(projM * viewM * worldM, 0);
+        byteArr.setM4x4(projM * viewM * worldM, 0, 0);
         matrix_buffer->uploadSubData(0, sizeof(f32) * 16);
         break;
     }
     case TMatrix::Texture0:
         texM = mat;
 
-        byteArr.setM4x4(mat, 48);
+        byteArr.setM4x4(mat, 0, 3);
         matrix_buffer->uploadSubData(sizeof(f32) * 16 * 3, sizeof(f32) * 16);
         break;
     };
@@ -388,27 +388,37 @@ void Renderer::createDefaultShaders()
 
 void Renderer::createUBOs()
 {
-    const u32 matrixCmpsCount = 16 * 4;
-    const u32 matrixDataSize = sizeof(f32) * matrixCmpsCount;
-    ByteArray matrix_ba(matrixCmpsCount, matrixDataSize);
+    ByteArray matrix_ba({"MatrixUBO",
+        {
+            {"WVPM", ByteArrayElementType::MAT4},
+            {"WVM", ByteArrayElementType::MAT4},
+            {"WM", ByteArrayElementType::MAT4},
+            {"TM", ByteArrayElementType::MAT4}
+        }}, 1);
 
-    matrix_ba.setM4x4(projM * viewM * worldM, 0);
-    matrix_ba.setM4x4(viewM * worldM, 16);
-    matrix_ba.setM4x4(worldM, 32);
-    matrix_ba.setM4x4(texM, 48);
+    matrix_ba.setM4x4(projM * viewM * worldM, 0, 0);
+    matrix_ba.setM4x4(viewM * worldM, 0, 1);
+    matrix_ba.setM4x4(worldM, 0, 2);
+    matrix_ba.setM4x4(texM, 0, 3);
 
     matrix_buffer = std::make_unique<UniformBuffer>(MATRIX_UBO_BINDING_POINT, matrix_ba);
 
-    const u32 fogCmpsCount = 1 + 1 + 4 + 3;
-    const u32 fogDataSize = sizeof(s32) + sizeof(s32) + 4 * sizeof(f32) + 3 * sizeof(f32);
-    ByteArray fog_ba(fogCmpsCount, fogDataSize);
+    ByteArray fog_ba({"FogUBO",
+        {
+            {"Enable", ByteArrayElementType::U32},
+            {"Type", ByteArrayElementType::U32},
+            {"Color", ByteArrayElementType::COLORF},
+            {"Start", ByteArrayElementType::FLOAT},
+            {"End", ByteArrayElementType::FLOAT},
+            {"Density", ByteArrayElementType::FLOAT}
+        }}, 1);
 
-    fog_ba.setInt(0, 0);
-    fog_ba.setInt(0, 1);
-    img::setColorF32(&fog_ba, img::colorf(), 2);
-    fog_ba.setFloat(0.0f, 6);
-    fog_ba.setFloat(0.0f, 7);
-    fog_ba.setFloat(0.0f, 8);
+    fog_ba.setUInt32(0, 0, 0);
+    fog_ba.setUInt32(0, 0, 1);
+    fog_ba.setColorf(img::colorf(), 0, 2);
+    fog_ba.setFloat(0.0f, 0, 3);
+    fog_ba.setFloat(0.0f, 0, 4);
+    fog_ba.setFloat(0.0f, 0, 5);
 
     fog_buffer = std::make_unique<UniformBuffer>(FOG_UBO_BINDING_POINT, fog_ba);
 }

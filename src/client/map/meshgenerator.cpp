@@ -87,24 +87,12 @@ void MapblockMeshGenerator::getSpecialTile(int index, TileSpec *tile_ret)
 
 void MapblockMeshGenerator::prepareDrawing(const TileSpec &tile)
 {
-    matrix4 posTransform;
-    posTransform.setTranslation(cur_node.origin+cur_node.translation);
-    posTransform.setRotationDegrees(cur_node.rotation);
-    posTransform.setScale(cur_node.scale);
 
-    Batcher3D::curPosTransform = posTransform;
     Batcher3D::smoothLighting = data->m_smooth_lighting;
     Batcher3D::curLightColor = cur_node.lcolor;
     Batcher3D::curLightFrame = cur_node.lframe;
     Batcher3D::curLightSource = cur_node.f->light_source;
     Batcher3D::applyFaceShading = !cur_node.f->light_source;
-
-    if (tile[0]->material_flags & MATERIAL_FLAG_WORLD_ALIGNED) {
-        matrix4 uvTransform;
-        uvTransform.setScale(1.0f / tile[0]->scale);
-
-        Batcher3D::curUVTransform = uvTransform;
-    }
 }
 
 #define SELECT_VERTEXTYPE(layer) \
@@ -120,7 +108,12 @@ void MapblockMeshGenerator::drawQuad(const TileSpec &tile, const std::array<v3f,
         v2f(1.0, 0.0)
     };
 
-    prepareDrawing(tile);
+    /*if (tile[0]->material_flags & MATERIAL_FLAG_WORLD_ALIGNED) {
+        matrix4 uvTransform;
+        uvTransform.setScale(1.0f / tile[0]->scale);
+
+        Batcher3D::curUVTransform = uvTransform;
+    }*/
 
     auto layer1 = collector->findLayer(tile[0], SELECT_VERTEXTYPE(tile[0]), 4, 6);
     Batcher3D::appendFace(collector->getBuffer(layer1.second.buffer_id), coords, colors, uv ? *uv : uvs, normals);
@@ -162,7 +155,12 @@ void MapblockMeshGenerator::drawCuboid(const aabbf &box, const std::array<TileSp
         img::white, img::white, img::white, img::white
     };
 
-    prepareDrawing(tiles[0]);
+    /*if (tile[0]->material_flags & MATERIAL_FLAG_WORLD_ALIGNED) {
+        matrix4 uvTransform;
+        uvTransform.setScale(1.0f / tile[0]->scale);
+
+        Batcher3D::curUVTransform = uvTransform;
+    }*/
 
     auto layer1 = collector->findLayer(tiles[0][0], SELECT_VERTEXTYPE(tiles[0][0]), 4, 6);
     auto buf1 = collector->getBuffer(layer1.second.buffer_id);
@@ -177,11 +175,6 @@ void MapblockMeshGenerator::drawCuboid(const aabbf &box, const std::array<TileSp
     Batcher3D::appendBox(buf2, box, colors, uvs, mask);
 
     applyTileRotation(buf1, tiles, tilecount, vcount);
-}
-
-static inline int lightDiff(LightPair a, LightPair b)
-{
-	return abs(a.lightDay - b.lightDay) + abs(a.lightNight - b.lightNight);
 }
 
 void MapblockMeshGenerator::drawAutoLightedCuboid(aabbf box, const TileSpec &tile,
@@ -201,8 +194,12 @@ void MapblockMeshGenerator::drawAutoLightedCuboid(aabbf box,
 	f32 dx2 = box.MaxEdge.X;
 	f32 dy2 = box.MaxEdge.Y;
     f32 dz2 = box.MaxEdge.Z;
-    if (scale)
-        cur_node.scale = v3f(cur_node.f->visual_scale);
+    if (scale) {
+        box.MinEdge *= cur_node.f->visual_scale;
+        box.MaxEdge *= cur_node.f->visual_scale;
+    }
+    box.MinEdge += cur_node.origin;
+    box.MaxEdge += cur_node.origin;
 
     if (data->m_smooth_lighting) {
 		LightInfo lights[8];
@@ -1500,36 +1497,6 @@ void MapblockMeshGenerator::drawNodeboxNode()
 		}
 	}
 
-    auto get_v3f = [] (v3f pos, u8 axis)
-    {
-        switch (axis) {
-        case 0:
-            return pos.X;
-        case 1:
-            return pos.Y;
-        case 2:
-            return pos.Z;
-        default:
-            return 0.0f;
-        }
-    };
-
-    auto set_v3f = [] (v3f &pos, u8 axis, f32 v)
-    {
-        switch (axis) {
-        case 0:
-            pos.X = v;
-            break;
-        case 1:
-            pos.Y = v;
-            break;
-        case 2:
-            pos.Z = v;
-            break;
-        default:
-            break;
-        }
-    };
 	if (isTransparent) {
 		std::vector<float> sections;
 		// Preallocate 8 default splits + Min&Max for each nodebox
@@ -1550,8 +1517,8 @@ void MapblockMeshGenerator::drawNodeboxNode()
 
 			// Add edges of existing node boxes, rounded to 1E-3
 			for (size_t i = 0; i < boxes.size(); i++) {
-                sections.push_back(std::floor(get_v3f(boxes[i].MinEdge, axis) * 1E3) * 1E-3);
-                sections.push_back(std::floor(get_v3f(boxes[i].MaxEdge, axis) * 1E3) * 1E-3);
+                sections.push_back(std::floor(boxes[i].MinEdge[axis] * 1E3) * 1E-3);
+                sections.push_back(std::floor(boxes[i].MaxEdge[axis] * 1E3) * 1E-3);
 			}
 
 			// split the boxes at recorded sections
@@ -1561,10 +1528,10 @@ void MapblockMeshGenerator::drawNodeboxNode()
 			for (size_t i = 0; i < boxes.size() && i < 100; i++) {
                 aabbf *box = &boxes[i];
 				for (float section : sections) {
-                    if (get_v3f(box->MinEdge, axis) < section && get_v3f(box->MaxEdge, axis) > section) {
+                    if (box->MinEdge[axis] < section && box->MaxEdge[axis] > section) {
                         aabbf copy(*box);
-                        set_v3f(copy.MinEdge, axis, section);
-                        set_v3f(box->MaxEdge, axis, section);
+                        copy.MinEdge[axis] = section;
+                        box->MaxEdge[axis] = section;
 						boxes.push_back(copy);
 						box = &boxes[i]; // find new address of the box in case of reallocation
 					}
@@ -1614,12 +1581,7 @@ void MapblockMeshGenerator::drawMeshNode()
             else if (degrotate)
                 MeshOperations::rotateMeshXZby(buf, 1.5f * degrotate);
 
-            for (u32 v = 0; v < buf->getVertexCount(); v++)
-                Batcher3D::appendVertex(buf, svtGetPos(buf, v), svtGetColor(buf, v), svtGetNormal(buf, v), svtGetUV(buf, v));
-            for (u32 i = 0; i < buf->getIndexCount(); i++)
-                appendIndex(buf, buf->getIndexAt(i));
 
-            delete buf;
 		}
 	} else {
 		warningstream << "drawMeshNode(): missing mesh" << std::endl;

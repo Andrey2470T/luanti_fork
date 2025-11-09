@@ -54,8 +54,8 @@ void Skeleton::addBones(std::vector<TransformNode *> &bones)
         auto bone = bones.at(i);
         addNode(bone);
 
-        ByteArray bone_arr(4 * 4, 4 * 4 * sizeof(f32));
-        bone_arr.setM4x4(bone->AbsoluteTransform, 0);
+        ByteArray bone_arr({"", {{"", ByteArrayElementType::MAT4}}}, 1);
+        bone_arr.setM4x4(bone->AbsoluteTransform, 0, 0);
         BonesDataTexture->addSample(bone_arr);
     }
 }
@@ -79,15 +79,13 @@ void Skeleton::updateTileLayer(std::shared_ptr<TileLayer> layer)
 {
     layer->bone_offset = BoneOffset;
     layer->animate_normals = (s32)AnimateNormals;
-    //shader->setUniformInt("mBonesOffset", BoneOffset);
-    //shader->setUniformInt("mAnimateNormals", (s32)AnimateNormals);
 }
 
 void Skeleton::updateDataTexture()
 {
     for (u8 i = 0; i < getNodesCount(); i++) {
-        ByteArray bone_arr(4 * 4, 4 * 4 * sizeof(f32));
-        bone_arr.setM4x4(getNode(i)->AbsoluteTransform, 0);
+        ByteArray bone_arr({"", {{"", ByteArrayElementType::MAT4}}}, 1);
+        bone_arr.setM4x4(getNode(i)->AbsoluteTransform, 0, 0);
 
         BonesDataTexture->updateSample(BoneOffset+i, bone_arr);
     }
@@ -140,8 +138,8 @@ void Skeleton::fillMeshAttribs(LayeredMesh *mesh)
                     break;
             }
 
-            buf->setV2IAttr(v2i(bones_ids[0], bones_ids[1]), 5, i);
-            buf->setV2IAttr(v2i(weights[0], weights[1]), 6, i);
+            buf->setV2FAttr(v2f(bones_ids[0], bones_ids[1]), 5, i);
+            buf->setV2FAttr(v2f(weights[0], weights[1]), 6, i);
         }
     }
 }

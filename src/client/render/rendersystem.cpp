@@ -7,7 +7,6 @@
 #include "loadscreen.h"
 #include "renderer.h"
 #include "log.h"
-#include <Utils/TypeSize.h>
 #include <Image/Image.h>
 #include "porting.h"
 #include "client/media/resource.h"

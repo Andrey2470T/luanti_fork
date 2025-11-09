@@ -17,9 +17,6 @@ enum Batcher3DVertexType
 class Batcher3D
 {
 public:
-    static matrix4 curPosTransform;
-    static matrix4 curUVTransform;
-
     // lighting params
     static bool applyFaceShading;
     static bool smoothLighting;
@@ -43,18 +40,18 @@ public:
     // The first face vertex is the upper left
     static void appendTriangle(MeshBuffer *buf, const std::array<v3f, 3> &positions,
         const img::color8 &color=img::color8(), const std::array<v2f, 3> &uvs={v2f(0.0f, 0.0f), v2f(0.5f, 1.0f), v2f(1.0f, 0.0f)},
-        std::optional<std::array<v3f, 4>> normals=std::nullopt);
+        const std::array<v3f, 4> &normals={});
     // 'rotation' in degrees!
     static void appendTriangle(MeshBuffer *buf, const std::array<v2f, 3> &positions, const v3f &rotation,
         const img::color8 &color=img::color8(), const std::array<v2f, 3> &uvs={v2f(0.0f, 0.0f), v2f(0.5f, 1.0f), v2f(1.0f, 0.0f)},
-         std::optional<std::array<v3f, 4>> normals=std::nullopt);
+        const std::array<v3f, 4> &normals={});
 
     static void appendFace(MeshBuffer *buf, const std::array<v3f, 4> &positions,
         const std::array<img::color8, 4> &colors, const rectf &uvs={v2f(0.0f, 1.0f), v2f(1.0f, 0.0f)},
-         std::optional<std::array<v3f, 4>> normals=std::nullopt);
+        const std::array<v3f, 4> &normals={});
     static void appendFace(MeshBuffer *buf, const rectf &positions, const v3f &rotation,
         const std::array<img::color8, 4> &colors, const rectf &uvs={v2f(0.0f, 1.0f), v2f(1.0f, 0.0f)},
-         std::optional<std::array<v3f, 4>> normals=std::nullopt);
+        const std::array<v3f, 4> &normals={});
     static void appendUnitFace(MeshBuffer *buf, const std::array<img::color8, 4> &colors)
     {
         appendFace(buf, {v3f(-1.0f, 1.0f, 0.0f), v3f(1.0f, 1.0f, 0.0f), v3f(1.0f, -1.0f, 0.0f), v3f(-1.0f, -1.0f, 0.0f)}, colors);

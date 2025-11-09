@@ -3,6 +3,7 @@
 // Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "particles.h"
+#include "Utils/TypeConverter.h"
 #include "collision.h"
 #include "client/ao/genericCAO.h"
 #include "client/core/clientevent.h"
@@ -58,11 +59,18 @@ Particle::Particle(RenderSystem *rnd_sys,
 {
     calcTileRect(m_parent ? texture : m_p.texture.string);
 
-    ByteArray newData(4*4 + 4 + 2*2 + 2*2 + 4, sizeof(ParticleSampleData));
-    newData.setM4x4(m_particle_data.transform, 0);
-    img::setColor8(&newData, m_particle_data.light_color, 4*4);
-    newData.setV2U(m_particle_data.tile_coords, 4*4 + 4);
-    newData.setV2U(m_particle_data.tile_size, 4*4 + 4 + 2*2);
+    ByteArray newData({"ParticleData",
+        {
+            {"Transform", ByteArrayElementType::MAT4},
+            {"LightColor", ByteArrayElementType::COLOR_RGBA8},
+            {"TileCoords", ByteArrayElementType::V2F},
+            {"TileSize", ByteArrayElementType::V2F},
+            {"BlendMode", ByteArrayElementType::U8}
+        }}, 1);
+    newData.setM4x4(m_particle_data.transform, 0, 0);
+    newData.setColor8(m_particle_data.light_color, 0, 1);
+    newData.setV2F(toV2T<f32>(m_particle_data.tile_coords), 0, 2);
+    newData.setV2F(toV2T<f32>(m_particle_data.tile_size), 0, 3);
 
     setBlending(newData);
 
@@ -142,11 +150,18 @@ void Particle::updateDataInTexture()
     if (!m_particle_data_changed)
         return;
 
-    ByteArray newData(4*4 + 4 + 2*2 + 2*2, sizeof(ParticleSampleData));
-    newData.setM4x4(m_particle_data.transform, 0);
-    img::setColor8(&newData, m_particle_data.light_color, 4*4);
-    newData.setV2U(m_particle_data.tile_coords, 4*4 + 4);
-    newData.setV2U(m_particle_data.tile_size, 4*4 + 4 + 2*2);
+    ByteArray newData({"ParticleData",
+        {
+            {"Transform", ByteArrayElementType::MAT4},
+            {"LightColor", ByteArrayElementType::COLOR_RGBA8},
+            {"TileCoords", ByteArrayElementType::V2F},
+            {"TileSize", ByteArrayElementType::V2F},
+            {"BlendMode", ByteArrayElementType::U8}
+        }}, 1);
+    newData.setM4x4(m_particle_data.transform, 0, 0);
+    newData.setColor8(m_particle_data.light_color, 0, 1);
+    newData.setV2F(toV2T<f32>(m_particle_data.tile_coords), 0, 2);
+    newData.setV2F(toV2T<f32>(m_particle_data.tile_size), 0, 3);
 
     setBlending(newData);
 
@@ -286,7 +301,7 @@ void Particle::setBlending(ByteArray &sampleArr)
         break;
     }
     m_particle_data.blend_mode = (u8)blendType;
-    sampleArr.setInt(m_particle_data.blend_mode, 4*4 + 4 + 2*2 + 2*2);
+    sampleArr.setUInt8(m_particle_data.blend_mode, 0, 4);
 }
 
 /*

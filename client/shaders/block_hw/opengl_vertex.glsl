@@ -1,7 +1,7 @@
 layout (location = 0) in vec3 pos;
 layout (location = 1) in vec4 color;
 layout (location = 2) in vec3 normal;
-layout (location = 3) in ivec2 uv;
+layout (location = 3) in vec2 uv;
 layout (location = 4) in int materialType;
 layout (location = 5) in vec3 hwcolor;
 

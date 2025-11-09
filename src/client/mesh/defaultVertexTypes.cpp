@@ -166,7 +166,7 @@ void svtSetHWColor(MeshBuffer *buf, const img::color8 &hw_c, u32 num)
 
     if (buf->getVAO()->getVertexType().Name == "TwoColorNode3D") {
         attr_n = 5;
-        buf->setRGBAttr(hw_c, attr_n, num);
+        buf->setRGBAAttr(hw_c, attr_n, num);
     }
     else
         buf->setRGBAAttr(hw_c, attr_n, num);
@@ -188,32 +188,11 @@ void fillEmptyCustomAttribs(MeshBuffer *buf, u8 firstCustomAtrribIndex)
             case BasicType::UINT8:
                 buf->setUInt8Attr(0, firstCustomAtrribIndex, lastVNum);
                 break;
-             case BasicType::CHAR:
-                buf->setCharAttr(0, firstCustomAtrribIndex, lastVNum);
-                break;
              case BasicType::UINT16:
                 buf->setUInt16Attr(0, firstCustomAtrribIndex, lastVNum);
                 break;
-            case BasicType::SHORT:
-                buf->setShortAttr(0, firstCustomAtrribIndex, lastVNum);
-                break;
-            case BasicType::UINT32:
-                buf->setUInt32Attr(0, firstCustomAtrribIndex, lastVNum);
-                break;
-            case BasicType::INT:
-                buf->setIntAttr(0, firstCustomAtrribIndex, lastVNum);
-                break;
             case BasicType::FLOAT:
                 buf->setFloatAttr(0.0f, firstCustomAtrribIndex, lastVNum);
-                break;
-            case BasicType::UINT64:
-                buf->setUInt64Attr(0, firstCustomAtrribIndex, lastVNum);
-                break;
-            case BasicType::LONG_INT:
-                 buf->setLongIntAttr(0, firstCustomAtrribIndex, lastVNum);
-                break;
-            case BasicType::DOUBLE:
-                buf->setDoubleAttr(0.0, firstCustomAtrribIndex, lastVNum);
                 break;
             default:
                 break;
@@ -221,28 +200,13 @@ void fillEmptyCustomAttribs(MeshBuffer *buf, u8 firstCustomAtrribIndex)
             break;
         }
         case 2: {
-            switch (attrib.ComponentType) {
-            case BasicType::UINT32:
-                buf->setV2UAttr(v2u(), firstCustomAtrribIndex, lastVNum);
-                break;
-            case BasicType::INT:
-                buf->setV2IAttr(v2i(), firstCustomAtrribIndex, lastVNum);
-                break;
-            case BasicType::FLOAT:
-                buf->setV2FAttr(v2f(), firstCustomAtrribIndex, lastVNum);
-                break;
-            default:
-                break;
-            }
+            buf->setV2FAttr(v2f(), firstCustomAtrribIndex, lastVNum);
             break;
         }
         case 3: {
             switch (attrib.ComponentType) {
-            case BasicType::UINT32:
-                buf->setV3UAttr(v3u(), firstCustomAtrribIndex, lastVNum);
-                break;
-            case BasicType::INT:
-                buf->setV3IAttr(v3i(), firstCustomAtrribIndex, lastVNum);
+            case BasicType::UINT8:
+                buf->setRGBAAttr(img::color8(img::PF_RGB8), firstCustomAtrribIndex, lastVNum);
                 break;
             case BasicType::FLOAT:
                 buf->setV3FAttr(v3f(), firstCustomAtrribIndex, lastVNum);
@@ -252,6 +216,24 @@ void fillEmptyCustomAttribs(MeshBuffer *buf, u8 firstCustomAtrribIndex)
             }
             break;
         }
+        case 4: {
+            switch (attrib.ComponentType) {
+            case BasicType::UINT8:
+                buf->setRGBAAttr(img::color8(img::PF_RGBA8), firstCustomAtrribIndex, lastVNum);
+                break;
+            case BasicType::FLOAT:
+                buf->setRGBAFAttr(img::colorf(), firstCustomAtrribIndex, lastVNum);
+            default:
+                break;
+            }
+            break;
+        }
+        case 16: {
+            buf->setM4x4Attr(matrix4(), firstCustomAtrribIndex, lastVNum);
+            break;
+        }
+        default:
+            break;
         }
     }
 }
@@ -328,7 +310,7 @@ void appendVT2D(
 
 void appendAOVT(
     MeshBuffer *buf, const v3f &pos, const img::color8 &c,
-    const v3f &normal, const v2f &uv, u8 matType, u64 bones, u64 weights)
+    const v3f &normal, const v2f &uv, u8 matType, const v2f &bones, const v2f &weights)
 {
     assert(buf->getVAO()->getVertexType().Name == "AnimatedObject3D");
 
@@ -338,8 +320,8 @@ void appendAOVT(
     buf->setV3FAttr(normal, 2, newVNum);
     buf->setV2FAttr(uv, 3, newVNum);
     buf->setUInt8Attr(matType, 4, newVNum);
-    buf->setUInt64Attr(bones, 5, newVNum);
-    buf->setUInt64Attr(weights, 6, newVNum);
+    buf->setV2FAttr(bones, 5, newVNum);
+    buf->setV2FAttr(weights, 6, newVNum);
 }
 
 void appendSBVT(

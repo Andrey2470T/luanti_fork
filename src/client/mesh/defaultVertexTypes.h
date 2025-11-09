@@ -53,9 +53,8 @@ void appendTCNVT(
 // Note: 'buf' already must have a preallocated storage for this new vertex!
 void appendVT2D(
     MeshBuffer *buf, const v2f &pos, const img::color8 &c, const v2f &uv=v2f());
-void appendAOVT(
-    MeshBuffer *buf, const v3f &pos, const img::color8 &c,
-    const v3f &normal=v3f(), const v2f &uv=v2f(), u8 matType=0, u64 bones=0, u64 weights=0
+void appendAOVT(MeshBuffer *buf, const v3f &pos, const img::color8 &c,
+    const v3f &normal=v3f(), const v2f &uv=v2f(), u8 matType=0, const v2f &bones=v2f(), const v2f &weights=v2f()
 );
 void appendSBVT(
     MeshBuffer *buf, const v3f &pos, const img::color8 &c,

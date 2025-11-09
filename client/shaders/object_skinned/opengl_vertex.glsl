@@ -1,7 +1,7 @@
 layout (location = 0) in vec3 pos;
 layout (location = 1) in vec4 color;
 layout (location = 2) in vec3 normal;
-layout (location = 3) in ivec2 uv;
+layout (location = 3) in vec2 uv;
 layout (location = 4) in int materialType;
 layout (location = 5) in vec2i bones;	// packed bones IDs (8 u8 numbers)
 layout (location = 6) in vec2i weights; // packed weights (8 u8 numbers)

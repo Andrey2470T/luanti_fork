@@ -3,102 +3,48 @@
 
 u8 MeshBuffer::getUInt8Attr(u32 attrN, u32 vertexN) const
 {
-    checkVertex(BasicType::UINT8, 1, attrN, vertexN);
-    return VBuffer.Data->getUInt8(countElemsBefore(vertexN, attrN));
-}
-s8 MeshBuffer::getCharAttr(u32 attrN, u32 vertexN) const
-{
-    checkVertex(BasicType::CHAR, 1, attrN, vertexN);
-    return VBuffer.Data->getChar(countElemsBefore(vertexN, attrN));
+    return VBuffer.Data->getUInt8(vertexN, attrN);
 }
 u16 MeshBuffer::getUInt16Attr(u32 attrN, u32 vertexN) const
 {
-    checkVertex(BasicType::UINT16, 1, attrN, vertexN);
-    return VBuffer.Data->getUInt16(countElemsBefore(vertexN, attrN));
-}
-s16 MeshBuffer::getShortAttr(u32 attrN, u32 vertexN) const
-{
-    checkVertex(BasicType::SHORT, 1, attrN, vertexN);
-    return VBuffer.Data->getShort(countElemsBefore(vertexN, attrN));
+    return VBuffer.Data->getUInt16(vertexN, attrN);
 }
 u32 MeshBuffer::getUInt32Attr(u32 attrN, u32 vertexN) const
 {
-    checkVertex(BasicType::UINT32, 1, attrN, vertexN);
-    return VBuffer.Data->getUInt32(countElemsBefore(vertexN, attrN));
-}
-s32 MeshBuffer::getIntAttr(u32 attrN, u32 vertexN) const
-{
-    checkVertex(BasicType::INT, 1, attrN, vertexN);
-    return VBuffer.Data->getInt(countElemsBefore(vertexN, attrN));
+    return VBuffer.Data->getUInt32(vertexN, attrN);
 }
 f32 MeshBuffer::getFloatAttr(u32 attrN, u32 vertexN) const
 {
-    checkVertex(BasicType::FLOAT, 1, attrN, vertexN);
-    return VBuffer.Data->getFloat(countElemsBefore(vertexN, attrN));
-}
-u64 MeshBuffer::getUInt64Attr(u32 attrN, u32 vertexN) const
-{
-    checkVertex(BasicType::UINT64, 1, attrN, vertexN);
-    return VBuffer.Data->getUInt64(countElemsBefore(vertexN, attrN));
-}
-s64 MeshBuffer::getLongIntAttr(u32 attrN, u32 vertexN) const
-{
-    checkVertex(BasicType::LONG_INT, 1, attrN, vertexN);
-    return VBuffer.Data->getLongInt(countElemsBefore(vertexN, attrN));
-}
-f64 MeshBuffer::getDoubleAttr(u32 attrN, u32 vertexN) const
-{
-    checkVertex(BasicType::DOUBLE, 1, attrN, vertexN);
-    return VBuffer.Data->getDouble(countElemsBefore(vertexN, attrN));
-}
-
-v2u MeshBuffer::getV2UAttr(u32 attrN, u32 vertexN) const
-{
-    checkVertex(BasicType::UINT32, 2, attrN, vertexN);
-    return VBuffer.Data->getV2U(countElemsBefore(vertexN, attrN));
-}
-v2i MeshBuffer::getV2IAttr(u32 attrN, u32 vertexN) const
-{
-    checkVertex(BasicType::INT, 2, attrN, vertexN);
-    return VBuffer.Data->getV2I(countElemsBefore(vertexN, attrN));
+    return VBuffer.Data->getFloat(vertexN, attrN);
 }
 v2f MeshBuffer::getV2FAttr(u32 attrN, u32 vertexN) const
 {
-    checkVertex(BasicType::FLOAT, 2, attrN, vertexN);
-    return VBuffer.Data->getV2F(countElemsBefore(vertexN, attrN));
-}
-
-v3u MeshBuffer::getV3UAttr(u32 attrN, u32 vertexN) const
-{
-    checkVertex(BasicType::UINT32, 3, attrN, vertexN);
-    return VBuffer.Data->getV3U(countElemsBefore(vertexN, attrN));
-}
-v3i MeshBuffer::getV3IAttr(u32 attrN, u32 vertexN) const
-{
-    checkVertex(BasicType::INT, 3, attrN, vertexN);
-    return VBuffer.Data->getV3I(countElemsBefore(vertexN, attrN));
+    return VBuffer.Data->getV2F(vertexN, attrN);
 }
 v3f MeshBuffer::getV3FAttr(u32 attrN, u32 vertexN) const
 {
-    checkVertex(BasicType::FLOAT, 3, attrN, vertexN);
-    return VBuffer.Data->getV3F(countElemsBefore(vertexN, attrN));
+    return VBuffer.Data->getV3F(vertexN, attrN);
+}
+matrix4 MeshBuffer::getM4x4Attr(u32 attrN, u32 vertexN) const
+{
+    return VBuffer.Data->getM4x4(vertexN, attrN);
 }
 img::color8 MeshBuffer::getRGBAttr(u32 attrN, u32 vertexN) const
 {
-    checkVertex(BasicType::UINT8, 3, attrN, vertexN);
-    return img::getColor8(VBuffer.Data.get(), countElemsBefore(vertexN, attrN), img::PF_RGB8);
+    return VBuffer.Data->getColorRGB8(vertexN, attrN);
 }
-
 img::color8 MeshBuffer::getRGBAAttr(u32 attrN, u32 vertexN) const
 {
-    checkVertex(BasicType::UINT8, 4, attrN, vertexN);
-    return img::getColor8(VBuffer.Data.get(), countElemsBefore(vertexN, attrN));
+    return VBuffer.Data->getColorRGBA8(vertexN, attrN);
+}
+img::colorf MeshBuffer::getRGBAFAttr(u32 attrN, u32 vertexN) const
+{
+    return VBuffer.Data->getColorf(vertexN, attrN);
 }
 
 u32 MeshBuffer::getIndexAt(u32 pos) const
 {
-    assert(hasIBO() && IBuffer.Data && pos < getIndexCount());
-    return IBuffer.Data->getUInt32(pos);
+    return IBuffer.Data->getUInt32(pos, 0);
 }
 
 void MeshBuffer::recalculateBoundingBox()
@@ -115,138 +61,69 @@ void MeshBuffer::recalculateBoundingBox()
 
 void MeshBuffer::setUInt8Attr(u8 value, u32 attrN, u32 vertexN)
 {
-    update(BasicType::UINT8, 1, attrN, vertexN);
-    VBuffer.Data->setUInt8(value, countElemsBefore(vertexN, attrN));
+    markDirty(vertexN);
+    VBuffer.Data->setUInt8(value, vertexN, attrN);
 }
-
-void MeshBuffer::setCharAttr(s8 value, u32 attrN, u32 vertexN)
-{
-    update(BasicType::CHAR, 1, attrN, vertexN);
-    VBuffer.Data->setChar(value, countElemsBefore(vertexN, attrN));
-}
-
 void MeshBuffer::setUInt16Attr(u16 value, u32 attrN, u32 vertexN)
 {
-    update(BasicType::UINT16, 1, attrN, vertexN);
-    VBuffer.Data->setUInt16(value, countElemsBefore(vertexN, attrN));
+    markDirty(vertexN);
+    VBuffer.Data->setUInt16(value, vertexN, attrN);
 }
-
-void MeshBuffer::setShortAttr(s16 value, u32 attrN, u32 vertexN)
-{
-    update(BasicType::SHORT, 1, attrN, vertexN);
-    VBuffer.Data->setShort(value, countElemsBefore(vertexN, attrN));
-}
-
 void MeshBuffer::setUInt32Attr(u32 value, u32 attrN, u32 vertexN)
 {
-    update(BasicType::UINT32, 1, attrN, vertexN);
-    VBuffer.Data->setUInt32(value, countElemsBefore(vertexN, attrN));
-}
-void MeshBuffer::setIntAttr(s32 value, u32 attrN, u32 vertexN)
-{
-    update(BasicType::INT, 1, attrN, vertexN);
-    VBuffer.Data->setInt(value, countElemsBefore(vertexN, attrN));
+    markDirty(vertexN);
+    VBuffer.Data->setUInt32(value, vertexN, attrN);
 }
 void MeshBuffer::setFloatAttr(f32 value, u32 attrN, u32 vertexN)
 {
-    update(BasicType::FLOAT, 1, attrN, vertexN);
-    VBuffer.Data->setFloat(value, countElemsBefore(vertexN, attrN));
+    markDirty(vertexN);
+    VBuffer.Data->setFloat(value, vertexN, attrN);
 }
-void MeshBuffer::setUInt64Attr(u64 value, u32 attrN, u32 vertexN)
-{
-    update(BasicType::UINT64, 1, attrN, vertexN);
-    VBuffer.Data->setUInt64(value, countElemsBefore(vertexN, attrN));
-}
-void MeshBuffer::setLongIntAttr(s64 value, u32 attrN, u32 vertexN)
-{
-    update(BasicType::LONG_INT, 1, attrN, vertexN);
-    VBuffer.Data->setLongInt(value, countElemsBefore(vertexN, attrN));
-}
-void MeshBuffer::setDoubleAttr(f64 value, u32 attrN, u32 vertexN)
-{
-    update(BasicType::DOUBLE, 1, attrN, vertexN);
-    VBuffer.Data->setDouble(value, countElemsBefore(vertexN, attrN));
-}
-
-
-void MeshBuffer::setV2UAttr(const v2u &value, u32 attrN, u32 vertexN)
-{
-    update(BasicType::UINT32, 2, attrN, vertexN);
-    VBuffer.Data->setV2U(value, countElemsBefore(vertexN, attrN));
-}
-
-void MeshBuffer::setV2IAttr(const v2i &value, u32 attrN, u32 vertexN)
-{
-    update(BasicType::INT, 2, attrN, vertexN);
-    VBuffer.Data->setV2I(value, countElemsBefore(vertexN, attrN));
-}
-
 void MeshBuffer::setV2FAttr(const v2f &value, u32 attrN, u32 vertexN)
 {
-    update(BasicType::FLOAT, 2, attrN, vertexN);
-    VBuffer.Data->setV2F(value, countElemsBefore(vertexN, attrN));
+    markDirty(vertexN);
+    VBuffer.Data->setV2F(value, vertexN, attrN);
 }
-
-
-void MeshBuffer::setV3UAttr(const v3u &value, u32 attrN, u32 vertexN)
-{
-    update(BasicType::UINT32, 3, attrN, vertexN);
-    VBuffer.Data->setV3U(value, countElemsBefore(vertexN, attrN));
-}
-
-void MeshBuffer::setV3IAttr(const v3i &value, u32 attrN, u32 vertexN)
-{
-    update(BasicType::INT, 3, attrN, vertexN);
-    VBuffer.Data->setV3I(value, countElemsBefore(vertexN, attrN));
-}
-
 void MeshBuffer::setV3FAttr(const v3f &value, u32 attrN, u32 vertexN)
 {
-    update(BasicType::FLOAT, 3, attrN, vertexN);
-    VBuffer.Data->setV3F(value, countElemsBefore(vertexN, attrN));
+    markDirty(vertexN);
+    VBuffer.Data->setV3F(value, vertexN, attrN);
 }
-
-void MeshBuffer::setRGBAttr(const img::color8 &value, u32 attrN, u32 vertexN)
+void MeshBuffer::setM4x4Attr(const matrix4 &value, u32 attrN, u32 vertexN)
 {
-    update(BasicType::UINT8, 3, attrN, vertexN);
-    img::setColor8(VBuffer.Data.get(), value, countElemsBefore(vertexN, attrN), img::PF_RGB8);
+    markDirty(vertexN);
+    VBuffer.Data->setM4x4(value, vertexN, attrN);
 }
-
-
 void MeshBuffer::setRGBAAttr(const img::color8 &value, u32 attrN, u32 vertexN)
 {
-    update(BasicType::UINT8, 4, attrN, vertexN);
-    img::setColor8(VBuffer.Data.get(), value, countElemsBefore(vertexN, attrN));
+    markDirty(vertexN);
+    VBuffer.Data->setColor8(value, vertexN, attrN);
 }
-
+void MeshBuffer::setRGBAFAttr(const img::colorf &value, u32 attrN, u32 vertexN)
+{
+    markDirty(vertexN);
+    VBuffer.Data->setColorf(value, vertexN, attrN);
+}
 void MeshBuffer::setIndexAt(u32 index, u32 pos)
 {
-    assert(hasIBO() && IBuffer.Data && pos < IBuffer.Data->count());
+    assert(hasIBO());
 
-    IBuffer.Data->setUInt32(index, pos);
-
-    IBuffer.DataCount = std::max(IBuffer.DataCount, pos+1);
-    IBuffer.StartChange = IBuffer.StartChange != std::nullopt ?
-        std::min(VBuffer.StartChange.value(), pos) : pos;
-    IBuffer.EndChange = IBuffer.EndChange != std::nullopt ?
-        std::max(IBuffer.EndChange.value(), pos) : pos;
-    IBuffer.Dirty = true;
+    markDirty(pos, false);
+    IBuffer.Data->setUInt32(index, pos, 0);
 }
 
 void MeshBuffer::reallocateData(u32 vertexCount, u32 indexCount)
 {
-    auto vType = VAO->getVertexType();
-
     if (!VBuffer.Data || (hasIBO() && !IBuffer.Data))
         return;
 
-    if (vertexCount == VBuffer.Data->count() / vType.ComponentsCount && indexCount == IBuffer.Data->count())
+    if (vertexCount == VBuffer.Data->count() && indexCount == IBuffer.Data->count())
         return;
 
     if (hasIBO())
-        IBuffer.Data->reallocate(indexCount, sizeof(u32) * indexCount);
+        IBuffer.Data->reallocate(indexCount);
 
-    VBuffer.Data->reallocate(vType.ComponentsCount * vertexCount, render::sizeOfVertexType(vType) * vertexCount);
+    VBuffer.Data->reallocate(vertexCount);
 }
 
 void MeshBuffer::uploadData()
@@ -262,8 +139,8 @@ void MeshBuffer::uploadData()
         iboCount = IBuffer.DataCount;
     }
     VAO->reallocate(VBuffer.Data->data(), VBuffer.DataCount, iboData, iboCount);
-    VBuffer.Dirty = false;
-    IBuffer.Dirty = false;
+    unmarkDirty();
+    unmarkDirty(false);
 }
 
 void MeshBuffer::uploadVertexData()
@@ -275,9 +152,7 @@ void MeshBuffer::uploadVertexData()
     u32 endV = VBuffer.EndChange.value();
     VAO->uploadVertexData(VBuffer.Data->data(), endV - startV + 1, startV);
 
-    VBuffer.StartChange = std::nullopt;
-    VBuffer.EndChange = std::nullopt;
-    VBuffer.Dirty = false;
+    unmarkDirty();
 }
 
 void MeshBuffer::uploadIndexData()
@@ -289,9 +164,7 @@ void MeshBuffer::uploadIndexData()
     u32 endI = IBuffer.EndChange.value();
     VAO->uploadIndexData((const u32 *)IBuffer.Data->data(), endI - startI + 1, startI);
 
-    IBuffer.StartChange = std::nullopt;
-    IBuffer.EndChange = std::nullopt;
-    IBuffer.Dirty = false;
+    unmarkDirty(false);
 }
 
 void MeshBuffer::clear()
@@ -311,13 +184,15 @@ void MeshBuffer::clear()
 
 MeshBuffer *MeshBuffer::copy() const
 {
-    MeshBuffer *new_mesh = new MeshBuffer(Type != MeshBufferType::VERTEX, VAO->getVertexType());
+    MeshBuffer *new_mesh = new MeshBuffer(
+        VBuffer.Data->count(), hasIBO() ? IBuffer.Data->count() : 0,
+        Type != MeshBufferType::VERTEX, VAO->getVertexType());
 
-    memcpy(new_mesh->VBuffer.Data->data(), VBuffer.Data->data(), getVertexCount());
+    memcpy(new_mesh->VBuffer.Data->data(), VBuffer.Data->data(), VBuffer.Data->bytesCount());
     if (hasIBO())
-        memcpy(new_mesh->IBuffer.Data->data(), IBuffer.Data->data(), getIndexCount());
+        memcpy(new_mesh->IBuffer.Data->data(), IBuffer.Data->data(), IBuffer.Data->bytesCount());
 
-    new_mesh->reallocateData(getVertexCount(), hasIBO() ? getIndexCount() : 0);
+    new_mesh->uploadData();
     new_mesh->setBoundingBox(getBoundingBox());
 
     return new_mesh;
@@ -327,39 +202,63 @@ void MeshBuffer::initData(u32 vertexCount, u32 indexCount)
 {
     auto vType = VAO->getVertexType();
 
-    VBuffer.Data = std::make_unique<ByteArray>(
-        vType.ComponentsCount * vertexCount, render::sizeOfVertexType(vType) * vertexCount);
+    // Convert VertexTypeDescriptor to ByteArrayDescriptor for the VBuffer
+    std::vector<ByteArrayElement> elements;
+    elements.resize(vType.Attributes.size());
 
-    if (hasIBO())
-        IBuffer.Data = std::make_unique<ByteArray>(indexCount, sizeof(u32) * indexCount);
+    for (u32 i = 0; i < elements.size(); i++) {
+        auto &elem = elements[i];
+        auto &attribute = vType.Attributes[i];
+
+        elem.Name = attribute.Name;
+
+        if (attribute.ComponentType == BasicType::FLOAT) {
+            if (attribute.ComponentCount == 2)
+                elem.Type = ByteArrayElementType::V2F;
+            else if (attribute.ComponentCount == 3)
+                elem.Type = ByteArrayElementType::V3F;
+            else if (attribute.ComponentCount == 4)
+                elem.Type = ByteArrayElementType::COLORF;
+            else if (attribute.ComponentCount == 16)
+                elem.Type = ByteArrayElementType::MAT4;
+            else
+                elem.Type = ByteArrayElementType::FLOAT;
+        }
+        else if (attribute.ComponentType == BasicType::UINT8) {
+            if (attribute.ComponentCount == 3)
+                elem.Type = ByteArrayElementType::COLOR_RGB8;
+            else if (attribute.ComponentCount == 4)
+                elem.Type = ByteArrayElementType::COLOR_RGBA8;
+            else
+                elem.Type = ByteArrayElementType::U8;
+        }
+        else
+            elem.Type = ByteArrayElementType::U16;
+    }
+    ByteArrayDescriptor vBufferDesc(vType.Name, elements);
+
+    VBuffer.Data = std::make_unique<ByteArray>(vBufferDesc, vertexCount);
+
+    if (hasIBO()) {
+        ByteArrayDescriptor iBufferDesc("Index", {{"Index", ByteArrayElementType::U32}});
+        IBuffer.Data = std::make_unique<ByteArray>(iBufferDesc, indexCount);
+    }
 }
 
-void MeshBuffer::checkVertex(BasicType requiredType, u8 requiredCmpsCount, u32 attrN, u32 vertexN) const
+void MeshBuffer::markDirty(u32 vertexN, bool vBuffer)
 {
-    auto vType = VAO->getVertexType();
-
-    assert(vertexN < VBuffer.Data->count() / vType.ComponentsCount);
-    auto &vertexAttr = vType.Attributes.at(attrN);
-    assert(vertexAttr.ComponentType == requiredType && vertexAttr.ComponentCount == requiredCmpsCount);
+    auto &buffer = vBuffer ? VBuffer : IBuffer;
+    buffer.DataCount = std::max(buffer.DataCount, vertexN+1);
+    buffer.StartChange = buffer.StartChange != std::nullopt ?
+        std::min(buffer.StartChange.value(), vertexN) : vertexN;
+    buffer.EndChange = buffer.EndChange != std::nullopt ?
+        std::max(buffer.EndChange.value(), vertexN) : vertexN;
+    buffer.Dirty = true;
 }
-
-void MeshBuffer::update(BasicType requiredType, u8 requiredCmpsCount, u32 attrN, u32 vertexN)
+void MeshBuffer::unmarkDirty(bool vBuffer)
 {
-    checkVertex(requiredType, requiredCmpsCount, attrN, vertexN);
-
-    VBuffer.DataCount = std::max(VBuffer.DataCount, vertexN+1);
-    VBuffer.StartChange = VBuffer.StartChange != std::nullopt ?
-        std::min(VBuffer.StartChange.value(), vertexN) : vertexN;
-    VBuffer.EndChange = VBuffer.EndChange != std::nullopt ?
-        std::max(VBuffer.EndChange.value(), vertexN) : vertexN;
-    VBuffer.Dirty = true;
-}
-
-u64 MeshBuffer::countElemsBefore(u32 vertexNumber, u32 attrNumber) const
-{
-    auto vType = VAO->getVertexType();
-    assert(VBuffer.Data && vertexNumber < VBuffer.Data->count() / vType.ComponentsCount);
-
-    auto &attr = vType.Attributes.at(attrNumber);
-    return vType.ComponentsCount * vertexNumber + attr.Offset;
+    auto &buffer = vBuffer ? VBuffer : IBuffer;
+    buffer.StartChange = std::nullopt;
+    buffer.EndChange = std::nullopt;
+    buffer.Dirty = false;
 }
