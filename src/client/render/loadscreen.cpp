@@ -65,30 +65,21 @@ void LoadScreen::draw(v2u screensize, const std::wstring &text, f32 dtime, bool 
     }
     // draw progress bar
     if ((percent_min >= 0) && (percent_max <= 100)) {
-#ifndef __ANDROID__
-        auto img_size = progress_bg_img_rect.getSize();
-        u32 imgW = std::clamp<u32>(img_size.X, 200u, 600u) * scale_f;
-        u32 imgH = std::clamp<u32>(img_size.Y, 24u, 72u) * scale_f;
-#else
-        const v2u img_size(256, 48);
-        f32 imgRatio = (f32)img_size.Y / img_size.X;
-        u32 imgW = screensize.X / 2.2f;
-        u32 imgH = floor(imgW * imgRatio);
-#endif
-        v2f img_pos(center.X - imgW / 2, center.Y - imgH / 2);
+        auto pb_size = progress_bg_img_rect.getSize() * scale_f;
+        auto p_size = progress_img_rect.getSize() * scale_f;
 
-        rectf new_progress_bg_size(img_pos, img_pos + v2f(imgW, imgH));
-        rectf new_progress_size(img_pos, img_pos + v2f(imgW, imgH));
-        /*rectf new_progress_size(
-            v2f(img_pos.X + (percent_min * imgW) / 100, img_pos.Y),
-            v2f(img_pos.X + (percent_max * imgW) / 100, img_pos.Y + imgH));*/
+        v2f pb_pos(center.X - pb_size.X / 2, center.Y - pb_size.Y / 2);\
+        v2f p_pos(center.X - p_size.X / 2, center.Y - p_size.Y / 2);
+
+        rectf new_progress_bg_size(pb_pos, pb_pos + v2f(pb_size.X, pb_size.Y));
+        rectf new_progress_size(p_pos, p_pos + v2f(p_size.X, p_size.Y));
 
         progress_rect->getShape()->updateRectangle(0, new_progress_bg_size, UISprite::defaultColors, progress_bg_img_rect);
         progress_rect->getShape()->updateRectangle(1, new_progress_size, UISprite::defaultColors, progress_img_rect);
         progress_rect->updateMesh(true, false);
 
-        progress_cliprect = recti(percent_min * imgW / 100, 0, percent_max * imgW / 100, imgH);
-        progress_cliprect += toV2T<s32>(img_pos);
+        progress_cliprect = recti(0, p_size.Y, percent_max * p_size.X / 100, 0);
+        progress_cliprect += toV2T<s32>(p_pos);
     }
 
     FogType fogtype;
@@ -101,8 +92,8 @@ void LoadScreen::draw(v2u screensize, const std::wstring &text, f32 dtime, bool 
 
     rndsys->beginDraw(render::CBF_COLOR | render::CBF_DEPTH, Renderer::menu_sky_color);
 
-    //if (draw_clouds)
-        //g_menumgr->drawClouds(dtime);
+    if (draw_clouds)
+        g_menumgr->drawClouds(dtime);
 
     progress_rect->draw(0, 1);
 
