@@ -4,7 +4,7 @@
 
 
 #define PARSE_FUNC(MODIFIER_NAME) \
-    static bool parse##MODIFIER_NAME(TextureGenerator *texgen, img::Image *dest, const std::string &mod)
+    static bool parse##MODIFIER_NAME(TextureGenerator *texgen, img::Image *&dest, const std::string &mod)
 
 class TextureGenerator;
 class ResourceCache;
@@ -12,7 +12,7 @@ class ResourceCache;
 class TexModParser
 {
 public:
-    static bool determineModifier(TextureGenerator *texgen, img::Image *dest, const std::string &mod);
+    static bool determineModifier(TextureGenerator *texgen, img::Image *&dest, const std::string &mod);
 private:
     PARSE_FUNC(Crack);
     PARSE_FUNC(Combine);
@@ -68,7 +68,7 @@ public:
 private:
     bool generatePart(const std::string &texmod_str_part, img::Image *&base_img);
 
-    void upscaleToLargest(img::Image *img1, img::Image *img2);
+    void upscaleToLargest(img::Image *&img1, img::Image *&img2);
 
     img::Image *createInventoryCubeImage(
         img::Image *img1, img::Image *img2, img::Image *img3);
@@ -76,5 +76,5 @@ private:
     img::Image *createCrack(img::Image *img, s32 frame_index,
 		v2u size, u8 tiles);
     
-    void blitImages(img::Image *src, img::Image *dest, const v2u &dstPos=v2u(0, 0), const v2u *srcSize=nullptr, bool upscale=false);
+    void blitImages(img::Image *&src, img::Image *&dest, const v2u &dstPos=v2u(0, 0), const v2u *srcSize=nullptr, bool upscale=false);
 };

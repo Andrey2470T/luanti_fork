@@ -5,7 +5,7 @@
 #include "settings.h"
 #include "resource.h"
 
-bool TexModParser::determineModifier(TextureGenerator *texgen, img::Image *dest, const std::string &mod)
+bool TexModParser::determineModifier(TextureGenerator *texgen, img::Image *&dest, const std::string &mod)
 {
     if (str_starts_with(mod, "[crack"))
         return parseCrack(texgen, dest, mod);
@@ -197,24 +197,19 @@ bool TextureGenerator::generatePart(const std::string &texmod_str_part, img::Ima
     }
 
     // This is either an image or invalid name
-    if (texmod_str_part[0] != '[') {
+    if (texmod_str_part.empty() || texmod_str_part[0] != '[') {
         img::Image *img = resCache->getOrLoad<img::Image>(ResourceType::IMAGE, texmod_str_part, false, false, true);
 
         if (!img) {
             if (texmod_str_part.empty())
                 return true;
 
-            errorstream << "TextureGenerator::generatePart(): Could not load image \""
-			    << texmod_str_part << "\" while building texture; "
-			    "Creating a dummy image" << std::endl;
+            errorstream << "TextureGenerator::generatePart(): Could not load image and create the dummy one" << std::endl;
             return false;
         }
 
-        if (!base_img) {
-            auto size = img->getSize();
-            base_img = new img::Image(img::PF_RGBA8, size.X, size.Y);
-            imgMdf->copyTo(img, base_img);
-        }
+        if (!base_img)
+            base_img = img;
         else
             blitImages(img, base_img, v2u(0), nullptr, true);
     }
@@ -233,7 +228,7 @@ bool TextureGenerator::generatePart(const std::string &texmod_str_part, img::Ima
     return true;
 }
 
-void TextureGenerator::upscaleToLargest(img::Image *img1, img::Image *img2)
+void TextureGenerator::upscaleToLargest(img::Image *&img1, img::Image *&img2)
 {
     auto size1 = img1->getSize();
     auto size2 = img2->getSize();
@@ -284,10 +279,11 @@ img::Image *TextureGenerator::createInventoryCubeImage(
         if (img_size.X != size || img_size.Y != size)
             imgMdf->resize(&image, v2u(size), img::RF_BICUBIC);
 
+        img::color8 dstColor(image->getFormat());
         for (u32 v = 0; v < size; v++) {
             for (u32 u = 0; u < size; u++) {
-                auto color = imgMdf->getPixelColor(image, u, v);
-                color = color * brightness / (u8)256;
+                imgMdf->getPixelDirect(image, u, v, dstColor);
+                dstColor = dstColor * brightness / (u8)256;
                 s16 x = xu * u + xv * v + x1;
                 s16 y = yu * u + yv * v + y1;
                 for (const auto &off : offsets) {
@@ -295,7 +291,7 @@ img::Image *TextureGenerator::createInventoryCubeImage(
                     u32 res_y = y + off.Y;
                     res_x = res_x + offset >= size ? offset-(size-1-res_x)-1 : res_x + offset;
                     res_y = res_x + offset >= size ? res_y+1 : res_y;
-                    imgMdf->setPixelColor(res_img, res_x, res_y, color);
+                    imgMdf->setPixelDirect(res_img, res_x, res_y, dstColor);
                 }
             }
         }
@@ -383,7 +379,7 @@ img::Image *TextureGenerator::createCrack(img::Image *img, s32 frame_index,
     return result;
 }
 
-void TextureGenerator::blitImages(img::Image *src, img::Image *dest, const v2u &dstPos, const v2u *size, bool upscale)
+void TextureGenerator::blitImages(img::Image *&src, img::Image *&dest, const v2u &dstPos, const v2u *size, bool upscale)
 {
     if (upscale)
         upscaleToLargest(src, dest);

@@ -29,7 +29,7 @@ do { \
     Adds a cracking texture
     N = animation frame count, P = crack progression
 */
-bool TexModParser::parseCrack(TextureGenerator *texgen, img::Image *dest, const std::string &mod)
+bool TexModParser::parseCrack(TextureGenerator *texgen, img::Image *&dest, const std::string &mod)
 {
     // Crack image number and overlay option
     // Format: crack[o][:<tiles>]:<frame_count>:<frame>
@@ -91,7 +91,7 @@ bool TexModParser::parseCrack(TextureGenerator *texgen, img::Image *dest, const 
     [combine:WxH:X,Y=filename:X,Y=filename2
     Creates a bigger texture from any amount of smaller ones
 */
-bool TexModParser::parseCombine(TextureGenerator *texgen, img::Image *dest, const std::string &mod)
+bool TexModParser::parseCombine(TextureGenerator *texgen, img::Image *&dest, const std::string &mod)
 {
     Strfnd sf(mod);
     sf.next(":");
@@ -146,7 +146,7 @@ bool TexModParser::parseCombine(TextureGenerator *texgen, img::Image *dest, cons
     Creates a texture of the given size and color, optionally with an <x>,<y>
     position. An alpha value may be specified in the `Colorstring`.
 */
-bool TexModParser::parseFill(TextureGenerator *texgen, img::Image *dest, const std::string &mod)
+bool TexModParser::parseFill(TextureGenerator *texgen, img::Image *&dest, const std::string &mod)
 {
     u32 x = 0;
     u32 y = 0;
@@ -223,18 +223,18 @@ void applyToImageFromSrc(TextureGenerator *texgen, img::Image *srcImg, img::Imag
 /*
     [brighten
 */
-bool TexModParser::parseBrighten(TextureGenerator *texgen, img::Image *dest, const std::string &mod)
+bool TexModParser::parseBrighten(TextureGenerator *texgen, img::Image *&dest, const std::string &mod)
 {
-    auto brighten = [] (img::color8 &input_c)
+    auto brighten = [texgen, dest] (u32 x, u32 y, img::color8 &curColor)
     {
-        input_c.R(0.5 * 255 + 0.5 * (f32)input_c.R());
-        input_c.G(0.5 * 255 + 0.5 * (f32)input_c.G());
-        input_c.B(0.5 * 255 + 0.5 * (f32)input_c.B());
+        curColor.R(0.5 * 255 + 0.5 * (f32)curColor.R());
+        curColor.G(0.5 * 255 + 0.5 * (f32)curColor.G());
+        curColor.B(0.5 * 255 + 0.5 * (f32)curColor.B());
 
-        return true;
+        texgen->imgMdf->setPixelDirect(dest, x, y, curColor);
     };
 
-    applyToImage(texgen, dest, brighten);
+    texgen->imgMdf->processPixelsBulk(dest, nullptr, brighten);
 
     return true;
 }
@@ -246,16 +246,15 @@ bool TexModParser::parseBrighten(TextureGenerator *texgen, img::Image *dest, con
     that the transparent parts don't look completely black
     when simple alpha channel is used for rendering.
 */
-bool TexModParser::parseNoAlpha(TextureGenerator *texgen, img::Image *dest, const std::string &mod)
+bool TexModParser::parseNoAlpha(TextureGenerator *texgen, img::Image *&dest, const std::string &mod)
 {
-    auto noAlpha = [] (img::color8 &input_c)
+    auto noAlpha = [texgen, dest] (u32 x, u32 y, img::color8 &curColor)
     {
-        input_c.A(255);
-
-        return true;
+        curColor.A(255);
+        texgen->imgMdf->setPixelDirect(dest, x, y, curColor);
     };
 
-    applyToImage(texgen, dest, noAlpha);
+    texgen->imgMdf->processPixelsBulk(dest, nullptr, noAlpha);
 
     return true;
 }
@@ -264,23 +263,22 @@ bool TexModParser::parseNoAlpha(TextureGenerator *texgen, img::Image *dest, cons
     [makealpha:R,G,B
     Convert one color to transparent.
 */
-bool TexModParser::parseMakeAlpha(TextureGenerator *texgen, img::Image *dest, const std::string &mod)
+bool TexModParser::parseMakeAlpha(TextureGenerator *texgen, img::Image *&dest, const std::string &mod)
 {
     Strfnd sf(mod.substr(11));
     u32 r1 = stoi(sf.next(","));
     u32 g1 = stoi(sf.next(","));
     u32 b1 = stoi(sf.next(""));
 
-    auto makeAlpha = [&] (img::color8 &input_c)
+    auto makeAlpha = [&] (u32 x, u32 y, img::color8 &curColor)
     {
-        if (!(input_c.R() == r1 && input_c.G() == g1 && input_c.B() == b1))
-            return false;
-        input_c.A(0);
-
-        return true;
+        if (curColor.R() == r1 && curColor.G() == g1 && curColor.B() == b1) {
+            curColor.A(0);
+            texgen->imgMdf->setPixelDirect(dest, x, y, curColor);
+        }
     };
 
-    applyToImage(texgen, dest, makeAlpha);
+    texgen->imgMdf->processPixelsBulk(dest, nullptr, makeAlpha);
 
     return true;
 }
@@ -305,7 +303,7 @@ bool TexModParser::parseMakeAlpha(TextureGenerator *texgen, img::Image *dest, co
     The resulting transform will be equivalent to one of the
     eight existing ones, though (see: dihedral group).
 */
-bool TexModParser::parseTransform(TextureGenerator *texgen, img::Image *dest, const std::string &mod)
+bool TexModParser::parseTransform(TextureGenerator *texgen, img::Image *&dest, const std::string &mod)
 {
     u32 transform = parseImageTransform(mod.substr(10));
 
@@ -343,15 +341,17 @@ bool TexModParser::parseTransform(TextureGenerator *texgen, img::Image *dest, co
     else if (transform == 7)    // flip y then rotate by 90 degrees ccw
         sxn = 3, syn = 1;  //   sx = (H-1) - dy, sy = (W-1) - dx
 
-    for (u32 dy=0; dy<size.Y; dy++)
-        for (u32 dx=0; dx<size.X; dx++)
-        {
-            u32 entries[4] = {dx, size.X-1-dx, dy, size.Y-1-dy};
-            u32 sx = entries[sxn];
-            u32 sy = entries[syn];
-            auto c = texgen->imgMdf->getPixelColor(dest, sx, sy);
-            texgen->imgMdf->setPixelColor(image, dx, dy, c);
-        }
+    auto doTransform = [&] (u32 x, u32 y, img::color8 &curColor)
+    {
+        u32 entries[4] = {x, size.X-1-x, y, size.Y-1-y};
+        u32 sx = entries[sxn];
+        u32 sy = entries[syn];
+        texgen->imgMdf->getPixelDirect(dest, sx, sy, curColor);
+        texgen->imgMdf->setPixelDirect(image, x, y, curColor);
+    };
+
+    rectu sizeRect(0, 0, size.X, size.Y);
+    texgen->imgMdf->processPixelsBulk(dest, &sizeRect, doTransform);
 
     delete dest;
     dest = image;
@@ -367,7 +367,7 @@ bool TexModParser::parseTransform(TextureGenerator *texgen, img::Image *dest, co
     Example (a grass block (not actually used in game):
     "[inventorycube{grass.png{mud.png&grass_side.png{mud.png&grass_side.png"
 */
-bool TexModParser::parseInventoryCube(TextureGenerator *texgen, img::Image *dest, const std::string &mod)
+bool TexModParser::parseInventoryCube(TextureGenerator *texgen, img::Image *&dest, const std::string &mod)
 {
     if (dest) {
         errorstream<<"TexModParser::parseInventoryCube(): baseimg != NULL "
@@ -411,7 +411,7 @@ bool TexModParser::parseInventoryCube(TextureGenerator *texgen, img::Image *dest
     [lowpart:percent:filename
     Adds the lower part of a texture
 */
-bool TexModParser::parseLowPart(TextureGenerator *texgen, img::Image *dest, const std::string &mod)
+bool TexModParser::parseLowPart(TextureGenerator *texgen, img::Image *&dest, const std::string &mod)
 {
     Strfnd sf(mod);
     sf.next(":");
@@ -446,7 +446,7 @@ bool TexModParser::parseLowPart(TextureGenerator *texgen, img::Image *dest, cons
     Crops a frame of a vertical animation.
     N = frame count, I = frame index
 */
-bool TexModParser::parseVerticalFrame(TextureGenerator *texgen, img::Image *dest, const std::string &mod)
+bool TexModParser::parseVerticalFrame(TextureGenerator *texgen, img::Image *&dest, const std::string &mod)
 {
     Strfnd sf(mod);
     sf.next(":");
@@ -480,7 +480,7 @@ bool TexModParser::parseVerticalFrame(TextureGenerator *texgen, img::Image *dest
     [mask:filename
     Applies a mask to an image
 */
-bool TexModParser::parseMask(TextureGenerator *texgen, img::Image *dest, const std::string &mod)
+bool TexModParser::parseMask(TextureGenerator *texgen, img::Image *&dest, const std::string &mod)
 {
     Strfnd sf(mod);
     sf.next(":");
@@ -495,17 +495,19 @@ bool TexModParser::parseMask(TextureGenerator *texgen, img::Image *dest, const s
 
     texgen->upscaleToLargest(dest, img);
 
-    auto mask = [] (img::color8 &src_c, img::color8 &dest_c)
+    auto mask = [&] (u32 x, u32 y, img::color8 &curColor)
     {
-        dest_c.R(dest_c.R() & src_c.R());
-        dest_c.G(dest_c.G() & src_c.G());
-        dest_c.B(dest_c.B() & src_c.B());
-        dest_c.A(dest_c.A() & src_c.A());
+        img::color8 destColor(curColor.getFormat());
+        texgen->imgMdf->getPixelDirect(dest, x, y, destColor);
+        destColor.R(destColor.R() & curColor.R());
+        destColor.G(destColor.G() & curColor.G());
+        destColor.B(destColor.B() & curColor.B());
+        destColor.A(destColor.A() & curColor.A());
 
-        return true;
+        texgen->imgMdf->setPixelDirect(dest, x, y, destColor);
     };
 
-    applyToImageFromSrc(texgen, img, dest, mask);
+    texgen->imgMdf->processPixelsBulk(img, nullptr, mask);
 
     delete img;
 
@@ -522,7 +524,7 @@ bool TexModParser::parseMask(TextureGenerator *texgen, img::Image *dest, const s
         A Screen blend has the opposite effect to a Multiply blend.
         color = color as ColorString
 */
-bool TexModParser::parseMultiply(TextureGenerator *texgen, img::Image *dest, const std::string &mod)
+bool TexModParser::parseMultiply(TextureGenerator *texgen, img::Image *&dest, const std::string &mod)
 {
     Strfnd sf(mod);
     sf.next(":");
@@ -539,7 +541,7 @@ bool TexModParser::parseMultiply(TextureGenerator *texgen, img::Image *dest, con
     return true;
 }
 
-bool TexModParser::parseScreen(TextureGenerator *texgen, img::Image *dest, const std::string &mod)
+bool TexModParser::parseScreen(TextureGenerator *texgen, img::Image *&dest, const std::string &mod)
 {
     Strfnd sf(mod);
     sf.next(":");
@@ -562,7 +564,7 @@ bool TexModParser::parseScreen(TextureGenerator *texgen, img::Image *dest, const
     color = color as ColorString
     ratio = optional string "alpha", or a weighting between 0 and 255
 */
-bool TexModParser::parseColorize(TextureGenerator *texgen, img::Image *dest, const std::string &mod)
+bool TexModParser::parseColorize(TextureGenerator *texgen, img::Image *&dest, const std::string &mod)
 {
     Strfnd sf(mod);
     sf.next(":");
@@ -582,32 +584,33 @@ bool TexModParser::parseColorize(TextureGenerator *texgen, img::Image *dest, con
         keep_alpha = true;
 
     u8 alpha = color.A();
-    auto size = dest->getSize();
+
     if ((ratio == -1 && alpha == 255) || ratio == 255) { // full replacement of color
-        for (u32 y = 0; y < size.Y; y++)
-            for (u32 x = 0; x < size.X; x++) {
+        texgen->imgMdf->processPixelsBulk(dest, nullptr,
+            [&] (u32 x, u32 y, img::color8 &curColor)
+            {
                 if (keep_alpha) { // replace the color with alpha = dest alpha * color alpha
-                    u8 dst_alpha = texgen->imgMdf->getPixelColor(dest, x, y).A();
-                    if (dst_alpha > 0) {
-                        color.A(dst_alpha * alpha / 255);
-                        texgen->imgMdf->setPixelColor(dest, x, y, color);
+                    if (curColor.A() > 0) {
+                        color.A(curColor.A() * alpha / 255);
+                        texgen->imgMdf->setPixelDirect(dest, x, y, color);
                     }
                 }
                 else { // replace the color including the alpha
-                    if (texgen->imgMdf->getPixelColor(dest, x, y).A() > 0)
-                        texgen->imgMdf->setPixelColor(dest, x, y, color);
+                    if (curColor.A() > 0)
+                        texgen->imgMdf->setPixelDirect(dest, x, y, color);
                 }
-            }
+        });
     } else {  // interpolate between the color and destination
         f32 interp = (ratio == -1 ? color.A() / 255.0f : ratio / 255.0f);
-        for (u32 y = 0; y < size.Y; y++)
-            for (u32 x = 0; x < size.X; x++) {
-                auto dst_c = texgen->imgMdf->getPixelColor(dest, x, y);
-                if (dst_c.A() > 0) {
-                    dst_c = color.linInterp(dst_c, interp);
-                    texgen->imgMdf->setPixelColor(dest, x, y, dst_c);
+
+        texgen->imgMdf->processPixelsBulk(dest, nullptr,
+            [&] (u32 x, u32 y, img::color8 &curColor)
+            {
+                if (curColor.A() > 0) {
+                    curColor = color.linInterp(curColor, interp);
+                    texgen->imgMdf->setPixelDirect(dest, x, y, curColor);
                 }
-            }
+            });
     }
 
     return true;
@@ -617,7 +620,7 @@ bool TexModParser::parseColorize(TextureGenerator *texgen, img::Image *dest, con
     [applyfiltersformesh
     Internal modifier
 */
-bool TexModParser::parseApplyFiltersForMesh(TextureGenerator *texgen, img::Image *dest, const std::string &mod)
+bool TexModParser::parseApplyFiltersForMesh(TextureGenerator *texgen, img::Image *&dest, const std::string &mod)
 {
     //const bool filter = m_setting_trilinear_filter || m_setting_bilinear_filter;
     const s32 scaleto = texgen->meshFilterNeeded ? texgen->minTextureSize : 1;
@@ -649,7 +652,7 @@ bool TexModParser::parseApplyFiltersForMesh(TextureGenerator *texgen, img::Image
     [resize:WxH
     Resizes the base image to the given dimensions
 */
-bool TexModParser::parseResize(TextureGenerator *texgen, img::Image *dest, const std::string &mod)
+bool TexModParser::parseResize(TextureGenerator *texgen, img::Image *&dest, const std::string &mod)
 {
     Strfnd sf(mod);
     sf.next(":");
@@ -668,21 +671,20 @@ bool TexModParser::parseResize(TextureGenerator *texgen, img::Image *dest, const
     R must be between 0 and 255.
     0 means totally transparent.
 */
-bool TexModParser::parseOpacity(TextureGenerator *texgen, img::Image *dest, const std::string &mod)
+bool TexModParser::parseOpacity(TextureGenerator *texgen, img::Image *&dest, const std::string &mod)
 {
     Strfnd sf(mod);
     sf.next(":");
 
     u32 ratio = mystoi(sf.next(""), 0, 255);
 
-    auto opacity = [&ratio] (img::color8 &c)
+    auto opacity = [texgen, dest, &ratio] (u32 x, u32 y, img::color8 &curColor)
     {
-        c.A(std::floor((c.A() * ratio) / 255 + 0.5));
-
-        return true;
+        curColor.A(std::floor((curColor.A() * ratio) / 255 + 0.5));
+        texgen->imgMdf->setPixelDirect(dest, x, y, curColor);
     };
 
-    applyToImage(texgen, dest, opacity);
+    texgen->imgMdf->processPixelsBulk(dest, nullptr, opacity);
 
     return true;
 }
@@ -694,7 +696,7 @@ bool TexModParser::parseOpacity(TextureGenerator *texgen, img::Image *dest, cons
     Only the channels that are mentioned in the mode string
     will be inverted.
 */
-bool TexModParser::parseInvert(TextureGenerator *texgen, img::Image *dest, const std::string &mod)
+bool TexModParser::parseInvert(TextureGenerator *texgen, img::Image *&dest, const std::string &mod)
 {
     Strfnd sf(mod);
     sf.next(":");
@@ -710,17 +712,17 @@ bool TexModParser::parseInvert(TextureGenerator *texgen, img::Image *dest, const
     if (mode.find('b') != std::string::npos)
         mask |= 0x000000ffUL;
 
-    auto invert = [&mask] (img::color8 &c)
+    auto invert = [texgen, dest, &mask] (u32 x, u32 y, img::color8 &curColor)
     {
-        c.R(c.R() ^ mask);
-        c.G(c.G() ^ mask);
-        c.B(c.B() ^ mask);
-        c.A(c.A() ^ mask);
+        curColor.R(curColor.R() ^ mask);
+        curColor.G(curColor.G() ^ mask);
+        curColor.B(curColor.B() ^ mask);
+        curColor.A(curColor.A() ^ mask);
 
-        return true;
+        texgen->imgMdf->setPixelDirect(dest, x, y, curColor);
     };
 
-    applyToImage(texgen, dest, invert);
+    texgen->imgMdf->processPixelsBulk(dest, nullptr, invert);
 
     return true;
 }
@@ -731,7 +733,7 @@ bool TexModParser::parseInvert(TextureGenerator *texgen, img::Image *dest, const
     from the base image it assumes to be a
     tilesheet with dimensions W,H (in tiles).
 */
-bool TexModParser::parseSheet(TextureGenerator *texgen, img::Image *dest, const std::string &mod)
+bool TexModParser::parseSheet(TextureGenerator *texgen, img::Image *&dest, const std::string &mod)
 {
     Strfnd sf(mod);
     sf.next(":");
@@ -770,7 +772,7 @@ bool TexModParser::parseSheet(TextureGenerator *texgen, img::Image *dest, const 
     Use minetest.encode_png and minetest.encode_base64
     to produce a valid string.
 */
-bool TexModParser::parsePNG(TextureGenerator *texgen, img::Image *dest, const std::string &mod)
+bool TexModParser::parsePNG(TextureGenerator *texgen, img::Image *&dest, const std::string &mod)
 {
     std::string png;
     {
@@ -832,11 +834,13 @@ static void apply_hue_saturation(img::ImageModifier *mdf, img::Image *dst, v2u d
         hsl.S = std::clamp((f32)saturation, 0.0f, 100.0f);
     }
 
+    img::color8 dstColor(dst->getFormat());
     for (u32 y = dst_pos.Y; y < dst_pos.Y + size.Y; y++)
         for (u32 x = dst_pos.X; x < dst_pos.X + size.X; x++) {
 
             if (colorize) {
-                f32 lum = mdf->getPixelColor(dst, x, y).getLuminance() / 255.0f;
+                mdf->getPixelDirect(dst, x, y, dstColor);
+                f32 lum = dstColor.getLuminance() / 255.0f;
 
                 if (norm_l < 0) {
                     lum *= norm_l + 1.0f;
@@ -848,7 +852,8 @@ static void apply_hue_saturation(img::ImageModifier *mdf, img::Image *dst, v2u d
 
             } else {
                 // convert the RGB to HSL
-                colorf = img::color8ToColorf(mdf->getPixelColor(dst, x, y));
+                mdf->getPixelDirect(dst, x, y, dstColor);
+                colorf = img::color8ToColorf(dstColor);
                 hsl.fromRGBA(colorf);
 
                 if (norm_l < 0) {
@@ -878,7 +883,8 @@ static void apply_hue_saturation(img::ImageModifier *mdf, img::Image *dst, v2u d
 
             // Convert back to RGB
             hsl.toRGBA(colorf);
-            mdf->setPixelColor(dst, x, y, img::colorfToColor8(colorf));
+            dstColor = img::colorfToColor8(colorf);
+            mdf->setPixelDirect(dst, x, y, dstColor);
         }
 }
 
@@ -897,7 +903,7 @@ static void apply_hue_saturation(img::ImageModifier *mdf, img::Image *dst, v2u d
     will be converted to a grayscale image as though seen through a
     colored glass, like	"Colorize" in GIMP.
 */
-bool TexModParser::parseHSL(TextureGenerator *texgen, img::Image *dest, const std::string &mod)
+bool TexModParser::parseHSL(TextureGenerator *texgen, img::Image *&dest, const std::string &mod)
 {
     bool colorize = str_starts_with(mod, "[colorizehsl:");
 
@@ -933,7 +939,7 @@ bool TexModParser::parseHSL(TextureGenerator *texgen, img::Image *dest, const st
 
     Swapping the top layer and base layer is a Hard Light blend
 */
-bool TexModParser::parseOverlay(TextureGenerator *texgen, img::Image *dest, const std::string &mod)
+bool TexModParser::parseOverlay(TextureGenerator *texgen, img::Image *&dest, const std::string &mod)
 {
     Strfnd sf(mod);
     sf.next(":");
@@ -955,7 +961,7 @@ bool TexModParser::parseOverlay(TextureGenerator *texgen, img::Image *dest, cons
     return true;
 }
 
-bool TexModParser::parseHardlight(TextureGenerator *texgen, img::Image *dest, const std::string &mod)
+bool TexModParser::parseHardlight(TextureGenerator *texgen, img::Image *&dest, const std::string &mod)
 {
     Strfnd sf(mod);
     sf.next(":");
@@ -1020,13 +1026,13 @@ static void apply_brightness_contrast(img::ImageModifier *mdf, img::Image *dst, 
 
     for (u32 y = dst_pos.Y; y < dst_pos.Y + size.Y; y++)
         for (u32 x = dst_pos.X; x < dst_pos.X + size.X; x++) {
-            dst_c = mdf->getPixelColor(dst, x, y);
+            mdf->getPixelDirect(dst, x, y, dst_c);
 
             dst_c.R(slope * dst_c.R()   + c);
             dst_c.G(slope * dst_c.G()   + c);
             dst_c.B(slope * dst_c.B()   + c);
 
-            mdf->setPixelColor(dst, x, y, dst_c);
+            mdf->setPixelDirect(dst, x, y, dst_c);
         }
 }
 
@@ -1039,7 +1045,7 @@ static void apply_brightness_contrast(img::ImageModifier *mdf, img::Image *dst, 
     C and B are both values from -127 to +127.
     B is optional.
 */
-bool TexModParser::parseContrast(TextureGenerator *texgen, img::Image *dest, const std::string &mod)
+bool TexModParser::parseContrast(TextureGenerator *texgen, img::Image *&dest, const std::string &mod)
 {
     Strfnd sf(mod);
     sf.next(":");
