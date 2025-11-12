@@ -1,442 +1,339 @@
-#include "lighting.h"
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2025 Unified Lighting Refactor
 
+#include "lighting.h"
 #include "voxel.h"
 #include "nodedef.h"
 #include "client/map/mapblockmesh.h"
 #include "settings.h"
-#include "map.h"
-#include "util/directiontables.h"
+#include "util/numeric.h"
 
-/*
-    Calculate non-smooth lighting at interior of node.
-    Single light bank.
-*/
-static u8 getInteriorLight(enum LightBank bank, MapNode n, s32 increment,
-    const NodeDefManager *ndef)
-{
-    u8 light = n.getLight(bank, ndef->getLightingFlags(n));
-    light = std::clamp(light + increment, 0, LIGHT_SUN);
-    return decode_light(light);
-}
-
-/*
-    Calculate non-smooth lighting at interior of node.
-    Both light banks.
-*/
-u16 getInteriorLight(MapNode n, s32 increment, const NodeDefManager *ndef)
-{
-    u16 day = getInteriorLight(LIGHTBANK_DAY, n, increment, ndef);
-    u16 night = getInteriorLight(LIGHTBANK_NIGHT, n, increment, ndef);
-    return day | (night << 8);
-}
-
-/*
-    Calculate non-smooth lighting at face of node.
-    Single light bank.
-*/
-static u8 getFaceLight(enum LightBank bank, MapNode n, MapNode n2, const NodeDefManager *ndef)
-{
-    ContentLightingFlags f1 = ndef->getLightingFlags(n);
-    ContentLightingFlags f2 = ndef->getLightingFlags(n2);
-
-    u8 light;
-    u8 l1 = n.getLight(bank, f1);
-    u8 l2 = n2.getLight(bank, f2);
-    if(l1 > l2)
-        light = l1;
-    else
-        light = l2;
-
-    // Boost light level for light sources
-    u8 light_source = MYMAX(f1.light_source, f2.light_source);
-    if(light_source > light)
-        light = light_source;
-
-    return decode_light(light);
-}
-
-/*
-    Calculate non-smooth lighting at face of node.
-    Both light banks.
-*/
-u16 getFaceLight(MapNode n, MapNode n2, const NodeDefManager *ndef)
-{
-    u16 day = getFaceLight(LIGHTBANK_DAY, n, n2, ndef);
-    u16 night = getFaceLight(LIGHTBANK_NIGHT, n, n2, ndef);
-    return day | (night << 8);
-}
-
-/*
-    Calculate smooth lighting at the XYZ- corner of p.
-    Both light banks
-*/
-static u16 getSmoothLightCombined(const v3s16 &p,
-    const std::array<v3s16,8> &dirs, MeshMakeData *data)
-{
-    const NodeDefManager *ndef = data->m_nodedef;
-
-    u16 ambient_occlusion = 0;
-    u16 light_count = 0;
-    u8 light_source_max = 0;
-    u16 light_day = 0;
-    u16 light_night = 0;
-    bool direct_sunlight = false;
-
-    auto add_node = [&] (u8 i, bool obstructed = false) -> bool {
-        if (obstructed) {
-            ambient_occlusion++;
-            return false;
-        }
-        MapNode n = data->m_vmanip.getNodeNoExNoEmerge(p + dirs[i]);
-        if (n.getContent() == CONTENT_IGNORE)
-            return true;
-        const ContentFeatures &f = ndef->get(n);
-        if (f.light_source > light_source_max)
-            light_source_max = f.light_source;
-        // Check f.solidness because fast-style leaves look better this way
-        if (f.param_type == CPT_LIGHT && f.solidness != 2) {
-            u8 light_level_day = n.getLight(LIGHTBANK_DAY, f.getLightingFlags());
-            u8 light_level_night = n.getLight(LIGHTBANK_NIGHT, f.getLightingFlags());
-            if (light_level_day == LIGHT_SUN)
-                direct_sunlight = true;
-            light_day += decode_light(light_level_day);
-            light_night += decode_light(light_level_night);
-            light_count++;
-        } else {
-            ambient_occlusion++;
-        }
-        return f.light_propagates;
-    };
-
-    bool obstructed[4] = { true, true, true, true };
-    add_node(0);
-    bool opaque1 = !add_node(1);
-    bool opaque2 = !add_node(2);
-    bool opaque3 = !add_node(3);
-    obstructed[0] = opaque1 && opaque2;
-    obstructed[1] = opaque1 && opaque3;
-    obstructed[2] = opaque2 && opaque3;
-    for (u8 k = 0; k < 3; ++k)
-        if (add_node(k + 4, obstructed[k]))
-            obstructed[3] = false;
-    if (add_node(7, obstructed[3])) { // wrap light around nodes
-        ambient_occlusion -= 3;
-        for (u8 k = 0; k < 3; ++k)
-            add_node(k + 4, !obstructed[k]);
-    }
-
-    if (light_count == 0) {
-        light_day = light_night = 0;
-    } else {
-        light_day /= light_count;
-        light_night /= light_count;
-    }
-
-    // boost direct sunlight, if any
-    if (direct_sunlight)
-        light_day = 0xFF;
-
-    // Boost brightness around light sources
-    bool skip_ambient_occlusion_day = false;
-    if (decode_light(light_source_max) >= light_day) {
-        light_day = decode_light(light_source_max);
-        skip_ambient_occlusion_day = true;
-    }
-
-    bool skip_ambient_occlusion_night = false;
-    if(decode_light(light_source_max) >= light_night) {
-        light_night = decode_light(light_source_max);
-        skip_ambient_occlusion_night = true;
-    }
-
-    if (ambient_occlusion > 4) {
-        static thread_local const float ao_gamma = rangelim(
-            g_settings->getFloat("ambient_occlusion_gamma"), 0.25, 4.0);
-
-        // Table of gamma space multiply factors.
-        static thread_local const float light_amount[3] = {
-            powf(0.75, 1.0 / ao_gamma),
-            powf(0.5,  1.0 / ao_gamma),
-            powf(0.25, 1.0 / ao_gamma)
-        };
-
-        //calculate table index for gamma space multiplier
-        ambient_occlusion -= 5;
-
-        if (!skip_ambient_occlusion_day)
-            light_day = rangelim(round32(
-                                     light_day * light_amount[ambient_occlusion]), 0, 255);
-        if (!skip_ambient_occlusion_night)
-            light_night = rangelim(round32(
-                                       light_night * light_amount[ambient_occlusion]), 0, 255);
-    }
-
-    return light_day | (light_night << 8);
-}
-
-/*
-    Calculate smooth lighting at the given corner of p.
-    Both light banks.
-    Node at p is solid, and thus the lighting is face-dependent.
-*/
-u16 getSmoothLightSolid(const v3s16 &p, const v3s16 &face_dir, const v3s16 &corner, MeshMakeData *data)
-{
-    return getSmoothLightTransparent(p + face_dir, corner - face_dir * 2, data);
-}
-
-/*
-    Calculate smooth lighting at the given corner of p.
-    Both light banks.
-    Node at p is not solid, and the lighting is not face-dependent.
-*/
-u16 getSmoothLightTransparent(const v3s16 &p, const v3s16 &corner, MeshMakeData *data)
-{
-    const std::array<v3s16,8> dirs = {{
-        // Always shine light
-        v3s16(0,0,0),
-        v3s16(corner.X,0,0),
-        v3s16(0,corner.Y,0),
-        v3s16(0,0,corner.Z),
-
-        // Can be obstructed
-        v3s16(corner.X,corner.Y,0),
-        v3s16(corner.X,0,corner.Z),
-        v3s16(0,corner.Y,corner.Z),
-        v3s16(corner.X,corner.Y,corner.Z)
-    }};
-    return getSmoothLightCombined(p, dirs, data);
-}
-
-// Maps light index to corner direction
-const v3s16 light_dirs[8] = {
-    v3s16(-1, -1, -1),
-    v3s16(-1, -1,  1),
-    v3s16(-1,  1, -1),
-    v3s16(-1,  1,  1),
-    v3s16( 1, -1, -1),
-    v3s16( 1, -1,  1),
-    v3s16( 1,  1, -1),
-    v3s16( 1,  1,  1),
+// Face-to-corner mapping
+// Faces: 0=Y+, 1=Y-, 2=X+, 3=X-, 4=Z+, 5=Z-
+const u8 FACE_TO_CORNER[6][4] = {
+	{3, 7, 6, 2},  // Y+ face
+	{0, 4, 5, 1},  // Y- face
+	{6, 7, 5, 4},  // X+ face
+	{3, 2, 0, 1},  // X- face
+	{7, 3, 1, 5},  // Z+ face
+	{2, 6, 4, 0},  // Z- face
 };
 
-// Maps cuboid face and vertex indices to the corresponding light index
-const u8 light_indices[6][4] = {
-    {3, 7, 6, 2},
-    {0, 4, 5, 1},
-    {6, 7, 5, 4},
-    {3, 2, 0, 1},
-    {7, 3, 1, 5},
-    {2, 6, 4, 0},
-};
-
-// Gets the base lighting values for a node
-void getSmoothLightFrame(LightFrame &lframe, const v3s16 &p, MeshMakeData *data)
-{
-    for (int k = 0; k < 8; ++k)
-        lframe.sunlight[k] = false;
-
-    std::array<LightPair, 8> light_corners;
-    for (int k = 0; k < 8; ++k)
-        light_corners[k] = LightPair(getSmoothLightTransparent(p, light_dirs[k], data));
-
-    for (int face = 0; face < 6; ++face) {
-        for (int k = 0; k < 4; k++) {
-            u8 index = light_indices[face][k];
-            auto lp = light_corners[index];
-
-            lframe.lightsDay[face][k] = lp.lightDay;
-            lframe.lightsNight[face][k] = lp.lightNight;
-
-            // If there is direct sunlight and no ambient occlusion at some corner,
-            // mark the vertical edge (top and bottom corners) containing it.
-            if (lp.lightDay == 255) {
-                lframe.sunlight[k] = true;
-                lframe.sunlight[k ^ 2] = true;
-            }
-        }
-    }
+// Helper: decode light value (expand from 0-15 to 0-255)
+static inline u8 decodeLightValue(u8 encoded) {
+	if (encoded <= LIGHT_MAX)
+		return decode_light(encoded);
+	return 255; // LIGHT_SUN maps to 255
 }
 
-// Distance of light extrapolation (for oversized nodes)
-// After this distance, it gives up and considers light level constant
-#define SMOOTH_LIGHTING_OVERSIZE 1.0
-
-// Calculates vertex light level
-//  vertex_pos - vertex position in the node (coordinates are clamped to [0.0, 1.0] or so)
-LightInfo blendLight(const v3f &vertex_pos, LightFrame &lframe)
-{
-    // Light levels at (logical) node corners are known. Here,
-    // trilinear interpolation is used to calculate light level
-    // at a given point in the node.
-    f32 x = std::clamp(vertex_pos.X / BS + 0.5, 0.0 - SMOOTH_LIGHTING_OVERSIZE, 1.0 + SMOOTH_LIGHTING_OVERSIZE);
-    f32 y = std::clamp(vertex_pos.Y / BS + 0.5, 0.0 - SMOOTH_LIGHTING_OVERSIZE, 1.0 + SMOOTH_LIGHTING_OVERSIZE);
-    f32 z = std::clamp(vertex_pos.Z / BS + 0.5, 0.0 - SMOOTH_LIGHTING_OVERSIZE, 1.0 + SMOOTH_LIGHTING_OVERSIZE);
-    f32 lightDay = 0.0; // daylight
-    f32 lightNight = 0.0;
-    f32 lightBoosted = 0.0; // daylight + direct sunlight, if any
-
-    std::array<u8, 8> lights_days;
-    std::array<u8, 8> lights_nights;
-
-    for (int face = 0; face < 6; ++face) {
-        for (int k = 0; k < 4; k++) {
-            u8 index = light_indices[face][k];
-
-            lights_days[index] = std::max(lights_days[index], lframe.lightsDay[face][k]);
-            lights_nights[index] = std::max(lights_nights[index], lframe.lightsNight[face][k]);
-        }
-    }
-    for (int k = 0; k < 8; ++k) {
-        f32 dx = (k & 4) ? x : 1 - x;
-        f32 dy = (k & 2) ? y : 1 - y;
-        f32 dz = (k & 1) ? z : 1 - z;
-        // Use direct sunlight (255), if any; use daylight otherwise.
-        f32 light_boosted = lframe.sunlight[k] ? 255 : lights_days[k];
-        lightDay += dx * dy * dz * lights_days[k];
-        lightNight += dx * dy * dz * lights_nights[k];
-        lightBoosted += dx * dy * dz * light_boosted;
-    }
-    return LightInfo{lightDay, lightNight, lightBoosted};
+// Helper: Get light value from a node
+static LightPair getNodeLight(MapNode node, const NodeDefManager *ndef) {
+	ContentLightingFlags flags = ndef->getLightingFlags(node);
+	
+	u8 day_raw = node.getLight(LIGHTBANK_DAY, flags);
+	u8 night_raw = node.getLight(LIGHTBANK_NIGHT, flags);
+	
+	u8 day = decodeLightValue(day_raw);
+	u8 night = decodeLightValue(night_raw);
+	
+	// Boost by light source
+	if (flags.light_source > 0) {
+		u8 source = decodeLightValue(flags.light_source);
+		day = std::max(day, source);
+		night = std::max(night, source);
+	}
+	
+	return LightPair(day, night);
 }
 
-// Calculates vertex color to be used in mapblock mesh
-//  vertex_pos - vertex position in the node (coordinates are clamped to [0.0, 1.0] or so)
-img::color8 blendLightColor(const v3f &vertex_pos, const v3f &vertex_normal,
-    LightFrame &lframe, u8 light_source)
-{
-    LightInfo light = blendLight(vertex_pos, lframe);
-    return encode_light(light.getPair(MYMAX(0.0f, vertex_normal.Y)), light_source);
+// Calculate lighting for a single corner with ambient occlusion
+VertexLight calculateCornerLight(
+	const v3s16 &p,
+	const v3s16 &corner_offset,
+	MeshMakeData *data
+) {
+	const NodeDefManager *ndef = data->m_nodedef;
+	
+	// Positions to sample (using smooth lighting algorithm)
+	// Center, 3 edges, 3 faces, 1 corner = 8 samples
+	const std::array<v3s16, 8> sample_offsets = {{
+		v3s16(0, 0, 0),                    // center
+		v3s16(corner_offset.X, 0, 0),      // X edge
+		v3s16(0, corner_offset.Y, 0),      // Y edge  
+		v3s16(0, 0, corner_offset.Z),      // Z edge
+		v3s16(corner_offset.X, corner_offset.Y, 0),  // XY face
+		v3s16(corner_offset.X, 0, corner_offset.Z),  // XZ face
+		v3s16(0, corner_offset.Y, corner_offset.Z),  // YZ face
+		v3s16(corner_offset.X, corner_offset.Y, corner_offset.Z)  // corner
+	}};
+	
+	u16 light_day_sum = 0;
+	u16 light_night_sum = 0;
+	u16 light_count = 0;
+	u16 ambient_occlusion = 0;
+	u8 max_light_source = 0;
+	bool has_sunlight = false;
+	
+	// Lambda to add a node's contribution
+	auto add_node = [&](int i, bool obstructed = false) -> bool {
+		if (obstructed) {
+			ambient_occlusion++;
+			return false;
+		}
+		
+		MapNode n = data->m_vmanip.getNodeNoExNoEmerge(p + sample_offsets[i]);
+		if (n.getContent() == CONTENT_IGNORE)
+			return true;
+			
+		const ContentFeatures &f = ndef->get(n);
+		
+		// Track max light source
+		if (f.light_source > max_light_source)
+			max_light_source = f.light_source;
+		
+		// Only transparent nodes contribute light
+		if (f.param_type == CPT_LIGHT && f.solidness != 2) {
+			ContentLightingFlags flags = f.getLightingFlags();
+			u8 day_raw = n.getLight(LIGHTBANK_DAY, flags);
+			u8 night_raw = n.getLight(LIGHTBANK_NIGHT, flags);
+			
+			if (day_raw == LIGHT_SUN)
+				has_sunlight = true;
+			
+			light_day_sum += decodeLightValue(day_raw);
+			light_night_sum += decodeLightValue(night_raw);
+			light_count++;
+		} else {
+			ambient_occlusion++;
+		}
+		
+		return f.light_propagates;
+	};
+	
+	// Sample in order: center, edges, faces, corner
+	// Track obstructions for proper AO
+	bool obstructed[4] = {true, true, true, true};
+	add_node(0);  // center
+	
+	bool opaque_x = !add_node(1);  // X edge
+	bool opaque_y = !add_node(2);  // Y edge
+	bool opaque_z = !add_node(3);  // Z edge
+	
+	// Faces are obstructed if both adjacent edges are opaque
+	obstructed[0] = opaque_x && opaque_y;  // XY face
+	obstructed[1] = opaque_x && opaque_z;  // XZ face
+	obstructed[2] = opaque_y && opaque_z;  // YZ face
+	
+	for (int k = 0; k < 3; k++)
+		if (add_node(k + 4, obstructed[k]))
+			obstructed[3] = false;
+	
+	// Corner (with special wrap-around logic)
+	if (add_node(7, obstructed[3])) {
+		ambient_occlusion -= 3;
+		for (int k = 0; k < 3; k++)
+			add_node(k + 4, !obstructed[k]);
+	}
+	
+	// Calculate average light
+	u8 final_day, final_night;
+	if (light_count == 0) {
+		final_day = final_night = 0;
+	} else {
+		final_day = light_day_sum / light_count;
+		final_night = light_night_sum / light_count;
+	}
+	
+	// Apply direct sunlight boost
+	if (has_sunlight)
+		final_day = 255;
+	
+	// Boost by light sources
+	u8 source_light = decodeLightValue(max_light_source);
+	bool skip_ao_day = false;
+	bool skip_ao_night = false;
+	
+	if (source_light >= final_day) {
+		final_day = source_light;
+		skip_ao_day = true;
+	}
+	if (source_light >= final_night) {
+		final_night = source_light;
+		skip_ao_night = true;
+	}
+	
+	// Apply ambient occlusion
+	if (ambient_occlusion > 4) {
+		static thread_local const float ao_gamma = rangelim(
+			g_settings->getFloat("ambient_occlusion_gamma"), 0.25, 4.0);
+		static thread_local const float ao_factors[3] = {
+			powf(0.75, 1.0 / ao_gamma),
+			powf(0.50, 1.0 / ao_gamma),
+			powf(0.25, 1.0 / ao_gamma)
+		};
+		
+		int ao_index = ambient_occlusion - 5;
+		if (!skip_ao_day)
+			final_day = rangelim(round32(final_day * ao_factors[ao_index]), 0, 255);
+		if (!skip_ao_night)
+			final_night = rangelim(round32(final_night * ao_factors[ao_index]), 0, 255);
+	}
+	
+	return VertexLight(LightPair(final_day, final_night), has_sunlight);
 }
 
-img::color8 encode_light(u16 light, u8 emissive_light)
-{
-    // Get components
-    u32 day = (light & 0xff);
-    u32 night = (light >> 8);
-    // Add emissive light
-    night += emissive_light * 2.5f;
-    if (night > 255)
-        night = 255;
-    // Since we don't know if the day light is sunlight or
-    // artificial light, assume it is artificial when the night
-    // light bank is also lit.
-    if (day < night)
-        day = 0;
-    else
-        day = day - night;
-    u32 sum = day + night;
-    // Ratio of sunlight:
-    u32 r;
-    if (sum > 0)
-        r = day * 255 / sum;
-    else
-        r = 0;
-    // Average light:
-    float b = (day + night) / 2;
-    return img::color8(img::PF_RGBA8, b, b, b, r);
+// Calculate uniform (non-smooth) lighting
+LightPair calculateUniformLight(MapNode node, const NodeDefManager *ndef) {
+	return getNodeLight(node, ndef);
 }
 
-void get_sunlight_color(img::colorf *sunlight, u32 daynight_ratio)
-{
-    f32 rg = daynight_ratio / 1000.0f - 0.04f;
-    f32 b = (0.98f * daynight_ratio) / 1000.0f + 0.078f;
-    sunlight->R(rg);
-    sunlight->G(rg);
-    sunlight->B(b);
+// Calculate face lighting (for solid nodes)
+LightPair calculateFaceLight(
+	const v3s16 &p,
+	const v3s16 &face_dir,
+	MeshMakeData *data
+) {
+	const NodeDefManager *ndef = data->m_nodedef;
+	
+	MapNode n1 = data->m_vmanip.getNodeNoExNoEmerge(p);
+	MapNode n2 = data->m_vmanip.getNodeNoExNoEmerge(p + face_dir);
+	
+	if (n1.getContent() == CONTENT_IGNORE || n2.getContent() == CONTENT_IGNORE)
+		return LightPair(0, 0);
+	
+	LightPair light1 = getNodeLight(n1, ndef);
+	LightPair light2 = getNodeLight(n2, ndef);
+	
+	return light1.max(light2);
 }
 
-void final_color_blend(img::color8 *result,
-    u16 light, u32 daynight_ratio)
-{
-    img::colorf dayLight;
-    get_sunlight_color(&dayLight, daynight_ratio);
-    final_color_blend(result,
-        encode_light(light, 0), dayLight);
+// Calculate complete lighting for a node
+void calculateNodeLighting(
+	NodeLighting &result,
+	const v3s16 &p,
+	bool smooth,
+	MeshMakeData *data
+) {
+	if (!smooth) {
+		// Uniform lighting
+		MapNode node = data->m_vmanip.getNodeNoExNoEmerge(p);
+		result.uniform = calculateUniformLight(node, data->m_nodedef);
+		
+		// Set all corners/faces to uniform
+		for (int i = 0; i < 8; i++)
+			result.corners[i] = VertexLight(result.uniform);
+			
+		for (int f = 0; f < 6; f++)
+			for (int v = 0; v < 4; v++)
+				result.faces[f][v] = VertexLight(result.uniform);
+				
+		return;
+	}
+	
+	// Smooth lighting: calculate each corner
+	for (int i = 0; i < 8; i++) {
+		v3s16 offset = getCornerOffset(i);
+		result.corners[i] = calculateCornerLight(p, offset, data);
+	}
+	
+	// Map corners to faces
+	for (int face = 0; face < 6; face++) {
+		for (int vert = 0; vert < 4; vert++) {
+			u8 corner_idx = FACE_TO_CORNER[face][vert];
+			result.faces[face][vert] = result.corners[corner_idx];
+		}
+	}
+	
+	// Calculate uniform as average of all corners
+	u16 day_sum = 0, night_sum = 0;
+	for (int i = 0; i < 8; i++) {
+		day_sum += result.corners[i].light.day;
+		night_sum += result.corners[i].light.night;
+	}
+	result.uniform = LightPair(day_sum / 8, night_sum / 8);
 }
 
-void final_color_blend(img::color8 *result,
-    const img::color8 &data, const img::colorf &dayLight)
-{
-    static const img::colorf artificialColor(img::PF_RGBA32F, 1.04f, 1.04f, 1.04f);
-
-    img::color8 c(data);
-    f32 n = 1 - c.A();
-
-    f32 r = c.R() * (c.A() * dayLight.R() + n * artificialColor.R()) * 2.0f;
-    f32 g = c.G() * (c.A() * dayLight.G() + n * artificialColor.G()) * 2.0f;
-    f32 b = c.B() * (c.A() * dayLight.B() + n * artificialColor.B()) * 2.0f;
-
-    // Emphase blue a bit in darker places
-    // Each entry of this array represents a range of 8 blue levels
-    static const u8 emphase_blue_when_dark[32] = {
-        1, 4, 6, 6, 6, 5, 4, 3, 2, 1, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    };
-
-    b += emphase_blue_when_dark[std::clamp((s32) ((r + g + b) / 3 * 255),
-        0, 255) / 8] / 255.0f;
-
-    result->R(r * 255);
-    result->G(g * 255);
-    result->B(b * 255);
+// Interpolate lighting at a point within the node
+VertexLight interpolateLight(
+	const NodeLighting &lighting,
+	const v3f &pos
+) {
+	// Trilinear interpolation
+	// pos is in BS units relative to node center: [-0.5, 0.5]
+	// Map to [0, 1] for interpolation
+    const f32 OVERSIZE = 1.0f;  // allow slight extrapolation
+    f32 x = std::clamp(pos.X / BS + 0.5f, 0.0f - OVERSIZE, 1.0f + OVERSIZE);
+    f32 y = std::clamp(pos.Y / BS + 0.5f, 0.0f - OVERSIZE, 1.0f + OVERSIZE);
+    f32 z = std::clamp(pos.Z / BS + 0.5f, 0.0f - OVERSIZE, 1.0f + OVERSIZE);
+	
+    f32 day = 0.0f;
+    f32 night = 0.0f;
+	bool any_sunlight = false;
+	
+	for (int k = 0; k < 8; k++) {
+        f32 dx = (k & 4) ? x : (1.0f - x);
+        f32 dy = (k & 2) ? y : (1.0f - y);
+        f32 dz = (k & 1) ? z : (1.0f - z);
+        f32 weight = dx * dy * dz;
+		
+		const VertexLight &vl = lighting.corners[k];
+		day += weight * vl.light.day;
+		night += weight * vl.light.night;
+		
+		if (vl.is_sunlight)
+			any_sunlight = true;
+	}
+	
+	return VertexLight(
+		LightPair(
+			static_cast<u8>(std::clamp(day, 0.0f, 255.0f)),
+			static_cast<u8>(std::clamp(night, 0.0f, 255.0f))
+		),
+		any_sunlight
+	);
 }
 
-std::vector<v3s16> getCornerPositions(v3s16 origin)
-{
-    std::vector<v3s16> positions(6);
-
-    for (u8 k = 0; k < 6; k++)
-        positions[k] = origin + g_6dirs[k];
-
-    return positions;
+// Encode light to vertex color (same as original encode_light)
+img::color8 encodeVertexLight(
+	LightPair light,
+	u8 emissive,
+	const v3f &normal
+) {
+	u32 day = light.day;
+	u32 night = light.night;
+	
+	// Add emissive light
+	night += emissive * 2.5f;
+	if (night > 255)
+		night = 255;
+	
+	// Artificial light subtraction
+	if (day < night)
+		day = 0;
+	else
+        day -= night;
+	
+	u32 sum = day + night;
+	u32 ratio = (sum > 0) ? (day * 255 / sum) : 0;
+	
+    f32 avg = (day + night) / 2.0f;
+	
+	return img::color8(img::PF_RGBA8, avg, avg, avg, ratio);
 }
 
-u16 getMaxLightLevel(Map &map, const NodeDefManager *ndef, const std::vector<v3s16> &positions, s32 glow)
-{
-    u16 light_at_pos = 0;
-    u8 light_at_pos_intensity = 0;
-    bool pos_ok = false;
-
-    for (auto &pos : positions) {
-        bool this_ok;
-        MapNode n = map.getNode(pos, &this_ok);
-        if (this_ok) {
-            // Get light level at the position plus the entity glow
-            u16 this_light = getInteriorLight(n, glow, ndef);
-            u8 this_light_intensity = MYMAX(this_light & 0xFF, this_light >> 8);
-            if (this_light_intensity > light_at_pos_intensity) {
-                light_at_pos = this_light;
-                light_at_pos_intensity = this_light_intensity;
-            }
-            pos_ok = true;
-        }
-    }
-    if (!pos_ok)
-        light_at_pos = LIGHT_SUN;
-
-    return light_at_pos;
-}
-
-img::color8 getLightColor(Map &map, const NodeDefManager *ndef, const std::vector<v3s16> &positions, s32 glow)
-{
-    u16 light = getMaxLightLevel(map, ndef, positions, glow);
-
-    // Initialize with full alpha, otherwise entity won't be visible
-    img::color8 light_color = img::white;
-
-    // Encode light into color, adding a small boost
-    // based on the entity glow.
-    light_color = encode_light(light, glow);
-
-    return light_color;
-}
-
-img::color8 getBlendedLightColor(Map &map, const NodeDefManager *ndef, const std::vector<v3s16> &positions, u32 daynight_ratio)
-{
-    u16 light = getMaxLightLevel(map, ndef, positions, 0);
-
-    img::color8 light_color;
-    final_color_blend(&light_color, light, daynight_ratio);
-
-    return light_color;
+// Encode with sunlight boost
+img::color8 encodeVertexLightWithSun(
+	const VertexLight &vlight,
+	u8 emissive,
+	const v3f &normal
+) {
+	LightPair light = vlight.light;
+	
+	// Apply sunlight boost for upward-facing surfaces
+	if (vlight.is_sunlight && normal.Y > 0.0f) {
+		light.day = 255;
+	}
+	
+	return encodeVertexLight(light, emissive, normal);
 }

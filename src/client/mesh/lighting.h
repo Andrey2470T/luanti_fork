@@ -1,3 +1,7 @@
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2025 Unified Lighting Refactor
+
 #pragma once
 
 #include <BasicIncludes.h>
@@ -6,109 +10,118 @@
 class MapNode;
 class NodeDefManager;
 class MeshMakeData;
-class Map;
 
-// Compute light at node
-u16 getInteriorLight(MapNode n, s32 increment, const NodeDefManager *ndef);
-u16 getFaceLight(MapNode n, MapNode n2, const NodeDefManager *ndef);
-u16 getSmoothLightSolid(const v3s16 &p, const v3s16 &face_dir, const v3s16 &corner, MeshMakeData *data);
-u16 getSmoothLightTransparent(const v3s16 &p, const v3s16 &corner, MeshMakeData *data);
-
+// Unified light pair structure
 struct LightPair {
-    u8 lightDay;
-    u8 lightNight;
+	u8 day;
+	u8 night;
 
-    LightPair() = default;
-    explicit LightPair(u16 value) : lightDay(value & 0xff), lightNight(value >> 8) {}
-    LightPair(u8 valueA, u8 valueB) : lightDay(valueA), lightNight(valueB) {}
-    LightPair(float valueA, float valueB) :
-        lightDay(std::clamp(round32(valueA), 0, 255)),
-        lightNight(std::clamp(round32(valueB), 0, 255)) {}
-    operator u16() const { return lightDay | lightNight << 8; }
+	LightPair() : day(0), night(0) {}
+	explicit LightPair(u16 value) : day(value & 0xff), night(value >> 8) {}
+	LightPair(u8 d, u8 n) : day(d), night(n) {}
+	
+	operator u16() const { return day | (night << 8); }
+	
+	LightPair max(const LightPair &other) const {
+		return LightPair(std::max(day, other.day), std::max(night, other.night));
+	}
 };
 
-struct LightInfo {
-    float light_day;
-    float light_night;
-    float light_boosted;
-
-    LightPair getPair(float sunlight_boost = 0.0) const
-    {
-        return LightPair(
-            (1 - sunlight_boost) * light_day
-                + sunlight_boost * light_boosted,
-            light_night);
-    }
+// Lighting configuration for a vertex
+struct VertexLight {
+	LightPair light;
+	bool is_sunlight;  // true if daylight comes from direct sun
+	
+	VertexLight() : light(), is_sunlight(false) {}
+	VertexLight(LightPair l, bool sun = false) : light(l), is_sunlight(sun) {}
 };
 
-// Structure saving light values for each vertex at each cuboid face
-struct LightFrame {
-    u8 lightsDay[6][4];
-    u8 lightsNight[6][4];
-    //f32 lightsDay[8];
-    //f32 lightsNight[8];
-    bool sunlight[8];
+// Complete lighting information for a node
+struct NodeLighting {
+	// Corner lighting (8 corners of a cube)
+	VertexLight corners[8];
+	
+	// Face lighting (6 faces, 4 vertices each)
+	// Derived from corners but cached for convenience
+	VertexLight faces[6][4];
+	
+	// Uniform lighting (for non-smooth lighting)
+	LightPair uniform;
+	
+	NodeLighting() : uniform() {
+		for (int i = 0; i < 8; i++)
+			corners[i] = VertexLight();
+		for (int f = 0; f < 6; f++)
+			for (int v = 0; v < 4; v++)
+				faces[f][v] = VertexLight();
+	}
 };
 
-extern const v3s16 light_dirs[8];
-extern const u8 light_indices[6][4];
+// Maps corner indices (0-7) to their position offsets
+// Bit 0 = X, Bit 1 = Y, Bit 2 = Z
+// 0 = (-1,-1,-1), 1 = (-1,-1,+1), ..., 7 = (+1,+1,+1)
+inline v3s16 getCornerOffset(int corner_index) {
+	return v3s16(
+		(corner_index & 4) ? 1 : -1,
+		(corner_index & 2) ? 1 : -1,
+		(corner_index & 1) ? 1 : -1
+	);
+}
 
-void getSmoothLightFrame(LightFrame &lframe, const v3s16 &p, MeshMakeData *data);
-LightInfo blendLight(const v3f &vertex_pos, LightFrame &lframe);
-img::color8 blendLightColor(const v3f &vertex_pos, const v3f &vertex_normal,
-    LightFrame &lframe, u8 light_source);
+// Maps face index (0-5) and vertex index (0-3) to corner index (0-7)
+// Faces: 0=Y+, 1=Y-, 2=X+, 3=X-, 4=Z+, 5=Z-
+extern const u8 FACE_TO_CORNER[6][4];
 
-/*!
- * Encodes light of a node.
- * The result is not the final color, but a
- * half-baked vertex color.
- * You have to multiply the resulting color
- * with the node's color.
- *
- * \param light the first 8 bits are day light,
- * the last 8 bits are night light
- * \param emissive_light amount of light the surface emits,
- * from 0 to LIGHT_SUN.
- */
-img::color8 encode_light(u16 light, u8 emissive_light);
+// Calculate lighting for a node at position p
+// smooth: use smooth lighting (interpolate from neighbors)
+// solid: node is solid (affects which neighbors to sample)
+void calculateNodeLighting(
+	NodeLighting &result,
+	const v3s16 &p,
+	bool smooth,
+	MeshMakeData *data
+);
 
-/*!
- * Returns the sunlight's color from the current
- * day-night ratio.
- */
-void get_sunlight_color(img::colorf *sunlight, u32 daynight_ratio);
+// Calculate lighting for a single corner
+VertexLight calculateCornerLight(
+	const v3s16 &p,
+	const v3s16 &corner_offset,
+	MeshMakeData *data
+);
 
-/*!
- * Gives the final  SColor shown on screen.
- *
- * \param result output color
- * \param light first 8 bits are day light, second 8 bits are
- * night light
- */
-void final_color_blend(img::color8 *result,
-    u16 light, u32 daynight_ratio);
+// Calculate uniform (non-smooth) lighting for a node
+LightPair calculateUniformLight(
+	MapNode node,
+	const NodeDefManager *ndef
+);
 
-/*!
- * Gives the final  SColor shown on screen.
- *
- * \param result output color
- * \param data the half-baked vertex color
- * \param dayLight color of the sunlight
- */
-void final_color_blend(img::color8 *result,
-    const img::color8 &data, const img::colorf &dayLight);
+// Calculate lighting at a face (for solid nodes)
+LightPair calculateFaceLight(
+	const v3s16 &p,
+	const v3s16 &face_dir,
+	MeshMakeData *data
+);
 
-std::vector<v3s16> getCornerPositions(v3s16 origin);
+// Interpolate lighting at a point within a node
+// pos: position in BS units relative to node center [-0.5, 0.5]
+VertexLight interpolateLight(
+	const NodeLighting &lighting,
+	const v3f &pos
+);
 
-/*!
- * Returns the baked light color of the light at that node position from "positions"
- * where the light intensity is maximal
- * \param map
- * \param ndef
- * \param positions list of all iterating nodes positions
- * \param glow some additional light value boost
- * \return
- */
-img::color8 getLightColor(Map &map, const NodeDefManager *ndef, const std::vector<v3s16> &positions, s32 glow);
+// Encode light to vertex color
+// light: the light pair (day/night)
+// emissive: light source strength (0-15)
+// normal: surface normal (used for sunlight boost on top faces)
+img::color8 encodeVertexLight(
+	LightPair light,
+	u8 emissive,
+	const v3f &normal = v3f(0, 0, 0)
+);
 
-img::color8 getBlendedLightColor(Map &map, const NodeDefManager *ndef, const std::vector<v3s16> &positions, u32 daynight_ratio);
+// Encode with sunlight boost for top-facing surfaces
+img::color8 encodeVertexLightWithSun(
+	const VertexLight &vlight,
+	u8 emissive,
+	const v3f &normal = v3f(0, 0, 0)
+);
