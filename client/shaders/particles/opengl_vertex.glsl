@@ -8,6 +8,9 @@ layout (location = 3) in vec2 texCoords; // relatively to the current tile size
 
 #include <matrices>
 #include <data_unpack>
+#include <final_light_color>
+
+uniform float mDayNightRatio;
 
 #define dataTex mTexture1
 uniform sampler2D dataTex;
@@ -33,7 +36,10 @@ void main(void)
 	int texSize = textureSize(dataTex, 0).x;
 	sampleCoords = shiftCoords(sampleCoords, texSize, 16);
 	vec2 coloruv = sampleCoords / texSize;
-	vColor = texture2D(dataTex, coloruv);
+
+	vec4 lightColor = texture2D(dataTex, coloruv);
+	float nightRatio = 1.0 - lightColor.a;
+	vColor = finalLightColor(mDayNightRatio, lightColor, nightRatio);
 
 	sampleCoords = shiftCoords(sampleCoords, texSize);
 	vTileCoords = unpackIntVec2(dataTex, sampleCoords);

@@ -177,9 +177,7 @@ void ScreenQuad::setPostprocessUniforms(Client *client)
     Shader *curshader = rnd->getShader();
 
     u32 daynight_ratio = (f32)client->getEnv().getDayNightRatio();
-    img::colorf sunlight;
-    get_sunlight_color(&sunlight, daynight_ratio);
-    curshader->setUniform3Float("mDayLight", v3f(sunlight.R(), sunlight.G(), sunlight.B()));
+    curshader->setUniformFloat("mDayNightRatio", (f32)daynight_ratio);
 
     f32 animation_timer_delta_f = (f32)client->getEnv().getFrameTimeDelta() / 100000.f;
     curshader->setUniformFloat("mAnimationTimerDelta", animation_timer_delta_f);

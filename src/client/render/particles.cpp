@@ -4,6 +4,7 @@
 
 #include "particles.h"
 #include "Utils/TypeConverter.h"
+#include "client/mesh/lighting.h"
 #include "collision.h"
 #include "client/ao/genericCAO.h"
 #include "client/core/clientevent.h"
@@ -207,36 +208,29 @@ void Particle::calcTileRect(const std::string &newImg)
 
 void Particle::updateVertexColor(ClientEnvironment *env)
 {
-	u8 light = 0;
-	bool pos_ok;
-
 	v3s16 p = v3s16(
 		floor(m_pos.X+0.5),
 		floor(m_pos.Y+0.5),
 		floor(m_pos.Z+0.5)
 	);
-	MapNode n = env->getClientMap().getNode(p, &pos_ok);
-	if (pos_ok)
-		light = n.getLightBlend(env->getDayNightRatio(),
-				env->getGameDef()->ndef()->getLightingFlags(n));
-	else
-		light = blend_light(env->getDayNightRatio(), LIGHT_SUN, 0);
 
-	u8 m_light = decode_light(light + m_p.glow);
+    if (m_p.glow < 0)
+        return;
+
+    auto light = calculateAverageLight(env->getMap(), env->getGameDef()->ndef(), {p});
+    auto light_color = encodeVertexLightWithSun(VertexLight(light, false), m_p.glow);
 
     // animate particle alpha in accordance with settings
     float alpha = 1.f;
     auto pt = m_parent ? m_pt : &m_p.texture;
     alpha = pt->alpha.blend(m_time / (m_expiration+0.1f));
 
-    img::color8 res_c(img::PF_RGBA8,
-        m_light * m_base_color.R() / 255,
-        m_light * m_base_color.G() / 255,
-        m_light * m_base_color.A() / 255, 255 * alpha);
+    light_color = light_color * m_base_color / 255;
+    light_color.A(255 * alpha);
 
-    if (m_particle_data.light_color != res_c)
+    if (m_particle_data.light_color != light_color)
         m_particle_data_changed = true;
-    m_particle_data.light_color = res_c;
+    m_particle_data.light_color = light_color;
 }
 
 void Particle::updateTransform(ClientEnvironment *env)
@@ -779,6 +773,10 @@ void ParticleManager::renderParticles()
     auto rnd = m_rnd_sys->getRenderer();
 
     rnd->setRenderState(true);
+
+    u32 daynight_ratio = (f32)m_env->getDayNightRatio();
+    m_shader->setUniformFloat("mDayNightRatio", (f32)daynight_ratio);
+
     rnd->setShader(m_shader);
     rnd->setTexture(dynamic_cast<render::Texture2D *>(m_rnd_sys->getPool(true)->getAtlas(0)->getTexture()));
 

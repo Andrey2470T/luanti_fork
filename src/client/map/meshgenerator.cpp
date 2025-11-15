@@ -24,10 +24,6 @@
 #define FRAMED_EDGE_COUNT 12
 #define FRAMED_NEIGHBOR_COUNT 18
 
-static constexpr u16 quad_indices_02[] = {0, 1, 2, 2, 3, 0};
-static constexpr u16 quad_indices_13[] = {0, 1, 3, 3, 1, 2};
-static const auto &quad_indices = quad_indices_02;
-
 const std::string MeshGenerator::raillike_groupname = "connect_to_raillike";
 
 MeshGenerator::MeshGenerator(MeshMakeData *input, LayeredMesh *output):
@@ -121,6 +117,10 @@ img::color8 MeshGenerator::calculateVertexColor(
 // CORE DRAWING PRIMITIVES
 // ============================================================================
 
+#define SELECT_VERTEXTYPE(layer) \
+    layer->material_flags & MATERIAL_FLAG_HARDWARE_COLORIZED ? \
+    TwoColorNodeVType : NodeVType
+
 void MeshGenerator::drawQuad(
 	const std::array<v3f, 4> &positions,
 	const std::array<v3f, 4> &normals,
@@ -130,45 +130,24 @@ void MeshGenerator::drawQuad(
 {
 	rectf uvs = uv ? *uv : rectf(v2f(0.0, 1.0), v2f(1.0, 0.0));
 
-	#define SELECT_VERTEXTYPE(layer) \
-		layer->material_flags & MATERIAL_FLAG_HARDWARE_COLORIZED ? \
-		TwoColorNodeVType : NodeVType
-
 	auto layer1 = collector->findLayer(tile[0], SELECT_VERTEXTYPE(tile[0]), 4, 6);
 	auto buf1 = collector->getBuffer(layer1.second.buffer_id);
 	
-	// Add vertices
-	u32 base_idx = buf1->getVertexCount();
-	for (int i = 0; i < 4; i++) {
-		// TODO: Add vertex properly using buffer API
-		// buf1->addVertex(positions[i], normals[i], colors[i], getUV(i, uvs));
-	}
-	
-	// Add indices
-	for (u16 idx : quad_indices) {
-		buf1->addIndex(base_idx + idx);
-	}
+    Batcher3D::appendFace(buf1, positions, colors, uv ? *uv : uvs, normals);
 
 	// Second layer
 	auto layer2 = collector->findLayer(tile[1], SELECT_VERTEXTYPE(tile[1]), 4, 6);
 	auto buf2 = collector->getBuffer(layer2.second.buffer_id);
 	
-	base_idx = buf2->getVertexCount();
-	for (int i = 0; i < 4; i++) {
-		// TODO: Add vertex properly
-	}
-	for (u16 idx : quad_indices) {
-		buf2->addIndex(base_idx + idx);
-	}
-
-	#undef SELECT_VERTEXTYPE
+    Batcher3D::appendFace(buf2, positions, colors, uv ? *uv : uvs, normals);
 }
 
 void MeshGenerator::drawCuboid(
 	const aabbf &box,
 	const std::array<TileSpec, 6> &tiles,
 	const NodeLighting &lighting,
-	u8 face_mask)
+    u8 face_mask,
+    const std::array<rectf, 6> *uvs)
 {
 	// Apply visual scale
 	aabbf transformed_box = box;
@@ -180,23 +159,29 @@ void MeshGenerator::drawCuboid(
 	transformed_box.MinEdge += cur_node.origin;
 	transformed_box.MaxEdge += cur_node.origin;
 
+    std::array<img::color8, 24> colors;
+
 	for (int face = 0; face < 6; face++) {
 		if (face_mask & (1 << face))
 			continue;  // Face is culled
 
 		// Get face colors from pre-calculated lighting
-		std::array<img::color8, 4> colors = calculateFaceColors(
+        std::array<img::color8, 4> face_colors = calculateFaceColors(
 			face, lighting, cur_node.f->light_source);
 
-		// Create face geometry
-		std::array<v3f, 4> positions;
-		std::array<v3f, 4> normals;
-		
-		// Generate face vertices based on box and face index
-		// TODO: Implement proper face vertex generation
-		
-		drawQuad(positions, normals, colors, tiles[face], nullptr);
+        colors[face*4] = face_colors[0];
+        colors[face*4+1] = face_colors[1];
+        colors[face*4+2] = face_colors[2];
+        colors[face*4+3] = face_colors[3];
 	}
+
+    auto layer1 = collector->findLayer(tiles[0][0], SELECT_VERTEXTYPE(tiles[0][0]), 4, 6);
+    auto buf1 = collector->getBuffer(layer1.second.buffer_id);
+    Batcher3D::appendBox(buf1, box, colors, uvs, face_mask);
+
+    auto layer2 = collector->findLayer(tiles[0][1], SELECT_VERTEXTYPE(tiles[0][0]), 4, 6);
+    auto buf2 = collector->getBuffer(layer1.second.buffer_id);
+    Batcher3D::appendBox(buf2, box, colors, uvs, face_mask);
 }
 
 // ============================================================================
@@ -627,8 +612,7 @@ void MeshGenerator::drawFencelikeNode()
 	};
 
 	cur_node.origin = intToFloat(cur_node.p, BS);
-	// TODO: drawCuboid with UV
-	// drawCuboid(post, {tile_rot}, cur_node.lighting, 0);
+    drawCuboid(post, {tile_rot}, cur_node.lighting, 0, &postuv);
 
 	// Check +X neighbor
 	v3s16 p2 = cur_node.p;
@@ -641,7 +625,17 @@ void MeshGenerator::drawFencelikeNode()
 								   BS/2 + bar_len,  BS/4 + bar_rad,  bar_rad);
 		static const aabbf bar_x2(BS/2 - bar_len, -BS/4 - bar_rad, -bar_rad,
 								   BS/2 + bar_len, -BS/4 + bar_rad,  bar_rad);
-		// TODO: Draw bars
+        static const std::array<rectf, 6> xrailuv = {
+            rectf(v2f(0.000, 0.125), v2f(1.000, 0.250)),
+            rectf(v2f(0.000, 0.250), v2f(1.000, 0.375)),
+            rectf(v2f(0.375, 0.375), v2f(0.500, 0.500)),
+            rectf(v2f(0.625, 0.625), v2f(0.750, 0.750)),
+            rectf(v2f(0.000, 0.500), v2f(1.000, 0.625)),
+            rectf(v2f(0.000, 0.875), v2f(1.000, 1.000)),
+        };
+
+        drawCuboid(bar_x1, {tile_nocrack}, cur_node.lighting, 0, &xrailuv);
+        drawCuboid(bar_x2, {tile_nocrack}, cur_node.lighting, 0, &xrailuv);
 	}
 
 	// Check +Z neighbor
@@ -655,7 +649,17 @@ void MeshGenerator::drawFencelikeNode()
 									bar_rad,  BS/4 + bar_rad, BS/2 + bar_len);
 		static const aabbf bar_z2(-bar_rad, -BS/4 - bar_rad, BS/2 - bar_len,
 									bar_rad, -BS/4 + bar_rad, BS/2 + bar_len);
-		// TODO: Draw bars
+        static const std::array<rectf, 6> zrailuv = {
+            rectf(v2f(0.1875, 0.0625), v2f(0.3125, 0.3125)),
+            rectf(v2f(0.2500, 0.0625), v2f(0.3750, 0.3125)),
+            rectf(v2f(0.0000, 0.5625), v2f(1.0000, 0.6875)),
+            rectf(v2f(0.0000, 0.3750), v2f(1.0000, 0.5000)),
+            rectf(v2f(0.3750, 0.3750), v2f(0.5000, 0.5000)),
+            rectf(v2f(0.6250, 0.6250), v2f(0.7500, 0.7500))
+        };
+
+        drawCuboid(bar_z1, {tile_nocrack}, cur_node.lighting, 0, &zrailuv);
+        drawCuboid(bar_z2, {tile_nocrack}, cur_node.lighting, 0, &zrailuv);
 	}
 }
 

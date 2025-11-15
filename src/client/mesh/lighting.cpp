@@ -3,6 +3,7 @@
 // Copyright (C) 2025 Unified Lighting Refactor
 
 #include "lighting.h"
+#include "map.h"
 #include "voxel.h"
 #include "nodedef.h"
 #include "client/map/mapblockmesh.h"
@@ -186,6 +187,24 @@ VertexLight calculateCornerLight(
 // Calculate uniform (non-smooth) lighting
 LightPair calculateUniformLight(MapNode node, const NodeDefManager *ndef) {
 	return getNodeLight(node, ndef);
+}
+
+LightPair calculateAverageLight(Map &map, const NodeDefManager *ndef, const std::vector<v3s16> &positions) {
+    LightPair max_light;
+
+    bool pos_ok = false;
+    for (const auto &pos : positions) {
+        auto node = map.getNode(pos, &pos_ok);
+
+        if (!pos_ok)
+            continue;
+        auto light_pair = getNodeLight(node, ndef);
+
+        if (light_pair.night > max_light.night)
+            max_light = light_pair;
+    }
+
+    return max_light;
 }
 
 // Calculate face lighting (for solid nodes)

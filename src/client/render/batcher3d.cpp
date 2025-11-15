@@ -4,11 +4,11 @@
 #include "client/mesh/lighting.h"
 #include "client/mesh/meshoperations.h"
 
-bool Batcher3D::applyFaceShading = false;
+/*bool Batcher3D::applyFaceShading = false;
 bool Batcher3D::smoothLighting = false;
 img::color8 Batcher3D::curLightColor = img::white;
 LightFrame Batcher3D::curLightFrame;
-u8 Batcher3D::curLightSource;
+u8 Batcher3D::curLightSource;*/
 
 void Batcher3D::appendVertex(MeshBuffer *buf, v3f pos,
     const img::color8 &color, const v3f &normal, v2f uv)
@@ -158,7 +158,7 @@ void Batcher3D::appendFace(MeshBuffer *buf, const rectf &positions, const v3f &r
     appendFace(buf, positions3d, colors, uvs, normals);
 }
 
-void Batcher3D::appendBox(MeshBuffer *buf, const aabbf &box, const std::array<img::color8, 8> &colors,
+void Batcher3D::appendBox(MeshBuffer *buf, const aabbf &box, const std::array<img::color8, 24> &colors,
     const std::array<rectf, 6> *uvs, u8 mask)
 {
     // Auto calculation of uvs
@@ -195,7 +195,7 @@ void Batcher3D::appendBox(MeshBuffer *buf, const aabbf &box, const std::array<im
                 v3f(box.MinEdge.X, box.MaxEdge.Y, box.MaxEdge.Z), box.MaxEdge,
                 v3f(box.MaxEdge.X, box.MaxEdge.Y, box.MinEdge.Z), v3f(box.MinEdge.X, box.MaxEdge.Y, box.MinEdge.Z)
             },
-            {colors[5], colors[6], colors[7], colors[4]}, up_uv
+            {colors[0], colors[1], colors[2], colors[3]}, up_uv
         );
     }
     // Down
@@ -207,7 +207,7 @@ void Batcher3D::appendBox(MeshBuffer *buf, const aabbf &box, const std::array<im
                 box.MinEdge, v3f(box.MaxEdge.X, box.MinEdge.Y, box.MinEdge.Z),
                 v3f(box.MaxEdge.X, box.MinEdge.Y, box.MaxEdge.Z), v3f(box.MinEdge.X, box.MinEdge.Y, box.MaxEdge.Z)
             },
-            {colors[0], colors[3], colors[2], colors[1]}, down_uv
+            {colors[4], colors[5], colors[6], colors[7]}, down_uv
         );
     }
     // Right
@@ -219,7 +219,7 @@ void Batcher3D::appendBox(MeshBuffer *buf, const aabbf &box, const std::array<im
                 v3f(box.MaxEdge.X, box.MaxEdge.Y, box.MinEdge.Z), box.MaxEdge,
                 v3f(box.MaxEdge.X, box.MinEdge.Y, box.MaxEdge.Z), v3f(box.MaxEdge.X, box.MinEdge.Y, box.MinEdge.Z)
             },
-            {colors[7], colors[6], colors[2], colors[3]}, right_uv
+            {colors[8], colors[9], colors[10], colors[11]}, right_uv
         );
     }
     // Left
@@ -231,7 +231,7 @@ void Batcher3D::appendBox(MeshBuffer *buf, const aabbf &box, const std::array<im
                 v3f(box.MinEdge.X, box.MaxEdge.Y, box.MaxEdge.Z), v3f(box.MinEdge.X, box.MaxEdge.Y, box.MinEdge.Z),
                 box.MinEdge, v3f(box.MinEdge.X, box.MinEdge.Y, box.MaxEdge.Z)
             },
-            {colors[5], colors[4], colors[0], colors[1]}, left_uv
+            {colors[12], colors[13], colors[14], colors[15]}, left_uv
         );
     }
     // Back
@@ -243,7 +243,7 @@ void Batcher3D::appendBox(MeshBuffer *buf, const aabbf &box, const std::array<im
                 box.MaxEdge, v3f(box.MinEdge.X, box.MaxEdge.Y, box.MaxEdge.Z),
                 v3f(box.MinEdge.X, box.MinEdge.Y, box.MaxEdge.Z), v3f(box.MaxEdge.X, box.MinEdge.Y, box.MaxEdge.Z)
             },
-            {colors[6], colors[5], colors[1], colors[2]}, back_uv
+            {colors[16], colors[17], colors[18], colors[19]}, back_uv
         );
     }
     // Front
@@ -255,7 +255,7 @@ void Batcher3D::appendBox(MeshBuffer *buf, const aabbf &box, const std::array<im
                 v3f(box.MinEdge.X, box.MaxEdge.Y, box.MinEdge.Z), v3f(box.MaxEdge.X, box.MaxEdge.Y, box.MinEdge.Z),
                 v3f(box.MaxEdge.X, box.MinEdge.Y, box.MinEdge.Z), box.MinEdge
             },
-            {colors[4], colors[7], colors[3], colors[0]}, front_uv
+            {colors[20], colors[21], colors[22], colors[23]}, front_uv
         );
     }
 }

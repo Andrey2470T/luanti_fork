@@ -88,7 +88,13 @@ PointedThing PlayerInteraction::updatePointedThing(
         selection->updateMesh(pos, camera_offset, *selectionboxes, rndsys->getDrawList());
         v3s16 p = floatToInt(pos, BS);
 
-        img::color8 c = getBlendedLightColor(map, nodedef, getCornerPositions(p), client->getEnv().getDayNightRatio());
+        std::vector<v3s16> positions(6);
+
+        for (u8 k = 0; k < 6; k++)
+            positions[k] = p + g_6dirs[k];
+
+        auto light = calculateAverageLight(map, nodedef, positions);
+        auto c = encodeVertexLightWithSun(VertexLight(light, false), 0);
 
 		// Modify final color a bit with time
 		u32 timer = client->getEnv().getFrameTime() % 5000;

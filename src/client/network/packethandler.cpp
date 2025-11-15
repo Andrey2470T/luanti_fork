@@ -67,6 +67,8 @@ void ClientPacketHandler::connect(const Address &address, const std::string &add
     infostream << std::endl;
 
     m_con->Connect(address);
+
+    m_client->initLocalMapSaving(address.getPort(), m_address_name, is_local_server);
 }
 
 inline void ClientPacketHandler::handleCommand(NetworkPacket* pkt)

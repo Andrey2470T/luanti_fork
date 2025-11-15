@@ -72,7 +72,8 @@ private:
 		const aabbf &box,
 		const std::array<TileSpec, 6> &tiles,
 		const NodeLighting &lighting,
-		u8 face_mask = 0xff
+        u8 face_mask = 0xff,
+        const std::array<rectf, 6> *uvs = nullptr
 	);
 
 	// Helper: calculate vertex colors from lighting

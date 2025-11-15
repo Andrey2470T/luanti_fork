@@ -141,6 +141,9 @@ public:
 	v3s16 getCrackPos();
     void setCrack(int level, v3s16 pos);*/
 
+    bool mediaReceived() const
+    { return !m_media_downloader; }
+
     u64 getMapSeed(){ return m_map_seed; }
 
 	bool m_simple_singleplayer_mode;
@@ -241,10 +244,9 @@ public:
 
 	bool inhibit_inventory_revert = false;
 
-private:
     void initLocalMapSaving(u16 port, const std::string &hostname,
         bool is_local_server);
-
+private:
     // own state
     LocalClientState m_state = LC_Created;
 

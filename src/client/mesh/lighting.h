@@ -10,6 +10,7 @@
 class MapNode;
 class NodeDefManager;
 class MeshMakeData;
+class Map;
 
 // Unified light pair structure
 struct LightPair {
@@ -93,6 +94,11 @@ VertexLight calculateCornerLight(
 LightPair calculateUniformLight(
 	MapNode node,
 	const NodeDefManager *ndef
+);
+
+LightPair calculateAverageLight(Map &map,
+    const NodeDefManager *ndef,
+    const std::vector<v3s16> &positions
 );
 
 // Calculate lighting at a face (for solid nodes)

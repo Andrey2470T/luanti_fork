@@ -5,11 +5,13 @@ layout (location = 3) in vec2 uv;
 layout (location = 4) in int materialType;
 
 #include <matrices>
+#include <final_light_color>
+
 #ifdef ENABLE_DYNAMIC_SHADOWS
 #include <shadows>
 #endif
 
-uniform vec3 mDayLight;
+uniform float mDayNightRatio;
 uniform float mAnimationTimer;
 
 out vec3 vNormal;
@@ -32,8 +34,6 @@ centroid out ivec2 vTexCoord;
 
 out highp vec3 vEyeVec;
 out float vNightRatio;
-// Color of the light emitted by the light sources.
-const vec3 artificialLight = vec3(1.04, 1.04, 1.04);
 out float vIDiff;
 const float e = 2.718281828459;
 const float BS = 10.0;
@@ -107,22 +107,10 @@ void main(void)
 			: directional_ambient(normalize(skinnedNormal));
 	}
 
-	vColor = color;
-
-	// The alpha gives the ratio of sunlight in the incoming light.
-	vvNightRatio = 1.0 - vColor.a;
-	vColor.rgb = vColor.rgb * (vColor.a * mDayLight.rgb +
-		vvNightRatio * artificialLight.rgb) * 2.0;
-	vColor.a = 1.0;
-
-	// Emphase blue a bit in darker places
-	// See C++ implementation in mapblock_mesh.cpp final_color_blend()
-	float brightness = (vColor.r + vColor.g + vColor.b) / 3.0;
-	vColor.b += max(0.0, 0.021 - abs(0.2 * brightness - 0.021) +
-		0.07 * brightness);
-
-	vColor = clamp(vColor, 0.0, 1.0);
-
+	// Calculate color.
+	float nightRatio = 1.0 - color.a;
+	vColor = finalLightColor(mDayNightRatio, color, nightRatio);
+	vNightRatio = nightRatio;
 
 #ifdef ENABLE_DYNAMIC_SHADOWS
 	if (ShadowParams.shadow_strength > 0.0) {

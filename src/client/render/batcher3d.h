@@ -18,11 +18,11 @@ class Batcher3D
 {
 public:
     // lighting params
-    static bool applyFaceShading;
+    /*static bool applyFaceShading;
     static bool smoothLighting;
     static img::color8 curLightColor;
     static LightFrame curLightFrame;
-    static u8 curLightSource;
+    static u8 curLightSource;*/
 
     static void appendVertex(MeshBuffer *buf, v3f pos,
         const img::color8 &color=img::color8(), const v3f &normal=v3f(), v2f uv=v2f());
@@ -57,9 +57,9 @@ public:
         appendFace(buf, {v3f(-1.0f, 1.0f, 0.0f), v3f(1.0f, 1.0f, 0.0f), v3f(1.0f, -1.0f, 0.0f), v3f(-1.0f, -1.0f, 0.0f)}, colors);
     }
 
-    static void appendBox(MeshBuffer *buf, const aabbf &box, const std::array<img::color8, 8> &colors,
+    static void appendBox(MeshBuffer *buf, const aabbf &box, const std::array<img::color8, 24> &colors,
         const std::array<rectf, 6> *uvs=nullptr, u8 mask=0xff);
-    static void appendUnitBox(MeshBuffer *buf, const std::array<img::color8, 8> &colors)
+    static void appendUnitBox(MeshBuffer *buf, const std::array<img::color8, 24> &colors)
     {
         appendBox(buf, {v3f(-1.0f, -1.0f, -1.0f), v3f(1.0f, 1.0f, 1.0f)}, colors);
     }

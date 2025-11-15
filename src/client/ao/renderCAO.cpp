@@ -520,10 +520,11 @@ void RenderCAO::updateVertexColor(bool update_light)
         for (u16 i = 0; i < npos; i++)
             positions[i] = pos[i];
 
-        auto light = getLightColor( m_env->getMap(), m_client->ndef(), positions, m_prop.glow);
+        auto light = calculateAverageLight(m_env->getMap(), m_client->ndef(), positions);
+        auto light_color = encodeVertexLightWithSun(VertexLight(light, false), m_prop.glow);
 
-        if (light != m_last_light)
-            m_last_light = light;
+        if (light_color != m_last_light)
+            m_last_light = light_color;
 
     }
     MeshOperations::colorizeMesh(m_model->getMesh()->getBuffer(0), m_base_color*m_last_light);

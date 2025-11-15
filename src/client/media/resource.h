@@ -135,7 +135,15 @@ void *ResourceSubCache<T>::get(const std::string &name)
 {
     auto it = std::find_if(cache.begin(), cache.end(), [name] (const std::unique_ptr<ResourceInfo<T>> &elem)
     {
-        return elem->name == name || elem->path == name;
+        bool path1_exists = fs::exists(elem->path);
+        bool path2_exists = fs::exists(name);
+
+        bool name_cmp = elem->name == name;
+        bool path_cmp = false;
+
+        if (path1_exists && path2_exists)
+            path_cmp = fs::equivalent(elem->path, name);
+        return name_cmp || path_cmp;
     });
 
     if (it == cache.end())

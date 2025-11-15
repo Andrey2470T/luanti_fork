@@ -58,9 +58,7 @@ void TileLayer::setupRenderState(Client *client) const
     // Workaround
     if (thing == RenderThing::NODE || thing == RenderThing::OBJECT) {
         u32 daynight_ratio = (f32)client->getEnv().getDayNightRatio();
-        img::colorf sunlight_f;
-        get_sunlight_color(&sunlight_f, daynight_ratio);
-        shader->setUniform3Float("mDayLight", v3f(sunlight_f.R(), sunlight_f.G(), sunlight_f.B()));
+        shader->setUniformFloat("mDayNightRatio", (f32)daynight_ratio);
 
         u32 animation_timer = client->getEnv().getFrameTime() % 1000000;
         f32 animation_timer_f = (f32)animation_timer / 100000.f;

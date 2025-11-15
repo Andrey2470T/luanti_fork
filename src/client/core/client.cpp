@@ -433,9 +433,7 @@ void Client::step(f32 dtime)
 	// Step environment (also handles player controls)
     m_env.step(dtime);
 
-    if (m_sound) {
-        m_sound->step(dtime);
-    }
+    m_sound->step(dtime);
 
 	/*
 		Get events
@@ -484,7 +482,7 @@ void Client::step(f32 dtime)
 		m_media_downloader->step(this);
 		if (m_media_downloader->isDone()) {
 			delete m_media_downloader;
-			m_media_downloader = NULL;
+            m_media_downloader = nullptr;
 		}
 	}
 	{
@@ -535,17 +533,15 @@ void Client::step(f32 dtime)
 	/*
 		Update positions of sounds attached to objects
 	*/
-	{
-		for (auto &m_sounds_to_object : m_sounds_to_objects) {
-			sound_handle_t client_id = m_sounds_to_object.first;
-			u16 object_id = m_sounds_to_object.second;
-			ClientActiveObject *cao = m_env.getActiveObject(object_id);
-			if (!cao)
-				continue;
-			m_sound->updateSoundPosVel(client_id, cao->getPosition() * (1.0f/BS),
-					cao->getVelocity() * (1.0f/BS));
-		}
-	}
+    for (auto &m_sounds_to_object : m_sounds_to_objects) {
+        sound_handle_t client_id = m_sounds_to_object.first;
+        u16 object_id = m_sounds_to_object.second;
+        ClientActiveObject *cao = m_env.getActiveObject(object_id);
+        if (!cao)
+            continue;
+        m_sound->updateSoundPosVel(client_id, cao->getPosition() * (1.0f/BS),
+        cao->getVelocity() * (1.0f/BS));
+    }
 
 	/*
 		Handle removed remotely initiated sounds
@@ -574,7 +570,7 @@ void Client::step(f32 dtime)
 		if (!removed_server_ids.empty()) {
             m_packet_handler->sendRemovedSounds(removed_server_ids);
 		}
-	}
+    }
 
 	// Write changes to the mod storage
 	m_mod_storage_save_timer -= dtime;
@@ -593,8 +589,8 @@ void Client::step(f32 dtime)
 
     if (m_clientevent_handler)
         m_clientevent_handler->processEvents();
-    if (m_sound)
-        updateSound(dtime);
+
+    updateSound(dtime);
 }
 
 bool Client::loadMedia(const std::string &data, const std::string &filename,
@@ -930,6 +926,7 @@ void Client::afterContentReceived()
 	infostream<<"Client::afterContentReceived() started"<<std::endl;
     assert(m_packet_handler->itemdefReceived()); // pre-condition
     assert(m_packet_handler->nodedefReceived()); // pre-condition
+    assert(mediaReceived());
 
     auto loadscreen = m_render_system->getLoadScreen();
     v2u wndsize = m_render_system->getWindowSize();

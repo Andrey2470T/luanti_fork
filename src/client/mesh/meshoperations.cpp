@@ -201,7 +201,8 @@ MeshBuffer *MeshOperations::convertNodeboxesToMesh(const std::vector<aabbf> &box
     MeshBuffer *mesh = new MeshBuffer(6 * 4 * boxes.size(), 6 * 6 * boxes.size());
 
 	img::color8 c(img::PF_RGBA8, 255,255,255,255);
-    std::array<img::color8, 8> colors = {c, c, c, c, c, c, c, c};
+    std::array<img::color8, 24> colors;
+    colors.fill(c);
 
 	for (aabbf box : boxes) {
 		box.repair();

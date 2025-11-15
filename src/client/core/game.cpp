@@ -372,9 +372,6 @@ bool Game::createClient(const GameStartData &start_data)
     if (!client->initGui())
         return false;
 
-    if (!client->initSound())
-        return false;
-
 	/* Set window caption
 	 */
     auto wnd = rndsys->getWindow();
@@ -467,6 +464,10 @@ bool Game::connectToServer(const GameStartData &start_data,
 
 	client->migrateModStorage();
 	client->m_simple_singleplayer_mode = simple_singleplayer_mode;
+
+    if (!client->initSound()) {
+        return false;
+    }
 
 	/*
 		Wait for server to accept connection
@@ -570,7 +571,8 @@ bool Game::getServerContent(bool *aborted)
 		step(dtime);
 
 		// End condition
-        if (pkt_handler->itemdefReceived() && pkt_handler->nodedefReceived()) {
+        if (client->mediaReceived() && pkt_handler->itemdefReceived() &&
+                pkt_handler->nodedefReceived()) {
 			return true;
 		}
 
