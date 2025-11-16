@@ -277,6 +277,9 @@ template <class T>
 T *ResourceCache::getOrLoad(ResourceType _type, const std::string &_name,
     bool apply_modifiers, bool load_for_mesh, bool apply_fallback)
 {
+    if (_name.empty())
+        return nullptr;
+
     if (_type == ResourceType::IMAGE) {
         auto img = reinterpret_cast<img::Image *>(subcaches[_type]->get(_name));
 

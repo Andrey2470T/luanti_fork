@@ -109,7 +109,7 @@ Model *addSpriteModel(TileLayer &layer, v3f position, v3f visual_size);
 Model *addUprightSpriteModel(TileLayer &layer, v3f position, v3f visual_size, bool is_player);
 Model *addCubeModel(TileLayer &layer, v3f position, v3f visual_size);
 Model *addMeshModel(TileLayer &layer, v3f position, v3f visual_size, AnimationManager *anim_mgr,
-    std::string mesh, ResourceCache *cache);
+    std::string mesh);
 
 void RenderCAO::addMesh()
 {
@@ -122,11 +122,12 @@ void RenderCAO::addMesh()
     else if (m_prop.visual == "cube")
         m_model = addCubeModel(m_tile_layer, m_position, m_prop.visual_size);
     else
-        m_model = addMeshModel(m_tile_layer, m_position, m_prop.visual_size, m_anim_mgr, m_prop.mesh, m_cache);
+        m_model = addMeshModel(m_tile_layer, m_position, m_prop.visual_size, m_anim_mgr, m_prop.mesh);
 
     m_cache->cacheResource<Model>(ResourceType::MODEL, m_model);
 
     updateVertexColor(true);
+    m_model->getMesh()->getBuffer(0)->uploadData();
 }
 
 void RenderCAO::removeMesh()
@@ -1236,27 +1237,26 @@ Model *addCubeModel(TileLayer &layer, v3f position, v3f visual_size)
 }
 
 Model *addMeshModel(TileLayer &layer, v3f position, v3f visual_size, AnimationManager *anim_mgr,
-    std::string mesh, ResourceCache *cache)
+    std::string mesh)
 {
-    std::vector<std::shared_ptr<TileLayer>> layers;
-
-    for (u8 i = 0; i < 6; i++)
-        layers.push_back(std::make_shared<TileLayer>(layer));
-    auto model = Model::load(anim_mgr, position, layers, mesh, cache);
+    auto model = Model::load(anim_mgr, mesh);
 
     if (model) {
         auto mesh = model->getMesh();
 
-        for (u8 i = 0; i < mesh->getBuffersCount(); i++) {
-            auto buffer = mesh->getBuffer(i);
+        auto buffer = mesh->getBuffer(0);
 
-            if (!MeshOperations::checkMeshNormals(buffer)) {
-                infostream << "MeshRenderCAO: recalculating normals for mesh "
-                    << mesh << std::endl;
-                MeshOperations::recalculateNormals(buffer, true, false);
-            }
+        if (!MeshOperations::checkMeshNormals(buffer)) {
+            infostream << "MeshRenderCAO: recalculating normals for mesh "
+                << mesh << std::endl;
+            MeshOperations::recalculateNormals(buffer, true, false);
+        }
 
-            MeshOperations::scaleMesh(buffer, visual_size);
+        MeshOperations::scaleMesh(buffer, visual_size);
+
+        for (u8 i = 0; i < 6; i++) {
+            auto &buf_layer = mesh->getBufferLayer(0, i);
+            buf_layer.first = std::make_shared<TileLayer>(layer);
         }
     }
 

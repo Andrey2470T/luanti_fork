@@ -19,10 +19,10 @@ out vec4 outColor;
 void main(void)
 {
 	// Calculate the pixel coords of the tile
-	int atlas_x = vTexCoord.x + vTileCoords.x;
-	int atlas_y = vTexCoord.y + vTileCoords.y;
+	int atlas_x = int(vTexCoord.x * float(vTileSize.x)) + vTileCoords.x;
+	int atlas_y = int(vTexCoord.y * float(vTileSize.y)) + vTileCoords.y;
 
-	vec4 base = texelFetch(baseTexture, vec2(atlas_x, atlas_y), 0).rgba;
+	vec4 base = texelFetch(baseTexture, ivec2(atlas_x, atlas_y), 0).rgba;
 
 	vec4 col = vec4(base.rgb * vColor.rgb, 1.0);
 

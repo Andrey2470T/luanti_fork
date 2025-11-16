@@ -89,7 +89,7 @@ void MeshMakeData::fillSingleNode(MapNode data, MapNode padding)
 
 MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data)
     :  m_client(client), m_mesh(std::make_unique<LayeredMesh>(v3f((data->m_side_length * 0.5f - 0.5f) * BS),
-      intToFloat(data->m_mesh_grid.getMeshPos(data->m_blockpos) * MAP_BLOCKSIZE, BS), NodeVType))
+      intToFloat(data->m_mesh_grid.getMeshPos(data->m_blockpos) * MAP_BLOCKSIZE, BS)))
 {
 	ZoneScoped;
 
@@ -118,12 +118,12 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data)
 	// algin vertices to mesh grid, not meshgen area
     //offset = intToFloat((data->m_blockpos - mesh_grid.getMeshPos(data->m_blockpos)) * MAP_BLOCKSIZE, BS);
 
-    /*MeshCollector collector(m_bounding_sphere_center, offset);
+    //MeshCollector collector(m_bounding_sphere_center, offset);
 
-	{
+    {
 		// Generate everything
-		MapblockMeshGenerator(data, &collector).generate();
-    }*/
+        MeshGenerator(data, m_mesh.get()).generate();
+    }
 
 
     auto basicPool = m_client->getRenderSystem()->getPool(true);
@@ -164,6 +164,8 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data)
 
             MeshOperations::recalculateMeshAtlasUVs(buffer, offset, count, atlas_size, src_rect);
         }
+
+        buffer->uploadData();
     }
 
     m_mesh->splitTransparentLayers();

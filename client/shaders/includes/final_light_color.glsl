@@ -4,8 +4,8 @@ const vec3 artificialLight = vec3(1.04, 1.04, 1.04);
 // daynightRatio: 0-1000
 vec3 getSunlightColor(float daynightRatio)
 {
-	float rg = daynight_ratio / 1000.0 - 0.04;
-    float b = (0.98 * daynight_ratio) / 1000.0 + 0.078;
+	float rg = daynightRatio / 1000.0 - 0.04;
+    float b = (0.98 * daynightRatio) / 1000.0 + 0.078;
 
     return vec3(rg, rg, b);
 }

@@ -14,12 +14,13 @@ int unpackInt(sampler2D dataTex, ivec2 coords)
 {
 	vec4 int_v = texelFetch(dataTex, coords, 0);
 
-	int int_n;
-	int_n = int_n | (int_v.r << 24);
-	int_n = int_n | (int_v.g << 16);
-	int_n = int_n | (int_v.b << 8);
-	int_n = int_n | int_v.a;
+	ivec4 bytes = ivec4(int_v * 255.0);
 
+	int int_n = 0;
+	int_n = int_n | (bytes.r << 24);
+	int_n = int_n | (bytes.g << 16);
+	int_n = int_n | (bytes.b << 8);
+	int_n = int_n | bytes.a;
 	return int_n;
 }
 

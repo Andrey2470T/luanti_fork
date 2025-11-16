@@ -8,6 +8,7 @@
 #include <cmath>
 #include <json/json.h>
 #include "client.h"
+#include "client/mesh/model.h"
 #include "client/player/interaction.h"
 #include "client/render/renderer.h"
 #include "client/render/sky.h"
@@ -643,12 +644,20 @@ bool Client::loadMedia(const std::string &data, const std::string &filename,
 	};
 	name = removeStringEnd(filename, model_ext);
 	if (!name.empty()) {
-		verbosestream<<"Client: Storing model into memory: "
-				<<"\""<<filename<<"\""<<std::endl;
-		if(m_mesh_data.count(filename))
-			errorstream<<"Multiple models with name \""<<filename.c_str()
-					<<"\" found; replacing previous model"<<std::endl;
-		m_mesh_data[filename] = data;
+        TRACESTREAM(<<"Client: Attempting to load model "
+                <<"file \"" << filename << "\"" << std::endl);
+
+        auto model = Model::loadFromMem(m_render_system->getAnimationManager(),
+            (void *)data.c_str(), data.size(), fs::path(filename).extension());
+
+        if (!model) {
+            errorstream<<"Client: Cannot create model from data of "
+                    <<"file \""<<filename<<"\""<<std::endl;
+            delete model;
+            return false;
+        }
+
+        m_resource_cache->cacheResource<Model>(ResourceType::MODEL, model, filename);
 		return true;
 	}
 

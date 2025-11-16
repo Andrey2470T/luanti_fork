@@ -30,11 +30,10 @@ class Model
 public:
     Model(AnimationManager *_mgr);
     Model(v3f pos, const std::vector<MeshLayer> &layers, MeshBuffer *buffer);
-    Model(AnimationManager *_mgr, v3f pos, const std::vector<std::shared_ptr<TileLayer>> &layers,
-        const aiScene *scene);
+    Model(AnimationManager *_mgr, const aiScene *scene);
 
-    static Model *load(AnimationManager *_mgr, v3f pos, const std::vector<std::shared_ptr<TileLayer>> &layers,
-        const std::string &name, ResourceCache *cache);
+    static Model *load(AnimationManager *_mgr, const std::string &name);
+    static Model *loadFromMem(AnimationManager *_mgr, void *mem, s32 size, const std::string &format);
 
     LayeredMesh *getMesh() const
     {
@@ -51,7 +50,7 @@ public:
         return animation;
     }
 private:
-    void processMesh(u8 mat_i, aiMesh *m, std::shared_ptr<TileLayer> layer);
+    void processMesh(u8 mat_i, const std::vector<aiMesh *> &meshes);
 
     void setBoneRelations(std::vector<Bone *> &bones, u8 &boneID, aiNode *curNode, std::optional<u8> parentID = std::nullopt);
     void setBoneWeights(aiSkeleton *skeleton, aiNode *node, Bone *bone);

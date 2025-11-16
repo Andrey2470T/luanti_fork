@@ -1,7 +1,6 @@
 #include "layeredmesh.h"
 #include "meshbuffer.h"
 #include "client/render/tilelayer.h"
-#include "defaultVertexTypes.h"
 
 v3f LayeredMeshTriangle::getCenter() const
 {
@@ -23,8 +22,8 @@ bool LayeredMesh::TransparentTrianglesSorter::operator()(const LayeredMeshTriang
     return dist1 > dist2;
 }
 
-LayeredMesh::LayeredMesh(const v3f &center, const v3f &abs_center, render::VertexTypeDescriptor basicVType)
-    : center_pos(center), abs_pos(abs_center), basicVertexType(basicVType)
+LayeredMesh::LayeredMesh(const v3f &center, const v3f &abs_center)
+    : center_pos(center), abs_pos(abs_center)
 {}
 
 std::vector<MeshLayer> LayeredMesh::getAllLayers() const
@@ -44,12 +43,9 @@ MeshLayer &LayeredMesh::findLayer(std::shared_ptr<TileLayer> layer, render::Vert
     for (u8 i = 0; i < getBuffersCount(); i++) {
         auto buffer = getBuffer(i);
 
-        // The buffer is overfilled
-        if ((u64)buffer->getVertexCount() + vertexCount > (u64)T_MAX(u32))
-            continue;
-
-        // The buffer vertex type is different from the layer's one
-        if ((layer->material_flags & MATERIAL_FLAG_HARDWARE_COLORIZED) != isHardwareHolorized(i))
+        // The buffer is overfilled or vertex type is different from the required one
+        if (((u64)buffer->getVertexCount() + vertexCount > (u64)T_MAX(u32)) ||
+                (vType.Name != buffer->getVAO()->getVertexType().Name))
             continue;
 
         auto &buf_layers = layers.at(i);
@@ -76,7 +72,7 @@ MeshLayer &LayeredMesh::findLayer(std::shared_ptr<TileLayer> layer, render::Vert
     layers.emplace_back();
 
     LayeredMeshPart mesh_p;
-    mesh_p.buffer_id = getBuffersCount();
+    mesh_p.buffer_id = getBuffersCount()-1;
     mesh_p.layer_id = 0;
 
     layers.back().emplace_back(layer, mesh_p);

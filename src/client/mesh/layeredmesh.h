@@ -21,6 +21,8 @@ struct LayeredMeshPart
 
     u32 offset = 0; // number of start index in the index buffer
     u32 count; // count of buffer indices starting from "offset"
+    u32 vertex_offset; // number of start vertex for this part (used only in the model load)
+    u32 vertex_count; // count of buffer vertices for this part (used only in the model load)
 
     // After 3d vertex batching, new indices are mandatory to be added also here
     std::vector<u32> indices;
@@ -58,12 +60,9 @@ class LayeredMesh
     std::vector<std::vector<MeshLayer>> layers;
 
     f32 radius_sq = 0.0f;
-    v3f center_pos; // relative BS coords
-    v3f abs_pos; // absolute BS coords
-
+    v3f center_pos; // relative BS coords, e.g. a half-side of a mapblock cube
+    v3f abs_pos; // absolute BS coords, for mapblock it is a min corner
     v3f abs_rot;
-	
-	render::VertexTypeDescriptor basicVertexType;
 
     struct TransparentTrianglesSorter
     {
@@ -79,7 +78,8 @@ class LayeredMesh
 
     std::vector<LayeredMeshPart> partial_layers;
 public:
-    LayeredMesh(const v3f &center, const v3f &abs_center, render::VertexTypeDescriptor basicVType);
+    LayeredMesh() = default;
+    LayeredMesh(const v3f &center, const v3f &abs_center);
 
     f32 getBoundingSphereRadius() const
     {
@@ -120,15 +120,17 @@ public:
     {
     	return partial_layers;
     }
-    
-    render::VertexTypeDescriptor getBasicVertexType() const
+
+    void setCenter(const v3f &center, const v3f &abs_center)
     {
-    	return basicVertexType;
+        center_pos = center;
+        abs_pos = abs_center;
     }
 
     void addNewBuffer(MeshBuffer *buffer)
     {
         buffers.emplace_back(std::unique_ptr<MeshBuffer>(buffer));
+        layers.emplace_back();
         recalculateBoundingRadius();
     }
     // adds the layer in the last buffer

@@ -93,10 +93,12 @@ void Skeleton::updateDataTexture()
 
 void Skeleton::fillMeshAttribs(LayeredMesh *mesh)
 {
-    assert(mesh->getBasicVertexType().Name != "AnimatedObject3D");
-
     for (u32 k = 0; k < mesh->getBuffersCount(); k++) {
         auto buf = mesh->getBuffer(k);
+
+        if (buf->getVAO()->getVertexType().Name != "AnimatedObject3D")
+            continue;
+
         for (u32 i = 0; i < buf->getVertexCount(); i++) {
             u8 bones_packed = 0;
             u8 weights_packed = 0;

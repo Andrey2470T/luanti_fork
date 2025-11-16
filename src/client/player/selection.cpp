@@ -61,7 +61,7 @@ void SelectionMesh::updateMesh(const v3f &new_pos, const v3s16 &camera_offset,
     for (auto &box : boxes)
         max_box.addInternalBox(box);
 
-    mesh = std::make_unique<LayeredMesh>(v3f(max_box.getRadius()), pos_with_offset, DefaultVType);
+    mesh = std::make_unique<LayeredMesh>(v3f(max_box.getRadius()), pos_with_offset);
     mesh->getRotation() = rotation;
 
     std::shared_ptr<TileLayer> layer = std::make_shared<TileLayer>();
@@ -161,7 +161,7 @@ void BlockBounds::updateMesh(Client *client, DistanceSortedDrawList *drawlist)
         rangelim(g_settings->getU16("show_block_bounds_radius_near"), 0, 1000) : 0;
 
     mesh = std::make_unique<LayeredMesh>(v3f(radius * MAP_BLOCKSIZE * BS),
-        intToFloat(block_pos * MAP_BLOCKSIZE, BS) - cam_offset, DefaultVType);
+        intToFloat(block_pos * MAP_BLOCKSIZE, BS) - cam_offset);
     MeshBuffer *buf = new MeshBuffer(4 * radius * radius * 3, 0, false);
 
     for (s16 x = -radius; x <= radius + 1; x++)

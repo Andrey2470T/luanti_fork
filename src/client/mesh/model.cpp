@@ -1,4 +1,5 @@
 #include "model.h"
+#include "client/render/batcher3d.h"
 #include "log.h"
 #include "defaultVertexTypes.h"
 #include "client/ao/skeleton.h"
@@ -41,7 +42,7 @@ Model::Model(AnimationManager *_mgr)
 
 Model::Model(v3f pos, const std::vector<MeshLayer> &layers, MeshBuffer *buffer)
 {
-    mesh = std::make_unique<LayeredMesh>(v3f(), pos, NodeVType);
+    mesh = std::make_unique<LayeredMesh>(v3f(), pos);
     mesh->addNewBuffer(buffer);
 
     for (auto layer : layers)
@@ -49,25 +50,28 @@ Model::Model(v3f pos, const std::vector<MeshLayer> &layers, MeshBuffer *buffer)
     mesh->splitTransparentLayers();
 }
 
-Model::Model(AnimationManager *_mgr, v3f pos, const std::vector<std::shared_ptr<TileLayer>> &layers,
-    const aiScene *scene)
+Model::Model(AnimationManager *_mgr, const aiScene *scene)
     : mgr(_mgr)
 {
     // aka Material Groups
     // The material groups order defines the meshes groups one
-    assert(scene->mNumMaterials <= scene->mNumMeshes);
 
     bool has_skeleton = scene->hasSkeletons();
     bool has_anim = scene->HasAnimations();
 
-    render::VertexTypeDescriptor vType = has_skeleton ? AOVType : NodeVType;
-    mesh = std::make_unique<LayeredMesh>(v3f(), pos, vType);
-    mesh->addNewBuffer(new MeshBuffer(true, vType));
+    mesh = std::make_unique<LayeredMesh>();
+    mesh->addNewBuffer(new MeshBuffer(true, has_skeleton ? AOVType : NodeVType));
 
     // process meshes
-    for (u8 i = 0; i < scene->mNumMaterials; i++) {
-        processMesh(i, scene->mMeshes[i], layers.at(i));
+    std::map<u32, std::vector<aiMesh *>> sortedMeshes;
+
+    for (u8 i = 0; i < scene->mNumMeshes; i++) {
+        auto mesh = scene->mMeshes[i];
+        sortedMeshes[mesh->mMaterialIndex].emplace_back(mesh);
     }
+
+    for (u8 i = 0; i < sortedMeshes.size(); i++)
+        processMesh(i, sortedMeshes[i]);
 
     // Adds only the first skeleton and first animation
     if (has_skeleton) {
@@ -78,11 +82,9 @@ Model::Model(AnimationManager *_mgr, v3f pos, const std::vector<std::shared_ptr<
     }
 
     mesh->splitTransparentLayers();
-    mesh->getBuffer(0)->uploadData();
 }
 
-Model *Model::load(AnimationManager *_mgr, v3f pos, const std::vector<std::shared_ptr<TileLayer> > &layers,
-    const std::string &name, ResourceCache *cache)
+Model *Model::load(AnimationManager *_mgr, const std::string &name)
 {
     Assimp::Importer importer;
 
@@ -92,6 +94,7 @@ Model *Model::load(AnimationManager *_mgr, v3f pos, const std::vector<std::share
         warningstream << "Model::load() Couldn't find any path to the resource with name " << name << std::endl;
         return nullptr;
     }
+
     const aiScene *scene = importer.ReadFile(path,
         aiProcess_JoinIdenticalVertices |
         aiProcess_Triangulate |
@@ -105,55 +108,77 @@ Model *Model::load(AnimationManager *_mgr, v3f pos, const std::vector<std::share
         return nullptr;
     }
 
-    auto model = new Model(_mgr, pos, layers, scene);
-    cache->cacheResource<Model>(ResourceType::MODEL, model);
-
-    return model;
+    return new Model(_mgr, scene);
 }
 
-void Model::processMesh(u8 mat_i, aiMesh *m, std::shared_ptr<TileLayer> layer)
+Model *Model::loadFromMem(AnimationManager *_mgr, void *mem, s32 size, const std::string &format)
 {
+    Assimp::Importer importer;
+
+    const aiScene *scene = importer.ReadFileFromMemory(mem, size,
+        aiProcess_JoinIdenticalVertices |
+        aiProcess_Triangulate |
+        aiProcess_GenNormals |
+        aiProcess_LimitBoneWeights |
+        aiProcess_FlipWindingOrder |
+        aiProcess_PopulateArmatureData,
+        format.c_str());
+
+    if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
+        errorstream << "Model::loadFromMem() Failed to load the model from memory" << std::endl;
+        return nullptr;
+    }
+
+    return new Model(_mgr, scene);
+}
+
+void Model::processMesh(u8 mat_i, const std::vector<aiMesh *> &meshes)
+{
+    if (meshes.empty())
+        return;
     auto buf = mesh->getBuffer(0);
     u32 vertexCount = buf->getVertexCount();
     u32 indexCount = buf->getIndexCount();
 
-    buf->reallocateData(vertexCount + m->mNumVertices, indexCount + m->mNumFaces * 3);
+    u32 vertices_put = 0;
+    u32 indices_put = 0;
+
+    for (u32 i = 0; i < meshes.size(); i++) {
+        vertices_put += meshes[i]->mNumVertices;
+        indices_put += meshes[i]->mNumFaces * 3;
+    }
+    buf->reallocateData(vertexCount + vertices_put, indexCount + indices_put);
 
     LayeredMeshPart mesh_part;
     mesh_part.buffer_id = 0;
     mesh_part.layer_id = mat_i;
     mesh_part.offset = indexCount;
-    mesh_part.count = m->mNumFaces * 3;
+    mesh_part.count = indices_put;
+    mesh_part.vertex_offset = vertexCount;
+    mesh_part.vertex_count = vertices_put;
 
-    mesh->addNewLayer(layer, mesh_part);
+    std::shared_ptr<TileLayer> tilelayer = std::make_shared<TileLayer>();
+    mesh->addNewLayer(tilelayer, mesh_part);
 
     auto vType = buf->getVAO()->getVertexType();
-    for (u32 i = 0; i < m->mNumVertices; i++) {
-        auto pos = m->mVertices[i];
-        auto color = m->mColors[i];
-        auto normal = m->mNormals[i];
-        auto uv = m->HasTextureCoords(0) ? m->mTextureCoords[0][i] : aiVector3D(0, 0, 0);
 
-        if (vType.Name == "Node3D") {
-            appendNVT(buf,
-                v3f(pos.x, pos.y, pos.z), img::color8(img::PF_RGBA8, color->r, color->g, color->b, color->a),
-                v3f(normal.x, normal.y, normal.z), v2f(uv.x, uv.y));
-        }
-        else if (vType.Name == "TwoColoredNode3D") {
-            appendTCNVT(buf,
-                v3f(pos.x, pos.y, pos.z), img::color8(img::PF_RGBA8, color->r, color->g, color->b, color->a),
-                v3f(normal.x, normal.y, normal.z), v2f(uv.x, uv.y));
-        }
-        else {
-            appendAOVT(buf,
-                v3f(pos.x, pos.y, pos.z), img::color8(img::PF_RGBA8, color->r, color->g, color->b, color->a),
-                v3f(normal.x, normal.y, normal.z), v2f(uv.x, uv.y));
-        }
-    }
+    for (u32 i = 0; i < meshes.size(); i++) {
+        auto m = meshes[i];
+        for (u32 i = 0; i < m->mNumVertices; i++) {
+            auto pos = m->mVertices[i];
+            auto color = m->HasVertexColors(0) ? m->mColors[0][i] : aiColor4D();
+            auto normal = m->HasNormals() ? m->mNormals[i] : aiVector3D();
+            auto uv = m->HasTextureCoords(0) ? m->mTextureCoords[0][i] : aiVector3D();
 
-    for (u32 f = 0; f < m->mNumFaces; f++) {
-        for (u8 k = 0; k < 3; k++)
-            appendIndex(buf, m->mFaces[f].mIndices[k]);
+            Batcher3D::appendVertex(buf, v3f(pos.x, pos.y, pos.z),
+                img::color8(img::PF_RGBA8, color.r, color.g, color.b, color.a),
+                v3f(normal.x, normal.y, normal.z), v2f(uv.x, uv.y));
+        }
+
+        for (u32 f = 0; f < m->mNumFaces; f++) {
+            for (u8 k = 0; k < 3; k++)
+                appendIndex(buf, m->mFaces[f].mIndices[k]);
+        }
     }
 }
 

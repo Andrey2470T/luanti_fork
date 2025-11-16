@@ -927,19 +927,17 @@ void ContentFeatures::updateTextures(Client *client, const ImageSettings &tsetti
 
 	if (drawtype == NDT_MESH && !mesh.empty()) {
 		// Read the mesh and apply scale
-        mesh_ptr = cache->getOrLoad<Model>(ResourceType::MODEL, mesh);
+        mesh_ptr = cache->get<Model>(ResourceType::MODEL, mesh);
 		if (mesh_ptr) {
-            for (u8 buf_i = 0; buf_i < mesh_ptr->getMesh()->getBuffersCount(); buf_i++) {
-                v3f scale = v3f(BS) * visual_scale;
+            v3f scale = v3f(BS) * visual_scale;
 
-                auto buf = mesh_ptr->getMesh()->getBuffer(buf_i);
-                MeshOperations::scaleMesh(buf, scale);
-                buf->recalculateBoundingBox();
-                if (!MeshOperations::checkMeshNormals(buf)) {
-                    infostream << "ContentFeatures: recalculating normals for mesh "
-                        << mesh << std::endl;
-                    MeshOperations::recalculateNormals(buf, true, false);
-                }
+            auto buf = mesh_ptr->getMesh()->getBuffer(0);
+            MeshOperations::scaleMesh(buf, scale);
+            buf->recalculateBoundingBox();
+            if (!MeshOperations::checkMeshNormals(buf)) {
+                infostream << "ContentFeatures: recalculating normals for mesh "
+                    << mesh << std::endl;
+                MeshOperations::recalculateNormals(buf, true, false);
             }
 		}
 	}

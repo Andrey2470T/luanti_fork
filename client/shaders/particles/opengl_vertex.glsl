@@ -31,11 +31,11 @@ void main(void)
 
 	mat4 transform = unpackFloatMat4x4(dataTex, sampleCoords);
 
-	vec4 transformedPos = transform * pos;
+	vec4 transformedPos = transform * vec4(pos, 1.0);
 
 	int texSize = textureSize(dataTex, 0).x;
 	sampleCoords = shiftCoords(sampleCoords, texSize, 16);
-	vec2 coloruv = sampleCoords / texSize;
+	vec2 coloruv = vec2(sampleCoords) / float(texSize);
 
 	vec4 lightColor = texture2D(dataTex, coloruv);
 	float nightRatio = 1.0 - lightColor.a;

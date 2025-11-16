@@ -888,19 +888,45 @@ void MeshGenerator::drawMeshNode()
 	if (cur_node.f->mesh_ptr) {
 		auto layered_mesh = cur_node.f->mesh_ptr->getMesh();
 
-		for (u8 i = 0; i < layered_mesh->getBuffersCount(); i++) {
-			auto buf = layered_mesh->getBuffer(i)->copy();
+        auto buf = layered_mesh->getBuffer(0)->copy();
 
-			if (facedir)
-				MeshOperations::rotateMeshBy6dFacedir(buf, facedir);
-			else if (degrotate)
-				MeshOperations::rotateMeshXZby(buf, 1.5f * degrotate);
+        bool modified = true;
+        if (facedir)
+            MeshOperations::rotateMeshBy6dFacedir(buf, facedir);
+        else if (degrotate)
+            MeshOperations::rotateMeshXZby(buf, 1.5f * degrotate);
+        else
+            modified = false;
 
-			// TODO: Apply lighting to mesh vertices
-			// For each vertex in buf:
-			//   VertexLight vl = interpolateLight(cur_node.lighting, vertex.pos);
-			//   vertex.color = encodeVertexLight(vl, cur_node.f->light_source, vertex.normal);
-		}
+        if (modified)
+            buf->recalculateBoundingBox();
+
+        for (u8 k = 0; k < layered_mesh->getBufferLayersCount(0); k++) {
+            TileSpec tile;
+            useTile(&tile, MYMIN(k, 5));
+
+            auto mp = layered_mesh->getBufferLayer(0, k).second;
+            auto layer = collector->findLayer(tile[0], SELECT_VERTEXTYPE(tile[0]),
+                mp.vertex_count, mp.count);
+            auto collector_buf = collector->getBuffer(layer.second.buffer_id);
+
+            for (u32 j = mp.vertex_offset; j < mp.vertex_offset + mp.vertex_count; j++) {
+                v3f pos = svtGetPos(buf, j);
+                pos += cur_node.origin;
+
+                img::color8 color = svtGetColor(buf, j);
+                v3f normal = svtGetNormal(buf, j);
+                color = calculateVertexColor(pos, svtGetNormal(buf, j),
+                    cur_node.lighting, cur_node.f->light_source);
+
+                Batcher3D::appendVertex(collector_buf, pos, color, normal, svtGetUV(buf, j));
+            }
+
+            for (u32 j = mp.offset; j < mp.offset + mp.count; j++)
+                appendIndex(collector_buf, buf->getIndexAt(j));
+        }
+
+        delete buf;
 	} else {
 		warningstream << "drawMeshNode(): missing mesh" << std::endl;
 		return;

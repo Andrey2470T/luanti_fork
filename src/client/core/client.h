@@ -318,9 +318,6 @@ private:
 	// Relation of client id to object id
 	std::unordered_map<sound_handle_t, u16> m_sounds_to_objects;
 
-	// Storage for mesh data for creating multiple instances of the same mesh
-	StringMap m_mesh_data;
-
 	// Used for saving server map to disk client-side
 	MapDatabase *m_localdb = nullptr;
 	IntervalLimiter m_localdb_save_interval;
