@@ -25,7 +25,7 @@
 */
 
 ClientMap::ClientMap(Client *client, DistanceSortedDrawList *drawlist)
-    : Map(client), m_client(client), m_drawlist(drawlist),
+    : Map(client), m_client(client),
       m_mesh_update_manager(std::make_unique<MeshUpdateManager>(client)),
       m_mesh_grid({g_settings->getU16("client_mesh_chunk")}),
       m_unload_unused_data_timeout(std::max(g_settings->getFloat("client_unload_unused_data_timeout"), 0.0f)),
@@ -64,7 +64,7 @@ void ClientMap::getBlocksInViewRange(v3s16 cam_pos_nodes,
 		v3s16 *p_blocks_min, v3s16 *p_blocks_max, float range)
 {
 	if (range <= 0.0f)
-        range = m_drawlist->getDrawControl().wanted_range;
+        range = m_client->getRenderSystem()->getDrawList()->getDrawControl().wanted_range;
 
     v3s16 box_nodes_d = v3s16(1, 1, 1) * range;
     // Define p_nodes_min/max as v3i becaudynamic_cast<ActiveObjectMgr<ClientActiveObject> *>(m_ao_mgr)->se 'cam_pos_nodes -/+ box_nodes_d'
@@ -94,10 +94,11 @@ void ClientMap::update()
 {
     ScopeProfiler sp(g_profiler, "CM::update()", SPT_AVG);
 
-    m_drawlist->lockMeshes();
+    auto drawlist = m_client->getRenderSystem()->getDrawList();
+    drawlist->lockMeshes();
 
     for (auto &block : m_visible_mapblocks) {
-        block->mesh->removeFromDrawList(m_drawlist);
+        block->mesh->removeFromDrawList(drawlist);
 		block->refDrop();
 	}
     m_visible_mapblocks.clear();
@@ -120,7 +121,7 @@ void ClientMap::update()
         v2s16 sp = sector->getPos();
 
         blocks_loaded += sector->size();
-        if (!m_drawlist->getDrawControl().range_all) {
+        if (!drawlist->getDrawControl().range_all) {
             if (sp.X < p_blocks_min.X || sp.X > p_blocks_max.X ||
                     sp.Y < p_blocks_min.Z || sp.Y > p_blocks_max.Z)
                 continue;
@@ -136,14 +137,14 @@ void ClientMap::update()
 
             m_visible_mapblocks.push_back(block);
 
-            mesh->addInDrawList(m_drawlist);
+            mesh->addInDrawList(drawlist);
 
             block->resetUsageTimer();
             blocks_in_range_with_mesh++;
         }
 	}
 
-    m_drawlist->unlockMeshes();
+    drawlist->unlockMeshes();
 
     g_profiler->avg("MapBlocks loaded [#]", blocks_loaded);
     g_profiler->avg("MapBlocks with mesh [#]", blocks_in_range_with_mesh);
@@ -153,10 +154,11 @@ void ClientMap::updateShadowBlocks(const v3f &shadow_light_pos, const v3f &shado
 {
     ScopeProfiler sp(g_profiler, "CM::updateShadowBlocks()", SPT_AVG);
 
-    m_drawlist->lockMeshes(true);
+    auto drawlist = m_client->getRenderSystem()->getDrawList();
+    drawlist->lockMeshes(true);
 
     for (auto &block : m_visible_shadow_mapblocks) {
-        block->mesh->removeFromDrawList(m_drawlist, true);
+        block->mesh->removeFromDrawList(drawlist, true);
         block->refDrop();
     }
     m_visible_shadow_mapblocks.clear();
@@ -186,16 +188,16 @@ void ClientMap::updateShadowBlocks(const v3f &shadow_light_pos, const v3f &shado
 
             m_visible_shadow_mapblocks.push_back(block);
 
-            mesh->addInDrawList(m_drawlist, true);
+            mesh->addInDrawList(drawlist, true);
 
             block->resetUsageTimer();
             blocks_in_range_with_mesh++;
         }
     }
 
-    m_drawlist->setLightPos(shadow_light_pos);
+    drawlist->setLightPos(shadow_light_pos);
 
-    m_drawlist->unlockMeshes(true);
+    drawlist->unlockMeshes(true);
 
     g_profiler->avg("MapBlocks loaded [#]", blocks_loaded);
     g_profiler->avg("MapBlocks with mesh [#]", blocks_in_range_with_mesh);
@@ -203,7 +205,7 @@ void ClientMap::updateShadowBlocks(const v3f &shadow_light_pos, const v3f &shado
 
 void ClientMap::touchMapBlocks()
 {
-    auto control = m_drawlist->getDrawControl();
+    auto control = m_client->getRenderSystem()->getDrawList()->getDrawControl();
     if (control.range_all)
 		return;
 

@@ -261,6 +261,9 @@ void AtlasPool::buildRectpack2DAtlas()
         ++atlasNum;
         buildRectpack2DAtlas();
     }
+
+    atlasNum = 0;
+    startImg = 0;
 }
 
 void AtlasPool::buildGlyphAtlas(render::TTFont *ttfont)
@@ -280,6 +283,9 @@ void AtlasPool::buildGlyphAtlas(render::TTFont *ttfont)
         ++atlasNum;
         buildGlyphAtlas(ttfont);
     }
+
+    atlasNum = 0;
+    glyphOffset = 0;
 }
 
 void AtlasPool::updateAnimatedTiles(f32 time)

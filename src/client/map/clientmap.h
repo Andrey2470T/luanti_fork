@@ -82,8 +82,6 @@ protected:
 private:
 	Client *m_client;
 
-    DistanceSortedDrawList *m_drawlist;
-
     std::list<MapBlock*> m_visible_mapblocks;
     std::list<MapBlock*> m_visible_shadow_mapblocks;
 

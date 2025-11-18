@@ -124,6 +124,16 @@ void RenderCAO::addMesh()
     else
         m_model = addMeshModel(m_tile_layer, m_position, m_prop.visual_size, m_anim_mgr, m_prop.mesh);
 
+    for (u32 i = 0; i < m_model->getMesh()->getBufferLayersCount(0); i++) {
+        auto &layer = m_model->getMesh()->getBufferLayer(0, i);
+        layer.first->shader = m_cache->getOrLoad<render::Shader>(ResourceType::SHADER,
+            m_model->getSkeleton() ? "object_skinned" : "object");
+        m_rndsys->getRenderer()->setUniformBlocks(layer.first->shader);
+
+        if (m_model->getSkeleton())
+            layer.first->textures.push_back(m_anim_mgr->getBonesTexture()->getGLTexture());
+    }
+
     m_cache->cacheResource<Model>(ResourceType::MODEL, m_model);
 
     updateVertexColor(true);
@@ -163,6 +173,8 @@ void RenderCAO::updateAppearance(std::string mod)
     else
         layers_n = m_model->getMesh()->getBufferLayersCount(0);
 
+    //m_tile_layer.textures.push_back(dynamic_cast<render::Texture *>(m_anim_mgr->getBonesTexture()->getGLTexture()));
+
     for (u8 i = 0; i < layers_n; i++) {
         std::string texturestring = "no_texture.png";
         if (!m_prop.textures.empty())
@@ -173,7 +185,6 @@ void RenderCAO::updateAppearance(std::string mod)
 
         if (m_prop.visual == "mesh") {
             auto layer = m_model->getMesh()->getBufferLayer(0, i);
-
             if (m_prop.backface_culling)
                 layer.first->material_flags |= MATERIAL_FLAG_BACKFACE_CULLING;
             else
@@ -263,7 +274,7 @@ void RenderCAO::step(float dtime, ClientEnvironment *env)
             // Apply animations if input detected and not attached
             // or set idle animation
 
-            auto anim = m_model->getAnimation();
+            auto anim = m_model ? m_model->getAnimation() : nullptr;
 
             if (anim) {
                 v2i set_range = anim->getRange();
@@ -328,11 +339,13 @@ void RenderCAO::step(float dtime, ClientEnvironment *env)
 
     /* Update the data texture info */
 
-    auto skeleton = m_model->getSkeleton();
+    if (m_model) {
+        auto skeleton = m_model->getSkeleton();
 
-    if (skeleton) {
-        for (u8 i = 0; i < m_model->getMesh()->getBufferLayersCount(0); i++)
-            skeleton->updateTileLayer(m_model->getMesh()->getBufferLayer(0, i).first);
+        if (skeleton) {
+            for (u8 i = 0; i < m_model->getMesh()->getBufferLayersCount(0); i++)
+                skeleton->updateTileLayer(m_model->getMesh()->getBufferLayer(0, i).first);
+        }
     }
 
     /* Update visibility */
@@ -746,11 +759,6 @@ void RenderCAO::initTileLayer()
         m_tile_layer.material_type = (m_prop.use_texture_alpha) ?
             TILE_MATERIAL_PLAIN_ALPHA : TILE_MATERIAL_PLAIN;
     m_tile_layer.use_default_shader = false;
-
-    std::string shadername = m_model->getSkeleton() ? "object_skinned" : "object";
-    m_tile_layer.shader = m_cache->getOrLoad<render::Shader>(ResourceType::SHADER, shadername);
-    m_rndsys->getRenderer()->setUniformBlocks(m_tile_layer.shader);
-    m_tile_layer.textures.push_back(dynamic_cast<render::Texture *>(m_anim_mgr->getBonesTexture()->getGLTexture()));
 }
 
 void RenderCAO::updateMeshCulling()
@@ -923,7 +931,7 @@ void RenderCAO::processMessage(const std::string &data)
             phys.acceleration_fast = override_acceleration_fast;
             phys.speed_walk = override_speed_walk;
         }
-    } else if (cmd == AO_CMD_SET_ANIMATION) {
+    } else if (cmd == AO_CMD_SET_ANIMATION && m_model) {
         v2f range = readV2F32(is);
         f32 speed = readF32(is);
         f32 blend = readF32(is); // unused for now
@@ -955,10 +963,10 @@ void RenderCAO::processMessage(const std::string &data)
 
         if (update)
             setAnimation(v2i(range.X, range.Y), speed, loop);
-    } else if (cmd == AO_CMD_SET_ANIMATION_SPEED) {
+    } else if (cmd == AO_CMD_SET_ANIMATION_SPEED && m_model) {
         f32 speed = readF32(is);
         setAnimationSpeed(speed);
-    } else if (cmd == AO_CMD_SET_BONE_POSITION) {
+    } else if (cmd == AO_CMD_SET_BONE_POSITION && m_model) {
         /*std::string bone = deSerializeString16(is);
         auto it = m_bone_override.find(bone);
         BoneOverride props;

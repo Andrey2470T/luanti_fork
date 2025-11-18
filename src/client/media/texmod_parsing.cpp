@@ -56,7 +56,7 @@ bool TexModParser::parseCrack(TextureGenerator *texgen, img::Image *&dest, const
             It is an image with a number of cracking stages
             horizontally tiled.
         */
-        img::Image *img_crack = texgen->resCache->getOrLoad<img::Image>(
+        img::Image *img_crack = texgen->resCache->get<img::Image>(
             ResourceType::IMAGE, "crack_anylength.png");
 
         if (!img_crack)
@@ -129,12 +129,12 @@ bool TexModParser::parseCombine(TextureGenerator *texgen, img::Image *&dest, con
             warningstream << "TexModParser::parseCombine(): Skipping \""
                           << filename << "\" as it's out-of-bounds " << pos_base
                           << " for [combine" << std::endl;
-            delete img;
+            //delete img;
             continue;
         }
 
         texgen->blitImages(img, dest, pos_base, &dim);
-        delete img;
+        //delete img;
     }
 
     return true;
@@ -353,7 +353,7 @@ bool TexModParser::parseTransform(TextureGenerator *texgen, img::Image *&dest, c
     rectu sizeRect(0, 0, size.X, size.Y);
     texgen->imgMdf->processPixelsBulk(dest, &sizeRect, doTransform);
 
-    delete dest;
+    //delete dest;
     dest = image;
 
     return true;
@@ -400,9 +400,9 @@ bool TexModParser::parseInventoryCube(TextureGenerator *texgen, img::Image *&des
     dest = texgen->createInventoryCubeImage(img_top, img_left, img_right);
 
     // Face images are not needed anymore
-    delete img_top;
-    delete img_left;
-    delete img_right;
+    //delete img_top;
+    //delete img_left;
+    //delete img_right;
 
     return true;
 }
@@ -436,7 +436,7 @@ bool TexModParser::parseLowPart(TextureGenerator *texgen, img::Image *&dest, con
     rectu destRect(v2u(0, 0), size);
     texgen->imgMdf->setBlendMode(img::BM_NORMAL);
     texgen->imgMdf->copyTo(img, dest, &srcRect, &destRect);
-    delete img;
+    //delete img;
 
     return true;
 }
@@ -470,7 +470,7 @@ bool TexModParser::parseVerticalFrame(TextureGenerator *texgen, img::Image *&des
     rectu srcRect(v2u(0, frame_index * frame_size.Y), frame_size);
     texgen->imgMdf->copyTo(dest, img, &srcRect);
     // Replace baseimg
-    delete dest;
+    //delete dest;
     dest = img;
 
     return true;
@@ -509,7 +509,7 @@ bool TexModParser::parseMask(TextureGenerator *texgen, img::Image *&dest, const 
 
     texgen->imgMdf->processPixelsBulk(img, nullptr, mask);
 
-    delete img;
+    //delete img;
 
     return true;
 }
@@ -640,7 +640,7 @@ bool TexModParser::parseApplyFiltersForMesh(TextureGenerator *texgen, img::Image
             v2u newsize(w, h);
             img::Image *newimg = new img::Image(dest->getFormat(), newsize.X, newsize.Y);
             texgen->imgMdf->copyTo(dest, newimg, nullptr, nullptr, true);
-            delete dest;
+            //delete dest;
             dest = newimg;
         }
     }
@@ -760,7 +760,7 @@ bool TexModParser::parseSheet(TextureGenerator *texgen, img::Image *&dest, const
     texgen->imgMdf->copyTo(dest, img, &rect, nullptr, true);
 
     // Replace baseimg
-    delete dest;
+    //delete dest;
     dest = img;
 
     return true;
@@ -952,7 +952,7 @@ bool TexModParser::parseOverlay(TextureGenerator *texgen, img::Image *&dest, con
         texgen->imgMdf->setBlendMode(img::BM_OVERLAY);
         texgen->imgMdf->copyTo(img, dest, nullptr, nullptr);
 
-        delete img;
+        //delete img;
     } else {
         errorstream << "generateImage(): Failed to load image \""
                     << filename << "\" for [overlay or [hardlight" << std::endl;
@@ -974,7 +974,7 @@ bool TexModParser::parseHardlight(TextureGenerator *texgen, img::Image *&dest, c
         texgen->imgMdf->setBlendMode(img::BM_HARD_LIGHT);
         texgen->imgMdf->copyTo(img, dest, nullptr, nullptr);
 
-        delete img;
+        //delete img;
     } else {
         errorstream << "generateImage(): Failed to load image \""
                     << filename << "\" for [overlay or [hardlight" << std::endl;

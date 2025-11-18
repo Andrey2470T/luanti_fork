@@ -587,7 +587,7 @@ void GameInputSystem::updateCameraDirection(float dtime)
     this results in duplicated input. To avoid that, we don't enable relative
     mouse mode if we're in touchscreen mode. */
 
-    cur_control.setRelativeMode(!g_touchcontrols && !isMenuActive());
+    //cur_control.setRelativeMode(!g_touchcontrols && !isMenuActive());
 
     if ((wnd->isActive() && wnd->isFocused()
             && !isMenuActive()) || input->isRandom()) {

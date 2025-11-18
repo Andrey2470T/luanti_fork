@@ -281,7 +281,12 @@ T *ResourceCache::getOrLoad(ResourceType _type, const std::string &_name,
         return nullptr;
 
     if (_type == ResourceType::IMAGE) {
-        auto img = reinterpret_cast<img::Image *>(subcaches[_type]->get(_name));
+        img::Image *img = nullptr;
+
+        bool contains_pngmod = _name.find("[png:") != std::string::npos;
+        // texmod strings with png modifiers cause the crashes in fs::exists (too long fs::path), so don't cache that
+        if (!contains_pngmod)
+            img = reinterpret_cast<img::Image *>(subcaches[_type]->get(_name));
 
         if (img)
             return static_cast<T *>((void*)img);
@@ -296,7 +301,8 @@ T *ResourceCache::getOrLoad(ResourceType _type, const std::string &_name,
             else
                 img = texgen->generate(_name);
 
-            subcaches[_type]->cacheResource(img, _name);
+            if (!contains_pngmod)
+                subcaches[_type]->cacheResource(img, _name);
         }
 
         if (!img && apply_fallback) {

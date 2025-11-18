@@ -157,7 +157,11 @@ void ScreenQuad::configureTexturesSettings()
     for (u8 index : texture_map) {
         settings.minF = update_filters[index].first;
         settings.magF = update_filters[index].second;
-        textures->getTexture(index)->updateParameters(settings, false, true);
+
+        auto tex = textures->getTexture(index);
+
+        if (tex)
+            tex->updateParameters(settings, false, true);
     }
 
     update_tex_params = false;

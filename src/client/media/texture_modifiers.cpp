@@ -155,7 +155,7 @@ img::Image *TextureGenerator::generate(const std::string &texmod_str)
         if (baseimg) {
             v2u tmpSize = tmp->getSize();
             blitImages(tmp, baseimg, v2u(0, 0), &tmpSize);
-            delete tmp;
+            //delete tmp;
         } else {
             baseimg = tmp;
         }
@@ -172,8 +172,6 @@ img::Image *TextureGenerator::generate(const std::string &texmod_str)
     } else if (baseimg->getWidth() == 0 || baseimg->getHeight() == 0) {
         errorstream << "TextureGenerator::generate(): zero-sized image was created?! "
                        "(attempted to create texture \"" << texmod_str << "\")" << std::endl;
-        delete baseimg;
-        baseimg = nullptr;
     }
 
     return baseimg;
@@ -192,7 +190,7 @@ bool TextureGenerator::generatePart(const std::string &texmod_str_part, img::Ima
     if (base_img && base_img->getSize().getLengthSQ() == 0) {
         errorstream << "TextureGenerator::generatePart(): baseimg is zero-sized?!"
 			<< std::endl;
-        delete base_img;
+        //delete base_img;
         base_img = nullptr;
     }
 

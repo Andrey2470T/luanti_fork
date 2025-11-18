@@ -519,7 +519,7 @@ static void setting_changed_callback(const std::string &name, void *data)
 }
 
 HudInventoryList::HudInventoryList(Client *_client, const HudElement *elem)
-    : HudSprite(_client->getResourceCache(), _client->getRenderSystem(), elem)
+    : HudSprite(_client->getResourceCache(), _client->getRenderSystem(), elem), client(_client)
 {
     updateScalingSetting();
     g_settings->registerChangedCallback("dpi_change_notifier", setting_changed_callback, this);

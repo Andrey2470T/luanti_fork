@@ -71,6 +71,8 @@ Rectpack2DAtlas::Rectpack2DAtlas(ResourceCache *_cache, const std::string &name,
     for (; start_i < images.size(); start_i++) {
         auto tileImg = images.at(start_i);
 
+        if (!tileImg)
+            continue;
         v2u size = tileImg->getClipSize();
         u32 tileArea = size.X * size.Y;
 
