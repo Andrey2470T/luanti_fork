@@ -18,8 +18,6 @@ public:
     GUIScene(Client *client, gui::IGUIEnvironment *env,
 		 gui::IGUIElement *parent, recti rect, s32 id = -1);
 
-    ~GUIScene();
-
     void setModel(Model *model);
 	void setTexture(u32 idx, img::Image *texture);
 	void setBackgroundColor(const img::color8 &color) noexcept { m_bgcolor = color; };

@@ -34,13 +34,22 @@ CGUIStaticText::CGUIStaticText(const wchar_t *text, bool border,
     Text->setBackgroundColor(BGColor);*/
 }
 
+void CGUIStaticText::updateMesh()
+{
+    if (!Rebuild)
+        return;
+    Text->updateBuffer(rectf(v2f(AbsoluteRect.ULC.X, AbsoluteRect.ULC.Y), v2f(AbsoluteRect.LRC.X, AbsoluteRect.LRC.Y)));
+
+    Rebuild = false;
+}
+
 //! draws the element and its children
 void CGUIStaticText::draw()
 {
 	if (!IsVisible)
 		return;
 
-    Text->updateBuffer(rectf(v2f(AbsoluteRect.ULC.X, AbsoluteRect.ULC.Y), v2f(AbsoluteRect.LRC.X, AbsoluteRect.LRC.Y)));
+    updateMesh();
     Text->draw();
 
     IGUIElement::draw();
@@ -50,6 +59,7 @@ void CGUIStaticText::draw()
 void CGUIStaticText::setOverrideFont(render::TTFont *font)
 {
     Text->setOverrideFont(font);
+    Rebuild = true;
 }
 
 //! Gets the override font (if any)
@@ -68,18 +78,21 @@ render::TTFont *CGUIStaticText::getActiveFont() const
 void CGUIStaticText::setOverrideColor(img::color8 color)
 {
     Text->setOverrideColor(color);
+    Rebuild = true;
 }
 
 //! Sets another color for the text.
 void CGUIStaticText::setBackgroundColor(img::color8 color)
 {
     Text->setBackgroundColor(color);
+    Rebuild = true;
 }
 
 //! Sets whether to draw the background
 void CGUIStaticText::setDrawBackground(bool draw)
 {
     Text->enableDrawBackground(draw);
+    Rebuild = true;
 }
 
 //! Gets the background color
@@ -98,6 +111,7 @@ bool CGUIStaticText::isDrawBackgroundEnabled() const
 void CGUIStaticText::setDrawBorder(bool draw)
 {
     Text->enableDrawBorder(draw);
+    Rebuild = true;
 }
 
 //! Checks if border drawing is enabled
@@ -109,6 +123,7 @@ bool CGUIStaticText::isDrawBorderEnabled() const
 void CGUIStaticText::setTextRestrainedInside(bool restrainTextInside)
 {
     Text->enableClipText(restrainTextInside);
+    Rebuild = true;
 }
 
 bool CGUIStaticText::isTextRestrainedInside() const
@@ -119,6 +134,7 @@ bool CGUIStaticText::isTextRestrainedInside() const
 void CGUIStaticText::setTextAlignment(EGUI_ALIGNMENT horizontal, EGUI_ALIGNMENT vertical)
 {
     Text->setAlignment(horizontal, vertical);
+    Rebuild = true;
 }
 
 img::color8 CGUIStaticText::getOverrideColor() const
@@ -136,6 +152,7 @@ img::color8 CGUIStaticText::getActiveColor() const
 void CGUIStaticText::enableOverrideColor(bool enable)
 {
     Text->enableOverrideColor(enable);
+    Rebuild = true;
 }
 
 bool CGUIStaticText::isOverrideColorEnabled() const
@@ -148,6 +165,7 @@ bool CGUIStaticText::isOverrideColorEnabled() const
 void CGUIStaticText::setWordWrap(bool enable)
 {
     Text->enableWordWrap(enable);
+    Rebuild = true;
 }
 
 bool CGUIStaticText::isWordWrapEnabled() const
@@ -164,6 +182,7 @@ void CGUIStaticText::setText(const wchar_t *text)
 void CGUIStaticText::setRightToLeft(bool rtl)
 {
     Text->enableRightToLeft(rtl);
+    Rebuild = true;
 }
 
 bool CGUIStaticText::isRightToLeft() const

@@ -47,7 +47,6 @@ Model::Model(v3f pos, const std::vector<MeshLayer> &layers, MeshBuffer *buffer)
 
     for (auto layer : layers)
         mesh->addNewLayer(layer.first, layer.second);
-    mesh->splitTransparentLayers();
 }
 
 Model::Model(AnimationManager *_mgr, const aiScene *scene)
@@ -80,8 +79,6 @@ Model::Model(AnimationManager *_mgr, const aiScene *scene)
         if (has_anim)
             processAnimations(scene);
     }
-
-    mesh->splitTransparentLayers();
 }
 
 Model *Model::load(AnimationManager *_mgr, const std::string &name)

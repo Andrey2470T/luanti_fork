@@ -104,6 +104,7 @@ void CGUIListBox::removeItem(u32 id)
 	}
 
     Items.erase(Items.begin()+id);
+    Rebuild = true;
 
 	recalculateItemHeight();
 }
@@ -141,12 +142,16 @@ void CGUIListBox::recalculateItemHeight()
 
 	if (Font != skin->getFont()) {
 		Font = skin->getFont();
-		if (0 == ItemHeightOverride)
+        if (0 == ItemHeightOverride) {
 			ItemHeight = 0;
+            Rebuild = true;
+        }
 
 		if (Font) {
-			if (0 == ItemHeightOverride)
+            if (0 == ItemHeightOverride) {
                 ItemHeight = Font->getFontHeight() + 4;
+                Rebuild = true;
+            }
 		}
 	}
 
@@ -414,33 +419,36 @@ void CGUIListBox::updateAbsolutePosition()
 	recalculateItemHeight();
 }
 
-//! draws the element and its children
-void CGUIListBox::draw()
+void CGUIListBox::updateMesh()
 {
-	if (!IsVisible)
-		return;
+    if (ScrollBar->isVisible() && LastScrollPos != ScrollBar->getPos()) {
+        LastScrollPos = ScrollBar->getPos();
+        Rebuild = true;
+    }
 
-	recalculateItemHeight(); // if the font changed
+    if (!Rebuild)
+        return;
 
-	GUISkin *skin = Environment->getSkin();
-	updateScrollBarSize(skin->getSize(EGDS_SCROLLBAR_SIZE));
+    recalculateItemHeight(); // if the font changed
+
+    GUISkin *skin = Environment->getSkin();
+    updateScrollBarSize(skin->getSize(EGDS_SCROLLBAR_SIZE));
 
     listBoxBank->clear();
 
-	recti *clipRect = 0;
+    recti *clipRect = 0;
 
-	// draw background
-	recti frameRect(AbsoluteRect);
+    // draw background
+    recti frameRect(AbsoluteRect);
 
-	// draw items
-
-	recti clientClip(AbsoluteRect);
-	clientClip.ULC.Y += 1;
-	clientClip.ULC.X += 1;
-	if (ScrollBar->isVisible())
-		clientClip.LRC.X -= ScrollBar->getRelativePosition().getWidth();
-	clientClip.LRC.Y -= 1;
-	clientClip.clipAgainst(AbsoluteClippingRect);
+    // draw items
+    recti clientClip(AbsoluteRect);
+    clientClip.ULC.Y += 1;
+    clientClip.ULC.X += 1;
+    if (ScrollBar->isVisible())
+        clientClip.LRC.X -= ScrollBar->getRelativePosition().getWidth();
+    clientClip.LRC.Y -= 1;
+    clientClip.clipAgainst(AbsoluteClippingRect);
 
     listBoxBank->addSprite({{rectf(), {}}}, 0);
     skin->add3DSunkenPane(listBoxBank->getSprite(0), skin->getColor(EGDC_3D_HIGH_LIGHT), true,
@@ -448,70 +456,80 @@ void CGUIListBox::draw()
     listBoxBank->getSprite(0)->setClipRect(clientClip);
     listBoxBank->getSprite(0)->rebuildMesh();
 
-	if (clipRect)
-		clientClip.clipAgainst(*clipRect);
+    if (clipRect)
+        clientClip.clipAgainst(*clipRect);
 
-	frameRect = AbsoluteRect;
-	frameRect.ULC.X += 1;
-	if (ScrollBar->isVisible())
-		frameRect.LRC.X -= ScrollBar->getRelativePosition().getWidth();
+    frameRect = AbsoluteRect;
+    frameRect.ULC.X += 1;
+    if (ScrollBar->isVisible())
+        frameRect.LRC.X -= ScrollBar->getRelativePosition().getWidth();
 
-	frameRect.LRC.Y = AbsoluteRect.ULC.Y + ItemHeight;
+    frameRect.LRC.Y = AbsoluteRect.ULC.Y + ItemHeight;
 
-	frameRect.ULC.Y -= ScrollBar->getPos();
-	frameRect.LRC.Y -= ScrollBar->getPos();
+    frameRect.ULC.Y -= ScrollBar->getPos();
+    frameRect.LRC.Y -= ScrollBar->getPos();
 
-	bool hl = (HighlightWhenNotFocused || Environment->hasFocus(this) || Environment->hasFocus(ScrollBar));
+    bool hl = (HighlightWhenNotFocused || Environment->hasFocus(this) || Environment->hasFocus(ScrollBar));
 
     auto itemColor = skin->getColor(EGDC_HIGH_LIGHT);
-	for (s32 i = 0; i < (s32)Items.size(); ++i) {
-		if (frameRect.LRC.Y >= AbsoluteRect.ULC.Y &&
-				frameRect.ULC.Y <= AbsoluteRect.LRC.Y) {
-			if (i == Selected && hl)
+    for (s32 i = 0; i < (s32)Items.size(); ++i) {
+        if (frameRect.LRC.Y >= AbsoluteRect.ULC.Y &&
+                frameRect.ULC.Y <= AbsoluteRect.LRC.Y) {
+            if (i == Selected && hl)
                 listBoxBank->addSprite({{toRectT<f32>(frameRect), {itemColor, itemColor, itemColor, itemColor}}}, 0, &clientClip);
 
-			recti textRect = frameRect;
-			textRect.ULC.X += 3;
+            recti textRect = frameRect;
+            textRect.ULC.X += 3;
 
-			if (Font) {
-				if (IconBank && (Items[i].Icon > -1)) {
-					v2i iconPos = textRect.ULC;
-					iconPos.Y += textRect.getHeight() / 2;
-					iconPos.X += ItemsIconWidth / 2;
+            if (Font) {
+                if (IconBank && (Items[i].Icon > -1)) {
+                    v2i iconPos = textRect.ULC;
+                    iconPos.Y += textRect.getHeight() / 2;
+                    iconPos.X += ItemsIconWidth / 2;
 
-					if (i == Selected && hl) {
-						IconBank->draw2DSprite((u32)Items[i].Icon, iconPos, &clientClip,
-								hasItemOverrideColor(i, EGUI_LBC_ICON_HIGHLIGHT) ? getItemOverrideColor(i, EGUI_LBC_ICON_HIGHLIGHT) : getItemDefaultColor(EGUI_LBC_ICON_HIGHLIGHT),
-								selectTime, core::TimeCounter::getRealTime(), false, true);
-					} else {
-						IconBank->draw2DSprite((u32)Items[i].Icon, iconPos, &clientClip,
-								hasItemOverrideColor(i, EGUI_LBC_ICON) ? getItemOverrideColor(i, EGUI_LBC_ICON) : getItemDefaultColor(EGUI_LBC_ICON),
-								0, (i == Selected) ? core::TimeCounter::getRealTime() : 0, false, true);
-					}
-				}
+                    if (i == Selected && hl) {
+                        IconBank->update2DSprite((u32)Items[i].Icon, iconPos, &clientClip,
+                                hasItemOverrideColor(i, EGUI_LBC_ICON_HIGHLIGHT) ? getItemOverrideColor(i, EGUI_LBC_ICON_HIGHLIGHT) : getItemDefaultColor(EGUI_LBC_ICON_HIGHLIGHT),
+                                selectTime, core::TimeCounter::getRealTime(), false, true);
+                    } else {
+                        IconBank->update2DSprite((u32)Items[i].Icon, iconPos, &clientClip,
+                                hasItemOverrideColor(i, EGUI_LBC_ICON) ? getItemOverrideColor(i, EGUI_LBC_ICON) : getItemDefaultColor(EGUI_LBC_ICON),
+                                0, (i == Selected) ? core::TimeCounter::getRealTime() : 0, false, true);
+                    }
+                }
 
-				textRect.ULC.X += ItemsIconWidth + 3;
+                textRect.ULC.X += ItemsIconWidth + 3;
 
                 img::color8 textColor;
-				if (i == Selected && hl) {
+                if (i == Selected && hl) {
                     textColor = hasItemOverrideColor(i, EGUI_LBC_TEXT_HIGHLIGHT) ?
                         getItemOverrideColor(i, EGUI_LBC_TEXT_HIGHLIGHT) : getItemDefaultColor(EGUI_LBC_TEXT_HIGHLIGHT);
-				} else {
+                } else {
                     textColor = hasItemOverrideColor(i, EGUI_LBC_TEXT) ?
                         getItemOverrideColor(i, EGUI_LBC_TEXT) : getItemDefaultColor(EGUI_LBC_TEXT);
-				}
+                }
 
                 listBoxBank->addTextSprite(Environment->getRenderSystem()->getFontManager(), EnrichedString(Items[i].Text),
                     0, toV2T<f32>(textRect.ULC), textColor, &clientClip, false);
 
-				textRect.ULC.X -= ItemsIconWidth + 3;
-			}
-		}
+                textRect.ULC.X -= ItemsIconWidth + 3;
+            }
+        }
 
-		frameRect.ULC.Y += ItemHeight;
-		frameRect.LRC.Y += ItemHeight;
-	}
+        frameRect.ULC.Y += ItemHeight;
+        frameRect.LRC.Y += ItemHeight;
+    }
 
+    Rebuild = false;
+}
+
+//! draws the element and its children
+void CGUIListBox::draw()
+{
+	if (!IsVisible)
+		return;
+
+    updateMesh();
     listBoxBank->drawBank();
 
 	IGUIElement::draw();
@@ -528,6 +546,7 @@ u32 CGUIListBox::addItem(const wchar_t *text, s32 icon)
 	recalculateItemHeight();
 	recalculateItemWidth(icon);
 
+    Rebuild = true;
 	return Items.size() - 1;
 }
 
@@ -624,6 +643,8 @@ void CGUIListBox::setItem(u32 index, const wchar_t *text, s32 icon)
 
 	recalculateItemHeight();
 	recalculateItemWidth(icon);
+
+    Rebuild = true;
 }
 
 //! Insert the item at the given index
@@ -638,6 +659,8 @@ s32 CGUIListBox::insertItem(u32 index, const wchar_t *text, s32 icon)
 	recalculateItemHeight();
 	recalculateItemWidth(icon);
 
+    Rebuild = true;
+
 	return index;
 }
 
@@ -649,6 +672,8 @@ void CGUIListBox::swapItems(u32 index1, u32 index2)
 	ListItem dummmy = Items[index1];
 	Items[index1] = Items[index2];
 	Items[index2] = dummmy;
+
+    Rebuild = true;
 }
 
 void CGUIListBox::setItemOverrideColor(u32 index, img::color8 color)
@@ -657,6 +682,7 @@ void CGUIListBox::setItemOverrideColor(u32 index, img::color8 color)
 		Items[index].OverrideColors[c].Use = true;
 		Items[index].OverrideColors[c].Color = color;
 	}
+    Rebuild = true;
 }
 
 void CGUIListBox::setItemOverrideColor(u32 index, EGUI_LISTBOX_COLOR colorType, img::color8 color)
@@ -666,6 +692,8 @@ void CGUIListBox::setItemOverrideColor(u32 index, EGUI_LISTBOX_COLOR colorType, 
 
     Items[index].OverrideColors[(u8)colorType].Use = true;
     Items[index].OverrideColors[(u8)colorType].Color = color;
+
+    Rebuild = true;
 }
 
 void CGUIListBox::clearItemOverrideColor(u32 index)
@@ -673,6 +701,8 @@ void CGUIListBox::clearItemOverrideColor(u32 index)
     for (u32 c = 0; c < (u32)EGUI_LBC_COUNT; ++c) {
 		Items[index].OverrideColors[c].Use = false;
 	}
+
+    Rebuild = true;
 }
 
 void CGUIListBox::clearItemOverrideColor(u32 index, EGUI_LISTBOX_COLOR colorType)
@@ -681,6 +711,8 @@ void CGUIListBox::clearItemOverrideColor(u32 index, EGUI_LISTBOX_COLOR colorType
 		return;
 
     Items[index].OverrideColors[(u8)colorType].Use = false;
+
+    Rebuild = true;
 }
 
 bool CGUIListBox::hasItemOverrideColor(u32 index, EGUI_LISTBOX_COLOR colorType) const
@@ -724,11 +756,14 @@ void CGUIListBox::setItemHeight(s32 height)
 {
 	ItemHeight = height;
 	ItemHeightOverride = 1;
+
+    Rebuild = true;
 }
 
 //! Sets whether to draw the background
 void CGUIListBox::setDrawBackground(bool draw)
 {
+    if (draw != DrawBack) Rebuild = true;
 	DrawBack = draw;
 }
 

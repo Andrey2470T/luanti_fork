@@ -20,6 +20,8 @@ public:
 	IGUICheckBox(IGUIEnvironment *environment, IGUIElement *parent, s32 id, recti rectangle) :
 			IGUIElement(EGUIET_CHECK_BOX, environment, parent, id, rectangle) {}
 
+    virtual void setPressed(bool pressed) = 0;
+
 	//! Set if box is checked.
 	virtual void setChecked(bool checked) = 0;
 

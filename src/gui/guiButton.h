@@ -23,6 +23,8 @@ public:
 	//! called if an event happened.
     virtual bool OnEvent(const core::Event& event) override;
 
+    void updateMesh() override;
+
 	//! draws the element and its children
 	virtual void draw() override;
 
@@ -166,7 +168,7 @@ public:
 			const wchar_t *tooltiptext=L"");
 
 protected:
-    void drawSprite(EGUI_BUTTON_STATE state, u32 startTime, const v2i& center);
+    void updateSprite(EGUI_BUTTON_STATE state, u32 startTime, const v2i& center);
     EGUI_BUTTON_IMAGE_STATE getImageState(bool pressed) const;
 
 	struct ButtonImage

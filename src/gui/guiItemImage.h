@@ -18,6 +18,7 @@ public:
 		const recti &rectangle, const std::string &item_name,
 		render::TTFont *font, Client *client);
 
+    void updateMesh() override;
 	virtual void draw() override;
 
 	virtual void setText(const wchar_t *text) override

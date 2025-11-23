@@ -348,52 +348,61 @@ void CGUIComboBox::updateListButtonWidth(s32 width)
 	}
 }
 
-//! draws the element and its children
-void CGUIComboBox::draw()
+void CGUIComboBox::updateMesh()
 {
-	if (!IsVisible)
-		return;
+    GUISkin *skin = Environment->getSkin();
 
-	GUISkin *skin = Environment->getSkin();
+    updateListButtonWidth(skin->getSize(EGDS_SCROLLBAR_SIZE));
 
-	updateListButtonWidth(skin->getSize(EGDS_SCROLLBAR_SIZE));
+    // font changed while the listbox is open?
+    if (ActiveFont != skin->getFont() && ListBox) {
+        // close and re-open to use new font-size
+        openCloseMenu();
+        openCloseMenu();
+    }
 
-	// font changed while the listbox is open?
-	if (ActiveFont != skin->getFont() && ListBox) {
-		// close and re-open to use new font-size
-		openCloseMenu();
-		openCloseMenu();
-	}
+    IGUIElement *currentFocus = Environment->getFocus();
+    if (currentFocus != LastFocus) {
+        HasFocus = currentFocus == this || isMyChild(currentFocus);
+        LastFocus = currentFocus;
+    }
 
-	IGUIElement *currentFocus = Environment->getFocus();
-	if (currentFocus != LastFocus) {
-		HasFocus = currentFocus == this || isMyChild(currentFocus);
-		LastFocus = currentFocus;
-	}
+    // set colors each time as skin-colors can be changed
+    SelectedText->setBackgroundColor(skin->getColor(EGDC_HIGH_LIGHT));
+    if (isEnabled()) {
+        SelectedText->setDrawBackground(HasFocus);
+        SelectedText->setOverrideColor(skin->getColor(HasFocus ? EGDC_HIGH_LIGHT_TEXT : EGDC_BUTTON_TEXT));
+    } else {
+        SelectedText->setDrawBackground(false);
+        SelectedText->setOverrideColor(skin->getColor(EGDC_GRAY_TEXT));
+    }
+    ListButton->setSprite(EGBS_BUTTON_UP, skin->getIcon(EGDI_CURSOR_DOWN), skin->getColor(isEnabled() ? EGDC_WINDOW_SYMBOL : EGDC_GRAY_WINDOW_SYMBOL));
+    ListButton->setSprite(EGBS_BUTTON_DOWN, skin->getIcon(EGDI_CURSOR_DOWN), skin->getColor(isEnabled() ? EGDC_WINDOW_SYMBOL : EGDC_GRAY_WINDOW_SYMBOL));
 
-	// set colors each time as skin-colors can be changed
-	SelectedText->setBackgroundColor(skin->getColor(EGDC_HIGH_LIGHT));
-	if (isEnabled()) {
-		SelectedText->setDrawBackground(HasFocus);
-		SelectedText->setOverrideColor(skin->getColor(HasFocus ? EGDC_HIGH_LIGHT_TEXT : EGDC_BUTTON_TEXT));
-	} else {
-		SelectedText->setDrawBackground(false);
-		SelectedText->setOverrideColor(skin->getColor(EGDC_GRAY_TEXT));
-	}
-	ListButton->setSprite(EGBS_BUTTON_UP, skin->getIcon(EGDI_CURSOR_DOWN), skin->getColor(isEnabled() ? EGDC_WINDOW_SYMBOL : EGDC_GRAY_WINDOW_SYMBOL));
-	ListButton->setSprite(EGBS_BUTTON_DOWN, skin->getIcon(EGDI_CURSOR_DOWN), skin->getColor(isEnabled() ? EGDC_WINDOW_SYMBOL : EGDC_GRAY_WINDOW_SYMBOL));
+    if (!Rebuild)
+        return;
 
-	recti frameRect(AbsoluteRect);
+    recti frameRect(AbsoluteRect);
 
-	// draw the border
+    // draw the border
 
     Border->clear();
     skin->add3DSunkenPane(Border.get(), skin->getColor(EGDC_3D_HIGH_LIGHT),
             true, true, toRectT<f32>(frameRect));
     Border->rebuildMesh();
     Border->setClipRect(AbsoluteClippingRect);
-    Border->draw();
 
+    Rebuild = false;
+}
+
+//! draws the element and its children
+void CGUIComboBox::draw()
+{
+	if (!IsVisible)
+		return;
+
+    updateMesh();
+    Border->draw();
 
 	// draw children
 	IGUIElement::draw();

@@ -930,7 +930,7 @@ void GUISkin::drawColoredIcon(gui::IGUIElement* element, EGUI_DEFAULT_ICON icon,
         colors = Colors.data();
 
     bool gray = element && !element->isEnabled();
-    Sprite->draw2DSprite(Icons[(u8)icon], position, clip,
+    Sprite->update2DSprite(Icons[(u8)icon], position, clip,
             colors[gray? (u8)EGDC_GRAY_WINDOW_SYMBOL : (u8)EGDC_WINDOW_SYMBOL], starttime, currenttime, loop, true);
 }
 // END PATCH

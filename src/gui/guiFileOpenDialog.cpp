@@ -143,15 +143,12 @@ const wchar_t *CGUIFileOpenDialog::getDirectoryNameW() const
 void CGUIFileOpenDialog::setFileName(const std::string &name)
 {
 	FileName = name;
-    //pathToStringW(FileNameW, FileName);
 }
 
 void CGUIFileOpenDialog::setDirectoryName(const std::string &name)
 {
 	FileDirectory = name;
 	FileDirectoryFlat = name;
-	//FileSystem->flattenFilename(FileDirectoryFlat);
-    //pathToStringW(FileDirectoryFlatW, FileDirectoryFlat);
 }
 
 //! called if an event happened.
@@ -267,18 +264,16 @@ bool CGUIFileOpenDialog::OnEvent(const core::Event &event)
 	return IGUIElement::OnEvent(event);
 }
 
-//! draws the element and its children
-void CGUIFileOpenDialog::draw()
+void CGUIFileOpenDialog::updateMesh()
 {
-	if (!IsVisible)
-		return;
+    if (!Rebuild)
+        return;
+    GUISkin *skin = Environment->getSkin();
 
-	GUISkin *skin = Environment->getSkin();
+    recti rect = AbsoluteRect;
 
-	recti rect = AbsoluteRect;
-
-	auto sprite0 = DialogBank->getSprite(0);
-	sprite0->clear();
+    auto sprite0 = DialogBank->getSprite(0);
+    sprite0->clear();
 
     rectf cliprect = toRectT<f32>(AbsoluteClippingRect);
     skin->add3DWindowBackground(sprite0, true, skin->getColor(EGDC_ACTIVE_BORDER), toRectT<f32>(rect), &cliprect);
@@ -286,21 +281,35 @@ void CGUIFileOpenDialog::draw()
     AbsoluteClippingRect = toRectT<s32>(cliprect);
     sprite0->setClipRect(AbsoluteClippingRect);
 
-	if (Text.size()) {
-		rect.ULC.X += 2;
-		rect.LRC.X -= skin->getSize(EGDS_WINDOW_BUTTON_WIDTH) + 5;
+    if (Text.size()) {
+        rect.ULC.X += 2;
+        rect.LRC.X -= skin->getSize(EGDS_WINDOW_BUTTON_WIDTH) + 5;
 
         render::TTFont *font = skin->getFont(EGDF_WINDOW);
-		if (font) {
+        if (font) {
             auto sprite1 = dynamic_cast<UITextSprite *>(DialogBank->getSprite(1));
             sprite1->setText(Text);
             sprite1->setOverrideColor(skin->getColor(EGDC_ACTIVE_CAPTION));
             sprite1->updateBuffer(toRectT<f32>(rect));
             sprite1->setClipRect(AbsoluteClippingRect);
-		}
-	}
+        }
+    }
 
-    DialogBank->drawBank();
+    Rebuild = false;
+}
+
+//! draws the element and its children
+void CGUIFileOpenDialog::draw()
+{
+	if (!IsVisible)
+		return;
+
+    updateMesh();
+    DialogBank->getSprite(0)->draw();
+
+    if (Text.size() && Environment->getSkin()->getFont(EGDF_WINDOW)) {
+        DialogBank->getSprite(1)->draw();
+    }
 
 	IGUIElement::draw();
 }

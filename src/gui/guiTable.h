@@ -121,6 +121,8 @@ public:
 	/* Must be called when position or size changes */
     void updateAbsolutePosition() override;
 
+    void updateMesh() override;
+
 	/* Irrlicht draw method */
     void draw() override;
 
@@ -192,6 +194,8 @@ protected:
 	std::vector<img::Image*> m_images;
 	std::map<std::string, s32> m_alloc_strings;
 	std::map<std::string, s32> m_alloc_images;
+
+    s32 m_last_scrollpos = -1;
 
 	s32 allocString(const std::string &text);
 	s32 allocImage(const std::string &imagename);

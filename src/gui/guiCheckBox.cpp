@@ -34,14 +34,14 @@ bool CGUICheckBox::OnEvent(const core::Event &event)
 		case EET_KEY_INPUT_EVENT:
 			if (event.KeyInput.PressedDown &&
                     (event.KeyInput.Key == core::KEY_RETURN || event.KeyInput.Key == core::KEY_SPACE)) {
-				Pressed = true;
+                setPressed(true);
 				return true;
             } else if (Pressed && event.KeyInput.PressedDown && event.KeyInput.Key == core::KEY_ESCAPE) {
-				Pressed = false;
+                setPressed(false);
 				return true;
 			} else if (!event.KeyInput.PressedDown && Pressed &&
                        (event.KeyInput.Key == core::KEY_RETURN || event.KeyInput.Key == core::KEY_SPACE)) {
-				Pressed = false;
+                setPressed(false);
 				if (Parent) {
 					core::Event newEvent;
 					newEvent.Type = EET_GUI_EVENT;
@@ -57,21 +57,21 @@ bool CGUICheckBox::OnEvent(const core::Event &event)
 		case EET_GUI_EVENT:
 			if (event.GUI.Type == EGET_ELEMENT_FOCUS_LOST) {
                 if (event.GUI.Caller == this)
-					Pressed = false;
+                    setPressed(false);
 			}
 			break;
 		case EET_MOUSE_INPUT_EVENT:
 			if (event.MouseInput.Type == EMIE_LMOUSE_PRESSED_DOWN) {
-				Pressed = true;
+                setPressed(true);
 				CheckTime = core::TimeCounter::getRealTime();
 				return true;
 			} else if (event.MouseInput.Type == EMIE_LMOUSE_LEFT_UP) {
 				bool wasPressed = Pressed;
-				Pressed = false;
+                setPressed(false);
 
 				if (wasPressed && Parent) {
 					if (!AbsoluteClippingRect.isPointInside(v2i(event.MouseInput.X, event.MouseInput.Y))) {
-						Pressed = false;
+                        setPressed(false);
 						return true;
 					}
 
@@ -95,47 +95,45 @@ bool CGUICheckBox::OnEvent(const core::Event &event)
 	return IGUIElement::OnEvent(event);
 }
 
-//! draws the element and its children
-void CGUICheckBox::draw()
+void CGUICheckBox::updateMesh()
 {
-	if (!IsVisible)
-		return;
-
-	GUISkin *skin = Environment->getSkin();
+    if (!Rebuild)
+        return;
+    GUISkin *skin = Environment->getSkin();
 
     CheckBoxBank->clear();
 
-	if (skin) {
+    if (skin) {
         UIRects *CheckBoxRects = CheckBoxBank->addSprite({}, 0, &AbsoluteClippingRect);
 
-		recti frameRect(AbsoluteRect);
+        recti frameRect(AbsoluteRect);
 
-		// draw background
-		if (Background) {
+        // draw background
+        if (Background) {
             img::color8 bgColor = skin->getColor(EGDC_3D_FACE);
             CheckBoxRects->addRect(toRectT<f32>(frameRect), {bgColor, bgColor, bgColor, bgColor});
-		}
-
-		// draw the border
-        if (Border) {
-            skin->add3DSunkenPane(CheckBoxRects, img::white, true, false, toRectT<f32>(frameRect));
-			frameRect.ULC.X += skin->getSize(EGDS_TEXT_DISTANCE_X);
-			frameRect.LRC.X -= skin->getSize(EGDS_TEXT_DISTANCE_X);
         }
 
-		const s32 height = skin->getSize(EGDS_CHECK_BOX_WIDTH);
+        // draw the border
+        if (Border) {
+            skin->add3DSunkenPane(CheckBoxRects, img::white, true, false, toRectT<f32>(frameRect));
+            frameRect.ULC.X += skin->getSize(EGDS_TEXT_DISTANCE_X);
+            frameRect.LRC.X -= skin->getSize(EGDS_TEXT_DISTANCE_X);
+        }
 
-		// the rectangle around the "checked" area.
-		recti checkRect(frameRect.ULC.X,
-				((frameRect.getHeight() - height) / 2) + frameRect.ULC.Y,
-				0, 0);
+        const s32 height = skin->getSize(EGDS_CHECK_BOX_WIDTH);
 
-		checkRect.LRC.X = checkRect.ULC.X + height;
-		checkRect.LRC.Y = checkRect.ULC.Y + height;
+        // the rectangle around the "checked" area.
+        recti checkRect(frameRect.ULC.X,
+                ((frameRect.getHeight() - height) / 2) + frameRect.ULC.Y,
+                0, 0);
 
-		EGUI_DEFAULT_COLOR col = EGDC_GRAY_EDITABLE;
-		if (isEnabled())
-			col = Pressed ? EGDC_FOCUSED_EDITABLE : EGDC_EDITABLE;
+        checkRect.LRC.X = checkRect.ULC.X + height;
+        checkRect.LRC.Y = checkRect.ULC.Y + height;
+
+        EGUI_DEFAULT_COLOR col = EGDC_GRAY_EDITABLE;
+        if (isEnabled())
+            col = Pressed ? EGDC_FOCUSED_EDITABLE : EGDC_EDITABLE;
 
         skin->add3DSunkenPane(CheckBoxRects, skin->getColor(col),
                 false, true, toRectT<f32>(checkRect));
@@ -144,7 +142,7 @@ void CGUICheckBox::draw()
         CheckBoxRects->draw();
 
         // the checked icon
-		if (Checked) {
+        if (Checked) {
             u32 sprite_res = skin->getIcon(GUIDefaultIcon::CheckBoxChecked);
             std::string tex_name = "checkbox_" + std::to_string(sprite_res) + ".png";
             auto sprite_tex = Environment->getResourceCache()->get<img::Image>(ResourceType::IMAGE, tex_name);
@@ -152,32 +150,49 @@ void CGUICheckBox::draw()
             if (sprite_tex) {
                 CheckBoxBank->addImageSprite(sprite_tex, 0, toRectT<f32>(checkRect), &AbsoluteClippingRect);
             }
-		}
+        }
 
-		// associated text
+        // associated text
         if (Text.size()) {
-			checkRect = frameRect;
-			checkRect.ULC.X += height + 5;
+            checkRect = frameRect;
+            checkRect.ULC.X += height + 5;
 
-			render::TTFont *font = skin->getFont();
-			if (font) {
+            render::TTFont *font = skin->getFont();
+            if (font) {
                 img::color8 text_c = skin->getColor(isEnabled() ? EGDC_BUTTON_TEXT : EGDC_GRAY_TEXT);
                 UITextSprite *CheckBoxText = CheckBoxBank->addTextSprite(
-                    Environment->getRenderSystem()->getFontManager(), EnrichedString(Text), 0, toV2T<f32>(checkRect.ULC), text_c, nullptr, false);
+                    Environment->getRenderSystem()->getFontManager(), EnrichedString(Text),
+                    0, toV2T<f32>(checkRect.ULC), text_c, nullptr, false);
                 CheckBoxText->setAlignment(GUIAlignment::Center, GUIAlignment::Center);
-			}
-		}
-	}
+            }
+        }
+    }
 
+    Rebuild = false;
+}
+
+//! draws the element and its children
+void CGUICheckBox::draw()
+{
+	if (!IsVisible)
+		return;
+
+    updateMesh();
     CheckBoxBank->drawBank();
 
     IGUIElement::draw();
 }
 
+void CGUICheckBox::setPressed(bool pressed)
+{
+    if (pressed != Pressed) Rebuild = true;
+    Pressed = pressed;
+}
 //! set if box is checked
 void CGUICheckBox::setChecked(bool checked)
 {
-	Checked = checked;
+    if (checked != Checked) Rebuild = true;
+    Checked = checked;
 }
 
 //! returns if box is checked
@@ -189,6 +204,7 @@ bool CGUICheckBox::isChecked() const
 //! Sets whether to draw the background
 void CGUICheckBox::setDrawBackground(bool draw)
 {
+    if (draw != Background) Rebuild = true;
 	Background = draw;
 }
 
@@ -201,6 +217,7 @@ bool CGUICheckBox::isDrawBackgroundEnabled() const
 //! Sets whether to draw the border
 void CGUICheckBox::setDrawBorder(bool draw)
 {
+    if (draw != Border) Rebuild = true;
 	Border = draw;
 }
 

@@ -458,6 +458,7 @@ public:
 	virtual void setText(const wchar_t *text)
 	{
 		Text = text;
+        Rebuild = true;
 	}
 
 	//! Returns caption of this element.
@@ -690,6 +691,8 @@ public:
 	{
 		return false;
 	}
+	
+    virtual void updateMesh() {};
 
 protected:
 	// not virtual because needed in constructor
@@ -850,6 +853,8 @@ protected:
 				child->recalculateAbsolutePosition(recursive);
 			}
 		}
+		
+		Rebuild = true;
 	}
 
 protected:
@@ -925,6 +930,9 @@ protected:
 
 	//! type of element
     GUIElementType Type;
+    
+    //! needs to rebuild a whole element mesh?
+    bool Rebuild = true;
 };
 
 } // end namespace gui

@@ -54,8 +54,8 @@ void EnrichedString::clear()
 	m_colors.clear();
 	m_has_background = false;
 	m_default_length = 0;
-    m_default_color = img::color8(img::PF_RGBA8, 255, 255, 255, 255);
-    m_background = img::color8(img::PF_RGBA8, 0, 0, 0, 0);
+    m_default_color = img::white;
+    m_background = img::black;
 }
 
 EnrichedString &EnrichedString::operator=(std::wstring_view str)

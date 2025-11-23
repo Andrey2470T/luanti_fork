@@ -108,21 +108,28 @@ void RenderCAO::setChildrenVisible(bool toset)
 Model *addSpriteModel(TileLayer &layer, v3f position, v3f visual_size);
 Model *addUprightSpriteModel(TileLayer &layer, v3f position, v3f visual_size, bool is_player);
 Model *addCubeModel(TileLayer &layer, v3f position, v3f visual_size);
-Model *addMeshModel(TileLayer &layer, v3f position, v3f visual_size, AnimationManager *anim_mgr,
+Model *addMeshModel(TileLayer &layer, v3f position, v3f visual_size, ResourceCache *cache,
     std::string mesh);
 
 void RenderCAO::addMesh()
 {
-    removeMesh();
+    Model *new_model = nullptr;
 
     if (m_prop.visual == "sprite")
-        m_model = addSpriteModel(m_tile_layer, m_position, m_prop.visual_size);
+        new_model = addSpriteModel(m_tile_layer, m_position, m_prop.visual_size);
     else if (m_prop.visual == "upright_sprite")
-        m_model = addUprightSpriteModel(m_tile_layer, m_position, m_prop.visual_size, m_is_player);
+        new_model = addUprightSpriteModel(m_tile_layer, m_position, m_prop.visual_size, m_is_player);
     else if (m_prop.visual == "cube")
-        m_model = addCubeModel(m_tile_layer, m_position, m_prop.visual_size);
+        new_model = addCubeModel(m_tile_layer, m_position, m_prop.visual_size);
     else
-        m_model = addMeshModel(m_tile_layer, m_position, m_prop.visual_size, m_anim_mgr, m_prop.mesh);
+        new_model = addMeshModel(m_tile_layer, m_position, m_prop.visual_size, m_cache, m_prop.mesh);
+
+    if (new_model == m_model)
+        return;
+
+    removeMesh();
+
+    m_model = new_model;
 
     for (u32 i = 0; i < m_model->getMesh()->getBufferLayersCount(0); i++) {
         auto &layer = m_model->getMesh()->getBufferLayer(0, i);
@@ -134,9 +141,9 @@ void RenderCAO::addMesh()
             layer.first->textures.push_back(m_anim_mgr->getBonesTexture()->getGLTexture());
     }
 
-    m_cache->cacheResource<Model>(ResourceType::MODEL, m_model);
-
     updateVertexColor(true);
+    m_model->getMesh()->splitTransparentLayers();
+
     m_model->getMesh()->getBuffer(0)->uploadData();
 }
 
@@ -151,7 +158,6 @@ void RenderCAO::removeMesh()
             if (tile->tile_ref)
                 m_cache->clearResource<img::Image>(ResourceType::IMAGE, tile->tile_ref);
         }
-        m_cache->clearResource<Model>(ResourceType::MODEL, m_model, true);
     }
 
     m_model = nullptr;
@@ -197,6 +203,8 @@ void RenderCAO::updateAppearance(std::string mod)
         m_base_color = m_prop.colors[0];
         updateVertexColor(false);
     }
+
+    m_model->getMesh()->getBuffer(0)->uploadVertexData();
 }
 
 void RenderCAO::setAttachment(object_t parent_id, const std::string &bone,
@@ -1244,10 +1252,10 @@ Model *addCubeModel(TileLayer &layer, v3f position, v3f visual_size)
     return new Model(position, {mesh_l}, cube);
 }
 
-Model *addMeshModel(TileLayer &layer, v3f position, v3f visual_size, AnimationManager *anim_mgr,
+Model *addMeshModel(TileLayer &layer, v3f position, v3f visual_size, ResourceCache *cache,
     std::string mesh)
 {
-    auto model = Model::load(anim_mgr, mesh);
+    auto model = cache->get<Model>(ResourceType::MODEL, mesh);
 
     if (model) {
         auto mesh = model->getMesh();

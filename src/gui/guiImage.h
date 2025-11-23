@@ -42,6 +42,8 @@ public:
         return MiddleRect;
     }
 
+    void updateMesh() override;
+
 	//! draws the element and its children
 	void draw() override;
 

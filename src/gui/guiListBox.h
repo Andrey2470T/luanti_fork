@@ -48,6 +48,8 @@ public:
 	//! called if an event happened.
 	bool OnEvent(const core::Event &event) override;
 
+    void updateMesh() override;
+
 	//! draws the element and its children
 	void draw() override;
 
@@ -165,6 +167,7 @@ private:
 	bool MoveOverSelect;
 	bool AutoScroll;
 	bool HighlightWhenNotFocused;
+    s32 LastScrollPos = -1;
 
     std::unique_ptr<UISpriteBank> listBoxBank;
 };

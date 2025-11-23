@@ -45,128 +45,137 @@ GUIInventoryList::GUIInventoryList(gui::IGUIEnvironment *env,
 {
 }
 
+void GUIInventoryList::updateMesh()
+{
+    if (!Rebuild)
+        return;
+    Inventory *inv = m_invmgr->getInventory(m_inventoryloc);
+    if (!inv) {
+        if (!m_already_warned) {
+            warningstream << "GUIInventoryList::draw(): "
+                    << "The inventory location "
+                    << "\"" << m_inventoryloc.dump() << "\" doesn't exist"
+                    << std::endl;
+            m_already_warned = true;
+        }
+        return;
+    }
+    InventoryList *ilist = inv->getList(m_listname);
+    if (!ilist) {
+        if (!m_already_warned) {
+            warningstream << "GUIInventoryList::draw(): "
+                    << "The inventory list \"" << m_listname << "\" @ \""
+                    << m_inventoryloc.dump() << "\" doesn't exist"
+                    << std::endl;
+            m_already_warned = true;
+        }
+        return;
+    }
+    m_already_warned = false;
+
+    Client *client = m_fs_menu->getClient();
+    const ItemSpec *selected_item = m_fs_menu->getSelectedItem();
+
+    recti imgrect(0, 0, m_slot_size.X, m_slot_size.Y);
+    v2i base_pos = AbsoluteRect.ULC;
+
+    const s32 list_size = (s32)ilist->getSize();
+
+    m_slots_rects->clear();
+
+    for (s32 i = 0; i < m_geom.X * m_geom.Y; i++) {
+        s32 item_i = i + m_start_item_i;
+        if (item_i >= list_size)
+            break;
+
+        v2i p((i % m_geom.X) * m_slot_spacing.X,
+                (i / m_geom.X) * m_slot_spacing.Y);
+        recti rect = imgrect + base_pos + p;
+        const ItemStack &orig_item = ilist->getItem(item_i);
+        ItemStack item = orig_item;
+
+        bool selected = selected_item
+            && m_invmgr->getInventory(selected_item->inventoryloc) == inv
+            && selected_item->listname == m_listname
+            && selected_item->i == item_i;
+        bool hovering = m_hovered_i == item_i;
+        //ItemRotationKind rotation_kind = selected ? IT_ROT_SELECTED :
+        //	(hovering ? IT_ROT_HOVERED : IT_ROT_NONE);
+
+        // layer 0
+        if (hovering) {
+            m_slots_rects->addRect(toRectT<f32>(rect), {m_options.slotbg_h});
+        } else {
+            m_slots_rects->addRect(toRectT<f32>(rect), {m_options.slotbg_n});
+        }
+
+        // Draw inv slot borders
+        if (m_options.slotborder) {
+            s32 x1 = rect.ULC.X;
+            s32 y1 = rect.ULC.Y;
+            s32 x2 = rect.LRC.X;
+            s32 y2 = rect.LRC.Y;
+            s32 border = 1;
+
+            std::array<img::color8, 4> colors = {
+                m_options.slotbordercolor, m_options.slotbordercolor,
+                m_options.slotbordercolor, m_options.slotbordercolor
+            };
+            m_slots_rects->addRect(rectf(v2f(x1 - border, y1 - border), v2f(x2 + border, y1)), colors);
+            m_slots_rects->addRect(rectf(v2f(x1 - border, y2), v2f(x2 + border, y2 + border)), colors);
+            m_slots_rects->addRect(rectf(v2f(x1 - border, y1), v2f(x1, y2)), colors);
+            m_slots_rects->addRect(rectf(v2f(x2, y1), v2f(x2 + border, y2)), colors);
+        }
+
+        // layer 1
+        if (selected)
+            item.takeItem(m_fs_menu->getSelectedAmount());
+
+        /*if (!item.empty()) {
+            // Draw item stack
+            drawItemStack(driver, m_font, item, rect, &AbsoluteClippingRect,
+                    client, rotation_kind);
+        }*/
+
+        // Add hovering tooltip. The tooltip disappears if any item is selected,
+        // including the currently hovered one.
+        bool show_tooltip = !item.empty() && hovering && !selected_item;
+
+        if (client->getInputHandler()->getReceiver()->getLastPointerType() == PointerType::Touch) {
+            // Touchscreen users cannot hover over an item without selecting it.
+            // To allow touchscreen users to see item tooltips, we also show the
+            // tooltip if the item is selected and the finger is still on the
+            // source slot.
+            // The selected amount may be 0 in rare cases during "left-dragging"
+            // (used to distribute items evenly).
+            // In this case, the user doesn't see an item being dragged,
+            // so we don't show the tooltip.
+            // Note: `m_fs_menu->getSelectedAmount() != 0` below refers to the
+            // part of the selected item the user is dragging.
+            // `!item.empty()` would refer to the part of the selected item
+            // remaining in the source slot.
+            show_tooltip |= hovering && selected && m_fs_menu->getSelectedAmount() != 0;
+        }
+
+        if (show_tooltip) {
+            std::string tooltip = orig_item.getDescription(client->idef());
+            if (m_fs_menu->doTooltipAppendItemname())
+                tooltip += "\n[" + orig_item.name + "]";
+            m_fs_menu->addHoveredItemTooltip(tooltip);
+        }
+    }
+
+    m_slots_rects->rebuildMesh();
+
+    Rebuild = false;
+}
+
 void GUIInventoryList::draw()
 {
 	if (!IsVisible)
 		return;
 
-	Inventory *inv = m_invmgr->getInventory(m_inventoryloc);
-	if (!inv) {
-		if (!m_already_warned) {
-			warningstream << "GUIInventoryList::draw(): "
-					<< "The inventory location "
-					<< "\"" << m_inventoryloc.dump() << "\" doesn't exist"
-					<< std::endl;
-			m_already_warned = true;
-		}
-		return;
-	}
-	InventoryList *ilist = inv->getList(m_listname);
-	if (!ilist) {
-		if (!m_already_warned) {
-			warningstream << "GUIInventoryList::draw(): "
-					<< "The inventory list \"" << m_listname << "\" @ \""
-					<< m_inventoryloc.dump() << "\" doesn't exist"
-					<< std::endl;
-			m_already_warned = true;
-		}
-		return;
-	}
-	m_already_warned = false;
-
-	Client *client = m_fs_menu->getClient();
-	const ItemSpec *selected_item = m_fs_menu->getSelectedItem();
-
-	recti imgrect(0, 0, m_slot_size.X, m_slot_size.Y);
-	v2i base_pos = AbsoluteRect.ULC;
-
-	const s32 list_size = (s32)ilist->getSize();
-	
-	m_slots_rects->clear();
-
-	for (s32 i = 0; i < m_geom.X * m_geom.Y; i++) {
-		s32 item_i = i + m_start_item_i;
-		if (item_i >= list_size)
-			break;
-
-		v2i p((i % m_geom.X) * m_slot_spacing.X,
-				(i / m_geom.X) * m_slot_spacing.Y);
-		recti rect = imgrect + base_pos + p;
-		const ItemStack &orig_item = ilist->getItem(item_i);
-		ItemStack item = orig_item;
-
-		bool selected = selected_item
-			&& m_invmgr->getInventory(selected_item->inventoryloc) == inv
-			&& selected_item->listname == m_listname
-			&& selected_item->i == item_i;
-		bool hovering = m_hovered_i == item_i;
-        //ItemRotationKind rotation_kind = selected ? IT_ROT_SELECTED :
-        //	(hovering ? IT_ROT_HOVERED : IT_ROT_NONE);
-
-		// layer 0
-		if (hovering) {
-            m_slots_rects->addRect(toRectT<f32>(rect), {m_options.slotbg_h});
-		} else {
-            m_slots_rects->addRect(toRectT<f32>(rect), {m_options.slotbg_n});
-		}
-
-		// Draw inv slot borders
-		if (m_options.slotborder) {
-			s32 x1 = rect.ULC.X;
-			s32 y1 = rect.ULC.Y;
-			s32 x2 = rect.LRC.X;
-			s32 y2 = rect.LRC.Y;
-			s32 border = 1;
-			
-			std::array<img::color8, 4> colors = {
-				m_options.slotbordercolor, m_options.slotbordercolor,
-				m_options.slotbordercolor, m_options.slotbordercolor
-			};
-            m_slots_rects->addRect(rectf(v2f(x1 - border, y1 - border), v2f(x2 + border, y1)), colors);
-            m_slots_rects->addRect(rectf(v2f(x1 - border, y2), v2f(x2 + border, y2 + border)), colors);
-            m_slots_rects->addRect(rectf(v2f(x1 - border, y1), v2f(x1, y2)), colors);
-            m_slots_rects->addRect(rectf(v2f(x2, y1), v2f(x2 + border, y2)), colors);
-		}
-
-		// layer 1
-		if (selected)
-			item.takeItem(m_fs_menu->getSelectedAmount());
-
-		/*if (!item.empty()) {
-			// Draw item stack
-			drawItemStack(driver, m_font, item, rect, &AbsoluteClippingRect,
-					client, rotation_kind);
-		}*/
-
-		// Add hovering tooltip. The tooltip disappears if any item is selected,
-		// including the currently hovered one.
-		bool show_tooltip = !item.empty() && hovering && !selected_item;
-
-		if (client->getInputHandler()->getReceiver()->getLastPointerType() == PointerType::Touch) {
-			// Touchscreen users cannot hover over an item without selecting it.
-			// To allow touchscreen users to see item tooltips, we also show the
-			// tooltip if the item is selected and the finger is still on the
-			// source slot.
-			// The selected amount may be 0 in rare cases during "left-dragging"
-			// (used to distribute items evenly).
-			// In this case, the user doesn't see an item being dragged,
-			// so we don't show the tooltip.
-			// Note: `m_fs_menu->getSelectedAmount() != 0` below refers to the
-			// part of the selected item the user is dragging.
-			// `!item.empty()` would refer to the part of the selected item
-			// remaining in the source slot.
-			show_tooltip |= hovering && selected && m_fs_menu->getSelectedAmount() != 0;
-		}
-
-		if (show_tooltip) {
-			std::string tooltip = orig_item.getDescription(client->idef());
-			if (m_fs_menu->doTooltipAppendItemname())
-				tooltip += "\n[" + orig_item.name + "]";
-			m_fs_menu->addHoveredItemTooltip(tooltip);
-		}
-	}
-	
-    m_slots_rects->rebuildMesh();
+    updateMesh();
     m_slots_rects->draw();
 
 	IGUIElement::draw();
@@ -210,7 +219,7 @@ bool GUIInventoryList::OnEvent(const core::Event &event)
 	return ret;
 }
 
-s32 GUIInventoryList::getItemIndexAtPos(v2i p) const
+s32 GUIInventoryList::getItemIndexAtPos(v2i p)
 {
 	// no item if no gui element at pointer
 	if (!IsVisible || AbsoluteClippingRect.getArea() <= 0 ||
@@ -240,8 +249,10 @@ s32 GUIInventoryList::getItemIndexAtPos(v2i p) const
 	rect.clipAgainst(AbsoluteClippingRect);
 
 	if (rect.getArea() > 0 && rect.isPointInside(p) &&
-			i + m_start_item_i < (s32)ilist->getSize())
+            i + m_start_item_i < (s32)ilist->getSize()) {
+        Rebuild = true;
 		return i + m_start_item_i;
+    }
 
 	return -1;
 }

@@ -35,16 +35,18 @@ public:
 	void clear() override;
 
 	//! Draws a sprite in 2d with position and color
-	virtual void draw2DSprite(u32 index, const v2i &pos, const recti *clip = 0,
+    virtual void update2DSprite(u32 index, const v2i &pos, const recti *clip = 0,
             const img::color8 &color = img::color8(img::white),
 			u32 starttime = 0, u32 currenttime = 0, bool loop = true, bool center = false) override;
 
 	//! Draws a sprite in 2d with destination rectangle and colors
-	virtual void draw2DSprite(u32 index, const recti &destRect,
+    virtual void update2DSprite(u32 index, const recti &destRect,
 			const recti *clip = 0,
 			const img::color8 *const colors = 0,
 			u32 timeTicks = 0,
 			bool loop = true) override;
+
+    void draw2DSprite() override;
 
 protected:
 	bool getFrameNr(u32 &frameNr, u32 index, u32 time, bool loop) const;

@@ -22,37 +22,39 @@ public:
 	virtual ~GUIEditBoxWithScrollBar() {}
 
 	//! Sets whether to draw the background
-	virtual void setDrawBackground(bool draw);
+    virtual void setDrawBackground(bool draw) override;
+
+    void updateMesh() override;
 
 	//! draws the element and its children
-	virtual void draw();
+    virtual void draw() override;
 
 	//! Updates the absolute position, splits text if required
-	virtual void updateAbsolutePosition();
+    virtual void updateAbsolutePosition() override;
 
 	//! Change the background color
 	virtual void setBackgroundColor(const img::color8 &bg_color);
 
-	virtual bool isDrawBackgroundEnabled() const;
-	virtual bool isDrawBorderEnabled() const;
-	virtual void setCursorChar(const wchar_t cursorChar);
-	virtual wchar_t getCursorChar() const;
-    virtual void setCursorBlinkTime(u32 timeMs);
-    virtual u32 getCursorBlinkTime() const;
+    virtual bool isDrawBackgroundEnabled() const override;
+    virtual bool isDrawBorderEnabled() const override;
+    virtual void setCursorChar(const wchar_t cursorChar) override;
+    virtual wchar_t getCursorChar() const override;
+    virtual void setCursorBlinkTime(u32 timeMs) override;
+    virtual u32 getCursorBlinkTime() const override;
 
 protected:
 	//! Breaks the single text line.
-    virtual void breakText();
+    virtual void breakText() override;
 	//! sets the area of the given line
-    virtual void setTextRect(s32 line);
+    virtual void setTextRect(s32 line) override;
 	//! calculates the current scroll position
-	void calculateScrollPos();
+    void calculateScrollPos() override;
 	//! calculated the FrameRect
 	void calculateFrameRect();
 	//! create a Vertical ScrollBar
 	void createVScrollBar();
 
-	s32 getCursorPos(s32 x, s32 y);
+    s32 getCursorPos(s32 x, s32 y) override;
 
 	bool m_background;
 

@@ -57,6 +57,7 @@ GUIEditBoxWithScrollBar::GUIEditBoxWithScrollBar(const wchar_t* text, bool borde
 //! Sets whether to draw the background
 void GUIEditBoxWithScrollBar::setDrawBackground(bool draw)
 {
+    if (draw != m_background) Rebuild = true;
 	m_background = draw;
 }
 
@@ -72,24 +73,21 @@ void GUIEditBoxWithScrollBar::updateAbsolutePosition()
 	}
 }
 
-
-//! draws the element and its children
-void GUIEditBoxWithScrollBar::draw()
+void GUIEditBoxWithScrollBar::updateMesh()
 {
-    if (!IsVisible)
-		return;
-
-	const bool focus = Environment->hasFocus(this);
+    if (!Rebuild)
+        return;
+    const bool focus = Environment->hasFocus(this);
 
     GUISkin* skin = Environment->getSkin();
-	if (!skin)
-		return;
+    if (!skin)
+        return;
 
-	img::color8 default_bg_color;
-	img::color8 bg_color;
+    img::color8 default_bg_color;
+    img::color8 bg_color;
 
     default_bg_color = m_writable ? skin->getColor(EGDC_WINDOW) : img::black;
-	bg_color = m_bg_color_used ? m_bg_color : default_bg_color;
+    bg_color = m_bg_color_used ? m_bg_color : default_bg_color;
 
     m_editbox_bank->clear();
 
@@ -106,156 +104,166 @@ void GUIEditBoxWithScrollBar::draw()
         editBoxRects->rebuildMesh();
     }
 
-	calculateFrameRect();
+    calculateFrameRect();
 
-	recti local_clip_rect = m_frame_rect;
-	local_clip_rect.clipAgainst(AbsoluteClippingRect);
+    recti local_clip_rect = m_frame_rect;
+    local_clip_rect.clipAgainst(AbsoluteClippingRect);
 
-	// draw the text
+    // draw the text
 
-	render::TTFont* font = getActiveFont();
+    render::TTFont* font = getActiveFont();
 
-	s32 cursor_line = 0;
-	s32 charcursorpos = 0;
+    s32 cursor_line = 0;
+    s32 charcursorpos = 0;
 
-	if (font) {
-		if (m_last_break_font != font) {
-			breakText();
-		}
+    if (font) {
+        if (m_last_break_font != font) {
+            breakText();
+        }
 
         auto font_mgr = Environment->getRenderSystem()->getFontManager();
 
-		// calculate cursor pos
+        // calculate cursor pos
 
-		std::wstring *txt_line = &Text;
-		s32 start_pos = 0;
+        std::wstring *txt_line = &Text;
+        s32 start_pos = 0;
 
-		std::wstring s, s2;
+        std::wstring s, s2;
 
-		// get mark position
-		const bool ml = (!m_passwordbox && (m_word_wrap || m_multiline));
-		const s32 realmbgn = m_mark_begin < m_mark_end ? m_mark_begin : m_mark_end;
-		const s32 realmend = m_mark_begin < m_mark_end ? m_mark_end : m_mark_begin;
-		const s32 hline_start = ml ? getLineFromPos(realmbgn) : 0;
-		const s32 hline_count = ml ? getLineFromPos(realmend) - hline_start + 1 : 1;
-		const s32 line_count = ml ? m_broken_text.size() : 1;
+        // get mark position
+        const bool ml = (!m_passwordbox && (m_word_wrap || m_multiline));
+        const s32 realmbgn = m_mark_begin < m_mark_end ? m_mark_begin : m_mark_end;
+        const s32 realmend = m_mark_begin < m_mark_end ? m_mark_end : m_mark_begin;
+        const s32 hline_start = ml ? getLineFromPos(realmbgn) : 0;
+        const s32 hline_count = ml ? getLineFromPos(realmend) - hline_start + 1 : 1;
+        const s32 line_count = ml ? m_broken_text.size() : 1;
 
-		// Save the override color information.
-		// Then, alter it if the edit box is disabled.
-		const bool prevOver = m_override_color_enabled;
-		const img::color8 prevColor = m_override_color;
+        // Save the override color information.
+        // Then, alter it if the edit box is disabled.
+        const bool prevOver = m_override_color_enabled;
+        const img::color8 prevColor = m_override_color;
 
-		if (Text.size()) {
-			if (!isEnabled() && !m_override_color_enabled) {
-				m_override_color_enabled = true;
-				m_override_color = skin->getColor(EGDC_GRAY_TEXT);
-			}
+        if (Text.size()) {
+            if (!isEnabled() && !m_override_color_enabled) {
+                m_override_color_enabled = true;
+                m_override_color = skin->getColor(EGDC_GRAY_TEXT);
+            }
 
-			for (s32 i = 0; i < line_count; ++i) {
-				setTextRect(i);
+            for (s32 i = 0; i < line_count; ++i) {
+                setTextRect(i);
 
-				// clipping test - don't draw anything outside the visible area
-				recti c = local_clip_rect;
-				c.clipAgainst(m_current_text_rect);
-				if (!c.isValid())
-					continue;
+                // clipping test - don't draw anything outside the visible area
+                recti c = local_clip_rect;
+                c.clipAgainst(m_current_text_rect);
+                if (!c.isValid())
+                    continue;
 
-				// get current line
-				if (m_passwordbox) {
-					if (m_broken_text.size() != 1) {
-						m_broken_text.clear();
-						m_broken_text.emplace_back();
-					}
-					if (m_broken_text[0].size() != Text.size()){
-						m_broken_text[0] = Text;
-						for (u32 q = 0; q < Text.size(); ++q)
-						{
-							m_broken_text[0][q] = m_passwordchar;
-						}
-					}
-					txt_line = &m_broken_text[0];
-					start_pos = 0;
-				} else {
-					txt_line = ml ? &m_broken_text[i] : &Text;
-					start_pos = ml ? m_broken_text_positions[i] : 0;
-				}
+                // get current line
+                if (m_passwordbox) {
+                    if (m_broken_text.size() != 1) {
+                        m_broken_text.clear();
+                        m_broken_text.emplace_back();
+                    }
+                    if (m_broken_text[0].size() != Text.size()){
+                        m_broken_text[0] = Text;
+                        for (u32 q = 0; q < Text.size(); ++q)
+                        {
+                            m_broken_text[0][q] = m_passwordchar;
+                        }
+                    }
+                    txt_line = &m_broken_text[0];
+                    start_pos = 0;
+                } else {
+                    txt_line = ml ? &m_broken_text[i] : &Text;
+                    start_pos = ml ? m_broken_text_positions[i] : 0;
+                }
 
 
-				// draw normal text
+                // draw normal text
                 m_editbox_bank->addTextSprite(font_mgr, EnrichedString(*txt_line), 0, toV2T<f32>(m_current_text_rect.ULC),
                     m_override_color_enabled ? m_override_color : skin->getColor(EGDC_BUTTON_TEXT), &local_clip_rect, false);
 
-				// draw mark and marked text
-				if (focus && m_mark_begin != m_mark_end && i >= hline_start && i < hline_start + hline_count) {
+                // draw mark and marked text
+                if (focus && m_mark_begin != m_mark_end && i >= hline_start && i < hline_start + hline_count) {
 
-					s32 mbegin = 0, mend = 0;
-					s32 lineStartPos = 0, lineEndPos = txt_line->size();
+                    s32 mbegin = 0, mend = 0;
+                    s32 lineStartPos = 0, lineEndPos = txt_line->size();
 
-					if (i == hline_start) {
-						// highlight start is on this line
-						s = txt_line->substr(0, realmbgn - start_pos);
+                    if (i == hline_start) {
+                        // highlight start is on this line
+                        s = txt_line->substr(0, realmbgn - start_pos);
                         mbegin = font->getTextWidth(s);
 
-						// deal with kerning
+                        // deal with kerning
                         mbegin += font->getKerningSizeForTwoChars(
-							(*txt_line)[realmbgn - start_pos],
+                            (*txt_line)[realmbgn - start_pos],
                             realmbgn - start_pos > 0 ? (*txt_line)[realmbgn - start_pos - 1] : 0);
 
-						lineStartPos = realmbgn - start_pos;
-					}
-					if (i == hline_start + hline_count - 1) {
-						// highlight end is on this line
-						s2 = txt_line->substr(0, realmend - start_pos);
+                        lineStartPos = realmbgn - start_pos;
+                    }
+                    if (i == hline_start + hline_count - 1) {
+                        // highlight end is on this line
+                        s2 = txt_line->substr(0, realmend - start_pos);
                         mend = font->getTextWidth(s2);
-						lineEndPos = (s32)s2.size();
-					} else {
+                        lineEndPos = (s32)s2.size();
+                    } else {
                         mend = font->getTextWidth(*txt_line);
-					}
+                    }
 
 
-					m_current_text_rect.ULC.X += mbegin;
-					m_current_text_rect.LRC.X = m_current_text_rect.ULC.X + mend - mbegin;
+                    m_current_text_rect.ULC.X += mbegin;
+                    m_current_text_rect.LRC.X = m_current_text_rect.ULC.X + mend - mbegin;
 
 
-					// draw mark
+                    // draw mark
                     m_editbox_bank->addSprite({{toRectT<f32>(m_current_text_rect), {skin->getColor(EGDC_HIGH_LIGHT)}}}, 0, &local_clip_rect);
 
-					// draw marked text
-					s = txt_line->substr(lineStartPos, lineEndPos - lineStartPos);
+                    // draw marked text
+                    s = txt_line->substr(lineStartPos, lineEndPos - lineStartPos);
 
                     if (s.size())
                         m_editbox_bank->addTextSprite(font_mgr, EnrichedString(s), 0, toV2T<f32>(m_current_text_rect.ULC),
                             m_override_color_enabled ? m_override_color : skin->getColor(EGDC_HIGH_LIGHT_TEXT),  &local_clip_rect, false);
-				}
-			}
+                }
+            }
 
-			// Return the override color information to its previous settings.
-			m_override_color_enabled = prevOver;
-			m_override_color = prevColor;
-		}
+            // Return the override color information to its previous settings.
+            m_override_color_enabled = prevOver;
+            m_override_color = prevColor;
+        }
 
-		// draw cursor
-		if (IsEnabled && m_writable) {
-			if (m_word_wrap || m_multiline) {
-				cursor_line = getLineFromPos(m_cursor_pos);
-				txt_line = &m_broken_text[cursor_line];
-				start_pos = m_broken_text_positions[cursor_line];
-			}
-			s = txt_line->substr(0, m_cursor_pos - start_pos);
+        // draw cursor
+        if (IsEnabled && m_writable) {
+            if (m_word_wrap || m_multiline) {
+                cursor_line = getLineFromPos(m_cursor_pos);
+                txt_line = &m_broken_text[cursor_line];
+                start_pos = m_broken_text_positions[cursor_line];
+            }
+            s = txt_line->substr(0, m_cursor_pos - start_pos);
             charcursorpos = font->getTextWidth(s) +
                 font->getKerningSizeForTwoChars(L'_',
                     m_cursor_pos - start_pos > 0 ? (*txt_line)[m_cursor_pos - start_pos - 1] : 0);
 
-			if (focus && (porting::getTimeMs() - m_blink_start_time) % 700 < 350) {
-				setTextRect(cursor_line);
-				m_current_text_rect.ULC.X += charcursorpos;
+            if (focus && (porting::getTimeMs() - m_blink_start_time) % 700 < 350) {
+                setTextRect(cursor_line);
+                m_current_text_rect.ULC.X += charcursorpos;
 
                 m_editbox_bank->addTextSprite(font_mgr, EnrichedString(""), 0, toV2T<f32>(m_current_text_rect.ULC),
                     m_override_color_enabled ? m_override_color : skin->getColor(EGDC_BUTTON_TEXT), &local_clip_rect, false);
-			}
-		}
-	}
+            }
+        }
+    }
 
+    Rebuild = false;
+}
+
+//! draws the element and its children
+void GUIEditBoxWithScrollBar::draw()
+{
+    if (!IsVisible)
+		return;
+
+    updateMesh();
     m_editbox_bank->drawBank();
 
 	// draw children
@@ -646,6 +654,7 @@ void GUIEditBoxWithScrollBar::createVScrollBar()
 //! Change the background color
 void GUIEditBoxWithScrollBar::setBackgroundColor(const img::color8 &bg_color)
 {
+    if (bg_color != m_bg_color) Rebuild = true;
 	m_bg_color = bg_color;
 	m_bg_color_used = true;
 }

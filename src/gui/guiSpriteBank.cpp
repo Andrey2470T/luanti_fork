@@ -115,7 +115,7 @@ inline bool CGUISpriteBank::getFrameNr(u32 &frame, u32 index, u32 time, bool loo
 }
 
 //! draws a sprite in 2d with scale and color
-void CGUISpriteBank::draw2DSprite(u32 index, const v2i &pos,
+void CGUISpriteBank::update2DSprite(u32 index, const v2i &pos,
 		const recti *clip, const img::color8 &color,
 		u32 starttime, u32 currenttime, bool loop, bool center)
 {
@@ -138,10 +138,9 @@ void CGUISpriteBank::draw2DSprite(u32 index, const v2i &pos,
 	}
 
     SpriteBank->update(tex, toRectT<f32>(r), color, clip);
-    SpriteBank->draw();
 }
 
-void CGUISpriteBank::draw2DSprite(u32 index, const recti &destRect,
+void CGUISpriteBank::update2DSprite(u32 index, const recti &destRect,
 		const recti *clip, const img::color8 *const colors,
 		u32 timeTicks, bool loop)
 {
@@ -158,6 +157,10 @@ void CGUISpriteBank::draw2DSprite(u32 index, const recti &destRect,
 		return;
 
     SpriteBank->update(tex, toRectT<f32>(destRect), {colors[0], colors[1], colors[2], colors[3]}, clip);
+}
+
+void CGUISpriteBank::draw2DSprite()
+{
     SpriteBank->draw();
 }
 

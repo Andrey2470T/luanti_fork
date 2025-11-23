@@ -179,42 +179,50 @@ void GUIChatConsole::setCursor(
 	m_cursor_height = relative_height;
 }
 
+void GUIChatConsole::updateMesh()
+{
+    // Check screen size
+    v2u screensize = Environment->getRenderSystem()->getWindowSize();
+    if (screensize != m_screensize)
+    {
+        // screen size has changed
+        // scale current console height to new window size
+        if (m_screensize.Y != 0)
+            m_height = m_height * screensize.Y / m_screensize.Y;
+        m_screensize = screensize;
+        m_desired_height = m_desired_height_fraction * m_screensize.Y;
+        reformatConsole();
+    } else if (!m_scrollbar->getAbsolutePosition().isPointInside(v2i(screensize.X, m_height))) {
+        // the height of the chat window is no longer the height of the scrollbar
+        // happens while opening/closing the window
+        updateScrollbar(true);
+    }
+
+    // Animation
+    u64 now = porting::getTimeMs();
+    animate(now - m_animate_time_old);
+    m_animate_time_old = now;
+
+    if (m_height > 0)
+    {
+        updateBackground();
+        updateText();
+        updatePrompt();
+    }
+
+    Rebuild = false;
+}
+
 void GUIChatConsole::draw()
 {
 	if(!IsVisible)
 		return;
 
-	// Check screen size
-    v2u screensize = Environment->getRenderSystem()->getWindowSize();
-	if (screensize != m_screensize)
-	{
-		// screen size has changed
-		// scale current console height to new window size
-		if (m_screensize.Y != 0)
-			m_height = m_height * screensize.Y / m_screensize.Y;
-		m_screensize = screensize;
-		m_desired_height = m_desired_height_fraction * m_screensize.Y;
-		reformatConsole();
-	} else if (!m_scrollbar->getAbsolutePosition().isPointInside(v2i(screensize.X, m_height))) {
-		// the height of the chat window is no longer the height of the scrollbar
-		// happens while opening/closing the window
-		updateScrollbar(true);
-	}
-
-	// Animation
-	u64 now = porting::getTimeMs();
-	animate(now - m_animate_time_old);
-	m_animate_time_old = now;
+    updateMesh();
 
 	// Draw console elements if visible
 	if (m_height > 0)
-	{
-		drawBackground();
-		drawText();
-		drawPrompt();
-
         m_chat_bank->drawBank();
-	}
 
 	gui::IGUIElement::draw();
 }
@@ -292,8 +300,10 @@ void GUIChatConsole::animate(u32 msec)
 		m_open_inhibited = 0;
 }
 
-void GUIChatConsole::drawBackground()
+void GUIChatConsole::updateBackground()
 {
+    if (!Rebuild)
+        return;
     auto background = dynamic_cast<ImageSprite *>(m_chat_bank->getSprite(0));
 
     if (m_background != nullptr)
@@ -304,7 +314,7 @@ void GUIChatConsole::drawBackground()
     background->rebuildMesh();
 }
 
-void GUIChatConsole::drawText()
+void GUIChatConsole::updateText()
 {
 	if (!m_font)
 		return;
@@ -316,6 +326,9 @@ void GUIChatConsole::drawText()
 		rect = recti (0, 0, m_screensize.X - getScrollbarSize(Environment), m_height);
 	else
 		rect = AbsoluteClippingRect;
+
+    EnrichedString mergedText;
+    rectf mergedRect;
 
 	for (u32 row = 0; row < buf.getRows(); ++row)
 	{
@@ -333,18 +346,26 @@ void GUIChatConsole::drawText()
 			recti destrect(
 				x, y, x + m_fontsize.X * fragment.text.size(), y + m_fontsize.Y);
 
-            auto text = dynamic_cast<UITextSprite *>(m_chat_bank->getSprite(1));
-            text->setText(fragment.text);
-            text->setClipRect(AbsoluteClippingRect);
-            text->updateBuffer(rectf(
-                x, y, x + m_fontsize.X * fragment.text.size(), y + m_fontsize.Y));
+            mergedText += fragment.text;
+            mergedRect.addInternalPoint(x, y);
+            mergedRect.addInternalPoint(x + m_fontsize.X * fragment.text.size(), y + m_fontsize.Y);
 		}
+
+        mergedText += EnrichedString(L"\n");
 	}
+
+    auto text = dynamic_cast<UITextSprite *>(m_chat_bank->getSprite(1));
+
+    if (text->getText() != mergedText.getString() || Rebuild) {
+        text->setText(mergedText);
+        text->setClipRect(AbsoluteClippingRect);
+        text->updateBuffer(rectf(mergedRect));
+    }
 
 	updateScrollbar();
 }
 
-void GUIChatConsole::drawPrompt()
+void GUIChatConsole::updatePrompt()
 {
 	if (!m_font)
 		return;
@@ -368,11 +389,14 @@ void GUIChatConsole::drawPrompt()
 		font_width, y, font_width + text_width, y + font_height);
 
     auto text = dynamic_cast<UITextSprite *>(m_chat_bank->getSprite(2));
-    text->setText(prompt_text);
-    text->setOverrideColor(img::white);
-    text->setClipRect(AbsoluteClippingRect);
-    text->updateBuffer(rectf(
-        font_width, y, font_width + text_width, y + font_height));
+
+    if (text->getText() != prompt_text || Rebuild) {
+        text->setText(prompt_text);
+        text->setOverrideColor(img::white);
+        text->setClipRect(AbsoluteClippingRect);
+        text->updateBuffer(rectf(
+            font_width, y, font_width + text_width, y + font_height));
+    }
 
 
 	// Draw the cursor during on periods

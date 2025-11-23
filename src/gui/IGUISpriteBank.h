@@ -96,7 +96,7 @@ public:
 	\param loop When true animations are looped
 	\param center When true pivot is set to the sprite-center. So it affects pos.
 	*/
-	virtual void draw2DSprite(u32 index, const v2i &pos,
+    virtual void update2DSprite(u32 index, const v2i &pos,
 			const recti *clip = 0,
             const img::color8 &color = img::white,
 			u32 starttime = 0, u32 currenttime = 0,
@@ -113,11 +113,13 @@ public:
 		(same as currenttime-starttime in other draw2DSprite function)
 		\param loop When true animations are looped
 	*/
-	virtual void draw2DSprite(u32 index, const recti &destRect,
+    virtual void update2DSprite(u32 index, const recti &destRect,
 			const recti *clip = 0,
 			const img::color8 *const colors = 0,
 			u32 timeTicks = 0,
 			bool loop = true) = 0;
+
+    virtual void draw2DSprite() = 0;
 };
 
 } // end namespace gui

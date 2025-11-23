@@ -42,6 +42,8 @@ void CGUIImage::setImage(img::Image *image, std::optional<AtlasTileAnim> animPar
 	Texture = image;
     AnimParams = animParams;
     FrameOffset = offset;
+
+    Rebuild = true;
 }
 
 //! Gets the image texture
@@ -53,6 +55,7 @@ img::Image *CGUIImage::getImage() const
 //! sets the color of the image
 void CGUIImage::setColor(img::color8 color)
 {
+    if (color != Color) Rebuild = true;
 	Color = color;
 }
 
@@ -62,31 +65,29 @@ img::color8 CGUIImage::getColor() const
 	return Color;
 }
 
-//! draws the element and its children
-void CGUIImage::draw()
+void CGUIImage::updateMesh()
 {
-	if (!IsVisible)
-		return;
-
-	GUISkin *skin = Environment->getSkin();
+    if (!Rebuild)
+        return;
+    GUISkin *skin = Environment->getSkin();
 
     auto pool = Environment->getRenderSystem()->getPool(false);
-	if (Texture) {
-		recti sourceRect(SourceRect);
-		if (sourceRect.getWidth() == 0 || sourceRect.getHeight() == 0) {
-            sourceRect = recti(v2i(Texture->getSize().X ,Texture->getSize().Y));
-		}
+    if (Texture) {
+        recti sourceRect(SourceRect);
+        if (sourceRect.getWidth() == 0 || sourceRect.getHeight() == 0) {
+            sourceRect = recti(v2i(Texture->getSize().X, Texture->getSize().Y));
+        }
 
         recti clippingRect;
         std::array<img::color8, 4> Colors = UISprite::defaultColors;
 
         clippingRect = AbsoluteClippingRect;
         checkBounds(clippingRect);
-		if (ScaleImage) {
+        if (ScaleImage) {
             Colors = {Color, Color, Color, Color};
-		} else {
+        } else {
             clippingRect.clipAgainst(AbsoluteClippingRect);
-		}
+        }
         if (MiddleRect.getArea() == 0) {
             auto img = std::get<std::shared_ptr<ImageSprite>>(Image);
             img->update(Texture, toRectT<f32>(AbsoluteRect), Colors, &clippingRect, AnimParams);
@@ -104,9 +105,9 @@ void CGUIImage::draw()
                 pool->getAnimatedTileByImage(Texture)->frame_offset = FrameOffset.value();
             sliced_img->draw();
         }
-	} else if (DrawBackground) {
-		recti clippingRect(AbsoluteClippingRect);
-		checkBounds(clippingRect);
+    } else if (DrawBackground) {
+        recti clippingRect(AbsoluteClippingRect);
+        checkBounds(clippingRect);
 
         auto color = skin->getColor(EGDC_3D_DARK_SHADOW);
         std::array<img::color8, 4> Colors = {color, color, color, color};
@@ -127,7 +128,25 @@ void CGUIImage::draw()
                 pool->getAnimatedTileByImage(Texture)->frame_offset = FrameOffset.value();
             sliced_img->draw();
         }
-	}
+    }
+
+    Rebuild = false;
+}
+
+//! draws the element and its children
+void CGUIImage::draw()
+{
+	if (!IsVisible)
+		return;
+
+    updateMesh();
+
+    if (MiddleRect.getArea() == 0) {
+        std::get<std::shared_ptr<ImageSprite>>(Image)->draw();
+    }
+    else {
+        std::get<std::shared_ptr<Image2D9Slice>>(Image)->draw();
+    }
 
 	IGUIElement::draw();
 }
@@ -141,6 +160,7 @@ void CGUIImage::setUseAlphaChannel(bool use)
 //! sets if the image should use its alpha channel to draw itself
 void CGUIImage::setScaleImage(bool scale)
 {
+    if (scale != ScaleImage) Rebuild = true;
 	ScaleImage = scale;
 }
 
@@ -159,6 +179,7 @@ bool CGUIImage::isAlphaChannelUsed() const
 //! Sets the source rectangle of the image. By default the full image is used.
 void CGUIImage::setSourceRect(const recti &sourceRect)
 {
+    if (sourceRect != SourceRect) Rebuild = true;
 	SourceRect = sourceRect;
 }
 

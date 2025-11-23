@@ -22,6 +22,26 @@ GUIItemImage::GUIItemImage(gui::IGUIEnvironment *env, gui::IGUIElement *parent,
     m_text->setOverrideFont(m_font);
 }
 
+void GUIItemImage::updateMesh()
+{
+    if (!Rebuild)
+        return;
+    IItemDefManager *idef = m_client->idef();
+    ItemStack item;
+    item.deSerialize(m_item_name, idef);
+    // Viewport rectangle on screen
+    //recti rect = recti(AbsoluteRect);
+    //drawItemStack(Environment->getVideoDriver(), m_font, item, rect,
+    //		&AbsoluteClippingRect, m_client, IT_ROT_NONE);
+    img::color8 color = img::white;
+
+    m_text->setText(m_label);
+    m_text->updateBuffer(toRectT<f32>(AbsoluteRect));
+    m_text->setClipRect(AbsoluteClippingRect);
+
+    Rebuild = false;
+}
+
 void GUIItemImage::draw()
 {
 	if (!IsVisible)
@@ -32,18 +52,7 @@ void GUIItemImage::draw()
 		return;
 	}
 
-	IItemDefManager *idef = m_client->idef();
-	ItemStack item;
-	item.deSerialize(m_item_name, idef);
-	// Viewport rectangle on screen
-    //recti rect = recti(AbsoluteRect);
-    //drawItemStack(Environment->getVideoDriver(), m_font, item, rect,
-    //		&AbsoluteClippingRect, m_client, IT_ROT_NONE);
-    img::color8 color = img::white;
-
-    m_text->setText(m_label);
-    m_text->updateBuffer(toRectT<f32>(AbsoluteRect));
-    m_text->setClipRect(AbsoluteClippingRect);
+    updateMesh();
     m_text->draw();
 
 	IGUIElement::draw();

@@ -29,28 +29,16 @@ GUIBackgroundImage::GUIBackgroundImage(gui::IGUIEnvironment *env,
     m_name(name), m_middle(middle), m_autoclip(autoclip),
     m_autoclip_offset(autoclip_offset)
 {
-    if (m_middle.getArea() == 0) {
-        Image = std::make_unique<ImageSprite>(env->getRenderSystem(),
-            env->getResourceCache());
-    }
-    else {
-        Image = std::make_unique<Image2D9Slice>(env->getResourceCache(),
-            env->getRenderSystem());
-    }
+    if (m_middle.getArea() == 0)
+        Image = std::make_shared<ImageSprite>(env->getRenderSystem(), env->getResourceCache());
+    else
+        Image = std::make_shared<Image2D9Slice>(env->getResourceCache(), env->getRenderSystem());
 }
 
-void GUIBackgroundImage::draw()
+void GUIBackgroundImage::updateMesh()
 {
-	if (!IsVisible)
+	if (!Rebuild)
 		return;
-
-	if (!texture) {
-		errorstream << "GUIBackgroundImage::draw() Unable to load texture:"
-				<< std::endl;
-		errorstream << "\t" << m_name << std::endl;
-		return;
-	}
-
 	recti rect;
 	if (m_autoclip) {
 		rect = Parent->getAbsoluteClippingRect();
@@ -65,12 +53,31 @@ void GUIBackgroundImage::draw()
 	if (m_middle.getArea() == 0) {
         auto img = std::get<std::shared_ptr<ImageSprite>>(Image);
         img->update(texture, toRectT<f32>(rect), UISprite::defaultColors, &srcrect);
-        img->draw();
 	} else {
         auto img = std::get<std::shared_ptr<Image2D9Slice>>(Image);
         img->updateRects(toRectT<f32>(srcrect), toRectT<f32>(rect), toRectT<f32>(m_middle));
-        img->draw();
+	}
+	
+	Rebuild = false;
+}
+
+void GUIBackgroundImage::draw()
+{
+	if (!IsVisible)
+		return;
+
+	if (!texture) {
+		errorstream << "GUIBackgroundImage::draw() Unable to load texture:"
+				<< std::endl;
+		errorstream << "\t" << m_name << std::endl;
+		return;
 	}
 
+	updateMesh();
+	if (m_middle.getArea() == 0)
+		std::get<std::shared_ptr<ImageSprite>>(Image)->draw();
+	else
+		std::get<std::shared_ptr<Image2D9Slice>>(Image)->draw();
+    
 	IGUIElement::draw();
 }

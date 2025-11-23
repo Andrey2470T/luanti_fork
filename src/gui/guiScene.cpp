@@ -42,21 +42,16 @@ GUIScene::GUIScene(Client *client, gui::IGUIEnvironment *env,
     //m_smgr->getParameters()->setAttribute(scene::ALLOW_ZWRITE_ON_TRANSPARENT, true);
 }
 
-GUIScene::~GUIScene()
-{
-    if (m_model)
-        Environment->getResourceCache()->clearResource<Model>(ResourceType::MODEL, m_model, true);
-}
-
 void GUIScene::setModel(Model *model)
 {
-    auto cache = Environment->getResourceCache();
-    if (m_model) {
-        cache->clearResource<Model>(ResourceType::MODEL, m_model, true);
-    }
+    if (model == m_model)
+        return;
+
+    m_model->getMesh()->splitTransparentLayers();
 
     m_model = model;
-    cache->cacheResource<Model>(ResourceType::MODEL, m_model);
+
+    m_model->getMesh()->getBuffer(0)->uploadData();
 }
 
 void GUIScene::setTexture(u32 idx, img::Image *texture)

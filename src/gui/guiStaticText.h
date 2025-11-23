@@ -18,6 +18,8 @@ public:
 			IGUIElement *parent, s32 id, const recti &rectangle,
 			bool background = false);
 
+    void updateMesh() override;
+
 	//! draws the element and its children
 	void draw() override;
 

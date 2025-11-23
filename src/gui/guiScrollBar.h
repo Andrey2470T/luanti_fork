@@ -32,6 +32,7 @@ public:
 		DEFAULT
 	};
 
+    void updateMesh() override;
 	virtual void draw() override;
 	virtual void updateAbsolutePosition() override;
 	virtual bool OnEvent(const core::Event &event) override;

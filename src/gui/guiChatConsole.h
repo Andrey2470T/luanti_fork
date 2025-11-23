@@ -53,14 +53,16 @@ public:
 		f32 blink_speed = 1.0,
 		f32 relative_height = 1.0);
 
+    void updateMesh() override;
+
 	// Irrlicht draw method
-	virtual void draw();
+    virtual void draw() override;
 
-	virtual bool OnEvent(const core::Event& event);
+    virtual bool OnEvent(const core::Event& event) override;
 
-	virtual void setVisible(bool visible);
+    virtual void setVisible(bool visible) override;
 
-	virtual bool acceptsIME() { return true; }
+    virtual bool acceptsIME() override { return true; }
 
 private:
 	void reformatConsole();
@@ -68,9 +70,9 @@ private:
 
 	// These methods are called by draw
 	void animate(u32 msec);
-	void drawBackground();
-	void drawText();
-	void drawPrompt();
+    void updateBackground();
+    void updateText();
+    void updatePrompt();
 
 	// If clicked fragment has a web url, send it to the system default web browser.
 	// Returns true if, and only if a web url was pressed.

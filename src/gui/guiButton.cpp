@@ -62,6 +62,7 @@ GUIButton::~GUIButton()
 //! Sets if the images should be scaled to fit the button
 void GUIButton::setScaleImage(bool scaleImage)
 {
+    if (scaleImage != ScaleImage) Rebuild = true;
 	ScaleImage = scaleImage;
 }
 
@@ -76,6 +77,7 @@ bool GUIButton::isScalingImage() const
 //! Sets if the button should use the skin to draw its border
 void GUIButton::setDrawBorder(bool border)
 {
+    if (border != DrawBorder) Rebuild = true;
 	DrawBorder = border;
 }
 
@@ -89,6 +91,7 @@ void GUIButton::setSpriteBank(IGUISpriteBank* sprites)
 		SpriteBank->drop();
 
 	SpriteBank = sprites;
+	Rebuild = true;
 }
 
 void GUIButton::setSprite(EGUI_BUTTON_STATE state, s32 index, img::color8 color, bool loop)
@@ -96,6 +99,7 @@ void GUIButton::setSprite(EGUI_BUTTON_STATE state, s32 index, img::color8 color,
 	ButtonSprites[(u32)state].Index	= index;
 	ButtonSprites[(u32)state].Color	= color;
 	ButtonSprites[(u32)state].Loop	= loop;
+	Rebuild = true;
 }
 
 //! Get the sprite-index for the given state or -1 when no sprite is set
@@ -238,23 +242,20 @@ bool GUIButton::OnEvent(const core::Event& event)
 	return Parent ? Parent->OnEvent(event) : false;
 }
 
-
-//! draws the element and its children
-void GUIButton::draw()
+void GUIButton::updateMesh()
 {
-	if (!IsVisible)
-		return;
+    // PATCH
+    // Track hovered state, if it has changed then we need to update the style.
+    bool hovered = isHovered();
+    bool focused = isFocused();
+    if (hovered != WasHovered || focused != WasFocused) {
+        WasHovered = hovered;
+        WasFocused = focused;
+        setFromState();
+    }
 
-	// PATCH
-	// Track hovered state, if it has changed then we need to update the style.
-	bool hovered = isHovered();
-	bool focused = isFocused();
-	if (hovered != WasHovered || focused != WasFocused) {
-		WasHovered = hovered;
-		WasFocused = focused;
-		setFromState();
-	}
-
+    if (!Rebuild)
+        return;
     GUISkin *skin = Environment->getSkin();
 	// END PATCH
 
@@ -276,7 +277,6 @@ void GUIButton::draw()
 		}
         sprite0->rebuildMesh();
         sprite0->setClipRect(AbsoluteClippingRect);
-        sprite0->draw();
 	}
 
     const v2i buttonCenter(AbsoluteRect.getCenter());
@@ -312,13 +312,11 @@ void GUIButton::draw()
             auto img = dynamic_cast<ImageSprite *>(ButtonBox->getSprite(1));
             img->update(texture, toRectT<f32>(ScaleImage? AbsoluteRect : recti(pos, sourceRect.getSize())),
                 image_colors, &AbsoluteClippingRect);
-            img->draw();
 		} else {
             auto sliced_img = dynamic_cast<Image2D9Slice *>(ButtonBox->getSprite(1));
             sliced_img->updateRects(toRectT<f32>(sourceRect), toRectT<f32>(BgMiddle),
                 toRectT<f32>(ScaleImage ? AbsoluteRect : recti(pos, sourceRect.getSize())),
                 texture, image_colors, &AbsoluteClippingRect);
-            sliced_img->draw();
 		}
 		// END PATCH
 	}
@@ -330,15 +328,15 @@ void GUIButton::draw()
             v2i pos(buttonCenter);
 			// pressed / unpressed animation
 			EGUI_BUTTON_STATE state = Pressed ? EGBS_BUTTON_DOWN : EGBS_BUTTON_UP;
-            drawSprite(state, ClickTime, pos);
+            updateSprite(state, ClickTime, pos);
 
 			// focused / unfocused animation
 			state = Environment->hasFocus(this) ? EGBS_BUTTON_FOCUSED : EGBS_BUTTON_NOT_FOCUSED;
-            drawSprite(state, FocusTime, pos);
+            updateSprite(state, FocusTime, pos);
 
 			// mouse over / off animation
 			state = isHovered() ? EGBS_BUTTON_MOUSE_OVER : EGBS_BUTTON_MOUSE_OFF;
-            drawSprite(state, HoverTime, pos);
+            updateSprite(state, HoverTime, pos);
 		}
 		else
 		{
@@ -347,10 +345,31 @@ void GUIButton::draw()
 		}
 	}
 
+    Rebuild = false;
+}
+
+//! draws the element and its children
+void GUIButton::draw()
+{
+    if (!IsVisible)
+        return;
+
+    updateMesh();
+
+    if (DrawBorder)
+        ButtonBox->getSprite(0)->draw();
+
+    EGUI_BUTTON_IMAGE_STATE imageState = EGBIS_IMAGE_UP;
+    if ( ButtonImages[(u32)imageState].Texture )
+        ButtonBox->getSprite(1)->draw();
+
+    if (SpriteBank && isEnabled())
+        SpriteBank->draw2DSprite();
+
     IGUIElement::draw();
 }
 
-void GUIButton::drawSprite(EGUI_BUTTON_STATE state, u32 startTime, const v2i& center)
+void GUIButton::updateSprite(EGUI_BUTTON_STATE state, u32 startTime, const v2i& center)
 {
 	u32 stateIdx = (u32)state;
 	s32 spriteIdx = ButtonSprites[stateIdx].Index;
@@ -362,7 +381,7 @@ void GUIButton::drawSprite(EGUI_BUTTON_STATE state, u32 startTime, const v2i& ce
 
     GUISkin *skin = Environment->getSkin();
 	s32 scale = std::max(std::floor(skin->getScale()), 1.0f);
-	recti rect(center, srcRect.getSize() * scale);
+	recti rect(center, center + srcRect.getSize() * scale);
 	rect -= rect.getSize() / 2;
 
 	const img::color8 colors[] = {
@@ -371,7 +390,7 @@ void GUIButton::drawSprite(EGUI_BUTTON_STATE state, u32 startTime, const v2i& ce
 		ButtonSprites[stateIdx].Color,
 		ButtonSprites[stateIdx].Color,
 	};
-	SpriteBank->draw2DSprite(spriteIdx, rect, &AbsoluteClippingRect, colors,
+    SpriteBank->update2DSprite(spriteIdx, rect, &AbsoluteClippingRect, colors,
 			porting::getTimeMs() - startTime, ButtonSprites[stateIdx].Loop);
 }
 
@@ -459,6 +478,7 @@ void GUIButton::setOverrideFont(render::TTFont* font)
 	OverrideFont = font;
 
 	StaticText->setOverrideFont(font);
+	Rebuild = true;
 }
 
 //! Gets the override font (if any)
@@ -485,6 +505,7 @@ void GUIButton::setOverrideColor(img::color8 color)
 	OverrideColorEnabled = true;
 
 	StaticText->setOverrideColor(color);
+	Rebuild = true;
 }
 
 img::color8 GUIButton::getOverrideColor() const
@@ -516,6 +537,7 @@ void GUIButton::setImage(EGUI_BUTTON_IMAGE_STATE state, img::Image* image, const
 
 	ButtonImages[stateIdx].Texture = image;
 	ButtonImages[stateIdx].SourceRect = sourceRect;
+	Rebuild = true;
 }
 
 // PATCH
@@ -601,6 +623,7 @@ bool GUIButton::isPushButton() const
 void GUIButton::setUseAlphaChannel(bool useAlphaChannel)
 {
 	UseAlphaChannel = useAlphaChannel;
+	Rebuild = true;
 }
 
 
@@ -643,6 +666,7 @@ void GUIButton::setColor(img::color8 color)
         img::color8 base = Environment->getSkin()->getColor((EGUI_DEFAULT_COLOR)i);
         Colors[i] = base.linInterp(color, d);
 	}
+	Rebuild = true;
 }
 
 //! Set element properties from a StyleSpec corresponding to the button state
@@ -746,6 +770,7 @@ void GUIButton::setFromStyle(const StyleSpec& style)
 	for (IGUIElement *child : getChildren()) {
 		child->setRelativePosition(childBounds);
 	}
+	Rebuild = true;
 }
 
 //! Set the styles used for each state

@@ -157,45 +157,54 @@ bool GUIScrollBar::OnEvent(const core::Event &event)
 	return IGUIElement::OnEvent(event);
 }
 
-void GUIScrollBar::draw()
+void GUIScrollBar::updateMesh()
 {
-	if (!IsVisible)
-		return;
-
+    if (!Rebuild)
+        return;
     GUISkin *skin = Environment->getSkin();
-	if (!skin)
-		return;
+    if (!skin)
+        return;
 
-	img::color8 icon_color = skin->getColor(
-			isEnabled() ? EGDC_WINDOW_SYMBOL : EGDC_GRAY_WINDOW_SYMBOL);
-	if (icon_color != current_icon_color)
-		refreshControls();
+    img::color8 icon_color = skin->getColor(
+            isEnabled() ? EGDC_WINDOW_SYMBOL : EGDC_GRAY_WINDOW_SYMBOL);
+    if (icon_color != current_icon_color)
+        refreshControls();
 
     box->clear();
 
-	slider_rect = AbsoluteRect;
+    slider_rect = AbsoluteRect;
     img::color8 color = skin->getColor(EGDC_SCROLLBAR);
 
     box->getShape()->addRectangle(toRectT<f32>(slider_rect), {color, color, color, color});
 
     if (!equals(range(), 0.0f)) {
-	if (is_horizontal) {
-		slider_rect.ULC.X = AbsoluteRect.ULC.X +
-						draw_center - thumb_size / 2;
-		slider_rect.LRC.X =
-				slider_rect.ULC.X + thumb_size;
-	} else {
-		slider_rect.ULC.Y = AbsoluteRect.ULC.Y +
-						draw_center - thumb_size / 2;
-		slider_rect.LRC.Y =
-				slider_rect.ULC.Y + thumb_size;
-	}
+    if (is_horizontal) {
+        slider_rect.ULC.X = AbsoluteRect.ULC.X +
+                        draw_center - thumb_size / 2;
+        slider_rect.LRC.X =
+                slider_rect.ULC.X + thumb_size;
+    } else {
+        slider_rect.ULC.Y = AbsoluteRect.ULC.Y +
+                        draw_center - thumb_size / 2;
+        slider_rect.LRC.Y =
+                slider_rect.ULC.Y + thumb_size;
+    }
 
         skin->add3DButtonPaneStandard(box.get(), toRectT<f32>(slider_rect));
 }
 
     box->rebuildMesh();
     box->setClipRect(AbsoluteClippingRect);
+
+    Rebuild = false;
+}
+
+void GUIScrollBar::draw()
+{
+	if (!IsVisible)
+		return;
+
+    updateMesh();
     box->draw();
 
 	IGUIElement::draw();
@@ -322,6 +331,7 @@ void GUIScrollBar::setPosInterpolated(const s32 &pos)
 	} else {
 		target_pos = std::nullopt;
 	}
+    Rebuild = true;
 }
 
 void GUIScrollBar::setSmallStep(const s32 &step)

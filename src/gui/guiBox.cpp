@@ -20,11 +20,10 @@ GUIBox::GUIBox(gui::IGUIEnvironment *env, gui::IGUIElement *parent, s32 id,
     m_box(std::make_unique<UIRects>(env->getRenderSystem(), 5))
 {}
 
-void GUIBox::draw()
+void GUIBox::updateMesh()
 {
-	if (!IsVisible)
+	if (!Rebuild)
 		return;
-
 	std::array<s32, 4> negative_borders = {0, 0, 0, 0};
 	std::array<s32, 4> positive_borders = {0, 0, 0, 0};
 
@@ -100,8 +99,17 @@ void GUIBox::draw()
             {m_bordercolors[i], m_bordercolors[i], m_bordercolors[i], m_bordercolors[i]});
 
     m_box->updateMesh();
-
     m_box->setClipRect(AbsoluteClippingRect);
+    
+    Rebuild = false;
+}
+
+void GUIBox::draw()
+{
+	if (!IsVisible)
+		return;
+
+	updateMesh();
     m_box->draw();
 
     IGUIElement::draw();

@@ -578,6 +578,8 @@ void GUITable::setSelected(s32 index)
 	if (m_selected != old_selected || selection_invisible) {
 		autoScroll();
 	}
+
+    Rebuild = true;
 }
 
 void GUITable::setOverrideFont(render::TTFont *font)
@@ -639,18 +641,23 @@ void GUITable::updateAbsolutePosition()
 	updateScrollBar();
 }
 
-void GUITable::draw()
+void GUITable::updateMesh()
 {
-	if (!IsVisible)
-		return;
-
     GUISkin *skin = Environment->getSkin();
     auto rnd = Environment->getRenderSystem()->getRenderer();
     auto cache = Environment->getResourceCache();
 
+    if (m_scrollbar->isVisible() && m_last_scrollpos != m_scrollbar->getPos()) {
+        m_last_scrollpos = m_scrollbar->getPos();
+        Rebuild = true;
+    }
+
+    if (!Rebuild)
+        return;
+
     m_table_box->clear();
 
-	// draw background
+    // draw background
 
     bool draw_background = m_background.A() > 0;
     if (m_border) {
@@ -669,55 +676,64 @@ void GUITable::draw()
         m_table_box->addSprite(background);
     }
 
-	// get clipping rect
+    // get clipping rect
 
-	recti client_clip(AbsoluteRect);
-	client_clip.ULC.Y += 1;
-	client_clip.ULC.X += 1;
-	client_clip.LRC.Y -= 1;
-	client_clip.LRC.X -= 1;
-	if (m_scrollbar->isVisible()) {
-		client_clip.LRC.X =
-				m_scrollbar->getAbsolutePosition().ULC.X;
-	}
-	client_clip.clipAgainst(AbsoluteClippingRect);
+    recti client_clip(AbsoluteRect);
+    client_clip.ULC.Y += 1;
+    client_clip.ULC.X += 1;
+    client_clip.LRC.Y -= 1;
+    client_clip.LRC.X -= 1;
+    if (m_scrollbar->isVisible()) {
+        client_clip.LRC.X =
+                m_scrollbar->getAbsolutePosition().ULC.X;
+    }
+    client_clip.clipAgainst(AbsoluteClippingRect);
 
-	// draw visible rows
+    // draw visible rows
 
-	s32 scrollpos = m_scrollbar->getPos();
-	s32 row_min = scrollpos / m_rowheight;
-	s32 row_max = (scrollpos + AbsoluteRect.getHeight() - 1)
-			/ m_rowheight + 1;
-	row_max = MYMIN(row_max, (s32) m_visible_rows.size());
+    s32 scrollpos = m_scrollbar->getPos();
+    s32 row_min = scrollpos / m_rowheight;
+    s32 row_max = (scrollpos + AbsoluteRect.getHeight() - 1)
+            / m_rowheight + 1;
+    row_max = MYMIN(row_max, (s32) m_visible_rows.size());
 
-	recti row_rect(AbsoluteRect);
-	if (m_scrollbar->isVisible())
-		row_rect.LRC.X -=
+    recti row_rect(AbsoluteRect);
+    if (m_scrollbar->isVisible())
+        row_rect.LRC.X -=
             skin->getSize(EGDS_SCROLLBAR_SIZE);
-	row_rect.ULC.Y += row_min * m_rowheight - scrollpos;
-	row_rect.LRC.Y = row_rect.ULC.Y + m_rowheight;
+    row_rect.ULC.Y += row_min * m_rowheight - scrollpos;
+    row_rect.LRC.Y = row_rect.ULC.Y + m_rowheight;
 
-	for (s32 i = row_min; i < row_max; ++i) {
-		Row *row = &m_rows[m_visible_rows[i]];
-		bool is_sel = i == m_selected;
-		img::color8 color = m_color;
+    for (s32 i = row_min; i < row_max; ++i) {
+        Row *row = &m_rows[m_visible_rows[i]];
+        bool is_sel = i == m_selected;
+        img::color8 color = m_color;
 
-		if (is_sel) {
+        if (is_sel) {
             UISprite *cell = new UISprite(nullptr, rnd, cache, true);
             cell->setClipRect(client_clip);
             cell->getShape()->addRectangle(toRectT<f32>(row_rect), {m_highlight, m_highlight, m_highlight, m_highlight});
             cell->rebuildMesh();
             m_table_box->addSprite(cell);
-			color = m_highlight_text;
-		}
+            color = m_highlight_text;
+        }
 
         for (s32 j = 0; j < row->cellcount; ++j)
-			drawCell(&row->cells[j], color, row_rect, client_clip);
+            drawCell(&row->cells[j], color, row_rect, client_clip);
 
-		row_rect.ULC.Y += m_rowheight;
-		row_rect.LRC.Y += m_rowheight;
-	}
+        row_rect.ULC.Y += m_rowheight;
+        row_rect.LRC.Y += m_rowheight;
+    }
 
+    Rebuild = false;
+}
+
+void GUITable::draw()
+{
+	if (!IsVisible)
+		return;
+
+    updateMesh();
     m_table_box->drawBank();
 
 	// Draw children
@@ -745,11 +761,13 @@ void GUITable::drawCell(const Cell *cell, img::color8 color,
 		if (m_font) {
             if (cell->content_type == COLUMN_TYPE_TEXT) {
                 m_table_box->addTextSprite(
-                    font_mgr, EnrichedString(m_strings[cell->content_index]), 0, toV2T<f32>(text_rect.ULC), color, &client_clip, false);
+                    font_mgr, EnrichedString(m_strings[cell->content_index]), 0,
+                        toV2T<f32>(text_rect.ULC), color, &client_clip, false);
             }
             else { // tree
                 m_table_box->addTextSprite(
-                    font_mgr, EnrichedString(cell->content_index ? L"+" : L"-"), 0, toV2T<f32>(text_rect.ULC), color, &client_clip, false);
+                    font_mgr, EnrichedString(cell->content_index ? L"+" : L"-"), 0,
+                        toV2T<f32>(text_rect.ULC), color, &client_clip, false);
             }
 		}
 	}
@@ -888,6 +906,7 @@ bool GUITable::OnEvent(const core::Event &event)
 			m_scrollbar->setPosInterpolated(m_scrollbar->getTargetPos() +
                     (event.MouseInput.WheelDelta < 0 ? -3 : 3) *
 					- (s32) m_rowheight / 2);
+            Rebuild = true;
 			return true;
 		}
 

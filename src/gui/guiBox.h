@@ -18,6 +18,8 @@ public:
 		const std::array<img::color8, 4> &colors,
 		const std::array<img::color8, 4> &bordercolors,
 		const std::array<s32, 4> &borderwidths);
+		
+	void updateMesh() override;
 
 	virtual void draw() override;
 

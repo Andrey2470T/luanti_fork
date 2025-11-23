@@ -69,6 +69,7 @@ public:
 		const Options &options,
 		render::TTFont *font);
 
+    void updateMesh() override;
 	virtual void draw() override;
 
 	virtual bool OnEvent(const core::Event &event) override;
@@ -85,12 +86,16 @@ public:
 
 	void setSlotBGColors(const img::color8 &slotbg_n, const img::color8 &slotbg_h)
 	{
+        if (slotbg_n != m_options.slotbg_n || slotbg_h != m_options.slotbg_h)
+            Rebuild = true;
 		m_options.slotbg_n = slotbg_n;
 		m_options.slotbg_h = slotbg_h;
 	}
 
 	void setSlotBorders(bool slotborder, const img::color8 &slotbordercolor)
 	{
+        if (slotborder != m_options.slotborder || slotbordercolor != m_options.slotbordercolor)
+            Rebuild = true;
 		m_options.slotborder = slotborder;
 		m_options.slotbordercolor = slotbordercolor;
 	}
@@ -101,7 +106,7 @@ public:
 	}
 
 	// returns -1 if not item is at pos p
-	s32 getItemIndexAtPos(v2i p) const;
+    s32 getItemIndexAtPos(v2i p);
 
 private:
 	InventoryManager *m_invmgr;

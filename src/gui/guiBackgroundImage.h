@@ -35,8 +35,11 @@ public:
 
     void setTexture(img::Image *img)
     {
+        if (img != texture) Rebuild = true;
         texture = img;
     }
+    
+    void updateMesh() override;
 	virtual void draw() override;
 
 private:

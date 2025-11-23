@@ -18,6 +18,8 @@ public:
 	//! constructor
 	CGUICheckBox(bool checked, IGUIEnvironment *environment, IGUIElement *parent, s32 id, recti rectangle);
 
+    void setPressed(bool pressed) override;
+
 	//! set if box is checked
 	void setChecked(bool checked) override;
 
@@ -40,6 +42,8 @@ public:
 
 	//! called if an event happened.
 	bool OnEvent(const core::Event &event) override;
+
+    void updateMesh() override;
 
 	//! draws the element and its children
 	void draw() override;

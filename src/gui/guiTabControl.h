@@ -24,6 +24,8 @@ public:
 			IGUIElement *parent, const recti &rectangle,
 			s32 id);
 
+    void updateMesh() override;
+
 	//! draws the element and its children
 	void draw() override;
 
@@ -108,6 +110,8 @@ public:
 
 	//! called if an event happened.
 	bool OnEvent(const core::Event &event) override;
+
+    void updateMesh() override;
 
 	//! draws the element and its children
 	void draw() override;

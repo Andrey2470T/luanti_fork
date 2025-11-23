@@ -2786,7 +2786,7 @@ void GUIFormSpecMenu::parseModel(parserData *data, const std::string &element)
 	if (!data->explicit_size)
 		warningstream << "invalid use of model without a size[] element" << std::endl;
 
-    Model *model = m_cache->getOrLoad<Model>(ResourceType::MODEL, meshstr);
+    Model *model = m_cache->get<Model>(ResourceType::MODEL, meshstr);
 
     if (!model) {
 		errorstream << "Invalid model element: Unable to load mesh:"
@@ -3390,7 +3390,7 @@ void GUIFormSpecMenu::getAndroidUIInput()
 
 GUIInventoryList::ItemSpec GUIFormSpecMenu::getItemAtPos(v2i p) const
 {
-	for (const GUIInventoryList *e : m_inventorylists) {
+    for (GUIInventoryList *e : m_inventorylists) {
 		s32 item_index = e->getItemIndexAtPos(p);
 		if (item_index != -1)
 			return GUIInventoryList::ItemSpec(e->getInventoryloc(), e->getListname(),

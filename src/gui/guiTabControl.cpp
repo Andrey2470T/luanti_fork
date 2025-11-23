@@ -34,18 +34,30 @@ CGUITab::CGUITab(IGUIEnvironment *environment,
 		TextColor = skin->getColor(EGDC_BUTTON_TEXT);
 }
 
+void CGUITab::updateMesh()
+{
+    if (!Rebuild)
+        return;
+    GUISkin *skin = Environment->getSkin();
+
+    if (skin && DrawBackground) {
+        box->getShape()->updateRectangle(0, toRectT<f32>(AbsoluteRect), {BackColor, BackColor, BackColor, BackColor});
+        box->updateMesh();
+        box->setClipRect(AbsoluteClippingRect);
+    }
+
+    Rebuild = false;
+}
+
 //! draws the element and its children
 void CGUITab::draw()
 {
 	if (!IsVisible)
 		return;
 
-	GUISkin *skin = Environment->getSkin();
+    updateMesh();
 
-    if (skin && DrawBackground) {
-        box->getShape()->updateRectangle(0, toRectT<f32>(AbsoluteRect), {BackColor, BackColor, BackColor, BackColor});
-        box->updateMesh();
-        box->setClipRect(AbsoluteClippingRect);
+    if (Environment->getSkin() && DrawBackground) {
         box->draw();
     }
 
@@ -55,18 +67,21 @@ void CGUITab::draw()
 //! sets if the tab should draw its background
 void CGUITab::setDrawBackground(bool draw)
 {
+    if (draw != DrawBackground) Rebuild = true;
 	DrawBackground = draw;
 }
 
 //! sets the color of the background, if it should be drawn.
 void CGUITab::setBackgroundColor(img::color8 c)
 {
+    if (c != BackColor) Rebuild = true;
 	BackColor = c;
 }
 
 //! sets the color of the text
 void CGUITab::setTextColor(img::color8 c)
 {
+    if (c != TextColor) Rebuild = true;
 	OverrideTextColorEnabled = true;
 	TextColor = c;
 }
@@ -188,6 +203,7 @@ IGUITab *CGUITabControl::addTab(const wchar_t *caption, s32 id)
 
 	if (ActiveTabIndex == -1) {
 		ActiveTabIndex = Tabs.size() - 1;
+        Rebuild = true;
 		tab->setVisible(true);
 	}
 
@@ -218,9 +234,11 @@ IGUITab *CGUITabControl::insertTab(s32 idx, const wchar_t *caption, s32 id)
 	if (ActiveTabIndex == -1) {
 		ActiveTabIndex = (u32)idx;
 		tab->setVisible(true);
+        Rebuild = true;
 	} else if (idx <= ActiveTabIndex) {
 		++ActiveTabIndex;
 		setVisibleTab(ActiveTabIndex);
+        Rebuild = true;
 	}
 
 	recalculateScrollBar();
@@ -264,9 +282,11 @@ s32 CGUITabControl::insertTab(s32 idx, IGUITab *tab, bool serializationMode)
 		if (ActiveTabIndex == -1) {
 			ActiveTabIndex = idx;
 			setVisibleTab(ActiveTabIndex);
+            Rebuild = true;
 		} else if (idx <= ActiveTabIndex) {
 			++ActiveTabIndex;
 			setVisibleTab(ActiveTabIndex);
+            Rebuild = true;
 		}
 	}
 
@@ -308,10 +328,12 @@ void CGUITabControl::removeTabButNotChild(s32 idx)
 	if (idx < ActiveTabIndex) {
 		--ActiveTabIndex;
 		setVisibleTab(ActiveTabIndex);
+        Rebuild = true;
 	} else if (idx == ActiveTabIndex) {
 		if ((u32)idx == Tabs.size())
 			--ActiveTabIndex;
 		setVisibleTab(ActiveTabIndex);
+        Rebuild = true;
 	}
 }
 
@@ -392,16 +414,20 @@ bool CGUITabControl::OnEvent(const core::Event &event)
 
 void CGUITabControl::scrollLeft()
 {
-	if (CurrentScrollTabIndex > 0)
+    if (CurrentScrollTabIndex > 0) {
 		--CurrentScrollTabIndex;
+        Rebuild = true;
+    }
 	recalculateScrollBar();
 }
 
 void CGUITabControl::scrollRight()
 {
 	if (CurrentScrollTabIndex < (s32)(Tabs.size()) - 1) {
-		if (needScrollControl(CurrentScrollTabIndex, true))
+        if (needScrollControl(CurrentScrollTabIndex, true)) {
 			++CurrentScrollTabIndex;
+            Rebuild = true;
+        }
 	}
 	recalculateScrollBar();
 }
@@ -537,10 +563,9 @@ recti CGUITabControl::calcTabPos()
 }
 
 //! draws the element and its children
-void CGUITabControl::draw()
+void CGUITabControl::updateMesh()
 {
-	if (!IsVisible)
-		return;
+    if (!Rebuild) return;
 
 	GUISkin *skin = Environment->getSkin();
 	if (!skin)
@@ -627,7 +652,8 @@ void CGUITabControl::draw()
 			recti textClipRect(frameRect); // TODO: exact size depends on borders in draw3DTabButton which we don't get with current interface
 			textClipRect.clipAgainst(AbsoluteClippingRect);
 
-            UITextSprite *TabText = TabBoxes->addTextSprite(font_mgr, EnrichedString(text), 0, toV2T<f32>(frameRect.ULC), Tabs[i]->getTextColor(), &textClipRect, false);
+            UITextSprite *TabText = TabBoxes->addTextSprite(font_mgr, EnrichedString(text), 0,
+                toV2T<f32>(frameRect.ULC), Tabs[i]->getTextColor(), &textClipRect, false);
             TabText->setAlignment(GUIAlignment::Center, GUIAlignment::Center);
 		}
 	}
@@ -650,7 +676,8 @@ void CGUITabControl::draw()
 			// draw text
 			recti textClipRect(frameRect); // TODO: exact size depends on borders in draw3DTabButton which we don't get with current interface
 			textClipRect.clipAgainst(AbsoluteClippingRect);
-            UITextSprite *TabText = TabBoxes->addTextSprite(font_mgr, EnrichedString(activeTab->getText()), 0, toV2T<f32>(frameRect.ULC), activeTab->getTextColor(), &textClipRect, false);
+            UITextSprite *TabText = TabBoxes->addTextSprite(font_mgr, EnrichedString(activeTab->getText()), 0,
+                toV2T<f32>(frameRect.ULC), activeTab->getTextColor(), &textClipRect, false);
             TabText->setAlignment(GUIAlignment::Center, GUIAlignment::Center);
 
 			tr.ULC.X = AbsoluteRect.ULC.X;
@@ -682,7 +709,8 @@ void CGUITabControl::draw()
             TabBoxes->addSprite(tabButton);
 
 			// draw text
-            UITextSprite *TabText = TabBoxes->addTextSprite(font_mgr, EnrichedString(activeTab->getText()), 0, toV2T<f32>(frameRect.ULC), activeTab->getTextColor(), &frameRect, false);
+            UITextSprite *TabText = TabBoxes->addTextSprite(font_mgr, EnrichedString(activeTab->getText()), 0,
+                toV2T<f32>(frameRect.ULC), activeTab->getTextColor(), &frameRect, false);
             TabText->setAlignment(GUIAlignment::Center, GUIAlignment::Center);
 
             tabButton = new UISprite(nullptr, rnd, cache, true);
@@ -742,6 +770,16 @@ void CGUITabControl::draw()
 		DownButton->setEnabled(needRightScroll);
 	refreshSprites();
 
+    Rebuild = false;
+}
+
+//! draws the element and its children
+void CGUITabControl::draw()
+{
+    if (!IsVisible)
+        return;
+
+    updateMesh();
     TabBoxes->drawBank();
 
     IGUIElement::draw();
@@ -930,6 +968,7 @@ bool CGUITabControl::setActiveTab(s32 idx)
 	bool changed = (ActiveTabIndex != idx);
 
 	ActiveTabIndex = idx;
+    Rebuild = true;
 
 	setVisibleTab(ActiveTabIndex);
 
