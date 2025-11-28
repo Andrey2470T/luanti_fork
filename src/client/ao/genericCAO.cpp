@@ -139,7 +139,7 @@ static bool logOnce(const std::ostringstream &from, std::ostream &log_to)
 */
 
 GenericCAO::GenericCAO(Client *client, ClientEnvironment *env):
-    ClientActiveObject(0, client, env),
+    ClientActiveObject(0, client, env), m_client(client),
     m_node_mgr(client ? client->getRenderSystem()->getNodeManager() : nullptr)
 {}
 
@@ -276,6 +276,8 @@ void GenericCAO::removeAttachmentNode()
 void GenericCAO::setAttachment(object_t parent_id, const std::string &bone,
 		v3f position, v3f rotation, bool force_visible)
 {
+    if (parent_id == 0)
+        return;
     auto cur_parent = getParent();
 
     Attachment *cur_node;

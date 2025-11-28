@@ -748,27 +748,22 @@ void GUITable::drawCell(const Cell *cell, img::color8 color,
 
 	if ((cell->content_type == COLUMN_TYPE_TEXT)
 			|| (cell->content_type == COLUMN_TYPE_TREE)) {
-
-		recti text_rect = row_rect;
-		text_rect.ULC.X = row_rect.ULC.X
-				+ cell->xpos;
-		text_rect.LRC.X = row_rect.ULC.X
-				+ cell->xmax;
-
 		if (cell->color_defined)
 			color = cell->color;
 
 		if (m_font) {
-            if (cell->content_type == COLUMN_TYPE_TEXT) {
-                m_table_box->addTextSprite(
-                    font_mgr, EnrichedString(m_strings[cell->content_index]), 0,
-                        toRectT<f32>(text_rect), color, &client_clip, false);
-            }
-            else { // tree
-                m_table_box->addTextSprite(
-                    font_mgr, EnrichedString(cell->content_index ? L"+" : L"-"), 0,
-                        toRectT<f32>(text_rect), color, &client_clip, false);
-            }
+            EnrichedString text = cell->content_type == COLUMN_TYPE_TEXT ?
+                EnrichedString(m_strings[cell->content_index]) :
+                EnrichedString(cell->content_index ? L"+" : L"-");
+            recti text_rect = row_rect;
+            text_rect.ULC.X = row_rect.ULC.X
+                    + cell->xpos;
+            text_rect.LRC.X = row_rect.ULC.X
+                    + cell->xpos + m_font->getTextWidth(text.getString());
+
+            m_table_box->addTextSprite(
+                font_mgr, text, 0,
+                toRectT<f32>(text_rect), color, &client_clip, false);
 		}
 	}
 	else if (cell->content_type == COLUMN_TYPE_IMAGE) {

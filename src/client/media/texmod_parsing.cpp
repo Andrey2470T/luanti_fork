@@ -432,7 +432,7 @@ bool TexModParser::parseLowPart(TextureGenerator *texgen, img::Image *&dest, con
     v2u srcPos(0, size.Y * (100-percent) / 100);
     v2u srcSize = size;
     srcSize.Y = srcSize.Y * percent / 100 + 1;
-    rectu srcRect(srcPos, srcSize);
+    rectu srcRect(srcPos, srcSize.X, srcSize.Y);
     rectu destRect(v2u(0, 0), size);
     texgen->imgMdf->setBlendMode(img::BM_NORMAL);
     texgen->imgMdf->copyTo(img, dest, &srcRect, &destRect);
@@ -467,7 +467,7 @@ bool TexModParser::parseVerticalFrame(TextureGenerator *texgen, img::Image *&des
 
     img::Image *img = new img::Image(img::PF_RGBA8, frame_size.X, frame_size.Y);
 
-    rectu srcRect(v2u(0, frame_index * frame_size.Y), frame_size);
+    rectu srcRect(v2u(0, frame_index * frame_size.Y), frame_size.X, frame_size.Y);
     texgen->imgMdf->copyTo(dest, img, &srcRect);
     // Replace baseimg
     //delete dest;
@@ -756,7 +756,7 @@ bool TexModParser::parseSheet(TextureGenerator *texgen, img::Image *&dest, const
     img::Image *img = new img::Image(img::PF_RGBA8, tile_dim.X, tile_dim.Y);
 
     v2u vdim = tile_dim;
-    rectu rect(v2u(x0 * vdim.X, y0 * vdim.Y), tile_dim);
+    rectu rect(v2u(x0 * vdim.X, y0 * vdim.Y), tile_dim.X, tile_dim.Y);
     texgen->imgMdf->copyTo(dest, img, &rect, nullptr, true);
 
     // Replace baseimg

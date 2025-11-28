@@ -210,6 +210,8 @@ void RenderCAO::updateAppearance(std::string mod)
 void RenderCAO::setAttachment(object_t parent_id, const std::string &bone,
         v3f position, v3f rotation, bool force_visible)
 {
+    if (parent_id == 0)
+        return;
     GenericCAO::setAttachment(parent_id, bone, position, rotation, force_visible);
 
     auto node = getAttachmentNode();
@@ -537,7 +539,7 @@ void RenderCAO::updateVertexColor(bool update_light)
         v3s16 pos[3];
         u16 npos = getLightPosition(pos);
 
-        std::vector<v3s16> positions;
+        std::vector<v3s16> positions(npos);
 
         for (u16 i = 0; i < npos; i++)
             positions[i] = pos[i];

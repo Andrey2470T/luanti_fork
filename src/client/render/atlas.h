@@ -140,8 +140,8 @@ public:
         return atlases.size();
     }
 
-    img::Image *addTile(const std::string &name);
-    img::Image *addAnimatedTile(const std::string &name, AtlasTileAnim anim);
+    void addTile(img::Image *img);
+    void addAnimatedTile(img::Image *img, AtlasTileAnim anim);
 
     rectf getTileRect(img::Image *tile, bool toUV=false, bool force_add=false, std::optional<AtlasTileAnim> anim=std::nullopt);
 

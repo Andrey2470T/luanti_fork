@@ -345,7 +345,7 @@ img::Image *TextureGenerator::createCrack(img::Image *img, s32 frame_index,
     s32 frame_count = strip_size.Y / strip_size.X;
     if (frame_index >= frame_count)
         frame_index = frame_count - 1;
-    rectu frame(v2u(0, frame_index * frame_size.Y), frame_size);
+    rectu frame(v2u(0, frame_index * frame_size.Y), frame_size.X, frame_size.Y);
     img::Image *result = nullptr;
 
     // extract crack frame

@@ -172,37 +172,30 @@ AnimatedAtlasTile *AtlasPool::getAnimatedTileByImage(img::Image *tile)
     return dynamic_cast<AnimatedAtlasTile *>(atlas_tile);
 }
 
-img::Image *AtlasPool::addTile(const std::string &name)
+void AtlasPool::addTile(img::Image *img)
 {
     if (type != AtlasType::RECTPACK2D)
-        return nullptr;
+        return;
 
-    auto img = cache->getOrLoad<img::Image>(
-        ResourceType::IMAGE, name, apply_modifiers, apply_modifiers, true);
+    //auto img = cache->getOrLoad<img::Image>(
+    //    ResourceType::IMAGE, name, apply_modifiers, apply_modifiers, true);
 
     auto imgIt = std::find(images.begin(), images.end(), img);
 
     // Add only unique tiles
     if (imgIt != images.end())
-        return *imgIt;
+        return;
 
     images.emplace_back(img);
-
-    return img;
 }
 
-img::Image *AtlasPool::addAnimatedTile(const std::string &name, AtlasTileAnim anim)
+void AtlasPool::addAnimatedTile(img::Image *img, AtlasTileAnim anim)
 {
     if (type != AtlasType::RECTPACK2D)
-        return nullptr;
-    auto img = addTile(name);
-
-    if (!img)
-        return nullptr;
+        return;
+    addTile(img);
 
     animatedImages[images.size()-1] = anim;
-
-    return img;
 }
 
 rectf AtlasPool::getTileRect(img::Image *tile, bool toUV, bool force_add, std::optional<AtlasTileAnim> anim)

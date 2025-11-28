@@ -133,7 +133,8 @@ void RenderSystem::buildGUIAtlas()
 
     for (auto &path : texpaths) {
         for (auto &entry : fs::directory_iterator(path))
-            guiPool->addTile(entry.path().filename());
+            guiPool->addTile(cache->getOrLoad<img::Image>(
+                ResourceType::IMAGE, entry.path().filename()));
     }
 
     guiPool->buildRectpack2DAtlas();

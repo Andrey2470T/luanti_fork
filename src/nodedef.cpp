@@ -719,10 +719,10 @@ static void fillTileAttribs(AtlasPool *basic_pool, ResourceCache *cache,
     if (frame_count == 1)
 		layer->material_flags &= ~MATERIAL_FLAG_ANIMATION;
 
-    /*if (layer->material_flags & MATERIAL_FLAG_ANIMATION)
-        basic_pool->addAnimatedTile(tiledef.name, {frame_length_ms, frame_count});
+    if (layer->material_flags & MATERIAL_FLAG_ANIMATION)
+        basic_pool->addAnimatedTile(img, {frame_length_ms, frame_count});
     else
-        basic_pool->addTile(tiledef.name);*/
+        basic_pool->addTile(img);
 }
 
 static bool isWorldAligned(AlignStyle style, WorldAlignMode mode, NodeDrawType drawtype)
