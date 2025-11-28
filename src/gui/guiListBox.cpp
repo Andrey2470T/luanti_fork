@@ -510,7 +510,7 @@ void CGUIListBox::updateMesh()
                 }
 
                 listBoxBank->addTextSprite(Environment->getRenderSystem()->getFontManager(), EnrichedString(Items[i].Text),
-                    0, toV2T<f32>(textRect.ULC), textColor, &clientClip, false);
+                    0, toRectT<f32>(textRect), textColor, &clientClip, false);
 
                 textRect.ULC.X -= ItemsIconWidth + 3;
             }

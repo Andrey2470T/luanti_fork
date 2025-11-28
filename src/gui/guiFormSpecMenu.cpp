@@ -3036,8 +3036,8 @@ void GUIFormSpecMenu::regenerateGui(v2u screensize)
 			recti(0, 0, 110, 18));
 		m_tooltip_element->enableOverrideColor(true);
 		m_tooltip_element->setBackgroundColor(m_default_tooltip_bgcolor);
-		m_tooltip_element->setDrawBackground(true);
-		m_tooltip_element->setDrawBorder(true);
+        m_tooltip_element->setDrawBackground(true);
+        m_tooltip_element->setDrawBorder(true);
 		m_tooltip_element->setOverrideColor(m_default_tooltip_color);
         m_tooltip_element->setTextAlignment(EGUIA_CENTER, EGUIA_CENTER);
 		m_tooltip_element->setWordWrap(false);

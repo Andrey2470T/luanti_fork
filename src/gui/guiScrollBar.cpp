@@ -159,8 +159,6 @@ bool GUIScrollBar::OnEvent(const core::Event &event)
 
 void GUIScrollBar::updateMesh()
 {
-    if (!Rebuild)
-        return;
     GUISkin *skin = Environment->getSkin();
     if (!skin)
         return;
@@ -195,8 +193,6 @@ void GUIScrollBar::updateMesh()
 
     box->rebuildMesh();
     box->setClipRect(AbsoluteClippingRect);
-
-    Rebuild = false;
 }
 
 void GUIScrollBar::draw()
@@ -331,7 +327,6 @@ void GUIScrollBar::setPosInterpolated(const s32 &pos)
 	} else {
 		target_pos = std::nullopt;
 	}
-    Rebuild = true;
 }
 
 void GUIScrollBar::setSmallStep(const s32 &step)

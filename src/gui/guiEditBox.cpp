@@ -25,8 +25,6 @@ void GUIEditBox::setOverrideFont(render::TTFont *font)
 	m_override_font = font;
 
 	breakText();
-
-    Rebuild = true;
 }
 
 //! Get the font which is used right now for drawing
@@ -43,7 +41,6 @@ render::TTFont *GUIEditBox::getActiveFont() const
 //! Sets another color for the text.
 void GUIEditBox::setOverrideColor(img::color8 color)
 {
-    if (color != m_override_color) Rebuild = true;
 	m_override_color = color;
 	m_override_color_enabled = true;
 }
@@ -56,14 +53,12 @@ img::color8 GUIEditBox::getOverrideColor() const
 //! Sets if the text should use the overide color or the color in the gui skin.
 void GUIEditBox::enableOverrideColor(bool enable)
 {
-    if (enable != m_override_color_enabled) Rebuild = true;
 	m_override_color_enabled = enable;
 }
 
 //! Enables or disables word wrap
 void GUIEditBox::setWordWrap(bool enable)
 {
-    if (enable != m_word_wrap) Rebuild = true;
 	m_word_wrap = enable;
 	breakText();
 }
@@ -71,7 +66,6 @@ void GUIEditBox::setWordWrap(bool enable)
 //! Enables or disables newlines.
 void GUIEditBox::setMultiLine(bool enable)
 {
-    if (enable != m_multiline) Rebuild = true;
 	m_multiline = enable;
 }
 
@@ -79,7 +73,6 @@ void GUIEditBox::setMultiLine(bool enable)
 //! \param enable: If set to true, the text will move around with the cursor position
 void GUIEditBox::setAutoScroll(bool enable)
 {
-    if (enable != m_autoscroll) Rebuild = true;
 	m_autoscroll = enable;
 }
 
@@ -97,7 +90,6 @@ void GUIEditBox::setPasswordBox(bool password_box, wchar_t password_char)
 //! Sets text justification
 void GUIEditBox::setTextAlignment(EGUI_ALIGNMENT horizontal, EGUI_ALIGNMENT vertical)
 {
-    if (horizontal != m_halign || vertical != m_valign) Rebuild = true;
 	m_halign = horizontal;
 	m_valign = vertical;
 }
@@ -110,8 +102,6 @@ void GUIEditBox::setText(const wchar_t *text)
 		m_cursor_pos = Text.size();
 	m_hscroll_pos = 0;
 	breakText();
-
-    Rebuild = true;
 }
 
 //! Sets the maximum amount of characters which may be entered in the box.
@@ -146,13 +136,11 @@ v2u GUIEditBox::getTextDimension()
 //! Turns the border on or off
 void GUIEditBox::setDrawBorder(bool border)
 {
-    if (border != m_border) Rebuild = true;
 	m_border = border;
 }
 
 void GUIEditBox::setWritable(bool can_write_text)
 {
-    if (can_write_text != m_writable) Rebuild = true;
 	m_writable = can_write_text;
 }
 
@@ -432,8 +420,6 @@ bool GUIEditBox::processKey(const core::Event &event)
 	}
 
 	calculateScrollPos();
-
-    Rebuild = true;
 
 	return true;
 }
@@ -764,7 +750,6 @@ bool GUIEditBox::processMouse(const core::Event &event)
 			s32 pos = m_vscrollbar->getTargetPos();
 			s32 step = m_vscrollbar->getSmallStep();
             m_vscrollbar->setPosInterpolated(pos - event.MouseInput.WheelDelta * step);
-            Rebuild = true;
 			return true;
 		}
 		break;

@@ -719,10 +719,10 @@ static void fillTileAttribs(AtlasPool *basic_pool, ResourceCache *cache,
     if (frame_count == 1)
 		layer->material_flags &= ~MATERIAL_FLAG_ANIMATION;
 
-    if (layer->material_flags & MATERIAL_FLAG_ANIMATION)
+    /*if (layer->material_flags & MATERIAL_FLAG_ANIMATION)
         basic_pool->addAnimatedTile(tiledef.name, {frame_length_ms, frame_count});
     else
-        basic_pool->addTile(tiledef.name);
+        basic_pool->addTile(tiledef.name);*/
 }
 
 static bool isWorldAligned(AlignStyle style, WorldAlignMode mode, NodeDrawType drawtype)
@@ -918,14 +918,14 @@ void ContentFeatures::updateTextures(Client *client, const ImageSettings &tsetti
         fillTileAttribs(basic_pool, cache, special_tiles[j][0], special_tiles[j], tdef_spec[j],
                 color, special_material, tdef_spec[j].backface_culling, tsettings);
 
-	if (param_type_2 == CPT2_COLOR ||
+    if (param_type_2 == CPT2_COLOR ||
 			param_type_2 == CPT2_COLORED_FACEDIR ||
 			param_type_2 == CPT2_COLORED_4DIR ||
 			param_type_2 == CPT2_COLORED_WALLMOUNTED ||
 			param_type_2 == CPT2_COLORED_DEGROTATE)
         palette = cache->getOrLoad<img::Palette>(ResourceType::PALETTE, palette_name);
 
-	if (drawtype == NDT_MESH && !mesh.empty()) {
+    if (drawtype == NDT_MESH && !mesh.empty()) {
 		// Read the mesh and apply scale
         mesh_ptr = cache->get<Model>(ResourceType::MODEL, mesh);
 		if (mesh_ptr) {
@@ -940,7 +940,7 @@ void ContentFeatures::updateTextures(Client *client, const ImageSettings &tsetti
                 MeshOperations::recalculateNormals(buf, true, false);
             }
 		}
-	}
+    }
 }
 #endif
 

@@ -57,7 +57,6 @@ GUIEditBoxWithScrollBar::GUIEditBoxWithScrollBar(const wchar_t* text, bool borde
 //! Sets whether to draw the background
 void GUIEditBoxWithScrollBar::setDrawBackground(bool draw)
 {
-    if (draw != m_background) Rebuild = true;
 	m_background = draw;
 }
 
@@ -75,8 +74,6 @@ void GUIEditBoxWithScrollBar::updateAbsolutePosition()
 
 void GUIEditBoxWithScrollBar::updateMesh()
 {
-    if (!Rebuild)
-        return;
     const bool focus = Environment->hasFocus(this);
 
     GUISkin* skin = Environment->getSkin();
@@ -86,20 +83,21 @@ void GUIEditBoxWithScrollBar::updateMesh()
     img::color8 default_bg_color;
     img::color8 bg_color;
 
-    default_bg_color = m_writable ? skin->getColor(EGDC_WINDOW) : img::black;
-    bg_color = m_bg_color_used ? m_bg_color : default_bg_color;
+    EGUI_DEFAULT_COLOR bgCol = EGDC_GRAY_EDITABLE;
+    if (isEnabled())
+        bgCol = focus ? EGDC_FOCUSED_EDITABLE : EGDC_EDITABLE;
 
     m_editbox_bank->clear();
 
-    if ((!m_border && m_background) || (m_border && m_writable)) {
+    if ((!m_border && m_background) || m_border) {
         UIRects *editBoxRects = m_editbox_bank->addSprite({}, 0, &AbsoluteClippingRect);
 
         if (!m_border && m_background)
-            editBoxRects->addRect(toRectT<f32>(AbsoluteRect), {bg_color});
+            editBoxRects->addRect(toRectT<f32>(AbsoluteRect), {skin->getColor(bgCol)});
 
         // draw the border
-        if (m_border && m_writable)
-            skin->add3DSunkenPane(editBoxRects, bg_color, false, m_background, toRectT<f32>(AbsoluteRect));
+        if (m_border)
+            skin->add3DSunkenPane(editBoxRects, skin->getColor(bgCol), false, m_background, toRectT<f32>(AbsoluteRect));
 
         editBoxRects->rebuildMesh();
     }
@@ -180,7 +178,7 @@ void GUIEditBoxWithScrollBar::updateMesh()
 
 
                 // draw normal text
-                m_editbox_bank->addTextSprite(font_mgr, EnrichedString(*txt_line), 0, toV2T<f32>(m_current_text_rect.ULC),
+                m_editbox_bank->addTextSprite(font_mgr, EnrichedString(*txt_line), 0, toRectT<f32>(m_current_text_rect),
                     m_override_color_enabled ? m_override_color : skin->getColor(EGDC_BUTTON_TEXT), &local_clip_rect, false);
 
                 // draw mark and marked text
@@ -222,7 +220,7 @@ void GUIEditBoxWithScrollBar::updateMesh()
                     s = txt_line->substr(lineStartPos, lineEndPos - lineStartPos);
 
                     if (s.size())
-                        m_editbox_bank->addTextSprite(font_mgr, EnrichedString(s), 0, toV2T<f32>(m_current_text_rect.ULC),
+                        m_editbox_bank->addTextSprite(font_mgr, EnrichedString(s), 0, toRectT<f32>(m_current_text_rect),
                             m_override_color_enabled ? m_override_color : skin->getColor(EGDC_HIGH_LIGHT_TEXT),  &local_clip_rect, false);
                 }
             }
@@ -233,28 +231,26 @@ void GUIEditBoxWithScrollBar::updateMesh()
         }
 
         // draw cursor
-        if (IsEnabled && m_writable) {
+        if (isEnabled()) {
             if (m_word_wrap || m_multiline) {
                 cursor_line = getLineFromPos(m_cursor_pos);
                 txt_line = &m_broken_text[cursor_line];
                 start_pos = m_broken_text_positions[cursor_line];
             }
             s = txt_line->substr(0, m_cursor_pos - start_pos);
-            charcursorpos = font->getTextWidth(s) +
+            charcursorpos = font->getTextWidth(s);/* +
                 font->getKerningSizeForTwoChars(L'_',
-                    m_cursor_pos - start_pos > 0 ? (*txt_line)[m_cursor_pos - start_pos - 1] : 0);
+                    m_cursor_pos - start_pos > 0 ? (*txt_line)[m_cursor_pos - start_pos - 1] : 0);*/
 
             if (focus && (porting::getTimeMs() - m_blink_start_time) % 700 < 350) {
                 setTextRect(cursor_line);
                 m_current_text_rect.ULC.X += charcursorpos;
 
-                m_editbox_bank->addTextSprite(font_mgr, EnrichedString(""), 0, toV2T<f32>(m_current_text_rect.ULC),
+                m_editbox_bank->addTextSprite(font_mgr, EnrichedString("_"), 0, toRectT<f32>(m_current_text_rect),
                     m_override_color_enabled ? m_override_color : skin->getColor(EGDC_BUTTON_TEXT), &local_clip_rect, false);
             }
         }
     }
-
-    Rebuild = false;
 }
 
 //! draws the element and its children
@@ -654,7 +650,6 @@ void GUIEditBoxWithScrollBar::createVScrollBar()
 //! Change the background color
 void GUIEditBoxWithScrollBar::setBackgroundColor(const img::color8 &bg_color)
 {
-    if (bg_color != m_bg_color) Rebuild = true;
 	m_bg_color = bg_color;
 	m_bg_color_used = true;
 }

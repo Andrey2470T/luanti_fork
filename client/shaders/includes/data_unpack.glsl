@@ -31,7 +31,7 @@ float unpackFloat(sampler2D dataTex, ivec2 coords)
 	return intBitsToFloat(int_v);
 }
 
-ivec2 shiftCoords(ivec2 coords, int width, int n=1)
+ivec2 shiftCoords(ivec2 coords, int width, int n)
 {
 	ivec2 shifted_c;
 
@@ -40,10 +40,16 @@ ivec2 shiftCoords(ivec2 coords, int width, int n=1)
 		shifted_c.x = n - (width - coords.x+1) - 1;
 	}
 	else {
+		shifted_c.y = coords.y;
 		shifted_c.x = coords.x+n;
 	}
 
 	return shifted_c;
+}
+
+ivec2 shiftCoords(ivec2 coords, int width)
+{
+	return shiftCoords(coords, width, 1);
 }
 
 ivec2 unpackIntVec2(sampler2D dataTex, ivec2 coords)

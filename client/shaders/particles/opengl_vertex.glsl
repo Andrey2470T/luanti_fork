@@ -20,10 +20,10 @@ uniform int mDataTexDim;
 
 out lowp vec4 vColor;
 out highp vec3 vEyeVec;
-out ivec2 vTileCoords;
-out ivec2 vTileSize;
+flat out ivec2 vTileCoords;
+flat out ivec2 vTileSize;
 out vec2 vTexCoord;
-out int vBlendMode;
+flat out int vBlendMode;
 
 void main(void)
 {

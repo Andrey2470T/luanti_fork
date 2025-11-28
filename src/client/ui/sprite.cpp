@@ -593,7 +593,7 @@ ImageSprite *UISpriteBank::addImageSprite(img::Image *img, u8 shift,
     return imageSprite;
 }
 
-UITextSprite *UISpriteBank::addTextSprite(FontManager *mgr, const EnrichedString &text, u8 shift, std::optional<v2f> pos,
+UITextSprite *UISpriteBank::addTextSprite(FontManager *mgr, const EnrichedString &text, u8 shift, std::optional<rectf> rect,
     const img::color8 &textColor, const recti *clipRect, bool wordWrap)
 {
     UITextSprite *textSprite = new UITextSprite(mgr, rndsys->getGUIEnvironment()->getSkin(),
@@ -605,8 +605,8 @@ UITextSprite *UISpriteBank::addTextSprite(FontManager *mgr, const EnrichedString
     auto font = textSprite->getActiveFont();
     rectf resRect(0, 0, font->getTextWidth(text.getString()), font->getTextHeight(text.getString()));
 
-    if (pos && !auto_align)
-        resRect += pos.value();
+    if (rect.has_value() && !auto_align)
+        resRect = rect.value();
 
     shiftRectByLastSprite(resRect, shift);
     textSprite->updateBuffer(rectf(resRect));

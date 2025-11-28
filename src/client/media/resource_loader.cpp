@@ -84,7 +84,6 @@ std::string getIncludePath(const std::string &name)
     for (auto &p : paths) {
         std::string fullname = name + ".glsl";
         fs::path fullpath(fs::path(p) / "includes" / fullname);
-        std::cout << "fullpath: " << fullpath << std::endl;
 
         if (fs::exists(fullpath))
             return fullpath.string();

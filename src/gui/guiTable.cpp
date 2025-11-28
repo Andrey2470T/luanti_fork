@@ -762,12 +762,12 @@ void GUITable::drawCell(const Cell *cell, img::color8 color,
             if (cell->content_type == COLUMN_TYPE_TEXT) {
                 m_table_box->addTextSprite(
                     font_mgr, EnrichedString(m_strings[cell->content_index]), 0,
-                        toV2T<f32>(text_rect.ULC), color, &client_clip, false);
+                        toRectT<f32>(text_rect), color, &client_clip, false);
             }
             else { // tree
                 m_table_box->addTextSprite(
                     font_mgr, EnrichedString(cell->content_index ? L"+" : L"-"), 0,
-                        toV2T<f32>(text_rect.ULC), color, &client_clip, false);
+                        toRectT<f32>(text_rect), color, &client_clip, false);
             }
 		}
 	}
