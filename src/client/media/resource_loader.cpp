@@ -103,44 +103,52 @@ render::Shader *ResourceLoader::loadShader(const std::string &path)
 
     header << "#version 330 core\n";
 
-    header << "#define ENABLE_WAVING_WATER " << (enable_waving_water ? 1 : 0) << "\n";
 	if (enable_waving_water) {
+        header << "#define ENABLE_WAVING_WATER 1\n";
         header << "#define WATER_WAVE_HEIGHT " << water_wave_height << "\n";
         header << "#define WATER_WAVE_LENGTH " << water_wave_length << "\n";
         header << "#define WATER_WAVE_SPEED " << water_wave_speed << "\n";
 	}
-	
-	header << "#define ENABLE_WAVING_LEAVES " << (enable_waving_leaves ? 1 : 0) << "\n";
-	header << "#define ENABLE_WAVING_PLANTS " << (enable_waving_plants ? 1 : 0) << "\n";
-	
-	header << "#define ENABLE_TONE_MAPPING " << (tone_mapping ? 1 : 0) << "\n";
 
-    header << "#define ENABLE_DYNAMIC_SHADOWS " << (enable_dynamic_shadows ? 1 : 0) << "\n";
+    if (enable_waving_leaves)
+        header << "#define ENABLE_WAVING_LEAVES 1\n";
+    if (enable_waving_plants)
+        header << "#define ENABLE_WAVING_PLANTS 1\n";
+    if (tone_mapping) header << "#define ENABLE_TONE_MAPPING 1\n";
+
 	if (enable_dynamic_shadows) {
-		header << "#define COLORED_SHADOWS " << (shadow_map_color ? 1 : 0) << "\n";
-		header << "#define POISSON_FILTER " << (shadow_poisson_filter ? 1 : 0) << "\n";
-		header << "#define ENABLE_WATER_REFLECTIONS " << (enable_water_reflections ? 1 : 0) << "\n";
-		header << "#define ENABLE_TRANSLUCENT_FOLIAGE " << (enable_translucent_foliage ? 1 : 0) << "\n";
-		header << "#define ENABLE_NODE_SPECULAR " << (enable_node_specular ? 1 : 0) << "\n";
+        header << "#define ENABLE_DYNAMIC_SHADOWS 1\n";
+        if (shadow_map_color)
+            header << "#define COLORED_SHADOWS 1\n";
+        if (shadow_poisson_filter)
+            header << "#define POISSON_FILTER 1\n";
+        if (enable_water_reflections)
+            header << "#define ENABLE_WATER_REFLECTIONS 1\n";
+        if (enable_translucent_foliage)
+            header << "#define ENABLE_TRANSLUCENT_FOLIAGE 1\n";
+        if (enable_node_specular)
+            header << "#define ENABLE_NODE_SPECULAR 1\n";
 
         header << "#define SHADOW_FILTER " << shadow_filters << "\n";
 		header << "#define SOFTSHADOWRADIUS " << shadow_soft_radius << "\n";
 	}
 
-    header << "#define ENABLE_BLOOM " << (enable_bloom ? 1 : 0) << "\n";
-	if (enable_bloom)
+    if (enable_bloom) {
+        header << "#define ENABLE_BLOOM 1\n";
 		header << "#define ENABLE_BLOOM_DEBUG " << (enable_bloom_debug ? 1 : 0) << "\n";
+    }
 
-	header << "#define ENABLE_AUTO_EXPOSURE " << (enable_auto_exposure ? 1 : 0) << "\n";
+    if (enable_auto_exposure) header << "#define ENABLE_AUTO_EXPOSURE 1\n";
 
 	if (antialiasing == "ssaa") {
 		header << "#define ENABLE_SSAA 1\n";
 		header << "#define SSAA_SCALE " << fsaa << ".\n";
 	}
 
-	header << "#define ENABLE_DITHERING " << (debanding ? 1 : 0) << "\n";
-
-	header << "#define VOLUMETRIC_LIGHT " << (enable_volumetric_lighting ? 1 : 0) << "\n";
+    if (debanding)
+        header << "#define ENABLE_DITHERING 1\n";
+    if (enable_volumetric_lighting)
+        header << "#define VOLUMETRIC_LIGHT 1\n";
 
     header << "#define TILE_MATERIAL_BASIC 0\n";
     header << "#define TILE_MATERIAL_ALPHA 1\n";

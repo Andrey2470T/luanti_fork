@@ -8,6 +8,7 @@
 #include "IGUIEnvironment.h"
 #include "IGUISpriteBank.h"
 #include "client/render/rendersystem.h"
+#include "client/ui/text_sprite.h"
 #include "guiScrollBar.h"
 #include <Core/TimeCounter.h>
 #include <Utils/String.h>
@@ -509,8 +510,10 @@ void CGUIListBox::updateMesh()
                         getItemOverrideColor(i, EGUI_LBC_TEXT) : getItemDefaultColor(EGUI_LBC_TEXT);
                 }
 
-                listBoxBank->addTextSprite(Environment->getRenderSystem()->getFontManager(), EnrichedString(Items[i].Text),
+                auto itemText = listBoxBank->addTextSprite(Environment->getRenderSystem()->getFontManager(), EnrichedString(Items[i].Text),
                     0, toRectT<f32>(textRect), textColor, &clientClip, false);
+                itemText->setAlignment(GUIAlignment::UpperLeft, GUIAlignment::Center);
+                itemText->updateBuffer(toRectT<f32>(textRect));
 
                 textRect.ULC.X -= ItemsIconWidth + 3;
             }

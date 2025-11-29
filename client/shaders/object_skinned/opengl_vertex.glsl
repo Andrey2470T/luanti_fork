@@ -37,9 +37,9 @@ out vec3 vPosition;
 out vec3 vWorldPosition;
 out lowp vec4 vColor;
 #ifdef GL_ES
-out mediump ivec2 vTexCoord;
+flat out mediump ivec2 vTexCoord;
 #else
-centroid out ivec2 vTexCoord;
+flat out ivec2 vTexCoord;
 #endif
 
 #ifdef ENABLE_DYNAMIC_SHADOWS
@@ -106,7 +106,7 @@ float directional_ambient(vec3 normal)
 
 void main(void)
 {
-	vTexCoord = uv;//(Matrices.texture0 * vec4(uv.xy, 1.0, 1.0)).st;
+	vTexCoord = ivec2(uv.x, uv.y);//(Matrices.texture0 * vec4(uv.xy, 1.0, 1.0)).st;
 
 	// Calculate weighted transformations from each affected bone for the current frame
 	vec3 skinnedPos = pos;
@@ -138,7 +138,7 @@ void main(void)
 	vWorldPosition = (Matrices.world * vec4(skinnedPos, 1.0)).xyz;
 	vEyeVec = -(Matrices.worldView * vec4(skinnedPos, 1.0)).xyz;
 
-	if (materialType == TILE_MATERIAL_PLAIN) || (materialType == TILE_MATERIAL_PLAIN_ALPHA)
+	if ((materialType == TILE_MATERIAL_PLAIN) || (materialType == TILE_MATERIAL_PLAIN_ALPHA))
 		vIDiff = 1.0;
 	else {
 		// This is intentional comparison with zero without any margin.
@@ -161,7 +161,7 @@ void main(void)
 		/* normalOffsetScale is in world coordinates (1/10th of a meter)
 		   z_bias is in light space coordinates */
 		float normalOffsetScale, z_bias;
-		float pFactor = getPerspectiveFactor(getRelativePosition(ShadowParams.shadowViewProj * skinnedPos));
+		float pFactor = getPerspectiveFactor(getRelativePosition(ShadowParams.shadowViewProj * vec4(skinnedPos, 1.0)));
 		if (vNormalLength > 0.0) {
 			nNormal = normalize(vNormal);
 			vCosLight = max(1e-5, dot(nNormal, -ShadowParams.lightDirection));

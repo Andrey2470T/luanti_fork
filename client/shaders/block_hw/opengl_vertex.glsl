@@ -32,9 +32,9 @@ out lowp vec3 vHWColor;
 // lie within the same bounds when MSAA is en- and disabled.
 // This fixes the stripes problem with nearest-neighbor textures and MSAA.
 #ifdef GL_ES
-out mediump ivec2 vTexCoord;
+flat out mediump ivec2 vTexCoord;
 #else
-centroid out ivec2 vTexCoord;
+flat out ivec2 vTexCoord;
 #endif
 #ifdef ENABLE_DYNAMIC_SHADOWS
 	out float vCosLight;
@@ -143,7 +143,7 @@ float snoise(vec3 p)
 
 void main(void)
 {
-	vTexCoord = uv;
+	vTexCoord = ivec2(uv.x, uv.y);
 
 	float disp_x;
 	float disp_z;

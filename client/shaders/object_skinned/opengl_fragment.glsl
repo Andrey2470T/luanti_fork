@@ -27,9 +27,9 @@ in vec3 vPosition;
 in vec3 vWorldPosition;
 in lowp vec4 vColor;
 #ifdef GL_ES
-in mediump ivec2 vTexCoord;
+flat in mediump ivec2 vTexCoord;
 #else
-centroid in ivec2 vTexCoord;
+flat in ivec2 vTexCoord;
 #endif
 in highp vec3 vEyeVec;
 in float vNightRatio;
