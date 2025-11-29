@@ -213,7 +213,7 @@ bool TextureGenerator::generatePart(const std::string &texmod_str_part, img::Ima
     }
     // Then this is a texture modifier
     else {
-        if (!base_img && !str_starts_with(texmod_str_part, "[fill")) {
+        if (!base_img && !str_starts_with(texmod_str_part, "[fill") && !str_starts_with(texmod_str_part, "[png")) {
             errorstream << "TextureGenerator::generatePart(): base_img == nullptr" \
 					<< " for texmod_str_part\"" << texmod_str_part \
 					<< "\", cancelling." << std::endl; \

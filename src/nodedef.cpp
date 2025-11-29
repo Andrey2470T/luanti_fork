@@ -713,7 +713,7 @@ static void fillTileAttribs(AtlasPool *basic_pool, ResourceCache *cache,
         tiledef.animation.determineParams(img->getSize(),
 				&frame_count, &frame_length_ms, NULL);
 		layer->animation_frame_count = frame_count;
-		layer->animation_frame_length_ms = frame_length_ms;
+        layer->animation_frame_length_ms = frame_length_ms;
 	}
 
     if (frame_count == 1)
@@ -746,7 +746,7 @@ void ContentFeatures::updateTextures(Client *client, const ImageSettings &tsetti
     auto cache = client->getResourceCache();
     if (tsettings.enable_minimap && !tiledef[0].name.empty()) {
         auto img = cache->getOrLoad<img::Image>(ResourceType::IMAGE, tiledef[0].name, true, true, true);
-        minimap_color = g_imgmodifier->imageAverageColor(img);
+        //minimap_color = g_imgmodifier->imageAverageColor(img);
     }
 
 	// Figure out the actual tiles to use
@@ -1411,7 +1411,7 @@ void NodeDefManager::updateTextures(IGameDef *gamedef, void *progress_callback_a
 	for (u32 i = 0; i < size; i++) {
 		ContentFeatures *f = &(m_content_features[i]);
         f->updateTextures(client, tsettings);
-		client->showUpdateProgressTexture(progress_callback_args, i, size);
+        client->showUpdateProgressTexture(progress_callback_args, i, size);
 	}
     client->getRenderSystem()->getPool(true)->buildRectpack2DAtlas();
 #endif

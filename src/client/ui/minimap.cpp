@@ -394,7 +394,7 @@ void Minimap::blitMinimapPixelsToImageRadar(img::Image *map_image)
 		else
             c.G(0);
 
-        g_imgmodifier->setPixel(map_image, x, data->mode.map_size - z - 1, c);
+        g_imgmodifier->setPixelDirect(map_image, x, data->mode.map_size - z - 1, c);
 	}
 }
 
@@ -420,8 +420,9 @@ void Minimap::blitMinimapPixelsToImageSurface(
         tilecolor.G(tilecolor.G() * f.minimap_color.G());
         tilecolor.B(tilecolor.B() * f.minimap_color.B());
 
-        g_imgmodifier->setPixel(map_image, x, data->mode.map_size - z - 1, tilecolor);
-        g_imgmodifier->setPixel(heightmap_image, x, data->mode.map_size - z - 1, img::color8(img::PF_R8, (u8)mmpixel->height));
+        g_imgmodifier->setPixelDirect(map_image, x, data->mode.map_size - z - 1, tilecolor);
+        img::color8 height(img::PF_R8, (u8)mmpixel->height);
+        g_imgmodifier->setPixelDirect(heightmap_image, x, data->mode.map_size - z - 1, height);
 	}
 }
 
@@ -486,11 +487,12 @@ render::Texture2D *Minimap::getMinimapTexture()
 
     img::Image *minimap_mask = getMinimapMask();
 
+    img::color8 mask_col;
 	for (s16 y = 0; y < MINIMAP_MAX_SY; y++)
 	for (s16 x = 0; x < MINIMAP_MAX_SX; x++) {
-        auto mask_col = g_imgmodifier->getPixel(minimap_mask, x, y);
+        g_imgmodifier->getPixelDirect(minimap_mask, x, y, mask_col);
         if (!mask_col.A())
-            g_imgmodifier->setPixel(minimap_image, x, y, img::color8(img::PF_RGBA8, 0,0,0,0));
+            g_imgmodifier->setPixelDirect(minimap_image, x, y, img::black);
 	}
 
 	if (data->texture)
@@ -641,7 +643,8 @@ void Minimap::updateActiveMarkers(recti rect)
 		}
         pos.X = ((f32)pos.X / data->mode.map_size) * MINIMAP_MAX_SX;
         pos.Z = ((f32)pos.Z / data->mode.map_size) * MINIMAP_MAX_SY;
-        img::color8 mask_col = g_imgmodifier->getPixel(minimap_mask, pos.X, pos.Z);
+        img::color8 mask_col;
+        g_imgmodifier->getPixelDirect(minimap_mask, pos.X, pos.Z, mask_col);
         if (!mask_col.A()) {
 			continue;
 		}

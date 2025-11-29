@@ -195,7 +195,7 @@ void Sun::update(const img::color8 &color,
         float offset = (1.0 - fabs(sin((time_of_day - 0.5) * PI))) * 511;
 
         if (m_tonemap) {
-            c = g_imgmodifier->getPixel(m_tonemap, offset, 0);
+            g_imgmodifier->getPixelDirect(m_tonemap, offset, 0, c);
             c.A(255);
         }
 
@@ -323,7 +323,7 @@ void Moon::update(const img::color8 &color,
         float offset = (1.0 - fabs(sin((time_of_day - 0.5) * PI))) * 511;
 
         if (m_tonemap) {
-            c = g_imgmodifier->getPixel(m_tonemap, offset, 0);
+            g_imgmodifier->getPixelDirect(m_tonemap, offset, 0, c);
             c.A(255);
         }
 

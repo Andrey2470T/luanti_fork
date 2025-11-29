@@ -213,8 +213,9 @@ img::Palette *ResourceLoader::loadPalette(const std::string &path)
     // This many param2 values will have the same color
     u32 step = 256 / area;
     // For each pixel in the image
+    img::color8 c;
     for (u32 i = 0; i < area; i++) {
-        img::color8 c = g_imgmodifier->getPixel(img, i % size.X, i / size.X);
+        g_imgmodifier->getPixelDirect(img, i % size.X, i / size.X, c);
         // Fill in palette with 'step' colors
         for (u32 j = 0; j < step; j++) {
             *colors_iter = c;

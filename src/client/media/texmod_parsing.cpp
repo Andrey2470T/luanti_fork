@@ -187,39 +187,6 @@ bool TexModParser::parseFill(TextureGenerator *texgen, img::Image *&dest, const 
     return true;
 }
 
-template <typename F>
-void applyToImage(TextureGenerator *texgen, img::Image *img, const F &func)
-{
-    auto *mdf = texgen->getImageModifier();
-    auto size = img->getSize();
-
-    for (u32 y=0; y < size.Y; y++)
-        for (u32 x=0; x < size.X; x++) {
-            img::color8 c = mdf->getPixelColor(img, x,y);
-
-            if (!func(c))
-                continue;
-            mdf->setPixelColor(img, x, y, c);
-        }
-}
-
-template <typename F>
-void applyToImageFromSrc(TextureGenerator *texgen, img::Image *srcImg, img::Image *destImg, const F &func)
-{
-    auto *mdf = texgen->getImageModifier();
-    auto size = srcImg->getSize();
-
-    for (u32 y=0; y < size.Y; y++)
-        for (u32 x=0; x < size.X; x++) {
-            img::color8 src_c = mdf->getPixelColor(srcImg, x,y);
-            img::color8 dest_c = mdf->getPixelColor(destImg, x,y);
-
-            if (!func(src_c, dest_c))
-                continue;
-            mdf->setPixelColor(destImg, x, y, dest_c);
-        }
-}
-
 /*
     [brighten
 */
@@ -785,9 +752,9 @@ bool TexModParser::parsePNG(TextureGenerator *texgen, img::Image *&dest, const s
         png = base64_decode(blob);
     }
 
-    u8 *png_bytes = reinterpret_cast<u8 *>(&png);
+    //u8 *png_bytes = reinterpret_cast<u8 *>(&png);
 
-    img::Image *png_img = img::ImageLoader::loadFromMem(png_bytes, png.size());
+    img::Image *png_img = img::ImageLoader::loadFromMem((void *)png.c_str(), png.size());
 
     if (!png_img) {
         errorstream << "TexModParser::parsePNG(): Invalid PNG data" << std::endl;
@@ -796,13 +763,9 @@ bool TexModParser::parsePNG(TextureGenerator *texgen, img::Image *&dest, const s
 
     // blit or use as base
     if (dest) {
-        texgen->blitImages(png_img, dest, v2u(), nullptr, true);
+        texgen->blitImages(png_img, dest, v2u(), nullptr);
         delete png_img;
-    } /*else if (pngimg->getColorFormat() != video::ECF_A8R8G8B8) {
-        baseimg = driver->createImage(video::ECF_A8R8G8B8, pngimg->getDimension());
-        pngimg->copyTo(baseimg);
-        pngimg->drop();
-    }*/ else {
+    } else {
         dest = png_img;
     }
 
