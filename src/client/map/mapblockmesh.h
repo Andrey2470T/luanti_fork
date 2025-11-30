@@ -115,6 +115,8 @@ public:
 private:
     Client *m_client;
 
+    bool uploaded = false;
+
 	std::unique_ptr<LayeredMesh> m_mesh;
     std::vector<std::shared_ptr<MinimapMapblock>> m_minimap_mapblocks;
 

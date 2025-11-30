@@ -73,6 +73,8 @@ LocalPlayer::LocalPlayer(Client *client, const std::string &name):
 
 	m_player_settings.readGlobalSettings();
 	m_player_settings.registerSettingsCallback();
+
+    m_interaction->player = this;
 }
 
 LocalPlayer::~LocalPlayer()

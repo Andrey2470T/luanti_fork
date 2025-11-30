@@ -161,8 +161,10 @@ void MeshGenerator::drawCuboid(
 
     std::array<img::color8, 24> colors;
 
+    u8 face_count = 0;
+
 	for (int face = 0; face < 6; face++) {
-		if (face_mask & (1 << face))
+        if (!(face_mask & (1 << face)))
 			continue;  // Face is culled
 
 		// Get face colors from pre-calculated lighting
@@ -173,14 +175,16 @@ void MeshGenerator::drawCuboid(
         colors[face*4+1] = face_colors[1];
         colors[face*4+2] = face_colors[2];
         colors[face*4+3] = face_colors[3];
+
+        ++face_count;
 	}
 
-    auto layer1 = collector->findLayer(tiles[0][0], SELECT_VERTEXTYPE(tiles[0][0]), 4, 6);
+    auto layer1 = collector->findLayer(tiles[0][0], SELECT_VERTEXTYPE(tiles[0][0]), face_count*4, face_count*6);
     auto buf1 = collector->getBuffer(layer1.second.buffer_id);
     Batcher3D::appendBox(buf1, box, colors, uvs, face_mask);
 
-    auto layer2 = collector->findLayer(tiles[0][1], SELECT_VERTEXTYPE(tiles[0][0]), 4, 6);
-    auto buf2 = collector->getBuffer(layer1.second.buffer_id);
+    auto layer2 = collector->findLayer(tiles[0][1], SELECT_VERTEXTYPE(tiles[0][1]), face_count*4, face_count*6);
+    auto buf2 = collector->getBuffer(layer2.second.buffer_id);
     Batcher3D::appendBox(buf2, box, colors, uvs, face_mask);
 }
 
@@ -193,6 +197,11 @@ void MeshGenerator::drawSolidNode()
 	// STEP 1: Determine visible faces and get tiles
 	u8 visible_faces = 0;
 	std::array<TileSpec, 6> tiles;
+
+    for (int face = 0; face < 6; face++) {
+        tiles[face][0] = std::make_shared<TileLayer>();
+        tiles[face][1] = std::make_shared<TileLayer>();
+    }
 	static const v3s16 tile_dirs[6] = {
 		v3s16(0, 1, 0), v3s16(0, -1, 0),
 		v3s16(1, 0, 0), v3s16(-1, 0, 0),
@@ -339,6 +348,11 @@ void MeshGenerator::drawAllfacesNode()
 
 	static const aabbf box(-BS/2, -BS/2, -BS/2, BS/2, BS/2, BS/2);
 	std::array<TileSpec, 6> tiles;
+
+    for (int face = 0; face < 6; face++) {
+        tiles[face][0] = std::make_shared<TileLayer>();
+        tiles[face][1] = std::make_shared<TileLayer>();
+    }
 	
 	static const v3s16 nodebox_tile_dirs[6] = {
 		v3s16(0, 1, 0), v3s16(0, -1, 0),
@@ -761,6 +775,8 @@ void MeshGenerator::drawNodeboxNode()
 
 	std::array<TileSpec, 6> tiles;
 	for (int face = 0; face < 6; face++) {
+        tiles[face][0] = std::make_shared<TileLayer>();
+        tiles[face][1] = std::make_shared<TileLayer>();
 		getTile(nodebox_tile_dirs[face], &tiles[face]);
 	}
 

@@ -670,15 +670,15 @@ static void fillTileAttribs(AtlasPool *basic_pool, ResourceCache *cache,
         u8 material_type, bool backface_culling,
         const ImageSettings &tsettings)
 {
-    auto img = cache->getOrLoad<img::Image>(ResourceType::IMAGE, tiledef.name, true, true, true);
+    layer->tile_ref = cache->getOrLoad<img::Image>(ResourceType::IMAGE, tiledef.name, true, true, true);
 
     layer->material_type = material_type;
 
     bool has_scale = tiledef.scale > 0;
     bool use_autoscale = tsettings.autoscale_mode == AUTOSCALE_FORCE ||
         (tsettings.autoscale_mode == AUTOSCALE_ENABLE && !has_scale);
-    if (use_autoscale && img) {
-        auto img_size = img->getSize();
+    if (use_autoscale && layer->tile_ref) {
+        auto img_size = layer->tile_ref->getSize();
         float base_size = tsettings.node_texture_size;
         float size = std::fmin(img_size.X, img_size.Y);
         layer->scale = std::fmax(base_size, size) / base_size;
@@ -708,9 +708,9 @@ static void fillTileAttribs(AtlasPool *basic_pool, ResourceCache *cache,
     s32 frame_count = 1;
     s32 frame_length_ms = 0;
 	if (layer->material_flags & MATERIAL_FLAG_ANIMATION) {
-        assert(img);
+        assert(layer->tile_ref);
 		int frame_length_ms = 0;
-        tiledef.animation.determineParams(img->getSize(),
+        tiledef.animation.determineParams(layer->tile_ref->getSize(),
 				&frame_count, &frame_length_ms, NULL);
 		layer->animation_frame_count = frame_count;
         layer->animation_frame_length_ms = frame_length_ms;
@@ -720,9 +720,9 @@ static void fillTileAttribs(AtlasPool *basic_pool, ResourceCache *cache,
 		layer->material_flags &= ~MATERIAL_FLAG_ANIMATION;
 
     if (layer->material_flags & MATERIAL_FLAG_ANIMATION)
-        basic_pool->addAnimatedTile(img, {frame_length_ms, frame_count});
+        basic_pool->addAnimatedTile(layer->tile_ref, {frame_length_ms, frame_count});
     else
-        basic_pool->addTile(img);
+        basic_pool->addTile(layer->tile_ref);
 }
 
 static bool isWorldAligned(AlignStyle style, WorldAlignMode mode, NodeDrawType drawtype)
@@ -746,7 +746,7 @@ void ContentFeatures::updateTextures(Client *client, const ImageSettings &tsetti
     auto cache = client->getResourceCache();
     if (tsettings.enable_minimap && !tiledef[0].name.empty()) {
         auto img = cache->getOrLoad<img::Image>(ResourceType::IMAGE, tiledef[0].name, true, true, true);
-        //minimap_color = g_imgmodifier->imageAverageColor(img);
+        minimap_color = g_imgmodifier->imageAverageColor(img);
     }
 
 	// Figure out the actual tiles to use

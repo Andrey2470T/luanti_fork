@@ -4,7 +4,9 @@
 
 #include "clientmap.h"
 #include "client/core/client.h"
+#include "client/media/resource.h"
 #include "client/mesh/meshoperations.h"
+#include "client/render/renderer.h"
 #include "client/ui/minimap.h"
 #include "mapblockmesh.h"
 #include "mapsector.h"
@@ -30,7 +32,15 @@ ClientMap::ClientMap(Client *client, DistanceSortedDrawList *drawlist)
       m_mesh_grid({g_settings->getU16("client_mesh_chunk")}),
       m_unload_unused_data_timeout(std::max(g_settings->getFloat("client_unload_unused_data_timeout"), 0.0f)),
       m_mapblock_limit(g_settings->getS32("client_mapblock_limit"))
-{}
+{
+    auto rnd = m_client->getRenderSystem()->getRenderer();
+    auto cache = m_client->getResourceCache();
+
+    auto block_shader = cache->getOrLoad<render::Shader>(ResourceType::SHADER, "block");
+    rnd->setUniformBlocks(block_shader);
+    auto block_hw_shader = m_client->getResourceCache()->getOrLoad<render::Shader>(ResourceType::SHADER, "block_hw");
+    rnd->setUniformBlocks(block_hw_shader);
+}
 
 ClientMap::~ClientMap()
 {
@@ -222,9 +232,14 @@ bool ClientMap::addActiveObject(u16 id)
     auto cao = m_client->getEnv().getActiveObject(id);
 
     v3s16 blockpos = getContainerPos(floatToInt(cao->getPosition(), BS), BS);
+
+    if (!getBlockNoCreateNoEx(blockpos)) {
+        m_pending_to_add_caos.push_back(id);
+        return false;
+    }
     MapBlock *block = getBlockNoCreate(blockpos);
 
-    if (!block || !block->mesh) {
+    if (!block->mesh) {
         m_pending_to_add_caos.push_back(id);
         return false;
     }
@@ -264,6 +279,10 @@ void ClientMap::removeActiveObject(u16 id)
     auto cao = m_client->getEnv().getActiveObject(id);
 
     v3s16 blockpos = getContainerPos(floatToInt(cao->getPosition(), BS), BS);
+
+    if (!getBlockNoCreateNoEx(blockpos))
+        return;
+
     MapBlock *block = getBlockNoCreate(blockpos);
 
     if (!block || !block->mesh)

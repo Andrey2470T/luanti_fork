@@ -84,7 +84,7 @@ void ClientEnvironment::setLocalPlayer(LocalPlayer *player)
     m_local_player.reset(player);
 }
 
-void ClientEnvironment::step(f32 dtime, bool paused)
+void ClientEnvironment::step(f32 dtime)
 {
     TimeTaker tt_update("ClientEnvironment::step()");
     m_animation_time += dtime;
@@ -103,12 +103,12 @@ void ClientEnvironment::step(f32 dtime, bool paused)
 	/* Step time of day */
 	stepTimeOfDay(dtime);
 
+    /* Step local player */
+    m_local_player->step(dtime);
+
     /* Calls mods callbacks */
 	if (m_client->modsLoaded())
 		m_script->environment_step(dtime);
-
-    /* Step local player */
-    m_local_player->step(dtime);
 
 	// Update lighting on local player (used for wield item)
     /*u32 day_night_ratio = getDayNightRatio();
@@ -161,13 +161,17 @@ void ClientEnvironment::step(f32 dtime, bool paused)
     gameui->clearInfoText();
     gameui->updateProfilers(dtime);
     gameui->updateDebugState(m_client);
+    gameui->updateProfilerGraphs();
 
     /* Update Camera */
     auto camera = m_local_player->getCamera();
     camera->update(dtime);
 
-    // class PlayerInteraction
+    /* Update PlayerInteraction */
     m_local_player->getInteraction()->step(dtime);
+
+    /* Update ClientMap */
+    m_map->step(dtime);
 }
 
 /*void ClientEnvironment::addSimpleObject(ClientSimpleObject *simple)
@@ -483,27 +487,14 @@ void ClientEnvironment::updateFrame(f32 dtime, bool paused)
     /* Update time of day */
     updateTimeOfDay();
 
-    auto camera = m_local_player->getCamera();
     /*
         Update clouds
     */
+    auto camera = m_local_player->getCamera();
     rnd_sys->getClouds()->update(dtime, camera, sky, draw_control.fog_range);
 
     /* Step particle manager */
     rnd_sys->getParticleManager()->step(dtime);
-
-    /*
-        Damage camera tilt
-    */
-    if (m_local_player->hurt_tilt_timer > 0.0f) {
-        m_local_player->hurt_tilt_timer -= dtime * 6.0f;
-
-        if (m_local_player->hurt_tilt_timer < 0.0f)
-            m_local_player->hurt_tilt_strength = 0.0f;
-    }
-
-    /* Update profiler */
-    //gameui->updateProfilerGraphs(graph);
 
     /*
         Update minimap pos and rotation
@@ -537,8 +528,7 @@ void ClientEnvironment::updateFrame(f32 dtime, bool paused)
     /* Update ClientMap */
     m_map->step(dtime);
 
-    //gameui->update(client, draw_control, cam, runData.pointed_old,
-     //       gui_chat_console.get(), dtime);
+    gameui->update(m_client, m_client->getChatMessanger()->getChatConsole(), dtime);
 
     rnd_sys->getGameFormSpec()->update();
 

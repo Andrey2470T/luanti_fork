@@ -68,7 +68,8 @@ MeshLayer &LayeredMesh::findLayer(std::shared_ptr<TileLayer> layer, render::Vert
         }
     }
 
-    buffers.emplace_back(std::make_unique<MeshBuffer>(vertexCount, indexCount, true, vType));
+    buffers.emplace_back(std::make_unique<MeshBuffer>(vertexCount, indexCount, true,
+        vType, render::MeshUsage::STATIC, false));
     layers.emplace_back();
 
     LayeredMeshPart mesh_p;

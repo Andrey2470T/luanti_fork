@@ -307,6 +307,10 @@ void GUIEngine::run()
 				last_window_info = window_info;
 			}
 
+            m_animation_time += dtime;
+            if(m_animation_time > 60.0) m_animation_time -= 60.0;
+            m_rndsys->getPool(false)->updateAnimatedTiles(m_animation_time);
+
             m_rndsys->beginDraw(render::CBF_COLOR | render::CBF_DEPTH, Renderer::menu_sky_color);
 
             if (m_clouds_enabled) {

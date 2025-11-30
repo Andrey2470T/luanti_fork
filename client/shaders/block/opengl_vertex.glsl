@@ -146,8 +146,8 @@ void main(void)
 	float disp_x;
 	float disp_z;
 	// OpenGL < 4.3 does not support continued preprocessor lines
-	if (materialType == TILE_MATERIAL_WAVING_LEAVES && ENABLE_WAVING_LEAVES) || (materialType == TILE_MATERIAL_WAVING_PLANTS && ENABLE_WAVING_PLANTS) {
-		vec4 pos2 = Matrices.world * pos;
+	if ((materialType == TILE_MATERIAL_WAVING_LEAVES && ENABLE_WAVING_LEAVES != 0) || (materialType == TILE_MATERIAL_WAVING_PLANTS && ENABLE_WAVING_PLANTS != 0)) {
+		vec4 pos2 = Matrices.world * vec4(pos, 1.0);
 		float tOffset = (pos2.x + pos2.y) * 0.001 + pos2.z * 0.002;
 		disp_x = (smoothTriangleWave(mAnimationTimer * 23.0 + tOffset) +
 		smoothTriangleWave(mAnimationTimer * 11.0 + tOffset)) * 0.4;
@@ -156,12 +156,13 @@ void main(void)
 		smoothTriangleWave(mAnimationTimer * 13.0 + tOffset)) * 0.5;
 	}
 
-	vec4 cpos = pos;
-	if (materialType == MATERIAL_WAVING_LIQUID && ENABLE_WAVING_WATER) {
+	vec4 cpos = vec4(pos, 1.0);
+	if ((materialType == TILE_MATERIAL_WAVING_LIQUID_BASIC || materialType == TILE_MATERIAL_WAVING_LIQUID_TRANSPARENT
+		|| materialType == TILE_MATERIAL_WAVING_LIQUID_OPAQUE) && ENABLE_WAVING_WATER != 0) {
 		// Generate waves with Perlin-type noise.
 		// The constants are calibrated such that they roughly
 		// correspond to the old sine waves.
-		vec3 wavePos = (Matrices.world * pos).xyz + cameraOffset;
+		vec3 wavePos = (Matrices.world * vec4(pos, 1.0)).xyz + mCameraOffset;
 		// The waves are slightly compressed along the z-axis to get
 		// wave-fronts along the x-axis.
 		wavePos.x /= WATER_WAVE_LENGTH * 3.0;
@@ -169,12 +170,12 @@ void main(void)
 		wavePos.z += mAnimationTimer * WATER_WAVE_SPEED * 10.0;
 		cpos.y += (snoise(wavePos) - 1.0) * WATER_WAVE_HEIGHT * 5.0;
 	}
-	else if (materialType == TILE_MATERIAL_WAVING_LEAVES && ENABLE_WAVING_LEAVES) {
+	else if (materialType == TILE_MATERIAL_WAVING_LEAVES && ENABLE_WAVING_LEAVES != 0) {
 		cpos.x += disp_x;
 		cpos.y += disp_z * 0.1;
 		cpos.z += disp_z;
 	}
-	else if (materialType == TILE_MATERIAL_WAVING_PLANTS && ENABLE_WAVING_PLANTS) {
+	else if (materialType == TILE_MATERIAL_WAVING_PLANTS && ENABLE_WAVING_PLANTS != 0) {
 		if (varTexCoord.y < 0.05) {
 			cpos.x += disp_x;
 			cpos.z += disp_z;
@@ -199,10 +200,10 @@ void main(void)
 	if (ShadowParams.shadow_strength > 0.0) {
 		vec4 shadow_pos;
 	
-		if (materialType == TILE_MATERIAL_WAVING_PLANTS && ENABLE_WAVING_PLANTS) {
+		if (materialType == TILE_MATERIAL_WAVING_PLANTS && ENABLE_WAVING_PLANTS != 0) {
 			// The shadow shaders don't apply waving when creating the shadow-map.
 			// We are using the not waved inVertexPosition to avoid ugly self-shadowing.
-			shadow_pos = pos;
+			shadow_pos = vec4(pos, 1.0);
 		}
 		else
 			shadow_pos = cpos;
@@ -232,7 +233,7 @@ void main(void)
 		z_bias *= pFactor * pFactor / ShadowParams.textureresolution / ShadowParams.shadowfar;
 
 		vShadowPosition = applyPerspectiveDistortion(ShadowParams.shadowViewProj * Matrices.world * (shadow_pos + vec4(normalOffsetScale * nNormal, 0.0))).xyz;
-		if (!ENABLE_TRANSLUCENT_FOLIAGE || materialType != TILE_MATERIAL_WAVING_LEAVES)
+		if (ENABLE_TRANSLUCENT_FOLIAGE == 0 || materialType != TILE_MATERIAL_WAVING_LEAVES)
 			vShadowPosition.z -= z_bias;
 
 		perspective_factor = pFactor;

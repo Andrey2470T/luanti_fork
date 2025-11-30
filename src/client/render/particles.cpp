@@ -774,11 +774,11 @@ void ParticleManager::renderParticles()
 
     rnd->setRenderState(true);
 
-    u32 daynight_ratio = (f32)m_env->getDayNightRatio();
-    m_shader->setUniformFloat("mDayNightRatio", (f32)daynight_ratio);
-
     rnd->setShader(m_shader);
     rnd->setTexture(dynamic_cast<render::Texture2D *>(m_rnd_sys->getPool(true)->getAtlas(0)->getTexture()));
+
+    u32 daynight_ratio = (f32)m_env->getDayNightRatio();
+    m_shader->setUniformFloat("mDayNightRatio", (f32)daynight_ratio);
 
     rnd->setDataTexParams(m_datatex.get());
 

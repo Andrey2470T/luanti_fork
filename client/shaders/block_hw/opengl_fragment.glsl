@@ -111,7 +111,7 @@ float mtsmoothstep(in float edge0, in float edge1, in float x)
 }
 
 float shadowCutoff(float x) {
-	if (ENABLE_TRANSLUCENT_FOLIAGE && materialType == TILE_MATERIAL_WAVING_LEAVES)
+	if (ENABLE_TRANSLUCENT_FOLIAGE != 0 && materialType == TILE_MATERIAL_WAVING_LEAVES)
 		return mtsmoothstep(0.0, 0.002, x);
 	else
 		return step(0.0, x);
@@ -300,7 +300,7 @@ vec4 getShadowColor(sampler2D shadowsampler, vec2 smTexCoord, float realDistance
 	vec4 visibility = vec4(0.0);
 	float scale_factor = radius / ShadowParams.textureresolution;
 
-	int samples = (1 + 1 * int(SOFTSHADOWRADIUS > 1.0)) * PCFSAMPLES; // scale max samples for the soft shadows
+	int samples = (1 + 1 * ((SOFTSHADOWRADIUS > 1.0) ? 1 : 0)) * PCFSAMPLES; // scale max samples for the soft shadows
 	samples = int(clamp(pow(4.0 * radius + 1.0, 2.0), 1.0, float(samples)));
 	int init_offset = int(floor(mod(((smTexCoord.x * 34.0) + 1.0) * smTexCoord.y, 64.0-samples)));
 	int end_offset = int(samples) + init_offset;
@@ -327,7 +327,7 @@ float getShadow(sampler2D shadowsampler, vec2 smTexCoord, float realDistance)
 	float visibility = 0.0;
 	float scale_factor = radius / ShadowParams.textureresolution;
 
-	int samples = (1 + 1 * int(SOFTSHADOWRADIUS > 1.0)) * PCFSAMPLES; // scale max samples for the soft shadows
+	int samples = (1 + 1 * ((SOFTSHADOWRADIUS > 1.0) ? 1 : 0)) * PCFSAMPLES; // scale max samples for the soft shadows
 	samples = int(clamp(pow(4.0 * radius + 1.0, 2.0), 1.0, float(samples)));
 	int init_offset = int(floor(mod(((smTexCoord.x * 34.0) + 1.0) * smTexCoord.y, 64.0-samples)));
 	int end_offset = int(samples) + init_offset;
@@ -358,7 +358,7 @@ vec4 getShadowColor(sampler2D shadowsampler, vec2 smTexCoord, float realDistance
 	vec2 clampedpos;
 	vec4 visibility = vec4(0.0);
 	float x, y;
-	float bound = (1 + 0.5 * int(SOFTSHADOWRADIUS > 1.0)) * PCFBOUND; // scale max bound for soft shadows
+	float bound = (1 + 0.5 * ((SOFTSHADOWRADIUS > 1.0) ? 1 : 0)) * PCFBOUND; // scale max bound for soft shadows
 	bound = clamp(0.5 * (4.0 * radius - 1.0), 0.5, bound);
 	float scale_factor = radius / bound / ShadowParams.textureresolution;
 	float n = 0.0;
@@ -386,7 +386,7 @@ float getShadow(sampler2D shadowsampler, vec2 smTexCoord, float realDistance)
 	vec2 clampedpos;
 	float visibility = 0.0;
 	float x, y;
-	float bound = (1 + 0.5 * int(SOFTSHADOWRADIUS > 1.0)) * PCFBOUND; // scale max bound for soft shadows
+	float bound = (1 + 0.5 * ((SOFTSHADOWRADIUS > 1.0) ? 1 : 0)) * PCFBOUND; // scale max bound for soft shadows
 	bound = clamp(0.5 * (4.0 * radius - 1.0), 0.5, bound);
 	float scale_factor = radius / bound / ShadowParams.textureresolution;
 	float n = 0.0;
@@ -534,7 +534,7 @@ void main(void)
 		}
 #endif
 
-		if (materialType == TILE_MATERIAL_WAVING_PLANTS || materialType == TILE_MATERIAL_WAVING_LEAVES && defined(ENABLE_TRANSLUCENT_FOLIAGE)) {
+		if (materialType == TILE_MATERIAL_WAVING_PLANTS || (materialType == TILE_MATERIAL_WAVING_LEAVES && ENABLE_TRANSLUCENT_FOLIAGE != 0)) {
 			// Simulate translucent foliage.
 			col.rgb += 4.0 * mDayLight * base.rgb * normalize(base.rgb * vColor.rgb * vColor.rgb) * f_adj_shadow_strength * pow(max(-dot(ShadowParams.lightDirection, viewVec), 0.0), 4.0) * max(1.0 - shadow_uncorrected, 0.0);
 		}
@@ -542,7 +542,7 @@ void main(void)
 #endif
 
 	// Applying fog
-	if (bool(FogParams.enable))
+	if (FogParams.enable != 0)
 	{
 		float FogFactor = computeFog(vEyeVec);
 		vec4 FogColor = FogParams.color;

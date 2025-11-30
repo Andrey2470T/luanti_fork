@@ -84,8 +84,8 @@ Client::Client(ResourceCache *resource_cache, RenderSystem *render_system,
     m_media_downloader(new ClientMediaDownloader()),
     m_modchannel_mgr(new ModChannelMgr())
 {
-	// Add local player
-	m_env.setLocalPlayer(new LocalPlayer(this, playername));
+    // Add local player
+    m_env.setLocalPlayer(new LocalPlayer(this, playername));
 
 	// Make the mod storage database and begin the save for later
 	m_mod_storage_database =
@@ -178,6 +178,8 @@ void Client::updateSound(f32 dtime)
     ClientMap &map = m_env.getClientMap();
     MapNode n = map.getNode(player->getFootstepNodePos());
     m_soundmaker->m_player_step_sound = m_nodedef->get(n).sound_footstep;
+
+    m_sound->step(dtime);
 }
 
 void Client::migrateModStorage()
@@ -414,6 +416,9 @@ void Client::step(f32 dtime)
 		Do stuff if connected
 	*/
 
+    if (m_clientevent_handler)
+        m_clientevent_handler->processEvents();
+
 	/*
 		Send pending messages on out chat queue
 	*/
@@ -432,14 +437,15 @@ void Client::step(f32 dtime)
 	LocalPlayer *player = m_env.getLocalPlayer();
 
 	// Step environment (also handles player controls)
-    m_env.step(dtime);
+    if (m_render_system->isFullyInit())
+        m_env.step(dtime);
 
-    m_sound->step(dtime);
+    updateSound(dtime);
 
 	/*
 		Get events
 	*/
-	while (m_env.hasClientEnvEvents()) {
+    while (m_clientevent_handler && m_env.hasClientEnvEvents()) {
 		ClientEnvEvent envEvent = m_env.getClientEnvEvent();
 
 		if (envEvent.type == CEE_PLAYER_DAMAGE) {
@@ -587,11 +593,6 @@ void Client::step(f32 dtime)
 		m_localdb->endSave();
 		m_localdb->beginSave();
 	}
-
-    if (m_clientevent_handler)
-        m_clientevent_handler->processEvents();
-
-    updateSound(dtime);
 }
 
 bool Client::loadMedia(const std::string &data, const std::string &filename,

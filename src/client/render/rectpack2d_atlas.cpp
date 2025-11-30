@@ -94,7 +94,7 @@ Rectpack2DAtlas::Rectpack2DAtlas(ResourceCache *_cache, const std::string &name,
             atlasArea += tileArea;
 
             if (animationProps != animatedImages.end())
-                animatedTiles.push_back(start_i);
+                animatedTiles.push_back(tiles.size()-1);
         }
     }
 

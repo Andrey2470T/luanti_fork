@@ -7,6 +7,7 @@
 #include <gettext.h>
 #include "client/map/clientmap.h"
 #include "client/network/packethandler.h"
+#include "client/player/interaction.h"
 #include "client/render/renderer.h"
 #include "gui/IGUIStaticText.h"
 #include "gui/mainmenumanager.h"
@@ -110,13 +111,12 @@ void GameUI::init()
     showDebug();
 }
 
-void GameUI::update(Client *client,
-    const PointedThing &pointed_old,
-	const GUIChatConsole *chat_console, float dtime)
+void GameUI::update(Client *client, const GUIChatConsole *chat_console, float dtime)
 {
     v2u wndSize = rndsys->getWindowSize();
 
 	LocalPlayer *player = client->getEnv().getLocalPlayer();
+    PlayerInteraction *interaction = player->getInteraction();
     v2f cam_orient = player->getCamera()->getOrientation();
 
     auto drawstats = rndsys->getRenderer()->getDrawStats();
@@ -166,10 +166,10 @@ void GameUI::update(Client *client,
             << " | pitch: " << (-wrapDegrees_180(cam_orient.X)) << "°"
 			<< " | seed: " << ((u64)client->getMapSeed());
 
-		if (pointed_old.type == POINTEDTHING_NODE) {
+        if (interaction->pointed_old.type == POINTEDTHING_NODE) {
 			ClientMap &map = client->getEnv().getClientMap();
 			const NodeDefManager *nodedef = client->getNodeDefManager();
-			MapNode n = map.getNode(pointed_old.node_undersurface);
+            MapNode n = map.getNode(interaction->pointed_old.node_undersurface);
 
 			if (n.getContent() != CONTENT_IGNORE) {
 				if (nodedef->get(n).name == "unknown") {

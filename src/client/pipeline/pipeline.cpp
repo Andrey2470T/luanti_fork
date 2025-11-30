@@ -194,13 +194,14 @@ void TextureBufferOutput::activate(PipelineContext &context)
         depth_face = (render::CubeMapFace)depth_stencil.second;
     }
 
+    auto ctxt = context.client->getRenderSystem()->getRenderer()->getContext();
+    ctxt->setFrameBuffer(render_target.get());
+
     render_target->setColorTextures(textures, faces);
     render_target->setDepthStencilTexture(depth_texture, depth_face);
 
-    auto ctxt = context.client->getRenderSystem()->getRenderer()->getContext();
     u16 clear = m_clear ? render::CBF_COLOR | render::CBF_DEPTH | render::CBF_STENCIL : render::CBF_NONE;
     ctxt->clearBuffers(clear, context.clear_color);
-    ctxt->setFrameBuffer(render_target.get());
     ctxt->setViewportSize(recti(0, 0, size.X, size.Y));
 
 	RenderTarget::activate(context);

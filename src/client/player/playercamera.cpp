@@ -39,8 +39,7 @@
 #define WIELDMESH_AMPLITUDE_Y 10.0f
 
 PlayerCamera::PlayerCamera(Client *client):
-    Camera(toV2T<u32>(client->getRenderSystem()->getRenderer()->getContext()->getViewportSize().getSize())),
-    m_draw_control(client->getRenderSystem()->getDrawList()->getDrawControl()), m_client(client)
+    Camera(toV2T<u32>(client->getRenderSystem()->getRenderer()->getContext()->getViewportSize().getSize())), m_client(client)
 {
     //auto smgr = rendering_engine->get_scene_manager();
 
@@ -583,8 +582,9 @@ void PlayerCamera::updateViewingRange()
 
     setNearValue(0.1f * BS);
 
-	m_draw_control.wanted_range = std::fmin(adjustDist(viewing_range, getFovMax()), 4000);
-	if (m_draw_control.range_all) {
+    auto &draw_control = m_client->getRenderSystem()->getDrawList()->getDrawControl();
+    draw_control.wanted_range = std::fmin(adjustDist(viewing_range, getFovMax()), 4000);
+    if (draw_control.range_all) {
         setFarValue(100000.0);
 		return;
 	}

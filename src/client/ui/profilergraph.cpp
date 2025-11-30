@@ -59,10 +59,9 @@ void ProfilerGraph::update(const std::string &id, f32 new_value, s32 x_left, s32
     bool relativegraph = (show_min != 0 && show_min != show_max);
     f32 lastscaledvalue = 0.0;
 
+    std::deque<f32> actualValues;
 
-    lines->clear();
-
-    for (f32 v : values) {
+    for (f32 &v : values) {
         float scaledvalue = 1.0;
 
         if (show_max != show_min)
@@ -72,6 +71,18 @@ void ProfilerGraph::update(const std::string &id, f32 new_value, s32 x_left, s32
             x++;
             continue;
         }
+
+        actualValues.push_back(v);
+    }
+
+    lines->clear();
+    lines->reallocateData(actualValues.size() * 3);
+
+    for (f32 &v : actualValues) {
+        float scaledvalue = 1.0;
+
+        if (show_max != show_min)
+            scaledvalue = (v - show_min) / (show_max - show_min);
 
         if (relativegraph) {
             s32 ivalue1 = lastscaledvalue * graph1h;

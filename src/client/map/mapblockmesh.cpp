@@ -127,7 +127,7 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data)
 
 
     auto basicPool = m_client->getRenderSystem()->getPool(true);
-    auto rnd = m_client->getRenderSystem()->getRenderer();
+
     for (u8 buf_i = 0; buf_i < m_mesh->getBuffersCount(); buf_i++) {
         auto buffer = m_mesh->getBuffer(buf_i);
         for (u8 layer_i = 0; layer_i < m_mesh->getBufferLayersCount(buf_i); layer_i++) {
@@ -145,10 +145,9 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data)
                 shadername = "block_hw";
 
             layer->use_default_shader = false;
-            layer->shader = m_client->getResourceCache()->getOrLoad<render::Shader>(ResourceType::SHADER, shadername);
-            rnd->setUniformBlocks(layer->shader);
+            layer->shader = m_client->getResourceCache()->get<render::Shader>(ResourceType::SHADER, shadername);
 
-            u32 atlas_size = atlas->getTextureSize();
+            u32 atlas_size = atlas ? atlas->getTextureSize() : 0;
 
             u32 offset = mesh_layer.second.offset;
             u32 count = mesh_layer.second.count;
@@ -164,8 +163,6 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data)
 
             MeshOperations::recalculateMeshAtlasUVs(buffer, offset, count, atlas_size, src_rect);
         }
-
-        buffer->uploadData();
     }
 
     m_mesh->splitTransparentLayers();
@@ -203,6 +200,11 @@ void MapBlockMesh::removeActiveObject(u16 id)
 
 void MapBlockMesh::addInDrawList(DistanceSortedDrawList *drawlist, bool shadow)
 {
+    if (!uploaded) {
+        for (u8 buf_i = 0; buf_i < m_mesh->getBuffersCount(); buf_i++)
+            m_mesh->getBuffer(buf_i)->uploadData();
+        uploaded = true;
+    }
     drawlist->addLayeredMesh(m_mesh.get());
 
     for (u16 ao_id : m_active_objects) {

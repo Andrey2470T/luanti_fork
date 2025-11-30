@@ -245,6 +245,9 @@ void ResourceSubCache<T>::clearResource(void *res, bool force)
         return elem.get()->data.get() == static_cast<T *>(res);
     });
 
+    if (it == cache.end())
+        return;
+
     if (force || it->get()->refcount == 1)
         cache.erase(it);
     else

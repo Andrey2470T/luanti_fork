@@ -62,8 +62,7 @@ public:
 	};
 
 	void init();
-    void update(Client *client, const PointedThing &pointed_old,
-                const GUIChatConsole *chat_console, float dtime);
+    void update(Client *client, const GUIChatConsole *chat_console, float dtime);
 
     const u8 &getFlags() const
     {

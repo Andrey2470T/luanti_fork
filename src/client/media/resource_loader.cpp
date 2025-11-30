@@ -103,17 +103,16 @@ render::Shader *ResourceLoader::loadShader(const std::string &path)
 
     header << "#version 330 core\n";
 
+    header << "#define ENABLE_WAVING_WATER " << (enable_waving_water ? 1 : 0) << "\n";
 	if (enable_waving_water) {
-        header << "#define ENABLE_WAVING_WATER 1\n";
         header << "#define WATER_WAVE_HEIGHT " << water_wave_height << "\n";
         header << "#define WATER_WAVE_LENGTH " << water_wave_length << "\n";
         header << "#define WATER_WAVE_SPEED " << water_wave_speed << "\n";
 	}
 
-    if (enable_waving_leaves)
-        header << "#define ENABLE_WAVING_LEAVES 1\n";
-    if (enable_waving_plants)
-        header << "#define ENABLE_WAVING_PLANTS 1\n";
+    header << "#define ENABLE_WAVING_LEAVES " << (enable_waving_leaves ? 1 : 0) << "\n";
+    header << "#define ENABLE_WAVING_PLANTS " << (enable_waving_plants ? 1 : 0) << "\n";
+
     if (tone_mapping) header << "#define ENABLE_TONE_MAPPING 1\n";
 
 	if (enable_dynamic_shadows) {

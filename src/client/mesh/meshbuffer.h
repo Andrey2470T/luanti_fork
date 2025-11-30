@@ -40,19 +40,25 @@ class MeshBuffer
 public:
     // Creates either VERTEX or VERTEX_INDEX buffer types
     MeshBuffer(bool createIBO = true, const render::VertexTypeDescriptor &descr=render::DefaultVType,
-        render::MeshUsage usage=render::MeshUsage::STATIC)
-        : Type(createIBO ? MeshBufferType::VERTEX_INDEX : MeshBufferType::VERTEX),
-          VAO(std::make_shared<render::Mesh>(descr, createIBO, usage))
+        render::MeshUsage usage=render::MeshUsage::STATIC, bool uploadData=true)
+        : Type(createIBO ? MeshBufferType::VERTEX_INDEX : MeshBufferType::VERTEX)
 	{
+        if (uploadData)
+            VAO = std::make_shared<render::Mesh>(descr, createIBO, usage);
+        else
+            VAO = std::make_shared<render::Mesh>(descr, usage);
         initData(0, 0);
 	}
     // Creates either VERTEX or VERTEX_INDEX buffer types allocating the storage for 'vertexCount' and 'indexCount'
     MeshBuffer(u32 vertexCount, u32 indexCount=0, bool createIBO = true,
         const render::VertexTypeDescriptor &descr=render::DefaultVType,
-        render::MeshUsage usage=render::MeshUsage::STATIC)
-        : Type(createIBO ? MeshBufferType::VERTEX_INDEX : MeshBufferType::VERTEX),
-        VAO(std::make_shared<render::Mesh>(nullptr, vertexCount, nullptr, indexCount, descr, createIBO, usage))
+        render::MeshUsage usage=render::MeshUsage::STATIC, bool uploadData=true)
+        : Type(createIBO ? MeshBufferType::VERTEX_INDEX : MeshBufferType::VERTEX)
     {
+        if (uploadData)
+            VAO = std::make_shared<render::Mesh>(nullptr, vertexCount, nullptr, indexCount, descr, createIBO, usage);
+        else
+            VAO = std::make_shared<render::Mesh>(descr, usage);
         initData(vertexCount, indexCount);
     }
 
@@ -122,17 +128,17 @@ public:
 
 	MeshBuffer *copy() const;
 
+    bool hasIBO() const
+    {
+        return Type == MeshBufferType::VERTEX_INDEX;
+    }
+
     bool operator==(const MeshBuffer *other_buffer) const
     {
         return VAO.get() == other_buffer->getVAO();
     }
 private:
     void initData(u32 vertexCount=0, u32 indexCount=0);
-
-    bool hasIBO() const
-    {
-        return Type == MeshBufferType::VERTEX_INDEX;
-    }
 
     void markDirty(u32 vertexN, bool vBuffer=true);
     void unmarkDirty(bool vBuffer=true);

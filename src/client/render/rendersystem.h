@@ -65,10 +65,16 @@ class RenderSystem
     f32 display_density;
     f32 gui_scaling;
     bool menu_clouds;
+
+    bool fullyInit = false;
 public:
     RenderSystem(ResourceCache *_cache);
     ~RenderSystem();
 
+    bool isFullyInit() const
+    {
+        return fullyInit;
+    }
     void initLoadScreen();
     void initRenderEnvironment(Client *_client);
 

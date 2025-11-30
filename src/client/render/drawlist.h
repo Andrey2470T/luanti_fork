@@ -57,6 +57,8 @@ class DistanceSortedDrawList
     std::list<LayeredMesh *> meshes;
     std::list<LayeredMesh *> shadow_meshes;
 
+    std::list<LayeredMesh *> updated_meshes;
+
     std::mutex meshes_mutex;
     std::mutex shadow_meshes_mutex;
 

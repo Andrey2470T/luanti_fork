@@ -186,6 +186,8 @@ private:
     std::unique_ptr<ImageSprite>          m_header;
     std::unique_ptr<ImageSprite>          m_footer;
 
+    f32 m_animation_time = 0.0f;
+
 	void setFormspecPrepend(const std::string &fs);
 
 	/**

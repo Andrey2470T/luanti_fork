@@ -99,7 +99,7 @@ void SelectionMesh::updateMesh(const v3f &new_pos, const v3s16 &camera_offset,
         img::color8 res_color = base_color * light_color;
         res_color.A(255);
 
-        buf = new MeshBuffer(8 * boxes.size(), 24 * boxes.size());
+        buf = new MeshBuffer(8 * boxes.size(), 36 * boxes.size());
         for (auto &box : boxes)
             Batcher3D::appendLineBox(buf, box, res_color);
 

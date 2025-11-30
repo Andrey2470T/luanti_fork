@@ -65,7 +65,7 @@ void GameInputSystem::processUserInput(f32 dtime)
 {
     bool desired = client->shouldShowTouchControls();
     if (desired && !g_touchcontrols) {
-        //g_touchcontrols = new TouchControls(device, texture_src);
+        g_touchcontrols = new TouchControls(client->getRenderSystem(), client->getResourceCache(), receiver);
 
     } else if (!desired && g_touchcontrols) {
         delete g_touchcontrols;

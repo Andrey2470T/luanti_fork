@@ -177,9 +177,6 @@ void AtlasPool::addTile(img::Image *img)
     if (type != AtlasType::RECTPACK2D)
         return;
 
-    //auto img = cache->getOrLoad<img::Image>(
-    //    ResourceType::IMAGE, name, apply_modifiers, apply_modifiers, true);
-
     auto imgIt = std::find(images.begin(), images.end(), img);
 
     // Add only unique tiles

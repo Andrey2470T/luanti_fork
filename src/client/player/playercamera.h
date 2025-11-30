@@ -103,9 +103,6 @@ private:
     //scene::ISceneManager *m_wieldmgr = nullptr;
     //WieldMeshSceneNode *m_wieldnode = nullptr;
 
-	// draw control
-    DrawControl& m_draw_control;
-
 	Client *m_client;
 
     v2f m_orientation; // {pitch, yaw}

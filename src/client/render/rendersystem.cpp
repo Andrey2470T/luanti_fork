@@ -84,6 +84,8 @@ void RenderSystem::initRenderEnvironment(Client *_client)
 
     gameui = std::make_unique<GameUI>(client);
     gameformspec = std::make_unique<GameFormSpec>();
+
+    fullyInit = true;
 }
 
 Hud *RenderSystem::getHud() const

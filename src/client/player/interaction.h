@@ -22,8 +22,6 @@ class PlayerInteraction
     InputHandler *input;
     ClientPacketHandler *pkt_handler;
 
-    PointedThing pointed_old;
-
 	f32 time_from_last_punch = 10.0f;
     f32 nodig_delay_timer;
     f32 dig_time;
@@ -58,8 +56,11 @@ class PlayerInteraction
 
     static void settingChangedCallback(const std::string &setting_name, void *data);
     void readSettings();
+
+    friend class LocalPlayer;
 public:
     bool pointing_at_object = true;
+    PointedThing pointed_old;
 
 	PlayerInteraction(Client *_client);
 	

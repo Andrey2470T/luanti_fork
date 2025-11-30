@@ -66,8 +66,7 @@ public:
 	Client *getGameDef() { return m_client; }
 	void setScript(ClientScripting *script) { m_script = script; }
 
-    void step(f32 dtime) override {}
-    void step(f32 dtime, bool paused);
+    void step(f32 dtime) override;
 
 	virtual void setLocalPlayer(LocalPlayer *player);
     LocalPlayer *getLocalPlayer() const { return m_local_player.get(); }

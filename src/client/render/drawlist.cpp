@@ -107,9 +107,9 @@ void DistanceSortedDrawList::updateList()
 
     needs_update_drawlist = false;
 
-    std::list<LayeredMesh *> new_meshes_list;
-
     MutexAutoLock meshes_lock(meshes_mutex);
+
+    updated_meshes.clear();
 
     //MeshGrid mesh_grid = client->getMeshGrid();
 
@@ -140,14 +140,14 @@ void DistanceSortedDrawList::updateList()
             continue;
         }*/
 
-        new_meshes_list.push_back(mesh);
+        updated_meshes.push_back(mesh);
     }
 
     meshes_mutex.unlock();
 
     // Resort the new mesh list
     mesh_sorter.camera_pos = cameraPos;
-    new_meshes_list.sort(mesh_sorter);
+    updated_meshes.sort(mesh_sorter);
 
     MutexAutoLock drawlist_lock(drawlist_mutex);
 
@@ -156,7 +156,7 @@ void DistanceSortedDrawList::updateList()
     layers.clear();
 
     // At first add solid layers, then transparent
-    for (auto &mesh : new_meshes_list) {
+    for (auto &mesh : updated_meshes) {
         auto all_layers = mesh->getAllLayers();
 
         for (auto &layer : all_layers) {
@@ -182,7 +182,6 @@ void DistanceSortedDrawList::updateList()
 
         if (distance_sq <= std::pow(sorting_distance + radius, 2.0f)) {
             mesh->transparentSort(cameraPos);
-            mesh->updateIndexBuffers();
 
             auto partial_layers = mesh->getPartialLayers();
 
@@ -222,6 +221,21 @@ void DistanceSortedDrawList::render()
     v3s16 cameraOffset = camera->getOffset();
 
     MutexAutoLock drawlist_lock(drawlist_mutex);
+
+    v3f cameraPos = camera->getPosition();
+    f32 sorting_distance = cache_transparency_sorting_distance * BS;
+
+    for (auto &mesh : updated_meshes) {
+        v3f center = mesh->getBoundingSphereCenter();
+        f32 radius = mesh->getBoundingSphereRadius();
+        f32 distance_sq = cameraPos.getDistanceFromSQ(center);
+
+        if (distance_sq <= std::pow(sorting_distance + radius, 2.0f))
+            mesh->updateIndexBuffers();
+    }
+
+    updated_meshes.clear();
+
     for (auto &l : layers) {
         l.first->setupRenderState(client);
 

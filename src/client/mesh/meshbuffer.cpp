@@ -117,7 +117,7 @@ void MeshBuffer::reallocateData(u32 vertexCount, u32 indexCount)
     if (!VBuffer.Data || (hasIBO() && !IBuffer.Data))
         return;
 
-    if (vertexCount == VBuffer.Data->count() && indexCount == IBuffer.Data->count())
+    if (vertexCount == VBuffer.Data->count() && (hasIBO() && indexCount == IBuffer.Data->count()))
         return;
 
     if (hasIBO())
