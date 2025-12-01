@@ -70,6 +70,8 @@ public:
 private:
     RenderTarget *target;
 
+    f32 prevDamage = 0.0f;
+
     RenderSource *source;
     u8 texture_index;
     std::unique_ptr<ScreenQuad> quad;

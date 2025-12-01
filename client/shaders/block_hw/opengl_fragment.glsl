@@ -46,6 +46,7 @@ flat in ivec2 vTexCoord;
 
 in highp vec3 vEyeVec;
 in float vNightRatio;
+flat in int vMaterialType;
 
 #ifdef ENABLE_DYNAMIC_SHADOWS
 #if (defined(ENABLE_WATER_REFLECTIONS) && MATERIAL_WATER_REFLECTIONS && ENABLE_WAVING_WATER)
@@ -100,7 +101,7 @@ float getLinearDepth()
 
 vec3 getLightSpacePosition()
 {
-	return shadow_position * 0.5 + 0.5;
+	return vShadowPosition * 0.5 + 0.5;
 }
 // custom smoothstep implementation because it's not defined in glsl1.2
 // https://docs.gl/sl4/smoothstep
@@ -111,7 +112,7 @@ float mtsmoothstep(in float edge0, in float edge1, in float x)
 }
 
 float shadowCutoff(float x) {
-	if (ENABLE_TRANSLUCENT_FOLIAGE != 0 && materialType == TILE_MATERIAL_WAVING_LEAVES)
+	if (ENABLE_TRANSLUCENT_FOLIAGE != 0 && vMaterialType == TILE_MATERIAL_WAVING_LEAVES)
 		return mtsmoothstep(0.0, 0.002, x);
 	else
 		return step(0.0, x);
@@ -205,13 +206,13 @@ float getPenumbraRadius(sampler2D shadowsampler, vec2 smTexCoord, float realDist
 	// A factor from 0 to 1 to reduce blurring of short shadows
 	float sharpness_factor = 1.0;
 	// conversion factor from shadow depth to blur radius
-	float depth_to_blur = ShadowParams.shadowfar / SOFTSHADOWRADIUS / xyPerspectiveBias0;
-	if (depth > 0.0 && f_normal_length > 0.0)
+	float depth_to_blur = ShadowParams.shadowfar / SOFTSHADOWRADIUS / ShadowParams.xyPerspectiveBias0;
+	if (depth > 0.0 && vFNormalLength > 0.0)
 		// 5 is empirical factor that controls how fast shadow loses sharpness
 		sharpness_factor = clamp(5.0 * depth * depth_to_blur, 0.0, 1.0);
 	depth = 0.0;
 
-	float world_to_texture = ShadowParams.xyPerspectiveBias1 / perspective_factor / perspective_factor
+	float world_to_texture = ShadowParams.xyPerspectiveBias1 / vPerspectiveFactor / vPerspectiveFactor
 			* ShadowParams.textureresolution / 2.0 / ShadowParams.shadowfar;
 	float world_radius = 0.2; // shadow blur radius in world float coordinates, e.g. 0.2 = 0.02 of one node
 
@@ -472,7 +473,7 @@ void main(void)
 			shadow_int = max(shadow_int, 1 - clamp(vCosLight, 0.0, self_shadow_cutoff_cosine)/self_shadow_cutoff_cosine);
 			shadow_color = mix(vec3(0.0), shadow_color, min(vCosLight, self_shadow_cutoff_cosine)/self_shadow_cutoff_cosine);
 
-			if (materialType == TILE_MATERIAL_WAVING_LEAVES || materialType == TILE_MATERIAL_WAVING_PLANTS) {
+			if (vMaterialType == TILE_MATERIAL_WAVING_LEAVES || vMaterialType == TILE_MATERIAL_WAVING_PLANTS) {
 				// Prevents foliage from becoming insanely bright outside the shadow map.
 				shadow_uncorrected = mix(shadow_int, shadow_uncorrected, clamp(distance_rate * 4.0 - 3.0, 0.0, 1.0));
 			}
@@ -484,7 +485,7 @@ void main(void)
 		col.rgb =
 				adjusted_night_ratio * col.rgb + // artificial light
 				(1.0 - adjusted_night_ratio) * ( // natural light
-						col.rgb * (1.0 - shadow_int * (1.0 - shadow_color) * (1.0 - shadow_tint)) +  // filtered texture color
+						col.rgb * (1.0 - shadow_int * (1.0 - shadow_color) * (1.0 - ShadowParams.shadowTint)) +  // filtered texture color
 						mDayLight * shadow_color * shadow_int);                 // reflected filtered sunlight/moonlight
 
 
@@ -534,7 +535,7 @@ void main(void)
 		}
 #endif
 
-		if (materialType == TILE_MATERIAL_WAVING_PLANTS || (materialType == TILE_MATERIAL_WAVING_LEAVES && ENABLE_TRANSLUCENT_FOLIAGE != 0)) {
+		if (vMaterialType == TILE_MATERIAL_WAVING_PLANTS || (vMaterialType == TILE_MATERIAL_WAVING_LEAVES && ENABLE_TRANSLUCENT_FOLIAGE != 0)) {
 			// Simulate translucent foliage.
 			col.rgb += 4.0 * mDayLight * base.rgb * normalize(base.rgb * vColor.rgb * vColor.rgb) * f_adj_shadow_strength * pow(max(-dot(ShadowParams.lightDirection, viewVec), 0.0), 4.0) * max(1.0 - shadow_uncorrected, 0.0);
 		}

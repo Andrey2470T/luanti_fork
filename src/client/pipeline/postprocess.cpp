@@ -304,18 +304,28 @@ void DamageFlashStep::run(PipelineContext &context)
     if (target)
         target->activate(context);
 
-    if (context.client->getEnv().damage_flash <= 0.0f)
+    f32 currentDamage = context.client->getEnv().damage_flash;
+
+    if (currentDamage <= 0.0f)
         return;
 
-    img::color8 color(img::PF_RGBA8, 180, 0, 0, context.client->getEnv().damage_flash);
+    img::color8 color(img::PF_RGBA8, 180, 0, 0, currentDamage);
 
     auto rnd_sys = context.client->getRenderSystem();
     if (!quad) {
         quad = std::make_unique<ScreenQuad>(rnd_sys, source);
         quad->setTextureMap({texture_index});
+        quad->updateQuad();
     }
 
-    quad->updateQuad();
+    if (currentDamage != prevDamage) {
+        auto buffer = quad->getBuffer();
+        MeshOperations::colorizeMesh(buffer, color);
+        buffer->uploadVertexData();
+
+        prevDamage = currentDamage;
+    }
+
     // Draw a full-screen rectangle
     quad->render(context.client);
 }

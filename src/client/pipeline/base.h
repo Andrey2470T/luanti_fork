@@ -86,6 +86,11 @@ public:
 
     ScreenQuad(RenderSystem *_rndsys, RenderSource *_textures);
 
+    MeshBuffer *getBuffer() const
+    {
+        return quad.get();
+    }
+
     void updateQuad(std::optional<v2u> offset=std::nullopt, std::optional<v2u> size=std::nullopt);
 
     void setTextureMap(const std::vector<u8> &map)
