@@ -82,11 +82,11 @@ public:
 	static const SkyboxParams getSkyDefaults()
 	{
 		SkyboxParams sky;
-        sky.bgcolor = img::color8(img::PF_RGBA8, 255, 255, 255, 255);
+        sky.bgcolor = img::white;
 		sky.type = "regular";
 		sky.clouds = true;
 		sky.sky_color = getSkyColorDefaults();
-        sky.fog_sun_tint = img::color8(img::PF_RGBA8, 255, 244, 125, 29);
+        sky.fog_sun_tint = img::color8(img::PF_RGBA8, 244, 125, 29, 255);
         sky.fog_moon_tint = colorfToColor8(img::colorf(0.5, 0.6, 0.8, 1));
 		sky.fog_tint_type = "default";
         sky.fog_color = img::color8(img::PF_RGBA8);
@@ -97,14 +97,14 @@ public:
 	{
 		SkyColor sky;
 		// Horizon colors
-        sky.day_horizon = img::color8(img::PF_RGBA8, 255, 144, 211, 246);
-        sky.indoors = img::color8(img::PF_RGBA8, 255, 100, 100, 100);
-        sky.dawn_horizon = img::color8(img::PF_RGBA8, 255, 186, 193, 240);
-        sky.night_horizon = img::color8(img::PF_RGBA8, 255, 64, 144, 255);
+        sky.day_horizon = img::color8(img::PF_RGBA8, 144, 211, 246, 255);
+        sky.indoors = img::color8(img::PF_RGBA8, 100, 100, 100, 255);
+        sky.dawn_horizon = img::color8(img::PF_RGBA8, 186, 193, 240, 255);
+        sky.night_horizon = img::color8(img::PF_RGBA8, 64, 144, 255, 255);
 		// Sky colors
-        sky.day_sky = img::color8(img::PF_RGBA8, 255, 97, 181, 245);
-        sky.dawn_sky = img::color8(img::PF_RGBA8, 255, 180, 186, 250);
-        sky.night_sky = img::color8(img::PF_RGBA8, 255, 0, 107, 255);
+        sky.day_sky = img::color8(img::PF_RGBA8, 97, 181, 245, 255);
+        sky.dawn_sky = img::color8(img::PF_RGBA8, 180, 186, 250, 255);
+        sky.night_sky = img::color8(img::PF_RGBA8, 0, 107, 255, 255);
 		return sky;
 	}
 
