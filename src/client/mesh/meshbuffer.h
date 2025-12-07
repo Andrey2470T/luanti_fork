@@ -20,9 +20,9 @@ class MeshBuffer
 
     struct SubMeshBuffer
     {
-        std::unique_ptr<ByteArray> Data;
+        std::vector<std::unique_ptr<ByteArray>> Data;
         // 'DataCount' is a count of vertices/indices
-        // As usually we allocate some data storage at once, 'DataCount' can be less 'Data.size()'
+        // As usually we allocate some data storage at once, 'DataCount' can be less 'Data.at(baIndex)->count()'
         u32 DataCount = 0;
         bool Dirty = false;
 
@@ -75,6 +75,7 @@ public:
     {
         return IBuffer.DataCount;
     }
+    u32 getSubDataCount(u32 baIndex, bool vBuffer=true) const;
 
 	render::Mesh *getVAO() const
 	{
@@ -118,11 +119,13 @@ public:
 
     void setIndexAt(u32 index, u32 pos);
 
-    void reallocateData(u32 vertexCount, u32 indexCount=0);
+    void reallocateData(u32 vertexCount, u32 indexCount=0, u32 baIndex=0);
 
     void uploadData();
     void uploadVertexData();
     void uploadIndexData();
+
+    void addSubData(u32 count=0, bool vBuffer=true);
 
     void clear();
 
@@ -140,6 +143,8 @@ public:
 private:
     void initData(u32 vertexCount=0, u32 indexCount=0);
 
+    u8 *mergeByteArrays(bool vBuffer=true) const;
+    void calcDataIndexAndOffset(u32 dataN, u32 &baIndex, u32 &dataOffset, bool vBuffer=true) const;
     void markDirty(u32 vertexN, bool vBuffer=true);
     void unmarkDirty(bool vBuffer=true);
 };

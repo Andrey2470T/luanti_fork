@@ -76,6 +76,9 @@ void ProfilerGraph::update(const std::string &id, f32 new_value, s32 x_left, s32
     }
 
     lines->clear();
+
+    if (actualValues.size() == 0)
+        return;
     lines->reallocateData(actualValues.size() * 3);
 
     for (f32 &v : actualValues) {

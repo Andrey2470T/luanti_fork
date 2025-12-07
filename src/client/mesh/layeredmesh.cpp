@@ -56,14 +56,26 @@ MeshLayer &LayeredMesh::findLayer(std::shared_ptr<TileLayer> layer, render::Vert
             return *layer == *(mlayer.first);
         });
 
-        buffer->reallocateData(buffer->getVertexCount()+vertexCount, buffer->getIndexCount()+indexCount);
-        if (layer_found != buf_layers.end())
+        if (layer_found != buf_layers.end()) {
+            u32 baIndex = std::distance(buf_layers.begin(), layer_found);
+            buffer->reallocateData(
+                buffer->getSubDataCount(baIndex)+vertexCount, buffer->getSubDataCount(baIndex, false)+indexCount, baIndex);
+            layer_found->second.count += indexCount;
+            recalculateBoundingRadius();
+
             return *layer_found;
+        }
         else {
+            u32 baIndex = std::distance(buf_layers.begin(), buf_layers.end());
+            buffer->reallocateData(vertexCount, indexCount, baIndex);
             LayeredMeshPart mesh_p;
             mesh_p.buffer_id = i;
             mesh_p.layer_id = buf_layers.size();
+            mesh_p.offset = buffer->getIndexCount();
+            mesh_p.count = indexCount;
             buf_layers.emplace_back(layer, mesh_p);
+            recalculateBoundingRadius();
+
             return buf_layers.back();
         }
     }
@@ -75,6 +87,7 @@ MeshLayer &LayeredMesh::findLayer(std::shared_ptr<TileLayer> layer, render::Vert
     LayeredMeshPart mesh_p;
     mesh_p.buffer_id = getBuffersCount()-1;
     mesh_p.layer_id = 0;
+    mesh_p.count = indexCount;
 
     layers.back().emplace_back(layer, mesh_p);
 
