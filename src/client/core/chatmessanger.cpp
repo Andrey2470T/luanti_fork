@@ -21,6 +21,7 @@ ChatMessanger::ChatMessanger(Client *_client)
 {
     g_settings->registerChangedCallback("chat_log_level",
         &settingChangedCallback, this);
+    readSettings();
 }
 
 void ChatMessanger::init(gui::IGUIEnvironment *guienv)
