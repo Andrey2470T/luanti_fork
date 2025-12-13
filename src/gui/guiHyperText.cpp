@@ -964,7 +964,7 @@ void TextDrawer::draw(const recti &clip_rect,
 					break;
 
 				if (el.type == ParsedText::ELEMENT_TEXT)
-                    m_box->addTextSprite(font_mgr, EnrichedString(el.text), 0, toRectT<f32>(rect), color, &clip_rect);
+                    m_box->addTextSprite(font_mgr, EnrichedString(el.text), 0, toRectT<f32>(rect), std::nullopt, color, &clip_rect);
 
 				if (el.underline &&  el.drawwidth) {
 					s32 linepos = el.pos.Y + offset.Y +

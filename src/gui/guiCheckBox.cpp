@@ -162,7 +162,7 @@ void CGUICheckBox::updateMesh()
                 img::color8 text_c = skin->getColor(isEnabled() ? EGDC_BUTTON_TEXT : EGDC_GRAY_TEXT);
                 UITextSprite *CheckBoxText = CheckBoxBank->addTextSprite(
                     Environment->getRenderSystem()->getFontManager(), EnrichedString(Text),
-                        0, toRectT<f32>(checkRect), text_c, nullptr, false);
+                        0, toRectT<f32>(checkRect), std::nullopt, text_c, nullptr, false);
                 CheckBoxText->setAlignment(GUIAlignment::Center, GUIAlignment::Center);
             }
         }

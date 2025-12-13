@@ -511,7 +511,7 @@ void CGUIListBox::updateMesh()
                 }
 
                 auto itemText = listBoxBank->addTextSprite(Environment->getRenderSystem()->getFontManager(), EnrichedString(Items[i].Text),
-                    0, toRectT<f32>(textRect), textColor, &clientClip, false);
+                    0, toRectT<f32>(textRect), std::nullopt, textColor, &clientClip, false);
                 itemText->setAlignment(GUIAlignment::UpperLeft, GUIAlignment::Center);
                 itemText->updateBuffer(toRectT<f32>(textRect));
 

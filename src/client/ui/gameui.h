@@ -51,18 +51,8 @@ class GameUI
 public:
     GameUI(Client *client);
 
-	// Flags that can, or may, change during main game loop
-    enum Flags
-	{
-        FLAGS_SHOW_CHAT = 0x1,
-        FLAGS_SHOW_HUD = 0x2,
-        FLAGS_SHOW_MINIMAL_DEBUG = 0x4,
-        FLAGS_SHOW_BASIC_DEBUG = 0x8,
-        FLAHS_SHOW_PROFILER_GRAPH = 0x10
-	};
-
 	void init();
-    void update(Client *client, const GUIChatConsole *chat_console, float dtime);
+    void update(Client *client, const GUIChatConsole *chat_console, f32 dtime);
 
     const u8 &getFlags() const
     {
@@ -159,14 +149,14 @@ private:
     IntervalLimiter profiler_interval;
 
     std::unique_ptr<UISpriteBank> debugtext;  // First and second lines of debug text
-    std::wstring first_debug_line;
-    std::wstring second_debug_line;
+    std::wstring last_first_debug_text;
+    std::wstring last_second_debug_text;
 
     std::unique_ptr<UITextSprite> infotext; // At the middle of the screen
     //std::wstring m_infotext;
 
     std::unique_ptr<UITextSprite> statustext;
-    std::wstring status_line;
+    std::wstring last_status_text;
     f32 statustext_time = 0.0f;
     img::color8 statustext_initial_color = img::black;
 

@@ -762,8 +762,7 @@ void GUITable::drawCell(const Cell *cell, img::color8 color,
                     + cell->xpos + m_font->getTextWidth(text.getString());
 
             m_table_box->addTextSprite(
-                font_mgr, text, 0,
-                toRectT<f32>(text_rect), color, &client_clip, false);
+                font_mgr, text, 0, toRectT<f32>(text_rect), std::nullopt, color, &client_clip, false);
 		}
 	}
 	else if (cell->content_type == COLUMN_TYPE_IMAGE) {

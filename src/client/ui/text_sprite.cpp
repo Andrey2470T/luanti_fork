@@ -76,6 +76,11 @@ u32 UITextSprite::getTextHeight() const
     return font->getLineHeight() * brokenText.size();
 }
 
+v2u UITextSprite::getTextSize() const
+{
+    return v2u(getTextWidth(), getTextHeight());
+}
+
 void UITextSprite::enableRightToLeft(bool rtl)
 {
     if (rightToLeft != rtl) {

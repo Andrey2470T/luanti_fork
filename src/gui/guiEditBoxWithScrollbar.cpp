@@ -178,7 +178,7 @@ void GUIEditBoxWithScrollBar::updateMesh()
 
 
                 // draw normal text
-                m_editbox_bank->addTextSprite(font_mgr, EnrichedString(*txt_line), 0, toRectT<f32>(m_current_text_rect),
+                m_editbox_bank->addTextSprite(font_mgr, EnrichedString(*txt_line), 0, toRectT<f32>(m_current_text_rect), std::nullopt,
                     m_override_color_enabled ? m_override_color : skin->getColor(EGDC_BUTTON_TEXT), &local_clip_rect, false);
 
                 // draw mark and marked text
@@ -220,7 +220,7 @@ void GUIEditBoxWithScrollBar::updateMesh()
                     s = txt_line->substr(lineStartPos, lineEndPos - lineStartPos);
 
                     if (s.size())
-                        m_editbox_bank->addTextSprite(font_mgr, EnrichedString(s), 0, toRectT<f32>(m_current_text_rect),
+                        m_editbox_bank->addTextSprite(font_mgr, EnrichedString(s), 0, toRectT<f32>(m_current_text_rect), std::nullopt,
                             m_override_color_enabled ? m_override_color : skin->getColor(EGDC_HIGH_LIGHT_TEXT),  &local_clip_rect, false);
                 }
             }
@@ -246,7 +246,7 @@ void GUIEditBoxWithScrollBar::updateMesh()
                 setTextRect(cursor_line);
                 m_current_text_rect.ULC.X += charcursorpos;
 
-                m_editbox_bank->addTextSprite(font_mgr, EnrichedString("_"), 0, toRectT<f32>(m_current_text_rect),
+                m_editbox_bank->addTextSprite(font_mgr, EnrichedString("_"), 0, toRectT<f32>(m_current_text_rect), std::nullopt,
                     m_override_color_enabled ? m_override_color : skin->getColor(EGDC_BUTTON_TEXT), &local_clip_rect, false);
             }
         }

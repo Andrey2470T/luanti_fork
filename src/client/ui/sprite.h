@@ -310,9 +310,8 @@ public:
     UIRects *addSprite(const std::vector<ColoredRect> &rects, u8 shift, const recti *clipRect=nullptr);
     ImageSprite *addImageSprite(img::Image *img, u8 shift, std::optional<rectf> rect=std::nullopt, const recti *clipRect=nullptr,
         std::optional<AtlasTileAnim> anim=std::nullopt);
-    UITextSprite *addTextSprite(FontManager *mgr, const EnrichedString &text, u8 shift,
-        std::optional<rectf> rect=std::nullopt, const img::color8 &textColor=img::white, const recti *clipRect=nullptr,
-        bool wordWrap = true);
+    UITextSprite *addTextSprite(FontManager *mgr, const EnrichedString &text, u8 shift, std::optional<rectf> rect=std::nullopt,
+        std::optional<v2f> pos=std::nullopt, const img::color8 &textColor=img::white, const recti *clipRect=nullptr, bool wordWrap=true);
 
     u32 getSpriteCount() const
     {

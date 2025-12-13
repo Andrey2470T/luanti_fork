@@ -93,6 +93,7 @@ public:
 
     u32 getTextWidth() const;
     u32 getTextHeight() const;
+    v2u getTextSize() const;
 
     void enableDrawBackground(bool draw)
     {

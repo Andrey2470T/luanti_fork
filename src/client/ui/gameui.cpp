@@ -56,15 +56,14 @@ void GameUI::init()
     auto font_mgr = rndsys->getFontManager();
     auto skin = rndsys->getGUIEnvironment()->getSkin();
 
-    debugtext = std::make_unique<UISpriteBank>(rndsys, cache);
+    debugtext = std::make_unique<UISpriteBank>(rndsys, cache, false);
 
 	// First line of debug text
-    debugtext->addTextSprite(font_mgr, EnrichedString(utf8_to_wide(PROJECT_NAME_C)), 0);
-    debugtext->addTextSprite(font_mgr, EnrichedString(), 1);
+    auto first_debugline = debugtext->addTextSprite(font_mgr, EnrichedString(utf8_to_wide(PROJECT_NAME_C)), 0, std::nullopt, v2f(5, 5));
+    debugtext->addTextSprite(font_mgr, EnrichedString(), 0, std::nullopt, v2f(5, 5 + first_debugline->getActiveFont()->getLineHeight()));
 
 	// Chat text
-    chattext = std::make_unique<UITextSprite>(font_mgr, skin, EnrichedString(),
-        rndsys->getRenderer(), cache);
+    chattext = std::make_unique<UITextSprite>(font_mgr, skin, EnrichedString(), rndsys->getRenderer(), cache);
 	u16 chat_font_size = g_settings->getU16("chat_font_size");
 	if (chat_font_size != 0) {
         chattext->setOverrideFont(font_mgr->getFontOrCreate(
@@ -77,16 +76,10 @@ void GameUI::init()
     u32 chat_font_height = chattext->getActiveFont()->getLineHeight();
     infotext = std::make_unique<UITextSprite>(font_mgr, skin, EnrichedString(), rndsys->getRenderer(), cache);
     infotext->getShape()->move(v2f(100, chat_font_height * (g_settings->getU16("recent_chat_messages") + 3)));
-        /*gui::StaticText::add(guienv, L"",
-		// Size is limited; text will be truncated after 6 lines.
-        recti(0, 0, 400, g_fontengine->getTextHeight() * 6) +
-			v2s32(100, chat_font_height *
-			(g_settings->getU16("recent_chat_messages") + 3)),
-            false, true, guiroot);*/
 
 	// Status text (displays info when showing and hiding GUI stuff, etc.)
-    status_line = L"<Status>";
-    statustext = std::make_unique<UITextSprite>(font_mgr, skin, EnrichedString(status_line),
+    last_status_text = L"<Status>";
+    statustext = std::make_unique<UITextSprite>(font_mgr, skin, EnrichedString(last_status_text),
         rndsys->getRenderer(), cache, false, false);
     statustext->setVisible(false);
 
@@ -111,7 +104,7 @@ void GameUI::init()
     showDebug();
 }
 
-void GameUI::update(Client *client, const GUIChatConsole *chat_console, float dtime)
+void GameUI::update(Client *client, const GUIChatConsole *chat_console, f32 dtime)
 {
     v2u wndSize = rndsys->getWindowSize();
 
@@ -144,8 +137,15 @@ void GameUI::update(Client *client, const GUIChatConsole *chat_console, float dt
 			<< std::setprecision(2)
             << " | RTT: " << (client->getPacketHandler()->getRTT() * 1000.0f) << "ms";
 
-        first_debug_line->setText(utf8_to_wide(os.str()));
-        first_debug_line->getShape()->move(v2f(5, 5));
+        std::wstring first_debug_text = utf8_to_wide(os.str());
+
+        if (first_debug_text != last_first_debug_text) {
+            first_debug_line->setText(first_debug_text);
+            auto font = first_debug_line->getActiveFont();
+            first_debug_line->updateBuffer(
+                rectf(v2f(5, 5), font->getTextWidth(first_debug_text), font->getTextHeight(first_debug_text)));
+            last_first_debug_text = first_debug_text;
+        }
 	}
 
 	// Finally set the guitext visible depending on the flag
@@ -181,8 +181,15 @@ void GameUI::update(Client *client, const GUIChatConsole *chat_console, float dt
 			}
 		}
 
-        second_debug_line->setText(utf8_to_wide(os.str()));
-        second_debug_line->getShape()->move(v2f(5, 5 + first_debug_line->getActiveFont()->getLineHeight()));
+        std::wstring second_debug_text = utf8_to_wide(os.str());
+
+        if (second_debug_text != last_second_debug_text) {
+            second_debug_line->setText(second_debug_text);
+            second_debug_line->updateBuffer(
+                rectf(v2f(5, 5 + first_debug_line->getActiveFont()->getLineHeight()),
+                second_debug_line->getTextWidth(), second_debug_line->getTextHeight()));
+            last_second_debug_text = second_debug_text;
+        }
 	}
 
     second_debug_line->setVisible(flags & GUIF_SHOW_BASIC_DEBUG);
@@ -213,7 +220,6 @@ void GameUI::update(Client *client, const GUIChatConsole *chat_console, float dt
 			g_touchcontrols->getStatusText()->setVisible(false);
 	}
 
-    //setStaticText(guitext_status, m_statustext.c_str());
     guitext_status->setVisible(!guitext_status->getText().empty());
 
     if (!statustext->getText().empty()) {
@@ -222,7 +228,8 @@ void GameUI::update(Client *client, const GUIChatConsole *chat_console, float dt
         s32 status_y = wndSize.Y  - (overriden ? 15 : 150);
         s32 status_x = (wndSize.X - status_width) / 2;
 
-        guitext_status->getShape()->move(v2f(status_x, status_y - status_height));
+        v2f guitext_status_shift(status_x, status_y - status_height);
+        guitext_status->getShape()->move(guitext_status_shift);
         //guitext_status->setRelativePosition(recti(status_x ,
         //	status_y - status_height, status_x + status_width, status_y));
 
@@ -232,6 +239,7 @@ void GameUI::update(Client *client, const GUIChatConsole *chat_console, float dt
         fade_color.A(static_cast<u32>(
             fade_color.A() * (1.0f - d * d)));
         guitext_status->setOverrideColor(fade_color);
+        guitext_status->updateBuffer(rectf(guitext_status_shift, guitext_status_shift+toV2T<f32>(guitext_status->getTextSize())));
 	}
 
 	// Hide chat when disabled by server or when console is visible
