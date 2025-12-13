@@ -3,6 +3,7 @@
 #include <memory>
 #include <Utils/Rect.h>
 #include <Render/Texture2D.h>
+#include "Utils/TypeConverter.h"
 #include "client/mesh/meshbuffer.h"
 #include <Render/DrawContext.h>
 
@@ -37,16 +38,20 @@ class UIShape
 		v2f start_p, end_p;
 		img::color8 start_c, end_c;
 
-        Line(const v2f &_start_p, const v2f &_end_p, const img::color8 &_start_c, const img::color8 &_end_c)
-            : Primitive(UIPrimitiveType::LINE), start_p(_start_p), end_p(_end_p), start_c(_start_c), end_c(_end_c)
+        Line(const v2f &_start_p, const v2f &_end_p,
+             const img::color8 &_start_c, const img::color8 &_end_c)
+            : Primitive(UIPrimitiveType::LINE), start_p(_start_p), end_p(_end_p),
+              start_c(_start_c), end_c(_end_c)
         {}
 	};
 	struct Triangle : public Primitive {
 		v2f p1, p2, p3;
 		img::color8 c1, c2, c3;
 
-        Triangle(const v2f &_p1, const v2f &_p2, const v2f &_p3, const img::color8 &_c1, const img::color8 &_c2, const img::color8 &_c3)
-            : Primitive(UIPrimitiveType::TRIANGLE), p1(_p1), p2(_p2), p3(_p3), c1(_c1), c2(_c2), c3(_c3)
+        Triangle(const v2f &_p1, const v2f &_p2, const v2f &_p3,
+                 const img::color8 &_c1, const img::color8 &_c2, const img::color8 &_c3)
+            : Primitive(UIPrimitiveType::TRIANGLE), p1(_p1), p2(_p2), p3(_p3),
+              c1(_c1), c2(_c2), c3(_c3)
         {}
 	};
 	struct Rectangle : public Primitive {
@@ -88,12 +93,16 @@ public:
     {
         return primitives.size();
     }
-	void addLine(const v2f &start_p, const v2f &end_p, const img::color8 &start_c, const img::color8 &end_c) {
+    void addLine(
+            const v2f &start_p, const v2f &end_p,
+            const img::color8 &start_c, const img::color8 &end_c) {
         primitives.emplace_back((Primitive *)(new Line(start_p, end_p, start_c, end_c)));
         dirtyPrimitives.push_back(primitives.size()-1);
         updateMaxArea(maxArea, start_p, end_p, maxAreaInit);
     }
-    void addTriangle(const v2f &p1, const v2f &p2, const v2f &p3, const img::color8 &c1, const img::color8 &c2, const img::color8 &c3) {
+    void addTriangle(
+            const v2f &p1, const v2f &p2, const v2f &p3,
+            const img::color8 &c1, const img::color8 &c2, const img::color8 &c3) {
         primitives.emplace_back((Primitive *)(new Triangle(p1, p2, p3, c1, c2, c3)));
         dirtyPrimitives.push_back(primitives.size()-1);
         updateMaxArea(maxArea, v2f(p1.X, p3.Y), p2, maxAreaInit);
@@ -109,9 +118,14 @@ public:
         updateMaxArea(maxArea, center - v2f(a/2, b/2), center+v2f(a/2, b/2), maxAreaInit);
     }
 
-    void updateLine(u32 n, const v2f &start_p, const v2f &end_p, const img::color8 &start_c, const img::color8 &end_c);
-    void updateTriangle(u32 n, const v2f &p1, const v2f &p2, const v2f &p3, const img::color8 &c1, const img::color8 &c2, const img::color8 &c3);
-    void updateRectangle(u32 n, const rectf &r, const std::array<img::color8, 4> &colors, const rectf &texr=rectf());
+    void updateLine(
+        u32 n, const v2f &start_p, const v2f &end_p,
+        const img::color8 &start_c, const img::color8 &end_c);
+    void updateTriangle(
+        u32 n, const v2f &p1, const v2f &p2, const v2f &p3,
+        const img::color8 &c1, const img::color8 &c2, const img::color8 &c3);
+    void updateRectangle(
+        u32 n, const rectf &r, const std::array<img::color8, 4> &colors, const rectf &texr=rectf());
     void updateEllipse(u32 n, f32 a, f32 b, const v2f &center, const img::color8 &c);
 
     void movePrimitive(u32 n, const v2f &shift);
@@ -161,10 +175,16 @@ public:
 
     friend class UISprite;
 private:
-    void appendToBuffer(MeshBuffer *buf, v2u imgSize=v2u(), bool toUV=false);
-    void updateBuffer(MeshBuffer *buf, bool positions=true, bool colors=true, v2u imgSize=v2u(), bool toUV=false);
-    void updateBuffer(MeshBuffer *buf, u32 primitiveNum, bool positions=true, bool colors=true, v2u imgSize=v2u(), bool toUV=false);
-    void appendToBuffer(MeshBuffer *buf, u32 primitiveNum, v2u imgSize=v2u(), bool toUV=false);
+    void appendToBuffer(
+        MeshBuffer *buf, v2u imgSize=v2u(), bool toUV=false);
+    void updateBuffer(
+        MeshBuffer *buf, bool positions=true, bool colors=true,
+        v2u imgSize=v2u(), bool toUV=false);
+    void updateBuffer(
+        MeshBuffer *buf, u32 primitiveNum, bool positions=true, bool colors=true,
+        v2u imgSize=v2u(), bool toUV=false);
+    void appendToBuffer(
+        MeshBuffer *buf, u32 primitiveNum, v2u imgSize=v2u(), bool toUV=false);
 };
 
 // 2D mesh consisting from some count of rectangles
@@ -175,7 +195,7 @@ protected:
     Renderer *renderer;
     ResourceCache *cache;
     std::unique_ptr<MeshBuffer> mesh;
-    std::unique_ptr<UIShape> shape;
+    UIShape shape;
 
     render::Texture2D *texture = nullptr;
 
@@ -195,23 +215,33 @@ public:
     // Creates a single rectangle mesh
     UISprite(render::Texture2D *tex, Renderer *_renderer,
         ResourceCache *_cache, const rectf &srcRect, const rectf &destRect,
-        const std::array<img::color8, 4> &colors=defaultColors, bool streamTexture=false, bool staticUsage=true, bool toUV=false);
+        const std::array<img::color8, 4> &colors=defaultColors,
+        bool streamTexture=false, bool staticUsage=true, bool toUV=false);
 
     // Creates (without buffer filling) multiple-primitive mesh
     UISprite(render::Texture2D *tex, Renderer *_renderer, ResourceCache *_cache,
-        const std::vector<UIPrimitiveType> &primitives, bool streamTexture=false, bool staticUsage=true, bool toUV=false);
+        const std::vector<UIPrimitiveType> &primitives,
+        bool streamTexture=false, bool staticUsage=true, bool toUV=false);
 
     virtual ~UISprite() = default;
 
     v2u getSize() const
     {
-        rectf area = shape->getMaxArea();
-        return v2u(area.getWidth(), area.getHeight());
+        rectf area = shape.getMaxArea();
+        return toV2T<u32>(area.getSize());
+    }
+    rectf getArea() const
+    {
+        return shape.getMaxArea();
     }
 
-    UIShape *getShape() const
+    UIShape *getShape()
     {
-        return shape.get();
+        return &shape;
+    }
+    const UIShape *getShape() const
+    {
+        return &shape;
     }
     MeshBuffer *getBuffer() const
     {
@@ -243,14 +273,16 @@ public:
 
     void clear(bool only_shape=false)
     {
-        shape->clear();
+        shape.clear();
 
         if (!only_shape)
             mesh->clear();
     }
     
     // Draws all or part of primitives
-    virtual void draw(std::optional<u32> primOffset=std::nullopt, std::optional<u32> primCount=std::nullopt);
+    virtual void draw(
+        std::optional<u32> primOffset=std::nullopt,
+        std::optional<u32> primCount=std::nullopt);
 protected:
     bool checkPrimitives(std::optional<u32> &offset, std::optional<u32> &count);
     void drawPart(u32 pOffset=0, u32 pCount=1);
@@ -260,6 +292,37 @@ class UITextSprite;
 class FontManager;
 class EnrichedString;
 class RenderSystem;
+class UISpriteBank;
+
+enum class BankAlignmentType : u8
+{
+    HORIZONTAL,
+    VERTICAL,
+    DISABLED
+};
+
+class BankAutoAlignment
+{
+    BankAlignmentType alignType;
+
+    v2f center;
+
+    UISpriteBank *bank = nullptr;
+public:
+    BankAutoAlignment(BankAlignmentType _alignType, UISpriteBank *_bank)
+        : alignType(_alignType), bank(_bank)
+    {
+        assert(alignType != BankAlignmentType::DISABLED);
+    }
+
+    void setCenter(const v2f &c)
+    {
+        center = c;
+    }
+
+    void centerBank();
+    void alignNewSprite(UISprite *sprite, std::optional<rectf> overrideRect=std::nullopt);
+};
 
 struct ColoredRect
 {
@@ -281,18 +344,22 @@ class UISpriteBank
     rectf maxArea;
     bool maxAreaInit = false;
 
-    std::vector<std::vector<u32>> sprites_grid;
-
-    v2f center;
-    bool auto_align;
+    std::optional<BankAutoAlignment> autoAlignment;
 public:
-    UISpriteBank(RenderSystem *_rndsys, ResourceCache *_cache, bool _auto_align=true)
-        : rndsys(_rndsys), cache(_cache), auto_align(_auto_align)
-    {}
-
-    void setCenter(const v2f &c)
+    UISpriteBank(RenderSystem *_rndsys, ResourceCache *_cache, BankAlignmentType alignType=BankAlignmentType::DISABLED)
+        : rndsys(_rndsys), cache(_cache)
     {
-        center = c;
+        if (alignType != BankAlignmentType::DISABLED)
+            autoAlignment = BankAutoAlignment(alignType, this);
+    }
+
+    v2u getSize() const
+    {
+        return toV2T<u32>(maxArea.getSize());
+    }
+    rectf getArea() const
+    {
+        return maxArea;
     }
     // 'shift': '0' - shift to right, '1' - shift down
     // the sprites on each line are centered
@@ -307,11 +374,12 @@ public:
     {
         sprites.emplace_back(sprite);
     }
-    UIRects *addSprite(const std::vector<ColoredRect> &rects, u8 shift, const recti *clipRect=nullptr);
-    ImageSprite *addImageSprite(img::Image *img, u8 shift, std::optional<rectf> rect=std::nullopt, const recti *clipRect=nullptr,
-        std::optional<AtlasTileAnim> anim=std::nullopt);
-    UITextSprite *addTextSprite(FontManager *mgr, const EnrichedString &text, u8 shift, std::optional<rectf> rect=std::nullopt,
-        std::optional<v2f> pos=std::nullopt, const img::color8 &textColor=img::white, const recti *clipRect=nullptr, bool wordWrap=true);
+    UIRects *addSprite(const std::vector<ColoredRect> &rects, const recti *clipRect=nullptr);
+    ImageSprite *addImageSprite(img::Image *img, std::optional<rectf> rect=std::nullopt,
+        const recti *clipRect=nullptr, std::optional<AtlasTileAnim> anim=std::nullopt);
+    UITextSprite *addTextSprite(FontManager *mgr, const std::wstring &text, std::optional<rectf> rect=std::nullopt,
+        std::optional<v2f> pos=std::nullopt, const img::color8 &textColor=img::white,
+        const recti *clipRect=nullptr, bool wordWrap=true);
 
     u32 getSpriteCount() const
     {
@@ -357,7 +425,8 @@ public:
 
     void update()
     {
-    	alignSpritesByCenter();
+        if (autoAlignment.has_value())
+            autoAlignment->centerBank();
         for (auto &sprite : sprites)
             sprite->updateMesh();
     }
@@ -379,7 +448,4 @@ public:
         for (auto &sprite : sprites)
             sprite->draw();
     }
-    void alignSpritesByCenter();
-private:
-    void shiftRectByLastSprite(rectf &r, u8 shift);
 };

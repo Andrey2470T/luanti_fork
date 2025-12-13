@@ -370,7 +370,7 @@ UISprite::UISprite(render::Texture2D *tex, Renderer *_renderer, ResourceCache *_
     bool streamTexture, bool staticUsage, bool toUV)
     : renderer(_renderer), cache(_cache), mesh(std::make_unique<MeshBuffer>(true, VType2D,
         staticUsage ? render::MeshUsage::STATIC : render::MeshUsage::DYNAMIC)),
-      shape(std::make_unique<UIShape>()), texture(tex), streamTex(streamTexture), toUV(toUV)
+      texture(tex), streamTex(streamTexture), toUV(toUV)
 {}
 
 // Creates a single rectangle mesh
@@ -379,10 +379,11 @@ UISprite::UISprite(render::Texture2D *tex, Renderer *_renderer,
     const std::array<img::color8, 4> &colors, bool streamTexture, bool staticUsage, bool toUV)
     : renderer(_renderer), cache(_cache),
     mesh(std::make_unique<MeshBuffer>(UIShape::countRequiredVCount({UIPrimitiveType::RECTANGLE}),
-        UIShape::countRequiredICount({UIPrimitiveType::RECTANGLE}), true, VType2D, staticUsage ? render::MeshUsage::STATIC : render::MeshUsage::DYNAMIC)),
-    shape(std::make_unique<UIShape>()), texture(tex), streamTex(streamTexture), toUV(toUV)
+        UIShape::countRequiredICount({UIPrimitiveType::RECTANGLE}), true, VType2D,
+        staticUsage ? render::MeshUsage::STATIC : render::MeshUsage::DYNAMIC)),
+    texture(tex), streamTex(streamTexture), toUV(toUV)
 {
-    shape->addRectangle(posRect, colors, uvRect);
+    shape.addRectangle(posRect, colors, uvRect);
     rebuildMesh();
 }
 
@@ -393,22 +394,23 @@ UISprite::UISprite(render::Texture2D *tex, Renderer *_renderer, ResourceCache *_
     const std::vector<UIPrimitiveType> &primitives, bool streamTexture, bool staticUsage, bool toUV)
     : renderer(_renderer), cache(_cache),
     mesh(std::make_unique<MeshBuffer>(UIShape::countRequiredVCount(primitives),
-        UIShape::countRequiredICount(primitives), true, VType2D, staticUsage ? render::MeshUsage::STATIC : render::MeshUsage::DYNAMIC)),
-    shape(std::make_unique<UIShape>()), texture(tex), streamTex(streamTexture), toUV(toUV)
+        UIShape::countRequiredICount(primitives), true, VType2D,
+        staticUsage ? render::MeshUsage::STATIC : render::MeshUsage::DYNAMIC)),
+    texture(tex), streamTex(streamTexture), toUV(toUV)
 {
     for (auto primType : primitives) {
         switch(primType) {
         case UIPrimitiveType::LINE:
-            shape->addLine(v2f(), v2f(), img::black, img::black);
+            shape.addLine(v2f(), v2f(), img::black, img::black);
             break;
         case UIPrimitiveType::TRIANGLE:
-            shape->addTriangle(v2f(), v2f(), v2f(), img::black, img::black, img::black);
+            shape.addTriangle(v2f(), v2f(), v2f(), img::black, img::black, img::black);
             break;
         case UIPrimitiveType::RECTANGLE:
-            shape->addRectangle(rectf(), {});
+            shape.addRectangle(rectf(), {});
             break;
         case UIPrimitiveType::ELLIPSE:
-            shape->addEllipse(0.0f, 0.0f, v2f(), img::black);
+            shape.addEllipse(0.0f, 0.0f, v2f(), img::black);
             break;
         default:
             break;
@@ -419,10 +421,10 @@ UISprite::UISprite(render::Texture2D *tex, Renderer *_renderer, ResourceCache *_
 
 void UISprite::rebuildMesh()
 {
-    std::vector<UIPrimitiveType> prims(shape->getPrimitiveCount());
+    std::vector<UIPrimitiveType> prims(shape.getPrimitiveCount());
 
-    for (u32 i = 0; i < shape->getPrimitiveCount(); i++)
-        prims[i] = shape->getPrimitiveType(i);
+    for (u32 i = 0; i < shape.getPrimitiveCount(); i++)
+        prims[i] = shape.getPrimitiveType(i);
 
     mesh->reallocateData(
         UIShape::countRequiredVCount(prims),
@@ -430,7 +432,7 @@ void UISprite::rebuildMesh()
     );
 
     v2u texSize = texture ? texture->getSize() : v2u();
-    shape->appendToBuffer(mesh.get(), texSize, toUV);
+    shape.appendToBuffer(mesh.get(), texSize, toUV);
     mesh->uploadData();
 }
 
@@ -438,7 +440,7 @@ void UISprite::updateMesh(bool positions, bool colors)
 {
     v2u texSize = texture ? texture->getSize() : v2u();
 
-    shape->updateBuffer(mesh.get(), positions, colors, texSize, toUV);
+    shape.updateBuffer(mesh.get(), positions, colors, texSize, toUV);
     mesh->uploadVertexData();
 }
 
@@ -459,11 +461,11 @@ void UISprite::draw(std::optional<u32> primOffset, std::optional<u32> primCount)
     if (clipRect != recti())
         renderer->setClipRect(clipRect);
 
-    auto prevType = shape->getPrimitiveType(primOffset_v);
+    auto prevType = shape.getPrimitiveType(primOffset_v);
     u32 pOffset = primOffset_v;
     u32 pCount = 1;
     for (u32 i = primOffset_v; i < primOffset_v+primCount_v; i++) {
-        auto curType = shape->getPrimitiveType(i);
+        auto curType = shape.getPrimitiveType(i);
 
         if (curType == prevType && (i + 1 < primCount_v))
             ++pCount;
@@ -488,8 +490,8 @@ bool UISprite::checkPrimitives(std::optional<u32> &offset, std::optional<u32> &c
     if (!offset.has_value())
         offset = 0;
     if (!count.has_value())
-        count = shape->getPrimitiveCount();
-    u32 totalPCount = shape->getPrimitiveCount();
+        count = shape.getPrimitiveCount();
+    u32 totalPCount = shape.getPrimitiveCount();
     if (totalPCount == 0 || !visible || offset.value() > totalPCount-1
         || offset.value() + count.value() > totalPCount)
         return false;
@@ -503,13 +505,13 @@ void UISprite::drawPart(u32 pOffset, u32 pCount)
 
     u32 startCount = 0;
     u32 count = 0;
-    auto pType = shape->getPrimitiveType(pOffset);
+    auto pType = shape.getPrimitiveType(pOffset);
 
     switch(pType) {
     case UIPrimitiveType::LINE:
     case UIPrimitiveType::TRIANGLE: {
         for (u32 i = 0; i < pOffset; i++)
-            startCount += primVCounts[(u8)shape->getPrimitiveType(i)];
+            startCount += primVCounts[(u8)shape.getPrimitiveType(i)];
 
         count = primVCounts[(u8)pType] * pCount;
         break;
@@ -517,7 +519,7 @@ void UISprite::drawPart(u32 pOffset, u32 pCount)
     case UIPrimitiveType::RECTANGLE:
     case UIPrimitiveType::ELLIPSE: {
         for (u32 i = 0; i < pOffset; i++)
-            startCount += primICounts[(u8)shape->getPrimitiveType(i)];
+            startCount += primICounts[(u8)shape.getPrimitiveType(i)];
 
         count = primICounts[(u8)pType] * pCount;
         break;
@@ -538,24 +540,62 @@ void UISprite::drawPart(u32 pOffset, u32 pCount)
     }
 }
 
+void BankAutoAlignment::centerBank()
+{
+    v2f center_shift = -(bank->getArea().getCenter() - center);
+    bank->move(center_shift);
+}
+
+void BankAutoAlignment::alignNewSprite(UISprite *sprite, std::optional<rectf> overrideRect)
+{
+    v2f rectSizef = toV2T<f32>(sprite->getSize());
+    rectf area(rectSizef);
+
+    if (overrideRect.has_value()) {
+        rectSizef = overrideRect->getSize();
+        area = overrideRect.value();
+    }
+
+    if (bank->getSpriteCount() == 0) {
+        area.ULC = center - rectSizef/2.0f;
+        area.LRC = center + rectSizef/2.0f;
+    }
+    else {
+        auto lastSpriteArea = bank->getSprite(bank->getSpriteCount()-1)->getArea();
+        if (alignType == BankAlignmentType::HORIZONTAL) {
+            area.ULC.X = lastSpriteArea.LRC.X;
+            area.LRC.X = area.ULC.X + rectSizef.X;
+            area.ULC.Y = (lastSpriteArea.ULC.Y + lastSpriteArea.LRC.Y)/2.0f - rectSizef.Y/2.0f;
+            area.LRC.Y = (lastSpriteArea.ULC.Y + lastSpriteArea.LRC.Y)/2.0f + rectSizef.Y/2.0f;
+        }
+        else {
+            area.ULC.Y = lastSpriteArea.LRC.Y;
+            area.LRC.Y = area.ULC.Y + rectSizef.Y;
+            area.ULC.X = (lastSpriteArea.ULC.X + lastSpriteArea.LRC.X)/2.0f - rectSizef.X/2.0f;
+            area.LRC.X = (lastSpriteArea.ULC.X + lastSpriteArea.LRC.X)/2.0f + rectSizef.X/2.0f;
+        }
+    }
+
+    rectf oldArea = sprite->getArea();
+    sprite->getShape()->move(area.getCenter() - oldArea.getCenter());
+}
+
 // if auto-align is enabled, the rects areas must be absolute, otherwise - relative to the ulc
-UIRects *UISpriteBank::addSprite(const std::vector<ColoredRect> &rects, u8 shift, const recti *clipRect)
+UIRects *UISpriteBank::addSprite(const std::vector<ColoredRect> &rects, const recti *clipRect)
 {
     UIRects *rectsSprite = new UIRects(rndsys, rects.size());
 
     if (!rects.empty()) {
         for (u32 k = 0; k < rects.size(); k++)
             rectsSprite->updateRect(k, rects.at(k).area, rects[k].colors);
+
+        if (autoAlignment.has_value())
+            autoAlignment->alignNewSprite(rectsSprite);
+
         rectsSprite->updateMesh();
 
-        rectf old_maxarea = rectsSprite->getShape()->getMaxArea();
-        rectf shifted_maxarea = old_maxarea;
-        shiftRectByLastSprite(shifted_maxarea, shift);
-
-        if (auto_align)
-            move(shifted_maxarea.getCenter() - old_maxarea.getCenter());
-        else
-            updateMaxArea(maxArea, shifted_maxarea.ULC, shifted_maxarea.LRC, maxAreaInit);
+        auto rectsMaxArea = rectsSprite->getArea();
+        updateMaxArea(maxArea, rectsMaxArea.ULC, rectsMaxArea.LRC, maxAreaInit);
     }
     
     if (clipRect)
@@ -567,8 +607,8 @@ UIRects *UISpriteBank::addSprite(const std::vector<ColoredRect> &rects, u8 shift
 }
 
 // 'pos' is used for auto_align = false
-ImageSprite *UISpriteBank::addImageSprite(img::Image *img, u8 shift,
-    std::optional<rectf> rect, const recti *clipRect, std::optional<AtlasTileAnim> anim)
+ImageSprite *UISpriteBank::addImageSprite(img::Image *img, std::optional<rectf> rect,
+    const recti *clipRect, std::optional<AtlasTileAnim> anim)
 {
     ImageSprite *imageSprite = new ImageSprite(rndsys, cache);
 
@@ -578,22 +618,25 @@ ImageSprite *UISpriteBank::addImageSprite(img::Image *img, u8 shift,
         resRect.LRC = v2f(img->getClipSize().X, img->getClipSize().Y);
 
     if (rect) {
-        if (auto_align)
+        if (autoAlignment.has_value()) {
             resRect.LRC = rect.value().getSize();
+            autoAlignment->alignNewSprite(imageSprite, resRect);
+        }
         else
             resRect = rect.value();
     }
 
-    shiftRectByLastSprite(resRect, shift);
     imageSprite->update(img, resRect, img::white, clipRect, anim);
-    updateMaxArea(maxArea, resRect.ULC, resRect.LRC, maxAreaInit);
+
+    auto imageMaxArea = imageSprite->getArea();
+    updateMaxArea(maxArea, imageMaxArea.ULC, imageMaxArea.LRC, maxAreaInit);
 
     sprites.emplace_back(imageSprite);
 
     return imageSprite;
 }
 
-UITextSprite *UISpriteBank::addTextSprite(FontManager *mgr, const EnrichedString &text, u8 shift, std::optional<rectf> rect,
+UITextSprite *UISpriteBank::addTextSprite(FontManager *mgr, const std::wstring &text, std::optional<rectf> rect,
     std::optional<v2f> pos, const img::color8 &textColor, const recti *clipRect, bool wordWrap)
 {
     UITextSprite *textSprite = new UITextSprite(mgr, rndsys->getGUIEnvironment()->getSkin(),
@@ -603,16 +646,17 @@ UITextSprite *UISpriteBank::addTextSprite(FontManager *mgr, const EnrichedString
     textSprite->setOverrideColor(textColor);
 
     auto font = textSprite->getActiveFont();
-    rectf resRect(0, 0, font->getTextWidth(text.getString()), font->getTextHeight(text.getString()));
+    rectf resRect(v2f(), toV2T<f32>(font->getTextSize(text)));
 
-    if (rect.has_value() && !auto_align)
+    if (rect.has_value() && !autoAlignment.has_value())
         resRect = rect.value();
 
-    if (pos.has_value() && !auto_align)
+    if (pos.has_value() && !autoAlignment.has_value())
         resRect += pos.value();
 
-    shiftRectByLastSprite(resRect, shift);
-    textSprite->updateBuffer(rectf(resRect));
+    if (autoAlignment.has_value())
+        autoAlignment->alignNewSprite(textSprite, resRect);
+    textSprite->updateBuffer(textSprite->getArea());
     updateMaxArea(maxArea, resRect.ULC, resRect.LRC, maxAreaInit);
     
     if (clipRect)
@@ -621,44 +665,4 @@ UITextSprite *UISpriteBank::addTextSprite(FontManager *mgr, const EnrichedString
     sprites.emplace_back(textSprite);
 
     return textSprite;
-}
-
-void UISpriteBank::shiftRectByLastSprite(rectf &r, u8 shift)
-{
-    if (!auto_align)
-        return;
-
-    if (!sprites.empty()) {
-        v2f rSize = r.getSize();
-
-        if (shift == 0) {
-            auto lastRow = sprites_grid.back();
-            auto lastSpriteArea = sprites.at(lastRow.back()).get()->getShape()->getMaxArea();
-            r.ULC.X = lastSpriteArea.LRC.X;
-            r.ULC.Y = lastSpriteArea.ULC.Y;
-            r.LRC = r.ULC + rSize;
-            lastRow.emplace_back(sprites.size());
-        }
-        else if (shift == 1) {
-            r.ULC.X = maxArea.getCenter().X-rSize.X/2.0f;
-            r.ULC.Y = maxArea.LRC.Y;
-            r.LRC = r.ULC + rSize;
-            sprites_grid.emplace_back(sprites.size());
-        }
-    }
-    else {
-        auto size = r.getSize();
-        r.ULC = center - size/2.0f;
-        r.LRC = center + size/2.0f;
-        sprites_grid.emplace_back();
-    }
-}
-
-void UISpriteBank::alignSpritesByCenter()
-{
-    if (!auto_align)
-        return;
-
-    v2f center_shift = -(maxArea.getCenter() - center);
-    move(center_shift);
 }

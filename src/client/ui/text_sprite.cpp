@@ -6,7 +6,7 @@
 #include "client/ui/glyph_atlas.h"
 #include "client/render/renderer.h"
 
-UITextSprite::UITextSprite(FontManager *font_manager, GUISkin *guiskin, const EnrichedString &text,
+UITextSprite::UITextSprite(FontManager *font_manager, GUISkin *guiskin, const std::wstring &text,
     Renderer *renderer, ResourceCache *resCache, bool border, bool wordWrap, bool fillBackground)
     : UISprite(nullptr, renderer, resCache, false, false), skin(guiskin), drawBorder(border),
     drawBackground(fillBackground),  wordWrap(wordWrap), mgr(font_manager)
@@ -144,7 +144,7 @@ void UITextSprite::updateBuffer(rectf &&r)
 
     if (drawBackground) {
         auto bg_color = getBackgroundColor();
-        shape->addRectangle(r, {bg_color, bg_color, bg_color, bg_color});
+        shape.addRectangle(r, {bg_color, bg_color, bg_color, bg_color});
     }
 
     if (drawBorder)
@@ -285,7 +285,7 @@ void UITextSprite::updateBuffer(rectf &&r)
 
     for (auto &tex_to_glyph : texture_to_glyph_map) {
         for (auto &glyphparams : tex_to_glyph.second)
-            shape->addRectangle(glyphparams.pos, glyphparams.colors, glyphparams.uv);
+            shape.addRectangle(glyphparams.pos, glyphparams.colors, glyphparams.uv);
     }
 
     rebuildMesh();
@@ -310,7 +310,7 @@ void UITextSprite::updateWrappedText()
     EnrichedString whitespace;
     u32 size = text.size();
     u32 length = 0;
-    u32 elWidth = shape->getMaxArea().getWidth();
+    u32 elWidth = shape.getMaxArea().getWidth();
     if (drawBorder)
         elWidth -= 2*skin->getSize(GUIDefaultSize::TextDistanceX);
     wchar_t c;
