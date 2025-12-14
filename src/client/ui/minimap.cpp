@@ -666,7 +666,7 @@ void Minimap::updateActiveMarkers(recti rect)
             s_pos.Y + am.Y - marker_size2,
             s_pos.X + am.X + marker_size2,
             s_pos.Y + am.Y + marker_size2);
-        shape->addRectangle(destRect, c, img_rect);
+        shape.addRectangle(destRect, c, img_rect);
 	}
 
     rebuildMesh();

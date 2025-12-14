@@ -6,13 +6,17 @@
 #include "client/ui/glyph_atlas.h"
 #include "client/render/renderer.h"
 
-UITextSprite::UITextSprite(FontManager *font_manager, GUISkin *guiskin, const std::wstring &text,
+UITextSprite::UITextSprite(FontManager *font_manager, GUISkin *guiskin, std::variant<EnrichedString, std::wstring> text,
     Renderer *renderer, ResourceCache *resCache, bool border, bool wordWrap, bool fillBackground)
     : UISprite(nullptr, renderer, resCache, false, false), skin(guiskin), drawBorder(border),
     drawBackground(fillBackground),  wordWrap(wordWrap), mgr(font_manager)
 {
     texture = getGlyphAtlasTexture();
-    setText(text);
+
+    if (std::holds_alternative<EnrichedString>(text))
+        setText(std::get<EnrichedString>(text));
+    else
+        setText(std::get<std::wstring>(text));
 }
 
 void UITextSprite::setOverrideFont(render::TTFont *font)

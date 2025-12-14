@@ -36,7 +36,7 @@ GUITable::GUITable(gui::IGUIEnvironment *env,
         recti rectangle):
     gui::IGUIElement(EGUIET_ELEMENT, env, parent, id, rectangle),
     m_table_box(std::make_unique<UISpriteBank>(env->getRenderSystem(),
-        env->getResourceCache(), false))
+        env->getResourceCache()))
 {
     GUISkin* skin = Environment->getSkin();
 
@@ -744,25 +744,22 @@ void GUITable::drawCell(const Cell *cell, img::color8 color,
 		const recti &row_rect,
 		const recti &client_clip)
 {
-    auto font_mgr = Environment->getRenderSystem()->getFontManager();
-
 	if ((cell->content_type == COLUMN_TYPE_TEXT)
 			|| (cell->content_type == COLUMN_TYPE_TREE)) {
 		if (cell->color_defined)
 			color = cell->color;
 
 		if (m_font) {
-            EnrichedString text = cell->content_type == COLUMN_TYPE_TEXT ?
-                EnrichedString(m_strings[cell->content_index]) :
-                EnrichedString(cell->content_index ? L"+" : L"-");
+            std::wstring text = cell->content_type == COLUMN_TYPE_TEXT ?
+                m_strings[cell->content_index] :
+                cell->content_index ? L"+" : L"-";
             recti text_rect = row_rect;
             text_rect.ULC.X = row_rect.ULC.X
                     + cell->xpos;
             text_rect.LRC.X = row_rect.ULC.X
-                    + cell->xpos + m_font->getTextWidth(text.getString());
+                    + cell->xpos + m_font->getTextWidth(text);
 
-            m_table_box->addTextSprite(
-                font_mgr, text, 0, toRectT<f32>(text_rect), std::nullopt, color, &client_clip, false);
+            m_table_box->addTextSprite(text, toRectT<f32>(text_rect), color, &client_clip);
 		}
 	}
 	else if (cell->content_type == COLUMN_TYPE_IMAGE) {
@@ -785,7 +782,7 @@ void GUITable::drawCell(const Cell *cell, img::color8 color,
 			if (imgh < rowh)
 				dest_rect += v2i(0, (rowh - imgh) / 2);
 
-            m_table_box->addImageSprite(image, 0, toRectT<f32>(dest_rect), &client_clip);
+            m_table_box->addImageSprite(image, toRectT<f32>(dest_rect), &client_clip);
 		}
 	}
 }

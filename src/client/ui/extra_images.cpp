@@ -89,7 +89,7 @@ void Image2D9Slice::createSlice(u8 x, u8 y)
         break;
     };
 
-    shape->updateRectangle(y*3+x, destRect, rectColors, srcRect);
+    shape.updateRectangle(y*3+x, destRect, rectColors, srcRect);
 }
 
 void Image2D9Slice::createSlices()
@@ -108,7 +108,7 @@ UIRects::UIRects(RenderSystem *rndsys, u32 init_rects_count)
 
 void UIRects::addRect(const rectf &rect, const std::array<img::color8, 4> &colors, bool rebuild)
 {
-	shape->addRectangle(rect, colors);
+    shape.addRectangle(rect, colors);
 
     if (rebuild)
         rebuildMesh();
@@ -116,7 +116,7 @@ void UIRects::addRect(const rectf &rect, const std::array<img::color8, 4> &color
 
 void UIRects::updateRect(u32 n, const rectf &rect, const std::array<img::color8, 4> &colors, bool update)
 {
-	shape->updateRectangle(n, rect, colors);
+    shape.updateRectangle(n, rect, colors);
 
     if (update)
         updateMesh();
@@ -140,7 +140,7 @@ void ImageSprite::update(img::Image *newImage, const rectf &rect, const std::arr
     }
     rectf tile_rect = pool->getTileRect(image, false, true);
 
-    shape->updateRectangle(0, rect, colors, tile_rect);
+    shape.updateRectangle(0, rect, colors, tile_rect);
     updateMesh();
 
     if (cliprect)

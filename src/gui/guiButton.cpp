@@ -26,7 +26,7 @@ GUIButton::GUIButton(IGUIEnvironment* environment, IGUIElement* parent,
         s32 id, recti rectangle, bool noclip) :
     IGUIButton(environment, parent, id, rectangle),
     ButtonBox(std::make_unique<UISpriteBank>(
-        environment->getRenderSystem(), environment->getResourceCache(), false))
+        environment->getRenderSystem(), environment->getResourceCache()))
 {
 	setNotClipped(noclip);
 
@@ -42,7 +42,7 @@ GUIButton::GUIButton(IGUIEnvironment* environment, IGUIElement* parent,
 	StaticText->setTextAlignment(EGUIA_CENTER, EGUIA_CENTER);
 	// END PATCH
 
-    ButtonBox->addSprite({}, 0, {});
+    ButtonBox->addSprite({}, {});
     if (BgMiddle.getArea() == 0)
         ButtonBox->addSprite<ImageSprite>(0, environment->getRenderSystem(),
             environment->getResourceCache());

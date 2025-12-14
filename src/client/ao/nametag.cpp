@@ -19,7 +19,7 @@ Nametag::Nametag(Client *client,
 {
     auto rndsys = client->getRenderSystem();
     faceBank = std::make_unique<UISpriteBank>(rndsys, client->getResourceCache());
-    faceBank->addTextSprite(rndsys->getFontManager(), EnrichedString(text), 0);
+    faceBank->addTextSprite(utf8_to_wide(text));
 
     show_backgrounds = g_settings->getBool("show_nametag_backgrounds");
 }
@@ -31,20 +31,17 @@ void Nametag::updateBank(v3f newWorldPos)
     v2f screen_pos;
     worldPos = camera_pos + newWorldPos * BS;
     calculateScreenPos(&screen_pos);
-    faceBank->setCenter(screen_pos);
 
     std::wstring nametag_colorless = unescape_translate(utf8_to_wide(text));
 
     auto font_mgr = client->getRenderSystem()->getFontManager();
 
     auto font = font_mgr->getFontOrCreate(render::FontMode::GRAY, render::FontStyle::NORMAL);
-    v2u textsize = font->getTextSize(nametag_colorless.c_str());
+    v2f textsize_f = toV2T<f32>(font->getTextSize(nametag_colorless));
 
     auto text_sprite = dynamic_cast<UITextSprite *>(faceBank->getSprite(0));
     text_sprite->setOverrideFont(font);
     text_sprite->setText(nametag_colorless);
-
-    v2f textsize_f(textsize.X, textsize.Y);
 
     auto bgcolor = getBgColor(show_backgrounds);
     if (bgcolor.A() != 0) {

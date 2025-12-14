@@ -5,7 +5,9 @@
 #include <Render/Texture2D.h>
 #include "Utils/TypeConverter.h"
 #include "client/mesh/meshbuffer.h"
+#include "gui/GUIEnums.h"
 #include <Render/DrawContext.h>
+#include <variant>
 
 class Renderer;
 class MeshBuffer;
@@ -321,7 +323,7 @@ public:
     }
 
     void centerBank();
-    void alignNewSprite(UISprite *sprite, std::optional<rectf> overrideRect=std::nullopt);
+    void alignSprite(u32 spriteID, std::optional<rectf> overrideRect=std::nullopt);
 };
 
 struct ColoredRect
@@ -361,6 +363,11 @@ public:
     {
         return maxArea;
     }
+
+    BankAutoAlignment *getAutoAlignment()
+    {
+        return &autoAlignment.value();
+    }
     // 'shift': '0' - shift to right, '1' - shift down
     // the sprites on each line are centered
     template<typename T, typename... Args>
@@ -374,12 +381,22 @@ public:
     {
         sprites.emplace_back(sprite);
     }
-    UIRects *addSprite(const std::vector<ColoredRect> &rects, const recti *clipRect=nullptr);
-    ImageSprite *addImageSprite(img::Image *img, std::optional<rectf> rect=std::nullopt,
-        const recti *clipRect=nullptr, std::optional<AtlasTileAnim> anim=std::nullopt);
-    UITextSprite *addTextSprite(FontManager *mgr, const std::wstring &text, std::optional<rectf> rect=std::nullopt,
-        std::optional<v2f> pos=std::nullopt, const img::color8 &textColor=img::white,
-        const recti *clipRect=nullptr, bool wordWrap=true);
+    UIRects *addSprite(
+        const std::vector<ColoredRect> &rects,
+        const recti *clipRect=nullptr);
+    ImageSprite *addImageSprite(
+        img::Image *img,
+        std::optional<rectf> rect=std::nullopt,
+        const recti *clipRect=nullptr,
+        std::optional<AtlasTileAnim> anim=std::nullopt);
+    UITextSprite *addTextSprite(
+        const std::wstring &text,
+        std::optional<std::variant<rectf, v2f>> shift=std::nullopt,
+        const img::color8 &textColor=img::white,
+        const recti *clipRect=nullptr,
+        bool wordWrap=false,
+        GUIAlignment horizAlign=GUIAlignment::Center,
+        GUIAlignment vertAlign=GUIAlignment::Center);
 
     u32 getSpriteCount() const
     {
@@ -425,7 +442,7 @@ public:
 
     void update()
     {
-        if (autoAlignment.has_value())
+        if (autoAlignment)
             autoAlignment->centerBank();
         for (auto &sprite : sprites)
             sprite->updateMesh();

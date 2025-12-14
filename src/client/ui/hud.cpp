@@ -132,13 +132,13 @@ void Hud::addHUDElement(u32 id, const HudElement *elem)
         break;
     case HUD_ELEM_WAYPOINT: {
         UISpriteBank *bank = new UISpriteBank(rnd_system, cache);
-        bank->addTextSprite(rnd_system->getFontManager(), EnrichedString(), 0);
+        bank->addTextSprite(L"");
         hudsprites.emplace_back(id, std::make_unique<HudWaypoint>(client, elem, bank));
         break;
     }
     case HUD_ELEM_IMAGE_WAYPOINT: {
         UISpriteBank *bank = new UISpriteBank(rnd_system, cache);
-        bank->addImageSprite(nullptr, 0);
+        bank->addImageSprite(nullptr);
         hudsprites.emplace_back(id, std::make_unique<HudWaypoint>(client, elem, bank));
         break;
     }

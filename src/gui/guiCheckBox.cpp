@@ -19,7 +19,7 @@ namespace gui
 //! constructor
 CGUICheckBox::CGUICheckBox(bool checked, IGUIEnvironment *environment, IGUIElement *parent, s32 id, recti rectangle) :
         IGUICheckBox(environment, parent, id, rectangle), CheckTime(0), Pressed(false), Checked(checked), Border(false), Background(false),
-        CheckBoxBank(std::make_unique<UISpriteBank>(environment->getRenderSystem(), environment->getResourceCache(), false))
+        CheckBoxBank(std::make_unique<UISpriteBank>(environment->getRenderSystem(), environment->getResourceCache()))
 {
 	// this element can be tabbed into
 	setTabStop(true);
@@ -104,7 +104,7 @@ void CGUICheckBox::updateMesh()
     CheckBoxBank->clear();
 
     if (skin) {
-        UIRects *CheckBoxRects = CheckBoxBank->addSprite({}, 0, &AbsoluteClippingRect);
+        UIRects *CheckBoxRects = CheckBoxBank->addSprite({}, &AbsoluteClippingRect);
 
         recti frameRect(AbsoluteRect);
 
@@ -148,7 +148,7 @@ void CGUICheckBox::updateMesh()
             auto sprite_tex = Environment->getResourceCache()->get<img::Image>(ResourceType::IMAGE, tex_name);
 
             if (sprite_tex) {
-                CheckBoxBank->addImageSprite(sprite_tex, 0, toRectT<f32>(checkRect), &AbsoluteClippingRect);
+                CheckBoxBank->addImageSprite(sprite_tex, toRectT<f32>(checkRect), &AbsoluteClippingRect);
             }
         }
 
@@ -160,10 +160,7 @@ void CGUICheckBox::updateMesh()
             render::TTFont *font = skin->getFont();
             if (font) {
                 img::color8 text_c = skin->getColor(isEnabled() ? EGDC_BUTTON_TEXT : EGDC_GRAY_TEXT);
-                UITextSprite *CheckBoxText = CheckBoxBank->addTextSprite(
-                    Environment->getRenderSystem()->getFontManager(), EnrichedString(Text),
-                        0, toRectT<f32>(checkRect), std::nullopt, text_c, nullptr, false);
-                CheckBoxText->setAlignment(GUIAlignment::Center, GUIAlignment::Center);
+                CheckBoxBank->addTextSprite(Text, toRectT<f32>(checkRect), text_c);
             }
         }
     }

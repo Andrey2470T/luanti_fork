@@ -154,7 +154,7 @@ void UIShape::scalePrimitive(u32 n, const v2f &scale, std::optional<v2f> center)
     switch(prim->type) {
     case UIPrimitiveType::LINE: {
         auto line = dynamic_cast<Line *>(prim);
-        v2f c = center.has_value() ? center.value() : (line->start_p + line->end_p) / 2;
+        v2f c = center ? center.value() : (line->start_p + line->end_p) / 2;
 
         line->start_p = c + (line->start_p - c) * scale;
         line->end_p = c + (line->end_p - c) * scale;
@@ -163,7 +163,7 @@ void UIShape::scalePrimitive(u32 n, const v2f &scale, std::optional<v2f> center)
     }
     case UIPrimitiveType::TRIANGLE: {
         auto trig = dynamic_cast<Triangle *>(prim);
-        v2f c = center.has_value() ? center.value() : (trig->p1 + trig->p2 + trig->p3) / 3;
+        v2f c = center ? center.value() : (trig->p1 + trig->p2 + trig->p3) / 3;
 
         trig->p1 = c + (trig->p1 - c) * scale;
         trig->p2 = c + (trig->p2 - c) * scale;
@@ -173,7 +173,7 @@ void UIShape::scalePrimitive(u32 n, const v2f &scale, std::optional<v2f> center)
     }
     case UIPrimitiveType::RECTANGLE: {
         auto rect = dynamic_cast<Rectangle *>(prim);
-        v2f c = center.has_value() ? center.value() : rect->r.getCenter();
+        v2f c = center ? center.value() : rect->r.getCenter();
 
         rect->r.ULC = c + (rect->r.ULC - c) * scale;
         rect->r.LRC = c + (rect->r.LRC - c) * scale;
@@ -487,9 +487,9 @@ void UISprite::draw(std::optional<u32> primOffset, std::optional<u32> primCount)
 
 bool UISprite::checkPrimitives(std::optional<u32> &offset, std::optional<u32> &count)
 {
-    if (!offset.has_value())
+    if (!offset)
         offset = 0;
-    if (!count.has_value())
+    if (!count)
         count = shape.getPrimitiveCount();
     u32 totalPCount = shape.getPrimitiveCount();
     if (totalPCount == 0 || !visible || offset.value() > totalPCount-1
@@ -542,38 +542,35 @@ void UISprite::drawPart(u32 pOffset, u32 pCount)
 
 void BankAutoAlignment::centerBank()
 {
-    v2f center_shift = -(bank->getArea().getCenter() - center);
+    v2f center_shift = center - bank->getArea().getCenter();
     bank->move(center_shift);
 }
 
-void BankAutoAlignment::alignNewSprite(UISprite *sprite, std::optional<rectf> overrideRect)
+void BankAutoAlignment::alignSprite(u32 spriteID, std::optional<rectf> overrideRect)
 {
+    if (spriteID == 0)
+        return;
+    auto sprite = bank->getSprite(spriteID);
     v2f rectSizef = toV2T<f32>(sprite->getSize());
     rectf area(rectSizef);
 
-    if (overrideRect.has_value()) {
+    if (overrideRect) {
         rectSizef = overrideRect->getSize();
         area = overrideRect.value();
     }
 
-    if (bank->getSpriteCount() == 0) {
-        area.ULC = center - rectSizef/2.0f;
-        area.LRC = center + rectSizef/2.0f;
+    auto prevSpriteArea = bank->getSprite(spriteID-1)->getArea();
+    if (alignType == BankAlignmentType::HORIZONTAL) {
+        area.ULC.X = prevSpriteArea.LRC.X;
+        area.LRC.X = area.ULC.X + rectSizef.X;
+        area.ULC.Y = (prevSpriteArea.ULC.Y + prevSpriteArea.LRC.Y)/2.0f - rectSizef.Y/2.0f;
+        area.LRC.Y = (prevSpriteArea.ULC.Y + prevSpriteArea.LRC.Y)/2.0f + rectSizef.Y/2.0f;
     }
     else {
-        auto lastSpriteArea = bank->getSprite(bank->getSpriteCount()-1)->getArea();
-        if (alignType == BankAlignmentType::HORIZONTAL) {
-            area.ULC.X = lastSpriteArea.LRC.X;
-            area.LRC.X = area.ULC.X + rectSizef.X;
-            area.ULC.Y = (lastSpriteArea.ULC.Y + lastSpriteArea.LRC.Y)/2.0f - rectSizef.Y/2.0f;
-            area.LRC.Y = (lastSpriteArea.ULC.Y + lastSpriteArea.LRC.Y)/2.0f + rectSizef.Y/2.0f;
-        }
-        else {
-            area.ULC.Y = lastSpriteArea.LRC.Y;
-            area.LRC.Y = area.ULC.Y + rectSizef.Y;
-            area.ULC.X = (lastSpriteArea.ULC.X + lastSpriteArea.LRC.X)/2.0f - rectSizef.X/2.0f;
-            area.LRC.X = (lastSpriteArea.ULC.X + lastSpriteArea.LRC.X)/2.0f + rectSizef.X/2.0f;
-        }
+        area.ULC.Y = prevSpriteArea.LRC.Y;
+        area.LRC.Y = area.ULC.Y + rectSizef.Y;
+        area.ULC.X = (prevSpriteArea.ULC.X + prevSpriteArea.LRC.X)/2.0f - rectSizef.X/2.0f;
+        area.LRC.X = (prevSpriteArea.ULC.X + prevSpriteArea.LRC.X)/2.0f + rectSizef.X/2.0f;
     }
 
     rectf oldArea = sprite->getArea();
@@ -581,16 +578,19 @@ void BankAutoAlignment::alignNewSprite(UISprite *sprite, std::optional<rectf> ov
 }
 
 // if auto-align is enabled, the rects areas must be absolute, otherwise - relative to the ulc
-UIRects *UISpriteBank::addSprite(const std::vector<ColoredRect> &rects, const recti *clipRect)
+UIRects *UISpriteBank::addSprite(
+    const std::vector<ColoredRect> &rects,
+    const recti *clipRect)
 {
     UIRects *rectsSprite = new UIRects(rndsys, rects.size());
+    sprites.emplace_back(rectsSprite);
 
     if (!rects.empty()) {
         for (u32 k = 0; k < rects.size(); k++)
             rectsSprite->updateRect(k, rects.at(k).area, rects[k].colors);
 
-        if (autoAlignment.has_value())
-            autoAlignment->alignNewSprite(rectsSprite);
+        if (autoAlignment)
+            autoAlignment->alignSprite(sprites.size()-1);
 
         rectsSprite->updateMesh();
 
@@ -601,68 +601,74 @@ UIRects *UISpriteBank::addSprite(const std::vector<ColoredRect> &rects, const re
     if (clipRect)
         rectsSprite->setClipRect(*clipRect);
 
-    sprites.emplace_back(rectsSprite);
-
     return rectsSprite;
 }
 
 // 'pos' is used for auto_align = false
-ImageSprite *UISpriteBank::addImageSprite(img::Image *img, std::optional<rectf> rect,
-    const recti *clipRect, std::optional<AtlasTileAnim> anim)
+ImageSprite *UISpriteBank::addImageSprite(
+    img::Image *img,
+    std::optional<rectf> rect,
+    const recti *clipRect,
+    std::optional<AtlasTileAnim> anim)
 {
     ImageSprite *imageSprite = new ImageSprite(rndsys, cache);
+    sprites.emplace_back(imageSprite);
 
     rectf resRect;
 
     if (img)
         resRect.LRC = v2f(img->getClipSize().X, img->getClipSize().Y);
 
-    if (rect) {
-        if (autoAlignment.has_value()) {
-            resRect.LRC = rect.value().getSize();
-            autoAlignment->alignNewSprite(imageSprite, resRect);
-        }
-        else
-            resRect = rect.value();
+    if (rect)
+        resRect = rect.value();
+    if (autoAlignment) {
+        autoAlignment->alignSprite(sprites.size()-1, resRect);
+        resRect = imageSprite->getArea();
     }
 
     imageSprite->update(img, resRect, img::white, clipRect, anim);
 
-    auto imageMaxArea = imageSprite->getArea();
-    updateMaxArea(maxArea, imageMaxArea.ULC, imageMaxArea.LRC, maxAreaInit);
-
-    sprites.emplace_back(imageSprite);
+    updateMaxArea(maxArea, resRect.ULC, resRect.LRC, maxAreaInit);
 
     return imageSprite;
 }
 
-UITextSprite *UISpriteBank::addTextSprite(FontManager *mgr, const std::wstring &text, std::optional<rectf> rect,
-    std::optional<v2f> pos, const img::color8 &textColor, const recti *clipRect, bool wordWrap)
+UITextSprite *UISpriteBank::addTextSprite(
+    const std::wstring &text,
+    std::optional<std::variant<rectf, v2f>> shift,
+    const img::color8 &textColor,
+    const recti *clipRect,
+    bool wordWrap,
+    GUIAlignment horizAlign,
+    GUIAlignment vertAlign)
 {
-    UITextSprite *textSprite = new UITextSprite(mgr, rndsys->getGUIEnvironment()->getSkin(),
+    UITextSprite *textSprite = new UITextSprite(rndsys->getFontManager(), rndsys->getGUIEnvironment()->getSkin(),
         text, rndsys->getRenderer(), cache, false, wordWrap);
+    sprites.emplace_back(textSprite);
 
-    textSprite->setAlignment(GUIAlignment::Center, GUIAlignment::Center);
+    textSprite->setAlignment(horizAlign, vertAlign);
     textSprite->setOverrideColor(textColor);
 
     auto font = textSprite->getActiveFont();
-    rectf resRect(v2f(), toV2T<f32>(font->getTextSize(text)));
+    rectf resRect(toV2T<f32>(font->getTextSize(text)));
 
-    if (rect.has_value() && !autoAlignment.has_value())
-        resRect = rect.value();
+    if (shift) {
+        if (std::holds_alternative<rectf>(shift.value()))
+            resRect = std::get<rectf>(shift.value());
+        else
+            resRect += std::get<v2f>(shift.value());
+    }
+    if (autoAlignment) {
+        autoAlignment->alignSprite(sprites.size()-1, resRect);
+        resRect = textSprite->getArea();
+    }
 
-    if (pos.has_value() && !autoAlignment.has_value())
-        resRect += pos.value();
+    textSprite->updateBuffer(rectf(resRect));
 
-    if (autoAlignment.has_value())
-        autoAlignment->alignNewSprite(textSprite, resRect);
-    textSprite->updateBuffer(textSprite->getArea());
     updateMaxArea(maxArea, resRect.ULC, resRect.LRC, maxAreaInit);
     
     if (clipRect)
         textSprite->setClipRect(*clipRect);
-
-    sprites.emplace_back(textSprite);
 
     return textSprite;
 }

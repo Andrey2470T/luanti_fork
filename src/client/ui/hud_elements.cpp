@@ -307,7 +307,6 @@ void HudWaypoint::updateBank(v3f newWorldPos)
     worldPos -= intToFloat(client->getEnv().getCameraOffset(), BS);
 
     calculateScreenPos(&pixelPos);
-    faceBank->setCenter(pixelPos);
 
     if (!image) {
         std::string text = elem->name;
@@ -526,7 +525,7 @@ HudInventoryList::HudInventoryList(Client *_client, const HudElement *elem)
     g_settings->registerChangedCallback("display_density_factor", setting_changed_callback, this);
     g_settings->registerChangedCallback("hud_scaling", setting_changed_callback, this);
 
-    list = std::make_unique<UISpriteBank>(rnd_system, cache, false);
+    list = std::make_unique<UISpriteBank>(rnd_system, cache);
     list->addSprite({{rectf(), {img::white}}}, 0);
     list->addSprite({{rectf(), {img::white}}}, 0);
     list->getSprite(1)->setVisible(false);

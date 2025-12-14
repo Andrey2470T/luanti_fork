@@ -29,7 +29,7 @@ CGUIFileOpenDialog::CGUIFileOpenDialog(const wchar_t *title,
 						(parent->getAbsolutePosition().getHeight() - FOD_HEIGHT) / 2 + FOD_HEIGHT)),
         FileNameText(0), Dragging(false),
         DialogBank(std::make_unique<UISpriteBank>(environment->getRenderSystem(),
-        	environment->getResourceCache(), false))
+            environment->getResourceCache()))
 {
 	Text = title;
 
@@ -91,8 +91,8 @@ CGUIFileOpenDialog::CGUIFileOpenDialog(const wchar_t *title,
 
 	fillListBox();
 	
-	DialogBank->addSprite({}, 0);
-    DialogBank->addTextSprite(environment->getRenderSystem()->getFontManager(), {}, 0);
+    DialogBank->addSprite({});
+    DialogBank->addTextSprite({});
 }
 
 //! destructor

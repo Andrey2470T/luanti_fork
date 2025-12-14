@@ -57,7 +57,7 @@ GUIChatConsole::GUIChatConsole(
 	m_menumgr(menumgr),
     m_animate_time_old(porting::getTimeMs()),
     m_chat_bank(std::make_unique<UISpriteBank>(env->getRenderSystem(),
-        env->getResourceCache(), false))
+        env->getResourceCache()))
 {
 	// load background settings
 	s32 console_alpha = g_settings->getS32("console_alpha");
@@ -99,9 +99,9 @@ GUIChatConsole::GUIChatConsole(
 	m_scrollbar->setLargeStep(1);
 	m_scrollbar->setSmallStep(1);
 
-    m_chat_bank->addImageSprite(m_background, 0);
-    m_chat_bank->addTextSprite(env->getRenderSystem()->getFontManager(), EnrichedString(), 0);
-    m_chat_bank->addTextSprite(env->getRenderSystem()->getFontManager(), EnrichedString(), 0);
+    m_chat_bank->addImageSprite(m_background);
+    m_chat_bank->addTextSprite(L"");
+    m_chat_bank->addTextSprite(L"");
     m_chat_bank->addSprite({}, 0);
 }
 

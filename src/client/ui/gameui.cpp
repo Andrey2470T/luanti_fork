@@ -56,14 +56,14 @@ void GameUI::init()
     auto font_mgr = rndsys->getFontManager();
     auto skin = rndsys->getGUIEnvironment()->getSkin();
 
-    debugtext = std::make_unique<UISpriteBank>(rndsys, cache, false);
+    debugtext = std::make_unique<UISpriteBank>(rndsys, cache);
 
 	// First line of debug text
-    auto first_debugline = debugtext->addTextSprite(font_mgr, EnrichedString(utf8_to_wide(PROJECT_NAME_C)), 0, std::nullopt, v2f(5, 5));
-    debugtext->addTextSprite(font_mgr, EnrichedString(), 0, std::nullopt, v2f(5, 5 + first_debugline->getActiveFont()->getLineHeight()));
+    auto first_debugline = debugtext->addTextSprite(utf8_to_wide(PROJECT_NAME_C), v2f(5, 5));
+    debugtext->addTextSprite(L"", v2f(5, 5 + first_debugline->getActiveFont()->getLineHeight()));
 
 	// Chat text
-    chattext = std::make_unique<UITextSprite>(font_mgr, skin, EnrichedString(), rndsys->getRenderer(), cache);
+    chattext = std::make_unique<UITextSprite>(font_mgr, skin, L"", rndsys->getRenderer(), cache);
 	u16 chat_font_size = g_settings->getU16("chat_font_size");
 	if (chat_font_size != 0) {
         chattext->setOverrideFont(font_mgr->getFontOrCreate(
@@ -74,18 +74,18 @@ void GameUI::init()
 	// If in debug mode, object debug infos shown here, too.
 	// Located on the left on the screen, below chat.
     u32 chat_font_height = chattext->getActiveFont()->getLineHeight();
-    infotext = std::make_unique<UITextSprite>(font_mgr, skin, EnrichedString(), rndsys->getRenderer(), cache);
+    infotext = std::make_unique<UITextSprite>(font_mgr, skin, L"", rndsys->getRenderer(), cache);
     infotext->getShape()->move(v2f(100, chat_font_height * (g_settings->getU16("recent_chat_messages") + 3)));
 
 	// Status text (displays info when showing and hiding GUI stuff, etc.)
     last_status_text = L"<Status>";
-    statustext = std::make_unique<UITextSprite>(font_mgr, skin, EnrichedString(last_status_text),
-        rndsys->getRenderer(), cache, false, false);
+    statustext = std::make_unique<UITextSprite>(
+        font_mgr, skin, last_status_text, rndsys->getRenderer(), cache);
     statustext->setVisible(false);
 
 	// Profiler text (size is updated when text is updated)
-    profilertext = std::make_unique<UITextSprite>(font_mgr, skin, EnrichedString("<Profiler>"),
-        rndsys->getRenderer(), cache, false, false);
+    profilertext = std::make_unique<UITextSprite>(font_mgr, skin, L"<Profiler>",
+        rndsys->getRenderer(), cache);
     profilertext->setOverrideFont(font_mgr->getFontOrCreate(render::FontMode::MONO, render::FontStyle::NORMAL,
         font_mgr->getDefaultFontSize(render::FontMode::MONO) * 0.9f));
     profilertext->setVisible(false);

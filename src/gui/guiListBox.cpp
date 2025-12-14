@@ -29,7 +29,7 @@ CGUIListBox::CGUIListBox(IGUIEnvironment *environment, IGUIElement *parent,
 		ScrollBar(0), selectTime(0), LastKeyTime(0), Selecting(false), DrawBack(drawBack),
         MoveOverSelect(moveOverSelect), AutoScroll(true), HighlightWhenNotFocused(true),
         listBoxBank(std::make_unique<UISpriteBank>(environment->getRenderSystem(),
-            environment->getResourceCache(), false))
+            environment->getResourceCache()))
 {
 	GUISkin *skin = Environment->getSkin();
 
@@ -477,7 +477,7 @@ void CGUIListBox::updateMesh()
         if (frameRect.LRC.Y >= AbsoluteRect.ULC.Y &&
                 frameRect.ULC.Y <= AbsoluteRect.LRC.Y) {
             if (i == Selected && hl)
-                listBoxBank->addSprite({{toRectT<f32>(frameRect), {itemColor, itemColor, itemColor, itemColor}}}, 0, &clientClip);
+                listBoxBank->addSprite({{toRectT<f32>(frameRect), {itemColor, itemColor, itemColor, itemColor}}}, &clientClip);
 
             recti textRect = frameRect;
             textRect.ULC.X += 3;
@@ -510,8 +510,8 @@ void CGUIListBox::updateMesh()
                         getItemOverrideColor(i, EGUI_LBC_TEXT) : getItemDefaultColor(EGUI_LBC_TEXT);
                 }
 
-                auto itemText = listBoxBank->addTextSprite(Environment->getRenderSystem()->getFontManager(), EnrichedString(Items[i].Text),
-                    0, toRectT<f32>(textRect), std::nullopt, textColor, &clientClip, false);
+                auto itemText = listBoxBank->addTextSprite(Items[i].Text,
+                    toRectT<f32>(textRect), textColor, &clientClip);
                 itemText->setAlignment(GUIAlignment::UpperLeft, GUIAlignment::Center);
                 itemText->updateBuffer(toRectT<f32>(textRect));
 
