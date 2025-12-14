@@ -171,7 +171,7 @@ void ClientEnvironment::step(f32 dtime)
     m_local_player->getInteraction()->step(dtime);
 
     /* Update ClientMap */
-    m_map->step(dtime);
+    //m_map->step(dtime);
 }
 
 /*void ClientEnvironment::addSimpleObject(ClientSimpleObject *simple)
@@ -524,9 +524,6 @@ void ClientEnvironment::updateFrame(f32 dtime, bool paused)
         ItemStack &tool_item = player->getWieldedItem(&selected_item, &hand_item);
         camera->wield(tool_item);
     }*/
-
-    /* Update ClientMap */
-    m_map->step(dtime);
 
     gameui->update(m_client, m_client->getChatMessanger()->getChatConsole(), dtime);
 

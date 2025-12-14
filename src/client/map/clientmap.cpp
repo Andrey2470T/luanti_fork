@@ -553,6 +553,7 @@ void ClientMap::step(f32 dtime)
 
                     if (r.mesh->getMesh()->getBuffersCount() == 0) {
                         delete r.mesh;
+                        r.mesh = nullptr;
                     } else {
                         // Replace with the new mesh
                         block->mesh = r.mesh;
@@ -562,6 +563,7 @@ void ClientMap::step(f32 dtime)
                 }
             } else {
                 delete r.mesh;
+                r.mesh = nullptr;
             }
 
             if (minimap && do_mapper_update) {
@@ -605,13 +607,13 @@ void ClientMap::step(f32 dtime)
     }
 
 
-    updateMapBlocksActiveObjects();
+    //updateMapBlocksActiveObjects();
 
     /*
         Update block draw list every 200ms or when camera direction has
         changed much
     */
-    update_draw_list_timer += dtime;
+    /*update_draw_list_timer += dtime;
     touch_blocks_timer += dtime;
 
     auto camera = m_client->getEnv().getLocalPlayer()->getCamera();
@@ -626,7 +628,8 @@ void ClientMap::step(f32 dtime)
     } else if (touch_blocks_timer > update_draw_list_delta) {
         touchMapBlocks();
         touch_blocks_timer = 0;
-    }/* else if (RenderingEngine::get_shadow_renderer()) {
+    }*/
+    /* else if (RenderingEngine::get_shadow_renderer()) {
         updateShadows();
     }*/
 }

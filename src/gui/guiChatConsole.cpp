@@ -102,7 +102,7 @@ GUIChatConsole::GUIChatConsole(
     m_chat_bank->addImageSprite(m_background);
     m_chat_bank->addTextSprite(L"");
     m_chat_bank->addTextSprite(L"");
-    m_chat_bank->addSprite({}, 0);
+    m_chat_bank->addSprite({{}});
 }
 
 void GUIChatConsole::openConsole(f32 scale)

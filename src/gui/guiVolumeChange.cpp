@@ -155,8 +155,7 @@ bool GUIVolumeChange::OnEvent(const core::Event& event)
 		}
 		if (event.GUI.Type == EGET_SCROLL_BAR_CHANGED) {
             if (caller->getID() == ID_soundSlider) {
-                s32 pos = static_cast<GUIScrollBar *>(
-                    Environment->getRootGUIElement()->getElementFromId(caller->getID()))->getPos();
+                s32 pos = static_cast<GUIScrollBar *>(caller)->getPos();
 				g_settings->setFloat("sound_volume", (float) pos / 100);
 
 				gui::IGUIElement *e = getElementFromId(ID_soundText);

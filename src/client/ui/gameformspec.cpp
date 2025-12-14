@@ -401,7 +401,7 @@ void GameFormSpec::showPauseMenu()
 	/* Note: FormspecFormSource and LocalFormspecHandler  *
 	 * are deleted by guiFormSpecMenu                     */
 	FormspecFormSource *fs_src = new FormspecFormSource(os.str());
-	LocalFormspecHandler *txt_dst = new LocalFormspecHandler("MT_PAUSE_MENU");
+    LocalFormspecHandler *txt_dst = new LocalFormspecHandler("MT_PAUSE_MENU", client);
 
     GUIFormSpecMenu::create(formspec, client, rndsys->getGUIEnvironment(),
             &input->joystick, fs_src, txt_dst, client->getFormspecPrepend(),
@@ -478,7 +478,7 @@ bool GameFormSpec::handleCallbacks()
 		return false;
 	}
 
-    //auto guiroot = guienv->getRootGUIElement();
+    auto guienv = rndsys->getGUIEnvironment();
 	if (g_gamecallback->changepassword_requested) {
         (new GUIPasswordChange(guienv, guiroot, -1, g_menumgr.get(), client))->drop();
 		g_gamecallback->changepassword_requested = false;
