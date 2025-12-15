@@ -39,10 +39,10 @@ Sun::Sun(RenderSystem *rndsys, ResourceCache *cache)
 
     // sunrise
     auto basicPool = m_rndsys->getPool(true);
-    setSunriseImage("sunrisebg.png", cache);
+    m_sunrise = cache->getOrLoad<img::Image>(ResourceType::IMAGE, "sunrisebg.png");
 
-    rectf dest = basicPool->getTileRect(m_sunrise, true);
     m_sunrise_mesh = std::make_unique<MeshBuffer>(4, 6);
+    rectf dest = basicPool->getTileRect(m_sunrise, true, true);
 
     img::color8 c = img::white;
 
@@ -56,7 +56,7 @@ void Sun::setImage(const std::string &image,
 {
     // Ignore matching textures (with modifiers) entirely,
     // but lets at least update the tonemap before hand.
-    if (m_sun_params.tonemap != tonemap) {
+    if (m_sun_params.tonemap != tonemap || !m_tonemap) {
         m_sun_params.tonemap = tonemap;
 
         m_tonemap = cache->getOrLoad<img::Image>(ResourceType::IMAGE, tonemap);
@@ -74,7 +74,7 @@ void Sun::setImage(const std::string &image,
 void Sun::setSunriseImage(const std::string &sunglow_texture, ResourceCache *cache)
 {
     // Ignore matching textures (with modifiers) entirely.
-    if (m_sun_params.sunrise == sunglow_texture)
+    if (m_sun_params.sunrise == sunglow_texture && m_sunrise)
         return;
     m_sun_params.sunrise = sunglow_texture;
     auto last_image = m_sunrise;
@@ -245,7 +245,7 @@ void Moon::setImage(const std::string &image,
 {
     // Ignore matching textures (with modifiers) entirely,
     // but lets at least update the tonemap before hand.
-    if (m_moon_params.tonemap != tonemap) {
+    if (m_moon_params.tonemap != tonemap || !m_tonemap) {
         m_moon_params.tonemap = tonemap;
 
         m_tonemap = cache->getOrLoad<img::Image>(ResourceType::IMAGE, tonemap);
@@ -566,11 +566,11 @@ void Sky::render(PlayerCamera *camera)
 
     rnd->setRenderState(true);
 
+    //rnd->setTransformMatrix(TMatrix::View, camera->getViewMatrix());
+    //rnd->setTransformMatrix(TMatrix::Projection, camera->getProjectionMatrix());
     rnd->setTransformMatrix(TMatrix::World, translate * scale);
 
 	if (m_sunlight_seen) {
-        img::color8 cloudyfogcolor = m_bgcolor;
-
 		// Abort rendering if we're in the clouds.
 		// Stops rendering a pure white hole in the bottom of the skybox.
 		if (m_in_clouds)
@@ -582,6 +582,7 @@ void Sky::render(PlayerCamera *camera)
             ctxt->enableDepthTest(false);
             rnd->setDefaultShader();
             rnd->setDefaultUniforms(1.0f, 0, 0, img::BM_COUNT);
+            m_rndsys->activateAtlas(m_skybox_images.at(5));
             rnd->draw(m_skybox_mesh.get());
             ctxt->enableDepthTest(true);
 		}
@@ -923,15 +924,4 @@ void Sky::updateCloudyFogColor()
 {
     MeshOperations::colorizeMesh(m_cloudyfog_mesh.get(), m_bgcolor);
     MeshOperations::colorizeMesh(m_far_cloudyfog_mesh.get(), m_bgcolor);
-}
-
-void update_uvs(RenderSystem *rndsys, MeshBuffer *buf, img::Image *img, u32 offset)
-{
-    auto basicPool = rndsys->getPool(true);
-    rectf dest = basicPool->getTileRect(img, true);
-
-    svtSetUV(buf, v2f(dest.LRC.X, dest.ULC.Y), offset);
-    svtSetUV(buf, dest.ULC, offset+1);
-    svtSetUV(buf, v2f(dest.ULC.X, dest.LRC.Y), offset+2);
-    svtSetUV(buf, dest.LRC, offset+3);
 }

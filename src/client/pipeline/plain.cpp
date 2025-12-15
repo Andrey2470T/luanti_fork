@@ -65,7 +65,7 @@ RenderStep* addUpscaling(RenderPipeline *pipeline, RenderStep *previousStep, v2f
 
 	// Attach previous step to the buffer
 	TextureBufferOutput *buffer_output = pipeline->createOwned<TextureBufferOutput>(
-        buffer, std::unordered_map<u8, u8> {{0, TEXTURE_LOWRES_COLOR}}, std::pair<u8, u8> {0, TEXTURE_LOWRES_DEPTH});
+        buffer, std::unordered_map<u8, u8> {{TEXTURE_LOWRES_COLOR, 0}}, std::pair<u8, u8> {TEXTURE_LOWRES_DEPTH, 0});
 	previousStep->setRenderTarget(buffer_output);
 
 	// Add upscaling step
@@ -78,14 +78,14 @@ RenderStep* addUpscaling(RenderPipeline *pipeline, RenderStep *previousStep, v2f
 
 void populatePlainPipeline(RenderPipeline *pipeline, Client *client)
 {
-    /*auto downscale_factor = getDownscaleFactor();
+    auto downscale_factor = getDownscaleFactor();
     auto step3D = pipeline->own(create3DStage(client, downscale_factor));
-	pipeline->addStep(step3D);
+    pipeline->addStep(step3D);
     //pipeline->addStep<DrawWield>();
 
-	step3D = addUpscaling(pipeline, step3D, downscale_factor, client);
+    //step3D = addUpscaling(pipeline, step3D, downscale_factor, client);
 
-    step3D->setRenderTarget(pipeline->createOwned<ScreenTarget>());*/
+    //step3D->setRenderTarget(pipeline->createOwned<ScreenTarget>());
 
-	pipeline->addStep<DrawHUD>();
+    //pipeline->addStep<DrawHUD>();
 }

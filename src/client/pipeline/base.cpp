@@ -55,30 +55,22 @@ void Draw3D::run(PipelineContext &context)
     auto camera = context.client->getEnv().getLocalPlayer()->getCamera();
 
     rnd_sys->getSky()->render(camera);
-    rnd_sys->getClouds()->render(camera);
-    rnd_sys->getDrawList()->render();
-    rnd_sys->getParticleManager()->renderParticles();
+    //rnd_sys->getClouds()->render(camera);
+    //rnd_sys->getDrawList()->render();
+    //rnd_sys->getParticleManager()->renderParticles();
 }
 
 void DrawHUD::run(PipelineContext &context)
 {
     auto rnd_sys = context.client->getRenderSystem();
 
-    if (context.show_hud) {
+    /*if (context.show_hud) {
        // if (context.shadow_renderer)
         //    context.shadow_renderer->drawDebug();
 
         rnd_sys->getGameUI()->render();
     }
-        /*context.hud->resizeHotbar();
-
-        if (context.draw_crosshair)
-            context.hud->drawCrosshair();
-
-        context.hud->drawLuaElements(context.client->getCamera()->getOffset());
-        context.client->getCamera()->drawNametags();
-    }*/
-    rnd_sys->getGUIEnvironment()->drawAll();
+    rnd_sys->getGUIEnvironment()->drawAll();*/
 }
 
 /*void RenderShadowMapStep::run(PipelineContext &context)
@@ -286,8 +278,8 @@ RenderStep *create3DStage(Client *client, v2f scale)
     auto step3d = new Draw3D();
     pipeline->addStep(pipeline->own(step3d));
 
-    auto effect = addPostProcessing(pipeline, step3d, scale, client);
-    effect->setRenderTarget(pipeline->getOutput());
+    //auto effect = addPostProcessing(pipeline, step3d, scale, client);
+    //effect->setRenderTarget(pipeline->getOutput());
 
     return pipeline;
 }

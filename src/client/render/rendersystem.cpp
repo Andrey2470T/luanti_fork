@@ -204,7 +204,7 @@ void RenderSystem::render()
     */
     auto draw_control = drawlist->getDrawControl();
 
-    /*if (renderer->fogEnabled()) {
+    if (renderer->fogEnabled()) {
         renderer->setFogParams(
             FogType::Linear,
             img::color8ToColorf(fog_color),
@@ -220,7 +220,7 @@ void RenderSystem::render()
             FOG_RANGE_ALL + 100 * BS,
             0.0f // unused
         );
-    }*/
+    }
 
     /*
         Drawing

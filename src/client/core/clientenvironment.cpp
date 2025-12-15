@@ -474,7 +474,7 @@ void ClientEnvironment::updateFrame(f32 dtime, bool paused)
         Fog range
     */
     auto sky = rnd_sys->getSky();
-    auto draw_control = rnd_sys->getDrawList()->getDrawControl();
+    auto &draw_control = rnd_sys->getDrawList()->getDrawControl();
     if (sky->getFogDistance() >= 0) {
         draw_control.wanted_range = MYMIN(draw_control.wanted_range, sky->getFogDistance());
     }

@@ -116,12 +116,15 @@ RenderStep *addPostProcessing(RenderPipeline *pipeline, RenderStep *previousStep
 
 	// attach buffer to the previous step
 	if (enable_msaa) {
-        TextureBufferOutput *msaa = pipeline->createOwned<TextureBufferOutput>(buffer, std::unordered_map<u8, u8> {{0, TEXTURE_MSAA_COLOR}}, std::pair<u8, u8> {0, TEXTURE_MSAA_DEPTH});
+        TextureBufferOutput *msaa = pipeline->createOwned<TextureBufferOutput>(
+            buffer, std::unordered_map<u8, u8> {{TEXTURE_MSAA_COLOR, 0}}, std::pair<u8, u8> {TEXTURE_MSAA_DEPTH, 0});
 		previousStep->setRenderTarget(msaa);
-        TextureBufferOutput *normal = pipeline->createOwned<TextureBufferOutput>(buffer, std::unordered_map<u8, u8> {{0,  TEXTURE_COLOR }}, std::pair<u8, u8> {0, TEXTURE_DEPTH});
+        TextureBufferOutput *normal = pipeline->createOwned<TextureBufferOutput>(
+            buffer, std::unordered_map<u8, u8> {{TEXTURE_COLOR, 0}}, std::pair<u8, u8> {TEXTURE_DEPTH, 0});
 		pipeline->addStep<ResolveMSAAStep>(msaa, normal);
 	} else {
-        previousStep->setRenderTarget(pipeline->createOwned<TextureBufferOutput>(buffer, std::unordered_map<u8, u8> {{0,  TEXTURE_COLOR }}, std::pair<u8, u8> {0, TEXTURE_DEPTH}));
+        previousStep->setRenderTarget(pipeline->createOwned<TextureBufferOutput>(
+            buffer, std::unordered_map<u8, u8> {{TEXTURE_COLOR, 0}}, std::pair<u8, u8> {TEXTURE_DEPTH, 0}));
 	}
 
     render::Shader *shader;
@@ -162,7 +165,7 @@ RenderStep *addPostProcessing(RenderPipeline *pipeline, RenderStep *previousStep
                 auto shader = cache->getOrLoad<render::Shader>(ResourceType::SHADER, "extract_bloom");
                 RenderStep *extract_bloom = pipeline->addStep<PostProcessingStep>(rndsys, buffer, shader, std::vector<u8> { source, TEXTURE_EXPOSURE_1 });
                 extract_bloom->setRenderSource(buffer);
-                extract_bloom->setRenderTarget(pipeline->createOwned<TextureBufferOutput>(buffer, std::unordered_map<u8, u8>{{0, TEXTURE_BLOOM}}));
+                extract_bloom->setRenderTarget(pipeline->createOwned<TextureBufferOutput>(buffer, std::unordered_map<u8, u8>{{TEXTURE_BLOOM, 0}}));
                 source = TEXTURE_BLOOM;
             }
 
@@ -172,7 +175,7 @@ RenderStep *addPostProcessing(RenderPipeline *pipeline, RenderStep *previousStep
                 shader = cache->getOrLoad<render::Shader>(ResourceType::SHADER, "volumetric_light");
                 auto volume = pipeline->addStep<PostProcessingStep>(rndsys, buffer, shader, std::vector<u8> { source, TEXTURE_DEPTH });
                 volume->setRenderSource(buffer);
-                volume->setRenderTarget(pipeline->createOwned<TextureBufferOutput>(buffer, std::unordered_map<u8, u8>{{0, TEXTURE_VOLUME}}));
+                volume->setRenderTarget(pipeline->createOwned<TextureBufferOutput>(buffer, std::unordered_map<u8, u8>{{TEXTURE_VOLUME, 0}}));
                 source = TEXTURE_VOLUME;
             }
 
@@ -182,7 +185,7 @@ RenderStep *addPostProcessing(RenderPipeline *pipeline, RenderStep *previousStep
                 auto step = pipeline->addStep<PostProcessingStep>(rndsys, buffer, shader, std::vector<u8> { source });
                 step->setRenderSource(buffer);
                 step->getQuad()->setBilinearFilter(0, true);
-                step->setRenderTarget(pipeline->createOwned<TextureBufferOutput>(buffer, std::unordered_map<u8, u8>{{0, TEXTURE_SCALE_DOWN + i}}));
+                step->setRenderTarget(pipeline->createOwned<TextureBufferOutput>(buffer, std::unordered_map<u8, u8>{{TEXTURE_SCALE_DOWN + i, 0}}));
                 source = TEXTURE_SCALE_DOWN + i;
             }
         }
@@ -196,7 +199,7 @@ RenderStep *addPostProcessing(RenderPipeline *pipeline, RenderStep *previousStep
                 step->setRenderSource(buffer);
                 step->getQuad()->setBilinearFilter(0, true);
                 step->getQuad()->setBilinearFilter(1, true);
-                step->setRenderTarget(pipeline->createOwned<TextureBufferOutput>(buffer, std::unordered_map<u8, u8>{{0, u8(TEXTURE_SCALE_UP + i - 1)}}));
+                step->setRenderTarget(pipeline->createOwned<TextureBufferOutput>(buffer, std::unordered_map<u8, u8>{{u8(TEXTURE_SCALE_UP + i - 1), 0}}));
                 source = TEXTURE_SCALE_UP + i - 1;
             }
         }
@@ -207,7 +210,7 @@ RenderStep *addPostProcessing(RenderPipeline *pipeline, RenderStep *previousStep
             auto update_exposure = pipeline->addStep<PostProcessingStep>(rndsys, buffer, shader, std::vector<u8> { TEXTURE_EXPOSURE_1, u8(TEXTURE_SCALE_DOWN + MIPMAP_LEVELS - 1) });
             update_exposure->getQuad()->setBilinearFilter(1, true);
             update_exposure->setRenderSource(buffer);
-            update_exposure->setRenderTarget(pipeline->createOwned<TextureBufferOutput>(buffer, std::unordered_map<u8, u8>{{0, TEXTURE_EXPOSURE_2}}));
+            update_exposure->setRenderTarget(pipeline->createOwned<TextureBufferOutput>(buffer, std::unordered_map<u8, u8>{{TEXTURE_EXPOSURE_2, 0}}));
         }
 
         // FXAA
@@ -220,7 +223,7 @@ RenderStep *addPostProcessing(RenderPipeline *pipeline, RenderStep *previousStep
             pipeline->addStep(effect);
             effect->getQuad()->setBilinearFilter(0, true);
             effect->setRenderSource(buffer);
-            effect->setRenderTarget(pipeline->createOwned<TextureBufferOutput>(buffer, std::unordered_map<u8, u8>{{0, TEXTURE_FXAA}}));
+            effect->setRenderTarget(pipeline->createOwned<TextureBufferOutput>(buffer, std::unordered_map<u8, u8>{{TEXTURE_FXAA, 0}}));
         }
     }
 
