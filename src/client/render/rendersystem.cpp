@@ -239,13 +239,16 @@ void RenderSystem::render()
     /*
         Profiler graph
     */
-    //gameui->getProfilerGraphs()->draw();
+    gameui->getProfilerGraphs()->draw();
 
     endDraw();
 
-    auto drawstats = renderer->getDrawStats();
+    auto &drawstats = renderer->getDrawStats();
     drawstats.drawtime = tt_draw.stop(true);
     g_profiler->graphAdd("Draw scene [us]", drawstats.drawtime);
+
+    drawstats.drawcalls = 0;
+    drawstats.drawn_primitives = 0;
 }
 
 void RenderSystem::autosaveScreensizeAndCo(v2u initial_screen_size, bool initial_wnd_maximized)

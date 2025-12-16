@@ -26,12 +26,11 @@
 #include "gettext.h"
 
 GameInputSystem::GameInputSystem(Client *_client)
-    : client(_client), input(client->getInputHandler()),
-      receiver(input->getReceiver()), guienv(client->getRenderSystem()->getGUIEnvironment()),
-      wnd(client->getRenderSystem()->getWindow()), chat_console(client->getChatMessanger()->getChatConsole()),
-      player(client->getEnv().getLocalPlayer()), gameui(client->getRenderSystem()->getGameUI()),
-      camera(player->getCamera()), sky(client->getRenderSystem()->getSky()),
-      quicktune(std::make_unique<QuicktuneShortcutter>())
+    : client(_client), rndsys(client->getRenderSystem()), input(client->getInputHandler()),
+      receiver(input->getReceiver()),guienv(rndsys->getGUIEnvironment()),
+      wnd(rndsys->getWindow()), chat_console(client->getChatMessanger()->getChatConsole()),
+      player(client->getEnv().getLocalPlayer()), gameui(rndsys->getGameUI()),
+      camera(player->getCamera()), quicktune(std::make_unique<QuicktuneShortcutter>())
 {
     g_settings->registerChangedCallback("doubletap_jump",
         &settingChangedCallback, this);
@@ -59,13 +58,15 @@ GameInputSystem::GameInputSystem(Client *_client)
         &settingChangedCallback, this);
     g_settings->registerChangedCallback("fast_move",
         &settingChangedCallback, this);
+
+    readSettings();
 }
 
 void GameInputSystem::processUserInput(f32 dtime)
 {
     bool desired = client->shouldShowTouchControls();
     if (desired && !g_touchcontrols) {
-        g_touchcontrols = new TouchControls(client->getRenderSystem(), client->getResourceCache(), receiver);
+        g_touchcontrols = new TouchControls(rndsys, client->getResourceCache(), receiver);
 
     } else if (!desired && g_touchcontrols) {
         delete g_touchcontrols;
@@ -123,7 +124,7 @@ void GameInputSystem::processUserInput(f32 dtime)
 
 void GameInputSystem::processKeyInput()
 {
-    auto formspec = client->getRenderSystem()->getGameFormSpec();
+    auto formspec = rndsys->getGameFormSpec();
     auto chat_msgr = client->getChatMessanger();
 
     if (input->wasKeyDown(KeyType::DROP)) {
@@ -382,7 +383,7 @@ void GameInputSystem::toggleBlockBounds()
         return;
     }
 
-    auto drawlist = client->getRenderSystem()->getDrawList();
+    auto drawlist = rndsys->getDrawList();
     auto blockbounds = drawlist->getBlockBounds();
     BlockBounds::Mode newmode = blockbounds->toggle(client, drawlist);
     switch (newmode) {
@@ -414,7 +415,7 @@ void GameInputSystem::toggleAutoforward()
 
 void GameInputSystem::toggleMinimap(bool shift_pressed)
 {
-    auto minimap = client->getRenderSystem()->getDefaultMinimap();
+    auto minimap = rndsys->getDefaultMinimap();
 
     if (!minimap || !(gameui->getFlags() & GUIF_SHOW_HUD) || !g_settings->getBool("enable_minimap"))
         return;
@@ -449,7 +450,7 @@ void GameInputSystem::toggleFog()
 {
     bool flag = !g_settings->getBool("enable_fog");
     g_settings->setBool("enable_fog", flag);
-    bool allowed = sky->getFogDistance() < 0 || player->checkPrivilege("debug");
+    bool allowed = rndsys->getSky()->getFogDistance() < 0 || player->checkPrivilege("debug");
     if (!allowed)
         gameui->showTranslatedStatusText("Fog enabled by GameInputSystem or mod");
     else if (flag)
@@ -462,7 +463,7 @@ void GameInputSystem::toggleFog()
 void GameInputSystem::toggleDebug()
 {
     u8 state = gameui->toggleDebug(player);
-    client->getRenderSystem()->getDrawList()->getDrawControl().show_wireframe = state == 3;
+    rndsys->getDrawList()->getDrawControl().show_wireframe = state == 3;
 
     if (state == 1) {
         gameui->showTranslatedStatusText("Debug info shown");
@@ -495,7 +496,7 @@ void GameInputSystem::increaseViewRange()
 {
     s16 range = g_settings->getS16("viewing_range");
     s16 range_new = range + 10;
-    s16 server_limit = sky->getFogDistance();
+    s16 server_limit = rndsys->getSky()->getFogDistance();
 
     if (range_new >= 4000) {
         range_new = 4000;
@@ -517,7 +518,7 @@ void GameInputSystem::decreaseViewRange()
 {
     s16 range = g_settings->getS16("viewing_range");
     s16 range_new = range - 10;
-    s16 server_limit = sky->getFogDistance();
+    s16 server_limit = rndsys->getSky()->getFogDistance();
 
     if (range_new <= 20) {
         range_new = 20;
@@ -537,10 +538,10 @@ void GameInputSystem::decreaseViewRange()
 
 void GameInputSystem::toggleFullViewRange()
 {
-    auto draw_control = client->getRenderSystem()->getDrawList()->getDrawControl();
+    auto draw_control = rndsys->getDrawList()->getDrawControl();
     draw_control.range_all = !draw_control.range_all;
     if (draw_control.range_all) {
-        if (sky->getFogDistance() >= 0) {
+        if (rndsys->getSky()->getFogDistance() >= 0) {
             gameui->showTranslatedStatusText("Unlimited viewing range enabled, but forbidden by GameInputSystem or mod");
         } else {
             gameui->showTranslatedStatusText("Unlimited viewing range enabled");
@@ -578,7 +579,7 @@ void GameInputSystem::updateCameraMode()
 
 void GameInputSystem::updateCameraDirection(float dtime)
 {
-    auto cur_control = wnd->getCursorControl();
+    auto &cur_control = wnd->getCursorControl();
 
     /* With CIrrDeviceSDL on Linux and Windows, enabling relative mouse mode
     somehow results in simulated mouse events being generated from touch events,

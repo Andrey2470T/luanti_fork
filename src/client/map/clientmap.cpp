@@ -38,14 +38,13 @@ ClientMap::ClientMap(Client *client, DistanceSortedDrawList *drawlist)
 
     auto block_shader = cache->getOrLoad<render::Shader>(ResourceType::SHADER, "block");
     rnd->setUniformBlocks(block_shader);
-    auto block_hw_shader = m_client->getResourceCache()->getOrLoad<render::Shader>(ResourceType::SHADER, "block_hw");
+    auto block_hw_shader = cache->getOrLoad<render::Shader>(ResourceType::SHADER, "block_hw");
     rnd->setUniformBlocks(block_hw_shader);
 }
 
 ClientMap::~ClientMap()
 {
     m_mesh_update_manager->stop();
-    m_mesh_update_manager->wait();
 
     MeshUpdateResult r;
     while (m_mesh_update_manager->getNextResult(r)) {

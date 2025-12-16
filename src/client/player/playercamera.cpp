@@ -619,7 +619,7 @@ void PlayerCamera::updateOrientation(bool invert_mouse, f32 mouse_sensitivity,
         }
 
         f32 sens_scale = getSensitivityScaleFactor();
-        new_orientation.Y   -= dist.X * mouse_sensitivity * sens_scale;
+        new_orientation.Y -= dist.X * mouse_sensitivity * sens_scale;
         new_orientation.X += dist.Y * mouse_sensitivity * sens_scale;
 
         if (dist.X != 0 || dist.Y != 0)

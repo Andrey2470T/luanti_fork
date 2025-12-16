@@ -277,12 +277,18 @@ void GameUI::updateChatSize()
     if (flags & GUIF_SHOW_BASIC_DEBUG)
         chat_y += dynamic_cast<UITextSprite *>(debugtext->getSprite(1))->getTextHeight();
 
-    const v2u wndSize = rndsys->getWindowSize();
 
-    chattext->updateBuffer(rectf(
+    const v2u wndSize = rndsys->getWindowSize();
+    rectf chatSize(
         v2f(10, chat_y),
         v2f(wndSize.X - 20, std::min<f32>(wndSize.Y, chattext->getTextHeight() + chat_y))
-    ));
+    );
+
+    if (chatSize == current_chat_size)
+        return;
+    current_chat_size = chatSize;
+
+    chattext->updateBuffer(rectf(chatSize));
 }
 
 void GameUI::updateProfiler()

@@ -15,6 +15,7 @@ class QuicktuneShortcutter;
 class GameInputSystem
 {
     Client *client;
+    RenderSystem *rndsys;
     InputHandler *input;
     MyEventReceiver *receiver;
     gui::IGUIEnvironment *guienv;
@@ -23,7 +24,6 @@ class GameInputSystem
     LocalPlayer *player;
     GameUI *gameui;
     PlayerCamera *camera;
-    Sky *sky;
 
     std::unique_ptr<QuicktuneShortcutter> quicktune;
 

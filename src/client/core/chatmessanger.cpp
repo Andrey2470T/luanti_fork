@@ -197,23 +197,23 @@ void ChatMessanger::updateChat(f32 dtime)
 	}
 
 	// Get new messages from client
-	std::wstring message;
+    std::wstring message;
 	while (getChatMessage(message)) {
 		chat_backend->addUnparsedMessage(message);
 	}
 
 	// Remove old messages
-	chat_backend->step(dtime);
+    chat_backend->step(dtime);
 
 	// Display all messages in a static text element
-	auto &buf = chat_backend->getRecentBuffer();
+    auto &buf = chat_backend->getRecentBuffer();
 	if (buf.getLinesModified()) {
 		buf.resetLinesModified();
         client->getRenderSystem()->getGameUI()->setChatText(chat_backend->getRecentChat(), buf.getLineCount());
 	}
 
 	// Make sure that the size is still correct
-	client->getRenderSystem()->getGameUI()->updateChatSize();
+    client->getRenderSystem()->getGameUI()->updateChatSize();
 }
 
 void ChatMessanger::settingChangedCallback(const std::string &setting_name, void *data)

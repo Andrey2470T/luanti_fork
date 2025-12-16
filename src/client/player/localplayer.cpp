@@ -817,7 +817,7 @@ void LocalPlayer::dropSelectedItem(bool single_item)
 
 void LocalPlayer::setPlayerControl(PlayerControl &_control)
 {
-    control = control;
+    control = _control;
 }
 
 u16 LocalPlayer::getHP()

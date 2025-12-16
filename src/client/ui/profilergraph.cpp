@@ -115,7 +115,7 @@ void ProfilerGraph::draw() const
 {
     auto rnd = rndsys->getRenderer();
 
-    rnd->setDefaultShader(true, true);
+    rnd->setDefaultShader(false, false);
     rnd->setDefaultUniforms(1.0f, 1, 0.5f, img::BM_COUNT);
 
     rnd->draw(lines.get());

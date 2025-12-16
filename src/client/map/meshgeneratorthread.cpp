@@ -232,6 +232,9 @@ void MeshUpdateWorkerThread::doUpdate()
 		m_manager->putResult(r);
 		m_queue_in->done(q->p);
 		delete q;
+
+        if (stopRequested())
+            break;
 	}
 }
 

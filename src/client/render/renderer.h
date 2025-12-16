@@ -57,9 +57,9 @@ struct Jitter {
 
 struct DrawStats
 {
-    u32 drawcalls;
-    u32 drawn_primitives;
-    f32 drawtime; // in us
+    u32 drawcalls = 0;
+    u32 drawn_primitives = 0;
+    f32 drawtime = 0.0f; // in us
 
     FpsControl fps;
     Jitter dtime_jitter, busy_time_jitter;

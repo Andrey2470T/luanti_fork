@@ -38,7 +38,7 @@ v2i RealInputHandler::getMousePos()
 
 void RealInputHandler::setMousePos(s32 x, s32 y)
 {
-    auto control = receiver->main_wnd->getCursorControl();
+    auto &control = receiver->main_wnd->getCursorControl();
     control.setPosition({x, y});
 }
 
