@@ -138,7 +138,9 @@ void Sun::draw()
 {
     auto rnd = m_rndsys->getRenderer();
     rnd->setDefaultShader(true);
-    m_rndsys->activateAtlas(m_image);
+
+    if (m_image)
+        m_rndsys->activateAtlas(m_image);
     rnd->setDefaultUniforms(1.0f, 0, 0.5f, img::BM_COUNT);
 
     rnd->draw(m_mesh.get());
@@ -148,7 +150,9 @@ void Sun::drawSunrise()
 {
     auto rnd = m_rndsys->getRenderer();
     rnd->setDefaultShader(true);
-    m_rndsys->activateAtlas(m_sunrise);
+
+    if (m_sunrise)
+        m_rndsys->activateAtlas(m_sunrise);
     rnd->setDefaultUniforms(1.0f, 0, 0.5f, img::BM_COUNT);
 
     rnd->draw(m_sunrise_mesh.get());
@@ -270,7 +274,9 @@ void Moon::draw()
 {
     auto rnd = m_rndsys->getRenderer();
     rnd->setDefaultShader(true);
-    m_rndsys->activateAtlas(m_image);
+
+    if (m_image)
+        m_rndsys->activateAtlas(m_image);
     rnd->setDefaultUniforms(1.0f, 0, 0.5f, img::BM_COUNT);
 
     rnd->draw(m_mesh.get());

@@ -83,9 +83,9 @@ void populatePlainPipeline(RenderPipeline *pipeline, Client *client)
     pipeline->addStep(step3D);
     //pipeline->addStep<DrawWield>();
 
-    //step3D = addUpscaling(pipeline, step3D, downscale_factor, client);
+    step3D = addUpscaling(pipeline, step3D, downscale_factor, client);
 
-    //step3D->setRenderTarget(pipeline->createOwned<ScreenTarget>());
+    step3D->setRenderTarget(pipeline->createOwned<ScreenTarget>());
 
-    //pipeline->addStep<DrawHUD>();
+    pipeline->addStep<DrawHUD>();
 }

@@ -389,6 +389,9 @@ bool Game::createClient(const GameStartData &start_data)
     // Update cached textures, meshes and materials
     client->afterContentReceived();
 
+    // Since Sky needs the 3d atlas, init it after collecting the atlas tiles for nodes
+    client->getRenderSystem()->initSkybox();
+
 	return true;
 }
 

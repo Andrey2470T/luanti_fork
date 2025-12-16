@@ -195,10 +195,10 @@ void TextureBufferOutput::activate(PipelineContext &context)
     }
 
     auto ctxt = context.client->getRenderSystem()->getRenderer()->getContext();
-    /*ctxt->setFrameBuffer(render_target.get());
+    ctxt->setFrameBuffer(render_target.get());
 
     render_target->setColorTextures(textures, faces);
-    render_target->setDepthStencilTexture(depth_texture, depth_face);*/
+    render_target->setDepthStencilTexture(depth_texture, depth_face);
 
     u16 clear = m_clear ? render::CBF_COLOR | render::CBF_DEPTH | render::CBF_STENCIL : render::CBF_NONE;
     ctxt->clearBuffers(clear, context.clear_color);

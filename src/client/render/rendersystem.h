@@ -77,6 +77,7 @@ public:
     }
     void initLoadScreen();
     void initRenderEnvironment(Client *_client);
+    void initSkybox();
 
     core::MainWindow *getWindow() const
     {

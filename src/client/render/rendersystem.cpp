@@ -73,9 +73,6 @@ void RenderSystem::initRenderEnvironment(Client *_client)
 
     pp_core = std::make_unique<PipelineCore>(client, g_settings->getBool("enable_dynamic_shadows"));
 
-    sky = std::make_unique<Sky>(this, cache);
-    clouds = std::make_unique<Clouds>(this, cache, myrand());
-
     drawlist = std::make_unique<DistanceSortedDrawList>(client);
     particle_manager = std::make_unique<ParticleManager>(this, cache, &client->getEnv());
 
@@ -86,6 +83,14 @@ void RenderSystem::initRenderEnvironment(Client *_client)
     gameformspec = std::make_unique<GameFormSpec>();
 
     fullyInit = true;
+}
+
+void RenderSystem::initSkybox()
+{
+    assert(client != nullptr);
+
+    sky = std::make_unique<Sky>(this, cache);
+    clouds = std::make_unique<Clouds>(this, cache, myrand());
 }
 
 Hud *RenderSystem::getHud() const

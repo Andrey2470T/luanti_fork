@@ -55,7 +55,7 @@ void Draw3D::run(PipelineContext &context)
     auto camera = context.client->getEnv().getLocalPlayer()->getCamera();
 
     rnd_sys->getSky()->render(camera);
-    //rnd_sys->getClouds()->render(camera);
+    rnd_sys->getClouds()->render(camera);
     //rnd_sys->getDrawList()->render();
     //rnd_sys->getParticleManager()->renderParticles();
 }
@@ -64,13 +64,13 @@ void DrawHUD::run(PipelineContext &context)
 {
     auto rnd_sys = context.client->getRenderSystem();
 
-    /*if (context.show_hud) {
+    if (context.show_hud) {
        // if (context.shadow_renderer)
         //    context.shadow_renderer->drawDebug();
 
         rnd_sys->getGameUI()->render();
     }
-    rnd_sys->getGUIEnvironment()->drawAll();*/
+    rnd_sys->getGUIEnvironment()->drawAll();
 }
 
 /*void RenderShadowMapStep::run(PipelineContext &context)
