@@ -135,7 +135,7 @@ public:
 		StarParams stars;
 		stars.visible = true;
 		stars.count = 1000;
-        stars.starcolor = img::color8(img::PF_RGBA8, 105, 235, 235, 255);
+        stars.starcolor = img::color8(img::PF_RGBA8, 255, 235, 235, 105);
 		stars.scale = 1;
 		stars.day_opacity = 0;
 		return stars;
@@ -145,9 +145,9 @@ public:
 	{
 		CloudParams clouds;
 		clouds.density = 0.4f;
-        clouds.color_bright = img::color8(img::PF_RGBA8, 229, 240, 240, 255);
-        clouds.color_ambient = img::color8(img::PF_RGBA8, 255, 0, 0, 0);
-        clouds.color_shadow = img::color8(img::PF_RGBA8, 255, 204, 204, 204);
+        clouds.color_bright = img::color8(img::PF_RGBA8, 255, 240, 240, 229);
+        clouds.color_ambient = img::color8(img::PF_RGBA8, 0, 0, 0, 255);
+        clouds.color_shadow = img::color8(img::PF_RGBA8, 201, 204, 204, 255);
 		clouds.thickness = 16.0f;
 		clouds.height = 120;
 		clouds.speed = v2f(0.0f, -2.0f);
