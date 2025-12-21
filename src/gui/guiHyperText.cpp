@@ -1060,7 +1060,7 @@ void GUIHyperText::checkHover(s32 X, s32 Y)
 		}
 	}
 
-    auto cursor_control = Environment->getRenderSystem()->getWindow()->getCursorControl();
+    auto &cursor_control = Environment->getRenderSystem()->getWindow()->getCursorControl();
     cursor_control.setActiveIcon(m_drawer.m_hovertag ? CI_HAND : CI_NORMAL);
 }
 
@@ -1078,7 +1078,7 @@ bool GUIHyperText::OnEvent(const core::Event &event)
 			event.GUI.Type == EGET_ELEMENT_LEFT) {
 		m_drawer.m_hovertag = nullptr;
 
-        auto cursor_control = Environment->getRenderSystem()->getWindow()->getCursorControl();
+        auto &cursor_control = Environment->getRenderSystem()->getWindow()->getCursorControl();
 
         if (cursor_control.isVisible())
             cursor_control.setActiveIcon(CI_NORMAL);

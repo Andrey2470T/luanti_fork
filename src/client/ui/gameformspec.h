@@ -52,7 +52,6 @@ private:
     Client *client;
     RenderSystem *rndsys;
     InputHandler *input;
-    gui::IGUIEnvironment *guienv;
 
 	// Default: "". If other than "": Empty show_formspec packets will only
 	// close the formspec when the formname matches

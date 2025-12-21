@@ -40,7 +40,8 @@ GlyphAtlas::GlyphAtlas(u32 num, render::TTFont *ttfont, u32 &offset)
 
 Glyph *GlyphAtlas::getByChar(wchar_t ch) const
 {
-    auto ch16 = wide_to_utf16(&ch);
+    std::wstring ch_str(1, ch);
+    auto ch16 = wide_to_utf16(ch_str);
 
     auto it = std::find_if(tiles.begin(), tiles.end(), [&ch16] (const std::unique_ptr<AtlasTile> &tile)
     {

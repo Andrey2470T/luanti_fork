@@ -3528,7 +3528,7 @@ void GUIFormSpecMenu::drawMenu()
 	gui::IGUIElement *hovered =
 			Environment->getRootGUIElement()->getElementFromPoint(m_pointer);
 
-    auto cursor_control = m_rndsys->getWindow()->getCursorControl();
+    auto &cursor_control = m_rndsys->getWindow()->getCursorControl();
     CURSOR_ICON current_cursor_icon = cursor_control.getCurrentIcon();
 
 	bool hovered_element_found = false;

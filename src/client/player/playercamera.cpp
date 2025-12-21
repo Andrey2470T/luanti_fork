@@ -633,7 +633,7 @@ void PlayerCamera::updateOrientation(bool invert_mouse, f32 mouse_sensitivity,
         new_orientation.X += input->joystick.getAxisWithoutDead(JA_FRUSTUM_VERTICAL) * c;
     }
 
-    new_orientation.X = rangelim(m_orientation.X, -89.5, 89.5);
+    new_orientation.X = rangelim(new_orientation.X, -89.5, 89.5);
 
     m_orientation += (new_orientation - m_orientation) * cam_smoothing;
 }

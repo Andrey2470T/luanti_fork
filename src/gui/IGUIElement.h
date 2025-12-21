@@ -290,7 +290,7 @@ public:
 	{
 		while (!Children.empty()) {
 			auto child = Children.back();
-            child->remove();
+			removeChild(child);
 		}
 	}
 

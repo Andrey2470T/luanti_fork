@@ -504,7 +504,7 @@ void ClientLauncher::main_menu(MainMenuData *menudata)
     framemarker.end();
     infostream << "Waited for other menus" << std::endl;
 
-    auto cur_control = render_system->getWindow()->getCursorControl();
+    auto &cur_control = render_system->getWindow()->getCursorControl();
     // Cursor can be non-visible when coming from the game
     cur_control.setVisible(true);
     // Set absolute mouse mode

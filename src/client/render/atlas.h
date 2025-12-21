@@ -52,14 +52,15 @@ class Atlas
 {
 protected:
     std::unique_ptr<render::Texture2D> texture;
-    
+
     // Saves only unique tiles (determined by the hash)
     std::unordered_map<size_t, u32> hash_to_index;
     std::vector<std::unique_ptr<AtlasTile>> tiles;
-    
+
     std::list<u32> dirty_tiles;
 public:
     Atlas() = default;
+    virtual ~Atlas() = default;
 
     void createTexture(const std::string &name, u32 size);
     
