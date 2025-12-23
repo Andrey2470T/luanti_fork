@@ -11,11 +11,11 @@ Camera::Camera(const v2u &viewportSize,
       m_frustum(viewportSize, isOrthogonal)
 {}
 
-void Camera::updateOffset()
+void Camera::updateOffset(v3f pos)
 {
     if (disable_update)
         return;
-    v3f cp = m_position / BS;
+    v3f cp = pos / BS;
 
     // Update offset if too far away from the center of the map
     m_last_offset = m_offset;

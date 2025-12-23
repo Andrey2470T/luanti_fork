@@ -334,6 +334,7 @@ void PlayerCamera::update(f32 dtime)
 	}
 
     m_playerbase_pos = player_position;
+    m_playerbase_rot = v3f(0, -1 * yaw, 0);
 
 	// Get camera tilt timer (hurt animation)
     float cameratilt = fabs(fabs(player->hurt_tilt_timer-0.75)-0.75);
@@ -377,8 +378,7 @@ void PlayerCamera::update(f32 dtime)
     // Set head node transformation
     eye_offset.Y += cameratilt * -player->hurt_tilt_strength + fall_bobbing;
     m_head_offset = eye_offset;
-    m_head_rotation = v3f(pitch, 0,
-           cameratilt * player->hurt_tilt_strength);
+    m_head_rotation = v3f(pitch, 0, cameratilt * player->hurt_tilt_strength);
 
 	// Compute relative camera position and target
 	v3f rel_cam_pos = v3f(0,0,0);
@@ -406,11 +406,10 @@ void PlayerCamera::update(f32 dtime)
 	// Compute absolute camera position and target
     m_position = m_playerbase_pos + m_head_offset + rel_cam_pos;
     matrix4 rot_transform;
-    rot_transform.buildRotateFromTo(v3f(0,0,1), m_direction);
-    rot_transform.transformVect(m_direction, rel_cam_target - rel_cam_pos);
+    rot_transform.setRotationDegrees(m_playerbase_rot + m_head_rotation);
+    m_direction = rot_transform.rotateAndScaleVect(rel_cam_target - rel_cam_pos);
 
-    v3f abs_cam_up;
-    rot_transform.transformVect(abs_cam_up, rel_cam_up);
+    v3f abs_cam_up = rot_transform.rotateAndScaleVect(rel_cam_up);
 
 	// Separate camera position for calculation
     v3f my_cp = m_position;
@@ -432,7 +431,7 @@ void PlayerCamera::update(f32 dtime)
                 my_cp.Y = m_position.Y + (m_direction.Y * -i);
 
 			// Prevent camera positioned inside nodes
-            /*const NodeDefManager *nodemgr = m_client->ndef();
+            const NodeDefManager *nodemgr = m_client->ndef();
 			MapNode n = m_client->getEnv().getClientMap()
 				.getNode(floatToInt(my_cp, BS));
 
@@ -443,7 +442,7 @@ void PlayerCamera::update(f32 dtime)
                 my_cp.Y += m_direction.Y*-1*-BS/2;
 				abort = true;
 				break;
-            }*/
+            }
 		}
 
 		// If node blocks camera position don't move y to heigh
@@ -451,18 +450,18 @@ void PlayerCamera::update(f32 dtime)
 			my_cp.Y = player_position.Y+BS*2;
 	}
 
-    updateOffset();
+    updateOffset(my_cp);
 
     // Set camera node transformation
-    my_cp -= intToFloat(m_offset, BS);
-    m_up_vector = abs_cam_up;
+    setPosition(my_cp - intToFloat(m_offset, BS));
+    setUpVector(abs_cam_up);
 	// *100.0 helps in large map coordinates
     setDirection(my_cp-intToFloat(m_offset, BS) + m_direction * 100);
 
 	// update the camera position in third-person mode to render blocks behind player
 	// and correctly apply liquid post FX.
-	if (m_camera_mode != CAMERA_MODE_FIRST)
-        m_position = my_cp;
+    //if (m_camera_mode != CAMERA_MODE_FIRST)
+    //    m_position = my_cp;
 
 	/*
 	 * Apply server-sent FOV, instantaneous or smooth transition.

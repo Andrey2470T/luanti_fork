@@ -142,7 +142,7 @@ public:
 		m_up_vector.normalize();
     }
 
-    void updateOffset();
+    void updateOffset(v3f pos);
 
 	void setFovX(f32 fovx)
 	{

@@ -111,6 +111,7 @@ private:
 	f32 m_cache_fov;
 
     v3f m_playerbase_pos;
+    v3f m_playerbase_rot;
     v3f m_head_offset;
     v3f m_head_rotation;
 

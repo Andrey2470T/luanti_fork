@@ -904,13 +904,13 @@ void LocalPlayer::step(f32 dtime)
                 fluidity_smooth = MYMAX(0.0f, fluidity_smooth);
 
                 v3f d_wanted;
-                bool in_liquid_stable = in_liquid_stable || in_liquid;
-                if (in_liquid_stable)
+                bool inliquid_stable = in_liquid_stable || in_liquid;
+                if (inliquid_stable)
                     d_wanted = -speed / fluidity;
                 else
                     d_wanted = -speed / BS;
                 f32 dl = d_wanted.getLength();
-                if (in_liquid_stable)
+                if (inliquid_stable)
                     dl = MYMIN(dl, fluidity_smooth);
                 dl *= (move_resistance * resistance_factor) +
                     (1 - resistance_factor);

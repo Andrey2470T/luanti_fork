@@ -91,7 +91,7 @@ void GameInputSystem::processUserInput(f32 dtime)
             /* on touchcontrols step may generate own input events which ain't
              * what we want in case we just did clear them */
             g_touchcontrols->show();
-            g_touchcontrols->step(dtime, player->getCamera());
+            g_touchcontrols->step(dtime, camera);
         }
 
         game_focused = true;
@@ -223,6 +223,8 @@ void GameInputSystem::processKeyInput()
         quicktune->inc();
     } else if (input->wasKeyDown(KeyType::QUICKTUNE_DEC)) {
         quicktune->dec();
+    } else if (input->wasKeyDown(KeyType::CAMERA_MODE)) {
+        updateCameraMode();
     }
 
     if (!input->isKeyDown(KeyType::JUMP) && reset_jump_timer) {
@@ -559,22 +561,20 @@ void GameInputSystem::checkZoomEnabled()
 
 void GameInputSystem::updateCameraMode()
 {
-    if (input->wasKeyPressed(KeyType::CAMERA_MODE)) {
-        RenderCAO *playercao = player->getCAO();
+    RenderCAO *playercao = player->getCAO();
 
-        // If playercao not loaded, don't change camera
-        if (!playercao)
-            return;
+    // If playercao not loaded, don't change camera
+    if (!playercao)
+        return;
 
-        camera->toggleCameraMode();
+    camera->toggleCameraMode();
 
-        if (g_touchcontrols)
-            g_touchcontrols->setUseCrosshair(!player->getInteraction()->isTouchCrosshairDisabled());
+    if (g_touchcontrols)
+        g_touchcontrols->setUseCrosshair(!player->getInteraction()->isTouchCrosshairDisabled());
 
-        // Make the player visible depending on camera mode.
-        playercao->updateMeshCulling();
-        playercao->setChildrenVisible(camera->getCameraMode() > CAMERA_MODE_FIRST);
-    }
+    // Make the player visible depending on camera mode.
+    playercao->updateMeshCulling();
+    playercao->setChildrenVisible(camera->getCameraMode() > CAMERA_MODE_FIRST);
 }
 
 void GameInputSystem::updateCameraDirection(float dtime)
@@ -623,7 +623,7 @@ void GameInputSystem::updatePlayerControl()
 {
     //TimeTaker tt("update player control", NULL, PRECISION_NANO);
 
-    v2f cam_orient = player->getCamera()->getOrientation();
+    v2f cam_orient = camera->getOrientation();
     PlayerControl control(
         input->isKeyDown(KeyType::FORWARD),
         input->isKeyDown(KeyType::BACKWARD),
