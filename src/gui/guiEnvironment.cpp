@@ -271,7 +271,7 @@ void CGUIEnvironment::OnPostRender(u32 time)
 		recti pos;
 
 		pos.ULC = LastHoveredMousePos;
-        v2u dim = getSkin()->getFont(EGDF_TOOLTIP)->getTextSize(HoveredNoSubelement->getToolTipText().c_str());
+        v2u dim = getSkin()->getFont(EGDF_TOOLTIP)->getTextSize(HoveredNoSubelement->getToolTipText());
         dim.X += getSkin()->getSize(EGDS_TEXT_DISTANCE_X) * 2;
         dim.Y += getSkin()->getSize(EGDS_TEXT_DISTANCE_Y) * 2;
 
@@ -281,7 +281,8 @@ void CGUIEnvironment::OnPostRender(u32 time)
 
 		pos.constrainTo(getAbsolutePosition());
 
-		ToolTip.Element = addStaticText(HoveredNoSubelement->getToolTipText().c_str(), pos, true, true, this, -1, true);
+
+        ToolTip.Element = addStaticText(HoveredNoSubelement->getToolTipText().c_str(), pos, true, true, this, -1, true);
 		ToolTip.Element->setOverrideColor(getSkin()->getColor(EGDC_TOOLTIP));
 		ToolTip.Element->setBackgroundColor(getSkin()->getColor(EGDC_TOOLTIP_BACKGROUND));
 		ToolTip.Element->setOverrideFont(getSkin()->getFont(EGDF_TOOLTIP));

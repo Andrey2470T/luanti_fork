@@ -142,7 +142,7 @@ void GUIFormSpecMenu::create(GUIFormSpecMenu *&cur_formspec, Client *client,
 	}
 
 	if (cur_formspec == nullptr) {
-        cur_formspec = new GUIFormSpecMenu(joystick, guiroot, -1, g_menumgr.get(),
+        cur_formspec = new GUIFormSpecMenu(joystick, guiroot, -1, g_menumgr,
             client, guienv, client->getResourceCache(), client->getRenderSystem(), sound_manager, fs_src,
 			txt_dest, formspecPrepend);
 

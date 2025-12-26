@@ -14,12 +14,12 @@ class RenderSystem;
 class MyEventReceiver;
 class InputHandler;
 class ResourceCache;
+class MainMenuManager;
 
 class ClientLauncher
 {
 public:
     ClientLauncher();
-
     ~ClientLauncher();
 
     bool run(GameStartData &start_data, const Settings &cmd_args);
@@ -41,6 +41,7 @@ private:
     bool skip_main_menu = false;
     bool random_input = false;
 
+    std::unique_ptr<MainMenuManager> menumgr;
     std::unique_ptr<ResourceCache> resource_cache;
     std::unique_ptr<RenderSystem> render_system;
     std::unique_ptr<MyEventReceiver> receiver;

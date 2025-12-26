@@ -16,7 +16,7 @@ LoadScreen::LoadScreen(ResourceCache *_cache, RenderSystem *_system, FontManager
     : cache(_cache), rndsys(_system)
 {
     guitext = std::make_unique<UITextSprite>(_mgr, _system->getGUIEnvironment()->getSkin(),
-        EnrichedString(L""), rndsys->getRenderer(), cache, false, false);
+        L"", rndsys->getRenderer(), cache, false, false);
     guitext->setAlignment(GUIAlignment::Center, GUIAlignment::UpperLeft);
 
     auto progress_bg_img = cache->get<img::Image>(ResourceType::IMAGE, "progress_bar_bg.png");

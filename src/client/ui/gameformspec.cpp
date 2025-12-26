@@ -213,6 +213,7 @@ GameFormSpec::~GameFormSpec() {
         formspec->quitMenu();
     }
     deleteFormspec();
+    formspec = nullptr;  // Ensure formspec is null after deletion
 }
 
 void GameFormSpec::showFormSpec(const std::string &_formspec, const std::string &_formname)
@@ -480,27 +481,27 @@ bool GameFormSpec::handleCallbacks()
 
     auto guienv = rndsys->getGUIEnvironment();
 	if (g_gamecallback->changepassword_requested) {
-        (new GUIPasswordChange(guienv, guiroot, -1, g_menumgr.get(), client))->drop();
+        (new GUIPasswordChange(guienv, guiroot, -1, g_menumgr, client))->drop();
 		g_gamecallback->changepassword_requested = false;
 	}
 
 	if (g_gamecallback->changevolume_requested) {
-        (new GUIVolumeChange(guienv, guiroot, -1, g_menumgr.get()))->drop();
+        (new GUIVolumeChange(guienv, guiroot, -1, g_menumgr))->drop();
 		g_gamecallback->changevolume_requested = false;
 	}
 
 	if (g_gamecallback->keyconfig_requested) {
-        (new GUIKeyChangeMenu(guienv, guiroot, -1, g_menumgr.get()))->drop();
+        (new GUIKeyChangeMenu(guienv, guiroot, -1, g_menumgr))->drop();
 		g_gamecallback->keyconfig_requested = false;
 	}
 
 	if (g_gamecallback->touchscreenlayout_requested) {
-        (new GUITouchscreenLayout(guienv, guiroot, -1, g_menumgr.get()))->drop();
+        (new GUITouchscreenLayout(guienv, guiroot, -1, g_menumgr))->drop();
 		g_gamecallback->touchscreenlayout_requested = false;
 	}
 
 	if (!g_gamecallback->show_open_url_dialog.empty()) {
-        (new GUIOpenURLMenu(guienv, guiroot, -1, g_menumgr.get(), g_gamecallback->show_open_url_dialog))->drop();
+        (new GUIOpenURLMenu(guienv, guiroot, -1, g_menumgr, g_gamecallback->show_open_url_dialog))->drop();
 		g_gamecallback->show_open_url_dialog.clear();
 	}
 

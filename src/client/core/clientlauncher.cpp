@@ -31,7 +31,7 @@
 
 /* mainmenumanager.h
  */
-std::unique_ptr<MainMenuManager> g_menumgr;
+MainMenuManager *g_menumgr = nullptr;
 gui::IGUIStaticText *guiroot = nullptr;
 
 // Passed to menus to allow disconnecting and exiting
@@ -52,6 +52,7 @@ static void dump_start_data(const GameStartData &data)
 }
 #endif
 
+
 ClientLauncher::ClientLauncher()
 {}
 
@@ -66,8 +67,7 @@ ClientLauncher::~ClientLauncher()
         assert(g_menumgr->menuCount() == 0);
 
     guiroot = nullptr;
-
-    g_menumgr.reset();
+    g_menumgr = nullptr;
 
 #if USE_SOUND
     g_sound_manager_singleton.reset();
@@ -111,7 +111,8 @@ bool ClientLauncher::run(GameStartData &start_data, const Settings &cmd_args)
     g_settings->registerChangedCallback("display_density_factor", setting_changed_callback, this);
     g_settings->registerChangedCallback("gui_scaling", setting_changed_callback, this);
 
-    g_menumgr = std::make_unique<MainMenuManager>(render_system.get(), resource_cache.get());
+    menumgr = std::make_unique<MainMenuManager>(render_system.get(), resource_cache.get());
+    g_menumgr = menumgr.get();
 
     // If an error occurs, this is set to something by menu().
     // It is then displayed before the menu shows on the next call to menu()
@@ -512,7 +513,7 @@ void ClientLauncher::main_menu(MainMenuData *menudata)
 
     /* show main menu */
     GUIEngine mymenu(&input->joystick, guiroot, render_system.get(), resource_cache.get(),
-        g_menumgr.get(), menudata, *kill);
+        g_menumgr, menudata, *kill);
 
     /* Save the settings when leaving the mainmenu.
      * This makes sure that setting changes made in the mainmenu are persisted

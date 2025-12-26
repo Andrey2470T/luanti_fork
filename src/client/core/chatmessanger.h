@@ -4,6 +4,7 @@
 #include <queue>
 #include <memory>
 #include "gui/IGUIEnvironment.h"
+#include "gui/guiChatConsole.h"
 #include "log_internal.h"
 
 class ClientPacketHandler;
@@ -24,7 +25,7 @@ class ChatMessanger
 
 	std::unique_ptr<ChatBackend> chat_backend;
     CaptureLogOutput chat_log_buf;
-    std::unique_ptr<GUIChatConsole> gui_chat_console;
+    GUIChatConsole *gui_chat_console = nullptr;
 
 	std::queue<std::wstring> out_chat_queue;
 	u32 last_chat_message_sent;
@@ -36,6 +37,7 @@ public:
 #endif
 
 	ChatMessanger(Client *_client);
+    ~ChatMessanger();
 
     ChatBackend *getBackend() const
     {
@@ -43,7 +45,7 @@ public:
     }
     GUIChatConsole *getChatConsole() const
     {
-        return gui_chat_console.get();
+        return gui_chat_console;
     }
 
     void init(gui::IGUIEnvironment *guienv);

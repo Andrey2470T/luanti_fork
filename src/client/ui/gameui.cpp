@@ -300,11 +300,10 @@ void GameUI::updateProfiler()
 
         g_profiler->print(os, profiler_current_page, profiler_max_page);
 
-		EnrichedString str(utf8_to_wide(os.str()));
-        str.setBackground(img::color8(img::PF_RGBA8, 0, 0, 0, 120));
-        profilertext->setText(str);
+        profilertext->setOverrideColor(img::color8(img::PF_RGBA8, 0, 0, 0, 120));
+        profilertext->setText(utf8_to_wide(os.str()));
 
-        v2f size(profilertext->getTextWidth(), profilertext->getTextHeight());
+        v2f size = toV2T<f32>(profilertext->getTextSize());
         v2f upper_left(6, dynamic_cast<UITextSprite *>(debugtext->getSprite(0))->getTextHeight() * 2.5f);
         v2f lower_right = upper_left;
         lower_right.X += size.X + 10;

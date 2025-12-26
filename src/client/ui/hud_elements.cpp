@@ -131,7 +131,10 @@ void HudText::update()
 {
     FontManager *font_mgr = rnd_system->getFontManager();
     text->setOverrideFont(getHudTextFont(font_mgr, elem, true));
-    text->setText(getHudWText(elem));
+
+    EnrichedString textstr = getHudWText(elem);
+    text->setOverrideColor(textstr.getColors().at(0));
+    text->setText(textstr);
     text->updateBuffer(getHudTextRect(rnd_system, elem->text, elem, true, true));
 }
 

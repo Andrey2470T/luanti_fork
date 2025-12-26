@@ -124,7 +124,7 @@ private:
     std::unique_ptr<Camera> m_menucamera;
 };
 
-extern std::unique_ptr<MainMenuManager> g_menumgr;
+extern MainMenuManager *g_menumgr;
 
 static inline bool isMenuActive()
 {

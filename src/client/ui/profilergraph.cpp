@@ -19,7 +19,7 @@ ProfilerGraph::ProfilerGraph(RenderSystem *_rndsys, ResourceCache *cache, u8 _nu
     : rndsys(_rndsys), color(_color), number(_number),
       lines(std::make_unique<MeshBuffer>(false, VType2D, render::MeshUsage::DYNAMIC)),
       text(std::make_unique<UITextSprite>(rndsys->getFontManager(), rndsys->getGUIEnvironment()->getSkin(),
-            EnrichedString(), rndsys->getRenderer(), cache))
+            L"", rndsys->getRenderer(), cache))
 {
     text->setOverrideFont(rndsys->getFontManager()->getDefaultFont());
     text->enableWordWrap(true);

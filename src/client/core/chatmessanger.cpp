@@ -24,6 +24,12 @@ ChatMessanger::ChatMessanger(Client *_client)
     readSettings();
 }
 
+ChatMessanger::~ChatMessanger()
+{
+    if (gui_chat_console)
+        gui_chat_console->drop();
+}
+
 void ChatMessanger::init(gui::IGUIEnvironment *guienv)
 {
     // Remove stale "recent" chat messages from previous connections
@@ -33,13 +39,14 @@ void ChatMessanger::init(gui::IGUIEnvironment *guienv)
     chat_backend->applySettings();
 
     // Chat backend and console
-    gui_chat_console = std::make_unique<GUIChatConsole>(guienv, guienv->getRootGUIElement(),
-            -1, chat_backend.get(), client, g_menumgr.get());
+    gui_chat_console = new GUIChatConsole(guienv, guienv->getRootGUIElement(),
+        -1, chat_backend.get(), client, g_menumgr);
+    gui_chat_console->grab();
 }
 
 void ChatMessanger::openConsole(float scale, const wchar_t *line)
 {
-    assert(scale > 0.0f && scale <= 1.0f);
+    assert(scale > 0.0f && scale <= 1.0f && !gui_chat_console);
 
 #ifdef __ANDROID__
     if (!porting::hasPhysicalKeyboardAndroid()) {

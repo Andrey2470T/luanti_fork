@@ -192,12 +192,9 @@ void UITextSprite::updateBuffer(rectf &&r)
     else if (vAlign == GUIAlignment::LowerRight)
         offset.Y += r.getHeight() - height_total;
 
-    auto colors = text.getColors();
+    auto color = getActiveColor();
 
-    std::array<img::color8, 4> arrColors = UISprite::defaultColors;
-
-    for (u32 k = 0; k < std::min<u32>(colors.size(), 4); k++)
-        arrColors.at(k) = colors.at(k);
+    std::array<img::color8, 4> arrColors = {color, color, color, color};
 
     v2f line_offset = offset;
 

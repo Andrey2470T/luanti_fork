@@ -388,6 +388,8 @@ Client::~Client()
 	for (auto &csp : m_sounds_client_to_server)
 		m_sound->freeId(csp.first);
 	m_sounds_client_to_server.clear();
+
+    m_render_system->deinitRenderEnvironment();
 }
 
 void Client::step(f32 dtime)

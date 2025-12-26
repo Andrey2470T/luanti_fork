@@ -93,6 +93,11 @@ void RenderSystem::initSkybox()
     clouds = std::make_unique<Clouds>(this, cache, myrand());
 }
 
+void RenderSystem::deinitRenderEnvironment()
+{
+    client = nullptr;
+}
+
 Hud *RenderSystem::getHud() const
 {
     return gameui->getHud();
