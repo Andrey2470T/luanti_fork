@@ -336,7 +336,6 @@ u8 *MeshBuffer::mergeByteArrays(bool vBuffer) const
 
     u32 bytesOffset = 0;
     for (auto &ba : buffer.Data) {
-        u32 bytesCount = ba->bytesCount();
         memcpy(totalData + bytesOffset, ba->data(), ba->bytesCount());
         bytesOffset += ba->bytesCount();
     }

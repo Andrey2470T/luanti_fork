@@ -43,9 +43,9 @@ void Camera::recalculateViewArea()
 	// problem. so solve this problem:
 
 	v3f up = m_up_vector;
-	f32 right = m_direction.dotProduct(up);
+    f32 dp = m_direction.dotProduct(up);
 
-	if (equals(std::fabs(right), 1.0f)) {
+    if (equals(std::fabs(dp), 1.0f)) {
 		up.X += 0.5f;
 	}
 

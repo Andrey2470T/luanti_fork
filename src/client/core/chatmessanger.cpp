@@ -46,7 +46,7 @@ void ChatMessanger::init(gui::IGUIEnvironment *guienv)
 
 void ChatMessanger::openConsole(float scale, const wchar_t *line)
 {
-    assert(scale > 0.0f && scale <= 1.0f && !gui_chat_console);
+    assert(scale > 0.0f && scale <= 1.0f && gui_chat_console);
 
 #ifdef __ANDROID__
     if (!porting::hasPhysicalKeyboardAndroid()) {

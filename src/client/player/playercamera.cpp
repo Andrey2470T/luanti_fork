@@ -404,12 +404,20 @@ void PlayerCamera::update(f32 dtime)
 	}
 
 	// Compute absolute camera position and target
-    m_position = m_playerbase_pos + m_head_offset + rel_cam_pos;
-    matrix4 rot_transform;
-    rot_transform.setRotationDegrees(m_playerbase_rot + m_head_rotation);
-    m_direction = rot_transform.rotateAndScaleVect(rel_cam_target - rel_cam_pos);
+    matrix4 base_transform;
+    base_transform.setRotationDegrees(m_playerbase_rot);
+    base_transform.setTranslation(m_playerbase_pos);
 
-    v3f abs_cam_up = rot_transform.rotateAndScaleVect(rel_cam_up);
+    matrix4 head_transform;
+    head_transform.setRotationDegrees(m_playerbase_rot + m_head_rotation);
+    head_transform.setTranslation(m_playerbase_pos + m_head_offset);
+
+    matrix4 res_transform = base_transform * head_transform;
+
+    res_transform.transformVect(m_position, rel_cam_pos);
+    m_direction = res_transform.rotateAndScaleVect(rel_cam_target - rel_cam_pos);
+
+    v3f abs_cam_up = res_transform.rotateAndScaleVect(rel_cam_up);
 
 	// Separate camera position for calculation
     v3f my_cp = m_position;
@@ -460,8 +468,7 @@ void PlayerCamera::update(f32 dtime)
 
 	// update the camera position in third-person mode to render blocks behind player
 	// and correctly apply liquid post FX.
-    //if (m_camera_mode != CAMERA_MODE_FIRST)
-    //    m_position = my_cp;
+    if (m_camera_mode != CAMERA_MODE_FIRST) m_position = my_cp;
 
 	/*
 	 * Apply server-sent FOV, instantaneous or smooth transition.
