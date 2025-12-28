@@ -79,7 +79,7 @@ void ProfilerGraph::update(const std::string &id, f32 new_value, s32 x_left, s32
 
     if (actualValues.size() == 0)
         return;
-    lines->reallocateData(actualValues.size() * 2, actualValues.size() * 2);
+    lines->reallocateData(actualValues.size() * 4, actualValues.size() * 6);
 
     for (f32 &v : actualValues) {
         float scaledvalue = 1.0;
@@ -87,23 +87,27 @@ void ProfilerGraph::update(const std::string &id, f32 new_value, s32 x_left, s32
         if (show_max != show_min)
             scaledvalue = (v - show_min) / (show_max - show_min);
 
+        v2f start_pos, end_pos;
         if (relativegraph) {
             s32 ivalue1 = lastscaledvalue * graph1h;
             s32 ivalue2 = scaledvalue * graph1h;
 
-            v2f start_pos(x - 1, graph1y - ivalue1);
-            v2f end_pos(x, graph1y - ivalue2);
+            start_pos = v2f(x - 1, graph1y - ivalue1);
+            end_pos = v2f(x, graph1y - ivalue2);
 
-            Batcher2D::appendLine(lines.get(), {start_pos, end_pos}, color);
             lastscaledvalue = scaledvalue;
         } else {
             s32 ivalue = scaledvalue * graph1h;
 
-            v2f start_pos(x, graph1y);
-            v2f end_pos(x, graph1y - ivalue);
-
-            Batcher2D::appendLine(lines.get(), {start_pos, end_pos}, color);
+            start_pos = v2f(x, graph1y);
+            end_pos = v2f(x, graph1y - ivalue);
         }
+
+        v2f normal = (end_pos - start_pos).normalize();
+        normal.rotateBy(90);
+
+        rectf line_r(start_pos, end_pos+normal);
+        Batcher2D::appendRectangle(lines.get(), line_r, {color, color, color, color});
 
         x++;
     }

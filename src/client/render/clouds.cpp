@@ -303,6 +303,9 @@ void Clouds::updateMesh()
 		}
 	}
 
+    for (u32 i = 0; i < m_mesh->getVertexCount(); i++)
+        svtSetHWColor(m_mesh.get(), m_color, i);
+
     m_mesh->uploadData();
 
     tracestream << "Cloud::updateMesh(): " << m_mesh->getVertexCount() << " vertices"
@@ -363,10 +366,10 @@ void Clouds::update(f32 dtime, Camera *camera, Sky *sky, f32 &fog_range,
     v3f camera_pos = camera->getPosition();
     v3s16 camera_offset = camera->getOffset();
     if (sky) {
-        if (!sky->getCloudsVisible()) {
+        /*if (!sky->getCloudsVisible()) {
             m_visible = false;
             return;
-        }
+        }*/
 
         m_visible = true;
         step(dtime);
@@ -374,17 +377,22 @@ void Clouds::update(f32 dtime, Camera *camera, Sky *sky, f32 &fog_range,
         camera_pos.X   = camera_pos.X + camera_offset.X * BS;
         camera_pos.Y   = camera_pos.Y + camera_offset.Y * BS;
         camera_pos.Z   = camera_pos.Z + camera_offset.Z * BS;
-
-
-        img::colorf ambient = img::color8ToColorf(m_params.color_ambient);
-        img::colorf bright = img::color8ToColorf(m_params.color_bright);
-
-        img::colorf cloud_color = sky->getCloudColor();
-        m_color.R(std::clamp(cloud_color.R() * bright.G(), ambient.R(), 1.0f));
-        m_color.G(std::clamp(cloud_color.G() * bright.G(), ambient.G(), 1.0f));
-        m_color.B(std::clamp(cloud_color.B() * bright.B(), ambient.B(), 1.0f));
-        m_color.A(bright.A());
     }
+
+    img::colorf ambient = img::color8ToColorf(m_params.color_ambient);
+    img::colorf bright = img::color8ToColorf(m_params.color_bright);
+
+    img::colorf cloud_color(1, 1, 1, 1);
+
+    if (sky)
+        cloud_color = sky->getCloudColor();
+    else if (color_override.has_value())
+        cloud_color = img::color8ToColorf(color_override.value());
+
+    m_color.R(std::clamp(cloud_color.R() * bright.G(), ambient.R(), 1.0f));
+    m_color.G(std::clamp(cloud_color.G() * bright.G(), ambient.G(), 1.0f));
+    m_color.B(std::clamp(cloud_color.B() * bright.B(), ambient.B(), 1.0f));
+    m_color.A(bright.A());
 
 	// is the camera inside the cloud mesh?
     m_camera_pos = camera_pos;
@@ -402,11 +410,6 @@ void Clouds::update(f32 dtime, Camera *camera, Sky *sky, f32 &fog_range,
 			m_camera_inside_cloud = filled;
 		}
 	}
-
-    updateMesh();
-
-    for (u32 i = 0; i < m_mesh->getVertexCount(); i++)
-        svtSetHWColor(m_mesh.get(), m_color, i);
 
     if (sky) {
         if (isCameraInsideCloud() && m_rndsys->getRenderer()->fogEnabled()) {

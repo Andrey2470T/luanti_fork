@@ -576,7 +576,7 @@ void Sky::render(PlayerCamera *camera)
     //rnd->setTransformMatrix(TMatrix::Projection, camera->getProjectionMatrix());
     rnd->setTransformMatrix(TMatrix::World, translate * scale);
 
-	if (m_sunlight_seen) {
+    //if (m_sunlight_seen) {
 		// Abort rendering if we're in the clouds.
 		// Stops rendering a pure white hole in the bottom of the skybox.
 		if (m_in_clouds)
@@ -624,7 +624,7 @@ void Sky::render(PlayerCamera *camera)
             rnd->setDefaultUniforms(1.0f, 0, 0.5f, img::BM_COUNT);
             rnd->draw(m_far_cloudyfog_mesh.get());
 		}
-	}
+    //}
 }
 
 void Sky::update(float time_of_day, float time_brightness,
@@ -712,7 +712,7 @@ void Sky::update(float time_of_day, float time_brightness,
 			bgcolor_bright_indoor_f, color_change_fraction);
         m_cloudcolor_bright_f = m_cloudcolor_bright_f.linInterp(
 			cloudcolor_bright_normal_f, color_change_fraction);
-		m_clouds_visible = false;
+        m_clouds_visible = false;
 	}
 
     img::color8 bgcolor_bright = img::colorfToColor8(m_bgcolor_bright_f);
