@@ -63,15 +63,16 @@ void Hud::updateCrosshair()
 {
     auto update = [this] (img::Image *img) {
         v2u size = img->getSize();
-        v2u scaled_size = size * std::max(std::floor(rnd_system->getScaleFactor()), 1.0f);
+        v2f scaled_size = toV2T<f32>(size * std::max(std::floor(rnd_system->getScaleFactor()), 1.0f));
 
         v2u wnd_size = rnd_system->getWindowSize();
         rectf r;
-        r.ULC = v2f(wnd_size.X/2.0f - scaled_size.X/2.0f, wnd_size.Y/2.0f - scaled_size.Y/2.0f);
-        r.LRC = r.ULC + v2f(scaled_size.X, scaled_size.Y);
+        r.ULC = toV2T<f32>(wnd_size)/2.0f - scaled_size/2.0f;
+        r.LRC = r.ULC + scaled_size;
 
         crosshair->getShape()->updateRectangle(0, r,
-            {crosshair_color, crosshair_color, crosshair_color, crosshair_color});
+            {crosshair_color, crosshair_color, crosshair_color, crosshair_color},
+            rnd_system->getPool(false)->getTileRect(img));
         crosshair->updateMesh();
     };
 
@@ -201,8 +202,10 @@ void Hud::render()
     if (g_touchcontrols && player->getInteraction()->isTouchCrosshairDisabled())
         crosshair_hidden = true;
 
-    if (!crosshair_hidden)
+    if (!crosshair_hidden) {
+        updateCrosshair();
         crosshair->draw();
+    }
 
     for (auto &sprite : hudsprites)
         sprite.second->draw();
