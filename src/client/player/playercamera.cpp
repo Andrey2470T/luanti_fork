@@ -331,7 +331,7 @@ void PlayerCamera::update(f32 dtime)
 		f32 newy = player_position.Y;
         f32 t = std::exp(-23 * dtime);
 		player_position.Y = oldy * t + newy * (1-t);
-	}
+    }
 
     m_playerbase_pos = player_position;
     m_playerbase_rot = v3f(0, -1 * yaw, 0);
@@ -385,7 +385,7 @@ void PlayerCamera::update(f32 dtime)
 	v3f rel_cam_target = v3f(0,0,1);
 	v3f rel_cam_up = v3f(0,1,0);
 
-	if (m_cache_view_bobbing_amount != 0.0f && m_view_bobbing_anim != 0.0f &&
+    if (m_cache_view_bobbing_amount != 0.0f && m_view_bobbing_anim != 0.0f &&
 		m_camera_mode < CAMERA_MODE_THIRD) {
 		f32 bobfrac = my_modf(m_view_bobbing_anim * 2);
 		f32 bobdir = (m_view_bobbing_anim < 0.5) ? 1.0 : -1.0;
@@ -401,7 +401,7 @@ void PlayerCamera::update(f32 dtime)
 		rel_cam_pos += bobvec * m_cache_view_bobbing_amount;
 		rel_cam_target += bobvec * m_cache_view_bobbing_amount;
 		rel_cam_up.rotateXYBy(-0.03 * bobdir * bobtmp * M_PI * m_cache_view_bobbing_amount);
-	}
+    }
 
 	// Compute absolute camera position and target
     matrix4 base_transform;
@@ -409,66 +409,67 @@ void PlayerCamera::update(f32 dtime)
     base_transform.setTranslation(m_playerbase_pos);
 
     matrix4 head_transform;
-    head_transform.setRotationDegrees(m_playerbase_rot + m_head_rotation);
-    head_transform.setTranslation(m_playerbase_pos + m_head_offset);
+    head_transform.setRotationDegrees(m_head_rotation);
+    head_transform.setTranslation(m_head_offset);
 
     matrix4 res_transform = base_transform * head_transform;
 
-    res_transform.transformVect(m_position, rel_cam_pos);
-    m_direction = res_transform.rotateAndScaleVect(rel_cam_target - rel_cam_pos);
+    v3f res_pos, res_dir, res_up;
+    res_transform.transformVect(res_pos, rel_cam_pos);
+    res_dir = res_transform.rotateAndScaleVect(rel_cam_target - rel_cam_pos);
 
-    v3f abs_cam_up = res_transform.rotateAndScaleVect(rel_cam_up);
+    res_up = res_transform.rotateAndScaleVect(rel_cam_up);
 
 	// Separate camera position for calculation
-    v3f my_cp = m_position;
+    v3f res_pos_cp = res_pos;
 
 	// Reposition the camera for third person view
 	if (m_camera_mode > CAMERA_MODE_FIRST)
 	{
 		if (m_camera_mode == CAMERA_MODE_THIRD_FRONT)
-            m_direction *= -1;
+            res_dir *= -1;
 
-		my_cp.Y += 2;
+        res_pos_cp.Y += 2;
 
 		// Calculate new position
 		bool abort = false;
 		for (int i = BS; i <= BS * 2.75; i++) {
-            my_cp.X = m_position.X + m_direction.X * -i;
-            my_cp.Z = m_position.Z + m_direction.Z * -i;
+            res_pos_cp.X = res_pos.X + res_dir.X * -i;
+            res_pos_cp.Z = res_pos.Z + res_dir.Z * -i;
 			if (i > 12)
-                my_cp.Y = m_position.Y + (m_direction.Y * -i);
+                res_pos_cp.Y = res_pos.Y + (res_dir.Y * -i);
 
 			// Prevent camera positioned inside nodes
             const NodeDefManager *nodemgr = m_client->ndef();
 			MapNode n = m_client->getEnv().getClientMap()
-				.getNode(floatToInt(my_cp, BS));
+                .getNode(floatToInt(res_pos_cp, BS));
 
 			const ContentFeatures& features = nodemgr->get(n);
 			if (features.walkable) {
-                my_cp.X += m_direction.X*-1*-BS/2;
-                my_cp.Z += m_direction.Z*-1*-BS/2;
-                my_cp.Y += m_direction.Y*-1*-BS/2;
+                res_pos_cp.X += res_dir.X*-1*-BS/2;
+                res_pos_cp.Z += res_dir.Z*-1*-BS/2;
+                res_pos_cp.Y += res_dir.Y*-1*-BS/2;
 				abort = true;
 				break;
             }
 		}
 
 		// If node blocks camera position don't move y to heigh
-		if (abort && my_cp.Y > player_position.Y+BS*2)
-			my_cp.Y = player_position.Y+BS*2;
+        if (abort && res_pos_cp.Y > player_position.Y+BS*2)
+            res_pos_cp.Y = player_position.Y+BS*2;
 	}
 
-    updateOffset(my_cp);
+    updateOffset(res_pos_cp);
 
     // Set camera node transformation
-    setPosition(my_cp - intToFloat(m_offset, BS));
-    setUpVector(abs_cam_up);
+    setPosition(res_pos_cp - intToFloat(m_offset, BS));
+    setUpVector(res_up);
 	// *100.0 helps in large map coordinates
-    setDirection(my_cp-intToFloat(m_offset, BS) + m_direction * 100);
+    setDirection(res_dir);
 
 	// update the camera position in third-person mode to render blocks behind player
 	// and correctly apply liquid post FX.
-    if (m_camera_mode != CAMERA_MODE_FIRST) m_position = my_cp;
+    if (m_camera_mode != CAMERA_MODE_FIRST) setPosition(res_pos_cp);
 
 	/*
 	 * Apply server-sent FOV, instantaneous or smooth transition.

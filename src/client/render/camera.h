@@ -127,13 +127,13 @@ public:
         m_position = pos;
     }
 
-    void setDirection(const v3f &dir, const v3f &parentRot=v3f())
+    void setDirection(const v3f &dir)
     {
         m_last_direction = m_direction;
         m_direction = dir;
         m_direction.normalize();
 
-        m_rotation = parentRot + m_direction.getHorizontalAngle();
+        m_rotation = m_direction.getHorizontalAngle();
     }
 
     void setUpVector(const v3f &up)
