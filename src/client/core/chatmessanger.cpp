@@ -220,8 +220,7 @@ void ChatMessanger::updateChat(f32 dtime)
         client->getRenderSystem()->getGameUI()->setChatText(restext, buf.getLineCount());
 	}
 
-	// Make sure that the size is still correct
-    client->getRenderSystem()->getGameUI()->updateChatSize();
+    client->getRenderSystem()->getGameUI()->updateChat();
 }
 
 void ChatMessanger::settingChangedCallback(const std::string &setting_name, void *data)

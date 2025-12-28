@@ -265,9 +265,10 @@ void GameUI::setChatText(const EnrichedString &chat_text, u32 _recent_chat_count
 {
     chattext->setText(chat_text);
     recent_chat_count = _recent_chat_count;
+    chattext_changed = true;
 }
 
-void GameUI::updateChatSize()
+void GameUI::updateChat()
 {
 	// Update gui element size and position
     f32 chat_y = 5;
@@ -284,9 +285,10 @@ void GameUI::updateChatSize()
         v2f(wndSize.X - 20, std::min<f32>(wndSize.Y, chattext->getTextHeight() + chat_y))
     );
 
-    if (chatSize == current_chat_size)
+    if (chatSize == current_chat_size && !chattext_changed)
         return;
     current_chat_size = chatSize;
+    chattext_changed = false;
 
     chattext->updateBuffer(rectf(chatSize));
 }

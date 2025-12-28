@@ -17,7 +17,7 @@
 
 ProfilerGraph::ProfilerGraph(RenderSystem *_rndsys, ResourceCache *cache, u8 _number, img::color8 _color)
     : rndsys(_rndsys), color(_color), number(_number),
-      lines(std::make_unique<MeshBuffer>(false, VType2D, render::MeshUsage::DYNAMIC)),
+      lines(std::make_unique<MeshBuffer>(true, VType2D, render::MeshUsage::DYNAMIC)),
       text(std::make_unique<UITextSprite>(rndsys->getFontManager(), rndsys->getGUIEnvironment()->getSkin(),
             L"", rndsys->getRenderer(), cache))
 {
@@ -79,7 +79,7 @@ void ProfilerGraph::update(const std::string &id, f32 new_value, s32 x_left, s32
 
     if (actualValues.size() == 0)
         return;
-    lines->reallocateData(actualValues.size() * 3);
+    lines->reallocateData(actualValues.size() * 2, actualValues.size() * 2);
 
     for (f32 &v : actualValues) {
         float scaledvalue = 1.0;
@@ -94,7 +94,7 @@ void ProfilerGraph::update(const std::string &id, f32 new_value, s32 x_left, s32
             v2f start_pos(x - 1, graph1y - ivalue1);
             v2f end_pos(x, graph1y - ivalue2);
 
-            Batcher2D::appendTriangle(lines.get(), {start_pos, end_pos, end_pos}, color);
+            Batcher2D::appendLine(lines.get(), {start_pos, end_pos}, color);
             lastscaledvalue = scaledvalue;
         } else {
             s32 ivalue = scaledvalue * graph1h;
@@ -102,7 +102,7 @@ void ProfilerGraph::update(const std::string &id, f32 new_value, s32 x_left, s32
             v2f start_pos(x, graph1y);
             v2f end_pos(x, graph1y - ivalue);
 
-            Batcher2D::appendTriangle(lines.get(), {start_pos, end_pos, end_pos}, color);
+            Batcher2D::appendLine(lines.get(), {start_pos, end_pos}, color);
         }
 
         x++;
@@ -115,7 +115,8 @@ void ProfilerGraph::draw() const
 {
     auto rnd = rndsys->getRenderer();
 
-    rnd->setDefaultShader(false, false);
+    rnd->setRenderState(false);
+    rnd->setDefaultShader(true, true);
     rnd->setDefaultUniforms(1.0f, 1, 0.5f, img::BM_COUNT);
 
     rnd->draw(lines.get());
@@ -147,6 +148,7 @@ void ProfilerGraph::updateText(const std::string &id, f32 show_min, f32 show_max
     text_str += utf8_to_wide(buf);
 
     text->setText(text_str);
+    text->setOverrideColor(color);
     text->updateBuffer(rectf(ulc_x, ulc_y, lrc_x, lrc_y));
 }
 

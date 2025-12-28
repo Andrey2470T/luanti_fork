@@ -197,7 +197,7 @@ void UITextSprite::updateBuffer(rectf &&r)
     std::array<img::color8, 4> arrColors = {color, color, color, color};
 
     v2f line_offset = offset;
-    u32 line_n = 0;
+    u32 char_n = 0;
 
     for (const auto &str : brokenText) {
         std::u16string str16 = wide_to_utf16(str.getString());
@@ -250,8 +250,8 @@ void UITextSprite::updateBuffer(rectf &&r)
             if (!overrideColorEnabled) {
                 auto textColors = text.getColors();
 
-                if (textColors.size() > 0 && line_n <= textColors.size()-1)
-                    arrColors = {textColors.at(line_n), textColors.at(line_n), textColors.at(line_n), textColors.at(line_n)};
+                if (char_n < textColors.size())
+                    arrColors = {textColors.at(char_n), textColors.at(char_n), textColors.at(char_n), textColors.at(char_n)};
             }
             if (shadowOffset) {
                 glyphparams.pos += v2f(shadowOffset);
@@ -285,12 +285,11 @@ void UITextSprite::updateBuffer(rectf &&r)
                 glyphparams_it->second.push_back(glyphparams);
 
             line_offset.X += advance;
+            char_n++;
         }
 
         line_offset.X = offset.X;
         line_offset.Y += height_line;
-
-        line_n++;
     }
 
     for (auto &tex_to_glyph : texture_to_glyph_map) {

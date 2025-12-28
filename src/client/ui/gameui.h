@@ -92,7 +92,7 @@ public:
         return flags & GUIF_SHOW_CHAT && recent_chat_count != 0 && profiler_current_page == 0;
 	}
     void setChatText(const EnrichedString &chat_text, u32 _recent_chat_count);
-	void updateChatSize();
+    void updateChat();
 
 	void updateProfiler();
 
@@ -161,7 +161,8 @@ private:
     img::color8 statustext_initial_color = img::black;
 
     std::unique_ptr<UITextSprite> chattext; // Chat text
-    u32 recent_chat_count = 0;
+    u32 recent_chat_count;
+    bool chattext_changed;
     rectf current_chat_size{0, 0, 0, 0};
 
     std::unique_ptr<UITextSprite> profilertext; // Profiler text
