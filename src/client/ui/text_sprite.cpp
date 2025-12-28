@@ -197,6 +197,7 @@ void UITextSprite::updateBuffer(rectf &&r)
     std::array<img::color8, 4> arrColors = {color, color, color, color};
 
     v2f line_offset = offset;
+    u32 line_n = 0;
 
     for (const auto &str : brokenText) {
         std::u16string str16 = wide_to_utf16(str.getString());
@@ -246,6 +247,12 @@ void UITextSprite::updateBuffer(rectf &&r)
                 glyph->pos.X, glyph->pos.Y + glyph->size.Y,
                 glyph->pos.X + glyph->size.X, glyph->pos.Y);
 
+            if (!overrideColorEnabled) {
+                auto textColors = text.getColors();
+
+                if (textColors.size() > 0 && line_n <= textColors.size()-1)
+                    arrColors = {textColors.at(line_n), textColors.at(line_n), textColors.at(line_n), textColors.at(line_n)};
+            }
             if (shadowOffset) {
                 glyphparams.pos += v2f(shadowOffset);
 
@@ -281,7 +288,9 @@ void UITextSprite::updateBuffer(rectf &&r)
         }
 
         line_offset.X = offset.X;
-        line_offset.Y = offset.Y + height_line;
+        line_offset.Y += height_line;
+
+        line_n++;
     }
 
     for (auto &tex_to_glyph : texture_to_glyph_map) {
@@ -296,11 +305,6 @@ void UITextSprite::updateWrappedText()
 {
     brokenText.clear();
 
-    if (!wordWrap) {
-        brokenText.push_back(text);
-        return;
-    }
-
     // Update word wrap
     render::TTFont* font = getActiveFont();
     if (!font)
@@ -314,6 +318,10 @@ void UITextSprite::updateWrappedText()
     u32 elWidth = shape.getMaxArea().getWidth();
     if (drawBorder)
         elWidth -= 2*skin->getSize(GUIDefaultSize::TextDistanceX);
+
+    if (!wordWrap)
+        elWidth = (u32)-1;
+
     wchar_t c;
 
     if (!rightToLeft)
@@ -324,26 +332,21 @@ void UITextSprite::updateWrappedText()
             c = text.getString()[i];
             bool lineBreak = false;
 
-            if (c == L'\r') // Mac or Windows breaks
-            {
-                lineBreak = true;
-                c = '\0';
-            }
-            else if (c == L'\n') // Unix breaks
+            if (c == L'\r' || c == L'\n') // Line breaks (always processed)
             {
                 lineBreak = true;
                 c = '\0';
             }
 
-            bool isWhitespace = (c == L' ' || c == 0);
-            if ( !isWhitespace )
+            //bool isWhitespace = (c == L' ' || c == 0);
+            if ( c != 0 )
             {
                 // part of a word
                 //word += c;
                 word.addChar(text, i);
             }
 
-            if ( isWhitespace || i == (size-1))
+            if ( c == 0 || i == (size-1))
             {
                 if (word.size())
                 {
@@ -398,10 +401,10 @@ void UITextSprite::updateWrappedText()
                     whitespace.clear();
                 }
 
-                if ( isWhitespace && c != 0)
+                /*if ( lineBreak )
                 {
                     whitespace.addChar(text, i);
-                }
+                }*/
 
                 // compute line break
                 if (lineBreak)
@@ -429,18 +432,13 @@ void UITextSprite::updateWrappedText()
             c = text.getString()[i];
             bool lineBreak = false;
 
-            if (c == L'\r') // Mac or Windows breaks
-            {
-                lineBreak = true;
-                c = '\0';
-            }
-            else if (c == L'\n') // Unix breaks
+            if (c == L'\r' || c == L'\n') // Mac, Windows orUnix breaks
             {
                 lineBreak = true;
                 c = '\0';
             }
 
-            if (c==L' ' || c==0 || i==0)
+            if (c == 0 || i==0)
             {
                 if (word.size())
                 {

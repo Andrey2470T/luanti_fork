@@ -216,7 +216,8 @@ void ChatMessanger::updateChat(f32 dtime)
     auto &buf = chat_backend->getRecentBuffer();
 	if (buf.getLinesModified()) {
 		buf.resetLinesModified();
-        client->getRenderSystem()->getGameUI()->setChatText(chat_backend->getRecentChat(), buf.getLineCount());
+        EnrichedString restext = chat_backend->getRecentChat();
+        client->getRenderSystem()->getGameUI()->setChatText(restext, buf.getLineCount());
 	}
 
 	// Make sure that the size is still correct
