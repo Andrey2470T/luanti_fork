@@ -53,9 +53,8 @@ class Atlas
 protected:
     std::unique_ptr<render::Texture2D> texture;
 
-    // Saves only unique tiles (determined by the hash)
-    std::unordered_map<size_t, u32> hash_to_index;
     std::vector<std::unique_ptr<AtlasTile>> tiles;
+    std::unordered_map<img::Image *, AtlasTile *> images_to_tile_mapping;
 
     std::list<u32> dirty_tiles;
 public:
@@ -84,7 +83,7 @@ public:
     bool addTile(AtlasTile *tile);
 
     AtlasTile *getTile(u32 i) const;
-    AtlasTile *getTileByImage(img::Image *img) const;
+    AtlasTile *getTileByImage(img::Image *img);
     
     void markDirty(u32 i);
     
@@ -103,6 +102,7 @@ public:
 class ResourceCache;
 class MeshBuffer;
 struct AnimatedAtlasTile;
+class GlyphAtlas;
 
 // Interface saving and handling sets of atlases of some type
 // Note: 'addTile' and 'addAnimatedTile' calls and atlases building
@@ -132,6 +132,8 @@ public:
 
     Atlas *getAtlas(u32 i) const;
     Atlas *getAtlasByTile(img::Image *tile, bool force_add=false, std::optional<AtlasTileAnim> anim=std::nullopt);
+
+    GlyphAtlas *getAtlasByChar(wchar_t ch);
 
     AtlasTile *getTileByImage(img::Image *tile);
     AnimatedAtlasTile *getAnimatedTileByImage(img::Image *tile);

@@ -38,31 +38,24 @@ GlyphAtlas::GlyphAtlas(u32 num, render::TTFont *ttfont, u32 &offset)
     drawTiles();
 }
 
-Glyph *GlyphAtlas::getByChar(wchar_t ch) const
+Glyph *GlyphAtlas::getGlyphByChar(wchar_t ch)
 {
-    std::wstring ch_str(1, ch);
-    auto ch16 = wide_to_utf16(ch_str);
+    auto foundGlyph = wchar_to_glyph_mapping[ch];
 
-    auto it = std::find_if(tiles.begin(), tiles.end(), [&ch16] (const std::unique_ptr<AtlasTile> &tile)
-    {
-        Glyph *glyph = dynamic_cast<Glyph *>(tile.get());
-
-        return glyph->symbol == ch16[0];
-    });
-
-    if (it == tiles.end())
+    if (!foundGlyph)
         return nullptr;
 
-    return dynamic_cast<Glyph *>((*it).get());
+    return foundGlyph;
 }
 
 void GlyphAtlas::fill(u32 num)
 {
-    auto glyphs = font->getGlyphsSet();
+    auto &glyphs = font->getGlyphsSet();
 
     for (u32 k = chars_offset; k < chars_offset + slots_count; k++) {
         Glyph *newGlyph = new Glyph(glyphs.at(k), num, font);
         addTile(newGlyph);
+        wchar_to_glyph_mapping[glyphs.at(k)] = newGlyph;
     }
 }
     
@@ -91,7 +84,7 @@ void GlyphAtlas::packTiles()
 	}
 }
 
-bool GlyphAtlas::readCache(u32 num)
+/*bool GlyphAtlas::readCache(u32 num)
 {
     fs::path atlasPath = fs::path(porting::path_cache) / "atlases";
     FileCache atlasCache(atlasPath);
@@ -215,7 +208,7 @@ void GlyphAtlas::saveToCache(u32 num)
     root[atlasName] = atlasInfo;
 
     File::write(atlasPath / "atlases.json", fastWriteJson(root));
-}
+}*/
 
 std::string GlyphAtlas::getName(u32 size, u32 num) const
 {
@@ -429,7 +422,6 @@ img::Image *FontManager::drawTextToImage(const std::wstring &text,
     render::FontMode mode, render::FontStyle style, std::optional<u32> size, const img::color8 &color)
 {
     auto font = getFontOrCreate(mode, style, size);
-
     return font->drawText(text, color);
 }
 

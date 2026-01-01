@@ -135,7 +135,7 @@ void Game::run()
 		g_profiler->graphPop(dummyvalues);
 	}
 
-    auto drawstats = rndsys->getRenderer()->getDrawStats();
+    auto &drawstats = rndsys->getRenderer()->getDrawStats();
     drawstats.fps.reset();
 
 	set_light_table(g_settings->getFloat("display_gamma"));
@@ -179,6 +179,15 @@ void Game::run()
 		// Prepare render data for next iteration
 
         rndsys->getRenderer()->updateStats(dtime);
+
+        auto gl_version = rndsys->getWindow()->getGLVersionString();
+        std::string caption = std::string(PROJECT_NAME_C) +
+            " " + g_version_hash +
+            " [" + gettext("Main Menu") + "]" +
+            " [" + gl_version + "] FPS: " +
+                std::to_string(1.0 / drawstats.dtime_jitter.avg);
+
+        rndsys->getWindow()->setCaption(utf8_to_wide(caption));
 
         if (!pkt_handler->checkConnection(error_message, reconnect_requested))
 			break;

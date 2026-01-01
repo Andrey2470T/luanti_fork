@@ -25,15 +25,13 @@ void Atlas::createTexture(const std::string &name, u32 size)
 
 bool Atlas::addTile(AtlasTile *tile)
 {
-    size_t tileHash = tile->hash();
+    auto foundTile = getTileByImage(tile->image);
 
-    auto it = hash_to_index.find(tileHash);
-
-    if (it != hash_to_index.end())
+    if (foundTile)
         return false;
 
     tiles.emplace_back(tile);
-    hash_to_index[tileHash] = tiles.size() - 1;
+    images_to_tile_mapping[tile->image] = tile;
     markDirty(tiles.size() - 1);
 
     return true;
@@ -47,17 +45,14 @@ AtlasTile *Atlas::getTile(u32 i) const
     return tiles.at(i).get();
 }
 
-AtlasTile *Atlas::getTileByImage(img::Image *img) const
+AtlasTile *Atlas::getTileByImage(img::Image *img)
 {
-    auto find_tile = std::find_if(tiles.begin(), tiles.end(), [img] (const std::unique_ptr<AtlasTile> &tile)
-    {
-        return img == tile->image;
-    });
+    auto foundTile = images_to_tile_mapping[img];
 
-    if (find_tile == tiles.end())
+    if (!foundTile)
         return nullptr;
 
-    return find_tile->get();
+    return foundTile;
 }
 
 void Atlas::markDirty(u32 i)
@@ -137,18 +132,32 @@ Atlas *AtlasPool::getAtlasByTile(img::Image *tile, bool force_add, std::optional
 {
     for (u32 i = 0; i < atlases.size(); i++) {
         auto atlas = atlases.at(i);
-        for (u32 j = 0; j < atlas->getTilesCount(); j++) {
-            auto atlasTile = atlas->getTile(j);
+        auto atlasTile = atlas->getTileByImage(tile);
 
-            if (atlasTile->image == tile)
-                return atlas;
-        }
+        if (atlasTile)
+            return atlas;
     }
 
     if (force_add) {
         forceAddTile(tile, anim);
         return atlases.back();
     }
+    return nullptr;
+}
+
+GlyphAtlas *AtlasPool::getAtlasByChar(wchar_t ch)
+{
+    if (type != AtlasType::GLYPH)
+        return nullptr;
+
+    for (u32 i = 0; i < atlases.size(); i++) {
+        auto atlas = dynamic_cast<GlyphAtlas *>(atlases.at(i));
+        auto atlasTile = atlas->getGlyphByChar(ch);
+
+        if (atlasTile)
+            return atlas;
+    }
+
     return nullptr;
 }
 
@@ -202,19 +211,17 @@ rectf AtlasPool::getTileRect(img::Image *tile, bool toUV, bool force_add, std::o
 
     for (u32 i = 0; i < atlases.size(); i++) {
         auto atlas = atlases.at(i);
-        for (u32 j = 0; j < atlas->getTilesCount(); j++) {
-            auto atlasTile = atlas->getTile(j);
+        auto atlasTile = atlas->getTileByImage(tile);
 
-            if (atlasTile->image != tile)
-                continue;
+        if (!atlasTile)
+            continue;
 
-            if (toUV)
-                return atlasTile->toUV(atlas->getTextureSize());
-            else {
-                v2f ulc_f(atlasTile->pos.X, atlasTile->pos.Y + atlasTile->size.Y);
-                v2f lrc_f(atlasTile->pos.X + atlasTile->size.X, atlasTile->pos.Y);
-                return rectf(ulc_f, lrc_f);
-            }
+        if (toUV)
+            return atlasTile->toUV(atlas->getTextureSize());
+        else {
+            v2f ulc_f(atlasTile->pos.X, atlasTile->pos.Y + atlasTile->size.Y);
+            v2f lrc_f(atlasTile->pos.X + atlasTile->size.X, atlasTile->pos.Y);
+            return rectf(ulc_f, lrc_f);
         }
     }
 

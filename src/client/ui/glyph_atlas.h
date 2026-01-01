@@ -8,30 +8,36 @@ struct Glyph : public AtlasTile
 {
     wchar_t symbol;
 
+    s32 minx, maxx, miny, maxy, advance;
+
     Glyph(wchar_t _symbol, u32 num)
         : AtlasTile(nullptr, num), symbol(_symbol)
     {}
     Glyph(wchar_t _symbol, u32 num, render::TTFont *font)
         : AtlasTile(font->getGlyphImage(_symbol), num),  symbol(_symbol)
-    {}
+    {
+        font->getGlyphMetrics((wchar_t)symbol, &minx, &maxx, &miny, &maxy, &advance);
+    }
 };
 
 class GlyphAtlas : public Atlas
 {
     render::TTFont *font;
+
+    std::unordered_map<wchar_t, Glyph *> wchar_to_glyph_mapping;
     
     u16 slots_count;
     char16_t chars_offset=0;
 public:
     GlyphAtlas(u32 num, render::TTFont *ttfont, u32 &offset);
 
-    Glyph *getByChar(wchar_t ch) const;
+    Glyph *getGlyphByChar(wchar_t ch);
     void fill(u32 num);
     
     void packTiles() override;
 
-    bool readCache(u32 num);
-    void saveToCache(u32 num);
+    //bool readCache(u32 num);
+    //void saveToCache(u32 num);
 
     std::string getName(u32 size, u32 num) const override;
 };
@@ -59,7 +65,7 @@ public:
 
     render::TTFont *getDefaultFont()
     {
-        return getFontOrCreate(render::FontMode::MONO, render::FontStyle::NORMAL);
+        return getFontOrCreate(render::FontMode::GRAY, render::FontStyle::NORMAL);
     }
 
     render::TTFont *getFont(render::FontMode mode, render::FontStyle style, std::optional<u32> size=std::nullopt) const;

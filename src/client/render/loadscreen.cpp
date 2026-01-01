@@ -61,11 +61,10 @@ void LoadScreen::draw(v2u screensize, const std::wstring &text, f32 dtime, bool 
 
         v2f center(screensize.X/2, screensize.Y/2);
 
-        auto font = guitext->getActiveFont();
-        v2f textsize(font->getTextWidth(text), font->getTextHeight(text));
-
         guitext->setText(text);
-        guitext->updateBuffer(rectf(center-textsize/2, center+textsize/2));
+
+        v2f textsize(guitext->getTextWidth(), guitext->getTextHeight());
+        guitext->updateBuffer(rectf(center-textsize/2.0f, center+textsize/2.0f));
 
         s32 percent_min = 0;
         s32 percent_max = percent;

@@ -283,7 +283,7 @@ void GUIEngine::run()
 
 	f32 dtime = 0.0f;
 
-    auto draw_stats = rnd->getDrawStats();
+    auto &draw_stats = rnd->getDrawStats();
     draw_stats.fps.reset();
 
 	auto framemarker = FrameMarker("GUIEngine::run()-frame").started();
@@ -296,6 +296,17 @@ void GUIEngine::run()
 		framemarker.start();
 
         if (wnd->isVisible()) {
+            m_rndsys->getRenderer()->updateStats(dtime);
+
+            auto gl_version = m_rndsys->getWindow()->getGLVersionString();
+            std::string caption = std::string(PROJECT_NAME_C) +
+                " " + g_version_hash +
+                " [" + gettext("Main Menu") + "]" +
+                " [" + gl_version + "] FPS: " +
+                std::to_string(1.0 / draw_stats.dtime_jitter.avg);
+
+            m_rndsys->getWindow()->setCaption(utf8_to_wide(caption));
+
 			// check if we need to update the "upper left corner"-text
             if (text_height != font_mgr->getDefaultFont()->getFontHeight()) {
 				updateTopLeftTextSize();

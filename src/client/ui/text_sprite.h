@@ -16,6 +16,8 @@ class UITextSprite : public UISprite
 	EnrichedString text;
 	std::vector<EnrichedString> brokenText;
 
+    u32 textWidth, textHeight, lineHeight;
+
     GUIAlignment hAlign = GUIAlignment::UpperLeft;
     GUIAlignment vAlign = GUIAlignment::UpperLeft;
     bool overrideColorEnabled = false;
@@ -38,8 +40,8 @@ class UITextSprite : public UISprite
         rectf uv;
     };
 
-    std::vector<std::pair<render::Texture2D *, u32>> texture_to_charcount_map;
-    std::vector<std::pair<render::Texture2D *, std::vector<GlyphPrimitiveParams>>> texture_to_glyph_map;
+    std::unordered_map<render::Texture2D *, u32> texture_to_charcount_map;
+    std::unordered_map<render::Texture2D *, std::vector<GlyphPrimitiveParams>> texture_to_glyph_map;
 public:
     UITextSprite(FontManager *font_manager, GUISkin *guiskin, std::variant<EnrichedString, std::wstring> text, Renderer *renderer,
         ResourceCache *resCache, bool border = false, bool wordWrap = false, bool fillBackground = false);
@@ -91,9 +93,18 @@ public:
         return text.getString();
     }
 
-    u32 getTextWidth() const;
-    u32 getTextHeight() const;
-    v2u getTextSize() const;
+    u32 getTextWidth() const
+    {
+        return textWidth;
+    }
+    u32 getTextHeight() const
+    {
+        return textHeight;
+    }
+    v2u getTextSize() const
+    {
+        return v2u(getTextWidth(), getTextHeight());
+    }
 
     void enableDrawBackground(bool draw)
     {
@@ -143,7 +154,6 @@ public:
 
     void updateBuffer(rectf &&r);
 private:
-    void updateWrappedText();
-    u32 getBrokenTextWidth() const;
+    void updateText();
     render::Texture2D *getGlyphAtlasTexture() const;
 };

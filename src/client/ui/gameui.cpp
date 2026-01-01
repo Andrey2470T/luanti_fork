@@ -60,7 +60,7 @@ void GameUI::init()
 
 	// First line of debug text
     auto first_debugline = debugtext->addTextSprite(utf8_to_wide(PROJECT_NAME_C), v2f(5, 5));
-    debugtext->addTextSprite(L"", v2f(5, 5 + first_debugline->getActiveFont()->getLineHeight()));
+    debugtext->addTextSprite(L"", v2f(5, 5 + first_debugline->getTextHeight()));
 
 	// Chat text
     chattext = std::make_unique<UITextSprite>(font_mgr, skin, L"", rndsys->getRenderer(), cache, false, true);
@@ -86,8 +86,8 @@ void GameUI::init()
 	// Profiler text (size is updated when text is updated)
     profilertext = std::make_unique<UITextSprite>(font_mgr, skin, L"<Profiler>",
         rndsys->getRenderer(), cache);
-    profilertext->setOverrideFont(font_mgr->getFontOrCreate(render::FontMode::MONO, render::FontStyle::NORMAL,
-        font_mgr->getDefaultFontSize(render::FontMode::MONO) * 0.9f));
+    profilertext->setOverrideFont(font_mgr->getFontOrCreate(render::FontMode::GRAY, render::FontStyle::NORMAL,
+        font_mgr->getDefaultFontSize(render::FontMode::GRAY) * 0.9f));
     profilertext->setVisible(false);
 
     graph_set = std::make_unique<ProfilerGraphSet>(rndsys, cache);
@@ -141,9 +141,8 @@ void GameUI::update(Client *client, const GUIChatConsole *chat_console, f32 dtim
 
         if (first_debug_text != last_first_debug_text) {
             first_debug_line->setText(first_debug_text);
-            auto font = first_debug_line->getActiveFont();
             first_debug_line->updateBuffer(
-                rectf(v2f(5, 5), font->getTextWidth(first_debug_text), font->getTextHeight(first_debug_text)));
+                rectf(v2f(5, 5), first_debug_line->getTextWidth(), first_debug_line->getTextHeight()));
             last_first_debug_text = first_debug_text;
         }
 	}
@@ -186,7 +185,7 @@ void GameUI::update(Client *client, const GUIChatConsole *chat_console, f32 dtim
         if (second_debug_text != last_second_debug_text) {
             second_debug_line->setText(second_debug_text);
             second_debug_line->updateBuffer(
-                rectf(v2f(5, 5 + first_debug_line->getActiveFont()->getLineHeight()),
+                rectf(v2f(5, 5 + first_debug_line->getTextHeight()),
                 second_debug_line->getTextWidth(), second_debug_line->getTextHeight()));
             last_second_debug_text = second_debug_text;
         }
