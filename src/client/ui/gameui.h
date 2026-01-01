@@ -149,8 +149,6 @@ private:
     IntervalLimiter profiler_interval;
 
     std::unique_ptr<UISpriteBank> debugtext;  // First and second lines of debug text
-    std::wstring last_first_debug_text;
-    std::wstring last_second_debug_text;
 
     std::unique_ptr<UITextSprite> infotext; // At the middle of the screen
     //std::wstring m_infotext;
@@ -162,8 +160,6 @@ private:
 
     std::unique_ptr<UITextSprite> chattext; // Chat text
     u32 recent_chat_count;
-    bool chattext_changed;
-    rectf current_chat_size{0, 0, 0, 0};
 
     std::unique_ptr<UITextSprite> profilertext; // Profiler text
     u8 profiler_current_page = 0;

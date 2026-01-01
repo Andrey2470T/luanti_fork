@@ -101,14 +101,14 @@ void ClientEnvironment::step(f32 dtime)
     updateFog();
 
 	/* Step time of day */
-	stepTimeOfDay(dtime);
+    stepTimeOfDay(dtime);
 
     /* Step local player */
     m_local_player->step(dtime);
 
     /* Calls mods callbacks */
-	if (m_client->modsLoaded())
-		m_script->environment_step(dtime);
+    if (m_client->modsLoaded())
+        m_script->environment_step(dtime);
 
 	// Update lighting on local player (used for wield item)
     /*u32 day_night_ratio = getDayNightRatio();
@@ -128,7 +128,7 @@ void ClientEnvironment::step(f32 dtime)
     }*/
 
     /* Step active objects and update lighting of them */
-	bool update_lighting = m_active_object_light_update_interval.step(dtime, 0.21);
+    bool update_lighting = m_active_object_light_update_interval.step(dtime, 0.21);
     auto cb_state = [this, dtime, update_lighting] (ClientActiveObject *cao) {
         RenderCAO *rendercao = dynamic_cast<RenderCAO *>(cao);
 
@@ -139,7 +139,7 @@ void ClientEnvironment::step(f32 dtime)
             rendercao->updateVertexColor(true);
 	};
 
-	m_ao_manager.step(dtime, cb_state);
+    m_ao_manager.step(dtime, cb_state);
 
     /* Step and handle simple objects */
     /*g_profiler->avg("ClientEnv: CSO count [#]", m_simple_objects.size());

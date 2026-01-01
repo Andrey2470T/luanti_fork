@@ -22,6 +22,7 @@ ProfilerGraph::ProfilerGraph(RenderSystem *_rndsys, ResourceCache *cache, u8 _nu
             L"", rndsys->getRenderer(), cache))
 {
     text->setOverrideFont(rndsys->getFontManager()->getDefaultFont());
+    text->setOverrideColor(color);
     text->enableWordWrap(true);
 }
 
@@ -152,12 +153,14 @@ void ProfilerGraph::updateText(const std::string &id, f32 show_min, f32 show_max
     text_str += utf8_to_wide(buf);
 
     text->setText(text_str);
-    text->setOverrideColor(color);
     text->updateBuffer(rectf(ulc_x, ulc_y, lrc_x, lrc_y));
 }
 
 void ProfilerGraphSet::put(const Profiler::GraphValues &values)
 {
+    if (!is_visible)
+        return;
+
     auto wnd_size = rndsys->getWindowSize();
 
     for (auto v : values) {

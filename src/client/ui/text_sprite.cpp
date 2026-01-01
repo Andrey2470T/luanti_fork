@@ -29,19 +29,31 @@ void UITextSprite::setOverrideFont(render::TTFont *font)
     updateText();
 
     texture = getGlyphAtlasTexture();
+
+    needsUpdate = true;
 }
 
 void UITextSprite::setOverrideColor(const img::color8 &c)
 {
+    if (overrideColorEnabled && overrideColor == c)
+        return;
+
     overrideColor = c;
     overrideColorEnabled = true;
+
+    needsUpdate = true;
 }
 
 void UITextSprite::setBackgroundColor(const img::color8 &c)
 {
+    if (overrideBGColorEnabled && bgColor == c)
+        return;
+
     bgColor = c;
     overrideBGColorEnabled = true;
     drawBackground = true;
+
+    needsUpdate = true;
 }
 
 void UITextSprite::enableWordWrap(bool wrap)
@@ -62,12 +74,20 @@ void UITextSprite::enableRightToLeft(bool rtl)
 
 void UITextSprite::setAlignment(GUIAlignment horizontal, GUIAlignment vertical)
 {
+    if (hAlign == horizontal && vAlign == vertical)
+        return;
+
     hAlign = horizontal;
     vAlign = vertical;
+
+    needsUpdate = true;
 }
 
 void UITextSprite::setText(const EnrichedString &_text)
 {
+    if (text == _text)
+        return;
+
     text = _text;
     updateText();
 }
@@ -109,6 +129,12 @@ void UITextSprite::draw(std::optional<u32> primOffset, std::optional<u32> primCo
 
 void UITextSprite::updateBuffer(rectf &&r)
 {
+    if (r == lastRectArea && !needsUpdate)
+        return;
+
+    lastRectArea = r;
+    needsUpdate = false;
+
     clear();
     texture_to_charcount_map.clear();
     texture_to_glyph_map.clear();
@@ -421,6 +447,8 @@ void UITextSprite::updateText()
 
     lineHeight = font->getLineHeight();
     textHeight = lineHeight * brokenText.size();
+
+    needsUpdate = true;
 }
 
 render::Texture2D *UITextSprite::getGlyphAtlasTexture() const

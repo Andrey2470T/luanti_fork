@@ -138,13 +138,9 @@ void GameUI::update(Client *client, const GUIChatConsole *chat_console, f32 dtim
             << " | RTT: " << (client->getPacketHandler()->getRTT() * 1000.0f) << "ms";
 
         std::wstring first_debug_text = utf8_to_wide(os.str());
-
-        if (first_debug_text != last_first_debug_text) {
-            first_debug_line->setText(first_debug_text);
-            first_debug_line->updateBuffer(
-                rectf(v2f(5, 5), first_debug_line->getTextWidth(), first_debug_line->getTextHeight()));
-            last_first_debug_text = first_debug_text;
-        }
+        first_debug_line->setText(first_debug_text);
+        first_debug_line->updateBuffer(
+            rectf(v2f(5, 5), first_debug_line->getTextWidth(), first_debug_line->getTextHeight()));
 	}
 
 	// Finally set the guitext visible depending on the flag
@@ -182,13 +178,10 @@ void GameUI::update(Client *client, const GUIChatConsole *chat_console, f32 dtim
 
         std::wstring second_debug_text = utf8_to_wide(os.str());
 
-        if (second_debug_text != last_second_debug_text) {
-            second_debug_line->setText(second_debug_text);
-            second_debug_line->updateBuffer(
-                rectf(v2f(5, 5 + first_debug_line->getTextHeight()),
-                second_debug_line->getTextWidth(), second_debug_line->getTextHeight()));
-            last_second_debug_text = second_debug_text;
-        }
+        second_debug_line->setText(second_debug_text);
+        second_debug_line->updateBuffer(
+            rectf(v2f(5, 5 + first_debug_line->getTextHeight()),
+            second_debug_line->getTextWidth(), second_debug_line->getTextHeight()));
 	}
 
     second_debug_line->setVisible(flags & GUIF_SHOW_BASIC_DEBUG);
@@ -264,7 +257,6 @@ void GameUI::setChatText(const EnrichedString &chat_text, u32 _recent_chat_count
 {
     chattext->setText(chat_text);
     recent_chat_count = _recent_chat_count;
-    chattext_changed = true;
 }
 
 void GameUI::updateChat()
@@ -283,11 +275,6 @@ void GameUI::updateChat()
         v2f(10, chat_y),
         v2f(wndSize.X - 20, std::min<f32>(wndSize.Y, chattext->getTextHeight() + chat_y))
     );
-
-    if (chatSize == current_chat_size && !chattext_changed)
-        return;
-    current_chat_size = chatSize;
-    chattext_changed = false;
 
     chattext->updateBuffer(rectf(chatSize));
 }

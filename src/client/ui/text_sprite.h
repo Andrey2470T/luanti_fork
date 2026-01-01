@@ -42,6 +42,9 @@ class UITextSprite : public UISprite
 
     std::unordered_map<render::Texture2D *, u32> texture_to_charcount_map;
     std::unordered_map<render::Texture2D *, std::vector<GlyphPrimitiveParams>> texture_to_glyph_map;
+
+    bool needsUpdate = true;
+    rectf lastRectArea;
 public:
     UITextSprite(FontManager *font_manager, GUISkin *guiskin, std::variant<EnrichedString, std::wstring> text, Renderer *renderer,
         ResourceCache *resCache, bool border = false, bool wordWrap = false, bool fillBackground = false);
