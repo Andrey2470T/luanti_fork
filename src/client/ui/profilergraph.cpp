@@ -26,10 +26,6 @@ ProfilerGraph::ProfilerGraph(RenderSystem *_rndsys, ResourceCache *cache, u8 _nu
     text->enableWordWrap(true);
 }
 
-void updateRectangle(u32 n, const rectf &r)
-{
-
-}
 void ProfilerGraph::update(const std::string &id, f32 new_value, s32 x_left, s32 y_bottom)
 {
     values.emplace_back(new_value);
@@ -66,32 +62,9 @@ void ProfilerGraph::update(const std::string &id, f32 new_value, s32 x_left, s32
     bool relativegraph = (show_min != 0 && show_min != show_max);
     f32 lastscaledvalue = 0.0;
 
-    /*std::vector<f32> actualValues;
-    actualValues.resize(log_max_size);
-
-    for (f32 &v : values) {
-        float scaledvalue = 1.0;
-
-        if (show_max != show_min)
-            scaledvalue = (v - show_min) / (show_max - show_min);
-
-        if (scaledvalue == 1.0 && v == 0) {
-            x++;
-            continue;
-        }
-
-        actualValues.push_back(v);
-    }*/
-
     std::vector<f32> actualValues;
     actualValues.insert(actualValues.begin(), values.begin(), values.end());
     actualValues.resize(log_max_size);
-
-    //lines->clear();
-
-    //if (actualValues.size() == 0)
-    //    return;
-    //lines->reallocateData(actualValues.size() * 4, actualValues.size() * 6);
 
     for (u32 v_i = 0; v_i < actualValues.size(); v_i++) {
         f32 &v = actualValues.at(v_i);
