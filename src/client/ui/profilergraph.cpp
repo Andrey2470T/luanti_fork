@@ -17,7 +17,7 @@
 
 ProfilerGraph::ProfilerGraph(RenderSystem *_rndsys, ResourceCache *cache, u8 _number, img::color8 _color)
     : rndsys(_rndsys), color(_color), number(_number),
-      lines(std::make_unique<MeshBuffer>(true, VType2D, render::MeshUsage::DYNAMIC)),
+      lines(std::make_unique<UIRects>(rndsys, log_max_size)),
       text(std::make_unique<UITextSprite>(rndsys->getFontManager(), rndsys->getGUIEnvironment()->getSkin(),
             L"", rndsys->getRenderer(), cache))
 {
@@ -26,6 +26,10 @@ ProfilerGraph::ProfilerGraph(RenderSystem *_rndsys, ResourceCache *cache, u8 _nu
     text->enableWordWrap(true);
 }
 
+void updateRectangle(u32 n, const rectf &r)
+{
+
+}
 void ProfilerGraph::update(const std::string &id, f32 new_value, s32 x_left, s32 y_bottom)
 {
     values.emplace_back(new_value);
@@ -33,7 +37,9 @@ void ProfilerGraph::update(const std::string &id, f32 new_value, s32 x_left, s32
     while (values.size() > log_max_size)
         values.erase(values.begin());
 
-    for (f32 v : values) {
+    f32 min_value = values.front();
+    f32 max_value = values.front();
+    for (f32 &v : values) {
         min_value = std::min(min_value, v);
         max_value = std::max(max_value, v);
     }
@@ -60,7 +66,8 @@ void ProfilerGraph::update(const std::string &id, f32 new_value, s32 x_left, s32
     bool relativegraph = (show_min != 0 && show_min != show_max);
     f32 lastscaledvalue = 0.0;
 
-    std::deque<f32> actualValues;
+    /*std::vector<f32> actualValues;
+    actualValues.resize(log_max_size);
 
     for (f32 &v : values) {
         float scaledvalue = 1.0;
@@ -74,19 +81,29 @@ void ProfilerGraph::update(const std::string &id, f32 new_value, s32 x_left, s32
         }
 
         actualValues.push_back(v);
-    }
+    }*/
 
-    lines->clear();
+    std::vector<f32> actualValues;
+    actualValues.insert(actualValues.begin(), values.begin(), values.end());
+    actualValues.resize(log_max_size);
 
-    if (actualValues.size() == 0)
-        return;
-    lines->reallocateData(actualValues.size() * 4, actualValues.size() * 6);
+    //lines->clear();
 
-    for (f32 &v : actualValues) {
+    //if (actualValues.size() == 0)
+    //    return;
+    //lines->reallocateData(actualValues.size() * 4, actualValues.size() * 6);
+
+    for (u32 v_i = 0; v_i < actualValues.size(); v_i++) {
+        f32 &v = actualValues.at(v_i);
         float scaledvalue = 1.0;
 
         if (show_max != show_min)
             scaledvalue = (v - show_min) / (show_max - show_min);
+
+        img::color8 actualColor = color;
+
+        if (v == 0)
+            actualColor.A(0);
 
         v2f start_pos, end_pos;
         if (relativegraph) {
@@ -108,24 +125,18 @@ void ProfilerGraph::update(const std::string &id, f32 new_value, s32 x_left, s32
         normal.rotateBy(90);
 
         rectf line_r(start_pos, end_pos+normal);
-        Batcher2D::appendRectangle(lines.get(), line_r, {color, color, color, color});
+
+        lines->updateRect(v_i, line_r, {actualColor, actualColor, actualColor, actualColor});
 
         x++;
     }
 
-    lines->uploadData();
+    lines->updateMesh();
 }
 
 void ProfilerGraph::draw() const
 {
-    auto rnd = rndsys->getRenderer();
-
-    rnd->setRenderState(false);
-    rnd->setDefaultShader(true, true);
-    rnd->setDefaultUniforms(1.0f, 1, 0.5f, img::BM_COUNT);
-
-    rnd->draw(lines.get());
-
+    lines->draw();
     text->draw();
 }
 
@@ -163,14 +174,8 @@ void ProfilerGraphSet::put(const Profiler::GraphValues &values)
 
     auto wnd_size = rndsys->getWindowSize();
 
-    for (auto v : values) {
-        auto graph_found = graphs.find(v.first);
-
-        if (graph_found == graphs.end())
-            continue;
-
-        graph_found->second->update(graph_found->first, v.second, 10, wnd_size.Y - 10);
-    }
+    for (auto v : values)
+        graphs.at(v.first)->update(v.first, v.second, 10, wnd_size.Y - 10);
 }
 
 void ProfilerGraphSet::draw() const

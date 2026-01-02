@@ -141,7 +141,7 @@ void GameUI::update(Client *client, const GUIChatConsole *chat_console, f32 dtim
         first_debug_line->setText(first_debug_text);
         first_debug_line->updateBuffer(
             rectf(v2f(5, 5), first_debug_line->getTextWidth(), first_debug_line->getTextHeight()));
-	}
+    }
 
 	// Finally set the guitext visible depending on the flag
     first_debug_line->setVisible(flags & GUIF_SHOW_MINIMAL_DEBUG);
@@ -182,7 +182,7 @@ void GameUI::update(Client *client, const GUIChatConsole *chat_console, f32 dtim
         second_debug_line->updateBuffer(
             rectf(v2f(5, 5 + first_debug_line->getTextHeight()),
             second_debug_line->getTextWidth(), second_debug_line->getTextHeight()));
-	}
+    }
 
     second_debug_line->setVisible(flags & GUIF_SHOW_BASIC_DEBUG);
 
@@ -232,7 +232,7 @@ void GameUI::update(Client *client, const GUIChatConsole *chat_console, f32 dtim
             fade_color.A() * (1.0f - d * d)));
         guitext_status->setOverrideColor(fade_color);
         guitext_status->updateBuffer(rectf(guitext_status_shift, guitext_status_shift+toV2T<f32>(guitext_status->getTextSize())));
-	}
+    }
 
 	// Hide chat when disabled by server or when console is visible
     chattext->setVisible(isChatVisible() && !chat_console->isVisible() && (player->hud_flags & HUD_FLAG_CHAT_VISIBLE));

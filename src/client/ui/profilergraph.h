@@ -6,13 +6,14 @@
 
 #include <BasicIncludes.h>
 #include <utility>
-#include <deque>
+#include <list>
 #include <Render/TTFont.h>
 #include "profiler.h"
+#include "extra_images.h"
 
 class RenderSystem;
 class ResourceCache;
-class MeshBuffer;
+class UIRects;
 class UITextSprite;
 
 /* Profiler display */
@@ -20,10 +21,7 @@ class ProfilerGraph
 {
     RenderSystem *rndsys;
 
-    std::deque<f32> values;
-
-    f32 min_value;
-    f32 max_value;
+    std::list<f32> values;
 
     img::color8 color;
 
@@ -31,8 +29,7 @@ class ProfilerGraph
 
     u32 log_max_size = 200;
 
-    std::unique_ptr<MeshBuffer> lines;
-
+    std::unique_ptr<UIRects> lines;
     std::unique_ptr<UITextSprite> text;
 public:
     ProfilerGraph(RenderSystem *_rndsys, ResourceCache *cache, u8 _number, img::color8 _color = img::white);
