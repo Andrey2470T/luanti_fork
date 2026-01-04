@@ -177,7 +177,6 @@ void fillEmptyCustomAttribs(MeshBuffer *buf, u8 firstCustomAtrribIndex)
 {
     auto vertexType = buf->getVAO()->getVertexType();
 
-    u32 lastVNum = buf->getVertexCount()-1;
     for (u8 i = firstCustomAtrribIndex; i < vertexType.Attributes.size(); i++) {
         auto &attrib = vertexType.Attributes[i];
 
@@ -186,13 +185,13 @@ void fillEmptyCustomAttribs(MeshBuffer *buf, u8 firstCustomAtrribIndex)
 
             switch (attrib.ComponentType) {
             case BasicType::UINT8:
-                buf->setUInt8Attr(0, firstCustomAtrribIndex, lastVNum);
+                buf->setUInt8Attr(0, firstCustomAtrribIndex);
                 break;
              case BasicType::UINT16:
-                buf->setUInt16Attr(0, firstCustomAtrribIndex, lastVNum);
+                buf->setUInt16Attr(0, firstCustomAtrribIndex);
                 break;
             case BasicType::FLOAT:
-                buf->setFloatAttr(0.0f, firstCustomAtrribIndex, lastVNum);
+                buf->setFloatAttr(0.0f, firstCustomAtrribIndex);
                 break;
             default:
                 break;
@@ -200,16 +199,16 @@ void fillEmptyCustomAttribs(MeshBuffer *buf, u8 firstCustomAtrribIndex)
             break;
         }
         case 2: {
-            buf->setV2FAttr(v2f(), firstCustomAtrribIndex, lastVNum);
+            buf->setV2FAttr(v2f(), firstCustomAtrribIndex);
             break;
         }
         case 3: {
             switch (attrib.ComponentType) {
             case BasicType::UINT8:
-                buf->setRGBAAttr(img::color8(img::PF_RGB8), firstCustomAtrribIndex, lastVNum);
+                buf->setRGBAAttr(img::color8(img::PF_RGB8), firstCustomAtrribIndex);
                 break;
             case BasicType::FLOAT:
-                buf->setV3FAttr(v3f(), firstCustomAtrribIndex, lastVNum);
+                buf->setV3FAttr(v3f(), firstCustomAtrribIndex);
                 break;
             default:
                 break;
@@ -219,17 +218,17 @@ void fillEmptyCustomAttribs(MeshBuffer *buf, u8 firstCustomAtrribIndex)
         case 4: {
             switch (attrib.ComponentType) {
             case BasicType::UINT8:
-                buf->setRGBAAttr(img::color8(img::PF_RGBA8), firstCustomAtrribIndex, lastVNum);
+                buf->setRGBAAttr(img::color8(img::PF_RGBA8), firstCustomAtrribIndex);
                 break;
             case BasicType::FLOAT:
-                buf->setRGBAFAttr(img::colorf(), firstCustomAtrribIndex, lastVNum);
+                buf->setRGBAFAttr(img::colorf(), firstCustomAtrribIndex);
             default:
                 break;
             }
             break;
         }
         case 16: {
-            buf->setM4x4Attr(matrix4(), firstCustomAtrribIndex, lastVNum);
+            buf->setM4x4Attr(matrix4(), firstCustomAtrribIndex);
             break;
         }
         default:
@@ -240,23 +239,22 @@ void fillEmptyCustomAttribs(MeshBuffer *buf, u8 firstCustomAtrribIndex)
 
 // Appends the attributes of the standard vertex type in the end of the mesh buffer
 // Note: 'buf' already must have a preallocated storage for this new vertex!
-void appendSVT(
+void SVT(
     MeshBuffer *buf, const v3f &pos, const img::color8 &c,
     const v3f &normal, const v2f &uv)
 {
-    u32 newVNum = buf->getVertexCount();
     u8 firstCustomAttrIndex = 2;
-    buf->setV3FAttr(pos, 0, newVNum);
-    buf->setRGBAAttr(c, 1, newVNum);
+    buf->setV3FAttr(pos, 0);
+    buf->setRGBAAttr(c, 1);
 
     auto vertexType = buf->getVAO()->getVertexType();
 
     if (vertexType.InitNormal) {
-        buf->setV3FAttr(normal, 2, newVNum);
+        buf->setV3FAttr(normal, 2);
         firstCustomAttrIndex = 3;
     }
     if (vertexType.InitUV) {
-        buf->setV2FAttr(uv, 3, newVNum);
+        buf->setV2FAttr(uv, 3);
         firstCustomAttrIndex = 4;
     }
 
@@ -265,81 +263,70 @@ void appendSVT(
 
 // Appends the attributes of the two color vertex type in the end of the mesh buffer
 // Note: 'buf' already must have a preallocated storage for this new vertex!
-void appendNVT(
+void NVT(
     MeshBuffer *buf, const v3f &pos, const img::color8 &c,
     const v3f &normal, const v2f &uv, u8 matType)
 {
     assert(buf->getVAO()->getVertexType().Name == "Node3D");
 
-    u32 newVNum = buf->getVertexCount();
-    buf->setV3FAttr(pos, 0, newVNum);
-    buf->setRGBAAttr(c, 1, newVNum);
-    buf->setV3FAttr(normal, 2, newVNum);
-    buf->setV2FAttr(uv, 3, newVNum);
-    buf->setUInt8Attr(matType, 4, newVNum);
+    buf->setV3FAttr(pos, 0);
+    buf->setRGBAAttr(c, 1);
+    buf->setV3FAttr(normal, 2);
+    buf->setV2FAttr(uv, 3);
+    buf->setUInt8Attr(matType, 4);
 }
 // Appends the attributes of the two color vertex type in the end of the mesh buffer
 // Note: 'buf' already must have a preallocated storage for this new vertex!
-void appendTCNVT(
+void TCNVT(
     MeshBuffer *buf, const v3f &pos, const img::color8 &c,
     const v3f &normal, const v2f &uv, u8 matType, const img::color8 &hw_c)
 {
     assert(buf->getVAO()->getVertexType().Name == "TwoColorNode3D");
 
-    u32 newVNum = buf->getVertexCount();
-    buf->setV3FAttr(pos, 0, newVNum);
-    buf->setRGBAAttr(c, 1, newVNum);
-    buf->setV3FAttr(normal, 2, newVNum);
-    buf->setV2FAttr(uv, 3, newVNum);
-    buf->setUInt8Attr(matType, 4, newVNum);
-    buf->setRGBAAttr(hw_c, 5, newVNum);
+    buf->setV3FAttr(pos, 0);
+    buf->setRGBAAttr(c, 1);
+    buf->setV3FAttr(normal, 2);
+    buf->setV2FAttr(uv, 3);
+    buf->setUInt8Attr(matType, 4);
+    buf->setRGBAAttr(hw_c, 5);
 }
 
 // Appends the attributes of the standard 2D vertex type in the end of the mesh buffer
 // Note: 'buf' already must have a preallocated storage for this new vertex!
-void appendVT2D(
+void VT2D(
     MeshBuffer *buf, const v2f &pos, const img::color8 &c, const v2f &uv)
 {
     assert(buf->getVAO()->getVertexType().Name == "Standard2D");
 
-    u32 newVNum = buf->getVertexCount();
-    buf->setV2FAttr(pos, 0, newVNum);
-    buf->setRGBAAttr(c, 1, newVNum);
-    buf->setV2FAttr(uv, 2, newVNum);
+    buf->setV2FAttr(pos, 0);
+    buf->setRGBAAttr(c, 1);
+    buf->setV2FAttr(uv, 2);
 }
 
-void appendAOVT(
+void AOVT(
     MeshBuffer *buf, const v3f &pos, const img::color8 &c,
     const v3f &normal, const v2f &uv, u8 matType, const v2f &bones, const v2f &weights)
 {
     assert(buf->getVAO()->getVertexType().Name == "AnimatedObject3D");
 
-    u32 newVNum = buf->getVertexCount();
-    buf->setV3FAttr(pos, 0, newVNum);
-    buf->setRGBAAttr(c, 1, newVNum);
-    buf->setV3FAttr(normal, 2, newVNum);
-    buf->setV2FAttr(uv, 3, newVNum);
-    buf->setUInt8Attr(matType, 4, newVNum);
-    buf->setV2FAttr(bones, 5, newVNum);
-    buf->setV2FAttr(weights, 6, newVNum);
+    buf->setV3FAttr(pos, 0);
+    buf->setRGBAAttr(c, 1);
+    buf->setV3FAttr(normal, 2);
+    buf->setV2FAttr(uv, 3);
+    buf->setUInt8Attr(matType, 4);
+    buf->setV2FAttr(bones, 5);
+    buf->setV2FAttr(weights, 6);
 }
 
-void appendSBVT(
+void SBVT(
     MeshBuffer *buf, const v3f &pos, const img::color8 &c,
     const v3f &normal, const v2f &uv, const img::color8 &hw_c)
 {
     assert(buf->getVAO()->getVertexType().Name == "Skybox3D");
 
-    u32 newVNum = buf->getVertexCount();
-    buf->setV3FAttr(pos, 0, newVNum);
-    buf->setRGBAAttr(c, 1, newVNum);
-    buf->setV3FAttr(normal, 2, newVNum);
-    buf->setV2FAttr(uv, 3, newVNum);
-    buf->setRGBAAttr(hw_c, 4, newVNum);
-}
-
-void appendIndex(MeshBuffer *buf, u32 index)
-{
-    u32 newINum = buf->getIndexCount();
-    buf->setIndexAt(index, newINum);
+    buf->setV3FAttr(pos, 0);
+    buf->setRGBAAttr(c, 1);
+    buf->setV3FAttr(normal, 2);
+    buf->setV2FAttr(uv, 3);
+    buf->setRGBAAttr(hw_c, 4);
 }

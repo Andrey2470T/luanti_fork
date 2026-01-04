@@ -910,7 +910,7 @@ void ClientPacketHandler::handleCommand_FadeSound(NetworkPacket *pkt)
 
 void ClientPacketHandler::handleCommand_Privileges(NetworkPacket* pkt)
 {
-    auto privileges = m_client->getEnv().getLocalPlayer()->getPrivilegeList();
+    auto &privileges = m_client->getEnv().getLocalPlayer()->getPrivilegeList();
     privileges.clear();
 
 	infostream << "Client: Privileges updated: ";

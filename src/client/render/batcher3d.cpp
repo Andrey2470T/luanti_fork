@@ -10,7 +10,7 @@ img::color8 Batcher3D::curLightColor = img::white;
 LightFrame Batcher3D::curLightFrame;
 u8 Batcher3D::curLightSource;*/
 
-void Batcher3D::appendVertex(MeshBuffer *buf, v3f pos,
+void Batcher3D::vertex(MeshBuffer *buf, v3f pos,
     const img::color8 &color, const v3f &normal, v2f uv)
 {
 
@@ -25,28 +25,45 @@ void Batcher3D::appendVertex(MeshBuffer *buf, v3f pos,
 
     auto vType = buf->getVAO()->getVertexType();
     if (vType.Name == "Node3D")
-        appendNVT(buf, pos, color, normal, uv);
+        NVT(buf, pos, color, normal, uv);
     else if (vType.Name == "TwoColorNode3D")
-        appendTCNVT(buf, pos, color, normal, uv);
+        TCNVT(buf, pos, color, normal, uv);
     else if (vType.Name == "AnimatedObject3D")
-        appendAOVT(buf, pos, color, normal, uv);
+        AOVT(buf, pos, color, normal, uv);
     else if (vType.Name == "Skybox3D")
-        appendSBVT(buf, pos, color, normal, uv);
+        SBVT(buf, pos, color, normal, uv);
     else
-        appendSVT(buf, pos, color, normal, uv);
+        SVT(buf, pos, color, normal, uv);
 }
 
-void Batcher3D::appendLine(MeshBuffer *buf, const v3f &startPos, const v3f &endPos,
+void Batcher3D::index(MeshBuffer *buf, u32 index)
+{
+    buf->setIndexAt(index);
+}
+
+void Batcher3D::line(MeshBuffer *buf, const v3f &startPos, const v3f &endPos,
     const img::color8 &color)
 {
-    appendVertex(buf, startPos, color);
-    appendVertex(buf, endPos, color);
+    if (buf->hasIBO()) {
+        u32 curVIndex = buf->getVertexOffset();
+        index(buf, curVIndex);
+        index(buf, curVIndex+1);
+    }
+
+    vertex(buf, startPos, color);
+    vertex(buf, endPos, color);
 }
 
-void Batcher3D::appendTriangle(MeshBuffer *buf, const std::array<v3f, 3> &positions,
+void Batcher3D::triangle(MeshBuffer *buf, const std::array<v3f, 3> &positions,
     const img::color8 &color, const std::array<v2f, 3> &uvs, const std::array<v3f, 4> &normals)
 {
-    std::array<v3f, 4> used_normals;
+    if (buf->hasIBO()) {
+        u32 curVIndex = buf->getVertexOffset();
+        index(buf, curVIndex);
+        index(buf, curVIndex+1);
+        index(buf, curVIndex+2);
+    }
+    //std::array<v3f, 4> used_normals;
 
     /*if (normals.has_value())
         used_normals = normals.value();
@@ -54,9 +71,9 @@ void Batcher3D::appendTriangle(MeshBuffer *buf, const std::array<v3f, 3> &positi
         v3f normal = plane3f(positions[0], positions[1], positions[2]).Normal;
         used_normals = {normal, normal, normal, normal};
     }*/
-    appendVertex(buf, positions[0], color, used_normals[0], uvs[0]);
-    appendVertex(buf, positions[1], color, used_normals[1], uvs[1]);
-    appendVertex(buf, positions[2], color, used_normals[2], uvs[2]);
+    vertex(buf, positions[0], color, normals[0], uvs[0]);
+    vertex(buf, positions[1], color, normals[1], uvs[1]);
+    vertex(buf, positions[2], color, normals[2], uvs[2]);
 }
 
 enum class RotationAxis : u8
@@ -93,7 +110,7 @@ inline void rotateFace(v3f &pos1, v3f &pos2, v3f &pos3, v3f &pos4, RotationAxis 
     }
 }
 
-void Batcher3D::appendTriangle(MeshBuffer *buf, const std::array<v2f, 3> &positions, const v3f &rotation,
+void Batcher3D::triangle(MeshBuffer *buf, const std::array<v2f, 3> &positions, const v3f &rotation,
     const img::color8 &color, const std::array<v2f, 3> &uvs, const std::array<v3f, 4> &normals)
 {
     std::array<v3f, 3> positions3d = {
@@ -111,10 +128,10 @@ void Batcher3D::appendTriangle(MeshBuffer *buf, const std::array<v2f, 3> &positi
     if (rotation.Z != 0.0f)
         rotateFace(positions3d[0], positions3d[1], positions3d[2], fakePos, RotationAxis::Z, rotation.Z);
 
-    appendTriangle(buf, positions3d, color, uvs, normals);
+    triangle(buf, positions3d, color, uvs, normals);
 }
 
-void Batcher3D::appendFace(MeshBuffer *buf, const std::array<v3f, 4> &positions,
+void Batcher3D::face(MeshBuffer *buf, const std::array<v3f, 4> &positions,
     const std::array<img::color8, 4> &colors, const rectf &uvs, const std::array<v3f, 4> &normals)
 {
     //std::array<v3f, 4> used_normals;
@@ -126,21 +143,21 @@ void Batcher3D::appendFace(MeshBuffer *buf, const std::array<v3f, 4> &positions,
         used_normals = {normal, normal, normal, normal};
     }*/
 
-    std::array<u32, 6> indices = {0, 3, 2, 0, 2, 1};
-
-    u32 curVCount = buf->getVertexCount();
-    appendVertex(buf, positions[0], colors[0], normals[0], uvs.ULC);
-    appendVertex(buf, positions[1], colors[1], normals[1], v2f(uvs.LRC.X, uvs.ULC.Y));
-    appendVertex(buf, positions[2], colors[2], normals[2], uvs.LRC);
-    appendVertex(buf, positions[3], colors[3], normals[3], v2f(uvs.ULC.X, uvs.LRC.Y));
-
     if (buf->hasIBO()) {
+        std::array<u32, 6> indices = {0, 3, 2, 0, 2, 1};
+
+        u32 curVIndex = buf->getVertexOffset();
         for (u32 i = 0; i < 6; i++)
-            appendIndex(buf, curVCount+indices[i]);
+            index(buf, curVIndex+indices[i]);
     }
+
+    vertex(buf, positions[0], colors[0], normals[0], uvs.ULC);
+    vertex(buf, positions[1], colors[1], normals[1], v2f(uvs.LRC.X, uvs.ULC.Y));
+    vertex(buf, positions[2], colors[2], normals[2], uvs.LRC);
+    vertex(buf, positions[3], colors[3], normals[3], v2f(uvs.ULC.X, uvs.LRC.Y));
 }
 
-void Batcher3D::appendFace(MeshBuffer *buf, const rectf &positions, const v3f &rotation,
+void Batcher3D::face(MeshBuffer *buf, const rectf &positions, const v3f &rotation,
     const std::array<img::color8, 4> &colors, const rectf &uvs, const std::array<v3f, 4> &normals)
 {
     std::array<v3f, 4> positions3d = {
@@ -157,10 +174,10 @@ void Batcher3D::appendFace(MeshBuffer *buf, const rectf &positions, const v3f &r
     if (rotation.Z != 0.0f)
         rotateFace(positions3d[0], positions3d[1], positions3d[2], positions3d[3], RotationAxis::Z, rotation.Z);
 
-    appendFace(buf, positions3d, colors, uvs, normals);
+    face(buf, positions3d, colors, uvs, normals);
 }
 
-void Batcher3D::appendBox(MeshBuffer *buf, const aabbf &box, const std::array<img::color8, 24> &colors,
+void Batcher3D::box(MeshBuffer *buf, const aabbf &box, const std::array<img::color8, 24> &colors,
     const std::array<rectf, 6> *uvs, u8 mask)
 {
     // Auto calculation of uvs
@@ -191,7 +208,7 @@ void Batcher3D::appendBox(MeshBuffer *buf, const aabbf &box, const std::array<im
     // Up
     if (mask & (1 << 0)) {
         rectf up_uv = uvs ? (*uvs)[0] : calc_uv(box_size.X, box_size.Z);
-        appendFace(
+        face(
             buf,
             {
                 v3f(box.MinEdge.X, box.MaxEdge.Y, box.MaxEdge.Z), box.MaxEdge,
@@ -203,7 +220,7 @@ void Batcher3D::appendBox(MeshBuffer *buf, const aabbf &box, const std::array<im
     // Down
     if (mask & (1 << 1)) {
         rectf down_uv = uvs ? (*uvs)[1] : calc_uv(box_size.X, box_size.Z);
-        appendFace(
+        face(
             buf,
             {
                 box.MinEdge, v3f(box.MaxEdge.X, box.MinEdge.Y, box.MinEdge.Z),
@@ -215,7 +232,7 @@ void Batcher3D::appendBox(MeshBuffer *buf, const aabbf &box, const std::array<im
     // Right
     if (mask & (1 << 2)) {
         rectf right_uv = uvs ? (*uvs)[2] : calc_uv(box_size.Z, box_size.Y);
-        appendFace(
+        face(
             buf,
             {
                 v3f(box.MaxEdge.X, box.MaxEdge.Y, box.MinEdge.Z), box.MaxEdge,
@@ -227,7 +244,7 @@ void Batcher3D::appendBox(MeshBuffer *buf, const aabbf &box, const std::array<im
     // Left
     if (mask & (1 << 3)) {
         rectf left_uv = uvs ? (*uvs)[3] : calc_uv(box_size.Z, box_size.Y);
-        appendFace(
+        face(
             buf,
             {
                 v3f(box.MinEdge.X, box.MaxEdge.Y, box.MaxEdge.Z), v3f(box.MinEdge.X, box.MaxEdge.Y, box.MinEdge.Z),
@@ -239,7 +256,7 @@ void Batcher3D::appendBox(MeshBuffer *buf, const aabbf &box, const std::array<im
     // Back
     if (mask & (1 << 4)) {
         rectf back_uv = uvs ? (*uvs)[4] : calc_uv(box_size.X, box_size.Y);
-        appendFace(
+        face(
             buf,
             {
                 box.MaxEdge, v3f(box.MinEdge.X, box.MaxEdge.Y, box.MaxEdge.Z),
@@ -251,7 +268,7 @@ void Batcher3D::appendBox(MeshBuffer *buf, const aabbf &box, const std::array<im
     // Front
     if (mask & (1 << 5)) {
         rectf front_uv = uvs ? (*uvs)[5] : calc_uv(box_size.X, box_size.Y);
-        appendFace(
+        face(
             buf,
             {
                 v3f(box.MinEdge.X, box.MaxEdge.Y, box.MinEdge.Z), v3f(box.MaxEdge.X, box.MaxEdge.Y, box.MinEdge.Z),
@@ -262,16 +279,9 @@ void Batcher3D::appendBox(MeshBuffer *buf, const aabbf &box, const std::array<im
     }
 }
 
-void Batcher3D::appendLineBox(MeshBuffer *buf, const aabbf &box, const img::color8 &color)
+void Batcher3D::lineBox(MeshBuffer *buf, const aabbf &box, const img::color8 &color)
 {
     assert(buf->hasIBO());
-
-    std::array<v3f, 8> edges;
-    box.getEdges(edges.data());
-
-    u32 curVCount = buf->getVertexCount();
-    for (auto edge : edges)
-        appendVertex(buf, edge, color);
 
     // Draws the lines as flattened triangles to be transparenct-sorted in the drawlist
     std::array<u32, 36> indices = {
@@ -280,6 +290,13 @@ void Batcher3D::appendLineBox(MeshBuffer *buf, const aabbf &box, const img::colo
         1, 0, 0,    3, 2, 2,    7, 6, 6,    5, 4, 4
     };
 
+    u32 curVIndex = buf->getVertexOffset();
     for (u32 i : indices)
-        appendIndex(buf, curVCount+i);
+        index(buf, curVIndex+i);
+
+    std::array<v3f, 8> edges;
+    box.getEdges(edges.data());
+
+    for (auto edge : edges)
+        vertex(buf, edge, color);
 }
