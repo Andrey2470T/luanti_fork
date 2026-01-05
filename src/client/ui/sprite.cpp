@@ -5,6 +5,7 @@
 #include <Render/Texture2D.h>
 #include "client/render/rendersystem.h"
 #include "gui/IGUIEnvironment.h"
+#include "gui/IGUISpriteBank.h"
 #include "text_sprite.h"
 #include "glyph_atlas.h"
 #include "extra_images.h"
@@ -59,6 +60,31 @@ rectf UIShape::getPrimitiveArea(u32 n) const
     default:
         return rectf();
     }
+}
+
+void UIShape::addLine(
+        const v2f &start_p, const v2f &end_p,
+        const img::color8 &start_c, const img::color8 &end_c) {
+    primitives.emplace_back((Primitive *)(new Line(start_p, end_p, start_c, end_c)));
+    dirtyPrimitives.push_back(primitives.size()-1);
+    updateMaxArea(maxArea, start_p, end_p, maxAreaInit);
+}
+void UIShape::addTriangle(
+        const v2f &p1, const v2f &p2, const v2f &p3,
+        const img::color8 &c1, const img::color8 &c2, const img::color8 &c3) {
+    primitives.emplace_back((Primitive *)(new Triangle(p1, p2, p3, c1, c2, c3)));
+    dirtyPrimitives.push_back(primitives.size()-1);
+    updateMaxArea(maxArea, v2f(p1.X, p3.Y), p2, maxAreaInit);
+}
+void UIShape::addRectangle(const rectf &r, const std::array<img::color8, 4> &colors, const rectf &texr) {
+    primitives.emplace_back((Primitive *)(new Rectangle(r, colors, texr)));
+    dirtyPrimitives.push_back(primitives.size()-1);
+    updateMaxArea(maxArea, r.ULC, r.LRC, maxAreaInit);
+}
+void UIShape::addEllipse(f32 a, f32 b, const v2f &center, const img::color8 &c) {
+    primitives.emplace_back((Primitive *)(new Ellipse(a, b, center, c)));
+    dirtyPrimitives.push_back(primitives.size()-1);
+    updateMaxArea(maxArea, center - v2f(a/2, b/2), center+v2f(a/2, b/2), maxAreaInit);
 }
 
 void UIShape::updateLine(u32 n, const v2f &start_p, const v2f &end_p, const img::color8 &start_c, const img::color8 &end_c)
@@ -218,6 +244,40 @@ u32 UIShape::countRequiredICount(const std::vector<UIPrimitiveType> &primitives)
     return count;
 }
 
+void UIShape::removePrimitive(u32 i)
+{
+    if (i >= getPrimitiveCount())
+        return;
+
+    primitives.erase(primitives.begin()+i);
+
+    for (u32 i = 0; i < primitives.size(); i++) {
+        rectf primArea = getPrimitiveArea(i);
+        updateMaxArea(maxArea, primArea.ULC, primArea.LRC, maxAreaInit);
+    }
+}
+void UIShape::clear()
+{
+    primitives.clear();
+    dirtyPrimitives.clear();
+    maxArea = rectf();
+    maxAreaInit = false;
+}
+
+void UIShape::move(const v2f &shift)
+{
+    for (u32 i = 0; i < primitives.size(); i++)
+        movePrimitive(i, shift);
+}
+
+void UIShape::scale(const v2f &scale, std::optional<v2f> c)
+{
+    v2f center = c.has_value() ? c.value() : maxArea.getCenter();
+
+    for (u32 i = 0; i < primitives.size(); i++)
+        scalePrimitive(i, scale, center);
+}
+
 void UIShape::appendToBuffer(MeshBuffer *buf, v2u imgSize, bool toUV)
 {
     for (auto dirtyPrim : dirtyPrimitives)
@@ -366,60 +426,9 @@ void UIShape::appendToBuffer(MeshBuffer *buf, u32 primitiveNum, v2u imgSize, boo
     }
 }
 
-UISprite::UISprite(render::Texture2D *tex, Renderer *_renderer, ResourceCache *_cache,
-    bool streamTexture, bool staticUsage, bool toUV)
-    : renderer(_renderer), cache(_cache), mesh(std::make_unique<MeshBuffer>(true, VType2D,
-        staticUsage ? render::MeshUsage::STATIC : render::MeshUsage::DYNAMIC)),
-      texture(tex), streamTex(streamTexture), toUV(toUV)
-{}
-
-// Creates a single rectangle mesh
-UISprite::UISprite(render::Texture2D *tex, Renderer *_renderer,
-    ResourceCache *_cache, const rectf &uvRect, const rectf &posRect,
-    const std::array<img::color8, 4> &colors, bool streamTexture, bool staticUsage, bool toUV)
-    : renderer(_renderer), cache(_cache),
-    mesh(std::make_unique<MeshBuffer>(UIShape::countRequiredVCount({UIPrimitiveType::RECTANGLE}),
-        UIShape::countRequiredICount({UIPrimitiveType::RECTANGLE}), true, VType2D,
-        staticUsage ? render::MeshUsage::STATIC : render::MeshUsage::DYNAMIC)),
-    texture(tex), streamTex(streamTexture), toUV(toUV)
-{
-    shape.addRectangle(posRect, colors, uvRect);
-    rebuildMesh();
-}
-
 const std::array<img::color8, 4> UISprite::defaultColors = {img::white, img::white, img::white, img::white};
 
-// Creates (without buffer filling) multiple-primitive mesh
-UISprite::UISprite(render::Texture2D *tex, Renderer *_renderer, ResourceCache *_cache,
-    const std::vector<UIPrimitiveType> &primitives, bool streamTexture, bool staticUsage, bool toUV)
-    : renderer(_renderer), cache(_cache),
-    mesh(std::make_unique<MeshBuffer>(UIShape::countRequiredVCount(primitives),
-        UIShape::countRequiredICount(primitives), true, VType2D,
-        staticUsage ? render::MeshUsage::STATIC : render::MeshUsage::DYNAMIC)),
-    texture(tex), streamTex(streamTexture), toUV(toUV)
-{
-    for (auto primType : primitives) {
-        switch(primType) {
-        case UIPrimitiveType::LINE:
-            shape.addLine(v2f(), v2f(), img::black, img::black);
-            break;
-        case UIPrimitiveType::TRIANGLE:
-            shape.addTriangle(v2f(), v2f(), v2f(), img::black, img::black, img::black);
-            break;
-        case UIPrimitiveType::RECTANGLE:
-            shape.addRectangle(rectf(), {});
-            break;
-        case UIPrimitiveType::ELLIPSE:
-            shape.addEllipse(0.0f, 0.0f, v2f(), img::black);
-            break;
-        default:
-            break;
-        }
-    }
-    rebuildMesh();
-}
-
-void UISprite::rebuildMesh()
+/*void UISprite::rebuildMesh()
 {
     std::vector<UIPrimitiveType> prims(shape.getPrimitiveCount());
 
@@ -575,11 +584,11 @@ void BankAutoAlignment::alignSprite(u32 spriteID, std::optional<rectf> overrideR
 
     rectf oldArea = sprite->getArea();
     sprite->getShape()->move(area.getCenter() - oldArea.getCenter());
-}
+}*/
 
 // if auto-align is enabled, the rects areas must be absolute, otherwise - relative to the ulc
-UIRects *UISpriteBank::addSprite(
-    const std::vector<ColoredRect> &rects,
+UIRects *SpriteDrawBatch::addRectsSprite(
+    const std::vector<TexturedRect> &rects,
     const recti *clipRect)
 {
     UIRects *rectsSprite = new UIRects(rndsys, rects.size());
@@ -605,7 +614,7 @@ UIRects *UISpriteBank::addSprite(
 }
 
 // 'pos' is used for auto_align = false
-ImageSprite *UISpriteBank::addImageSprite(
+/*ImageSprite *SpriteDrawBatch::addImageSprite(
     img::Image *img,
     std::optional<rectf> rect,
     const recti *clipRect,
@@ -631,9 +640,9 @@ ImageSprite *UISpriteBank::addImageSprite(
     updateMaxArea(maxArea, resRect.ULC, resRect.LRC, maxAreaInit);
 
     return imageSprite;
-}
+}*/
 
-UITextSprite *UISpriteBank::addTextSprite(
+UITextSprite *SpriteDrawBatch::addTextSprite(
     const std::wstring &text,
     std::optional<std::variant<rectf, v2f>> shift,
     const img::color8 &textColor,

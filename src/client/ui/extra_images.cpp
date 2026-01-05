@@ -6,21 +6,16 @@
 #include "sprite.h"
 #include "client/render/renderer.h"
 
-Image2D9Slice::Image2D9Slice(ResourceCache *resCache, RenderSystem *rndsys)
-    : UISprite(nullptr, rndsys->getRenderer(), resCache, {UIPrimitiveType::RECTANGLE, UIPrimitiveType::RECTANGLE,
-              UIPrimitiveType::RECTANGLE, UIPrimitiveType::RECTANGLE, UIPrimitiveType::RECTANGLE, UIPrimitiveType::RECTANGLE,
-              UIPrimitiveType::RECTANGLE, UIPrimitiveType::RECTANGLE, UIPrimitiveType::RECTANGLE}, true), pool(rndsys->getPool(false))
+Image2D9Slice::Image2D9Slice(ResourceCache *resCache, SpriteDrawBatch *drawBatch, AtlasPool *pool)
+    : UISprite(resCache, drawBatch), guiPool(pool)
 {}
-Image2D9Slice::Image2D9Slice(ResourceCache *resCache, RenderSystem *rndsys,
+Image2D9Slice::Image2D9Slice(ResourceCache *resCache, SpriteDrawBatch *drawBatch, AtlasPool *pool,
                              const rectf &src_rect, const rectf &dest_rect,
                              const rectf &middle_rect, img::Image *baseImg,
                              const std::array<img::color8, 4> &colors,
                              std::optional<AtlasTileAnim> anim)
-    : UISprite(rndsys->getPool(false)->getAtlasByTile(baseImg, true, anim)->getTexture(), rndsys->getRenderer(), resCache,
-        {UIPrimitiveType::RECTANGLE, UIPrimitiveType::RECTANGLE, UIPrimitiveType::RECTANGLE,
-        UIPrimitiveType::RECTANGLE, UIPrimitiveType::RECTANGLE, UIPrimitiveType::RECTANGLE,
-        UIPrimitiveType::RECTANGLE, UIPrimitiveType::RECTANGLE, UIPrimitiveType::RECTANGLE}, true), srcRect(src_rect),
-        destRect(dest_rect), middleRect(middle_rect), pool(rndsys->getPool(false))
+    : UISprite(resCache, drawBatch), srcRect(src_rect),
+        destRect(dest_rect), middleRect(middle_rect), guiPool(pool)
 {
     updateRects(src_rect, dest_rect, middle_rect, baseImg, colors, nullptr, anim);
 }

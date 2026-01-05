@@ -6,33 +6,13 @@
 #include <Render/TTFont.h>
 #include <Render/Texture2D.h>
 #include "gui/GUISkin.h"
+#include "client/render/text.h"
 
 class FontManager;
 
 class UITextSprite : public UISprite
 {
-    GUISkin *skin;
-
-	EnrichedString text;
-	std::vector<EnrichedString> brokenText;
-
-    u32 textWidth, textHeight, lineHeight;
-
-    GUIAlignment hAlign = GUIAlignment::UpperLeft;
-    GUIAlignment vAlign = GUIAlignment::UpperLeft;
-    bool overrideColorEnabled = false;
-    bool overrideBGColorEnabled = false;
-	bool drawBorder;
-	bool drawBackground;
-    bool wordWrap = false;
-    bool clipText = true;
-    bool rightToLeft = false;
-	
-    img::color8 overrideColor = img::color8(img::PF_RGBA8, 255, 255, 255, 101);
-    img::color8 bgColor = img::color8(img::PF_RGBA8, 210, 210, 210, 101);
-    render::TTFont *overrideFont = nullptr;
-
-    FontManager *mgr;
+    Text text;
 
     struct GlyphPrimitiveParams {
         rectf pos;
@@ -40,123 +20,29 @@ class UITextSprite : public UISprite
         rectf uv;
     };
 
-    std::unordered_map<render::Texture2D *, u32> texture_to_charcount_map;
-    std::unordered_map<render::Texture2D *, std::vector<GlyphPrimitiveParams>> texture_to_glyph_map;
-
-    bool needsUpdate = true;
-    rectf lastRectArea;
+    rectf boundRect;
 public:
-    UITextSprite(FontManager *font_manager, GUISkin *guiskin, std::variant<EnrichedString, std::wstring> text, Renderer *renderer,
-        ResourceCache *resCache, bool border = false, bool wordWrap = false, bool fillBackground = false);
+    UITextSprite(FontManager *font_manager, GUISkin *guiskin, ResourceCache *resCache,
+        SpriteDrawBatch *drawBatch, std::variant<EnrichedString, std::wstring> text,
+        bool border = false, bool wordWrap = false, bool fillBackground = false);
 
-    void setOverrideFont(render::TTFont *font);
-    render::TTFont *getOverrideFont() const
+    Text &getText()
     {
-        return overrideFont;
+        return text;
     }
-    render::TTFont *getActiveFont() const
+    const Text &getText() const
     {
-        return overrideFont ? overrideFont : skin->getFont();
-    }
-
-    void setOverrideColor(const img::color8 &c);
-    img::color8 getOverrideColor() const
-    {
-        return overrideColor;
+        return text;
     }
 
-    void setBackgroundColor(const img::color8 &c);
-    img::color8 getBackgroundColor() const
+    void setBoundRect(const rectf &newRect)
     {
-        return drawBackground ? bgColor : skin->getColor(GUIDefaultColor::Face3D);
+        boundRect = newRect;
+        text.needsUpdate = true;
     }
 
-    img::color8 getActiveColor() const
-    {
-        return overrideColorEnabled ? overrideColor : skin->getColor(EGDC_BUTTON_TEXT);
-    }
+    void updateBatch() override;
+    //void draw(std::optional<u32> primOffset=std::nullopt, std::optional<u32> primCount=std::nullopt) override;
 
-    void enableOverrideColor(bool enable)
-    {
-        overrideColorEnabled = enable;
-    }
-
-    bool isOverrideColorEnabled() const
-    {
-        return overrideColorEnabled;
-    }
-
-    u32 getLinesCount() const
-    {
-        return wordWrap ? brokenText.size() : 1;
-    }
-
-    std::wstring getText() const
-    {
-        return text.getString();
-    }
-
-    u32 getTextWidth() const
-    {
-        return textWidth;
-    }
-    u32 getTextHeight() const
-    {
-        return textHeight;
-    }
-    v2u getTextSize() const
-    {
-        return v2u(getTextWidth(), getTextHeight());
-    }
-
-    void enableDrawBackground(bool draw)
-    {
-        drawBackground = draw;
-    }
-    void enableDrawBorder(bool draw)
-    {
-        drawBorder = draw;
-    }
-    void enableClipText(bool clip)
-    {
-        clipText = clip;
-    }
-    void enableWordWrap(bool wrap);
-    void enableRightToLeft(bool rtl);
-
-    void setAlignment(GUIAlignment horizontal, GUIAlignment vertical);
-
-    bool isDrawBackground() const
-    {
-        return drawBackground;
-    }
-    bool isDrawBorder() const
-    {
-        return drawBorder;
-    }
-    bool isWordWrap() const
-    {
-        return wordWrap;
-    }
-    bool isClipText() const
-    {
-        return clipText;
-    }
-    bool isRightToLeft() const
-    {
-        return rightToLeft;
-    }
-
-    void setText(const EnrichedString &text);
-    void setText(const std::wstring &text)
-    {
-        setText(EnrichedString(text));
-    }
-
-    void draw(std::optional<u32> primOffset=std::nullopt, std::optional<u32> primCount=std::nullopt) override;
-
-    void updateBuffer(rectf &&r);
-private:
-    void updateText();
-    render::Texture2D *getGlyphAtlasTexture() const;
+    //void updateBuffer(rectf &&r);
 };

@@ -1,98 +1,15 @@
 #include "text_sprite.h"
 #include "client/media/resource.h"
-#include "client/ui/batcher2d.h"
-#include "client/render/renderer.h"
 #include <Utils/String.h>
 #include "client/ui/glyph_atlas.h"
-#include "client/render/renderer.h"
 
-UITextSprite::UITextSprite(FontManager *font_manager, GUISkin *guiskin, std::variant<EnrichedString, std::wstring> text,
-    Renderer *renderer, ResourceCache *resCache, bool border, bool wordWrap, bool fillBackground)
-    : UISprite(nullptr, renderer, resCache, false, false), skin(guiskin), drawBorder(border),
-    drawBackground(fillBackground),  wordWrap(wordWrap), mgr(font_manager)
-{
-    texture = getGlyphAtlasTexture();
+UITextSprite::UITextSprite(FontManager *font_manager, GUISkin *guiskin, ResourceCache *resCache,
+    SpriteDrawBatch *drawBatch, std::variant<EnrichedString, std::wstring> text,
+    bool border, bool wordWrap, bool fillBackground)
+    : UISprite(resCache, drawBatch), text(font_manager, guiskin, text, border, wordWrap, fillBackground)
+{}
 
-    if (std::holds_alternative<EnrichedString>(text))
-        setText(std::get<EnrichedString>(text));
-    else
-        setText(std::get<std::wstring>(text));
-}
-
-void UITextSprite::setOverrideFont(render::TTFont *font)
-{
-    if (overrideFont == font)
-        return;
-
-    overrideFont = font;
-
-    updateText();
-
-    texture = getGlyphAtlasTexture();
-
-    needsUpdate = true;
-}
-
-void UITextSprite::setOverrideColor(const img::color8 &c)
-{
-    if (overrideColorEnabled && overrideColor == c)
-        return;
-
-    overrideColor = c;
-    overrideColorEnabled = true;
-
-    needsUpdate = true;
-}
-
-void UITextSprite::setBackgroundColor(const img::color8 &c)
-{
-    if (overrideBGColorEnabled && bgColor == c)
-        return;
-
-    bgColor = c;
-    overrideBGColorEnabled = true;
-    drawBackground = true;
-
-    needsUpdate = true;
-}
-
-void UITextSprite::enableWordWrap(bool wrap)
-{
-    if (wordWrap != wrap) {
-        wordWrap = wrap;
-        updateText();
-    }
-}
-
-void UITextSprite::enableRightToLeft(bool rtl)
-{
-    if (rightToLeft != rtl) {
-        rightToLeft = rtl;
-        updateText();
-    }
-}
-
-void UITextSprite::setAlignment(GUIAlignment horizontal, GUIAlignment vertical)
-{
-    if (hAlign == horizontal && vAlign == vertical)
-        return;
-
-    hAlign = horizontal;
-    vAlign = vertical;
-
-    needsUpdate = true;
-}
-
-void UITextSprite::setText(const EnrichedString &_text)
-{
-    if (text == _text)
-        return;
-
-    text = _text;
-    updateText();
-}
-
-void UITextSprite::draw(std::optional<u32> primOffset, std::optional<u32> primCount)
+/*void UITextSprite::draw(std::optional<u32> primOffset, std::optional<u32> primCount)
 {
     if (!isVisible())
         return;
@@ -125,51 +42,60 @@ void UITextSprite::draw(std::optional<u32> primOffset, std::optional<u32> primCo
 
     if (clipRect != recti())
         renderer->setClipRect(recti());
-}
+}*/
 
-void UITextSprite::updateBuffer(rectf &&r)
+void UITextSprite::updateBatch()
 {
-    if (r == lastRectArea && !needsUpdate)
+    if (!text.needsUpdate)
         return;
 
-    lastRectArea = r;
-    needsUpdate = false;
+    text.needsUpdate = false;
 
     clear();
-    texture_to_charcount_map.clear();
-    texture_to_glyph_map.clear();
 
-    if (drawBackground) {
-        auto bg_color = getBackgroundColor();
-        shape.addRectangle(r, {bg_color, bg_color, bg_color, bg_color});
+    std::unordered_map<render::Texture2D *, u32> texture_to_charcount_map;
+    std::unordered_map<render::Texture2D *, std::vector<GlyphPrimitiveParams>> texture_to_glyph_map;
+
+    if (text.isDrawBackground()) {
+        auto bg_color = text.getBackgroundColor();
+        shape.addRectangle(boundRect, {bg_color, bg_color, bg_color, bg_color});
     }
 
-    if (drawBorder)
-        skin->add3DSunkenPane(this, img::color8(), true, false, r);
+    auto skin = text.getSkin();
+    if (text.isDrawBorder())
+        skin->add3DSunkenPane(this, img::color8(), true, false, boundRect);
 
-    render::TTFont *font = getActiveFont();
+    render::TTFont *font = text.getActiveFont();
 
+    auto brokenText = text.getBrokenText();
     if (brokenText.empty())
         return;
 
-    auto fontAtlases = mgr->getPool(font->getMode(), font->getStyle(), font->getCurrentSize());
+    auto fontMgr = text.getFontManager();
+    auto fontAtlases = fontMgr->getPool(font->getMode(), font->getStyle(), font->getCurrentSize());
 
     if (!fontAtlases)
         return;
 
-    v2f offset = r.ULC;
+    v2f offset =boundRect.ULC;
+
+    GUIAlignment hAlign, vAlign;
+    text.getAlignment(hAlign, vAlign);
+
+    v2u textSize = text.getTextSize();
+    u32 lineHeight = text.getLineHeight();
 
     if (hAlign == GUIAlignment::Center)
-        offset.X += (r.getWidth() - textWidth) / 2.0f;
+        offset.X += (boundRect.getWidth() - textSize.X) / 2.0f;
     else if (hAlign == GUIAlignment::LowerRight)
-        offset.X += r.getWidth() - textWidth;
+        offset.X += boundRect.getWidth() - textSize.X;
 
     if (vAlign == GUIAlignment::Center)
-        offset.Y += (r.getHeight() - textHeight) / 2.0f;
+        offset.Y += (boundRect.getHeight() - textSize.Y) / 2.0f;
     else if (vAlign == GUIAlignment::LowerRight)
-        offset.Y += r.getHeight() - textHeight;
+        offset.Y += boundRect.getHeight() - textSize.Y;
 
-    auto color = getActiveColor();
+    auto color = text.getActiveColor();
 
     std::array<img::color8, 4> arrColors = {color, color, color, color};
 
@@ -206,8 +132,8 @@ void UITextSprite::updateBuffer(rectf &&r)
                 glyph->pos.X, glyph->pos.Y + glyph->size.Y,
                 glyph->pos.X + glyph->size.X, glyph->pos.Y);
 
-            if (!overrideColorEnabled) {
-                auto textColors = text.getColors();
+            if (!text.isOverrideColorEnabled()) {
+                auto textColors = text.getTextColors();
 
                 if (char_n < textColors.size())
                     arrColors = {textColors.at(char_n), textColors.at(char_n), textColors.at(char_n), textColors.at(char_n)};
@@ -243,220 +169,12 @@ void UITextSprite::updateBuffer(rectf &&r)
             shape.addRectangle(glyphparams.pos, glyphparams.colors, glyphparams.uv);
     }
 
-    rebuildMesh();
-}
+    std::vector<SpriteDrawChunk> chunks;
 
-void UITextSprite::updateText()
-{
-    brokenText.clear();
+    for (auto &tex_to_charcount : texture_to_charcount_map)
+        chunks.emplace_back(tex_to_charcount.first, clipRect, 0, tex_to_charcount.second*6);
 
-    // Update word wrap
-    render::TTFont* font = getActiveFont();
-    if (!font)
-        return;
-
-    EnrichedString line;
-    EnrichedString word;
-    EnrichedString whitespace;
-    u32 size = text.size();
-    u32 length = 0;
-    u32 elWidth = shape.getMaxArea().getWidth();
-    if (drawBorder)
-        elWidth -= 2*skin->getSize(GUIDefaultSize::TextDistanceX);
-
-    if (!wordWrap)
-        elWidth = (u32)-1;
-
-    wchar_t c;
-
-    if (!rightToLeft)
-    {
-        // regular (left-to-right)
-        for (u32 i=0; i<size; ++i)
-        {
-            c = text.getString()[i];
-            bool lineBreak = false;
-
-            if (c == L'\r' || c == L'\n') // Line breaks (always processed)
-            {
-                lineBreak = true;
-                c = '\0';
-            }
-
-            //bool isWhitespace = (c == L' ' || c == 0);
-            if ( c != 0 )
-            {
-                // part of a word
-                //word += c;
-                word.addChar(text, i);
-            }
-
-            if ( c == 0 || i == (size-1))
-            {
-                if (word.size())
-                {
-                    // here comes the next whitespace, look if
-                    // we must break the last word to the next line.
-                    const u32 whitelgth = font->getTextWidth(whitespace.getString());
-                    const u32 wordlgth = font->getTextWidth(word.getString());
-
-                    if (wordlgth > elWidth)
-                    {
-                        // This word is too long to fit in the available space, look for
-                        // the Unicode Soft HYphen (SHY / 00AD) character for a place to
-                        // break the word at
-                        int where = std::wstring(word.c_str()).find_first_of( wchar_t(0x00AD) );
-                        if (where != -1)
-                        {
-                            EnrichedString first = word.substr(0, where);
-                            EnrichedString second = word.substr(where, word.size() - where);
-                            first.addCharNoColor(L'-');
-                            brokenText.push_back(line + first);
-                            const u32 secondLength = font->getTextWidth(second.getString());
-
-                            length = secondLength;
-                            line = second;
-                        }
-                        else
-                        {
-                            // No soft hyphen found, so there's nothing more we can do
-                            // break to next line
-                            if (length)
-                                brokenText.push_back(line);
-                            length = wordlgth;
-                            line = word;
-                        }
-                    }
-                    else if (length && (length + wordlgth + whitelgth > elWidth))
-                    {
-                        // break to next line
-                        brokenText.push_back(line);
-                        length = wordlgth;
-                        line = word;
-                    }
-                    else
-                    {
-                        // add word to line
-                        line += whitespace;
-                        line += word;
-                        length += whitelgth + wordlgth;
-                    }
-
-                    word.clear();
-                    whitespace.clear();
-                }
-
-                /*if ( lineBreak )
-                {
-                    whitespace.addChar(text, i);
-                }*/
-
-                // compute line break
-                if (lineBreak)
-                {
-                    line += whitespace;
-                    line += word;
-                    brokenText.push_back(line);
-                    line.clear();
-                    word.clear();
-                    whitespace.clear();
-                    length = 0;
-                }
-            }
-        }
-
-        line += whitespace;
-        line += word;
-        brokenText.push_back(line);
-    }
-    else
-    {
-        // right-to-left
-        for (u32 i=size; i>=0; --i)
-        {
-            c = text.getString()[i];
-            bool lineBreak = false;
-
-            if (c == L'\r' || c == L'\n') // Mac, Windows orUnix breaks
-            {
-                lineBreak = true;
-                c = '\0';
-            }
-
-            if (c == 0 || i==0)
-            {
-                if (word.size())
-                {
-                    // here comes the next whitespace, look if
-                    // we must break the last word to the next line.
-                    const u32 whitelgth = font->getTextWidth(whitespace.getString());
-                    const u32 wordlgth = font->getTextWidth(word.getString());
-
-                    if (length && (length + wordlgth + whitelgth > elWidth))
-                    {
-                        // break to next line
-                        brokenText.push_back(line);
-                        length = wordlgth;
-                        line = word;
-                    }
-                    else
-                    {
-                        // add word to line
-                        line = whitespace + line;
-                        line = word + line;
-                        length += whitelgth + wordlgth;
-                    }
-
-                    word.clear();
-                    whitespace.clear();
-                }
-
-                if (c != 0)
-                    whitespace = text.substr(i, 1) + whitespace;
-
-                // compute line break
-                if (lineBreak)
-                {
-                    line = whitespace + line;
-                    line = word + line;
-                    brokenText.push_back(line);
-                    line.clear();
-                    word.clear();
-                    whitespace.clear();
-                    length = 0;
-                }
-            }
-            else
-            {
-                // yippee this is a word..
-                word = text.substr(i, 1) + word;
-            }
-        }
-
-        line = whitespace + line;
-        line = word + line;
-        brokenText.push_back(line);
-    }
-
-    if (wordWrap) {
-        for (auto line : brokenText)
-            textWidth = std::max(textWidth, font->getTextWidth(line.getString()));
-    }
-    else
-        textWidth = font->getTextWidth(text.getString());
-
-    lineHeight = font->getLineHeight();
-    textHeight = lineHeight * brokenText.size();
-
-    needsUpdate = true;
-}
-
-render::Texture2D *UITextSprite::getGlyphAtlasTexture() const
-{
-    auto font = getActiveFont();
-    auto pool = mgr->getPoolOrCreate(font->getMode(), font->getStyle(), font->getCurrentSize());
-
-    return pool->getAtlas(0)->getTexture(); // Beforehand assume each glyph atlas pool contains one atlas each
+    //drawBatch->addChunks(chunks);
 }
 
 

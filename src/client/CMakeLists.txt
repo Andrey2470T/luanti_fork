@@ -93,6 +93,7 @@ set(render_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/render/renderer.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/rendersystem.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/sky.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/render/text.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/tilelayer.cpp
 )
 
