@@ -6,15 +6,15 @@
 #include "sprite.h"
 #include "client/render/renderer.h"
 
-Image2D9Slice::Image2D9Slice(ResourceCache *resCache, SpriteDrawBatch *drawBatch, AtlasPool *pool)
-    : UISprite(resCache, drawBatch), guiPool(pool)
+Image2D9Slice::Image2D9Slice(ResourceCache *resCache, SpriteDrawBatch *drawBatch, AtlasPool *pool, u32 depthLevel)
+    : UISprite(resCache, drawBatch, depthLevel), guiPool(pool)
 {}
 Image2D9Slice::Image2D9Slice(ResourceCache *resCache, SpriteDrawBatch *drawBatch, AtlasPool *pool,
                              const rectf &src_rect, const rectf &dest_rect,
                              const rectf &middle_rect, img::Image *baseImg,
                              const std::array<img::color8, 4> &colors,
-                             std::optional<AtlasTileAnim> anim)
-    : UISprite(resCache, drawBatch), srcRect(src_rect),
+                             std::optional<AtlasTileAnim> anim, u32 depthLevel)
+    : UISprite(resCache, drawBatch, depthLevel), srcRect(src_rect),
         destRect(dest_rect), middleRect(middle_rect), guiPool(pool)
 {
     updateRects(src_rect, dest_rect, middle_rect, baseImg, colors, nullptr, anim);
@@ -32,14 +32,21 @@ void Image2D9Slice::updateRects(const rectf &src_rect, const rectf &dest_rect, c
     
 	if (img && img != image ) {
         image = img;
-        setTexture(pool->getAtlasByTile(image, true, anim)->getTexture());
-        srcRect = pool->getTileRect(image, false, true);
+        srcRect = guiPool->getTileRect(image, false, true);
     }
     if (clipRect)
         setClipRect(*clipRect);
 
     createSlices();
 }
+
+void Image2D9Slice::appendToBatch()
+{
+    auto tex = guiPool->getAtlasByTile(image)->getTexture();
+    drawBatch->addSpriteChunks(this, {{tex, clipRect, 9}});
+}
+void Image2D9Slice::updateBatch()
+{}
 
 void Image2D9Slice::createSlice(u8 x, u8 y)
 {
@@ -84,60 +91,58 @@ void Image2D9Slice::createSlice(u8 x, u8 y)
         break;
     };
 
-    shape.updateRectangle(y*3+x, destRect, rectColors, srcRect);
+    shape.addRectangle(destRect, rectColors, srcRect);
 }
 
 void Image2D9Slice::createSlices()
 {
+    clear();
+
     for (u8 x = 0; x < 3; x++)
         for (u8 y = 0; y < 3; y++)
             createSlice(x, y);
-
-    updateMesh();
 }
 
-UIRects::UIRects(RenderSystem *rndsys, u32 init_rects_count)
-    : UISprite(nullptr, rndsys->getRenderer(), nullptr,
-		std::vector<UIPrimitiveType>(init_rects_count, UIPrimitiveType::RECTANGLE), false)
-{}
-
-void UIRects::addRect(const rectf &rect, const std::array<img::color8, 4> &colors, bool rebuild)
+UIRects::UIRects(ResourceCache *resCache, SpriteDrawBatch *drawBatch, AtlasPool *pool,
+    u32 init_rects_count, u32 depthLevel)
+    : UISprite(resCache, drawBatch, depthLevel), guiPool(pool)
 {
-    shape.addRectangle(rect, colors);
-
-    if (rebuild)
-        rebuildMesh();
+    for (u32 k = 0; k < init_rects_count; k++)
+        shape.addRectangle({}, UISprite::defaultColors);
 }
-
-void UIRects::updateRect(u32 n, const rectf &rect, const std::array<img::color8, 4> &colors, bool update)
+UIRects::UIRects(ResourceCache *resCache, SpriteDrawBatch *drawBatch, AtlasPool *pool,
+    const std::vector<TexturedRect> &rects, u32 depthLevel)
+    : UISprite(resCache, drawBatch, depthLevel), guiPool(pool)
 {
-    shape.updateRectangle(n, rect, colors);
-
-    if (update)
-        updateMesh();
-}
-
-ImageSprite::ImageSprite(RenderSystem *rndsys, ResourceCache *cache)
-    : UISprite(nullptr, rndsys->getRenderer(), cache, {UIPrimitiveType::RECTANGLE}, true),
-      pool(rndsys->getPool(false))
-{}
-
-void ImageSprite::update(img::Image *newImage, const rectf &rect, const std::array<img::color8, 4> &colors,
-    const recti *cliprect, std::optional<AtlasTileAnim> anim)
-{
-    if (image != newImage) {
-        image = newImage;
-
-        if (image)
-            setTexture(pool->getAtlasByTile(image, true, anim)->getTexture());
-        else
-            setTexture(nullptr);
+    for (auto &rect : rects) {
+        rectf tileRect = rect.image ? guiPool->getTileRect(rect.image, false, true) : rectf();
+        shape.addRectangle(rect.area, rect.colors, tileRect);
+        images.push_back(rect.image);
     }
-    rectf tile_rect = pool->getTileRect(image, false, true);
-
-    shape.updateRectangle(0, rect, colors, tile_rect);
-    updateMesh();
-
-    if (cliprect)
-        setClipRect(*cliprect);
 }
+
+void UIRects::addRect(const TexturedRect &rect)
+{
+    rectf tileRect = rect.image ? guiPool->getTileRect(rect.image, false, true) : rectf();
+    shape.addRectangle(rect.area, rect.colors, tileRect);
+    images.push_back(rect.image);
+}
+
+void UIRects::updateRect(u32 n, const TexturedRect &rect)
+{
+    rectf tileRect = rect.image ? guiPool->getTileRect(rect.image, false, true) : rectf();
+    shape.updateRectangle(n, rect.area, rect.colors, tileRect);
+    images.at(n) = rect.image;
+}
+
+void UIRects::appendToBatch()
+{
+    std::vector<SpriteDrawChunk> chunks;
+    for (u32 k = 0; k < shape.getPrimitiveCount(); k++) {
+        render::Texture2D *tex = images[k] ? guiPool->getAtlasByTile(images[k])->getTexture() : nullptr;
+        chunks.emplace_back(tex, clipRect, 1);
+    }
+    drawBatch->addSpriteChunks(this, chunks);
+}
+void UIRects::updateBatch()
+{}

@@ -5,8 +5,8 @@
 
 UITextSprite::UITextSprite(FontManager *font_manager, GUISkin *guiskin, ResourceCache *resCache,
     SpriteDrawBatch *drawBatch, std::variant<EnrichedString, std::wstring> text,
-    bool border, bool wordWrap, bool fillBackground)
-    : UISprite(resCache, drawBatch), text(font_manager, guiskin, text, border, wordWrap, fillBackground)
+    bool border, bool wordWrap, bool fillBackground, u32 depthLevel)
+    : UISprite(resCache, drawBatch, depthLevel), text(font_manager, guiskin, text, border, wordWrap, fillBackground)
 {}
 
 /*void UITextSprite::draw(std::optional<u32> primOffset, std::optional<u32> primCount)
@@ -44,7 +44,7 @@ UITextSprite::UITextSprite(FontManager *font_manager, GUISkin *guiskin, Resource
         renderer->setClipRect(recti());
 }*/
 
-void UITextSprite::updateBatch()
+void UITextSprite::appendToBatch()
 {
     if (!text.needsUpdate)
         return;
@@ -52,9 +52,6 @@ void UITextSprite::updateBatch()
     text.needsUpdate = false;
 
     clear();
-
-    std::unordered_map<render::Texture2D *, u32> texture_to_charcount_map;
-    std::unordered_map<render::Texture2D *, std::vector<GlyphPrimitiveParams>> texture_to_glyph_map;
 
     if (text.isDrawBackground()) {
         auto bg_color = text.getBackgroundColor();
@@ -77,7 +74,7 @@ void UITextSprite::updateBatch()
     if (!fontAtlases)
         return;
 
-    v2f offset =boundRect.ULC;
+    v2f offset = boundRect.ULC;
 
     GUIAlignment hAlign, vAlign;
     text.getAlignment(hAlign, vAlign);
@@ -102,6 +99,8 @@ void UITextSprite::updateBatch()
     v2f line_offset = offset;
     u32 char_n = 0;
 
+    std::vector<SpriteDrawChunk> chunks;
+
     for (const auto &str : brokenText) {
         for (const wchar_t &ch : str.getString()) {
             auto atlas = fontAtlases->getAtlasByChar(ch);
@@ -109,26 +108,16 @@ void UITextSprite::updateBatch()
             if (!atlas)
                 continue;
 
-            render::Texture2D *atlas_tex = atlas->getTexture();
+            auto tex = atlas->getTexture();
 
             u32 shadowOffset, shadowAlpha;
             font->getShadowParameters(&shadowOffset, &shadowAlpha);
 
-            u32 &charCount = texture_to_charcount_map[atlas_tex];
-
-            if (shadowOffset)
-                charCount += 2;
-            else
-                ++charCount;
-
             Glyph *glyph = atlas->getGlyphByChar(ch);
-
-            auto &glyphParamsSet = texture_to_glyph_map[atlas_tex];
 
             rectf glyphPos(line_offset, glyph->size.X, glyph->size.Y);
 
-            GlyphPrimitiveParams glyphparams;
-            glyphparams.uv = rectf(
+            rectf glyphUV = rectf(
                 glyph->pos.X, glyph->pos.Y + glyph->size.Y,
                 glyph->pos.X + glyph->size.X, glyph->pos.Y);
 
@@ -139,22 +128,21 @@ void UITextSprite::updateBatch()
                     arrColors = {textColors.at(char_n), textColors.at(char_n), textColors.at(char_n), textColors.at(char_n)};
             }
             if (shadowOffset) {
-                glyphparams.pos += v2f(shadowOffset);
+                rectf shadowGlyphPos = glyphPos;
+                shadowGlyphPos += v2f(shadowOffset);
 
                 std::array<img::color8, 4> shadowColors = arrColors;
                 shadowColors[0].A(shadowAlpha);
                 shadowColors[1].A(shadowAlpha);
                 shadowColors[2].A(shadowAlpha);
                 shadowColors[3].A(shadowAlpha);
-                glyphparams.colors = shadowColors;
 
-                glyphParamsSet.push_back(glyphparams);
+                shape.addRectangle(shadowGlyphPos, shadowColors, glyphUV);
             }
 
-            glyphparams.pos = glyphPos;
-            glyphparams.colors = arrColors;
+            shape.addRectangle(glyphPos, arrColors, glyphUV);
 
-            glyphParamsSet.push_back(glyphparams);
+            chunks.emplace_back(tex, clipRect, shadowOffset ? 2 : 1);
 
             line_offset.X += glyph->advance;
             char_n++;
@@ -164,17 +152,7 @@ void UITextSprite::updateBatch()
         line_offset.Y += lineHeight;
     }
 
-    for (auto &tex_to_glyph : texture_to_glyph_map) {
-        for (auto &glyphparams : tex_to_glyph.second)
-            shape.addRectangle(glyphparams.pos, glyphparams.colors, glyphparams.uv);
-    }
-
-    std::vector<SpriteDrawChunk> chunks;
-
-    for (auto &tex_to_charcount : texture_to_charcount_map)
-        chunks.emplace_back(tex_to_charcount.first, clipRect, 0, tex_to_charcount.second*6);
-
-    //drawBatch->addChunks(chunks);
+    drawBatch->addSpriteChunks(this, chunks);
 }
 
 

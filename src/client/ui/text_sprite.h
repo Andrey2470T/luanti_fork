@@ -14,17 +14,11 @@ class UITextSprite : public UISprite
 {
     Text text;
 
-    struct GlyphPrimitiveParams {
-        rectf pos;
-        std::array<img::color8, 4> colors;
-        rectf uv;
-    };
-
     rectf boundRect;
 public:
     UITextSprite(FontManager *font_manager, GUISkin *guiskin, ResourceCache *resCache,
         SpriteDrawBatch *drawBatch, std::variant<EnrichedString, std::wstring> text,
-        bool border = false, bool wordWrap = false, bool fillBackground = false);
+        bool border = false, bool wordWrap = false, bool fillBackground = false, u32 depthLevel=0);
 
     Text &getText()
     {
@@ -41,8 +35,6 @@ public:
         text.needsUpdate = true;
     }
 
-    void updateBatch() override;
-    //void draw(std::optional<u32> primOffset=std::nullopt, std::optional<u32> primCount=std::nullopt) override;
-
-    //void updateBuffer(rectf &&r);
+    void appendToBatch() override;
+    void updateBatch() override {}
 };

@@ -8,6 +8,7 @@
 #include "gui/GUIEnums.h"
 #include <Render/DrawContext.h>
 #include <variant>
+#include <tuple>
 
 class RenderSystem;
 class MeshBuffer;
@@ -104,17 +105,22 @@ public:
     void addRectangle(
         const rectf &r,
         const std::array<img::color8, 4> &colors,
-        const rectf &texr=rectf());
+        const rectf &texr=rectf(), // in pixel coords
+        const v2u &imgSize=v2u(1,1));
     void addEllipse(f32 a, f32 b, const v2f &center, const img::color8 &c);
 
     void updateLine(
-        u32 n, const v2f &start_p, const v2f &end_p,
+        u32 n,
+        const v2f &start_p, const v2f &end_p,
         const img::color8 &start_c, const img::color8 &end_c);
     void updateTriangle(
-        u32 n, const v2f &p1, const v2f &p2, const v2f &p3,
+        u32 n,
+        const v2f &p1, const v2f &p2, const v2f &p3,
         const img::color8 &c1, const img::color8 &c2, const img::color8 &c3);
     void updateRectangle(
-        u32 n, const rectf &r, const std::array<img::color8, 4> &colors, const rectf &texr=rectf());
+        u32 n,
+        const rectf &r, const std::array<img::color8, 4> &colors,
+        const rectf &texr=rectf(),  const v2u &imgSize=v2u(1,1));
     void updateEllipse(u32 n, f32 a, f32 b, const v2f &center, const img::color8 &c);
 
     void movePrimitive(u32 n, const v2f &shift);
@@ -134,18 +140,11 @@ public:
     void move(const v2f &shift);
     void scale(const v2f &scale, std::optional<v2f> c);
 
-    friend class UISprite;
+    void appendToBuffer(MeshBuffer *buf);
+    void updateBuffer(MeshBuffer *buf);
 private:
-    void appendToBuffer(
-        MeshBuffer *buf, v2u imgSize=v2u(), bool toUV=false);
-    void updateBuffer(
-        MeshBuffer *buf, bool positions=true, bool colors=true,
-        v2u imgSize=v2u(), bool toUV=false);
-    void updateBuffer(
-        MeshBuffer *buf, u32 primitiveNum, bool positions=true, bool colors=true,
-        v2u imgSize=v2u(), bool toUV=false);
-    void appendToBuffer(
-        MeshBuffer *buf, u32 primitiveNum, v2u imgSize=v2u(), bool toUV=false);
+    void updateBuffer(MeshBuffer *buf, u32 primitiveNum);
+    void appendToBuffer(MeshBuffer *buf, u32 primitiveNum);
 };
 
 class SpriteDrawBatch;
@@ -163,11 +162,14 @@ protected:
     bool visible = true;
 
     recti clipRect;
+
+    // The toppest rendered sprite has the highest level
+    u8 depthLevel = 0;
 public:
     static const std::array<img::color8, 4> defaultColors;
 
-    UISprite(ResourceCache *_cache, SpriteDrawBatch *_drawBatch)
-        : cache(_cache), drawBatch(_drawBatch)
+    UISprite(ResourceCache *_cache, SpriteDrawBatch *_drawBatch, u32 _depthLevel=0)
+        : cache(_cache), drawBatch(_drawBatch), depthLevel(_depthLevel)
     {}
 
     virtual ~UISprite() = default;
@@ -190,6 +192,10 @@ public:
     {
         return shape;
     }
+    u8 getDepthLevel() const
+    {
+        return depthLevel;
+    }
 
     bool isVisible() const
     {
@@ -211,7 +217,9 @@ public:
         shape.clear();
     }
     
-    // Appends new draw chunks in the draw batch or update the meshbuffer directly
+    // Appends new draw chunks in the draw batch
+    virtual void appendToBatch() = 0;
+    //  Update the meshbuffer directly
     virtual void updateBatch() = 0;
     
     // Draws all or part of primitives
@@ -264,15 +272,14 @@ struct TexturedRect
 };
 
 class UIRects;
+class Image2D9Slice;
 class UITextSprite;
 
 struct SpriteDrawChunk
 {
     render::Texture2D *texture = nullptr;
-    rectf clipRect;
-
-    u32 indexOffset = 0; // index offset inside the meshbuffer
-    u32 indexCount;
+    recti clipRect;
+    u32 rectsN;
 };
 
 class SpriteDrawBatch
@@ -283,11 +290,15 @@ class SpriteDrawBatch
 
     std::unique_ptr<MeshBuffer> buffer;
 
-    std::vector<SpriteDrawChunk> chunks;
+    std::unordered_map<UISprite *, std::vector<SpriteDrawChunk>> chunks;
+
+    typedef std::unordered_map<render::Texture2D *,
+        std::vector<std::pair<recti, std::vector<std::tuple<UISprite *, u32, u32>>>>> DrawSubBatch;
+
+    std::unordered_map<u32, DrawSubBatch> subBatches; // map depth level to its subbatch
 
     rectf maxArea;
     bool maxAreaInit = false;
-    bool groupByTexture = false;
 public:
     SpriteDrawBatch(RenderSystem *_rndsys, ResourceCache *_cache)
         : rndsys(_rndsys), cache(_cache)
@@ -308,7 +319,13 @@ public:
     }
     UIRects *addRectsSprite(
         const std::vector<TexturedRect> &rects,
-        const recti *clipRect=nullptr);
+        const recti *clipRect=nullptr,
+        u32 depthLevel=0);
+    Image2D9Slice *addImage2D9Slice(
+        const rectf &src_rect, const rectf &dest_rect,
+        const rectf &middle_rect, img::Image *baseImg,
+        const std::array<img::color8, 4> &colors=UISprite::defaultColors,
+        std::optional<AtlasTileAnim> anim=std::nullopt, u32 depthLevel=0);
     UITextSprite *addTextSprite(
         const std::wstring &text,
         std::optional<std::variant<rectf, v2f>> shift=std::nullopt,
@@ -316,7 +333,8 @@ public:
         const recti *clipRect=nullptr,
         bool wordWrap=false,
         GUIAlignment horizAlign=GUIAlignment::Center,
-        GUIAlignment vertAlign=GUIAlignment::Center);
+        GUIAlignment vertAlign=GUIAlignment::Center,
+        u32 depthLevel=0);
 
     u32 getSpriteCount() const
     {
@@ -361,7 +379,10 @@ public:
         chunks.clear();
     }
 
-    void addSpriteChunks(const std::vector<SpriteDrawChunk> &chunks);
+    void addSpriteChunks(UISprite *sprite, const std::vector<SpriteDrawChunk> &addchunks)
+    {
+        chunks[sprite].insert(chunks[sprite].begin(), addchunks.begin(), addchunks.end());
+    }
     
     void setClipRect(u32 n, const recti &r)
     {
@@ -369,11 +390,10 @@ public:
     	sprites.at(n)->setClipRect(r);
     }
 
-    void update();
+    void rebuild();
 
-    void draw()
-    {
-        for (auto &sprite : sprites)
-            sprite->draw();
-    }
+    void draw();
+private:
+    void batch();
+    bool extendRectsRange(std::tuple<UISprite *, u32, u32> &curRange, const std::pair<u32, u32> &newRange);
 };

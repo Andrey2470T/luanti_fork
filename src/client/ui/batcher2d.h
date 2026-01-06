@@ -52,7 +52,7 @@ public:
         const v2u &imgSize,
         const rectf &srcRect, const rectf &destRect,
         const std::array<img::color8, 4> &colors,
-        bool flip, bool toUV=false);
+        bool flip);
     static void appendImageUnitRectangle(MeshBuffer *buf, bool flip)
     {
         imageRectangle(buf, v2u(1), rectf(v2f(1.0f)),

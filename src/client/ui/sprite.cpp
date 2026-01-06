@@ -76,8 +76,17 @@ void UIShape::addTriangle(
     dirtyPrimitives.push_back(primitives.size()-1);
     updateMaxArea(maxArea, v2f(p1.X, p3.Y), p2, maxAreaInit);
 }
-void UIShape::addRectangle(const rectf &r, const std::array<img::color8, 4> &colors, const rectf &texr) {
-    primitives.emplace_back((Primitive *)(new Rectangle(r, colors, texr)));
+void UIShape::addRectangle(
+    const rectf &r, const std::array<img::color8, 4> &colors,
+    const rectf &texr, const v2u &imgSize) {
+    f32 invW = 1.0f / imgSize.X;
+    f32 invH = 1.0f / imgSize.Y;
+
+    rectf tcoords;
+    tcoords.ULC = v2f(texr.ULC.X * invW, texr.ULC.Y * invH);
+    tcoords.LRC = v2f(texr.LRC.X * invW, texr.LRC.Y * invH);
+
+    primitives.emplace_back((Primitive *)(new Rectangle(r, colors, tcoords)));
     dirtyPrimitives.push_back(primitives.size()-1);
     updateMaxArea(maxArea, r.ULC, r.LRC, maxAreaInit);
 }
@@ -87,7 +96,9 @@ void UIShape::addEllipse(f32 a, f32 b, const v2f &center, const img::color8 &c) 
     updateMaxArea(maxArea, center - v2f(a/2, b/2), center+v2f(a/2, b/2), maxAreaInit);
 }
 
-void UIShape::updateLine(u32 n, const v2f &start_p, const v2f &end_p, const img::color8 &start_c, const img::color8 &end_c)
+void UIShape::updateLine(
+    u32 n, const v2f &start_p, const v2f &end_p,
+    const img::color8 &start_c, const img::color8 &end_c)
 {
     auto line = dynamic_cast<Line *>(primitives.at(n).get());
     line->start_p = start_p;
@@ -98,7 +109,9 @@ void UIShape::updateLine(u32 n, const v2f &start_p, const v2f &end_p, const img:
     dirtyPrimitives.push_back(n);
     updateMaxArea(maxArea, start_p, end_p, maxAreaInit);
 }
-void UIShape::updateTriangle(u32 n, const v2f &p1, const v2f &p2, const v2f &p3, const img::color8 &c1, const img::color8 &c2, const img::color8 &c3)
+void UIShape::updateTriangle(
+    u32 n, const v2f &p1, const v2f &p2, const v2f &p3,
+    const img::color8 &c1, const img::color8 &c2, const img::color8 &c3)
 {
     auto trig = dynamic_cast<Triangle *>(primitives.at(n).get());
     trig->p1 = p1;
@@ -111,12 +124,22 @@ void UIShape::updateTriangle(u32 n, const v2f &p1, const v2f &p2, const v2f &p3,
     dirtyPrimitives.push_back(n);
     updateMaxArea(maxArea, v2f(p1.X, p3.Y), p2, maxAreaInit);
 }
-void UIShape::updateRectangle(u32 n, const rectf &r, const std::array<img::color8, 4> &colors, const rectf &texr)
+void UIShape::updateRectangle(
+    u32 n, const rectf &r, const std::array<img::color8, 4> &colors,
+    const rectf &texr, const v2u &imgSize)
 {
     auto rect = dynamic_cast<Rectangle *>(primitives.at(n).get());
+
+    f32 invW = 1.0f / imgSize.X;
+    f32 invH = 1.0f / imgSize.Y;
+
+    rectf tcoords;
+    tcoords.ULC = v2f(texr.ULC.X * invW, texr.ULC.Y * invH);
+    tcoords.LRC = v2f(texr.LRC.X * invW, texr.LRC.Y * invH);
+
     rect->r = r;
     rect->colors = colors;
-    rect->texr = texr;
+    rect->texr = tcoords;
 
     dirtyPrimitives.push_back(n);
     updateMaxArea(maxArea, r.ULC, r.LRC, maxAreaInit);
@@ -278,23 +301,23 @@ void UIShape::scale(const v2f &scale, std::optional<v2f> c)
         scalePrimitive(i, scale, center);
 }
 
-void UIShape::appendToBuffer(MeshBuffer *buf, v2u imgSize, bool toUV)
+void UIShape::appendToBuffer(MeshBuffer *buf)
 {
     for (auto dirtyPrim : dirtyPrimitives)
-        appendToBuffer(buf, dirtyPrim, imgSize, toUV);
+        appendToBuffer(buf, dirtyPrim);
 
     dirtyPrimitives.clear();
 }
 
-void UIShape::updateBuffer(MeshBuffer *buf, bool positions, bool colors, v2u imgSize, bool toUV)
+void UIShape::updateBuffer(MeshBuffer *buf)
 {
     for (auto dirtyPrim : dirtyPrimitives)
-        updateBuffer(buf, dirtyPrim, positions, colors, imgSize, toUV);
+        updateBuffer(buf, dirtyPrim);
 
     dirtyPrimitives.clear();
 }
 
-void UIShape::updateBuffer(MeshBuffer *buf, u32 primitiveNum, bool positions, bool colors, v2u imgSize, bool toUV)
+void UIShape::updateBuffer(MeshBuffer *buf, u32 primitiveNum)
 {
     auto foundDirtyPrim = std::find(dirtyPrimitives.begin(), dirtyPrimitives.end(), primitiveNum);
 
@@ -308,79 +331,27 @@ void UIShape::updateBuffer(MeshBuffer *buf, u32 primitiveNum, bool positions, bo
     for (u32 i = 0; i < primitiveNum; i++)
         startV += primVCounts[(u8)primitives[i]->type];
 
+    buf->setIndexOffset(startV);
+
     switch (p->type) {
     case UIPrimitiveType::LINE: {
         auto line = dynamic_cast<Line *>(p);
-        if (positions) {
-            svtSetPos2D(buf, line->start_p, startV);
-            svtSetPos2D(buf, line->end_p, startV+1);
-        }
-        if (colors) {
-            svtSetColor(buf, line->start_c, startV);
-            svtSetColor(buf, line->end_c, startV+1);
-        }
+        Batcher2D::line(buf, line->start_p, line->end_p, line->start_c);
         break;
     }
     case UIPrimitiveType::TRIANGLE: {
         auto trig = dynamic_cast<Triangle *>(p);
-        if (positions) {
-            svtSetPos2D(buf, trig->p1, startV);
-            svtSetPos2D(buf, trig->p2, startV+1);
-            svtSetPos2D(buf, trig->p3, startV+2);
-        }
-        if (colors) {
-            svtSetColor(buf, trig->c1, startV);
-            svtSetColor(buf, trig->c2, startV+1);
-            svtSetColor(buf, trig->c3, startV+2);
-        }
+        Batcher2D::triangle(buf, {trig->p1, trig->p2, trig->p3}, trig->c1);
         break;
     }
     case UIPrimitiveType::RECTANGLE: {
         auto rect = dynamic_cast<Rectangle *>(p);
-        if (positions) {
-            svtSetPos2D(buf, rect->r.ULC, startV);
-            svtSetPos2D(buf, v2f(rect->r.LRC.X, rect->r.ULC.Y), startV+1);
-            svtSetPos2D(buf, rect->r.LRC, startV+2);
-            svtSetPos2D(buf, v2f(rect->r.ULC.X, rect->r.LRC.Y), startV+3);
-        }
-        if (colors) {
-            svtSetColor(buf, rect->colors[0], startV);
-            svtSetColor(buf, rect->colors[1], startV+1);
-            svtSetColor(buf, rect->colors[2], startV+2);
-            svtSetColor(buf, rect->colors[3], startV+3);
-        }
-
-        rectf uv = rect->texr;
-
-        if (toUV) {
-            f32 invW = 1.0f / (imgSize.X == 0 ? 1 : imgSize.X);
-            f32 invH = 1.0f / (imgSize.Y == 0 ? 1 : imgSize.Y);
-            uv.ULC = v2f(rect->texr.ULC.X * invW, rect->texr.ULC.Y * invH);
-            uv.LRC = v2f(rect->texr.LRC.X * invW, rect->texr.LRC.Y * invH);
-        }
-        svtSetUV(buf, uv.ULC, startV);
-        svtSetUV(buf, v2f(uv.LRC.X, uv.ULC.Y), startV+1);
-        svtSetUV(buf, uv.LRC, startV+2);
-        svtSetUV(buf, v2f(uv.ULC.X, uv.LRC.Y), startV+3);
-
+        Batcher2D::rectangle(buf, rect->r, rect->colors, rect->texr);
         break;
     }
     case UIPrimitiveType::ELLIPSE: {
         auto ellipse = dynamic_cast<Ellipse *>(p);
-
-        if (positions)
-            svtSetPos2D(buf, ellipse->center, startV);
-        if (colors)
-            svtSetColor(buf, ellipse->c, startV);
-
-        for (u8 i = 0; i < primVCounts[(u8)UIPrimitiveType::ELLIPSE]-1; i++) {
-            u32 curAngle = i * PI / 4;
-            v2f relPos(ellipse->a * cos(curAngle), ellipse->b * sin(curAngle));
-            if (positions)
-                svtSetPos2D(buf, ellipse->center + relPos, startV+i+1);
-            if (colors)
-                svtSetColor(buf, ellipse->c, startV+i+1);
-        }
+        Batcher2D::ellipse(buf, ellipse->a, ellipse->b, v2u(1,1), ellipse->center, ellipse->c);
         break;
     }
     default:
@@ -388,7 +359,7 @@ void UIShape::updateBuffer(MeshBuffer *buf, u32 primitiveNum, bool positions, bo
     }
 }
 
-void UIShape::appendToBuffer(MeshBuffer *buf, u32 primitiveNum, v2u imgSize, bool toUV)
+void UIShape::appendToBuffer(MeshBuffer *buf, u32 primitiveNum)
 {
     auto foundDirtyPrim = std::find(dirtyPrimitives.begin(), dirtyPrimitives.end(), primitiveNum);
 
@@ -400,25 +371,22 @@ void UIShape::appendToBuffer(MeshBuffer *buf, u32 primitiveNum, v2u imgSize, boo
     switch (p->type) {
     case UIPrimitiveType::LINE: {
         auto line = dynamic_cast<Line *>(p);
-        Batcher2D::appendLine(buf, line->start_p, line->end_p, line->start_c);
+        Batcher2D::line(buf, line->start_p, line->end_p, line->start_c);
         break;
     }
     case UIPrimitiveType::TRIANGLE: {
         auto trig = dynamic_cast<Triangle *>(p);
-        Batcher2D::appendTriangle(buf, {trig->p1, trig->p2, trig->p3}, trig->c1);
+        Batcher2D::triangle(buf, {trig->p1, trig->p2, trig->p3}, trig->c1);
         break;
     }
     case UIPrimitiveType::RECTANGLE: {
         auto rect = dynamic_cast<Rectangle *>(p);
-        if (rect->texr != rectf())
-            Batcher2D::appendImageRectangle(buf, imgSize, rect->texr, rect->r, rect->colors, false, toUV);
-        else
-            Batcher2D::appendRectangle(buf, rect->r, rect->colors);
+        Batcher2D::rectangle(buf, rect->r, rect->colors, rect->texr);
         break;
     }
     case UIPrimitiveType::ELLIPSE: {
         auto ellipse = dynamic_cast<Ellipse *>(p);
-        Batcher2D::appendEllipse(buf, ellipse->a, ellipse->b, imgSize, ellipse->center, ellipse->c);
+        Batcher2D::ellipse(buf, ellipse->a, ellipse->b, v2u(1,1), ellipse->center, ellipse->c);
         break;
     }
     default:
@@ -589,23 +557,14 @@ void BankAutoAlignment::alignSprite(u32 spriteID, std::optional<rectf> overrideR
 // if auto-align is enabled, the rects areas must be absolute, otherwise - relative to the ulc
 UIRects *SpriteDrawBatch::addRectsSprite(
     const std::vector<TexturedRect> &rects,
-    const recti *clipRect)
+    const recti *clipRect,
+    u32 depthLevel)
 {
-    UIRects *rectsSprite = new UIRects(rndsys, rects.size());
+    UIRects *rectsSprite = new UIRects(cache, this, rndsys->getPool(false), rects, depthLevel);
     sprites.emplace_back(rectsSprite);
 
-    if (!rects.empty()) {
-        for (u32 k = 0; k < rects.size(); k++)
-            rectsSprite->updateRect(k, rects.at(k).area, rects[k].colors);
-
-        if (autoAlignment)
-            autoAlignment->alignSprite(sprites.size()-1);
-
-        rectsSprite->updateMesh();
-
-        auto rectsMaxArea = rectsSprite->getArea();
-        updateMaxArea(maxArea, rectsMaxArea.ULC, rectsMaxArea.LRC, maxAreaInit);
-    }
+    auto rectsMaxArea = rectsSprite->getArea();
+    updateMaxArea(maxArea, rectsMaxArea.ULC, rectsMaxArea.LRC, maxAreaInit);
     
     if (clipRect)
         rectsSprite->setClipRect(*clipRect);
@@ -613,34 +572,21 @@ UIRects *SpriteDrawBatch::addRectsSprite(
     return rectsSprite;
 }
 
-// 'pos' is used for auto_align = false
-/*ImageSprite *SpriteDrawBatch::addImageSprite(
-    img::Image *img,
-    std::optional<rectf> rect,
-    const recti *clipRect,
-    std::optional<AtlasTileAnim> anim)
+Image2D9Slice *SpriteDrawBatch::addImage2D9Slice(
+    const rectf &src_rect, const rectf &dest_rect,
+    const rectf &middle_rect, img::Image *baseImg,
+    const std::array<img::color8, 4> &colors,
+    std::optional<AtlasTileAnim> anim, u32 depthLevel)
 {
-    ImageSprite *imageSprite = new ImageSprite(rndsys, cache);
-    sprites.emplace_back(imageSprite);
+    Image2D9Slice *img2D9Slice = new Image2D9Slice(cache, this, rndsys->getPool(false),
+        src_rect, dest_rect, middle_rect, baseImg, colors, anim, depthLevel);
+    sprites.emplace_back(img2D9Slice);
 
-    rectf resRect;
+    auto rectsMaxArea = img2D9Slice->getArea();
+    updateMaxArea(maxArea, rectsMaxArea.ULC, rectsMaxArea.LRC, maxAreaInit);
 
-    if (img)
-        resRect.LRC = v2f(img->getClipSize().X, img->getClipSize().Y);
-
-    if (rect)
-        resRect = rect.value();
-    if (autoAlignment) {
-        autoAlignment->alignSprite(sprites.size()-1, resRect);
-        resRect = imageSprite->getArea();
-    }
-
-    imageSprite->update(img, resRect, img::white, clipRect, anim);
-
-    updateMaxArea(maxArea, resRect.ULC, resRect.LRC, maxAreaInit);
-
-    return imageSprite;
-}*/
+    return img2D9Slice;
+}
 
 UITextSprite *SpriteDrawBatch::addTextSprite(
     const std::wstring &text,
@@ -649,16 +595,19 @@ UITextSprite *SpriteDrawBatch::addTextSprite(
     const recti *clipRect,
     bool wordWrap,
     GUIAlignment horizAlign,
-    GUIAlignment vertAlign)
+    GUIAlignment vertAlign,
+    u32 depthLevel)
 {
-    UITextSprite *textSprite = new UITextSprite(rndsys->getFontManager(), rndsys->getGUIEnvironment()->getSkin(),
-        text, rndsys->getRenderer(), cache, false, wordWrap);
+    UITextSprite *textSprite = new UITextSprite(
+        rndsys->getFontManager(), rndsys->getGUIEnvironment()->getSkin(),
+        cache, this, text, false, wordWrap, false, depthLevel);
     sprites.emplace_back(textSprite);
 
-    textSprite->setAlignment(horizAlign, vertAlign);
-    textSprite->setOverrideColor(textColor);
+    auto &textObj = textSprite->getText();
+    textObj.setAlignment(horizAlign, vertAlign);
+    textObj.setOverrideColor(textColor);
 
-    auto font = textSprite->getActiveFont();
+    auto font = textObj.getActiveFont();
     rectf resRect(toV2T<f32>(font->getTextSize(text)));
 
     if (shift) {
@@ -667,12 +616,7 @@ UITextSprite *SpriteDrawBatch::addTextSprite(
         else
             resRect += std::get<v2f>(shift.value());
     }
-    if (autoAlignment) {
-        autoAlignment->alignSprite(sprites.size()-1, resRect);
-        resRect = textSprite->getArea();
-    }
-
-    textSprite->updateBuffer(rectf(resRect));
+    textSprite->setBoundRect(resRect);
 
     updateMaxArea(maxArea, resRect.ULC, resRect.LRC, maxAreaInit);
     
@@ -680,4 +624,114 @@ UITextSprite *SpriteDrawBatch::addTextSprite(
         textSprite->setClipRect(*clipRect);
 
     return textSprite;
+}
+
+void SpriteDrawBatch::rebuild()
+{
+    buffer->clear();
+    chunks.clear();
+
+    std::vector<UIPrimitiveType> prims;
+    for (auto &sprite : sprites) {
+        auto shape = sprite->getShape();
+
+        for (u32 i = 0; i < shape.getPrimitiveCount(); i++)
+            prims.push_back(shape.getPrimitiveType(i));
+
+        sprite->appendToBatch();
+    }
+
+    buffer->reallocateData(
+        UIShape::countRequiredVCount(prims),
+        UIShape::countRequiredICount(prims)
+    );
+
+    for (auto &sprite : sprites)
+        sprite->getShape().appendToBuffer(buffer.get());
+
+    buffer->uploadData();
+
+    batch();
+}
+
+void SpriteDrawBatch::draw()
+{
+    auto rnd = rndsys->getRenderer();
+    rnd->setRenderState(false);
+    rnd->setDefaultShader(true, true);
+    rnd->setDefaultUniforms(1.0f, 1, 0.5f, img::BM_COUNT);
+
+    for (auto &subBatch : subBatches) {
+        for (auto &texBatch : subBatch.second) {
+            rnd->setTexture(texBatch.first);
+
+            for (auto &clipRectToRects : texBatch.second) {
+                rnd->setClipRect(clipRectToRects.first);
+
+                for (auto &rects : clipRectToRects.second) {
+                    if (!(std::get<0>(rects)->isVisible()))
+                        continue;
+
+                    u32 indexOffset = std::get<1>(rects)*6;
+                    u32 indexCount = (std::get<2>(rects)-std::get<1>(rects)+1)*6;
+
+                    rnd->draw(buffer.get(), render::PT_TRIANGLES, indexOffset, indexCount);
+                }
+            }
+        }
+    }
+}
+
+void SpriteDrawBatch::batch()
+{
+    subBatches.clear();
+
+    u32 curRectN = 0;
+    for (auto &spriteToChunks : chunks) {
+        u32 depthLevel = spriteToChunks.first->getDepthLevel();
+
+        DrawSubBatch &subBatch = subBatches[depthLevel];
+
+        for (auto &chunk : spriteToChunks.second) {
+            auto &texBatch = subBatch[chunk.texture];
+
+            auto clipToRectsIt = std::find(texBatch.begin(), texBatch.end(),
+                [&chunk] (const auto &clipToRect)
+                {
+                    return chunk.clipRect == clipToRect.first;
+                });
+
+            std::vector<std::tuple<UISprite *, u32, u32>> *rectRanges = nullptr;
+            if (clipToRectsIt == texBatch.end()) {
+                texBatch.emplace_back(chunk.clipRect);
+                rectRanges = &(texBatch.back().second);
+            }
+            else
+                rectRanges = &((*clipToRectsIt).second);
+
+            bool wasExtended = false;
+            for (u32 k = 0; k < rectRanges->size(); k++) {
+                if (extendRectsRange(rectRanges->at(k), {curRectN, curRectN+chunk.rectsN})) {
+                    wasExtended = true;
+                    break;
+                }
+            }
+
+            if (!wasExtended)
+                rectRanges->emplace_back(spriteToChunks.first, curRectN, curRectN+chunk.rectsN);
+
+            curRectN += chunk.rectsN;
+        }
+    }
+}
+
+bool SpriteDrawBatch::extendRectsRange(std::tuple<UISprite *, u32, u32> &curRange, const std::pair<u32, u32> &newRange)
+{
+    if ((newRange.first - std::get<2>(curRange)) > 1 || (std::get<1>(curRange) - newRange.second) > 1)
+        return false;
+
+    std::get<1>(curRange) = std::min(newRange.first, std::get<1>(curRange));
+    std::get<2>(curRange) = std::max(newRange.second, std::get<2>(curRange));
+
+    return true;
 }
