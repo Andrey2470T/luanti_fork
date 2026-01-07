@@ -1,42 +1,31 @@
 #include "loadscreen.h"
 #include "Utils/Rect.h"
-#include "Render/Texture2D.h"
 #include "client/media/resource.h"
-#include "client/render/clouds.h"
 #include "client/ui/extra_images.h"
 #include "client/ui/sprite.h"
 #include "gui/mainmenumanager.h"
 #include "rendersystem.h"
 #include "client/ui/text_sprite.h"
-#include "client/render/atlas.h"
-#include "client/ui/batcher2d.h"
+
 #include "client/render/renderer.h"
 
 LoadScreen::LoadScreen(ResourceCache *_cache, RenderSystem *_system, FontManager *_mgr)
-    : cache(_cache), rndsys(_system)
+    : cache(_cache), rndsys(_system), drawBatch(std::make_unique<SpriteDrawBatch>(rndsys, cache))
 {
-    guitext = std::make_unique<UITextSprite>(_mgr, _system->getGUIEnvironment()->getSkin(),
-        L"", rndsys->getRenderer(), cache, false, false);
-    guitext->setAlignment(GUIAlignment::Center, GUIAlignment::UpperLeft);
-
-    auto progress_bg_img = cache->get<img::Image>(ResourceType::IMAGE, "progress_bar_bg.png");
-    auto progress_img = cache->get<img::Image>(ResourceType::IMAGE, "progress_bar.png");
+    progress_bg_img = cache->get<img::Image>(ResourceType::IMAGE, "progress_bar_bg.png");
+    progress_img = cache->get<img::Image>(ResourceType::IMAGE, "progress_bar.png");
 
     auto progress_bg_img_size = rectf(v2f(), toV2T<f32>(progress_bg_img->getSize()));
     auto progress_img_size = rectf(v2f(), toV2T<f32>(progress_img->getSize()));
 
-    auto guiPool = _system->getPool(false);
-    render::Texture2D *tex = guiPool->getAtlasByTile(progress_img)->getTexture();
-    progress_rect = std::make_unique<UISprite>(tex, rndsys->getRenderer(), cache, true);
+    progress_bg_rect = drawBatch->addRectsSprite({
+        {progress_bg_img_size, UISprite::defaultColors, progress_bg_img}}, nullptr, 0);
 
-    progress_bg_img_rect = guiPool->getTileRect(progress_bg_img);
-    progress_img_rect = guiPool->getTileRect(progress_img);
+    progress_rect = drawBatch->addRectsSprite({
+        {progress_img_size, UISprite::defaultColors, progress_img}}, nullptr, 1);
 
-    auto shape = progress_rect->getShape();
-    shape->addRectangle(progress_bg_img_size, UISprite::defaultColors, progress_bg_img_rect);
-    shape->addRectangle(progress_img_size, UISprite::defaultColors, progress_img_rect);
-
-    progress_rect->rebuildMesh();
+    progress_text = drawBatch->addTextSprite(L"", std::nullopt, img::white, nullptr, false,
+        GUIAlignment::Center, GUIAlignment::UpperLeft, 1);
 }
 
 void LoadScreen::draw(v2u screensize, const std::wstring &text, f32 dtime, bool menu_clouds,
@@ -61,10 +50,10 @@ void LoadScreen::draw(v2u screensize, const std::wstring &text, f32 dtime, bool 
 
         v2f center(screensize.X/2, screensize.Y/2);
 
-        guitext->setText(text);
+        progress_text->setText(text);
 
-        v2f textsize(guitext->getTextWidth(), guitext->getTextHeight());
-        guitext->updateBuffer(rectf(center-textsize/2.0f, center+textsize/2.0f));
+        v2f textsize(progress_text->getTextWidth(), progress_text->getTextHeight());
+        progress_text->setBoundRect(rectf(center-textsize/2.0f, center+textsize/2.0f));
 
         s32 percent_min = 0;
         s32 percent_max = percent;
@@ -75,8 +64,8 @@ void LoadScreen::draw(v2u screensize, const std::wstring &text, f32 dtime, bool 
         }
         // draw progress bar
         if ((percent_min >= 0) && (percent_max <= 100)) {
-            auto pb_size = progress_bg_img_rect.getSize() * scale_f;
-            auto p_size = progress_img_rect.getSize() * scale_f;
+            auto pb_size = progress_bg_img->getSize() * scale_f;
+            auto p_size = progress_img->getSize() * scale_f;
 
             v2f pb_pos(center.X - pb_size.X / 2, center.Y - pb_size.Y / 2);\
             v2f p_pos(center.X - p_size.X / 2, center.Y - p_size.Y / 2);
@@ -84,22 +73,18 @@ void LoadScreen::draw(v2u screensize, const std::wstring &text, f32 dtime, bool 
             rectf new_progress_bg_size(pb_pos, pb_pos + v2f(pb_size.X, pb_size.Y));
             rectf new_progress_size(p_pos, p_pos + v2f(p_size.X, p_size.Y));
 
-            progress_rect->getShape()->updateRectangle(0, new_progress_bg_size, UISprite::defaultColors, progress_bg_img_rect);
-            progress_rect->getShape()->updateRectangle(1, new_progress_size, UISprite::defaultColors, progress_img_rect);
-            progress_rect->updateMesh(true, false);
+            progress_bg_rect->updateRect(0, {new_progress_bg_size, UISprite::defaultColors, progress_bg_img});
+            progress_rect->updateRect(0, {new_progress_size, UISprite::defaultColors, progress_img});
 
             progress_cliprect = recti(0, p_size.Y, percent_max * p_size.X / 100, 0);
             progress_cliprect += toV2T<s32>(p_pos);
+
+            progress_rect->setClipRect(progress_cliprect);
         }
     }
 
-    progress_rect->draw(0, 1);
-
-    progress_rect->setClipRect(progress_cliprect);
-    progress_rect->draw(1, 1);
-    progress_rect->setClipRect(recti());
-
-    guitext->draw();
+    drawBatch->rebuild();
+    drawBatch->draw();
 
     rndsys->endDraw();
 }

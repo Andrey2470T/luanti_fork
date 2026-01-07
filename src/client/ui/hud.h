@@ -52,7 +52,7 @@ public:
 
     void updateCrosshair();
     void updateBuiltinElements();
-    void updateInvListSelections(std::optional<u32> slotID);
+    void updateInvListSelections(u32 slotID);
 
     void addHUDElement(u32 id, const HudElement *elem);
     void removeHUDElement(u32 id);

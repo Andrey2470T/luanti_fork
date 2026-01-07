@@ -299,7 +299,7 @@ void Clouds::updateMesh()
             for (u32 i = 0; i < 4; i++) {
                 positions[i] += pos;
             }
-            Batcher3D::appendFace(m_mesh.get(), positions, colors, rectf(v2f(0.0f, 1.0f), v2f(1.0f, 0.0f)), normals);
+            Batcher3D::face(m_mesh.get(), positions, colors, rectf(v2f(0.0f, 1.0f), v2f(1.0f, 0.0f)), normals);
 		}
 	}
 

@@ -214,7 +214,7 @@ MeshBuffer *MeshOperations::convertNodeboxesToMesh(const std::vector<aabbf> &box
 		box.MaxEdge.Y += expand;
 		box.MaxEdge.Z += expand;
 
-        Batcher3D::appendBox(mesh, box, colors, uv_coords);
+        Batcher3D::box(mesh, box, colors, uv_coords);
     }
 
     return mesh;

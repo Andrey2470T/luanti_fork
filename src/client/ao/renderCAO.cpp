@@ -612,7 +612,8 @@ void RenderCAO::updateNametag()
         m_nametag->text = m_prop.nametag;
         m_nametag->textcolor = m_prop.nametag_color;
         m_nametag->bgcolor = m_prop.nametag_bgcolor;
-        m_nametag->updateBank(pos);
+        m_nametag->setWorldPos(pos);
+        m_nametag->update();
     }
 }
 
@@ -1187,7 +1188,7 @@ void RenderCAO::processInitData(const std::string &data)
 Model *addSpriteModel(TileLayer &layer, v3f position, v3f visual_size)
 {
     MeshBuffer *sprite = new MeshBuffer(4, 6);
-    Batcher3D::appendUnitFace(sprite, {});
+    Batcher3D::unitFace(sprite, {});
 
     MeshOperations::scaleMesh(sprite, visual_size * BS);
 
@@ -1219,7 +1220,7 @@ void RenderCAO::updateLayerUVs(std::string new_texture, u8 layer_id)
 Model *addUprightSpriteModel(TileLayer &layer, v3f position, v3f visual_size, bool is_player)
 {
     MeshBuffer *sprite = new MeshBuffer(4, 6);
-    Batcher3D::appendUnitFace(sprite, {});
+    Batcher3D::unitFace(sprite, {});
 
     MeshOperations::scaleMesh(sprite, visual_size * BS);
 
@@ -1241,7 +1242,7 @@ Model *addUprightSpriteModel(TileLayer &layer, v3f position, v3f visual_size, bo
 Model *addCubeModel(TileLayer &layer, v3f position, v3f visual_size)
 {
     MeshBuffer *cube = new MeshBuffer(4 * 6, 6 * 6);
-    Batcher3D::appendUnitBox(cube, {});
+    Batcher3D::unitBox(cube, {});
 
     MeshOperations::scaleMesh(cube, visual_size * BS);
 

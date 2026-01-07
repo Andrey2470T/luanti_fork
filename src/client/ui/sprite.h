@@ -165,9 +165,9 @@ protected:
     // The toppest rendered sprite has the highest level
     u8 depthLevel = 0;
 
-    bool changed = false;
 public:
     static const std::array<img::color8, 4> defaultColors;
+    bool changed = false;
 
     UISprite(ResourceCache *_cache, SpriteDrawBatch *_drawBatch, u32 _depthLevel=0)
         : cache(_cache), drawBatch(_drawBatch), depthLevel(_depthLevel)
@@ -217,6 +217,7 @@ public:
     void clear()
     {
         shape.clear();
+        changed = true;
     }
     
     // Appends new draw chunks in the draw batch

@@ -133,9 +133,12 @@ UIRects::UIRects(ResourceCache *resCache, SpriteDrawBatch *drawBatch, AtlasPool 
     changed = true;
 }
 
-void UIRects::addRect(const TexturedRect &rect)
+void UIRects::addRect(const TexturedRect &rect, std::optional<rectf> srcRect)
 {
     rectf tileRect = rect.image ? guiPool->getTileRect(rect.image, false, true) : rectf();
+
+    if (srcRect.has_value())
+        tileRect = srcRect.value();
     shape.addRectangle(rect.area, rect.colors, tileRect);
     images.push_back(rect.image);
 

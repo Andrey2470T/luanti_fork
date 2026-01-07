@@ -133,13 +133,13 @@ void MeshGenerator::drawQuad(
 	auto layer1 = collector->findLayer(tile[0], SELECT_VERTEXTYPE(tile[0]), 4, 6);
 	auto buf1 = collector->getBuffer(layer1.second.buffer_id);
 	
-    Batcher3D::appendFace(buf1, positions, colors, uv ? *uv : uvs, normals);
+    Batcher3D::face(buf1, positions, colors, uv ? *uv : uvs, normals);
 
 	// Second layer
 	auto layer2 = collector->findLayer(tile[1], SELECT_VERTEXTYPE(tile[1]), 4, 6);
 	auto buf2 = collector->getBuffer(layer2.second.buffer_id);
 	
-    Batcher3D::appendFace(buf2, positions, colors, uv ? *uv : uvs, normals);
+    Batcher3D::face(buf2, positions, colors, uv ? *uv : uvs, normals);
 }
 
 void MeshGenerator::drawCuboid(
@@ -181,11 +181,11 @@ void MeshGenerator::drawCuboid(
 
     auto layer1 = collector->findLayer(tiles[0][0], SELECT_VERTEXTYPE(tiles[0][0]), face_count*4, face_count*6);
     auto buf1 = collector->getBuffer(layer1.second.buffer_id);
-    Batcher3D::appendBox(buf1, box, colors, uvs, face_mask);
+    Batcher3D::box(buf1, box, colors, uvs, face_mask);
 
     auto layer2 = collector->findLayer(tiles[0][1], SELECT_VERTEXTYPE(tiles[0][1]), face_count*4, face_count*6);
     auto buf2 = collector->getBuffer(layer2.second.buffer_id);
-    Batcher3D::appendBox(buf2, box, colors, uvs, face_mask);
+    Batcher3D::box(buf2, box, colors, uvs, face_mask);
 }
 
 // ============================================================================
@@ -935,11 +935,11 @@ void MeshGenerator::drawMeshNode()
                 color = calculateVertexColor(pos, svtGetNormal(buf, j),
                     cur_node.lighting, cur_node.f->light_source);
 
-                Batcher3D::appendVertex(collector_buf, pos, color, normal, svtGetUV(buf, j));
+                Batcher3D::vertex(collector_buf, pos, color, normal, svtGetUV(buf, j));
             }
 
             for (u32 j = mp.offset; j < mp.offset + mp.count; j++)
-                appendIndex(collector_buf, buf->getIndexAt(j));
+                Batcher3D::index(collector_buf, buf->getIndexAt(j));
         }
 
         delete buf;

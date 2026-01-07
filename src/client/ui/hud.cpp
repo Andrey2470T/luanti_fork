@@ -101,7 +101,7 @@ void Hud::updateBuiltinElements()
     //    findSprite(builtinHotbarID)->setVisible(false);
 }
 
-void Hud::updateInvListSelections(std::optional<u32> slotID)
+void Hud::updateInvListSelections(u32 slotID)
 {
     for (auto &elem : hudsprites)
         if (elem.second->getType() == HUD_ELEM_INVENTORY)

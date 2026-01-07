@@ -101,7 +101,7 @@ void SelectionMesh::updateMesh(const v3f &new_pos, const v3s16 &camera_offset,
 
         buf = new MeshBuffer(8 * boxes.size(), 36 * boxes.size());
         for (auto &box : boxes)
-            Batcher3D::appendLineBox(buf, box, res_color);
+            Batcher3D::lineBox(buf, box, res_color);
 
         layer->line_thickness = thickness;
     }
@@ -181,17 +181,17 @@ void BlockBounds::updateMesh(Client *client, DistanceSortedDrawList *drawlist)
             v3f pmin = v3f(x, y,    -radius) * MAP_BLOCKSIZE * BS;
             v3f pmax = v3f(x, y, 1 + radius) * MAP_BLOCKSIZE * BS;
 
-            Batcher3D::appendLine(buf,
+            Batcher3D::line(buf,
                 base_corner + v3f(pmin.X, pmin.Y, pmin.Z),
                 base_corner + v3f(pmax.X, pmax.Y, pmax.Z),
                 choose_color(block_pos.X, block_pos.Y)
                 );
-            Batcher3D::appendLine(buf,
+            Batcher3D::line(buf,
                 base_corner + v3f(pmin.X, pmin.Z, pmin.Y),
                 base_corner + v3f(pmax.X, pmax.Z, pmax.Y),
                 choose_color(block_pos.X, block_pos.Z)
                 );
-            Batcher3D::appendLine(buf,
+            Batcher3D::line(buf,
                 base_corner + v3f(pmin.Z, pmin.X, pmin.Y),
                 base_corner + v3f(pmax.Z, pmax.X, pmax.Y),
                 choose_color(block_pos.Y, block_pos.Z)

@@ -387,8 +387,7 @@ void GameUI::render()
     drawBatch->rebuild();
 
     drawBatch->draw();
-
-    hud->render();
+    graph_set->draw();
     
     for (auto &nt : nametags)
         nt->drawBank();

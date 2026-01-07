@@ -58,8 +58,8 @@ MeshLayer &LayeredMesh::findLayer(std::shared_ptr<TileLayer> layer, render::Vert
 
         if (layer_found != buf_layers.end()) {
             u32 baIndex = std::distance(buf_layers.begin(), layer_found);
-            buffer->reallocateData(
-                buffer->getSubDataCount(baIndex)+vertexCount, buffer->getSubDataCount(baIndex, false)+indexCount, baIndex);
+            //buffer->reallocateData(
+            //    buffer->getSubDataCount(baIndex)+vertexCount, buffer->getSubDataCount(baIndex, false)+indexCount, baIndex);
             layer_found->second.count += indexCount;
             recalculateBoundingRadius();
 
@@ -67,7 +67,7 @@ MeshLayer &LayeredMesh::findLayer(std::shared_ptr<TileLayer> layer, render::Vert
         }
         else {
             u32 baIndex = std::distance(buf_layers.begin(), buf_layers.end());
-            buffer->reallocateData(vertexCount, indexCount, baIndex);
+            //buffer->reallocateData(vertexCount, indexCount, baIndex);
             LayeredMeshPart mesh_p;
             mesh_p.buffer_id = i;
             mesh_p.layer_id = buf_layers.size();

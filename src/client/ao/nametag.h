@@ -4,14 +4,17 @@
 #include "client/ui/hud_elements.h"
 
 class Client;
+class SpriteDrawBatch;
 
 class Nametag : public Waypoint
 {
+    std::unique_ptr<SpriteDrawBatch> drawBatch;
     bool show_backgrounds;
 public:
     std::string text;
     img::color8 textcolor;
     std::optional<img::color8> bgcolor;
+    v3f localPos;
 
     Nametag(Client *client,
             const std::string &text,
@@ -19,7 +22,7 @@ public:
             const std::optional<img::color8> &bgcolor,
             const v3f &pos);
 
-    void updateBank(v3f newWorldPos) override;
+    void update();
 
     img::color8 getBgColor(bool use_fallback) const
 	{

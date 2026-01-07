@@ -4,6 +4,7 @@
 #include "glyph_atlas.h"
 #include "gui/IGUIEnvironment.h"
 #include "text_sprite.h"
+#include "extra_images.h"
 #include "client/media/resource.h"
 #include "batcher2d.h"
 #include "client/core/client.h"
@@ -112,45 +113,45 @@ rectf getHudImageRect(ResourceCache *cache, RenderSystem *rnd_system, const std:
     return imgRect;
 }
 
+HudSprite::HudSprite(Client *_client, const HudElement *_elem, UISprite *_sprite)
+    : client(_client), rndsys(client->getRenderSystem()), cache(client->getResourceCache()),
+      elem(_elem), sprite(_sprite)
+{}
+
 HudSprite::~HudSprite()
 {
     cache->clearResource<img::Image>(ResourceType::IMAGE, img1);
     cache->clearResource<img::Image>(ResourceType::IMAGE, img2);
 }
 
-HudText::HudText(Client *client, const HudElement *elem)
-    : HudSprite(client->getResourceCache(), client->getRenderSystem(), elem)
+HudText::HudText(Client *client, const HudElement *elem, SpriteDrawBatch *drawBatch)
+    : HudSprite(client, elem, drawBatch->addTextSprite(L""))
 {
-    EnrichedString wtext = getHudWText(elem);
-    RenderSystem *rnd_system = client->getRenderSystem();
-    text = std::make_unique<UITextSprite>(rnd_system->getFontManager(), rnd_system->getGUIEnvironment()->getSkin(),
-        wtext, rnd_system->getRenderer(), client->getResourceCache());
+    update();
 }
 
 void HudText::update()
 {
-    FontManager *font_mgr = rnd_system->getFontManager();
-    text->setOverrideFont(getHudTextFont(font_mgr, elem, true));
+    FontManager *font_mgr = rndsys->getFontManager();
+
+    auto textSprite = dynamic_cast<UITextSprite *>(sprite);
+    textSprite->getTextObj().setOverrideFont(getHudTextFont(font_mgr, elem, true));
 
     EnrichedString textstr = getHudWText(elem);
-    text->setOverrideColor(textstr.getColors().at(0));
-    text->setText(textstr);
-    text->updateBuffer(getHudTextRect(rnd_system, elem->text, elem, true, true));
+    textSprite->getTextObj().setOverrideColor(textstr.getColors().at(0));
+    textSprite->setText(textstr);
+    textSprite->setBoundRect(getHudTextRect(rndsys, elem->text, elem, true, true));
 }
 
-HudStatbar::HudStatbar(Client *client, const HudElement *elem)
-    : HudSprite(client->getResourceCache(), client->getRenderSystem(), elem)
+HudStatbar::HudStatbar(Client *client, const HudElement *elem, SpriteDrawBatch *drawBatch)
+    : HudSprite(client, elem, drawBatch->addRectsSprite({}))
 {
-    img1 = cache->getOrLoad<img::Image>(ResourceType::IMAGE, elem->text);
-    auto guiTex = rnd_system->getPool(false)->getAtlasByTile(img1, true)->getTexture();
-    bar = std::make_unique<UISprite>(guiTex, rnd_system->getRenderer(), cache, true);
-
     update();
 }
 
 void HudStatbar::update()
 {
-    bar->clear();
+    sprite->clear();
 
     const img::color8 color = img::white;
     const std::array<img::color8, 4> colors = {color, color, color, color};
@@ -162,11 +163,11 @@ void HudStatbar::update()
     if (!elem->text2.empty())
         img2 = cache->getOrLoad<img::Image>(ResourceType::IMAGE, elem->text2);
 
-    auto guiPool = rnd_system->getPool(false);
+    auto guiPool = rndsys->getPool(false);
     rectf stat_img_src = guiPool->getTileRect(img1, false, true);
     rectf stat_img_bg_src = guiPool->getTileRect(img2, false, true);
 
-    f32 scale_f = rnd_system->getScaleFactor();
+    f32 scale_f = rndsys->getScaleFactor();
     v2f srcd(img1->getSize().X, img1->getSize().Y);
     v2f dstd;
     if (elem->size.isNull())
@@ -176,7 +177,7 @@ void HudStatbar::update()
 
     v2f offset = v2f(elem->offset.X, elem->offset.Y) * scale_f;
 
-    v2u screensize = rnd_system->getWindowSize();
+    v2u screensize = rndsys->getWindowSize();
     v2f pos = v2f(floor(elem->pos.X * (f32)screensize.X + 0.5), floor(elem->pos.Y * (f32)screensize.Y + 0.5));
     pos += offset;
 
@@ -227,24 +228,23 @@ void HudStatbar::update()
     steppos.Y *= dstd.Y;
 
     // Draw full textures
-    auto shape = bar->getShape();
+    auto statbarSprite = dynamic_cast<UIRects *>(sprite);
 
     for (u32 i = 0; i < elem->number / 2; i++) {
-        rectf srcrect = stat_img_src;
         rectf dstrect(0, 0, dstd.X, dstd.Y);
 
         dstrect += pos;
-        shape->addRectangle(dstrect, colors, srcrect);
+        statbarSprite->addRect({dstrect, colors, img1});
 
         pos += steppos;
     }
 
     if (elem->number % 2 == 1) {
         // Draw half a texture
-        shape->addRectangle(dsthalfrect + pos, colors, srchalfrect + stat_img_src.ULC);
+        statbarSprite->addRect({dsthalfrect + pos, colors, img1}, srchalfrect + stat_img_src.ULC);
 
         if (img2 && elem->item > elem->number) {
-            shape->addRectangle(dsthalfrect2 + pos, colors, srchalfrect2 + stat_img_bg_src.ULC);
+            statbarSprite->addRect({dsthalfrect2 + pos, colors, img2}, srchalfrect2 + stat_img_bg_src.ULC);
             pos += steppos;
         }
     }
@@ -257,24 +257,27 @@ void HudStatbar::update()
         else
             start_offset = elem->number / 2;
         for (u32 i = start_offset; i < elem->item / 2; i++) {
-            rectf srcrect = stat_img_src;
             rectf dstrect(0, 0, dstd.X, dstd.Y);
 
             dstrect += pos;
-            shape->addRectangle(dstrect, colors, srcrect);
+            statbarSprite->addRect({dstrect, colors, img1});
             pos += steppos;
         }
 
         if (elem->item % 2 == 1)
-            shape->addRectangle(dsthalfrect + pos, colors, srchalfrect + stat_img_bg_src.ULC);
+            statbarSprite->addRect({dsthalfrect + pos, colors, img1}, srchalfrect + stat_img_src.ULC);
     }
-
-    bar->rebuildMesh();
 }
 
-Waypoint::Waypoint(Client *_client, UISpriteBank *_faceBank, v3f _worldPos)
-    : client(_client), faceBank(std::unique_ptr<UISpriteBank>(_faceBank)), worldPos(_worldPos)
+Waypoint::Waypoint(Client *_client, v3f _worldPos)
+    : client(_client), worldPos(_worldPos)
 {}
+
+void Waypoint::setWorldPos(v3f newWorldPos)
+{
+    worldPos = newWorldPos * BS;
+    worldPos -= intToFloat(client->getEnv().getCameraOffset(), BS);
+}
 
 bool Waypoint::calculateScreenPos(v2f *pos)
 {
@@ -295,102 +298,93 @@ bool Waypoint::calculateScreenPos(v2f *pos)
     return true;
 }
 
-HudWaypoint::HudWaypoint(Client *_client, const HudElement *elem, UISpriteBank *bank)
-    : HudSprite(_client->getResourceCache(), _client->getRenderSystem(), elem),
-      Waypoint(_client, bank), image(elem->type == HUD_ELEM_IMAGE_WAYPOINT)
+HudTextWaypoint::HudTextWaypoint(Client *_client, const HudElement *elem, SpriteDrawBatch *drawBatch)
+    : HudSprite(_client, elem, drawBatch->addTextSprite(L"")), Waypoint(_client)
 {
     update();
 }
 
-void HudWaypoint::updateBank(v3f newWorldPos)
+void HudTextWaypoint::update()
 {
     v2f pixelPos;
-
-    worldPos = newWorldPos * BS;
-    worldPos -= intToFloat(client->getEnv().getCameraOffset(), BS);
-
     calculateScreenPos(&pixelPos);
 
-    if (!image) {
-        std::string text = elem->name;
+    sprite->clear();
 
-        // Waypoints reuse the item field to store precision,
-        // item = precision + 1 and item = 0 <=> precision = 10 for backwards compatibility.
-        // Also see `push_hud_element`.
-        u32 item = elem->item;
-        f32 precision = (item == 0) ? 10.0f : (item - 1.f);
-        bool draw_precision = precision > 0;
+    std::string text = elem->name;
 
-        if (draw_precision) {
-            std::ostringstream os;
-            v3f p_pos = client->getEnv().getLocalPlayer()->getPosition() / BS;
-            f32 distance = std::floor(precision * p_pos.getDistanceFrom(elem->world_pos)) / precision;
-            os << distance << elem->text;
-            text += os.str();
-        }
+    // Waypoints reuse the item field to store precision,
+    // item = precision + 1 and item = 0 <=> precision = 10 for backwards compatibility.
+    // Also see `push_hud_element`.
+    u32 item = elem->item;
+    f32 precision = (item == 0) ? 10.0f : (item - 1.f);
+    bool draw_precision = precision > 0;
 
-        FontManager *font_mgr = rnd_system->getFontManager();
-        auto text_sprite = dynamic_cast<UITextSprite *>(faceBank->getSprite(0));
-        text_sprite->setOverrideFont(getHudTextFont(font_mgr, elem, true));
-        text_sprite->setText(EnrichedString(text));
-        text_sprite->updateBuffer(getHudTextRect(rnd_system, text, elem, true, false, pixelPos));
+    if (draw_precision) {
+        std::ostringstream os;
+        v3f p_pos = HudSprite::client->getEnv().getLocalPlayer()->getPosition() / BS;
+        f32 distance = std::floor(precision * p_pos.getDistanceFrom(elem->world_pos)) / precision;
+        os << distance << elem->text;
+        text += os.str();
     }
-    else {
-        auto img_sprite = faceBank->getSprite(0);
 
-        rectf img_rect = getHudImageRect(cache, rnd_system, elem->text, elem, false, &img1, pixelPos);
-        auto guiPool = rnd_system->getPool(false);
-        img_sprite->setTexture(rnd_system->getPool(false)->getAtlasByTile(img1, true)->getTexture());
-
-        img::color8 color(img::PF_RGBA8, (elem->number >> 16) & 0xFF,
-                          (elem->number >> 8)  & 0xFF,
-                          (elem->number >> 0)  & 0xFF, 255);
-
-        rectf srcrect = guiPool->getTileRect(img1, false, true);
-        img_sprite->getShape()->updateRectangle(0, img_rect, {color, color, color, color}, srcrect);
-        img_sprite->updateMesh();
-    }
+    FontManager *font_mgr = rndsys->getFontManager();
+    auto textSprite = dynamic_cast<UITextSprite *>(sprite);
+    textSprite->getTextObj().setOverrideFont(getHudTextFont(font_mgr, elem, true));
+    textSprite->setText(EnrichedString(text));
+    textSprite->setBoundRect(getHudTextRect(rndsys, text, elem, true, false, pixelPos));
 }
 
-HudImage::HudImage(Client *client, const HudElement *elem)
-    : HudSprite(client->getResourceCache(), client->getRenderSystem(), elem)
+HudImageWaypoint::HudImageWaypoint(Client *_client, const HudElement *elem, SpriteDrawBatch *drawBatch)
+    : HudSprite(_client, elem, drawBatch->addRectsSprite({})), Waypoint(_client)
 {
-    image = std::make_unique<UISprite>(nullptr, rnd_system->getRenderer(), cache,
-        rectf(), rectf(), std::array<img::color8, 4>{img::white}, true);
+    update();
+}
 
+void HudImageWaypoint::update()
+{
+    v2f pixelPos;
+    calculateScreenPos(&pixelPos);
+
+    auto imgSprite = dynamic_cast<UIRects *>(sprite);
+
+    rectf img_rect = getHudImageRect(cache, rndsys, elem->text, elem, false, &img1, pixelPos);
+
+    img::color8 color(img::PF_RGBA8, (elem->number >> 16) & 0xFF,
+        (elem->number >> 8)  & 0xFF,
+        (elem->number >> 0)  & 0xFF, 255);
+
+    imgSprite->updateRect(0, {img_rect, {color, color, color, color}, img1});
+}
+
+HudImage::HudImage(Client *client, const HudElement *elem, SpriteDrawBatch *drawBatch)
+    : HudSprite(client, elem, drawBatch->addRectsSprite({}))
+{
     update();
 }
 
 void HudImage::update()
 {
-    rectf img_rect = getHudImageRect(cache, rnd_system, elem->text, elem, true, &img1);
+    rectf img_rect = getHudImageRect(cache, rndsys, elem->text, elem, true, &img1);
 
-    auto guiPool = rnd_system->getPool(false);
-    image->setTexture(guiPool->getAtlasByTile(img1, true)->getTexture());
-
-    rectf srcrect = guiPool->getTileRect(img1, false, true);
-    image->getShape()->updateRectangle(0, img_rect, {img::white}, srcrect);
-    image->updateMesh(true, false);
+    auto imgSprite = dynamic_cast<UIRects *>(sprite);
+    imgSprite->updateRect(0, {img_rect, UISprite::defaultColors, img1});
 }
 
-HudCompass::HudCompass(Client *_client, const HudElement *elem)
-    : HudSprite(_client->getResourceCache(), _client->getRenderSystem(), elem), client(_client)
+HudCompass::HudCompass(Client *_client, const HudElement *elem, SpriteDrawBatch *drawBatch)
+    : HudSprite(_client, elem, drawBatch->addRectsSprite({}))
 {
-    img1 = cache->getOrLoad<img::Image>(ResourceType::IMAGE, elem->text);
-    auto guiTex = rnd_system->getPool(false)->getAtlasByTile(img1, true)->getTexture();
-    compass = std::make_unique<UISprite>(guiTex, rnd_system->getRenderer(), cache, true);
-
     update();
 }
 
 void HudCompass::update()
 {
-    compass->clear();
+    sprite->clear();
 
     img1 = cache->getOrLoad<img::Image>(ResourceType::IMAGE, elem->text);
 
     rectf destrect;
-    destrect += calcHUDOffset(rnd_system, destrect, elem, false, std::nullopt);
+    destrect += calcHUDOffset(rndsys, destrect, elem, false, std::nullopt);
 
     // Angle according to camera view
     matrix4 rotation;
@@ -422,7 +416,7 @@ void HudCompass::update()
     }
 }
 
-void HudCompass::draw()
+/*void HudCompass::draw()
 {
     auto context = rnd_system->getRenderer()->getContext();
     recti prevViewport = context->getViewportSize();
@@ -433,15 +427,14 @@ void HudCompass::draw()
     compass->draw();
 
     context->setViewportSize(prevViewport);
-}
+}*/
 
 void HudCompass::updateTranslate(const rectf &r, img::Image *img, s32 angle)
 {
-    const std::array<img::color8, 4> colors = {img::white, img::white, img::white, img::white};
+    const std::array<img::color8, 4> colors = UISprite::defaultColors;
 
     // Compute source image scaling
 
-    rectf srcrect = rnd_system->getPool(false)->getTileRect(img, false, true);
     v2u imgsize = img->getSize();
     v2f destsize(r.getHeight() * elem->scale.X * imgsize.X / imgsize.Y,
                   r.getHeight() * elem->scale.Y);
@@ -464,16 +457,16 @@ void HudCompass::updateTranslate(const rectf &r, img::Image *img, s32 angle)
     while (tgtrect.ULC.X > r.ULC.X)
         tgtrect -= v2f(destsize.X, 0);
 
-    auto shape = compass->getShape();
-    shape->addRectangle(tgtrect, colors, srcrect);
+    auto compassSprite = dynamic_cast<UIRects *>(sprite);
+    compassSprite->addRect({tgtrect, colors, img});
     tgtrect += v2f(destsize.X, 0);
 
     while (tgtrect.ULC.X < r.LRC.X) {
-        shape->addRectangle(tgtrect, colors, srcrect);
+        compassSprite->addRect({tgtrect, colors, img});
         tgtrect += v2f(destsize.X, 0);
     }
-    compass->setClipRect(recti(r.ULC.X, r.ULC.Y, r.LRC.X, r.LRC.Y));
-    compass->rebuildMesh();
+
+    compassSprite->setClipRect(recti(r.ULC.X, r.ULC.Y, r.LRC.X, r.LRC.Y));
 }
 
 void HudCompass::updateRotate(const rectf &r, img::Image *img, s32 angle)
@@ -489,22 +482,21 @@ void HudCompass::updateRotate(const rectf &r, img::Image *img, s32 angle)
     rotation.transformVect(dest_ulc);
     rotation.transformVect(dest_lrc);
 
-    rectf srcrect = rnd_system->getPool(false)->getTileRect(img, false, true);
     rectf destrect(dest_ulc.X, dest_ulc.Y, dest_lrc.X, dest_lrc.Y);
 
-    compass->getShape()->addRectangle(destrect, {}, srcrect);
-    compass->rebuildMesh();
+    auto compassSprite = dynamic_cast<UIRects *>(sprite);
+    compassSprite->addRect({destrect, UISprite::defaultColors, img});
 }
 
-HudMinimap::HudMinimap(Client *_client, const HudElement *elem)
-    : HudSprite(_client->getResourceCache(), _client->getRenderSystem(), elem),
+HudMinimap::HudMinimap(Client *_client, const HudElement *elem, SpriteDrawBatch *drawBatch)
+    : HudSprite(_client, elem),
     minimap(std::make_unique<Minimap>(_client, _client->getRenderSystem()->getRenderer(), _client->getResourceCache()))
 {}
 
 void HudMinimap::update()
 {
     rectf destrect;
-    destrect += calcHUDOffset(rnd_system, destrect, elem, true, std::nullopt);
+    destrect += calcHUDOffset(rndsys, destrect, elem, true, std::nullopt);
 
     viewport = recti(destrect.ULC.X, destrect.ULC.Y, destrect.LRC.X, destrect.LRC.Y);
     minimap->updateActiveMarkers(viewport);
@@ -520,18 +512,13 @@ static void setting_changed_callback(const std::string &name, void *data)
     static_cast<HudInventoryList*>(data)->updateScalingSetting();
 }
 
-HudInventoryList::HudInventoryList(Client *_client, const HudElement *elem)
-    : HudSprite(_client->getResourceCache(), _client->getRenderSystem(), elem), client(_client)
+HudInventoryList::HudInventoryList(Client *_client, const HudElement *elem, SpriteDrawBatch *drawBatch)
+    : HudSprite(_client, elem, drawBatch->addRectsSprite({}))
 {
     updateScalingSetting();
     g_settings->registerChangedCallback("dpi_change_notifier", setting_changed_callback, this);
     g_settings->registerChangedCallback("display_density_factor", setting_changed_callback, this);
     g_settings->registerChangedCallback("hud_scaling", setting_changed_callback, this);
-
-    list = std::make_unique<UISpriteBank>(rnd_system, cache);
-    list->addSprite({{rectf(), {img::white}}}, 0);
-    list->addSprite({{rectf(), {img::white}}}, 0);
-    list->getSprite(1)->setVisible(false);
 
     updateBackgroundImages();
 }
@@ -544,55 +531,34 @@ HudInventoryList::~HudInventoryList()
 void HudInventoryList::updateBackgroundImages()
 {
     LocalPlayer *player = client->getEnv().getLocalPlayer();
-    auto guiPool = rnd_system->getPool(false);
 
-    if (background_img != player->hotbar_image) {
+    if (background_img != player->hotbar_image)
         background_img = player->hotbar_image;
 
-        auto img = cache->getOrLoad<img::Image>(ResourceType::IMAGE, background_img);
-        list->getSprite(0)->setTexture(img ? guiPool->getAtlasByTile(img)->getTexture() : nullptr);
-    }
-
-    if (background_selected_img != player->hotbar_selected_image) {
+    if (background_selected_img != player->hotbar_selected_image)
         background_selected_img = player->hotbar_selected_image;
 
-        auto selected_img = cache->getOrLoad<img::Image>(ResourceType::IMAGE, background_selected_img);
-        list->getSprite(1)->setTexture(selected_img ? guiPool->getAtlasByTile(selected_img)->getTexture() : nullptr);
-    }
+    update();
 }
 
-void HudInventoryList::updateSelectedSlot(std::optional<u32> selected_index)
+void HudInventoryList::updateSelectedSlot(u32 selected_index)
 {
-    if (selected_index.value() == selectedItemIndex.value())
-        return;
+    update();
 
-    auto selected_sprite = list->getSprite(1);
+    auto invSprite = dynamic_cast<UIRects *>(sprite);
 
-    if (!selected_index && selectedItemIndex) {
-        selectedItemIndex = std::nullopt;
-        selected_sprite->setVisible(false);
-        return;
-    }
-
-    selected_sprite->clear();
-    selected_sprite->setVisible(true);
-
-    auto selected_shape = selected_sprite->getShape();
-
-    rectf selected_r = getSlotRect(selected_index.value());
+    rectf selected_r = getSlotRect(selected_index);
     
-    if (list_bisected && selected_index.value() <= invlistItemCount / 2)
+    if (list_bisected && selected_index <= invlistItemCount / 2)
         selected_r -= v2f(0, slotSize + padding);
 
     if (!background_selected_img.empty()) {
     	auto selected_img = cache->getOrLoad<img::Image>(ResourceType::IMAGE, background_selected_img);
-        auto guiPool = rnd_system->getPool(false);
-        rectf srcrect = guiPool->getTileRect(selected_img, false, true);
     
         selected_r.ULC -= padding*2;
         selected_r.LRC += padding*2;
 
-        selected_shape->addRectangle(selected_r, {img::white}, srcrect);
+        invSprite->addRect({selected_r, UISprite::defaultColors, selected_img});
     } else {
         img::color8 c_outside(img::blue);
 
@@ -601,30 +567,27 @@ void HudInventoryList::updateSelectedSlot(std::optional<u32> selected_index)
         f32 x2 = selected_r.LRC.X;
         f32 y2 = selected_r.LRC.Y;
         // Black base borders
-        selected_shape->addRectangle(
+        invSprite->addRect({
             rectf(
                 v2f(x1 - padding, y1 - padding),
                 v2f(x2 + padding, y1)
-            ), {c_outside}, rectf());
-        selected_shape->addRectangle(
+            ), {c_outside, c_outside, c_outside, c_outside}});
+        invSprite->addRect({
             rectf(
                 v2f(x1 - padding, y2),
                 v2f(x2 + padding, y2 + padding)
-            ), {c_outside}, rectf());
-        selected_shape->addRectangle(
+            ), {c_outside, c_outside, c_outside, c_outside}});
+        invSprite->addRect({
             rectf(
                 v2f(x1 - padding, y1),
                 v2f(x1, y2)
-            ), {c_outside}, rectf());
-        selected_shape->addRectangle(
+            ), {c_outside, c_outside, c_outside, c_outside}});
+        invSprite->addRect({
             rectf(
                 v2f(x2, y1),
                 v2f(x2 + padding, y2)
-            ), {c_outside}, rectf());
+            ), {c_outside, c_outside, c_outside, c_outside}});
     }
-
-
-    selected_sprite->rebuildMesh();
 
     //drawItemStack(driver, g_fontengine->getFont(), item, rect, NULL,
     //	client, selected ? IT_ROT_SELECTED : IT_ROT_NONE);
@@ -639,34 +602,36 @@ void HudInventoryList::update()
         std::swap(width, height);
 
     rectf listrect(0, 0, width, height);
-    v2f list_offset = calcHUDOffset(rnd_system, listrect, elem, true, std::nullopt);
+    v2f list_offset = calcHUDOffset(rndsys, listrect, elem, true, std::nullopt);
 
-    auto sprite = list->getSprite(0);
     sprite->clear();
+
+    auto invSprite = dynamic_cast<UIRects *>(sprite);
 
     std::array<img::color8, 4> colors = {img::white, img::white, img::white, img::white};
     
-    v2u wnd_size = rnd_system->getWindowSize();
+    v2u wnd_size = rndsys->getWindowSize();
 	list_bisected = width / wnd_size.X <= g_settings->getFloat("hud_hotbar_max_width");
 
     v2f shift_up(0, slotSize + padding);
+
+    img::color8 color(img::PF_RGBA8, 0, 0, 0, 128);
+
     if (!background_img.empty()) {
     	auto img = cache->getOrLoad<img::Image>(ResourceType::IMAGE, background_img);
-        auto guiPool = rnd_system->getPool(false);
-        rectf srcrect = guiPool->getTileRect(img, false, true);
     
         rectf destrect(-padding/2, -padding/2, width+padding/2, height+padding/2);
         destrect += list_offset;
 
         if (!list_bisected)
-            sprite->getShape()->addRectangle(destrect, colors, srcrect);
+            invSprite->addRect({destrect, colors, img});
         else {
             rectf shifted_destrect = destrect - shift_up;
             shifted_destrect.LRC.X -= shifted_destrect.getWidth()/2;
             destrect.ULC.X += destrect.getWidth()/2;
             
-            sprite->getShape()->addRectangle(shifted_destrect, colors, srcrect);
-            sprite->getShape()->addRectangle(destrect, colors, srcrect);
+            invSprite->addRect({shifted_destrect, colors, img});
+            invSprite->addRect({destrect, colors, img});
         }
     }
     else {
@@ -675,7 +640,7 @@ void HudInventoryList::update()
                 rectf destrect = getSlotRect(i);
                 destrect += list_offset;
 
-                sprite->getShape()->addRectangle(destrect, {img::color8(img::PF_RGBA8, 0, 0, 0, 128)}, rectf());
+                invSprite->addRect({destrect, {color, color, color, color}});
             }
         }
         else {
@@ -684,23 +649,21 @@ void HudInventoryList::update()
                 destrect += list_offset;
                 destrect -= shift_up;
 
-                sprite->getShape()->addRectangle(destrect, {img::color8(img::PF_RGBA8, 0, 0, 0, 128)}, rectf());
+                invSprite->addRect({destrect, {color, color, color, color}});
             }
             for (u32 i = invlistItemCount / 2; i < invlistItemCount; i++) {
                 rectf destrect = getSlotRect(i);
                 destrect += list_offset;
 
-                sprite->getShape()->addRectangle(destrect, {img::color8(img::PF_RGBA8, 0, 0, 0, 128)}, rectf());
+                invSprite->addRect({destrect, {color, color, color, color}});
             }
         }
     }
-
-   sprite->rebuildMesh();
 }
 
 void HudInventoryList::updateScalingSetting()
 {
-    slotSize = floor(HOTBAR_IMAGE_SIZE * rnd_system->getScaleFactor() + 0.5);
+    slotSize = floor(HOTBAR_IMAGE_SIZE * rndsys->getScaleFactor() + 0.5);
     padding = slotSize / 12;
 }
 
@@ -734,8 +697,8 @@ rectf HudInventoryList::getSlotRect(u32 n) const
    return slotrect;
 }
 
-HudHotbar::HudHotbar(Client *client, const HudElement *elem)
-    : HudInventoryList(client, elem)
+HudHotbar::HudHotbar(Client *client, const HudElement *elem, SpriteDrawBatch *drawBatch)
+    : HudInventoryList(client, elem, drawBatch)
 {
     auto inv = client->getEnv().getLocalPlayer()->inventory;
     InventoryList *mainlist = inv.getList("main");
@@ -761,9 +724,9 @@ void HudHotbar::update()
     HudInventoryList::update();
 
     if (g_touchcontrols && background_img.empty()) {
-        auto shape = list->getSprite(0)->getShape();
-        for (u32 i = 0; i < shape->getPrimitiveCount(); i++) {
-            auto rect = shape->getPrimitiveArea(i);
+        auto shape = sprite->getShape();
+        for (u32 i = 0; i < shape.getPrimitiveCount(); i++) {
+            auto rect = shape.getPrimitiveArea(i);
 
             g_touchcontrols->registerHotbarRect(i, recti(rect.ULC.X, rect.ULC.Y, rect.LRC.X, rect.LRC.Y));
         }

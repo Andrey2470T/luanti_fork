@@ -20,8 +20,9 @@ namespace core
 
 class ResourceCache;
 class RenderSystem;
-class UISprite;
+class UIRects;
 class UITextSprite;
+class SpriteDrawBatch;
 class FontManager;
 
 class LoadScreen
@@ -29,11 +30,14 @@ class LoadScreen
 	ResourceCache *cache;
     RenderSystem *rndsys;
 
-	std::unique_ptr<UITextSprite> guitext;
-    std::unique_ptr<UISprite> progress_rect;
+    std::unique_ptr<SpriteDrawBatch> drawBatch;
 
-    rectf progress_bg_img_rect;
-    rectf progress_img_rect;
+    UITextSprite *progress_text;
+    UIRects *progress_bg_rect;
+    UIRects *progress_rect;
+
+    img::Image *progress_bg_img;
+    img::Image *progress_img;
 
     recti progress_cliprect;
 

@@ -15,11 +15,12 @@ class RenderSystem;
 class ResourceCache;
 class UIRects;
 class UITextSprite;
+class SpriteDrawBatch;
 
 /* Profiler display */
 class ProfilerGraph
 {
-    RenderSystem *rndsys;
+    SpriteDrawBatch *drawBatch;
 
     std::list<f32> values;
 
@@ -29,14 +30,12 @@ class ProfilerGraph
 
     u32 log_max_size = 200;
 
-    std::unique_ptr<UIRects> lines;
-    std::unique_ptr<UITextSprite> text;
+    UIRects *graph;
+    UITextSprite *text;
 public:
-    ProfilerGraph(RenderSystem *_rndsys, ResourceCache *cache, u8 _number, img::color8 _color = img::white);
+    ProfilerGraph(SpriteDrawBatch *_drawBatch, u8 _number, img::color8 _color = img::white);
 
     void update(const std::string &id, f32 new_value, s32 x_left, s32 y_bottom);
-
-    void draw() const;
 private:
     void updateText(const std::string &id, f32 show_min, f32 show_max,
         f32 ulc_x, f32 ulc_y, f32 lrc_x, f32 lrc_y);
@@ -46,6 +45,8 @@ class ProfilerGraphSet
 {
     RenderSystem *rndsys;
     ResourceCache *cache;
+
+    std::unique_ptr<SpriteDrawBatch> drawBatch;
     std::map<std::string, std::unique_ptr<ProfilerGraph>> graphs;
 
     bool is_visible = false;
@@ -56,7 +57,7 @@ public:
 
     void addGraph(const std::string &id, u8 number, img::color8 color = img::white)
     {
-        graphs[id] = std::make_unique<ProfilerGraph>(rndsys, cache, number, color);
+        graphs[id] = std::make_unique<ProfilerGraph>(drawBatch.get(), number, color);
     }
     void put(const Profiler::GraphValues &values);
 

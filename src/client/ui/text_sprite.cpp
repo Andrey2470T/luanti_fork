@@ -11,7 +11,7 @@ UITextSprite::UITextSprite(FontManager *font_manager, GUISkin *guiskin, Resource
 
 void UITextSprite::appendToBatch()
 {
-    if (!text.needsUpdate)
+    if (!text.needsUpdate && !changed)
         return;
 
     text.needsUpdate = false;

@@ -167,14 +167,14 @@ void Model::processMesh(u8 mat_i, const std::vector<aiMesh *> &meshes)
             auto normal = m->HasNormals() ? m->mNormals[i] : aiVector3D();
             auto uv = m->HasTextureCoords(0) ? m->mTextureCoords[0][i] : aiVector3D();
 
-            Batcher3D::appendVertex(buf, v3f(pos.x, pos.y, pos.z),
+            Batcher3D::vertex(buf, v3f(pos.x, pos.y, pos.z),
                 img::color8(img::PF_RGBA8, color.r, color.g, color.b, color.a),
                 v3f(normal.x, normal.y, normal.z), v2f(uv.x, uv.y));
         }
 
         for (u32 f = 0; f < m->mNumFaces; f++) {
             for (u8 k = 0; k < 3; k++)
-                appendIndex(buf, m->mFaces[f].mIndices[k]);
+               Batcher3D::index(buf, m->mFaces[f].mIndices[k]);
         }
     }
 }

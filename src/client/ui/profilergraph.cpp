@@ -3,27 +3,17 @@
 // Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 // Copyright (C) 2018 nerzhul, Loic Blot <loic.blot@unix-experience.fr>
 
-#include "client/render/renderer.h"
-#include "gui/IGUIEnvironment.h"
 #include "porting.h"
 #include "profilergraph.h"
 #include "client/render/rendersystem.h"
-#include "client/mesh/meshbuffer.h"
-#include "client/mesh/defaultVertexTypes.h"
 #include "text_sprite.h"
-#include "glyph_atlas.h"
-#include "batcher2d.h"
 #include "util/string.h"
 
-ProfilerGraph::ProfilerGraph(RenderSystem *_rndsys, ResourceCache *cache, u8 _number, img::color8 _color)
-    : rndsys(_rndsys), color(_color), number(_number),
-      lines(std::make_unique<UIRects>(rndsys, log_max_size)),
-      text(std::make_unique<UITextSprite>(rndsys->getFontManager(), rndsys->getGUIEnvironment()->getSkin(),
-            L"", rndsys->getRenderer(), cache))
+ProfilerGraph::ProfilerGraph(SpriteDrawBatch *_drawBatch, u8 _number, img::color8 _color)
+    : drawBatch(_drawBatch), color(_color), number(_number)
 {
-    text->setOverrideFont(rndsys->getFontManager()->getDefaultFont());
-    text->setOverrideColor(color);
-    text->enableWordWrap(true);
+    graph = drawBatch->addRectsSprite({});
+    text = drawBatch->addTextSprite(L"", std::nullopt, color, nullptr, true);
 }
 
 void ProfilerGraph::update(const std::string &id, f32 new_value, s32 x_left, s32 y_bottom)
@@ -62,12 +52,9 @@ void ProfilerGraph::update(const std::string &id, f32 new_value, s32 x_left, s32
     bool relativegraph = (show_min != 0 && show_min != show_max);
     f32 lastscaledvalue = 0.0;
 
-    std::vector<f32> actualValues;
-    actualValues.insert(actualValues.begin(), values.begin(), values.end());
-    actualValues.resize(log_max_size);
+    graph->clear();
 
-    for (u32 v_i = 0; v_i < actualValues.size(); v_i++) {
-        f32 &v = actualValues.at(v_i);
+    for (auto &v : values) {
         float scaledvalue = 1.0;
 
         if (show_max != show_min)
@@ -99,18 +86,10 @@ void ProfilerGraph::update(const std::string &id, f32 new_value, s32 x_left, s32
 
         rectf line_r(start_pos, end_pos+normal);
 
-        lines->updateRect(v_i, line_r, {actualColor, actualColor, actualColor, actualColor});
+        graph->addRect({line_r, {actualColor, actualColor, actualColor, actualColor}});
 
         x++;
     }
-
-    lines->updateMesh();
-}
-
-void ProfilerGraph::draw() const
-{
-    lines->draw();
-    text->draw();
 }
 
 void ProfilerGraph::updateText(const std::string &id, f32 show_min, f32 show_max,
@@ -137,7 +116,7 @@ void ProfilerGraph::updateText(const std::string &id, f32 show_min, f32 show_max
     text_str += utf8_to_wide(buf);
 
     text->setText(text_str);
-    text->updateBuffer(rectf(ulc_x, ulc_y, lrc_x, lrc_y));
+    text->setBoundRect(rectf(ulc_x, ulc_y, lrc_x, lrc_y));
 }
 
 void ProfilerGraphSet::put(const Profiler::GraphValues &values)
@@ -155,6 +134,7 @@ void ProfilerGraphSet::draw() const
 {
     if (!is_visible)
         return;
-    for (auto &graph : graphs)
-        graph.second->draw();
+
+    drawBatch->rebuild();
+    drawBatch->draw();
 }

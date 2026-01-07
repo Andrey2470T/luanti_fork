@@ -12,24 +12,23 @@ Nametag::Nametag(Client *client,
         const img::color8 &textcolor,
         const std::optional<img::color8> &bgcolor,
         const v3f &pos)
-    : Waypoint(client, nullptr, client->getEnv().getLocalPlayer()->getCamera()->getPosition()+pos*BS),
+    : Waypoint(client, client->getEnv().getLocalPlayer()->getCamera()->getPosition()+pos*BS),
+      drawBatch(std::make_unique<SpriteDrawBatch>(client->getRenderSystem(), client->getResourceCache())),
       text(text),
       textcolor(textcolor),
-      bgcolor(bgcolor)
+      bgcolor(bgcolor),
+      localPos(pos)
 {
-    auto rndsys = client->getRenderSystem();
-    faceBank = std::make_unique<UISpriteBank>(rndsys, client->getResourceCache());
-    faceBank->addTextSprite(utf8_to_wide(text));
-
+    drawBatch->addTextSprite(utf8_to_wide(text));
     show_backgrounds = g_settings->getBool("show_nametag_backgrounds");
 }
 
-void Nametag::updateBank(v3f newWorldPos)
+void Nametag::update()
 {
     v3f camera_pos = client->getEnv().getLocalPlayer()->getCamera()->getPosition();
 
     v2f screen_pos;
-    worldPos = camera_pos + newWorldPos * BS;
+    setWorldPos(camera_pos+localPos*BS);
     calculateScreenPos(&screen_pos);
 
     std::wstring nametag_colorless = unescape_translate(utf8_to_wide(text));
@@ -39,9 +38,9 @@ void Nametag::updateBank(v3f newWorldPos)
     auto font = font_mgr->getFontOrCreate(render::FontMode::GRAY, render::FontStyle::NORMAL);
     v2f textsize_f = toV2T<f32>(font->getTextSize(nametag_colorless));
 
-    auto text_sprite = dynamic_cast<UITextSprite *>(faceBank->getSprite(0));
-    text_sprite->setOverrideFont(font);
-    text_sprite->setText(nametag_colorless);
+    auto textSprite = dynamic_cast<UITextSprite *>(drawBatch->getSprite(0));
+    textSprite->getTextObj().setOverrideFont(font);
+    textSprite->setText(nametag_colorless);
 
     auto bgcolor = getBgColor(show_backgrounds);
     if (bgcolor.A() != 0) {
@@ -49,7 +48,7 @@ void Nametag::updateBank(v3f newWorldPos)
         textsize_f.X += 4.0f;
     }
 
-    text_sprite->setBackgroundColor(bgcolor);
-    text_sprite->setOverrideColor(textcolor);
-    text_sprite->updateBuffer(rectf(screen_pos-textsize_f/2.0f, textsize_f.X, textsize_f.Y));
+    textSprite->getTextObj().setBackgroundColor(bgcolor);
+    textSprite->getTextObj().setOverrideColor(textcolor);
+    textSprite->setBoundRect(rectf(screen_pos-textsize_f/2.0f, textsize_f.X, textsize_f.Y));
 }
