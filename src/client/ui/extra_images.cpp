@@ -38,15 +38,23 @@ void Image2D9Slice::updateRects(const rectf &src_rect, const rectf &dest_rect, c
         setClipRect(*clipRect);
 
     createSlices();
+
+    changed = true;
 }
 
 void Image2D9Slice::appendToBatch()
 {
+    if (!changed)
+        return;
     auto tex = guiPool->getAtlasByTile(image)->getTexture();
     drawBatch->addSpriteChunks(this, {{tex, clipRect, 9}});
+
+    changed = false;
 }
 void Image2D9Slice::updateBatch()
-{}
+{
+    appendToBatch();
+}
 
 void Image2D9Slice::createSlice(u8 x, u8 y)
 {
@@ -109,6 +117,8 @@ UIRects::UIRects(ResourceCache *resCache, SpriteDrawBatch *drawBatch, AtlasPool 
 {
     for (u32 k = 0; k < init_rects_count; k++)
         shape.addRectangle({}, UISprite::defaultColors);
+
+    changed = true;
 }
 UIRects::UIRects(ResourceCache *resCache, SpriteDrawBatch *drawBatch, AtlasPool *pool,
     const std::vector<TexturedRect> &rects, u32 depthLevel)
@@ -119,6 +129,8 @@ UIRects::UIRects(ResourceCache *resCache, SpriteDrawBatch *drawBatch, AtlasPool 
         shape.addRectangle(rect.area, rect.colors, tileRect);
         images.push_back(rect.image);
     }
+
+    changed = true;
 }
 
 void UIRects::addRect(const TexturedRect &rect)
@@ -126,23 +138,35 @@ void UIRects::addRect(const TexturedRect &rect)
     rectf tileRect = rect.image ? guiPool->getTileRect(rect.image, false, true) : rectf();
     shape.addRectangle(rect.area, rect.colors, tileRect);
     images.push_back(rect.image);
+
+    changed = true;
 }
 
 void UIRects::updateRect(u32 n, const TexturedRect &rect)
 {
     rectf tileRect = rect.image ? guiPool->getTileRect(rect.image, false, true) : rectf();
     shape.updateRectangle(n, rect.area, rect.colors, tileRect);
-    images.at(n) = rect.image;
+
+    if (images.at(n) != rect.image)
+        images.at(n) = rect.image;
+
+    changed = true;
 }
 
 void UIRects::appendToBatch()
 {
+    if (!changed)
+        return;
     std::vector<SpriteDrawChunk> chunks;
     for (u32 k = 0; k < shape.getPrimitiveCount(); k++) {
         render::Texture2D *tex = images[k] ? guiPool->getAtlasByTile(images[k])->getTexture() : nullptr;
         chunks.emplace_back(tex, clipRect, 1);
     }
     drawBatch->addSpriteChunks(this, chunks);
+
+    changed = false;
 }
 void UIRects::updateBatch()
-{}
+{
+    appendToBatch();
+}

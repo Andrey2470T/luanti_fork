@@ -1,11 +1,9 @@
 #include "sprite.h"
 #include "batcher2d.h"
-#include "client/mesh/defaultVertexTypes.h"
 #include "client/render/renderer.h"
 #include <Render/Texture2D.h>
 #include "client/render/rendersystem.h"
 #include "gui/IGUIEnvironment.h"
-#include "gui/IGUISpriteBank.h"
 #include "text_sprite.h"
 #include "glyph_atlas.h"
 #include "extra_images.h"
@@ -66,14 +64,14 @@ void UIShape::addLine(
         const v2f &start_p, const v2f &end_p,
         const img::color8 &start_c, const img::color8 &end_c) {
     primitives.emplace_back((Primitive *)(new Line(start_p, end_p, start_c, end_c)));
-    dirtyPrimitives.push_back(primitives.size()-1);
+    dirtyPrimitives.insert(primitives.size()-1);
     updateMaxArea(maxArea, start_p, end_p, maxAreaInit);
 }
 void UIShape::addTriangle(
         const v2f &p1, const v2f &p2, const v2f &p3,
         const img::color8 &c1, const img::color8 &c2, const img::color8 &c3) {
     primitives.emplace_back((Primitive *)(new Triangle(p1, p2, p3, c1, c2, c3)));
-    dirtyPrimitives.push_back(primitives.size()-1);
+    dirtyPrimitives.insert(primitives.size()-1);
     updateMaxArea(maxArea, v2f(p1.X, p3.Y), p2, maxAreaInit);
 }
 void UIShape::addRectangle(
@@ -87,12 +85,12 @@ void UIShape::addRectangle(
     tcoords.LRC = v2f(texr.LRC.X * invW, texr.LRC.Y * invH);
 
     primitives.emplace_back((Primitive *)(new Rectangle(r, colors, tcoords)));
-    dirtyPrimitives.push_back(primitives.size()-1);
+    dirtyPrimitives.insert(primitives.size()-1);
     updateMaxArea(maxArea, r.ULC, r.LRC, maxAreaInit);
 }
 void UIShape::addEllipse(f32 a, f32 b, const v2f &center, const img::color8 &c) {
     primitives.emplace_back((Primitive *)(new Ellipse(a, b, center, c)));
-    dirtyPrimitives.push_back(primitives.size()-1);
+    dirtyPrimitives.insert(primitives.size()-1);
     updateMaxArea(maxArea, center - v2f(a/2, b/2), center+v2f(a/2, b/2), maxAreaInit);
 }
 
@@ -106,7 +104,7 @@ void UIShape::updateLine(
     line->start_c = start_c;
     line->end_c = end_c;
 
-    dirtyPrimitives.push_back(n);
+    dirtyPrimitives.insert(n);
     updateMaxArea(maxArea, start_p, end_p, maxAreaInit);
 }
 void UIShape::updateTriangle(
@@ -121,7 +119,7 @@ void UIShape::updateTriangle(
     trig->c2 = c2;
     trig->c3 = c3;
 
-    dirtyPrimitives.push_back(n);
+    dirtyPrimitives.insert(n);
     updateMaxArea(maxArea, v2f(p1.X, p3.Y), p2, maxAreaInit);
 }
 void UIShape::updateRectangle(
@@ -141,7 +139,7 @@ void UIShape::updateRectangle(
     rect->colors = colors;
     rect->texr = tcoords;
 
-    dirtyPrimitives.push_back(n);
+    dirtyPrimitives.insert(n);
     updateMaxArea(maxArea, r.ULC, r.LRC, maxAreaInit);
 }
 void UIShape::updateEllipse(u32 n, f32 a, f32 b, const v2f &center, const img::color8 &c)
@@ -152,7 +150,7 @@ void UIShape::updateEllipse(u32 n, f32 a, f32 b, const v2f &center, const img::c
     ellipse->center = center;
     ellipse->c = c;
 
-    dirtyPrimitives.push_back(n);
+    dirtyPrimitives.insert(n);
     updateMaxArea(maxArea, center - v2f(a/2, b/2), center+v2f(a/2, b/2), maxAreaInit);
 }
 
@@ -194,7 +192,7 @@ void UIShape::movePrimitive(u32 n, const v2f &shift)
         return;
     }
 
-    dirtyPrimitives.push_back(n);
+    dirtyPrimitives.insert(n);
 }
 void UIShape::scalePrimitive(u32 n, const v2f &scale, std::optional<v2f> center)
 {
@@ -242,7 +240,7 @@ void UIShape::scalePrimitive(u32 n, const v2f &scale, std::optional<v2f> center)
         return;
     }
 
-    dirtyPrimitives.push_back(n);
+    dirtyPrimitives.insert(n);
 }
 
 u32 UIShape::countRequiredVCount(const std::vector<UIPrimitiveType> &primitives)
@@ -301,14 +299,6 @@ void UIShape::scale(const v2f &scale, std::optional<v2f> c)
         scalePrimitive(i, scale, center);
 }
 
-void UIShape::appendToBuffer(MeshBuffer *buf)
-{
-    for (auto dirtyPrim : dirtyPrimitives)
-        appendToBuffer(buf, dirtyPrim);
-
-    dirtyPrimitives.clear();
-}
-
 void UIShape::updateBuffer(MeshBuffer *buf)
 {
     for (auto dirtyPrim : dirtyPrimitives)
@@ -327,46 +317,15 @@ void UIShape::updateBuffer(MeshBuffer *buf, u32 primitiveNum)
     Primitive *p = primitives.at(primitiveNum).get();
 
     u32 startV = 0;
+    u32 startI = 0;
 
-    for (u32 i = 0; i < primitiveNum; i++)
+    for (u32 i = 0; i < primitiveNum; i++) {
         startV += primVCounts[(u8)primitives[i]->type];
-
-    buf->setIndexOffset(startV);
-
-    switch (p->type) {
-    case UIPrimitiveType::LINE: {
-        auto line = dynamic_cast<Line *>(p);
-        Batcher2D::line(buf, line->start_p, line->end_p, line->start_c);
-        break;
+        startI += primICounts[(u8)primitives[i]->type];
     }
-    case UIPrimitiveType::TRIANGLE: {
-        auto trig = dynamic_cast<Triangle *>(p);
-        Batcher2D::triangle(buf, {trig->p1, trig->p2, trig->p3}, trig->c1);
-        break;
-    }
-    case UIPrimitiveType::RECTANGLE: {
-        auto rect = dynamic_cast<Rectangle *>(p);
-        Batcher2D::rectangle(buf, rect->r, rect->colors, rect->texr);
-        break;
-    }
-    case UIPrimitiveType::ELLIPSE: {
-        auto ellipse = dynamic_cast<Ellipse *>(p);
-        Batcher2D::ellipse(buf, ellipse->a, ellipse->b, v2u(1,1), ellipse->center, ellipse->c);
-        break;
-    }
-    default:
-        break;
-    }
-}
 
-void UIShape::appendToBuffer(MeshBuffer *buf, u32 primitiveNum)
-{
-    auto foundDirtyPrim = std::find(dirtyPrimitives.begin(), dirtyPrimitives.end(), primitiveNum);
-
-    if (foundDirtyPrim == dirtyPrimitives.end())
-        return;
-
-    Primitive *p = primitives.at(primitiveNum).get();
+    buf->setVertexOffset(buf->getVertexOffset()+startV);
+    buf->setIndexOffset(buf->getIndexOffset()+startI);
 
     switch (p->type) {
     case UIPrimitiveType::LINE: {
@@ -396,127 +355,7 @@ void UIShape::appendToBuffer(MeshBuffer *buf, u32 primitiveNum)
 
 const std::array<img::color8, 4> UISprite::defaultColors = {img::white, img::white, img::white, img::white};
 
-/*void UISprite::rebuildMesh()
-{
-    std::vector<UIPrimitiveType> prims(shape.getPrimitiveCount());
-
-    for (u32 i = 0; i < shape.getPrimitiveCount(); i++)
-        prims[i] = shape.getPrimitiveType(i);
-
-    mesh->reallocateData(
-        UIShape::countRequiredVCount(prims),
-        UIShape::countRequiredICount(prims)
-    );
-
-    v2u texSize = texture ? texture->getSize() : v2u();
-    shape.appendToBuffer(mesh.get(), texSize, toUV);
-    mesh->uploadData();
-}
-
-void UISprite::updateMesh(bool positions, bool colors)
-{
-    v2u texSize = texture ? texture->getSize() : v2u();
-
-    shape.updateBuffer(mesh.get(), positions, colors, texSize, toUV);
-    mesh->uploadVertexData();
-}
-
-void UISprite::draw(std::optional<u32> primOffset, std::optional<u32> primCount)
-{
-    if (!checkPrimitives(primOffset, primCount))
-        return;
-
-    u32 primOffset_v = primOffset.value();
-    u32 primCount_v = primCount.value();
-
-    renderer->setRenderState(false);
-    renderer->setDefaultShader(true, true);
-    if (texture)
-        renderer->setTexture(texture);
-    renderer->setDefaultUniforms(1.0f, 1, 0.5f, img::BM_COUNT);
-
-    if (clipRect != recti())
-        renderer->setClipRect(clipRect);
-
-    auto prevType = shape.getPrimitiveType(primOffset_v);
-    u32 pOffset = primOffset_v;
-    u32 pCount = 1;
-    for (u32 i = primOffset_v; i < primOffset_v+primCount_v; i++) {
-        auto curType = shape.getPrimitiveType(i);
-
-        if (curType == prevType && (i + 1 < primCount_v))
-            ++pCount;
-        else {
-            drawPart(pOffset, pCount);
-
-            pCount = 1;
-            pOffset = i;
-            prevType = curType;
-        }
-    }
-
-    if (clipRect != recti())
-        renderer->setClipRect(recti());
-
-    if (texture)
-        renderer->setTexture(nullptr);
-}
-
-bool UISprite::checkPrimitives(std::optional<u32> &offset, std::optional<u32> &count)
-{
-    if (!offset)
-        offset = 0;
-    if (!count)
-        count = shape.getPrimitiveCount();
-    u32 totalPCount = shape.getPrimitiveCount();
-    if (totalPCount == 0 || !visible || offset.value() > totalPCount-1
-        || offset.value() + count.value() > totalPCount)
-        return false;
-
-    return true;
-}
-
-void UISprite::drawPart(u32 pOffset, u32 pCount)
-{
-    auto vao = mesh->getVAO();
-
-    u32 startCount = 0;
-    u32 count = 0;
-    auto pType = shape.getPrimitiveType(pOffset);
-
-    switch(pType) {
-    case UIPrimitiveType::LINE:
-    case UIPrimitiveType::TRIANGLE: {
-        for (u32 i = 0; i < pOffset; i++)
-            startCount += primVCounts[(u8)shape.getPrimitiveType(i)];
-
-        count = primVCounts[(u8)pType] * pCount;
-        break;
-    }
-    case UIPrimitiveType::RECTANGLE:
-    case UIPrimitiveType::ELLIPSE: {
-        for (u32 i = 0; i < pOffset; i++)
-            startCount += primICounts[(u8)shape.getPrimitiveType(i)];
-
-        count = primICounts[(u8)pType] * pCount;
-        break;
-    }}
-    switch(pType) {
-    case UIPrimitiveType::LINE:
-        vao->draw(render::PT_LINES, count, startCount);
-        break;
-    case UIPrimitiveType::TRIANGLE:
-    case UIPrimitiveType::RECTANGLE:
-        vao->draw(render::PT_TRIANGLES, count, startCount);
-        break;
-    case UIPrimitiveType::ELLIPSE:
-        vao->draw(render::PT_TRIANGLE_FAN, count, startCount);
-        break;
-    default:
-        break;
-    }
-}
-
+/*
 void BankAutoAlignment::centerBank()
 {
     v2f center_shift = center - bank->getArea().getCenter();
@@ -563,6 +402,8 @@ UIRects *SpriteDrawBatch::addRectsSprite(
     UIRects *rectsSprite = new UIRects(cache, this, rndsys->getPool(false), rects, depthLevel);
     sprites.emplace_back(rectsSprite);
 
+    updateBatch = true;
+
     auto rectsMaxArea = rectsSprite->getArea();
     updateMaxArea(maxArea, rectsMaxArea.ULC, rectsMaxArea.LRC, maxAreaInit);
     
@@ -581,6 +422,8 @@ Image2D9Slice *SpriteDrawBatch::addImage2D9Slice(
     Image2D9Slice *img2D9Slice = new Image2D9Slice(cache, this, rndsys->getPool(false),
         src_rect, dest_rect, middle_rect, baseImg, colors, anim, depthLevel);
     sprites.emplace_back(img2D9Slice);
+
+    updateBatch = true;
 
     auto rectsMaxArea = img2D9Slice->getArea();
     updateMaxArea(maxArea, rectsMaxArea.ULC, rectsMaxArea.LRC, maxAreaInit);
@@ -603,7 +446,9 @@ UITextSprite *SpriteDrawBatch::addTextSprite(
         cache, this, text, false, wordWrap, false, depthLevel);
     sprites.emplace_back(textSprite);
 
-    auto &textObj = textSprite->getText();
+    updateBatch = true;
+
+    auto &textObj = textSprite->getTextObj();
     textObj.setAlignment(horizAlign, vertAlign);
     textObj.setOverrideColor(textColor);
 
@@ -626,11 +471,44 @@ UITextSprite *SpriteDrawBatch::addTextSprite(
     return textSprite;
 }
 
+void SpriteDrawBatch::move(const v2f &shift)
+{
+    for (auto &sprite : sprites) {
+        sprite->getShape().move(shift);
+        auto primArea = sprite->getShape().getMaxArea();
+        updateMaxArea(maxArea, primArea.ULC, primArea.LRC, maxAreaInit);\
+
+        updateBatch = true;
+    }
+}
+
+void SpriteDrawBatch::scale(const v2f &scale)
+{
+    v2f center = maxArea.getCenter();
+
+    for (auto &sprite : sprites) {
+        sprite->getShape().scale(scale, center);
+        auto primArea = sprite->getShape().getMaxArea();
+        updateMaxArea(maxArea, primArea.ULC, primArea.LRC, maxAreaInit);
+
+        updateBatch = true;
+    }
+}
+
+void SpriteDrawBatch::remove(u32 n)
+{
+    if (n > sprites.size()-1)
+        return;
+
+    auto sprite_it = sprites.begin()+n;
+    chunks.erase(chunks.find(sprite_it->get()));
+    sprites.erase(sprite_it);
+
+    updateBatch = true;
+}
+
 void SpriteDrawBatch::rebuild()
 {
-    buffer->clear();
-    chunks.clear();
-
     std::vector<UIPrimitiveType> prims;
     for (auto &sprite : sprites) {
         auto shape = sprite->getShape();
@@ -641,17 +519,55 @@ void SpriteDrawBatch::rebuild()
         sprite->appendToBatch();
     }
 
+    if (!updateBatch)
+        return;
+
+    buffer->clear();
+
     buffer->reallocateData(
         UIShape::countRequiredVCount(prims),
         UIShape::countRequiredICount(prims)
     );
 
-    for (auto &sprite : sprites)
-        sprite->getShape().appendToBuffer(buffer.get());
+    u32 rectOffset = 0;
+    for (auto &sprite : sprites) {
+        buffer->setVertexOffset(rectOffset*4);
+        buffer->setIndexOffset(rectOffset*6);
+
+        sprite->getShape().updateBuffer(buffer.get());
+
+        rectOffset += sprite->getShape().getPrimitiveCount();
+    }
 
     buffer->uploadData();
 
     batch();
+
+    updateBatch = false;
+}
+
+void SpriteDrawBatch::update()
+{
+    u32 rectOffset = 0;
+    for (auto &sprite : sprites) {
+        sprite->updateBatch();
+
+        buffer->setVertexOffset(rectOffset*4);
+        buffer->setIndexOffset(rectOffset*6);
+
+        sprite->getShape().updateBuffer(buffer.get());
+
+        u32 curRectCount = sprite->getShape().getPrimitiveCount();
+        buffer->setDirtyRange(rectOffset*4, (rectOffset+curRectCount)*4);
+        buffer->uploadVertexData();
+
+        rectOffset += curRectCount;
+    }
+
+    if (updateBatch) {
+        batch();
+        updateBatch = false;
+    }
 }
 
 void SpriteDrawBatch::draw()

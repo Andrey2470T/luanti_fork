@@ -133,9 +133,6 @@ void RenderSystem::activateAtlas(img::Image *img, bool basic_pool)
 {
     auto pool = getPool(basic_pool);
     auto texture = pool->getAtlasByTile(img)->getTexture();
-
-    if (!texture)
-        return;
     renderer->setTexture(texture);
 }
 

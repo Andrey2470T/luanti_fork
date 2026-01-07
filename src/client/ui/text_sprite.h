@@ -20,13 +20,43 @@ public:
         SpriteDrawBatch *drawBatch, std::variant<EnrichedString, std::wstring> text,
         bool border = false, bool wordWrap = false, bool fillBackground = false, u32 depthLevel=0);
 
-    Text &getText()
+    Text &getTextObj()
     {
         return text;
     }
-    const Text &getText() const
+    const Text &getTextObj() const
     {
         return text;
+    }
+
+    std::wstring getText() const
+    {
+        text.getText();
+    }
+    void setText(const EnrichedString &textstr)
+    {
+        text.setText(textstr);
+    }
+    void setText(const std::wstring &textstr)
+    {
+        text.setText(textstr);
+    }
+
+    u32 getTextWidth() const
+    {
+        return text.getTextWidth();
+    }
+    u32 getTextHeight() const
+    {
+        return text.getTextHeight();
+    }
+    u32 getLineHeight() const
+    {
+        return text.getLineHeight();
+    }
+    v2u getTextSize() const
+    {
+        return v2u(getTextWidth(), getTextHeight());
     }
 
     void setBoundRect(const rectf &newRect)

@@ -7,6 +7,7 @@
 #include "client/mesh/meshbuffer.h"
 #include "gui/GUIEnums.h"
 #include <Render/DrawContext.h>
+#include <unordered_set>
 #include <variant>
 #include <tuple>
 
@@ -77,7 +78,7 @@ class UIShape
 	};
 
     std::vector<std::unique_ptr<Primitive>> primitives;
-    std::vector<u32> dirtyPrimitives;
+    std::unordered_set<u32> dirtyPrimitives;
 
     rectf maxArea;
     bool maxAreaInit = false;
@@ -140,11 +141,9 @@ public:
     void move(const v2f &shift);
     void scale(const v2f &scale, std::optional<v2f> c);
 
-    void appendToBuffer(MeshBuffer *buf);
     void updateBuffer(MeshBuffer *buf);
 private:
     void updateBuffer(MeshBuffer *buf, u32 primitiveNum);
-    void appendToBuffer(MeshBuffer *buf, u32 primitiveNum);
 };
 
 class SpriteDrawBatch;
@@ -165,6 +164,8 @@ protected:
 
     // The toppest rendered sprite has the highest level
     u8 depthLevel = 0;
+
+    bool changed = false;
 public:
     static const std::array<img::color8, 4> defaultColors;
 
@@ -210,6 +211,7 @@ public:
     void setClipRect(const recti &r)
     {
         clipRect = r;
+        changed = true;
     }
 
     void clear()
@@ -299,6 +301,8 @@ class SpriteDrawBatch
 
     rectf maxArea;
     bool maxAreaInit = false;
+
+    bool updateBatch = false;
 public:
     SpriteDrawBatch(RenderSystem *_rndsys, ResourceCache *_cache)
         : rndsys(_rndsys), cache(_cache)
@@ -346,32 +350,11 @@ public:
         return sprites.at(n).get();
     }
 
-    void move(const v2f &shift)
-    {
-        for (auto &sprite : sprites) {
-            sprite->getShape().move(shift);
-            auto primArea = sprite->getShape().getMaxArea();
-            updateMaxArea(maxArea, primArea.ULC, primArea.LRC, maxAreaInit);
-        }
-    }
+    void move(const v2f &shift);
 
-    void scale(const v2f &scale)
-    {
-        v2f center = maxArea.getCenter();
+    void scale(const v2f &scale);
 
-        for (auto &sprite : sprites) {
-            sprite->getShape().scale(scale, center);
-            auto primArea = sprite->getShape().getMaxArea();
-            updateMaxArea(maxArea, primArea.ULC, primArea.LRC, maxAreaInit);
-        }
-    }
-
-    void remove(u32 n)
-    {
-        if (n > sprites.size()-1)
-            return;
-        sprites.erase(sprites.begin()+n);
-    }
+    void remove(u32 n);
 
     void clear()
     {
@@ -381,16 +364,23 @@ public:
 
     void addSpriteChunks(UISprite *sprite, const std::vector<SpriteDrawChunk> &addchunks)
     {
-        chunks[sprite].insert(chunks[sprite].begin(), addchunks.begin(), addchunks.end());
+        auto &chunk = chunks[sprite];
+        chunk.clear();
+        chunk.insert(chunk.begin(), addchunks.begin(), addchunks.end());
+
+        updateBatch = true;
     }
     
     void setClipRect(u32 n, const recti &r)
     {
     	assert(n < sprites.size());
     	sprites.at(n)->setClipRect(r);
+
+        updateBatch = true;
     }
 
     void rebuild();
+    void update();
 
     void draw();
 private:

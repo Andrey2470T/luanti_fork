@@ -139,9 +139,9 @@ void Sun::draw()
     auto rnd = m_rndsys->getRenderer();
     rnd->setDefaultShader(true);
 
-    if (m_image)
-        m_rndsys->activateAtlas(m_image);
+    m_rndsys->activateAtlas(m_image);
     rnd->setDefaultUniforms(1.0f, 0, 0.5f, img::BM_COUNT);
+    rnd->setClipRect(recti());
 
     rnd->draw(m_mesh.get());
 }
@@ -151,9 +151,9 @@ void Sun::drawSunrise()
     auto rnd = m_rndsys->getRenderer();
     rnd->setDefaultShader(true);
 
-    if (m_sunrise)
-        m_rndsys->activateAtlas(m_sunrise);
+    m_rndsys->activateAtlas(m_sunrise);
     rnd->setDefaultUniforms(1.0f, 0, 0.5f, img::BM_COUNT);
+    rnd->setClipRect(recti());
 
     rnd->draw(m_sunrise_mesh.get());
 }
@@ -275,9 +275,9 @@ void Moon::draw()
     auto rnd = m_rndsys->getRenderer();
     rnd->setDefaultShader(true);
 
-    if (m_image)
-        m_rndsys->activateAtlas(m_image);
+    m_rndsys->activateAtlas(m_image);
     rnd->setDefaultUniforms(1.0f, 0, 0.5f, img::BM_COUNT);
+    rnd->setClipRect(recti());
 
     rnd->draw(m_mesh.get());
 }
@@ -360,6 +360,8 @@ void Stars::draw()
     auto rnd = m_rndsys->getRenderer();
     rnd->setShader(m_shader);
     rnd->setBlending(true);
+    rnd->setTexture(nullptr);
+    rnd->setClipRect(recti());
 
     rnd->draw(m_mesh.get());
 }
@@ -589,6 +591,7 @@ void Sky::render(PlayerCamera *camera)
             rnd->setDefaultShader();
             rnd->setDefaultUniforms(1.0f, 0, 0, img::BM_COUNT);
             m_rndsys->activateAtlas(m_skybox_images.at(5));
+            rnd->setClipRect(recti());
             rnd->draw(m_skybox_mesh.get());
             ctxt->enableDepthTest(true);
 		}
@@ -597,6 +600,8 @@ void Sky::render(PlayerCamera *camera)
 		if (m_visible) {
             rnd->setDefaultShader(true);
             rnd->setDefaultUniforms(1.0f, 0, 0.5f, img::BM_COUNT);
+            rnd->setTexture(nullptr);
+            rnd->setClipRect(recti());
             rnd->draw(m_cloudyfog_mesh.get());
 		}
 
@@ -622,6 +627,8 @@ void Sky::render(PlayerCamera *camera)
 		if (m_visible) {
             rnd->setDefaultShader(true);
             rnd->setDefaultUniforms(1.0f, 0, 0.5f, img::BM_COUNT);
+            rnd->setTexture(nullptr);
+            rnd->setClipRect(recti());
             rnd->draw(m_far_cloudyfog_mesh.get());
 		}
     //}

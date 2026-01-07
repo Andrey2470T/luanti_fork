@@ -21,9 +21,9 @@
 #include "batcher2d.h"
 #include "client/render/atlas.h"
 
-Hud::Hud(Client *_client)
-    : client(_client), rnd_system(client->getRenderSystem()),
-    player(client->getEnv().getLocalPlayer()), cache(client->getResourceCache())
+Hud::Hud(Client *_client, SpriteDrawBatch *_drawBatch)
+    : client(_client), player(client->getEnv().getLocalPlayer()),
+      cache(client->getResourceCache()), drawBatch(_drawBatch)
 {
     initCrosshair();
 

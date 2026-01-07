@@ -9,41 +9,6 @@ UITextSprite::UITextSprite(FontManager *font_manager, GUISkin *guiskin, Resource
     : UISprite(resCache, drawBatch, depthLevel), text(font_manager, guiskin, text, border, wordWrap, fillBackground)
 {}
 
-/*void UITextSprite::draw(std::optional<u32> primOffset, std::optional<u32> primCount)
-{
-    if (!isVisible())
-        return;
-
-    renderer->setRenderState(false);
-    renderer->setDefaultShader(true, true);
-    renderer->setDefaultUniforms(1.0f, 1, 0.5f, img::BM_COUNT);
-
-    if (clipRect != recti())
-        renderer->setClipRect(clipRect);
-
-    u32 rectN = 0;
-    if (drawBackground || drawBorder) {
-        u32 count = drawBackground && drawBorder ? 2 : 1;
-        drawPart(rectN, count);
-        rectN += count;
-    }
-
-    if (visible && !text.empty()) {
-        for (auto &tex_to_charcount : texture_to_charcount_map) {
-            renderer->setTexture(tex_to_charcount.first);
-            renderer->setDefaultUniforms(1.0f, 1, 0.5f, img::BM_COUNT);
-
-            drawPart(rectN, tex_to_charcount.second);
-            rectN += tex_to_charcount.second;
-        }
-
-        renderer->setTexture(nullptr);
-    }
-
-    if (clipRect != recti())
-        renderer->setClipRect(recti());
-}*/
-
 void UITextSprite::appendToBatch()
 {
     if (!text.needsUpdate)
@@ -153,6 +118,8 @@ void UITextSprite::appendToBatch()
     }
 
     drawBatch->addSpriteChunks(this, chunks);
+
+    changed = false;
 }
 
 

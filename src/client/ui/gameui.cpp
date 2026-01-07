@@ -43,7 +43,9 @@ inline static const char *yawToDirectionString(int yaw)
 }
 
 GameUI::GameUI(Client *client)
-    : rndsys(client->getRenderSystem()), hud(std::make_unique<Hud>(client))
+    : rndsys(client->getRenderSystem()),
+        drawBatch(std::make_unique<SpriteDrawBatch>(rndsys, client->getResourceCache())),
+         hud(std::make_unique<Hud>(client, drawBatch.get()))
 {
     auto guienv = rndsys->getGUIEnvironment();
 	if (guienv && guienv->getSkin())
@@ -54,39 +56,34 @@ GameUI::GameUI(Client *client)
 void GameUI::init()
 {
     auto font_mgr = rndsys->getFontManager();
-    auto skin = rndsys->getGUIEnvironment()->getSkin();
 
-    debugtext = std::make_unique<UISpriteBank>(rndsys, cache);
-
-	// First line of debug text
-    auto first_debugline = debugtext->addTextSprite(utf8_to_wide(PROJECT_NAME_C), v2f(5, 5));
-    debugtext->addTextSprite(L"", v2f(5, 5 + first_debugline->getTextHeight()));
+    // First line of debug text
+    minimal_debugtext = drawBatch->addTextSprite(utf8_to_wide(PROJECT_NAME_C), v2f(5, 5));
+    // Second line of debug text
+    basic_debugtext = drawBatch->addTextSprite(L"", v2f(5, 5 + minimal_debugtext->getTextHeight()));
 
 	// Chat text
-    chattext = std::make_unique<UITextSprite>(font_mgr, skin, L"", rndsys->getRenderer(), cache, false, true);
+    chattext = drawBatch->addTextSprite(L"", std::nullopt, img::white, nullptr, true);
 	u16 chat_font_size = g_settings->getU16("chat_font_size");
 	if (chat_font_size != 0) {
-        chattext->setOverrideFont(font_mgr->getFontOrCreate(
+        chattext->getTextObj().setOverrideFont(font_mgr->getFontOrCreate(
             render::FontMode::GRAY, render::FontStyle::NORMAL, std::clamp<u16>(chat_font_size, 5, 72)));
 	}
 
 	// Infotext of nodes and objects.
 	// If in debug mode, object debug infos shown here, too.
 	// Located on the left on the screen, below chat.
-    u32 chat_font_height = chattext->getActiveFont()->getLineHeight();
-    infotext = std::make_unique<UITextSprite>(font_mgr, skin, L"", rndsys->getRenderer(), cache);
-    infotext->getShape()->move(v2f(100, chat_font_height * (g_settings->getU16("recent_chat_messages") + 3)));
+    u32 chat_font_height = chattext->getLineHeight();
+    infotext = drawBatch->addTextSprite(L"", v2f(100, chat_font_height * (g_settings->getU16("recent_chat_messages") + 3)));
 
 	// Status text (displays info when showing and hiding GUI stuff, etc.)
     last_status_text = L"<Status>";
-    statustext = std::make_unique<UITextSprite>(
-        font_mgr, skin, last_status_text, rndsys->getRenderer(), cache);
+    statustext = drawBatch->addTextSprite(last_status_text);
     statustext->setVisible(false);
 
 	// Profiler text (size is updated when text is updated)
-    profilertext = std::make_unique<UITextSprite>(font_mgr, skin, L"<Profiler>",
-        rndsys->getRenderer(), cache);
-    profilertext->setOverrideFont(font_mgr->getFontOrCreate(render::FontMode::GRAY, render::FontStyle::NORMAL,
+    profilertext = drawBatch->addTextSprite(L"<Profiler>");
+    profilertext->getTextObj().setOverrideFont(font_mgr->getFontOrCreate(render::FontMode::GRAY, render::FontStyle::NORMAL,
         font_mgr->getDefaultFontSize(render::FontMode::GRAY) * 0.9f));
     profilertext->setVisible(false);
 
@@ -116,7 +113,6 @@ void GameUI::update(Client *client, const GUIChatConsole *chat_console, f32 dtim
     auto draw_control = rndsys->getDrawList()->getDrawControl();
 
 	// Minimal debug text must only contain info that can't give a gameplay advantage
-    auto first_debug_line = dynamic_cast<UITextSprite *>(debugtext->getSprite(0));
     if (flags & GUIF_SHOW_MINIMAL_DEBUG) {
         const u16 fps = 1.0 / drawstats.dtime_jitter.avg;
         drawtime_avg *= 0.95f;
@@ -137,17 +133,17 @@ void GameUI::update(Client *client, const GUIChatConsole *chat_console, f32 dtim
 			<< std::setprecision(2)
             << " | RTT: " << (client->getPacketHandler()->getRTT() * 1000.0f) << "ms";
 
-        std::wstring first_debug_text = utf8_to_wide(os.str());
-        first_debug_line->setText(first_debug_text);
-        first_debug_line->updateBuffer(
-            rectf(v2f(5, 5), first_debug_line->getTextWidth(), first_debug_line->getTextHeight()));
+        std::wstring text = utf8_to_wide(os.str());
+        minimal_debugtext->setText(text);
+        minimal_debugtext->setBoundRect(
+            rectf(v2f(5, 5), minimal_debugtext->getTextWidth(),
+            minimal_debugtext->getTextHeight()));
     }
 
 	// Finally set the guitext visible depending on the flag
-    first_debug_line->setVisible(flags & GUIF_SHOW_MINIMAL_DEBUG);
+    minimal_debugtext->setVisible(flags & GUIF_SHOW_MINIMAL_DEBUG);
 
 	// Basic debug text also shows info that might give a gameplay advantage
-    auto second_debug_line = dynamic_cast<UITextSprite *>(debugtext->getSprite(1));
     if (flags & GUIF_SHOW_BASIC_DEBUG) {
 		v3f player_position = player->getPosition();
 
@@ -176,15 +172,15 @@ void GameUI::update(Client *client, const GUIChatConsole *chat_console, f32 dtim
 			}
 		}
 
-        std::wstring second_debug_text = utf8_to_wide(os.str());
+        std::wstring text = utf8_to_wide(os.str());
 
-        second_debug_line->setText(second_debug_text);
-        second_debug_line->updateBuffer(
-            rectf(v2f(5, 5 + first_debug_line->getTextHeight()),
-            second_debug_line->getTextWidth(), second_debug_line->getTextHeight()));
+        basic_debugtext->setText(text);
+        basic_debugtext->setBoundRect(
+            rectf(v2f(5, 5 + basic_debugtext->getTextHeight()),
+            basic_debugtext->getTextWidth(), basic_debugtext->getTextHeight()));
     }
 
-    second_debug_line->setVisible(flags & GUIF_SHOW_BASIC_DEBUG);
+    basic_debugtext->setVisible(flags & GUIF_SHOW_BASIC_DEBUG);
 
     // Info text
     infotext->setVisible(flags & GUIF_SHOW_HUD && g_menumgr->menuCount() == 0);
@@ -199,6 +195,7 @@ void GameUI::update(Client *client, const GUIChatConsole *chat_console, f32 dtim
 			clearStatusText();
             statustext_time = 0.0f;
 		}
+
 	}
 
     UITextSprite *guitext_status = nullptr;
@@ -207,7 +204,7 @@ void GameUI::update(Client *client, const GUIChatConsole *chat_console, f32 dtim
 		guitext_status = g_touchcontrols->getStatusText();
         statustext->setVisible(false);
 	} else {
-        guitext_status = statustext.get();
+        guitext_status = statustext;
 		if (g_touchcontrols)
 			g_touchcontrols->getStatusText()->setVisible(false);
 	}
@@ -215,13 +212,13 @@ void GameUI::update(Client *client, const GUIChatConsole *chat_console, f32 dtim
     guitext_status->setVisible(!guitext_status->getText().empty());
 
     if (!statustext->getText().empty()) {
-		s32 status_width  = guitext_status->getTextWidth();
-		s32 status_height = guitext_status->getTextHeight();
+        s32 status_width  = guitext_status->getTextWidth();
+        s32 status_height = guitext_status->getTextHeight();
         s32 status_y = wndSize.Y  - (overriden ? 15 : 150);
         s32 status_x = (wndSize.X - status_width) / 2;
 
         v2f guitext_status_shift(status_x, status_y - status_height);
-        guitext_status->getShape()->move(guitext_status_shift);
+        guitext_status->getShape().move(guitext_status_shift);
         //guitext_status->setRelativePosition(recti(status_x ,
         //	status_y - status_height, status_x + status_width, status_y));
 
@@ -230,8 +227,9 @@ void GameUI::update(Client *client, const GUIChatConsole *chat_console, f32 dtim
         f32 d = statustext_time / statustext_time_max;
         fade_color.A(static_cast<u32>(
             fade_color.A() * (1.0f - d * d)));
-        guitext_status->setOverrideColor(fade_color);
-        guitext_status->updateBuffer(rectf(guitext_status_shift, guitext_status_shift+toV2T<f32>(guitext_status->getTextSize())));
+        guitext_status->getTextObj().setOverrideColor(fade_color);
+        guitext_status->setBoundRect(
+            rectf(guitext_status_shift, guitext_status_shift+toV2T<f32>(guitext_status->getTextSize())));
     }
 
 	// Hide chat when disabled by server or when console is visible
@@ -265,9 +263,9 @@ void GameUI::updateChat()
     f32 chat_y = 5;
 
     if (flags & GUIF_SHOW_MINIMAL_DEBUG)
-        chat_y += dynamic_cast<UITextSprite *>(debugtext->getSprite(0))->getTextHeight();
+        chat_y += minimal_debugtext->getTextHeight();
     if (flags & GUIF_SHOW_BASIC_DEBUG)
-        chat_y += dynamic_cast<UITextSprite *>(debugtext->getSprite(1))->getTextHeight();
+        chat_y += basic_debugtext->getTextHeight();
 
 
     const v2u wndSize = rndsys->getWindowSize();
@@ -276,7 +274,7 @@ void GameUI::updateChat()
         v2f(wndSize.X - 20, std::min<f32>(wndSize.Y, chattext->getTextHeight() + chat_y))
     );
 
-    chattext->updateBuffer(rectf(chatSize));
+    chattext->setBoundRect(chatSize);
 }
 
 void GameUI::updateProfiler()
@@ -288,16 +286,16 @@ void GameUI::updateProfiler()
 
         g_profiler->print(os, profiler_current_page, profiler_max_page);
 
-        profilertext->setOverrideColor(img::color8(img::PF_RGBA8, 0, 0, 0, 120));
+        profilertext->getTextObj().setOverrideColor(img::color8(img::PF_RGBA8, 0, 0, 0, 120));
         profilertext->setText(utf8_to_wide(os.str()));
 
         v2f size = toV2T<f32>(profilertext->getTextSize());
-        v2f upper_left(6, dynamic_cast<UITextSprite *>(debugtext->getSprite(0))->getTextHeight() * 2.5f);
+        v2f upper_left(6, minimal_debugtext->getTextHeight() * 2.5f);
         v2f lower_right = upper_left;
         lower_right.X += size.X + 10;
         lower_right.Y += size.Y;
 
-        profilertext->updateBuffer(rectf(upper_left, lower_right));
+        profilertext->setBoundRect(rectf(upper_left, lower_right));
 	}
 
     profilertext->setVisible(profiler_current_page != 0);
@@ -376,8 +374,8 @@ void GameUI::toggleProfiler()
 
 void GameUI::clearText()
 {
-    dynamic_cast<UITextSprite *>(debugtext->getSprite(0))->setText(L"");
-    dynamic_cast<UITextSprite *>(debugtext->getSprite(1))->setText(L"");
+    minimal_debugtext->setText(L"");
+    basic_debugtext->setText(L"");
     infotext->setText(L"");
     statustext->setText(L"");
     chattext->setText(L"");
@@ -386,11 +384,9 @@ void GameUI::clearText()
 
 void GameUI::render()
 {
-    debugtext->drawBank();
-    infotext->draw();
-    statustext->draw();
-    chattext->draw();
-    profilertext->draw();
+    drawBatch->rebuild();
+
+    drawBatch->draw();
 
     hud->render();
     

@@ -136,8 +136,6 @@ private:
     RenderSystem *rndsys;
     ResourceCache *cache;
 
-    std::unique_ptr<Hud> hud;
-
     u8 flags = GUIF_SHOW_CHAT | GUIF_SHOW_HUD;
 
     float drawtime_avg = 0;
@@ -148,24 +146,29 @@ private:
 
     IntervalLimiter profiler_interval;
 
-    std::unique_ptr<UISpriteBank> debugtext;  // First and second lines of debug text
+    UITextSprite *minimal_debugtext; // The upper debug text line
+    UITextSprite *basic_debugtext; // The lower debug text line
 
-    std::unique_ptr<UITextSprite> infotext; // At the middle of the screen
+    UITextSprite *infotext; // At the middle of the screen
     //std::wstring m_infotext;
 
-    std::unique_ptr<UITextSprite> statustext;
+    UITextSprite *statustext;
     std::wstring last_status_text;
     f32 statustext_time = 0.0f;
     img::color8 statustext_initial_color = img::black;
 
-    std::unique_ptr<UITextSprite> chattext; // Chat text
+    UITextSprite *chattext; // Chat text
     u32 recent_chat_count;
 
-    std::unique_ptr<UITextSprite> profilertext; // Profiler text
+    UITextSprite *profilertext; // Profiler text
     u8 profiler_current_page = 0;
     const u8 profiler_max_page = 3;
     
     std::list<std::unique_ptr<Nametag>> nametags;
 
     std::unique_ptr<ProfilerGraphSet> graph_set;
+
+    std::unique_ptr<SpriteDrawBatch> drawBatch;
+
+    std::unique_ptr<Hud> hud;
 };

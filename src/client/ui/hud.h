@@ -22,16 +22,18 @@ class UISprite;
 class EnrichedString;
 class AtlasPool;
 class HudSprite;
+class SpriteDrawBatch;
 
 class Hud
 {
     Client *client;
-	RenderSystem *rnd_system;
     LocalPlayer *player;
     ResourceCache *cache;
 
+    SpriteDrawBatch *drawBatch;
+
     // Crosshair is not controlled by mods yet
-    std::unique_ptr<UISprite> crosshair;
+    UIRects *crosshair;
 
     u32 builtinMinimapID;
     u32 builtinHotbarID;
@@ -44,7 +46,7 @@ public:
     const std::string crosshair_img = "crosshair.png";
     const std::string object_crosshair_img = "object_crosshair.png";
 
-    Hud(Client *_client);
+    Hud(Client *_client, SpriteDrawBatch *_drawBatch);
 
 	bool hasElementOfType(HudElementType type);
 
