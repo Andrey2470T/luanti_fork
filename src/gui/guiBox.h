@@ -9,6 +9,7 @@
 #include <array>
 
 class UIRects;
+class SpriteDrawBatch;
 
 class GUIBox : public gui::IGUIElement
 {
@@ -28,5 +29,6 @@ private:
 	std::array<img::color8, 4> m_bordercolors;
 	std::array<s32, 4> m_borderwidths;
 
-    std::unique_ptr<UIRects> m_box;
+    std::unique_ptr<SpriteDrawBatch> drawBatch;
+    UIRects *m_box;
 };

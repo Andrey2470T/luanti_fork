@@ -22,8 +22,8 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <Image/Image.h>
 #include <variant>
 
-class ImageSprite;
-class Image2D9Slice;
+class UISprite;
+class SpriteDrawBatch;
 
 class GUIBackgroundImage : public gui::IGUIElement
 {
@@ -49,5 +49,6 @@ private:
 	bool m_autoclip;
     v2i m_autoclip_offset;
 
-    std::variant<std::shared_ptr<ImageSprite>, std::shared_ptr<Image2D9Slice>> Image;
+    std::unique_ptr<SpriteDrawBatch> drawBatch;
+    UISprite *image;
 };

@@ -27,12 +27,13 @@ GUIBackgroundImage::GUIBackgroundImage(gui::IGUIEnvironment *env,
     const std::string &name, const recti &middle, bool autoclip, v2i autoclip_offset) :
 	gui::IGUIElement(EGUIET_ELEMENT, env, parent, id, rectangle),
     m_name(name), m_middle(middle), m_autoclip(autoclip),
-    m_autoclip_offset(autoclip_offset)
+    m_autoclip_offset(autoclip_offset),
+    drawBatch(std::make_unique<SpriteDrawBatch>(env->getRenderSystem(), env->getResourceCache()))
 {
     if (m_middle.getArea() == 0)
-        Image = std::make_shared<ImageSprite>(env->getRenderSystem(), env->getResourceCache());
+        image = drawBatch->addRectsSprite({{}});
     else
-        Image = std::make_shared<Image2D9Slice>(env->getResourceCache(), env->getRenderSystem());
+        image = drawBatch->addImage2D9Slice({}, {}, {}, nullptr);
 }
 
 void GUIBackgroundImage::updateMesh()
@@ -51,12 +52,14 @@ void GUIBackgroundImage::updateMesh()
     recti srcrect(v2i(0, 0), toV2T<s32>(texture->getSize()));
 
 	if (m_middle.getArea() == 0) {
-        auto img = std::get<std::shared_ptr<ImageSprite>>(Image);
-        img->update(texture, toRectT<f32>(rect), UISprite::defaultColors, &srcrect);
+        auto img = dynamic_cast<UIRects *>(image);
+        img->updateRect(0, {toRectT<f32>(rect), UISprite::defaultColors, texture});
 	} else {
-        auto img = std::get<std::shared_ptr<Image2D9Slice>>(Image);
-        img->updateRects(toRectT<f32>(srcrect), toRectT<f32>(rect), toRectT<f32>(m_middle));
+        auto img = dynamic_cast<Image2D9Slice *>(image);
+        img->updateRects(toRectT<f32>(srcrect), toRectT<f32>(rect), toRectT<f32>(m_middle), texture);
 	}
+
+    drawBatch->update();
 	
 	Rebuild = false;
 }
@@ -74,10 +77,7 @@ void GUIBackgroundImage::draw()
 	}
 
 	updateMesh();
-	if (m_middle.getArea() == 0)
-		std::get<std::shared_ptr<ImageSprite>>(Image)->draw();
-	else
-		std::get<std::shared_ptr<Image2D9Slice>>(Image)->draw();
+    drawBatch->draw();
     
 	IGUIElement::draw();
 }

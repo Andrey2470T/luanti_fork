@@ -25,8 +25,7 @@ using namespace gui;
 GUIButton::GUIButton(IGUIEnvironment* environment, IGUIElement* parent,
         s32 id, recti rectangle, bool noclip) :
     IGUIButton(environment, parent, id, rectangle),
-    ButtonBox(std::make_unique<UISpriteBank>(
-        environment->getRenderSystem(), environment->getResourceCache()))
+    drawBatch(std::make_unique<SpriteDrawBatch>(environment->getRenderSystem(), environment->getResourceCache()))
 {
 	setNotClipped(noclip);
 
@@ -42,13 +41,11 @@ GUIButton::GUIButton(IGUIEnvironment* environment, IGUIElement* parent,
 	StaticText->setTextAlignment(EGUIA_CENTER, EGUIA_CENTER);
 	// END PATCH
 
-    ButtonBox->addSprite({}, {});
+    ButtonBox = drawBatch->addRectsSprite({{}});
     if (BgMiddle.getArea() == 0)
-        ButtonBox->addSprite<ImageSprite>(0, environment->getRenderSystem(),
-            environment->getResourceCache());
+        ImageBox = drawBatch->addRectsSprite({{}});
     else
-        ButtonBox->addSprite<Image2D9Slice>(0, environment->getResourceCache(),
-            environment->getRenderSystem());
+        ImageBox = drawBatch->addImage2D9Slice(rectf(), rectf(), rectf(), nullptr);
 }
 
 //! destructor
@@ -261,23 +258,22 @@ void GUIButton::updateMesh()
 
 	if (DrawBorder)
 	{
-        auto sprite0 = ButtonBox->getSprite(0);
-        sprite0->clear();
+        ButtonBox->clear();
 		if (!Pressed)
 		{
 			// PATCH
-            skin->addColored3DButtonPaneStandard(sprite0, toRectT<f32>(AbsoluteRect), Colors);
+            skin->addColored3DButtonPaneStandard(ButtonBox, toRectT<f32>(AbsoluteRect), Colors);
 			// END PATCH
 		}
 		else
 		{
 			// PATCH
-            skin->addColored3DButtonPanePressed(sprite0, toRectT<f32>(AbsoluteRect), Colors);
+            skin->addColored3DButtonPanePressed(ButtonBox, toRectT<f32>(AbsoluteRect), Colors);
 			// END PATCH
 		}
-        sprite0->rebuildMesh();
-        sprite0->setClipRect(AbsoluteClippingRect);
-	}
+        ButtonBox->setClipRect(AbsoluteClippingRect);
+        ButtonBox->setVisible(true);
+    }
 
     const v2i buttonCenter(AbsoluteRect.getCenter());
 	// PATCH
@@ -309,15 +305,18 @@ void GUIButton::updateMesh()
 		img::Image* texture = ButtonImages[(u32)imageState].Texture;
         std::array<img::color8, 4> image_colors = { BgColor, BgColor, BgColor, BgColor };
 		if (BgMiddle.getArea() == 0) {
-            auto img = dynamic_cast<ImageSprite *>(ButtonBox->getSprite(1));
-            img->update(texture, toRectT<f32>(ScaleImage? AbsoluteRect : recti(pos, sourceRect.getSize())),
-                image_colors, &AbsoluteClippingRect);
+            auto img = dynamic_cast<UIRects *>(ImageBox);
+            img->updateRect(0, {toRectT<f32>(ScaleImage? AbsoluteRect : recti(pos, sourceRect.getSize())),
+                image_colors, texture});
+            img->setClipRect(AbsoluteClippingRect);
+
 		} else {
-            auto sliced_img = dynamic_cast<Image2D9Slice *>(ButtonBox->getSprite(1));
+            auto sliced_img = dynamic_cast<Image2D9Slice *>(ImageBox);
             sliced_img->updateRects(toRectT<f32>(sourceRect), toRectT<f32>(BgMiddle),
                 toRectT<f32>(ScaleImage ? AbsoluteRect : recti(pos, sourceRect.getSize())),
                 texture, image_colors, &AbsoluteClippingRect);
 		}
+        ImageBox->setVisible(true);
 		// END PATCH
 	}
 
@@ -345,6 +344,8 @@ void GUIButton::updateMesh()
 		}
 	}
 
+    drawBatch->rebuild();
+
     Rebuild = false;
 }
 
@@ -356,12 +357,7 @@ void GUIButton::draw()
 
     updateMesh();
 
-    if (DrawBorder)
-        ButtonBox->getSprite(0)->draw();
-
-    EGUI_BUTTON_IMAGE_STATE imageState = EGBIS_IMAGE_UP;
-    if ( ButtonImages[(u32)imageState].Texture )
-        ButtonBox->getSprite(1)->draw();
+    drawBatch->draw();
 
     if (SpriteBank && isEnabled())
         SpriteBank->draw2DSprite();

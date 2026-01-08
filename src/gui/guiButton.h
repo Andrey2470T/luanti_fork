@@ -246,8 +246,11 @@ private:
 	bool WasHovered = false;
 	bool WasFocused = false;
 
-	gui::IGUIStaticText *StaticText;
-    std::unique_ptr<UISpriteBank> ButtonBox;
+    std::unique_ptr<SpriteDrawBatch> drawBatch;
+
+    gui::IGUIStaticText *StaticText;
+    UIRects *ButtonBox;
+    UISprite *ImageBox;
 
 	recti BgMiddle;
 	recti Padding;

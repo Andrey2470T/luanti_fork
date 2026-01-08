@@ -17,8 +17,10 @@ GUIBox::GUIBox(gui::IGUIEnvironment *env, gui::IGUIElement *parent, s32 id,
 	m_colors(colors),
 	m_bordercolors(bordercolors),
     m_borderwidths(borderwidths),
-    m_box(std::make_unique<UIRects>(env->getRenderSystem(), 5))
-{}
+    drawBatch(std::make_unique<SpriteDrawBatch>(env->getRenderSystem(), env->getResourceCache()))
+{
+    drawBatch->addSprite(new UIRects(env->getResourceCache(), drawBatch.get(), env->getRenderSystem()->getPool(false), 5));
+}
 
 void GUIBox::updateMesh()
 {
@@ -92,14 +94,14 @@ void GUIBox::updateMesh()
 		lowerright_rect.Y
 	);
 
-    m_box->updateRect(0, toRectT<f32>(main_rect), {m_colors[0], m_colors[1], m_colors[3], m_colors[2]});
+    m_box->updateRect(0, {toRectT<f32>(main_rect), {m_colors[0], m_colors[1], m_colors[3], m_colors[2]}});
 
     for (size_t i = 0; i < 4; i++)
-        m_box->updateRect(i+1, toRectT<f32>(border_rects[i]),
-            {m_bordercolors[i], m_bordercolors[i], m_bordercolors[i], m_bordercolors[i]});
+        m_box->updateRect(i+1, {toRectT<f32>(border_rects[i]),
+            {m_bordercolors[i], m_bordercolors[i], m_bordercolors[i], m_bordercolors[i]}});
 
-    m_box->updateMesh();
     m_box->setClipRect(AbsoluteClippingRect);
+    drawBatch->update();
     
     Rebuild = false;
 }
@@ -110,7 +112,7 @@ void GUIBox::draw()
 		return;
 
 	updateMesh();
-    m_box->draw();
+    drawBatch->draw();
 
     IGUIElement::draw();
 }
