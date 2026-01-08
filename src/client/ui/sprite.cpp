@@ -396,8 +396,8 @@ void BankAutoAlignment::alignSprite(u32 spriteID, std::optional<rectf> overrideR
 // if auto-align is enabled, the rects areas must be absolute, otherwise - relative to the ulc
 UIRects *SpriteDrawBatch::addRectsSprite(
     const std::vector<TexturedRect> &rects,
-    const recti *clipRect,
-    u32 depthLevel)
+    u32 depthLevel,
+    const recti *clipRect)
 {
     UIRects *rectsSprite = new UIRects(cache, this, rndsys->getPool(false), rects, depthLevel);
     sprites.emplace_back(rectsSprite);
@@ -416,8 +416,8 @@ UIRects *SpriteDrawBatch::addRectsSprite(
 Image2D9Slice *SpriteDrawBatch::addImage2D9Slice(
     const rectf &src_rect, const rectf &dest_rect,
     const rectf &middle_rect, img::Image *baseImg,
-    const std::array<img::color8, 4> &colors,
-    std::optional<AtlasTileAnim> anim, u32 depthLevel)
+    u32 depthLevel, const std::array<img::color8, 4> &colors,
+    std::optional<AtlasTileAnim> anim)
 {
     Image2D9Slice *img2D9Slice = new Image2D9Slice(cache, this, rndsys->getPool(false),
         src_rect, dest_rect, middle_rect, baseImg, colors, anim, depthLevel);
@@ -435,11 +435,11 @@ UITextSprite *SpriteDrawBatch::addTextSprite(
     const std::wstring &text,
     std::optional<std::variant<rectf, v2f>> shift,
     const img::color8 &textColor,
+    u32 depthLevel,
     const recti *clipRect,
     bool wordWrap,
     GUIAlignment horizAlign,
-    GUIAlignment vertAlign,
-    u32 depthLevel)
+    GUIAlignment vertAlign)
 {
     UITextSprite *textSprite = new UITextSprite(
         rndsys->getFontManager(), rndsys->getGUIEnvironment()->getSkin(),

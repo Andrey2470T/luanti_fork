@@ -57,7 +57,7 @@ public:
         const std::vector<TexturedRect> &rects, u32 depthLevel=0);
 
     void addRect(const TexturedRect &rect, std::optional<rectf> srcRect=std::nullopt);
-    void updateRect(u32 n, const TexturedRect &rect);
+    void updateRect(u32 n, const TexturedRect &rect, std::optional<rectf> srcRect=std::nullopt);
 
     void appendToBatch() override;
     void updateBatch() override;

@@ -324,22 +324,23 @@ public:
     }
     UIRects *addRectsSprite(
         const std::vector<TexturedRect> &rects,
-        const recti *clipRect=nullptr,
-        u32 depthLevel=0);
+        u32 depthLevel=0,
+        const recti *clipRect=nullptr);
     Image2D9Slice *addImage2D9Slice(
         const rectf &src_rect, const rectf &dest_rect,
         const rectf &middle_rect, img::Image *baseImg,
+        u32 depthLevel=0,
         const std::array<img::color8, 4> &colors=UISprite::defaultColors,
-        std::optional<AtlasTileAnim> anim=std::nullopt, u32 depthLevel=0);
+        std::optional<AtlasTileAnim> anim=std::nullopt);
     UITextSprite *addTextSprite(
         const std::wstring &text,
         std::optional<std::variant<rectf, v2f>> shift=std::nullopt,
         const img::color8 &textColor=img::white,
+        u32 depthLevel=0,
         const recti *clipRect=nullptr,
         bool wordWrap=false,
         GUIAlignment horizAlign=GUIAlignment::Center,
-        GUIAlignment vertAlign=GUIAlignment::Center,
-        u32 depthLevel=0);
+        GUIAlignment vertAlign=GUIAlignment::Center);
 
     u32 getSpriteCount() const
     {

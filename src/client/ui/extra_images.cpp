@@ -145,9 +145,12 @@ void UIRects::addRect(const TexturedRect &rect, std::optional<rectf> srcRect)
     changed = true;
 }
 
-void UIRects::updateRect(u32 n, const TexturedRect &rect)
+void UIRects::updateRect(u32 n, const TexturedRect &rect, std::optional<rectf> srcRect)
 {
     rectf tileRect = rect.image ? guiPool->getTileRect(rect.image, false, true) : rectf();
+
+    if (srcRect.has_value())
+        tileRect = srcRect.value();
     shape.updateRectangle(n, rect.area, rect.colors, tileRect);
 
     if (images.at(n) != rect.image)

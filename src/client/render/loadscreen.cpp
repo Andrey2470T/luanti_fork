@@ -19,13 +19,12 @@ LoadScreen::LoadScreen(ResourceCache *_cache, RenderSystem *_system, FontManager
     auto progress_img_size = rectf(v2f(), toV2T<f32>(progress_img->getSize()));
 
     progress_bg_rect = drawBatch->addRectsSprite({
-        {progress_bg_img_size, UISprite::defaultColors, progress_bg_img}}, nullptr, 0);
+        {progress_bg_img_size, UISprite::defaultColors, progress_bg_img}}, 0);
 
     progress_rect = drawBatch->addRectsSprite({
-        {progress_img_size, UISprite::defaultColors, progress_img}}, nullptr, 1);
+        {progress_img_size, UISprite::defaultColors, progress_img}}, 1);
 
-    progress_text = drawBatch->addTextSprite(L"", std::nullopt, img::white, nullptr, false,
-        GUIAlignment::Center, GUIAlignment::UpperLeft, 1);
+    progress_text = drawBatch->addTextSprite(L"", std::nullopt, img::white, 2);
 }
 
 void LoadScreen::draw(v2u screensize, const std::wstring &text, f32 dtime, bool menu_clouds,

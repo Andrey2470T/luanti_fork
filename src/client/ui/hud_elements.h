@@ -122,20 +122,16 @@ class HudMinimap : public HudSprite
 
     recti viewport;
 public:
-    HudMinimap(Client *_client, const HudElement *elem, SpriteDrawBatch *drawBatch);
+    HudMinimap(Client *_client, const HudElement *elem);
+    ~HudMinimap();
 
     Minimap *getUnderlyingMinimap() const
     {
         return minimap.get();
     }
 
-    void setVisible(bool visible) override
-    {
-        minimap->setVisible(visible);
-    }
-
     void update() override;
-    void draw() override;
+    void draw();
 };
 
 class HudInventoryList : public HudSprite

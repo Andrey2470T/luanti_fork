@@ -384,13 +384,17 @@ void GameUI::clearText()
 
 void GameUI::render()
 {
-    drawBatch->rebuild();
+    hud->updateCrosshair();
+    hud->updateBuiltinElements();
 
+    drawBatch->rebuild();
     drawBatch->draw();
-    graph_set->draw();
+    hud->renderMinimaps();
     
-    for (auto &nt : nametags)
-        nt->drawBank();
+    //for (auto &nt : nametags)
+    //    nt->draw();
+
+    graph_set->draw();
 }
 
 void GameUI::updateDebugState(Client *client)

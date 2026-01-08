@@ -218,8 +218,6 @@ Minimap::~Minimap()
 	m_minimap_update_thread->stop();
 	m_minimap_update_thread->wait();
 
-    //m_meshbuffer.reset();
-
 	if (data->minimap_mask_round)
         m_cache->clearResource<img::Image>(ResourceType::IMAGE, data->minimap_mask_round, true);
 	if (data->minimap_mask_square)
@@ -576,10 +574,10 @@ void Minimap::drawMinimap(recti rect)
     else
         m_renderer->setTransformMatrix(TMatrix::World, matrix);
 
-    updateUVs({0, 1, 1, 0});
     m_renderer->draw(m_buffer.get());
 
-    auto guiPool = client->getRenderSystem()->getPool(false);
+    auto rndsys = client->getRenderSystem();
+    auto guiPool = rndsys->getPool(false);
 
 	// Draw overlay
     auto minimap_overlay = data->minimap_shape_round ?
@@ -587,13 +585,12 @@ void Minimap::drawMinimap(recti rect)
     m_renderer->setDefaultShader(true, false);
     m_renderer->setDefaultUniforms(1.0f, 1, 0.5f, img::BM_COUNT);
 
-    auto atlas = guiPool->getAtlasByTile(minimap_overlay, true);
-    ctxt->setActiveUnit(0, atlas->getTexture());
+    rndsys->activateAtlas(minimap_overlay, false);
+    MeshOperations::recalculateMeshAtlasUVs(m_buffer.get(), 0, 6,
+        guiPool->getAtlasByTile(minimap_overlay)->getTextureSize(), guiPool->getTileRect(minimap_overlay),
+        minimap_texture->getWidth(), rectf(v2f(), toV2T<f32>(minimap_texture->getSize())));
+    m_buffer->uploadVertexData();
 
-    auto tile_rect = guiPool->getTileRect(minimap_overlay);
-    tile_rect.ULC /= (f32)atlas->getTextureSize();
-    tile_rect.LRC /= (f32)atlas->getTextureSize();
-    updateUVs(tile_rect);
     m_renderer->draw(m_buffer.get());
 
 	// Draw player marker on minimap
@@ -603,14 +600,14 @@ void Minimap::drawMinimap(recti rect)
         matrix.setRotationDegrees(v3f(0, 0, m_angle));
 	}
 
-    atlas = guiPool->getAtlasByTile(data->player_marker, true);
-    ctxt->setActiveUnit(0, atlas->getTexture());
+    rndsys->activateAtlas(data->player_marker, false);
     m_renderer->setTransformMatrix(TMatrix::World, matrix);
 
-    tile_rect = guiPool->getTileRect(data->player_marker);
-    tile_rect.ULC /= (f32)atlas->getTextureSize();
-    tile_rect.LRC /= (f32)atlas->getTextureSize();
-    updateUVs(tile_rect);
+    MeshOperations::recalculateMeshAtlasUVs(m_buffer.get(), 0, 6,
+        guiPool->getAtlasByTile(data->player_marker)->getTextureSize(), guiPool->getTileRect(data->player_marker),
+        guiPool->getAtlasByTile(minimap_overlay)->getTextureSize(), guiPool->getTileRect(minimap_overlay));
+    m_buffer->uploadVertexData();
+
     m_renderer->draw(m_buffer.get());
 
 	// Reset transformations
@@ -620,15 +617,10 @@ void Minimap::drawMinimap(recti rect)
 
 	// Draw player markers
     m_renderer->draw(m_buffer.get());
-}
 
-void Minimap::updateUVs(const rectf &srcRect)
-{
-    svtSetUV(m_buffer.get(), srcRect.ULC, 0);
-    svtSetUV(m_buffer.get(), v2f(srcRect.LRC.X, srcRect.ULC.Y), 1);
-    svtSetUV(m_buffer.get(), srcRect.LRC, 2);
-    svtSetUV(m_buffer.get(), v2f(srcRect.ULC.X, srcRect.LRC.Y), 3);
-
+    MeshOperations::recalculateMeshAtlasUVs(m_buffer.get(), 0, 6,
+        minimap_texture->getWidth(), rectf(v2f(), toV2T<f32>(minimap_texture->getSize())),
+        guiPool->getAtlasByTile(data->player_marker)->getTextureSize(), guiPool->getTileRect(data->player_marker));
     m_buffer->uploadVertexData();
 }
 

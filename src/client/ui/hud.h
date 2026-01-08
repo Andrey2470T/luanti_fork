@@ -41,7 +41,6 @@ class Hud
     std::vector<std::pair<u32, std::unique_ptr<HudSprite>>> hudsprites;
 public:
     // Crosshair
-    bool crosshair_hidden = false;
     img::color8 crosshair_color;
     const std::string crosshair_img = "crosshair.png";
     const std::string object_crosshair_img = "object_crosshair.png";
@@ -62,7 +61,7 @@ public:
 
     void setHudVisible(bool visible);
 
-    void render();
+    void renderMinimaps();
 private:
     HudSprite *findSprite(u32 id);
     void initCrosshair();

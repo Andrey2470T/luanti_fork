@@ -142,7 +142,6 @@ public:
 	std::unique_ptr<MinimapData> data;
 
 private:
-    void updateUVs(const rectf &srcRect);
     Renderer *m_renderer;
     ResourceCache *m_cache;
 

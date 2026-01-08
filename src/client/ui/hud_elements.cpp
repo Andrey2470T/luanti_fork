@@ -125,7 +125,7 @@ HudSprite::~HudSprite()
 }
 
 HudText::HudText(Client *client, const HudElement *elem, SpriteDrawBatch *drawBatch)
-    : HudSprite(client, elem, drawBatch->addTextSprite(L""))
+    : HudSprite(client, elem, drawBatch->addTextSprite(L"", std::nullopt, img::white, elem->z_index))
 {
     update();
 }
@@ -144,7 +144,7 @@ void HudText::update()
 }
 
 HudStatbar::HudStatbar(Client *client, const HudElement *elem, SpriteDrawBatch *drawBatch)
-    : HudSprite(client, elem, drawBatch->addRectsSprite({}))
+    : HudSprite(client, elem, drawBatch->addRectsSprite({}, elem->z_index))
 {
     update();
 }
@@ -299,7 +299,7 @@ bool Waypoint::calculateScreenPos(v2f *pos)
 }
 
 HudTextWaypoint::HudTextWaypoint(Client *_client, const HudElement *elem, SpriteDrawBatch *drawBatch)
-    : HudSprite(_client, elem, drawBatch->addTextSprite(L"")), Waypoint(_client)
+    : HudSprite(_client, elem, drawBatch->addTextSprite(L"", std::nullopt, img::white, elem->z_index)), Waypoint(_client)
 {
     update();
 }
@@ -336,7 +336,7 @@ void HudTextWaypoint::update()
 }
 
 HudImageWaypoint::HudImageWaypoint(Client *_client, const HudElement *elem, SpriteDrawBatch *drawBatch)
-    : HudSprite(_client, elem, drawBatch->addRectsSprite({})), Waypoint(_client)
+    : HudSprite(_client, elem, drawBatch->addRectsSprite({}, elem->z_index)), Waypoint(_client)
 {
     update();
 }
@@ -358,7 +358,7 @@ void HudImageWaypoint::update()
 }
 
 HudImage::HudImage(Client *client, const HudElement *elem, SpriteDrawBatch *drawBatch)
-    : HudSprite(client, elem, drawBatch->addRectsSprite({}))
+    : HudSprite(client, elem, drawBatch->addRectsSprite({}, elem->z_index))
 {
     update();
 }
@@ -372,7 +372,7 @@ void HudImage::update()
 }
 
 HudCompass::HudCompass(Client *_client, const HudElement *elem, SpriteDrawBatch *drawBatch)
-    : HudSprite(_client, elem, drawBatch->addRectsSprite({}))
+    : HudSprite(_client, elem, drawBatch->addRectsSprite({}, elem->z_index))
 {
     update();
 }
@@ -488,15 +488,24 @@ void HudCompass::updateRotate(const rectf &r, img::Image *img, s32 angle)
     compassSprite->addRect({destrect, UISprite::defaultColors, img});
 }
 
-HudMinimap::HudMinimap(Client *_client, const HudElement *elem, SpriteDrawBatch *drawBatch)
-    : HudSprite(_client, elem),
-    minimap(std::make_unique<Minimap>(_client, _client->getRenderSystem()->getRenderer(), _client->getResourceCache()))
+HudMinimap::HudMinimap(Client *_client, const HudElement *elem)
+    : HudSprite(_client, elem, new UIRects(_client->getResourceCache(), nullptr,
+        _client->getRenderSystem()->getPool(false), 1, elem->z_index)),
+    minimap(std::make_unique<Minimap>(_client, dynamic_cast<UIRects *>(sprite)))
 {}
+
+HudMinimap::~HudMinimap()
+{
+    delete sprite;
+}
 
 void HudMinimap::update()
 {
     rectf destrect;
     destrect += calcHUDOffset(rndsys, destrect, elem, true, std::nullopt);
+
+    auto minimapSprite = dynamic_cast<UIRects *>(sprite);
+    minimapSprite->updateRect(0, {destrect, UISprite::defaultColors}, rectf(0, 1, 1, 0));
 
     viewport = recti(destrect.ULC.X, destrect.ULC.Y, destrect.LRC.X, destrect.LRC.Y);
     minimap->updateActiveMarkers(viewport);
@@ -504,7 +513,8 @@ void HudMinimap::update()
 
 void HudMinimap::draw()
 {
-    minimap->drawMinimap(viewport);
+    if (sprite->isVisible())
+        minimap->drawMinimap(viewport);
 }
 
 static void setting_changed_callback(const std::string &name, void *data)
@@ -513,7 +523,7 @@ static void setting_changed_callback(const std::string &name, void *data)
 }
 
 HudInventoryList::HudInventoryList(Client *_client, const HudElement *elem, SpriteDrawBatch *drawBatch)
-    : HudSprite(_client, elem, drawBatch->addRectsSprite({}))
+    : HudSprite(_client, elem, drawBatch->addRectsSprite({}, elem->z_index))
 {
     updateScalingSetting();
     g_settings->registerChangedCallback("dpi_change_notifier", setting_changed_callback, this);

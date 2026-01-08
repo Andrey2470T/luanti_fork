@@ -6,6 +6,7 @@
 
 #include "hud.h"
 #include "client/player/interaction.h"
+#include "client/ui/extra_images.h"
 #include "gui/touchcontrols.h"
 #include "settings.h"
 #include "util/numeric.h"
@@ -28,21 +29,21 @@ Hud::Hud(Client *_client, SpriteDrawBatch *_drawBatch)
     initCrosshair();
 
     if (g_settings->getBool("enable_minimap")) {
-        //if (client->getProtoVersion() < 44) {
+        if (client->getProtoVersion() < 44) {
             HudElement *minimap = new HudElement{HUD_ELEM_MINIMAP, v2f(1, 0), "", v2f(), "", 0 , 0, 0, v2f(-1, 1),
                 v2f(-10, 10), v3f(), v2i(256, 256), 0, "", 0};
             u32 id = player->getFreeHudID();
             hudsprites.emplace_back(id, std::make_unique<HudMinimap>(client, minimap));
             builtinMinimapID = id;
-        //}
+        }
     }
-    //if (client->getProtoVersion() < 46) {
+    if (client->getProtoVersion() < 46) {
         HudElement *hotbar = new HudElement{HUD_ELEM_HOTBAR, v2f(0.5, 1), "", v2f(), "", 0 , 0, 0, v2f(0, -1),
             v2f(0, -4), v3f(), v2i(), 0, "", 0};
         u32 id = player->getFreeHudID();
-        hudsprites.emplace_back(id, std::make_unique<HudHotbar>(client, hotbar));
+        hudsprites.emplace_back(id, std::make_unique<HudHotbar>(client, hotbar, drawBatch));
         builtinHotbarID = id;
-    //}
+    }
 
     resortElements();
 }
@@ -61,19 +62,24 @@ bool Hud::hasElementOfType(HudElementType type)
 
 void Hud::updateCrosshair()
 {
-    auto update = [this] (img::Image *img) {
-        v2u size = img->getSize();
-        v2f scaled_size = toV2T<f32>(size * std::max(std::floor(rnd_system->getScaleFactor()), 1.0f));
+    if (g_touchcontrols && player->getInteraction()->isTouchCrosshairDisabled())
+        crosshair->setVisible(false);
 
-        v2u wnd_size = rnd_system->getWindowSize();
+    if (!crosshair->isVisible())
+        return;
+
+    auto update = [this] (img::Image *img) {
+        auto rndsys = client->getRenderSystem();
+        v2u size = img->getSize();
+        v2f scaled_size = toV2T<f32>(size * std::max(std::floor(rndsys->getScaleFactor()), 1.0f));
+
+        v2u wnd_size = rndsys->getWindowSize();
         rectf r;
         r.ULC = toV2T<f32>(wnd_size)/2.0f - scaled_size/2.0f;
         r.LRC = r.ULC + scaled_size;
 
-        crosshair->getShape()->updateRectangle(0, r,
-            {crosshair_color, crosshair_color, crosshair_color, crosshair_color},
-            rnd_system->getPool(false)->getTileRect(img));
-        crosshair->updateMesh();
+        crosshair->updateRect(
+            0, {r, {crosshair_color, crosshair_color, crosshair_color, crosshair_color}, img});
     };
 
     std::string imgname;
@@ -89,16 +95,16 @@ void Hud::updateCrosshair()
 void Hud::updateBuiltinElements()
 {
     if (g_settings->getBool("enable_minimap")) {
-        //if (client->getProtoVersion() < 44 && player->hud_flags & HUD_FLAG_MINIMAP_VISIBLE)
+        if (client->getProtoVersion() < 44 && player->hud_flags & HUD_FLAG_MINIMAP_VISIBLE)
             findSprite(builtinMinimapID)->setVisible(true);
-        //else
-        //    findSprite(builtinMinimapID)->setVisible(false);
+        else
+            findSprite(builtinMinimapID)->setVisible(false);
     }
 
-    //if (client->getProtoVersion() < 46 && player->hud_flags & HUD_FLAG_HOTBAR_VISIBLE)
+    if (client->getProtoVersion() < 46 && player->hud_flags & HUD_FLAG_HOTBAR_VISIBLE)
         findSprite(builtinHotbarID)->setVisible(true);
-    //else
-    //    findSprite(builtinHotbarID)->setVisible(false);
+    else
+        findSprite(builtinHotbarID)->setVisible(false);
 }
 
 void Hud::updateInvListSelections(u32 slotID)
@@ -120,37 +126,33 @@ void Hud::addHUDElement(u32 id, const HudElement *elem)
 
     switch(elem->type) {
     case HUD_ELEM_IMAGE:
-        hudsprites.emplace_back(id, std::make_unique<HudImage>(client, elem));
+        hudsprites.emplace_back(id, std::make_unique<HudImage>(client, elem, drawBatch));
         break;
     case HUD_ELEM_TEXT:
-        hudsprites.emplace_back(id, std::make_unique<HudText>(client, elem));
+        hudsprites.emplace_back(id, std::make_unique<HudText>(client, elem, drawBatch));
         break;
     case HUD_ELEM_STATBAR:
-        hudsprites.emplace_back(id, std::make_unique<HudStatbar>(client, elem));
+        hudsprites.emplace_back(id, std::make_unique<HudStatbar>(client, elem, drawBatch));
         break;
     case HUD_ELEM_INVENTORY:
-        hudsprites.emplace_back(id, std::make_unique<HudInventoryList>(client, elem));
+        hudsprites.emplace_back(id, std::make_unique<HudInventoryList>(client, elem, drawBatch));
         break;
     case HUD_ELEM_WAYPOINT: {
-        UISpriteBank *bank = new UISpriteBank(rnd_system, cache);
-        bank->addTextSprite(L"");
-        hudsprites.emplace_back(id, std::make_unique<HudWaypoint>(client, elem, bank));
+        hudsprites.emplace_back(id, std::make_unique<HudTextWaypoint>(client, elem, drawBatch));
         break;
     }
     case HUD_ELEM_IMAGE_WAYPOINT: {
-        UISpriteBank *bank = new UISpriteBank(rnd_system, cache);
-        bank->addImageSprite(nullptr);
-        hudsprites.emplace_back(id, std::make_unique<HudWaypoint>(client, elem, bank));
+        hudsprites.emplace_back(id, std::make_unique<HudImageWaypoint>(client, elem, drawBatch));
         break;
     }
     case HUD_ELEM_COMPASS:
-        hudsprites.emplace_back(id, std::make_unique<HudCompass>(client, elem));
+        hudsprites.emplace_back(id, std::make_unique<HudCompass>(client, elem, drawBatch));
         break;
     case HUD_ELEM_MINIMAP:
         hudsprites.emplace_back(id, std::make_unique<HudMinimap>(client, elem));
         break;
     case HUD_ELEM_HOTBAR:
-        hudsprites.emplace_back(id, std::make_unique<HudHotbar>(client, elem));
+        hudsprites.emplace_back(id, std::make_unique<HudHotbar>(client, elem, drawBatch));
         break;
     }
 
@@ -191,24 +193,18 @@ Minimap *Hud::getMinimap()
 
 void Hud::setHudVisible(bool visible)
 {
-    crosshair_hidden = !visible;
+    crosshair->setVisible(visible);
 
     for (auto &sprite : hudsprites)
         sprite.second->setVisible(visible);
 }
 
-void Hud::render()
+void Hud::renderMinimaps()
 {
-    if (g_touchcontrols && player->getInteraction()->isTouchCrosshairDisabled())
-        crosshair_hidden = true;
-
-    if (!crosshair_hidden) {
-        updateCrosshair();
-        crosshair->draw();
+    for (auto &sprite : hudsprites) {
+        if (sprite.second->getType() == HUD_ELEM_MINIMAP)
+            dynamic_cast<HudMinimap *>(sprite.second.get())->draw();
     }
-
-    for (auto &sprite : hudsprites)
-        sprite.second->draw();
 }
 
 HudSprite *Hud::findSprite(u32 id)
@@ -232,9 +228,7 @@ void Hud::initCrosshair()
         g_settings->getS32("crosshair_alpha"));
 
     auto crosshair_image = cache->get<img::Image>(ResourceType::IMAGE, crosshair_img);
-    auto guiPool = rnd_system->getPool(false);
-    crosshair = std::make_unique<UISprite>(guiPool->getAtlasByTile(crosshair_image)->getTexture(),
-        rnd_system->getRenderer(), cache, guiPool->getTileRect(crosshair_image), rectf(), std::array<img::color8, 4>{}, true);
+    crosshair = drawBatch->addRectsSprite({{rectf(), UISprite::defaultColors, crosshair_image}});
 }
 
 void Hud::resortElements()
