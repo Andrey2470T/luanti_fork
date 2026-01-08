@@ -348,7 +348,8 @@ protected:
 	std::vector<gui::IGUIElement *> m_clickthrough_elements;
 	std::vector<std::pair<std::string, GUIScrollContainer *>> m_scroll_containers;
 
-    std::unique_ptr<UIRects> m_menu;
+    std::unique_ptr<SpriteDrawBatch> drawBatch;
+    UIRects *m_menu;
 
 	GUIInventoryList::ItemSpec *m_selected_item = nullptr;
 	u16 m_selected_amount = 0;

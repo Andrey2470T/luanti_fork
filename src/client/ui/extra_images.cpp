@@ -12,7 +12,7 @@ Image2D9Slice::Image2D9Slice(ResourceCache *resCache, SpriteDrawBatch *drawBatch
 Image2D9Slice::Image2D9Slice(ResourceCache *resCache, SpriteDrawBatch *drawBatch, AtlasPool *pool,
                              const rectf &src_rect, const rectf &dest_rect,
                              const rectf &middle_rect, img::Image *baseImg,
-                             const std::array<img::color8, 4> &colors,
+                             const RectColors &colors,
                              std::optional<AtlasTileAnim> anim, u32 depthLevel)
     : UISprite(resCache, drawBatch, depthLevel), srcRect(src_rect),
         destRect(dest_rect), middleRect(middle_rect), guiPool(pool)
@@ -21,7 +21,7 @@ Image2D9Slice::Image2D9Slice(ResourceCache *resCache, SpriteDrawBatch *drawBatch
 }
 
 void Image2D9Slice::updateRects(const rectf &src_rect, const rectf &dest_rect, const rectf &middle_rect, img::Image *img,
-	const std::array<img::color8, 4> &colors, const recti *clipRect, std::optional<AtlasTileAnim> anim)
+    const RectColors &colors, const recti *clipRect, std::optional<AtlasTileAnim> anim)
 {
     if (middleRect.LRC.X < 0)
         middleRect.LRC.X += srcRect.getWidth();
@@ -116,7 +116,7 @@ UIRects::UIRects(ResourceCache *resCache, SpriteDrawBatch *drawBatch, AtlasPool 
     : UISprite(resCache, drawBatch, depthLevel), guiPool(pool)
 {
     for (u32 k = 0; k < init_rects_count; k++)
-        shape.addRectangle({}, UISprite::defaultColors);
+        shape.addRectangle({}, RectColors::defaultColors);
 
     changed = true;
 }

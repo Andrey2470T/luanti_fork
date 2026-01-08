@@ -101,7 +101,7 @@ GUIFormSpecMenu::GUIFormSpecMenu(JoystickController *joystick,
 	m_client(client),
     m_fontmgr(rndsys->getFontManager()),
 	m_formspec_prepend(formspecPrepend),
-    m_menu(std::make_unique<UIRects>(rndsys, 0)),
+    drawBatch(std::make_unique<SpriteDrawBatch>(rndsys, cache)),
     m_form_src(fsrc),
     m_text_dst(tdst),
     m_joystick(joystick)
@@ -113,6 +113,8 @@ GUIFormSpecMenu::GUIFormSpecMenu(JoystickController *joystick,
 
 	m_tooltip_show_delay = (u32)g_settings->getS32("tooltip_show_delay");
 	m_tooltip_append_itemname = g_settings->getBool("tooltip_append_itemname");
+
+    m_menu = drawBatch->addRectsSprite({{}});
 }
 
 GUIFormSpecMenu::~GUIFormSpecMenu()
@@ -3454,25 +3456,25 @@ void GUIFormSpecMenu::drawMenu()
     v2u wndSize = m_rndsys->getWindowSize();
     recti allbg(0, 0, wndSize.X, wndSize.Y);
 
-    if (m_bgfullscreen)
-        m_menu->addRect(toRectT<f32>(allbg), {m_fullscreen_bgcolor});
-
-    if (m_bgnonfullscreen)
-        m_menu->addRect(toRectT<f32>(AbsoluteRect), {m_bgcolor});
-
     u32 cur_render_rect = 0;
     if (m_bgfullscreen || m_bgnonfullscreen) {
-        m_menu->rebuildMesh();
-
         if (m_bgfullscreen) {
+            m_menu->clear();
+            m_menu->updateRect(0, {toRectT<f32>(allbg), m_fullscreen_bgcolor});
             m_menu->setClipRect(allbg);
-            m_menu->draw(cur_render_rect, 1);
+            drawBatch->update();
+            drawBatch->draw();
+
             cur_render_rect++;
         }
 
         if (m_bgnonfullscreen) {
+            m_menu->clear();
+            m_menu->updateRect(0, {toRectT<f32>(AbsoluteRect), m_bgcolor});
             m_menu->setClipRect(AbsoluteClippingRect);
-            m_menu->draw(cur_render_rect, 1);
+            drawBatch->update();
+            drawBatch->draw();
+
             cur_render_rect++;
         }
     }
@@ -3537,9 +3539,10 @@ void GUIFormSpecMenu::drawMenu()
 		if (m_show_debug) {
 			recti rect = hovered->getAbsoluteClippingRect();
             m_menu->clear();
-            m_menu->addRect(toRectT<f32>(rect), {img::colorU32NumberToObject(0x22FFFF00)}, true);
+            m_menu->updateRect(0, {toRectT<f32>(rect), img::colorU32NumberToObject(0x22FFFF00)});
             m_menu->setClipRect(rect);
-            m_menu->draw(cur_render_rect, 1);
+            drawBatch->update();
+            drawBatch->draw();
             cur_render_rect++;
 		}
 

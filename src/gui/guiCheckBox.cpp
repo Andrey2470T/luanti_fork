@@ -19,7 +19,7 @@ namespace gui
 //! constructor
 CGUICheckBox::CGUICheckBox(bool checked, IGUIEnvironment *environment, IGUIElement *parent, s32 id, recti rectangle) :
         IGUICheckBox(environment, parent, id, rectangle), CheckTime(0), Pressed(false), Checked(checked), Border(false), Background(false),
-        CheckBoxBank(std::make_unique<UISpriteBank>(environment->getRenderSystem(), environment->getResourceCache()))
+        drawBatch(std::make_unique<SpriteDrawBatch>(environment->getRenderSystem(), environment->getResourceCache()))
 {
 	// this element can be tabbed into
 	setTabStop(true);
@@ -101,17 +101,18 @@ void CGUICheckBox::updateMesh()
         return;
     GUISkin *skin = Environment->getSkin();
 
-    CheckBoxBank->clear();
+    drawBatch->clear();
 
     if (skin) {
-        UIRects *CheckBoxRects = CheckBoxBank->addSprite({}, &AbsoluteClippingRect);
+        UIRects *CheckBoxRects = drawBatch->addRectsSprite({});
+        CheckBoxRects->setClipRect(AbsoluteClippingRect);
 
         recti frameRect(AbsoluteRect);
 
         // draw background
         if (Background) {
             img::color8 bgColor = skin->getColor(EGDC_3D_FACE);
-            CheckBoxRects->addRect(toRectT<f32>(frameRect), {bgColor, bgColor, bgColor, bgColor});
+            CheckBoxRects->addRect({toRectT<f32>(frameRect), bgColor});
         }
 
         // draw the border
@@ -138,18 +139,15 @@ void CGUICheckBox::updateMesh()
         skin->add3DSunkenPane(CheckBoxRects, skin->getColor(col),
                 false, true, toRectT<f32>(checkRect));
 
-        CheckBoxRects->rebuildMesh();
-        CheckBoxRects->draw();
-
         // the checked icon
         if (Checked) {
             u32 sprite_res = skin->getIcon(GUIDefaultIcon::CheckBoxChecked);
             std::string tex_name = "checkbox_" + std::to_string(sprite_res) + ".png";
             auto sprite_tex = Environment->getResourceCache()->get<img::Image>(ResourceType::IMAGE, tex_name);
 
-            if (sprite_tex) {
-                CheckBoxBank->addImageSprite(sprite_tex, toRectT<f32>(checkRect), &AbsoluteClippingRect);
-            }
+            if (sprite_tex)
+                CheckBoxRects->addRect({toRectT<f32>(checkRect), RectColors::defaultColors, sprite_tex});
+
         }
 
         // associated text
@@ -160,10 +158,12 @@ void CGUICheckBox::updateMesh()
             render::TTFont *font = skin->getFont();
             if (font) {
                 img::color8 text_c = skin->getColor(isEnabled() ? EGDC_BUTTON_TEXT : EGDC_GRAY_TEXT);
-                CheckBoxBank->addTextSprite(Text, toRectT<f32>(checkRect), text_c);
+                drawBatch->addTextSprite(Text, toRectT<f32>(checkRect), text_c);
             }
         }
     }
+
+    drawBatch->rebuild();
 
     Rebuild = false;
 }
@@ -175,7 +175,7 @@ void CGUICheckBox::draw()
 		return;
 
     updateMesh();
-    CheckBoxBank->drawBank();
+    drawBatch->draw();
 
     IGUIElement::draw();
 }

@@ -154,7 +154,7 @@ void HudStatbar::update()
     sprite->clear();
 
     const img::color8 color = img::white;
-    const std::array<img::color8, 4> colors = {color, color, color, color};
+    const RectColors colors = {color, color, color, color};
 
     img1 = cache->getOrLoad<img::Image>(ResourceType::IMAGE, elem->text);
     if (!img1)
@@ -368,7 +368,7 @@ void HudImage::update()
     rectf img_rect = getHudImageRect(cache, rndsys, elem->text, elem, true, &img1);
 
     auto imgSprite = dynamic_cast<UIRects *>(sprite);
-    imgSprite->updateRect(0, {img_rect, UISprite::defaultColors, img1});
+    imgSprite->updateRect(0, {img_rect, RectColors::defaultColors, img1});
 }
 
 HudCompass::HudCompass(Client *_client, const HudElement *elem, SpriteDrawBatch *drawBatch)
@@ -431,7 +431,7 @@ void HudCompass::update()
 
 void HudCompass::updateTranslate(const rectf &r, img::Image *img, s32 angle)
 {
-    const std::array<img::color8, 4> colors = UISprite::defaultColors;
+    const RectColors colors;
 
     // Compute source image scaling
 
@@ -485,7 +485,7 @@ void HudCompass::updateRotate(const rectf &r, img::Image *img, s32 angle)
     rectf destrect(dest_ulc.X, dest_ulc.Y, dest_lrc.X, dest_lrc.Y);
 
     auto compassSprite = dynamic_cast<UIRects *>(sprite);
-    compassSprite->addRect({destrect, UISprite::defaultColors, img});
+    compassSprite->addRect({destrect, RectColors::defaultColors, img});
 }
 
 HudMinimap::HudMinimap(Client *_client, const HudElement *elem)
@@ -505,7 +505,7 @@ void HudMinimap::update()
     destrect += calcHUDOffset(rndsys, destrect, elem, true, std::nullopt);
 
     auto minimapSprite = dynamic_cast<UIRects *>(sprite);
-    minimapSprite->updateRect(0, {destrect, UISprite::defaultColors}, rectf(0, 1, 1, 0));
+    minimapSprite->updateRect(0, {destrect, RectColors::defaultColors}, rectf(0, 1, 1, 0));
 
     viewport = recti(destrect.ULC.X, destrect.ULC.Y, destrect.LRC.X, destrect.LRC.Y);
     minimap->updateActiveMarkers(viewport);
@@ -568,7 +568,7 @@ void HudInventoryList::updateSelectedSlot(u32 selected_index)
         selected_r.ULC -= padding*2;
         selected_r.LRC += padding*2;
 
-        invSprite->addRect({selected_r, UISprite::defaultColors, selected_img});
+        invSprite->addRect({selected_r, RectColors::defaultColors, selected_img});
     } else {
         img::color8 c_outside(img::blue);
 
@@ -618,7 +618,7 @@ void HudInventoryList::update()
 
     auto invSprite = dynamic_cast<UIRects *>(sprite);
 
-    std::array<img::color8, 4> colors = {img::white, img::white, img::white, img::white};
+    RectColors colors;
     
     v2u wnd_size = rndsys->getWindowSize();
 	list_bisected = width / wnd_size.X <= g_settings->getFloat("hud_hotbar_max_width");
@@ -650,7 +650,7 @@ void HudInventoryList::update()
                 rectf destrect = getSlotRect(i);
                 destrect += list_offset;
 
-                invSprite->addRect({destrect, {color, color, color, color}});
+                invSprite->addRect({destrect, color});
             }
         }
         else {
@@ -659,13 +659,13 @@ void HudInventoryList::update()
                 destrect += list_offset;
                 destrect -= shift_up;
 
-                invSprite->addRect({destrect, {color, color, color, color}});
+                invSprite->addRect({destrect, color});
             }
             for (u32 i = invlistItemCount / 2; i < invlistItemCount; i++) {
                 rectf destrect = getSlotRect(i);
                 destrect += list_offset;
 
-                invSprite->addRect({destrect, {color, color, color, color}});
+                invSprite->addRect({destrect, color});
             }
         }
     }

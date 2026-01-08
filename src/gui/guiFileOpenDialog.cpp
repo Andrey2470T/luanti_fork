@@ -28,8 +28,7 @@ CGUIFileOpenDialog::CGUIFileOpenDialog(const wchar_t *title,
 						(parent->getAbsolutePosition().getWidth() - FOD_WIDTH) / 2 + FOD_WIDTH,
 						(parent->getAbsolutePosition().getHeight() - FOD_HEIGHT) / 2 + FOD_HEIGHT)),
         FileNameText(0), Dragging(false),
-        DialogBank(std::make_unique<UISpriteBank>(environment->getRenderSystem(),
-            environment->getResourceCache()))
+        drawBatch(std::make_unique<SpriteDrawBatch>(environment->getRenderSystem(), environment->getResourceCache()))
 {
 	Text = title;
 
@@ -91,8 +90,8 @@ CGUIFileOpenDialog::CGUIFileOpenDialog(const wchar_t *title,
 
 	fillListBox();
 	
-    DialogBank->addSprite({});
-    DialogBank->addTextSprite({});
+    drawBatch->addRectsSprite({});
+    drawBatch->addTextSprite(L"");
 }
 
 //! destructor
@@ -272,28 +271,29 @@ void CGUIFileOpenDialog::updateMesh()
 
     recti rect = AbsoluteRect;
 
-    auto sprite0 = DialogBank->getSprite(0);
+    auto sprite0 = drawBatch->getSprite(0);
     sprite0->clear();
 
     rectf cliprect = toRectT<f32>(AbsoluteClippingRect);
     skin->add3DWindowBackground(sprite0, true, skin->getColor(EGDC_ACTIVE_BORDER), toRectT<f32>(rect), &cliprect);
-    sprite0->rebuildMesh();
     AbsoluteClippingRect = toRectT<s32>(cliprect);
     sprite0->setClipRect(AbsoluteClippingRect);
 
-    if (Text.size()) {
+    if (Text.size() && Environment->getSkin()->getFont(EGDF_WINDOW)) {
         rect.ULC.X += 2;
         rect.LRC.X -= skin->getSize(EGDS_WINDOW_BUTTON_WIDTH) + 5;
 
         render::TTFont *font = skin->getFont(EGDF_WINDOW);
         if (font) {
-            auto sprite1 = dynamic_cast<UITextSprite *>(DialogBank->getSprite(1));
+            auto sprite1 = dynamic_cast<UITextSprite *>(drawBatch->getSprite(1));
             sprite1->setText(Text);
-            sprite1->setOverrideColor(skin->getColor(EGDC_ACTIVE_CAPTION));
-            sprite1->updateBuffer(toRectT<f32>(rect));
+            sprite1->getTextObj().setOverrideColor(skin->getColor(EGDC_ACTIVE_CAPTION));
+            sprite1->setBoundRect(toRectT<f32>(rect));
             sprite1->setClipRect(AbsoluteClippingRect);
         }
     }
+
+    drawBatch->rebuild();
 
     Rebuild = false;
 }
@@ -305,11 +305,7 @@ void CGUIFileOpenDialog::draw()
 		return;
 
     updateMesh();
-    DialogBank->getSprite(0)->draw();
-
-    if (Text.size() && Environment->getSkin()->getFont(EGDF_WINDOW)) {
-        DialogBank->getSprite(1)->draw();
-    }
+    drawBatch->draw();
 
 	IGUIElement::draw();
 }

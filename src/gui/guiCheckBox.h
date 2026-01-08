@@ -7,7 +7,8 @@
 #include "IGUICheckBox.h"
 #include <memory>
 
-class UISpriteBank;
+class SpriteDrawBatch;
+class UIRects;
 
 namespace gui
 {
@@ -55,7 +56,7 @@ private:
 	bool Border;
 	bool Background;
 
-    std::unique_ptr<UISpriteBank> CheckBoxBank;
+    std::unique_ptr<SpriteDrawBatch> drawBatch;
 };
 
 } // end namespace gui

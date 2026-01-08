@@ -78,8 +78,7 @@ void Hud::updateCrosshair()
         r.ULC = toV2T<f32>(wnd_size)/2.0f - scaled_size/2.0f;
         r.LRC = r.ULC + scaled_size;
 
-        crosshair->updateRect(
-            0, {r, {crosshair_color, crosshair_color, crosshair_color, crosshair_color}, img});
+        crosshair->updateRect(0, {r, crosshair_color, img});
     };
 
     std::string imgname;
@@ -228,7 +227,7 @@ void Hud::initCrosshair()
         g_settings->getS32("crosshair_alpha"));
 
     auto crosshair_image = cache->get<img::Image>(ResourceType::IMAGE, crosshair_img);
-    crosshair = drawBatch->addRectsSprite({{rectf(), UISprite::defaultColors, crosshair_image}});
+    crosshair = drawBatch->addRectsSprite({{rectf(), RectColors::defaultColors, crosshair_image}});
 }
 
 void Hud::resortElements()

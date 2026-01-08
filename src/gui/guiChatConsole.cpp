@@ -56,8 +56,7 @@ GUIChatConsole::GUIChatConsole(
 	m_client(client),
 	m_menumgr(menumgr),
     m_animate_time_old(porting::getTimeMs()),
-    m_chat_bank(std::make_unique<UISpriteBank>(env->getRenderSystem(),
-        env->getResourceCache()))
+    drawBatch(std::make_unique<SpriteDrawBatch>(env->getRenderSystem(), env->getResourceCache()))
 {
 	// load background settings
 	s32 console_alpha = g_settings->getS32("console_alpha");
@@ -99,10 +98,10 @@ GUIChatConsole::GUIChatConsole(
 	m_scrollbar->setLargeStep(1);
 	m_scrollbar->setSmallStep(1);
 
-    m_chat_bank->addImageSprite(m_background);
-    m_chat_bank->addTextSprite(L"");
-    m_chat_bank->addTextSprite(L"");
-    m_chat_bank->addSprite({{}});
+    drawBatch->addRectsSprite({{rectf(), RectColors::defaultColors, m_background}});
+    drawBatch->addTextSprite(L"");
+    drawBatch->addTextSprite(L"");
+    drawBatch->addRectsSprite({{}});
 }
 
 void GUIChatConsole::openConsole(f32 scale)
@@ -210,6 +209,8 @@ void GUIChatConsole::updateMesh()
         updatePrompt();
     }
 
+    drawBatch->rebuild();
+
     Rebuild = false;
 }
 
@@ -222,7 +223,7 @@ void GUIChatConsole::draw()
 
 	// Draw console elements if visible
 	if (m_height > 0)
-        m_chat_bank->drawBank();
+        drawBatch->draw();
 
 	gui::IGUIElement::draw();
 }
@@ -304,14 +305,13 @@ void GUIChatConsole::updateBackground()
 {
     if (!Rebuild)
         return;
-    auto background = dynamic_cast<ImageSprite *>(m_chat_bank->getSprite(0));
+    auto background = dynamic_cast<UIRects *>(drawBatch->getSprite(0));
 
     if (m_background != nullptr)
-        background->update(m_background, rectf(0, -m_height, m_screensize.X, 0), m_background_color, &AbsoluteClippingRect);
+        background->updateRect(0, {rectf(0, -m_height, m_screensize.X, 0), m_background_color, m_background});
 	else
-        background->update(m_background, rectf(0, 0, m_screensize.X, m_height), m_background_color, &AbsoluteClippingRect);
-
-    background->rebuildMesh();
+        background->updateRect(0, {rectf(0, 0, m_screensize.X, m_height), m_background_color});
+    background->setClipRect(AbsoluteClippingRect);
 }
 
 void GUIChatConsole::updateText()
@@ -354,12 +354,12 @@ void GUIChatConsole::updateText()
         mergedText += EnrichedString(L"\n");
 	}
 
-    auto text = dynamic_cast<UITextSprite *>(m_chat_bank->getSprite(1));
+    auto text = dynamic_cast<UITextSprite *>(drawBatch->getSprite(1));
 
     if (text->getText() != mergedText.getString() || Rebuild) {
         text->setText(mergedText);
         text->setClipRect(AbsoluteClippingRect);
-        text->updateBuffer(rectf(mergedRect));
+        text->setBoundRect(mergedRect);
     }
 
 	updateScrollbar();
@@ -388,13 +388,13 @@ void GUIChatConsole::updatePrompt()
 	recti destrect(
 		font_width, y, font_width + text_width, y + font_height);
 
-    auto text = dynamic_cast<UITextSprite *>(m_chat_bank->getSprite(2));
+    auto text = dynamic_cast<UITextSprite *>(drawBatch->getSprite(2));
 
     if (text->getText() != prompt_text || Rebuild) {
         text->setText(prompt_text);
-        text->setOverrideColor(img::white);
+        text->getTextObj().setOverrideColor(img::white);
         text->setClipRect(AbsoluteClippingRect);
-        text->updateBuffer(rectf(
+        text->setBoundRect(rectf(
             font_width, y, font_width + text_width, y + font_height));
     }
 
@@ -417,9 +417,8 @@ void GUIChatConsole::updatePrompt()
 				x + font_width * MYMAX(cursor_len, 1),
 				y + font_height * (cursor_len ? m_cursor_height+1 : 1)
 			);
-            img::color8 cursor_color = img::white;
-            auto cursor = dynamic_cast<UIRects *>(m_chat_bank->getSprite(3));
-            cursor->updateRect(0, toRectT<f32>(destrect), {cursor_color, cursor_color, cursor_color, cursor_color}, true);
+            auto cursor = dynamic_cast<UIRects *>(drawBatch->getSprite(3));
+            cursor->updateRect(0, {toRectT<f32>(destrect)});
             cursor->setClipRect(AbsoluteClippingRect);
 		}
 	}

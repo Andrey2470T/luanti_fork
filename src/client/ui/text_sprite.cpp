@@ -59,7 +59,7 @@ void UITextSprite::appendToBatch()
 
     auto color = text.getActiveColor();
 
-    std::array<img::color8, 4> arrColors = {color, color, color, color};
+    RectColors arrColors = {color, color, color, color};
 
     v2f line_offset = offset;
     u32 char_n = 0;
@@ -96,7 +96,7 @@ void UITextSprite::appendToBatch()
                 rectf shadowGlyphPos = glyphPos;
                 shadowGlyphPos += v2f(shadowOffset);
 
-                std::array<img::color8, 4> shadowColors = arrColors;
+                RectColors shadowColors = arrColors;
                 shadowColors[0].A(shadowAlpha);
                 shadowColors[1].A(shadowAlpha);
                 shadowColors[2].A(shadowAlpha);

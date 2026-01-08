@@ -7,7 +7,7 @@
 
 #include "guiEditBox.h"
 
-class UISpriteBank;
+class SpriteDrawBatch;
 
 class GUIEditBoxWithScrollBar : public GUIEditBox
 {
@@ -61,7 +61,7 @@ protected:
 	bool m_bg_color_used;
 	img::color8 m_bg_color;
 
-    std::unique_ptr<UISpriteBank> m_editbox_bank;
+    std::unique_ptr<SpriteDrawBatch> drawBatch;
 };
 
 

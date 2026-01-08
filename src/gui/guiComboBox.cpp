@@ -9,6 +9,7 @@
 #include "IGUIButton.h"
 #include "guiListBox.h"
 #include "client/render/rendersystem.h"
+#include "client/ui/extra_images.h"
 
 namespace gui
 {
@@ -20,7 +21,7 @@ CGUIComboBox::CGUIComboBox(IGUIEnvironment *environment, IGUIElement *parent,
 		ListButton(nullptr), SelectedText(nullptr), ListBox(nullptr), LastFocus(nullptr),
         Selected(-1), HAlign(GUIAlignment::UpperLeft), VAlign(EGUIA_CENTER), MaxSelectionRows(5), HasFocus(false),
         ActiveFont(nullptr),
-        Border(std::make_unique<UISprite>(nullptr, environment->getRenderSystem()->getRenderer(), environment->getResourceCache()))
+        drawBatch(std::make_unique<SpriteDrawBatch>(environment->getRenderSystem(), environment->getResourceCache()))
 {
 	GUISkin *skin = Environment->getSkin();
 
@@ -47,6 +48,8 @@ CGUIComboBox::CGUIComboBox(IGUIEnvironment *environment, IGUIElement *parent,
 	// this element can be tabbed to
 	setTabStop(true);
 	setTabOrder(-1);
+
+    Border = drawBatch->addRectsSprite({});
 }
 
 void CGUIComboBox::setTextAlignment(EGUI_ALIGNMENT horizontal, EGUI_ALIGNMENT vertical)
@@ -387,10 +390,11 @@ void CGUIComboBox::updateMesh()
     // draw the border
 
     Border->clear();
-    skin->add3DSunkenPane(Border.get(), skin->getColor(EGDC_3D_HIGH_LIGHT),
-            true, true, toRectT<f32>(frameRect));
-    Border->rebuildMesh();
+    skin->add3DSunkenPane(Border, skin->getColor(EGDC_3D_HIGH_LIGHT),
+        true, true, toRectT<f32>(frameRect));
     Border->setClipRect(AbsoluteClippingRect);
+
+    drawBatch->rebuild();
 
     Rebuild = false;
 }
@@ -402,7 +406,7 @@ void CGUIComboBox::draw()
 		return;
 
     updateMesh();
-    Border->draw();
+    drawBatch->draw();
 
 	// draw children
 	IGUIElement::draw();

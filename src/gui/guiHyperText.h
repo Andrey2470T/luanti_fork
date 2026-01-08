@@ -12,7 +12,8 @@
 class Client;
 class GUIScrollBar;
 class FontManager;
-class UISpriteBank;
+class SpriteDrawBatch;
+class UIRects;
 
 class ParsedText
 {
@@ -178,7 +179,7 @@ protected:
 	s32 m_voffset;
 	std::vector<RectWithMargin> m_floating;
 
-    std::unique_ptr<UISpriteBank> m_box;
+    std::unique_ptr<SpriteDrawBatch> drawBatch;
 };
 
 class GUIHyperText : public gui::IGUIElement

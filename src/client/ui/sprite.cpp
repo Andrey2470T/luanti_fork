@@ -21,6 +21,8 @@ void updateMaxArea(rectf &curMaxArea, const v2f &primULC, const v2f &primLRC, bo
     init = true;
 }
 
+const std::array<img::color8, 4> RectColors::defaultColors = {img::white, img::white, img::white, img::white};
+
 rectf UIShape::getPrimitiveArea(u32 n) const
 {
     UIPrimitiveType type = getPrimitiveType(n);
@@ -75,7 +77,7 @@ void UIShape::addTriangle(
     updateMaxArea(maxArea, v2f(p1.X, p3.Y), p2, maxAreaInit);
 }
 void UIShape::addRectangle(
-    const rectf &r, const std::array<img::color8, 4> &colors,
+    const rectf &r, const RectColors &colors,
     const rectf &texr, const v2u &imgSize) {
     f32 invW = 1.0f / imgSize.X;
     f32 invH = 1.0f / imgSize.Y;
@@ -123,7 +125,7 @@ void UIShape::updateTriangle(
     updateMaxArea(maxArea, v2f(p1.X, p3.Y), p2, maxAreaInit);
 }
 void UIShape::updateRectangle(
-    u32 n, const rectf &r, const std::array<img::color8, 4> &colors,
+    u32 n, const rectf &r, const RectColors &colors,
     const rectf &texr, const v2u &imgSize)
 {
     auto rect = dynamic_cast<Rectangle *>(primitives.at(n).get());
@@ -340,7 +342,7 @@ void UIShape::updateBuffer(MeshBuffer *buf, u32 primitiveNum)
     }
     case UIPrimitiveType::RECTANGLE: {
         auto rect = dynamic_cast<Rectangle *>(p);
-        Batcher2D::rectangle(buf, rect->r, rect->colors, rect->texr);
+        Batcher2D::rectangle(buf, rect->r, rect->colors.colors, rect->texr);
         break;
     }
     case UIPrimitiveType::ELLIPSE: {
@@ -352,8 +354,6 @@ void UIShape::updateBuffer(MeshBuffer *buf, u32 primitiveNum)
         break;
     }
 }
-
-const std::array<img::color8, 4> UISprite::defaultColors = {img::white, img::white, img::white, img::white};
 
 /*
 void BankAutoAlignment::centerBank()
@@ -394,10 +394,9 @@ void BankAutoAlignment::alignSprite(u32 spriteID, std::optional<rectf> overrideR
 }*/
 
 // if auto-align is enabled, the rects areas must be absolute, otherwise - relative to the ulc
-UIRects *SpriteDrawBatch::addRectsSprite(
-    const std::vector<TexturedRect> &rects,
-    u32 depthLevel,
-    const recti *clipRect)
+UIRects *SpriteDrawBatch::addRectsSprite(const std::vector<TexturedRect> &rects,
+    const recti *clipRect,
+    u32 depthLevel)
 {
     UIRects *rectsSprite = new UIRects(cache, this, rndsys->getPool(false), rects, depthLevel);
     sprites.emplace_back(rectsSprite);
@@ -416,7 +415,7 @@ UIRects *SpriteDrawBatch::addRectsSprite(
 Image2D9Slice *SpriteDrawBatch::addImage2D9Slice(
     const rectf &src_rect, const rectf &dest_rect,
     const rectf &middle_rect, img::Image *baseImg,
-    u32 depthLevel, const std::array<img::color8, 4> &colors,
+    u32 depthLevel, const RectColors &colors,
     std::optional<AtlasTileAnim> anim)
 {
     Image2D9Slice *img2D9Slice = new Image2D9Slice(cache, this, rndsys->getPool(false),
@@ -431,12 +430,11 @@ Image2D9Slice *SpriteDrawBatch::addImage2D9Slice(
     return img2D9Slice;
 }
 
-UITextSprite *SpriteDrawBatch::addTextSprite(
-    const std::wstring &text,
+UITextSprite *SpriteDrawBatch::addTextSprite(const std::wstring &text,
     std::optional<std::variant<rectf, v2f>> shift,
     const img::color8 &textColor,
-    u32 depthLevel,
     const recti *clipRect,
+    u32 depthLevel,
     bool wordWrap,
     GUIAlignment horizAlign,
     GUIAlignment vertAlign)

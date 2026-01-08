@@ -77,11 +77,14 @@ GUIEngine::GUIEngine(JoystickController *joystick,
 	m_data(data),
     m_rescache(cache),
     m_kill(kill),
-    m_background(std::make_unique<ImageSprite>(m_rndsys, m_rescache)),
-    m_overlay(std::make_unique<ImageSprite>(m_rndsys, m_rescache)),
-    m_header(std::make_unique<ImageSprite>(m_rndsys, m_rescache)),
-    m_footer(std::make_unique<ImageSprite>(m_rndsys, m_rescache))
+    baseDrawBatch(std::make_unique<SpriteDrawBatch>(m_rndsys, m_rescache)),
+    headerDrawBatch(std::make_unique<SpriteDrawBatch>(m_rndsys, m_rescache))
 {
+    m_background = baseDrawBatch->addRectsSprite({{}});
+    m_overlay = baseDrawBatch->addRectsSprite({{}});
+    m_header = headerDrawBatch->addRectsSprite({{}});
+    m_footer = baseDrawBatch->addRectsSprite({{}});
+
 	// initialize texture pointers
 	for (image_definition &texture : m_textures) {
         texture.texture = nullptr;
@@ -333,6 +336,9 @@ void GUIEngine::run()
 
             drawFooter();
 
+            baseDrawBatch->rebuild();
+            baseDrawBatch->draw();
+
             m_rndsys->getGUIEnvironment()->drawAll();
 
 			// The header *must* be drawn after the menu because it uses
@@ -340,6 +346,9 @@ void GUIEngine::run()
 			// The header *can* be drawn after the menu because it never intersects
 			// the menu.
             drawHeader();
+
+            headerDrawBatch->update();
+            headerDrawBatch->draw();
 
             m_rndsys->endDraw();
 		}
@@ -390,12 +399,13 @@ void GUIEngine::drawBackground()
 
 	img::Image* texture = m_textures[TEX_LAYER_BACKGROUND].texture;
 
+    m_background->clear();
+
 	/* If no texture, draw background of solid color */
 	if(!texture){
         img::color8 color(img::PF_RGBA8,80,58,37,255);
 		recti rect(0, 0, screensize.X, screensize.Y);
-        m_background->update(nullptr, toRectT<f32>(rect), color);
-        m_background->draw();
+        m_background->addRect({toRectT<f32>(rect), color});
 		return;
 	}
 
@@ -409,10 +419,7 @@ void GUIEngine::drawBackground()
 		for (unsigned int x = 0; x < screensize.X; x += tilesize.X )
 		{
 			for (unsigned int y = 0; y < screensize.Y; y += tilesize.Y )
-			{
-                m_background->update(texture, rectf(x, y, x+tilesize.X, y+tilesize.Y), img::white);
-                m_background->draw();
-			}
+                m_background->addRect({rectf(x, y, x+tilesize.X, y+tilesize.Y), img::white, texture});
 		}
 		return;
 	}
@@ -431,8 +438,7 @@ void GUIEngine::drawBackground()
 		(s32) screensize.Y - (s32) bg_size.Y
 	) / 2;
 	/* Draw background texture */
-    m_background->update(texture, rectf(offset.X, offset.Y, bg_size.X + offset.X, bg_size.Y + offset.Y), img::white);
-    m_background->draw();
+    m_background->addRect({rectf(offset.X, offset.Y, bg_size.X + offset.X, bg_size.Y + offset.Y), img::white, texture});
 }
 
 /******************************************************************************/
@@ -447,8 +453,7 @@ void GUIEngine::drawOverlay()
 		return;
 
 	/* Draw background texture */
-    m_background->update(texture, rectf(0, 0, screensize.X, screensize.Y), img::white);
-    m_background->draw();
+    m_overlay->updateRect(0, {rectf(0, 0, screensize.X, screensize.Y)});
 }
 
 /******************************************************************************/
@@ -505,8 +510,7 @@ void GUIEngine::drawHeader()
 	// 2. Move
 	desired_rect.constrainTo(max_rect);
 
-    m_background->update(texture, toRectT<f32>(desired_rect), img::white);
-    m_background->draw();
+    m_header->updateRect(0, {toRectT<f32>(desired_rect), img::white, texture});
 }
 
 /******************************************************************************/
@@ -534,8 +538,7 @@ void GUIEngine::drawFooter()
 		rect += v2i(screensize.X/2,screensize.Y-footersize.Y);
 		rect -= v2i(footersize.X/2, 0);
 
-        m_background->update(texture, toRectT<f32>(rect), img::white);
-        m_background->draw();
+        m_footer->updateRect(0, {toRectT<f32>(rect), img::white, texture});
 	}
 }
 

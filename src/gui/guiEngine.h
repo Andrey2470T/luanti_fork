@@ -181,10 +181,12 @@ private:
 	/** script basefolder */
     std::string                           m_scriptdir;
 
-    std::unique_ptr<ImageSprite>          m_background;
-    std::unique_ptr<ImageSprite>          m_overlay;
-    std::unique_ptr<ImageSprite>          m_header;
-    std::unique_ptr<ImageSprite>          m_footer;
+    std::unique_ptr<SpriteDrawBatch>      baseDrawBatch;
+    UIRects                              *m_background;
+    UIRects                              *m_overlay;
+    std::unique_ptr<SpriteDrawBatch>      headerDrawBatch;
+    UIRects                              *m_header;
+    UIRects                              *m_footer;
 
     f32 m_animation_time = 0.0f;
 

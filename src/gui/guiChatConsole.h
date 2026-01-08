@@ -13,7 +13,8 @@
 
 class Client;
 class GUIScrollBar;
-class UISpriteBank;
+class SpriteDrawBatch;
+class UIRects;
 
 class GUIChatConsole : public gui::IGUIElement
 {
@@ -127,7 +128,7 @@ private:
 	render::TTFont *m_font;
 	v2u m_fontsize;
 
-    std::unique_ptr<UISpriteBank> m_chat_bank;
+    std::unique_ptr<SpriteDrawBatch> drawBatch;
 
 	// Enable clickable chat weblinks
 	bool m_cache_clickable_chat_weblinks;

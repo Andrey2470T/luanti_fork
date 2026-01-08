@@ -626,7 +626,7 @@ u32 ParsedText::parseTag(const wchar_t *text, u32 cursor)
 TextDrawer::TextDrawer(const wchar_t *text, Client *client,
         gui::IGUIEnvironment *environment) :
         m_text(environment->getRenderSystem()->getFontManager(), text), m_client(client), m_guienv(environment),
-        m_box(std::make_unique<UISpriteBank>(environment->getRenderSystem(), environment->getResourceCache()))
+        drawBatch(std::make_unique<SpriteDrawBatch>(environment->getRenderSystem(), environment->getResourceCache()))
 {
 	// Size all elements
 	for (auto &p : m_text.m_paragraphs) {
@@ -938,10 +938,10 @@ void TextDrawer::draw(const recti &clip_rect,
 	v2i offset = dest_offset;
 	offset.Y += m_voffset;
 
-    m_box->clear();
+    drawBatch->clear();
 
 	if (m_text.background_type == ParsedText::BACKGROUND_COLOR)
-        m_box->addSprite({{toRectT<f32>(clip_rect), {m_text.background_color}}});
+        drawBatch->addRectsSprite({{toRectT<f32>(clip_rect), m_text.background_color}});
 
 	for (auto &p : m_text.m_paragraphs) {
 		for (auto &el : p.elements) {
@@ -962,7 +962,7 @@ void TextDrawer::draw(const recti &clip_rect,
 					break;
 
 				if (el.type == ParsedText::ELEMENT_TEXT)
-                    m_box->addTextSprite(el.text, toRectT<f32>(rect), color, &clip_rect);
+                    drawBatch->addTextSprite(el.text, toRectT<f32>(rect), color, &clip_rect);
 
 				if (el.underline &&  el.drawwidth) {
 					s32 linepos = el.pos.Y + offset.Y +
@@ -973,7 +973,7 @@ void TextDrawer::draw(const recti &clip_rect,
 							el.pos.X + offset.X + el.drawwidth,
 							linepos + (el.baseline >> 3));
 
-                    m_box->addSprite({{toRectT<f32>(linerect), {color}}}, &clip_rect);
+                    drawBatch->addRectsSprite({{toRectT<f32>(linerect), {color}}}, &clip_rect);
 				}
 			} break;
 
@@ -981,7 +981,7 @@ void TextDrawer::draw(const recti &clip_rect,
 				img::Image *texture =
                         m_guienv->getResourceCache()->getOrLoad<img::Image>(ResourceType::IMAGE, wide_to_utf8(el.text));
                 if (texture)
-                    m_box->addImageSprite(texture, toRectT<f32>(rect), &clip_rect);
+                    drawBatch->addRectsSprite({{toRectT<f32>(rect), img::white, texture}}, &clip_rect);
 			} break;
 
 			case ParsedText::ELEMENT_ITEM: {
@@ -999,7 +999,8 @@ void TextDrawer::draw(const recti &clip_rect,
 		}
 	}
 
-    m_box->drawBank();
+    drawBatch->rebuild();
+    drawBatch->draw();
 }
 
 // -----------------------------------------------------------------------------

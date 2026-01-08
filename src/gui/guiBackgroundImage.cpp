@@ -53,7 +53,7 @@ void GUIBackgroundImage::updateMesh()
 
 	if (m_middle.getArea() == 0) {
         auto img = dynamic_cast<UIRects *>(image);
-        img->updateRect(0, {toRectT<f32>(rect), UISprite::defaultColors, texture});
+        img->updateRect(0, {toRectT<f32>(rect), RectColors::defaultColors, texture});
 	} else {
         auto img = dynamic_cast<Image2D9Slice *>(image);
         img->updateRects(toRectT<f32>(srcrect), toRectT<f32>(rect), toRectT<f32>(m_middle), texture);

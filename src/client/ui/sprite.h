@@ -28,6 +28,34 @@ extern std::array<u8, 4> primICounts;
 
 void updateMaxArea(rectf &curMaxArea, const v2f &primULC, const v2f &primLRC, bool &init);
 
+struct RectColors
+{
+    static const std::array<img::color8, 4> defaultColors;
+    std::array<img::color8, 4> colors=defaultColors;
+
+    RectColors(const img::color8 &color)
+    {
+        colors = {color, color, color, color};
+    }
+    RectColors(const std::initializer_list<img::color8> &_colors={img::white, img::white, img::white, img::white})
+    {
+        std::copy(_colors.begin(), _colors.end(), colors.begin());
+    }
+    RectColors(const std::array<img::color8, 4> &_colors)
+    {
+        colors = _colors;
+    }
+
+    const img::color8 &operator[](u8 index) const
+    {
+        return colors.at(index);
+    }
+    img::color8 &operator[](u8 index)
+    {
+        return colors.at(index);
+    }
+};
+
 class UIShape
 {
 	struct Primitive {
@@ -61,9 +89,9 @@ class UIShape
 	struct Rectangle : public Primitive {
 		rectf r;
         rectf texr;
-		std::array<img::color8, 4> colors;
+        RectColors colors;
 
-        Rectangle(const rectf &_r, const std::array<img::color8, 4> &_colors, const rectf &_texr=rectf())
+        Rectangle(const rectf &_r, const RectColors &_colors, const rectf &_texr=rectf())
             : Primitive(UIPrimitiveType::RECTANGLE), r(_r), texr(_texr), colors(_colors)
         {}
 	};
@@ -105,7 +133,7 @@ public:
         const img::color8 &c1, const img::color8 &c2, const img::color8 &c3);
     void addRectangle(
         const rectf &r,
-        const std::array<img::color8, 4> &colors,
+        const RectColors &colors,
         const rectf &texr=rectf(), // in pixel coords
         const v2u &imgSize=v2u(1,1));
     void addEllipse(f32 a, f32 b, const v2f &center, const img::color8 &c);
@@ -120,7 +148,7 @@ public:
         const img::color8 &c1, const img::color8 &c2, const img::color8 &c3);
     void updateRectangle(
         u32 n,
-        const rectf &r, const std::array<img::color8, 4> &colors,
+        const rectf &r, const RectColors &colors,
         const rectf &texr=rectf(),  const v2u &imgSize=v2u(1,1));
     void updateEllipse(u32 n, f32 a, f32 b, const v2f &center, const img::color8 &c);
 
@@ -166,7 +194,6 @@ protected:
     u8 depthLevel = 0;
 
 public:
-    static const std::array<img::color8, 4> defaultColors;
     bool changed = false;
 
     UISprite(ResourceCache *_cache, SpriteDrawBatch *_drawBatch, u32 _depthLevel=0)
@@ -269,7 +296,7 @@ typedef std::pair<u32, u32> AtlasTileAnim;
 struct TexturedRect
 {
     rectf area;
-    std::array<img::color8, 4> colors = UISprite::defaultColors;
+    RectColors colors = RectColors::defaultColors;
     img::Image *image = nullptr;
     std::optional<AtlasTileAnim> anim=std::nullopt;
 };
@@ -324,20 +351,20 @@ public:
     }
     UIRects *addRectsSprite(
         const std::vector<TexturedRect> &rects,
-        u32 depthLevel=0,
-        const recti *clipRect=nullptr);
+        const recti *clipRect=nullptr,
+        u32 depthLevel=0);
     Image2D9Slice *addImage2D9Slice(
         const rectf &src_rect, const rectf &dest_rect,
         const rectf &middle_rect, img::Image *baseImg,
         u32 depthLevel=0,
-        const std::array<img::color8, 4> &colors=UISprite::defaultColors,
+        const RectColors &colors=RectColors::defaultColors,
         std::optional<AtlasTileAnim> anim=std::nullopt);
     UITextSprite *addTextSprite(
         const std::wstring &text,
         std::optional<std::variant<rectf, v2f>> shift=std::nullopt,
         const img::color8 &textColor=img::white,
-        u32 depthLevel=0,
         const recti *clipRect=nullptr,
+        u32 depthLevel=0,
         bool wordWrap=false,
         GUIAlignment horizAlign=GUIAlignment::Center,
         GUIAlignment vertAlign=GUIAlignment::Center);

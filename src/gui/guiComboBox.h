@@ -7,7 +7,8 @@
 #include "IGUIComboBox.h"
 #include "IGUIStaticText.h"
 
-class UISprite;
+class SpriteDrawBatch;
+class UIRects;
 
 namespace gui
 {
@@ -99,7 +100,8 @@ private:
 	bool HasFocus;
 	render::TTFont *ActiveFont;
 
-    std::unique_ptr<UISprite> Border;
+    std::unique_ptr<SpriteDrawBatch> drawBatch;
+    UIRects *Border;
 };
 
 } // end namespace gui

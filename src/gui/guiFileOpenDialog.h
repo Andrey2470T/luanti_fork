@@ -81,7 +81,7 @@ protected:
 	IGUIElement *EventParent;
 	bool Dragging;
 	
-	std::unique_ptr<UISpriteBank> DialogBank;
+    std::unique_ptr<SpriteDrawBatch> drawBatch;
 };
 
 } // end namespace gui
