@@ -5,6 +5,9 @@
 #include "minimap.h"
 #include <cmath>
 #include "client/core/client.h"
+#include "client/mesh/defaultVertexTypes.h"
+#include "client/render/atlas.h"
+#include "client/ui/extra_images.h"
 #include "nodedef.h"
 #include "client/map/clientmap.h"
 #include "scripting_client.h"
@@ -168,9 +171,11 @@ void MinimapUpdateThread::getMap(v3s16 pos, s16 size, s16 height)
 //// Mapper
 ////
 
-Minimap::Minimap(Client *_client, Renderer *_renderer, ResourceCache *_cache)
-    : UISprite(nullptr, _renderer, _cache, rectf(), rectf(v2f(-1.0f, 1.0f), v2f(1.0f, -1.0f)), {}, false),
-    client(_client), data(new MinimapData()), m_ndef(_client->getNodeDefManager())
+Minimap::Minimap(Client *_client, UIRects *_rect)
+    //: UISprite(nullptr, _rect, _cache, rectf(), rectf(v2f(-1.0f, 1.0f), v2f(1.0f, -1.0f)), {}, false),
+    : client(_client), data(new MinimapData()), m_renderer(client->getRenderSystem()->getRenderer()),
+    m_cache(client->getResourceCache()), m_rect(_rect),
+    m_buffer(std::make_unique<MeshBuffer>(4, 6, true, VType2D)), m_ndef(_client->getNodeDefManager())
 {
 	// Initialize static settings
     m_surface_mode_scan_height = g_settings->getBool("minimap_double_scan_height") ? 256 : 128;
@@ -188,13 +193,15 @@ Minimap::Minimap(Client *_client, Renderer *_renderer, ResourceCache *_cache)
 
 	setModeIndex(0);
 
-    data->minimap_overlay_round = cache->getOrLoad<render::Texture2D>(ResourceType::TEXTURE, "minimap_overlay_round.png");
-    data->minimap_overlay_square = cache->getOrLoad<render::Texture2D>(ResourceType::TEXTURE, "minimap_overlay_square.png");
-    data->player_marker =cache->getOrLoad<render::Texture2D>(ResourceType::TEXTURE, "player_marker.png");
-    data->object_marker_red = cache->getOrLoad<render::Texture2D>(ResourceType::TEXTURE, "object_marker_red.png");
+    data->minimap_overlay_round = m_cache->get<img::Image>(ResourceType::IMAGE, "minimap_overlay_round.png");
+    data->minimap_overlay_square = m_cache->get<img::Image>(ResourceType::IMAGE, "minimap_overlay_square.png");
+    data->player_marker = m_cache->get<img::Image>(ResourceType::IMAGE, "player_marker.png");
+    data->object_marker_red = m_cache->get<img::Image>(ResourceType::IMAGE, "object_marker_red.png");
     data->textures_initialised = true;
 
-    m_minimap_shader = cache->getOrLoad<render::Shader>(ResourceType::SHADER, "minimap");
+    m_minimap_shader = m_cache->getOrLoad<render::Shader>(ResourceType::SHADER, "minimap");
+
+    m_rect->getShape().updateBuffer(m_buffer.get());
 
     if (client->modsLoaded()) {
         client->getScript()->on_minimap_ready(this);
@@ -214,9 +221,9 @@ Minimap::~Minimap()
     //m_meshbuffer.reset();
 
 	if (data->minimap_mask_round)
-        cache->clearResource<img::Image>(ResourceType::IMAGE, data->minimap_mask_round, true);
+        m_cache->clearResource<img::Image>(ResourceType::IMAGE, data->minimap_mask_round, true);
 	if (data->minimap_mask_square)
-        cache->clearResource<img::Image>(ResourceType::IMAGE, data->minimap_mask_square, true);
+        m_cache->clearResource<img::Image>(ResourceType::IMAGE, data->minimap_mask_square, true);
 
     // Dynamic textures are not cached
     delete data->texture;
@@ -254,11 +261,7 @@ void Minimap::setMinimapShape(MinimapShape shape)
 
 MinimapShape Minimap::getMinimapShape()
 {
-	if (data->minimap_shape_round) {
-		return MINIMAP_SHAPE_ROUND;
-	}
-
-	return MINIMAP_SHAPE_SQUARE;
+    return data->minimap_shape_round ? MINIMAP_SHAPE_ROUND : MINIMAP_SHAPE_SQUARE;
 }
 
 void Minimap::setModeIndex(size_t index)
@@ -431,14 +434,14 @@ img::Image *Minimap::getMinimapMask()
 	if (data->minimap_shape_round) {
 		if (!data->minimap_mask_round) {
 			// Get round minimap textures
-            data->minimap_mask_round = cache->get<img::Image>(ResourceType::IMAGE, "minimap_mask_round.png");
+            data->minimap_mask_round = m_cache->get<img::Image>(ResourceType::IMAGE, "minimap_mask_round.png");
 		}
 		return data->minimap_mask_round;
 	}
 
 	if (!data->minimap_mask_square) {
 		// Get square minimap textures
-        data->minimap_mask_square = cache->get<img::Image>(ResourceType::IMAGE, "minimap_mask_square.png");
+        data->minimap_mask_square = m_cache->get<img::Image>(ResourceType::IMAGE, "minimap_mask_square.png");
 	}
 	return data->minimap_mask_square;
 }
@@ -467,7 +470,7 @@ render::Texture2D *Minimap::getMinimapTexture()
 		break;
 	case MINIMAP_TYPE_TEXTURE:
 		// FIXME: this is a pointless roundtrip through the gpu
-        img::Image* image = cache->getOrLoad<img::Image>(ResourceType::IMAGE, data->mode.texture);
+        img::Image* image = m_cache->getOrLoad<img::Image>(ResourceType::IMAGE, data->mode.texture);
 
         v2u size = image->getSize();
         rectu destRect(
@@ -479,7 +482,7 @@ render::Texture2D *Minimap::getMinimapTexture()
         );
         g_imgmodifier->copyTo(image, map_image, nullptr, &destRect);
 
-        cache->clearResource<img::Image>(ResourceType::IMAGE, image, true);
+        m_cache->clearResource<img::Image>(ResourceType::IMAGE, image, true);
 	}
 
     g_imgmodifier->copyTo(map_image, minimap_image, nullptr, nullptr, true);
@@ -504,8 +507,10 @@ render::Texture2D *Minimap::getMinimapTexture()
     settings.minF = render::TMF_LINEAR_MIPMAP_LINEAR;
     settings.magF = render::TMAGF_LINEAR;
     settings.isRenderTarget = false;
-    data->texture = new render::Texture2D("minimap__", std::unique_ptr<img::Image>(minimap_image), settings);
-    data->heightmap_texture = new render::Texture2D("minimap_heightmap__", std::unique_ptr<img::Image>(heightmap_image), settings);
+    data->texture = new render::Texture2D("minimap__",
+        std::unique_ptr<img::Image>(minimap_image), settings);
+    data->heightmap_texture = new render::Texture2D("minimap_heightmap__",
+        std::unique_ptr<img::Image>(heightmap_image), settings);
 
 	data->map_invalidated = true;
 
@@ -534,28 +539,30 @@ void Minimap::drawMinimap(recti rect)
 	if (!minimap_texture)
 		return;
 
-    auto ctxt = renderer->getContext();
+    auto ctxt = m_renderer->getContext();
     recti oldViewPort = ctxt->getViewportSize();
 
-    matrix4 oldProjMat = renderer->getTransformMatrix(TMatrix::Projection);
-    matrix4 oldViewMat = renderer->getTransformMatrix(TMatrix::View);
+    matrix4 oldProjMat = m_renderer->getTransformMatrix(TMatrix::Projection);
+    matrix4 oldViewMat = m_renderer->getTransformMatrix(TMatrix::View);
 
     ctxt->setViewportSize(rect);
-    renderer->setTransformMatrix(TMatrix::Projection, matrix4());
-    renderer->setTransformMatrix(TMatrix::View, matrix4());
+    m_renderer->setTransformMatrix(TMatrix::Projection, matrix4());
+    m_renderer->setTransformMatrix(TMatrix::View, matrix4());
 
-    renderer->setRenderState(false);
+    m_renderer->setRenderState(false);
 
     matrix4 matrix;
     matrix.makeIdentity();
 
     if (data->mode.type == MINIMAP_TYPE_SURFACE) {
-        renderer->setShader(m_minimap_shader);
+        m_renderer->setShader(m_minimap_shader);
         m_minimap_shader->setUniform3Float("mYawVec", getYawVec());
 	} else {
-        renderer->setDefaultShader(true, false);
-        renderer->setDefaultUniforms(1.0f, 1, 0.5f, img::BM_COUNT);
+        m_renderer->setDefaultShader(true, false);
+        m_renderer->setDefaultUniforms(1.0f, 1, 0.5f, img::BM_COUNT);
 	}
+
+    m_renderer->setClipRect(recti());
 	
 	ctxt->setActiveUnit(0, minimap_texture);
     ctxt->setActiveUnit(1, data->heightmap_texture);
@@ -567,16 +574,27 @@ void Minimap::drawMinimap(recti rect)
     if (data->mode.type == MINIMAP_TYPE_SURFACE)
         m_minimap_shader->setUniform4x4Matrix("mWorld", matrix);
     else
-        renderer->setTransformMatrix(TMatrix::World, matrix);
-    draw(0, 1);
+        m_renderer->setTransformMatrix(TMatrix::World, matrix);
+
+    updateUVs({0, 1, 1, 0});
+    m_renderer->draw(m_buffer.get());
+
+    auto guiPool = client->getRenderSystem()->getPool(false);
 
 	// Draw overlay
-    render::Texture2D *minimap_overlay = data->minimap_shape_round ?
+    auto minimap_overlay = data->minimap_shape_round ?
 		data->minimap_overlay_round : data->minimap_overlay_square;
-    renderer->setDefaultShader(true, false);
-    renderer->setDefaultUniforms(1.0f, 1, 0.5f, img::BM_COUNT);
-    ctxt->setActiveUnit(0, minimap_overlay);
-    draw(0, 1);
+    m_renderer->setDefaultShader(true, false);
+    m_renderer->setDefaultUniforms(1.0f, 1, 0.5f, img::BM_COUNT);
+
+    auto atlas = guiPool->getAtlasByTile(minimap_overlay, true);
+    ctxt->setActiveUnit(0, atlas->getTexture());
+
+    auto tile_rect = guiPool->getTileRect(minimap_overlay);
+    tile_rect.ULC /= (f32)atlas->getTextureSize();
+    tile_rect.LRC /= (f32)atlas->getTextureSize();
+    updateUVs(tile_rect);
+    m_renderer->draw(m_buffer.get());
 
 	// Draw player marker on minimap
 	if (data->minimap_shape_round) {
@@ -585,17 +603,33 @@ void Minimap::drawMinimap(recti rect)
         matrix.setRotationDegrees(v3f(0, 0, m_angle));
 	}
 
-    ctxt->setActiveUnit(0, data->player_marker);
-    renderer->setTransformMatrix(TMatrix::World, matrix);
-    draw(0, 1);
+    atlas = guiPool->getAtlasByTile(data->player_marker, true);
+    ctxt->setActiveUnit(0, atlas->getTexture());
+    m_renderer->setTransformMatrix(TMatrix::World, matrix);
+
+    tile_rect = guiPool->getTileRect(data->player_marker);
+    tile_rect.ULC /= (f32)atlas->getTextureSize();
+    tile_rect.LRC /= (f32)atlas->getTextureSize();
+    updateUVs(tile_rect);
+    m_renderer->draw(m_buffer.get());
 
 	// Reset transformations
-    renderer->setTransformMatrix(TMatrix::Projection, oldProjMat);
-    renderer->setTransformMatrix(TMatrix::View, oldViewMat);
+    m_renderer->setTransformMatrix(TMatrix::Projection, oldProjMat);
+    m_renderer->setTransformMatrix(TMatrix::View, oldViewMat);
     ctxt->setViewportSize(oldViewPort);
 
 	// Draw player markers
-    draw(0, 1);
+    m_renderer->draw(m_buffer.get());
+}
+
+void Minimap::updateUVs(const rectf &srcRect)
+{
+    svtSetUV(m_buffer.get(), srcRect.ULC, 0);
+    svtSetUV(m_buffer.get(), v2f(srcRect.LRC.X, srcRect.ULC.Y), 1);
+    svtSetUV(m_buffer.get(), srcRect.LRC, 2);
+    svtSetUV(m_buffer.get(), v2f(srcRect.ULC.X, srcRect.LRC.Y), 3);
+
+    m_buffer->uploadVertexData();
 }
 
 void Minimap::addMarker(v3f pos)
@@ -618,7 +652,13 @@ void Minimap::updateActiveMarkers(recti rect)
 	m_active_markers.clear();
 
     // Clear all ealier added markers
-    clear();
+    m_buffer->reallocateData(4, 6);
+    // Then reserve a new storage for current markers
+    m_buffer->reallocateData(4+m_markers.size()*4, 6+m_markers.size()*6);
+
+    auto &shape = m_rect->getShape();
+    for (u32 k = 1; k < shape.getPrimitiveCount(); k++)
+        shape.removePrimitive(k);
 
     v3f cam_offset = intToFloat(client->getEnv().getLocalPlayer()->getCamera()->getOffset(), BS);
 	v3s16 pos_offset = data->pos - v3s16(data->mode.map_size / 2,
@@ -669,7 +709,9 @@ void Minimap::updateActiveMarkers(recti rect)
         shape.addRectangle(destRect, c, img_rect);
 	}
 
-    rebuildMesh();
+    shape.updateBuffer(m_buffer.get());
+
+    m_buffer->uploadData();
 }
 
 ////

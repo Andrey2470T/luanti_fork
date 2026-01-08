@@ -18,6 +18,7 @@ class Client;
 class NodeDefManager;
 class RenderSystem;
 class ResourceCache;
+class Renderer;
 class VoxelManipulator;
 
 #define MINIMAP_MAX_SX 512
@@ -62,10 +63,10 @@ struct MinimapData {
     render::Texture2D *texture = nullptr;
     render::Texture2D *heightmap_texture = nullptr;
 	bool textures_initialised = false; // True if the following textures are not nullptrs.
-    render::Texture2D *minimap_overlay_round = nullptr;
-    render::Texture2D *minimap_overlay_square = nullptr;
-    render::Texture2D *player_marker = nullptr;
-    render::Texture2D *object_marker_red = nullptr;
+    img::Image *minimap_overlay_round = nullptr;
+    img::Image *minimap_overlay_square = nullptr;
+    img::Image *player_marker = nullptr;
+    img::Image *object_marker_red = nullptr;
 };
 
 struct QueuedMinimapUpdate {
@@ -94,10 +95,10 @@ private:
 	std::map<v3s16, MinimapMapblock *> m_blocks_cache;
 };
 
-class Minimap : public UISprite
+class Minimap
 {
 public:
-    Minimap(Client *_client, Renderer *_renderer, ResourceCache *_cache);
+    Minimap(Client *_client, UIRects *_rect);
 	~Minimap();
 
 	void addBlock(v3s16 pos, MinimapMapblock *data);
@@ -141,7 +142,14 @@ public:
 	std::unique_ptr<MinimapData> data;
 
 private:
+    void updateUVs(const rectf &srcRect);
+    Renderer *m_renderer;
+    ResourceCache *m_cache;
+
+    UIRects *m_rect;
+    std::unique_ptr<MeshBuffer> m_buffer;
     render::Shader *m_minimap_shader;
+
 	const NodeDefManager *m_ndef;
 	std::unique_ptr<MinimapUpdateThread> m_minimap_update_thread;
 	std::vector<MinimapModeDef> m_modes;
