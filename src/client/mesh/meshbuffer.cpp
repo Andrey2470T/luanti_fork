@@ -150,57 +150,35 @@ void MeshBuffer::setIndexAt(u32 index, s32 pos)
 
 void MeshBuffer::reallocateData(u32 vertexCount, u32 indexCount)
 {
-    if (vertexCount == VBuffer.Data->count() && (hasIBO() && indexCount == IBuffer.Data->count()))
-        return;
+    if (vertexCount != VBuffer.Data->count())
+        VBuffer.Data->reallocate(vertexCount);
 
-    VBuffer.Data->reallocate(vertexCount);
-
-    if (hasIBO())
+    if (hasIBO() && indexCount != IBuffer.Data->count())
         IBuffer.Data->reallocate(indexCount);
+
+    if (vertexCount != VBuffer.Data->count() || (hasIBO() && indexCount != IBuffer.Data->count()))
+        VAO->reallocate(vertexCount, hasIBO() ? indexCount : 0);
 }
 
 void MeshBuffer::uploadData()
 {
-    if (!VBuffer.Dirty && (hasIBO() && !IBuffer.Dirty))
-        return;
+    if (VBuffer.Dirty) {
+        u32 startV = VBuffer.DirtyRange.first != -1 ? VBuffer.DirtyRange.first : 0;
+        u32 endV = VBuffer.DirtyRange.second != -1 ? VBuffer.DirtyRange.second : VBuffer.Data->count();
+        VAO->uploadVertexData(VBuffer.Data->data(), endV - startV + 1, startV);
 
-    u32 *indices = nullptr;
-    u32 iboCount = 0;
-
-    if (hasIBO()) {
-        indices = (u32 *)IBuffer.Data->data();
-        iboCount = IBuffer.Data->count();
+        VBuffer.Dirty = false;
+        VBuffer.DirtyRange = {-1, -1};
     }
-    VAO->reallocate(VBuffer.Data->data(), VBuffer.Data->count(), indices, iboCount);
 
-    VBuffer.Dirty = false;
-    IBuffer.Dirty = false;
-}
+    if (hasIBO() && IBuffer.Dirty) {
+        u32 startI = IBuffer.DirtyRange.first != -1 ? IBuffer.DirtyRange.first : 0;
+        u32 endI = IBuffer.DirtyRange.second != -1 ? IBuffer.DirtyRange.second : IBuffer.Data->count();
+        VAO->uploadIndexData((u32 *)IBuffer.Data->data(), endI - startI + 1, startI);
 
-void MeshBuffer::uploadVertexData()
-{
-    if (VBuffer.Data->count() == 0 || !VBuffer.Dirty)
-        return;
-
-    u32 startV = VBuffer.DirtyRange.first != -1 ? VBuffer.DirtyRange.first : 0;
-    u32 endV = VBuffer.DirtyRange.second != -1 ? VBuffer.DirtyRange.second : VBuffer.Data->count();
-    VAO->uploadVertexData(VBuffer.Data->data(), endV - startV + 1, startV);
-
-    VBuffer.Dirty = false;
-    VBuffer.DirtyRange = {-1, -1};
-}
-
-void MeshBuffer::uploadIndexData()
-{
-    if (!hasIBO() || IBuffer.Data->count() == 0 || !IBuffer.Dirty)
-        return;
-
-    u32 startI = IBuffer.DirtyRange.first != -1 ? IBuffer.DirtyRange.first : 0;
-    u32 endI = IBuffer.DirtyRange.second != -1 ? IBuffer.DirtyRange.second : IBuffer.Data->count();
-    VAO->uploadIndexData((u32 *)IBuffer.Data->data(), endI - startI + 1, startI);
-
-    IBuffer.Dirty = false;
-    IBuffer.DirtyRange = {-1, -1};
+        IBuffer.Dirty = false;
+        IBuffer.DirtyRange = {-1, -1};
+    }
 }
 
 void MeshBuffer::clear()

@@ -301,15 +301,15 @@ void UIShape::scale(const v2f &scale, std::optional<v2f> c)
         scalePrimitive(i, scale, center);
 }
 
-void UIShape::updateBuffer(MeshBuffer *buf)
+void UIShape::updateBuffer(MeshBuffer *buf, u32 vertexOffset, u32 indexOffset)
 {
     for (auto dirtyPrim : dirtyPrimitives)
-        updateBuffer(buf, dirtyPrim);
+        updateBuffer(buf, dirtyPrim, vertexOffset, indexOffset);
 
     dirtyPrimitives.clear();
 }
 
-void UIShape::updateBuffer(MeshBuffer *buf, u32 primitiveNum)
+void UIShape::updateBuffer(MeshBuffer *buf, u32 primitiveNum, u32 vertexOffset, u32 indexOffset)
 {
     auto foundDirtyPrim = std::find(dirtyPrimitives.begin(), dirtyPrimitives.end(), primitiveNum);
 
@@ -326,8 +326,8 @@ void UIShape::updateBuffer(MeshBuffer *buf, u32 primitiveNum)
         startI += primICounts[(u8)primitives[i]->type];
     }
 
-    buf->setVertexOffset(buf->getVertexOffset()+startV);
-    buf->setIndexOffset(buf->getIndexOffset()+startI);
+    buf->setVertexOffset(vertexOffset+startV);
+    buf->setIndexOffset(indexOffset+startI);
 
     switch (p->type) {
     case UIPrimitiveType::LINE: {
@@ -529,11 +529,7 @@ void SpriteDrawBatch::rebuild()
 
     u32 rectOffset = 0;
     for (auto &sprite : sprites) {
-        buffer->setVertexOffset(rectOffset*4);
-        buffer->setIndexOffset(rectOffset*6);
-
-        sprite->getShape().updateBuffer(buffer.get());
-
+        sprite->getShape().updateBuffer(buffer.get(), rectOffset*4, rectOffset*6);
         rectOffset += sprite->getShape().getPrimitiveCount();
     }
 
@@ -550,14 +546,11 @@ void SpriteDrawBatch::update()
     for (auto &sprite : sprites) {
         sprite->updateBatch();
 
-        buffer->setVertexOffset(rectOffset*4);
-        buffer->setIndexOffset(rectOffset*6);
-
-        sprite->getShape().updateBuffer(buffer.get());
+        sprite->getShape().updateBuffer(buffer.get(), rectOffset*4, rectOffset*6);
 
         u32 curRectCount = sprite->getShape().getPrimitiveCount();
         buffer->setDirtyRange(rectOffset*4, (rectOffset+curRectCount)*4);
-        buffer->uploadVertexData();
+        buffer->uploadData();
 
         rectOffset += curRectCount;
     }

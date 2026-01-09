@@ -324,7 +324,7 @@ void DamageFlashStep::run(PipelineContext &context)
     if (currentDamage != prevDamage) {
         auto buffer = quad->getBuffer();
         MeshOperations::colorizeMesh(buffer, color);
-        buffer->uploadVertexData();
+        buffer->uploadData();
 
         prevDamage = currentDamage;
     }

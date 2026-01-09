@@ -5,6 +5,7 @@
 #pragma once
 
 #include "GUIEnums.h"
+#include "client/ui/extra_images.h"
 #include "client/ui/sprite.h"
 #include <Image/Color.h>
 #include <Utils/Rect.h>
@@ -619,7 +620,7 @@ private:
 
     inline void addRect(UISprite *sprite, const std::array<img::color8, 4> &newColors, const rectf &newRect)
     {
-        sprite->getShape()->addRectangle(newRect, newColors);
+        sprite->getShape().addRectangle(newRect, newColors);
     }
     inline void addRect(UISprite *sprite, const img::color8 &newColor, const rectf &newRect)
     {

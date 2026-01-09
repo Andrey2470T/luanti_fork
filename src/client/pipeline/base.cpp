@@ -90,9 +90,9 @@ ScreenQuad::ScreenQuad(RenderSystem *_rndsys, RenderSource *_textures)
 
     rectf screen_rect(v2f(0.0f), v2f(wnd_size.X, wnd_size.Y));
     img::color8 color = img::black;
-    Batcher2D::appendImageRectangle(quad.get(), wnd_size,
+    Batcher2D::imageRectangle(quad.get(), wnd_size,
         rectf(v2f(0.0f, 1.0f), v2f(1.0f, 0.0f)), screen_rect,  {color, color, color, color}, false);
-    quad->uploadVertexData();
+    quad->uploadData();
 
     prev_size = wnd_size;
 
@@ -121,7 +121,7 @@ void ScreenQuad::updateQuad(std::optional<v2u> offset, std::optional<v2u> size)
     svtSetPos2D(quad.get(), pos + v2f(cur_size.X, -cur_size.Y), 2);
     svtSetPos2D(quad.get(), pos - v2f(0.0f, cur_size.Y), 3);
 
-    quad->uploadVertexData();
+    quad->uploadData();
 }
 
 void ScreenQuad::setShader(bool set_default, std::optional<render::Shader *> new_shader)

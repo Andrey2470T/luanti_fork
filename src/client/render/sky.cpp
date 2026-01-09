@@ -25,8 +25,8 @@
 
 MeshBuffer *init_sky_body()
 {
-    MeshBuffer *mesh = new MeshBuffer(4, 6, true);
-    Batcher3D::appendFace(mesh, {}, {}, {v2f(1.0f, 1.0f), v2f(0.0f, 0.0f)});
+    MeshBuffer *mesh = new MeshBuffer(4, 6);
+    Batcher3D::face(mesh, {}, {}, {v2f(1.0f, 1.0f), v2f(0.0f, 0.0f)});
     mesh->uploadData();
 
     return mesh;
@@ -46,7 +46,7 @@ Sun::Sun(RenderSystem *rndsys, ResourceCache *cache)
 
     img::color8 c = img::white;
 
-    Batcher3D::appendFace(m_sunrise_mesh.get(), {}, {c, c, c, c}, dest);
+    Batcher3D::face(m_sunrise_mesh.get(), {}, {c, c, c, c}, dest);
 
     m_sunrise_mesh->uploadData();
 }
@@ -206,6 +206,8 @@ void Sun::update(const img::color8 &color,
         update_sky_body(m_mesh.get(), -d, d, c);
         place_sky_body(m_mesh.get(), 90, wicked_time_of_day * 360 - 90, body_orbit_tilt);
     }
+
+    m_mesh->uploadData();
 }
 
 void Sun::updateSunrise(float time_of_day)
@@ -236,6 +238,8 @@ void Sun::updateSunrise(float time_of_day)
 
         svtSetPos(m_sunrise_mesh.get(), pos, i);
     }
+
+    m_sunrise_mesh->uploadData();
 }
 
 Moon::Moon(RenderSystem *rndsys)
@@ -336,6 +340,8 @@ void Moon::update(const img::color8 &color,
         update_sky_body(m_mesh.get(), -d, d, c);
         place_sky_body(m_mesh.get(), -90, wicked_time_of_day * 360 - 90, body_orbit_tilt);
     }
+
+    m_mesh->uploadData();
 }
 
 Stars::Stars(RenderSystem *rndsys, ResourceCache *cache)
@@ -393,6 +399,8 @@ void Stars::update(Renderer *rnd, float wicked_time_of_day, float body_orbit_til
     auto sky_rotation = orbit_rotation * day_rotation;
     auto world_matrix = rnd->getTransformMatrix(TMatrix::World);
     m_world = world_matrix * sky_rotation;
+
+    m_mesh->uploadData();
 }
 
 void Stars::updateMesh()
@@ -428,7 +436,7 @@ void Stars::updateMesh()
         v3f p2 = a.rotateAndScaleVect(v3f(d, 1, d));
         v3f p3 = a.rotateAndScaleVect(v3f(-d, 1, d));
 
-        Batcher3D::appendFace(m_mesh.get(), {p, p1, p2, p3}, {}, {});
+        Batcher3D::face(m_mesh.get(), {p, p1, p2, p3}, {}, {});
     }
 
     m_mesh->uploadData();
@@ -478,7 +486,7 @@ Sky::Sky(RenderSystem *rndsys, ResourceCache *cache) :
             }
         }
 
-        Batcher3D::appendFace(m_skybox_mesh.get(), positions, {c, c, c, c}, {v2f(1.0f, 1.0f), v2f(0.0f, 0.0f)});
+        Batcher3D::face(m_skybox_mesh.get(), positions, {c, c, c, c}, {v2f(1.0f, 1.0f), v2f(0.0f, 0.0f)});
     }
 
     m_skybox_mesh->uploadData();
@@ -509,8 +517,10 @@ Sky::Sky(RenderSystem *rndsys, ResourceCache *cache) :
                 pos.rotateXZBy(-180);
         }
 
-        Batcher3D::appendFace(m_cloudyfog_mesh.get(), positions, {}, {v2f(1.0f, 1.0f), v2f(0.0f, 0.0f)});
+        Batcher3D::face(m_cloudyfog_mesh.get(), positions, {}, {v2f(1.0f, 1.0f), v2f(0.0f, 0.0f)});
     }
+
+    m_cloudyfog_mesh->uploadData();
 
     // far cloudy fog
 
@@ -536,10 +546,10 @@ Sky::Sky(RenderSystem *rndsys, ResourceCache *cache) :
                 pos.rotateXZBy(-180);
         }
 
-        Batcher3D::appendFace(m_far_cloudyfog_mesh.get(), positions, {}, {v2f(1.0f, 1.0f), v2f(0.0f, 0.0f)});
+        Batcher3D::face(m_far_cloudyfog_mesh.get(), positions, {}, {v2f(1.0f, 1.0f), v2f(0.0f, 0.0f)});
     }
 
-    Batcher3D::appendFace(m_far_cloudyfog_mesh.get(),
+    Batcher3D::face(m_far_cloudyfog_mesh.get(),
         {
             v3f(-1, -1.0, -1),
             v3f(1, -1.0, -1),
@@ -937,4 +947,7 @@ void Sky::updateCloudyFogColor()
 {
     MeshOperations::colorizeMesh(m_cloudyfog_mesh.get(), m_bgcolor);
     MeshOperations::colorizeMesh(m_far_cloudyfog_mesh.get(), m_bgcolor);
+
+    m_cloudyfog_mesh->uploadData();
+    m_far_cloudyfog_mesh->uploadData();
 }

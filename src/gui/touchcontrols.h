@@ -112,7 +112,7 @@ public:
 	std::optional<u16> getHotbarSelection();
 
 	bool isStatusTextOverriden() { return m_overflow_open; }
-    UITextSprite *getStatusText() { return m_status_text.get(); }
+    UITextSprite *getStatusText() { return m_text; }
 
 	ButtonLayout getLayout() { return m_layout; }
 	void applyLayout(const ButtonLayout &layout);

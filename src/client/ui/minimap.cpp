@@ -202,6 +202,7 @@ Minimap::Minimap(Client *_client, UIRects *_rect)
     m_minimap_shader = m_cache->getOrLoad<render::Shader>(ResourceType::SHADER, "minimap");
 
     m_rect->getShape().updateBuffer(m_buffer.get());
+    m_buffer->uploadData();
 
     if (client->modsLoaded()) {
         client->getScript()->on_minimap_ready(this);
@@ -589,7 +590,7 @@ void Minimap::drawMinimap(recti rect)
     MeshOperations::recalculateMeshAtlasUVs(m_buffer.get(), 0, 6,
         guiPool->getAtlasByTile(minimap_overlay)->getTextureSize(), guiPool->getTileRect(minimap_overlay),
         minimap_texture->getWidth(), rectf(v2f(), toV2T<f32>(minimap_texture->getSize())));
-    m_buffer->uploadVertexData();
+    m_buffer->uploadData();
 
     m_renderer->draw(m_buffer.get());
 
@@ -606,7 +607,7 @@ void Minimap::drawMinimap(recti rect)
     MeshOperations::recalculateMeshAtlasUVs(m_buffer.get(), 0, 6,
         guiPool->getAtlasByTile(data->player_marker)->getTextureSize(), guiPool->getTileRect(data->player_marker),
         guiPool->getAtlasByTile(minimap_overlay)->getTextureSize(), guiPool->getTileRect(minimap_overlay));
-    m_buffer->uploadVertexData();
+    m_buffer->uploadData();
 
     m_renderer->draw(m_buffer.get());
 
@@ -621,7 +622,7 @@ void Minimap::drawMinimap(recti rect)
     MeshOperations::recalculateMeshAtlasUVs(m_buffer.get(), 0, 6,
         minimap_texture->getWidth(), rectf(v2f(), toV2T<f32>(minimap_texture->getSize())),
         guiPool->getAtlasByTile(data->player_marker)->getTextureSize(), guiPool->getTileRect(data->player_marker));
-    m_buffer->uploadVertexData();
+    m_buffer->uploadData();
 }
 
 void Minimap::addMarker(v3f pos)

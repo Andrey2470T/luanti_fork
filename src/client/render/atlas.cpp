@@ -314,6 +314,7 @@ void AtlasPool::updateMeshUVs(MeshBuffer *buffer, u32 start_index, u32 index_cou
 
     MeshOperations::recalculateMeshAtlasUVs(buffer, start_index, index_count,
         newAtlasSize, newTileRect, oldAtlasSize, oldTileRect);
+    buffer->uploadData();
 }
 
 void AtlasPool::updateAllMeshUVs(MeshBuffer *buffer, img::Image *tile,

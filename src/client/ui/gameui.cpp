@@ -63,7 +63,7 @@ void GameUI::init()
     basic_debugtext = drawBatch->addTextSprite(L"", v2f(5, 5 + minimal_debugtext->getTextHeight()));
 
 	// Chat text
-    chattext = drawBatch->addTextSprite(L"", std::nullopt, img::white, 0, nullptr, true);
+    chattext = drawBatch->addTextSprite(L"", std::nullopt, img::white, nullptr, 0, true);
 	u16 chat_font_size = g_settings->getU16("chat_font_size");
 	if (chat_font_size != 0) {
         chattext->getTextObj().setOverrideFont(font_mgr->getFontOrCreate(

@@ -169,9 +169,9 @@ public:
     void move(const v2f &shift);
     void scale(const v2f &scale, std::optional<v2f> c);
 
-    void updateBuffer(MeshBuffer *buf);
+    void updateBuffer(MeshBuffer *buf, u32 vertexOffset=0, u32 indexOffset=0);
 private:
-    void updateBuffer(MeshBuffer *buf, u32 primitiveNum);
+    void updateBuffer(MeshBuffer *buf, u32 primitiveNum, u32 vertexOffset=0, u32 indexOffset=0);
 };
 
 class SpriteDrawBatch;

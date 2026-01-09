@@ -121,8 +121,6 @@ public:
     void reallocateData(u32 vertexCount, u32 indexCount=0);
 
     void uploadData();
-    void uploadVertexData();
-    void uploadIndexData();
 
     void clear();
 
