@@ -12,6 +12,7 @@
 #include <memory>
 #include <optional>
 #include <unordered_map>
+#include "client/ui/sprite.h"
 #include "itemdef.h"
 #include "touchscreenlayout.h"
 #include "util/basic_macros.h"
@@ -175,7 +176,8 @@ private:
     std::vector<IGUIStaticText *> m_overflow_button_titles;
 	std::vector<recti> m_overflow_button_rects;
 
-    std::unique_ptr<UITextSprite> m_status_text;
+    std::unique_ptr<SpriteDrawBatch> drawBatch;
+    UITextSprite *m_text;
 
 	// Note: TouchControls intentionally uses IGUIImage instead of IGUIButton
 	// for its buttons. We only want static image display, not interactivity,

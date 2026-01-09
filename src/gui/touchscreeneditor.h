@@ -16,6 +16,7 @@ namespace gui
 	class IGUIImage;
 }
 
+class SpriteDrawBatch;
 class UIRects;
 
 class GUITouchscreenLayout : public GUIModalMenu
@@ -77,7 +78,8 @@ private:
 
     gui::IGUIButton *m_gui_remove_btn;
 
-    std::unique_ptr<UIRects> m_menu;
+    std::unique_ptr<SpriteDrawBatch> drawBatch;
+    UIRects *m_menu;
 
 	void regenerateMenu(v2u screensize);
 };

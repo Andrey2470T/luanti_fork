@@ -9,7 +9,7 @@
 #include <iostream>
 #include "guiScrollBar.h"
 
-class UISpriteBank;
+class SpriteDrawBatch;
 
 /*
 	A table GUI element for GUIFormSpecMenu.
@@ -187,7 +187,7 @@ protected:
 	render::TTFont *m_font = nullptr;
 	GUIScrollBar *m_scrollbar = nullptr;
 
-    std::unique_ptr<UISpriteBank> m_table_box;
+    std::unique_ptr<SpriteDrawBatch> drawBatch;
 
 	// Allocated strings and images
     std::vector<std::wstring> m_strings;

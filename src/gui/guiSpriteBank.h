@@ -6,7 +6,8 @@
 
 #include "IGUISpriteBank.h"
 
-class ImageSprite;
+class SpriteDrawBatch;
+class UIRects;
 
 namespace gui
 {
@@ -63,7 +64,8 @@ protected:
     std::vector<img::Image *> Textures;
 	IGUIEnvironment *Environment;
 
-    std::unique_ptr<ImageSprite> SpriteBank;
+    std::unique_ptr<SpriteDrawBatch> drawBatch;
+    UIRects *Image;
 };
 
 } // end namespace gui

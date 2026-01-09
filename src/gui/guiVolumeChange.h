@@ -22,7 +22,8 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "modalMenu.h"
 #include <string>
 
-class UISprite;
+class SpriteDrawBatch;
+class UIRects;
 
 class GUIVolumeChange : public GUIModalMenu
 {
@@ -45,5 +46,6 @@ protected:
 	std::wstring getLabelByID(s32 id) { return L""; }
 	std::string getNameByID(s32 id) { return ""; }
 private:
-    std::unique_ptr<UISprite> volumeChangeBox;
+    std::unique_ptr<SpriteDrawBatch> drawBatch;
+    UIRects *box;
 };

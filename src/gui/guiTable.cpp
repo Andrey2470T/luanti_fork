@@ -14,6 +14,7 @@
 #include "client/render/atlas.h"
 #include "client/render/rendersystem.h"
 #include "IGUIEnvironment.h"
+#include "client/ui/extra_images.h"
 #include "client/ui/text_sprite.h"
 #include "debug.h"
 #include "log.h"
@@ -35,8 +36,7 @@ GUITable::GUITable(gui::IGUIEnvironment *env,
         gui::IGUIElement* parent, s32 id,
         recti rectangle):
     gui::IGUIElement(EGUIET_ELEMENT, env, parent, id, rectangle),
-    m_table_box(std::make_unique<UISpriteBank>(env->getRenderSystem(),
-        env->getResourceCache()))
+    drawBatch(std::make_unique<SpriteDrawBatch>(env->getRenderSystem(), env->getResourceCache()))
 {
     GUISkin* skin = Environment->getSkin();
 
@@ -644,8 +644,6 @@ void GUITable::updateAbsolutePosition()
 void GUITable::updateMesh()
 {
     GUISkin *skin = Environment->getSkin();
-    auto rnd = Environment->getRenderSystem()->getRenderer();
-    auto cache = Environment->getResourceCache();
 
     if (m_scrollbar->isVisible() && m_last_scrollpos != m_scrollbar->getPos()) {
         m_last_scrollpos = m_scrollbar->getPos();
@@ -655,26 +653,18 @@ void GUITable::updateMesh()
     if (!Rebuild)
         return;
 
-    m_table_box->clear();
+    drawBatch->clear();
 
     // draw background
 
     bool draw_background = m_background.A() > 0;
     if (m_border) {
-        UISprite *border = new UISprite(nullptr, rnd, cache, true);
+        auto border = drawBatch->addRectsSprite({});
         border->setClipRect(AbsoluteClippingRect);
         skin->add3DSunkenPane(border, m_background, true, draw_background, toRectT<f32>(AbsoluteRect));
-        border->rebuildMesh();
-        m_table_box->addSprite(border);
     }
-    else if (draw_background) {
-        UISprite *background = new UISprite(nullptr, rnd, cache, true);
-        background->setClipRect(AbsoluteClippingRect);
-        background->getShape()->addRectangle(toRectT<f32>(AbsoluteRect), {m_background});
-        background->rebuildMesh();
-
-        m_table_box->addSprite(background);
-    }
+    else if (draw_background)
+        drawBatch->addRectsSprite({{toRectT<f32>(AbsoluteRect), m_background}}, &AbsoluteClippingRect);
 
     // get clipping rect
 
@@ -710,11 +700,7 @@ void GUITable::updateMesh()
         img::color8 color = m_color;
 
         if (is_sel) {
-            UISprite *cell = new UISprite(nullptr, rnd, cache, true);
-            cell->setClipRect(client_clip);
-            cell->getShape()->addRectangle(toRectT<f32>(row_rect), {m_highlight, m_highlight, m_highlight, m_highlight});
-            cell->rebuildMesh();
-            m_table_box->addSprite(cell);
+            drawBatch->addRectsSprite({{toRectT<f32>(row_rect), m_highlight}}, &client_clip);
             color = m_highlight_text;
         }
 
@@ -725,6 +711,8 @@ void GUITable::updateMesh()
         row_rect.LRC.Y += m_rowheight;
     }
 
+    drawBatch->rebuild();
+
     Rebuild = false;
 }
 
@@ -734,7 +722,7 @@ void GUITable::draw()
 		return;
 
     updateMesh();
-    m_table_box->drawBank();
+    drawBatch->draw();
 
 	// Draw children
     IGUIElement::draw();
@@ -759,7 +747,7 @@ void GUITable::drawCell(const Cell *cell, img::color8 color,
             text_rect.LRC.X = row_rect.ULC.X
                     + cell->xpos + m_font->getTextWidth(text);
 
-            m_table_box->addTextSprite(text, toRectT<f32>(text_rect), color, &client_clip);
+            drawBatch->addTextSprite(text, toRectT<f32>(text_rect), color, &client_clip);
 		}
 	}
 	else if (cell->content_type == COLUMN_TYPE_IMAGE) {
@@ -782,7 +770,7 @@ void GUITable::drawCell(const Cell *cell, img::color8 color,
 			if (imgh < rowh)
 				dest_rect += v2i(0, (rowh - imgh) / 2);
 
-            m_table_box->addImageSprite(image, toRectT<f32>(dest_rect), &client_clip);
+            drawBatch->addRectsSprite({{toRectT<f32>(dest_rect), RectColors::defaultColors, image}}, &client_clip);
 		}
 	}
 }

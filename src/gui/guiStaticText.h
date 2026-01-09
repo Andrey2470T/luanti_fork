@@ -6,6 +6,7 @@
 
 #include "IGUIStaticText.h"
 
+class SpriteDrawBatch;
 class UITextSprite;
 
 namespace gui
@@ -106,7 +107,8 @@ public:
 	bool isRightToLeft() const override;
 
 private:
-    std::unique_ptr<UITextSprite> Text;
+    std::unique_ptr<SpriteDrawBatch> drawBatch;
+    UITextSprite *Text;
 };
 
 } // end namespace gui

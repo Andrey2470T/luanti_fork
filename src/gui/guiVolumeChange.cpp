@@ -18,6 +18,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
 #include "guiVolumeChange.h"
+#include "client/ui/extra_images.h"
 #include "debug.h"
 #include "gui/IGUIEnvironment.h"
 #include "guiButton.h"
@@ -44,9 +45,9 @@ GUIVolumeChange::GUIVolumeChange(gui::IGUIEnvironment* env,
         IMenuManager *menumgr
 ):
     GUIModalMenu(env, parent, id, menumgr),
-    volumeChangeBox(std::make_unique<UISprite>(nullptr, env->getRenderSystem()->getRenderer(),
-        env->getResourceCache(), std::vector<UIPrimitiveType>{UIPrimitiveType::RECTANGLE}, true))
+    drawBatch(std::make_unique<SpriteDrawBatch>(env->getRenderSystem(), env->getResourceCache()))
 {
+    box = drawBatch->addRectsSprite({{}});
 }
 
 void GUIVolumeChange::regenerateGui(v2u screensize)
@@ -105,10 +106,10 @@ void GUIVolumeChange::drawMenu()
 		return;
 
     img::color8 bgcolor(img::PF_RGBA8, 0, 0, 0, 140);
-    volumeChangeBox->getShape()->updateRectangle(0, toRectT<f32>(AbsoluteRect), {bgcolor, bgcolor, bgcolor, bgcolor});
-    volumeChangeBox->updateMesh();
-    volumeChangeBox->setClipRect(AbsoluteClippingRect);
-    volumeChangeBox->draw();
+    box->updateRect(0, {toRectT<f32>(AbsoluteRect), bgcolor});
+    box->setClipRect(AbsoluteClippingRect);
+    drawBatch->update();
+    drawBatch->draw();
 	gui::IGUIElement::draw();
 }
 

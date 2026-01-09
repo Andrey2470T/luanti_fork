@@ -14,9 +14,10 @@ namespace gui
 
 CGUISpriteBank::CGUISpriteBank(IGUIEnvironment *env) :
         Environment(env),
-        SpriteBank(std::make_unique<ImageSprite>(Environment->getRenderSystem(),
-        Environment->getResourceCache()))
-{}
+        drawBatch(std::make_unique<SpriteDrawBatch>(env->getRenderSystem(), env->getResourceCache()))
+{
+    Image = drawBatch->addRectsSprite({{}});
+}
 
 CGUISpriteBank::~CGUISpriteBank()
 {
@@ -137,7 +138,9 @@ void CGUISpriteBank::update2DSprite(u32 index, const v2i &pos,
 		p -= r.getSize() / 2;
 	}
 
-    SpriteBank->update(tex, toRectT<f32>(r), color, clip);
+    Image->updateRect(0, {toRectT<f32>(r), color, tex});
+    Image->setClipRect(*clip);
+    drawBatch->update();
 }
 
 void CGUISpriteBank::update2DSprite(u32 index, const recti &destRect,
@@ -156,7 +159,9 @@ void CGUISpriteBank::update2DSprite(u32 index, const recti &destRect,
 	if (rn >= Rectangles.size())
 		return;
 
-    SpriteBank->update(tex, toRectT<f32>(destRect), {colors[0], colors[1], colors[2], colors[3]}, clip);
+    Image->updateRect(0, {toRectT<f32>(destRect), {colors[0], colors[1], colors[2], colors[3]}});
+    Image->setClipRect(*clip);
+    drawBatch->update();
 }
 
 void CGUISpriteBank::draw2DSprite()

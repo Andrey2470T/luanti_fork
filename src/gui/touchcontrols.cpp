@@ -202,7 +202,8 @@ TouchControls::TouchControls(RenderSystem *rndsys, ResourceCache *cache,
         m_window(rndsys->getWindow()),
         m_guienv(rndsys->getGUIEnvironment()),
         m_receiver(receiver),
-        m_cache(cache)
+        m_cache(cache),
+        drawBatch(std::make_unique<SpriteDrawBatch>(m_rndsys, m_cache))
 {
 	m_touchscreen_threshold = g_settings->getU16("touchscreen_threshold");
 	m_long_tap_delay = g_settings->getU16("touch_long_tap_delay");
@@ -299,10 +300,8 @@ void TouchControls::applyLayout(const ButtonLayout &layout)
 		m_overflow_button_rects.push_back(rect);
 	});
 
-    m_status_text = std::make_unique<UITextSprite>(
-        m_rndsys->getFontManager(), m_rndsys->getGUIEnvironment()->getSkin(),
-        L"", m_rndsys->getRenderer(), m_cache, false, false);
-	m_status_text->setVisible(false);
+    m_text = drawBatch->addTextSprite(L"");
+    m_text->setVisible(false);
 
 	// applyLayout can be called at any time, also e.g. while the overflow menu
 	// is open, so this is necessary to restore correct visibility.

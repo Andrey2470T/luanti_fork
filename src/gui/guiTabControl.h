@@ -7,8 +7,8 @@
 #include "IGUITabControl.h"
 #include "GUISkin.h"
 
-class UISprite;
-class UISpriteBank;
+class SpriteDrawBatch;
+class UIRects;
 
 namespace gui
 {
@@ -52,7 +52,8 @@ private:
 	img::color8 TextColor;
 	bool DrawBackground;
 
-    std::unique_ptr<UISprite> box;
+    std::unique_ptr<SpriteDrawBatch> drawBatch;
+    UIRects *box;
 };
 
 //! A standard tab control
@@ -176,7 +177,7 @@ private:
 	s32 CurrentScrollTabIndex;
 	s32 TabExtraWidth;
 
-    std::unique_ptr<UISpriteBank> TabBoxes;
+    std::unique_ptr<SpriteDrawBatch> drawBatch;
 };
 
 } // end namespace gui

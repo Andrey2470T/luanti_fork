@@ -19,26 +19,19 @@ CGUIStaticText::CGUIStaticText(const wchar_t *text, bool border,
 		s32 id, const recti &rectangle,
 		bool background) :
 		IGUIStaticText(environment, parent, id, rectangle),
-        Text(std::make_unique<UITextSprite>(
-            Environment->getRenderSystem()->getFontManager(), Environment->getSkin(), text,
-            Environment->getRenderSystem()->getRenderer(), Environment->getResourceCache(),
-            border, false, background))
+        drawBatch(std::make_unique<SpriteDrawBatch>(environment->getRenderSystem(), environment->getResourceCache()))
 {
-
-    /*img::color8 BGColor(img::PF_RGBA8, 255, 255, 255, 101);
-	if (environment && environment->getSkin()) {
-        BGColor = environment->getSkin()->getColor(EGDC_3D_FACE);
-	}
-
-    Text->setColor(img::color8(img::PF_RGBA8, 255, 255, 255, 101));
-    Text->setBackgroundColor(BGColor);*/
+    Text = drawBatch->addTextSprite(text);
+    Text->getTextObj().enableDrawBorder(border);
+    Text->getTextObj().enableDrawBackground(background);
 }
 
 void CGUIStaticText::updateMesh()
 {
     if (!Rebuild)
         return;
-    Text->updateBuffer(rectf(v2f(AbsoluteRect.ULC.X, AbsoluteRect.ULC.Y), v2f(AbsoluteRect.LRC.X, AbsoluteRect.LRC.Y)));
+    Text->setBoundRect(rectf(v2f(AbsoluteRect.ULC.X, AbsoluteRect.ULC.Y), v2f(AbsoluteRect.LRC.X, AbsoluteRect.LRC.Y)));
+    drawBatch->rebuild();
 
     Rebuild = false;
 }
@@ -50,7 +43,7 @@ void CGUIStaticText::draw()
 		return;
 
     updateMesh();
-    Text->draw();
+    drawBatch->draw();
 
     IGUIElement::draw();
 }
@@ -58,119 +51,119 @@ void CGUIStaticText::draw()
 //! Sets another skin independent font.
 void CGUIStaticText::setOverrideFont(render::TTFont *font)
 {
-    Text->setOverrideFont(font);
+    Text->getTextObj().setOverrideFont(font);
     Rebuild = true;
 }
 
 //! Gets the override font (if any)
 render::TTFont *CGUIStaticText::getOverrideFont() const
 {
-    return Text->getOverrideFont();
+    return Text->getTextObj().getOverrideFont();
 }
 
 //! Get the font which is used right now for drawing
 render::TTFont *CGUIStaticText::getActiveFont() const
 {
-    return Text->getActiveFont();
+    return Text->getTextObj().getActiveFont();
 }
 
 //! Sets another color for the text.
 void CGUIStaticText::setOverrideColor(img::color8 color)
 {
-    Text->setOverrideColor(color);
+    Text->getTextObj().setOverrideColor(color);
     Rebuild = true;
 }
 
 //! Sets another color for the text.
 void CGUIStaticText::setBackgroundColor(img::color8 color)
 {
-    Text->setBackgroundColor(color);
+    Text->getTextObj().setBackgroundColor(color);
     Rebuild = true;
 }
 
 //! Sets whether to draw the background
 void CGUIStaticText::setDrawBackground(bool draw)
 {
-    Text->enableDrawBackground(draw);
+    Text->getTextObj().enableDrawBackground(draw);
     Rebuild = true;
 }
 
 //! Gets the background color
 img::color8 CGUIStaticText::getBackgroundColor() const
 {
-    return Text->getBackgroundColor();
+    return Text->getTextObj().getBackgroundColor();
 }
 
 //! Checks if background drawing is enabled
 bool CGUIStaticText::isDrawBackgroundEnabled() const
 {
-    return Text->isDrawBackground();
+    return Text->getTextObj().isDrawBackground();
 }
 
 //! Sets whether to draw the border
 void CGUIStaticText::setDrawBorder(bool draw)
 {
-    Text->enableDrawBorder(draw);
+    Text->getTextObj().enableDrawBorder(draw);
     Rebuild = true;
 }
 
 //! Checks if border drawing is enabled
 bool CGUIStaticText::isDrawBorderEnabled() const
 {
-    return Text->isDrawBorder();
+    return Text->getTextObj().isDrawBorder();
 }
 
 void CGUIStaticText::setTextRestrainedInside(bool restrainTextInside)
 {
-    Text->enableClipText(restrainTextInside);
+    Text->getTextObj().enableClipText(restrainTextInside);
     Rebuild = true;
 }
 
 bool CGUIStaticText::isTextRestrainedInside() const
 {
-    return Text->isClipText();
+    return Text->getTextObj().isClipText();
 }
 
 void CGUIStaticText::setTextAlignment(EGUI_ALIGNMENT horizontal, EGUI_ALIGNMENT vertical)
 {
-    Text->setAlignment(horizontal, vertical);
+    Text->getTextObj().setAlignment(horizontal, vertical);
     Rebuild = true;
 }
 
 img::color8 CGUIStaticText::getOverrideColor() const
 {
-    return Text->getOverrideColor();
+    return Text->getTextObj().getOverrideColor();
 }
 
 img::color8 CGUIStaticText::getActiveColor() const
 {
-    return Text->getActiveColor();
+    return Text->getTextObj().getActiveColor();
 }
 
 //! Sets if the static text should use the override color or the
 //! color in the gui skin.
 void CGUIStaticText::enableOverrideColor(bool enable)
 {
-    Text->enableOverrideColor(enable);
+    Text->getTextObj().enableOverrideColor(enable);
     Rebuild = true;
 }
 
 bool CGUIStaticText::isOverrideColorEnabled() const
 {
-    return Text->isOverrideColorEnabled();
+    return Text->getTextObj().isOverrideColorEnabled();
 }
 
 //! Enables or disables word wrap for using the static text as
 //! multiline text control.
 void CGUIStaticText::setWordWrap(bool enable)
 {
-    Text->enableWordWrap(enable);
+    Text->getTextObj().enableWordWrap(enable);
     Rebuild = true;
 }
 
 bool CGUIStaticText::isWordWrapEnabled() const
 {
-    return Text->isWordWrap();
+    return Text->getTextObj().isWordWrap();
 }
 
 void CGUIStaticText::setText(const wchar_t *text)
@@ -181,13 +174,13 @@ void CGUIStaticText::setText(const wchar_t *text)
 
 void CGUIStaticText::setRightToLeft(bool rtl)
 {
-    Text->enableRightToLeft(rtl);
+    Text->getTextObj().enableRightToLeft(rtl);
     Rebuild = true;
 }
 
 bool CGUIStaticText::isRightToLeft() const
 {
-    return Text->isRightToLeft();
+    return Text->getTextObj().isRightToLeft();
 }
 
 void CGUIStaticText::updateAbsolutePosition()
