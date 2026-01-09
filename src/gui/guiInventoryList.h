@@ -10,7 +10,7 @@
 #include <Render/TTFont.h>
 
 class GUIFormSpecMenu;
-class UIRects;
+class SpriteDrawBatch;
 
 class GUIInventoryList : public gui::IGUIElement
 {
@@ -131,7 +131,7 @@ private:
 	// the font
 	render::TTFont *m_font;
 	
-    std::unique_ptr<UIRects> m_slots_rects;
+    std::unique_ptr<SpriteDrawBatch> drawBatch;
 
 	// the index of the hovered item; -1 if no item is hovered
 	s32 m_hovered_i;

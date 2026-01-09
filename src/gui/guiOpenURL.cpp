@@ -16,6 +16,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
 #include "guiOpenURL.h"
+#include "client/ui/extra_images.h"
 #include "gui/IGUIEnvironment.h"
 #include "guiButton.h"
 #include "guiEditBoxWithScrollbar.h"
@@ -38,9 +39,9 @@ GUIOpenURLMenu::GUIOpenURLMenu(gui::IGUIEnvironment* env,
 ):
 	GUIModalMenu(env, parent, id, menumgr),
     url(url),
-    openURLBox(std::make_unique<UISprite>(nullptr, env->getRenderSystem()->getRenderer(),
-        env->getResourceCache(), std::vector<UIPrimitiveType>{UIPrimitiveType::RECTANGLE}, true))
+    drawBatch(std::make_unique<SpriteDrawBatch>(env->getRenderSystem(), env->getResourceCache()))
 {
+    rect = drawBatch->addRectsSprite({{}});
 }
 
 static std::string maybe_colorize_url(const std::string &url)
@@ -151,10 +152,10 @@ void GUIOpenURLMenu::drawMenu()
 		return;
 
     img::color8 bgcolor(img::PF_RGBA8, 0, 0, 0, 140);
-    openURLBox->getShape()->updateRectangle(0, toRectT<f32>(AbsoluteRect), {bgcolor});
-    openURLBox->updateMesh();
-    openURLBox->setClipRect(AbsoluteClippingRect);
-    openURLBox->draw();
+    rect->updateRect(0, {toRectT<f32>(AbsoluteRect), bgcolor});
+    rect->setClipRect(AbsoluteClippingRect);
+    drawBatch->update();
+    drawBatch->draw();
 
 	gui::IGUIElement::draw();
 #ifdef __ANDROID__

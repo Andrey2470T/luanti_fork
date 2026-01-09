@@ -44,8 +44,9 @@ GUIPasswordChange::GUIPasswordChange(gui::IGUIEnvironment* env,
 ):
 	GUIModalMenu(env, parent, id, menumgr),
     m_client(client),
-    m_box(std::make_unique<UIRects>(env->getRenderSystem(), 1))
+    drawBatch(std::make_unique<SpriteDrawBatch>(env->getRenderSystem(), env->getResourceCache()))
 {
+    m_box = drawBatch->addRectsSprite({{}});
 }
 
 void GUIPasswordChange::regenerateGui(v2u screensize)
@@ -150,9 +151,10 @@ void GUIPasswordChange::drawMenu()
 		return;
 
     img::color8 bgcolor(img::PF_RGBA8, 0, 0, 0, 140);
-    m_box->updateRect(0, toRectT<f32>(AbsoluteRect), bgcolor, true);
+    m_box->updateRect(0, {toRectT<f32>(AbsoluteRect), bgcolor});
     m_box->setClipRect(AbsoluteClippingRect);
-    m_box->draw();
+    drawBatch->update();
+    drawBatch->draw();
 
 	gui::IGUIElement::draw();
 #ifdef __ANDROID__

@@ -15,7 +15,8 @@ the arrow buttons where there is insufficient space.
 #include "IGUIButton.h"
 #include <optional>
 
-class UISprite;
+class SpriteDrawBatch;
+class UIRects;
 
 using namespace gui;
 
@@ -90,7 +91,8 @@ private:
 	recti slider_rect;
 	img::color8 current_icon_color;
 
-    std::unique_ptr<UISprite> box;
+    std::unique_ptr<SpriteDrawBatch> drawBatch;
+    UIRects *box;
 
 	void setPosRaw(const s32 &pos);
 	void updatePos();

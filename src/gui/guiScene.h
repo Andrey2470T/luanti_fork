@@ -11,6 +11,8 @@
 class Client;
 class Model;
 struct TileLayer;
+class SpriteDrawBatch;
+class UIRects;
 
 class GUIScene : public gui::IGUIElement
 {
@@ -69,5 +71,6 @@ private:
     img::color8 m_bgcolor;
 
     std::shared_ptr<TileLayer> m_layer;
-    std::unique_ptr<UISprite> m_background;
+    std::unique_ptr<SpriteDrawBatch> drawBatch;
+    UIRects *m_background;
  };

@@ -11,6 +11,7 @@
 #include "client/render/rendersystem.h"
 #include "client/mesh/meshbuffer.h"
 #include "client/mesh/model.h"
+#include "client/ui/extra_images.h"
 #include "gui/IGUIEnvironment.h"
 #include "porting.h"
 #include "client/mesh/meshoperations.h"
@@ -21,8 +22,7 @@
 GUIScene::GUIScene(Client *client, gui::IGUIEnvironment *env,
            gui::IGUIElement *parent, recti rect, s32 id)
     : IGUIElement(EGUIET_ELEMENT, env, parent, id, rect), m_client(client),
-      m_background(std::make_unique<UISprite>(nullptr, env->getRenderSystem()->getRenderer(),
-        env->getResourceCache(), true))
+      drawBatch(std::make_unique<SpriteDrawBatch>(env->getRenderSystem(), env->getResourceCache()))
 {
     m_cam = new Camera(v2u(), v3f(0.0f, 0.0f, -100.0f), v3f(0.0f));
     m_cam->setFovY(degToRad(30.0f));
@@ -40,6 +40,7 @@ GUIScene::GUIScene(Client *client, gui::IGUIEnvironment *env,
     m_layer->textures.push_back(
         env->getRenderSystem()->getAnimationManager()->getBonesTexture()->getGLTexture());
     //m_smgr->getParameters()->setAttribute(scene::ALLOW_ZWRITE_ON_TRANSPARENT, true);
+    m_background = drawBatch->addRectsSprite({});
 }
 
 void GUIScene::setModel(Model *model)
@@ -86,9 +87,9 @@ void GUIScene::draw()
 
     m_background->clear();
     Environment->getSkin()->add3DSunkenPane(
-            m_background.get(), m_bgcolor, false, true, toRectT<f32>(borderRect));
-    m_background->updateMesh();
-    m_background->draw();
+            m_background, m_bgcolor, false, true, toRectT<f32>(borderRect));
+    drawBatch->rebuild();
+    drawBatch->draw();
 
     v2i size = getAbsoluteClippingRect().getSize();
     m_cam->setAspectRatio((f32)size.X / (f32)size.Y);

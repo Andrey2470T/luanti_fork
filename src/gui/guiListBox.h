@@ -8,7 +8,7 @@
 #include <Render/TTFont.h>
 
 class GUIScrollBar;
-class UISpriteBank;
+class SpriteDrawBatch;
 
 namespace gui
 {
@@ -169,7 +169,7 @@ private:
 	bool HighlightWhenNotFocused;
     s32 LastScrollPos = -1;
 
-    std::unique_ptr<UISpriteBank> listBoxBank;
+    std::unique_ptr<SpriteDrawBatch> drawBatch;
 };
 
 } // end namespace gui

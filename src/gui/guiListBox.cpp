@@ -9,6 +9,7 @@
 #include "IGUISpriteBank.h"
 #include "client/render/rendersystem.h"
 #include "client/ui/text_sprite.h"
+#include "client/ui/extra_images.h"
 #include "guiScrollBar.h"
 #include <Core/TimeCounter.h>
 #include <Utils/String.h>
@@ -28,8 +29,7 @@ CGUIListBox::CGUIListBox(IGUIEnvironment *environment, IGUIElement *parent,
 		TotalItemHeight(0), ItemsIconWidth(0), Font(0), IconBank(0),
 		ScrollBar(0), selectTime(0), LastKeyTime(0), Selecting(false), DrawBack(drawBack),
         MoveOverSelect(moveOverSelect), AutoScroll(true), HighlightWhenNotFocused(true),
-        listBoxBank(std::make_unique<UISpriteBank>(environment->getRenderSystem(),
-            environment->getResourceCache()))
+        drawBatch(std::make_unique<SpriteDrawBatch>(environment->getRenderSystem(), environment->getResourceCache()))
 {
 	GUISkin *skin = Environment->getSkin();
 
@@ -435,7 +435,7 @@ void CGUIListBox::updateMesh()
     GUISkin *skin = Environment->getSkin();
     updateScrollBarSize(skin->getSize(EGDS_SCROLLBAR_SIZE));
 
-    listBoxBank->clear();
+    drawBatch->clear();
 
     recti *clipRect = 0;
 
@@ -451,11 +451,10 @@ void CGUIListBox::updateMesh()
     clientClip.LRC.Y -= 1;
     clientClip.clipAgainst(AbsoluteClippingRect);
 
-    listBoxBank->addSprite({{rectf(), {}}}, 0);
-    skin->add3DSunkenPane(listBoxBank->getSprite(0), skin->getColor(EGDC_3D_HIGH_LIGHT), true,
+    auto box = drawBatch->addRectsSprite({{}});
+    skin->add3DSunkenPane(box, skin->getColor(EGDC_3D_HIGH_LIGHT), true,
             DrawBack, toRectT<f32>(frameRect));
-    listBoxBank->getSprite(0)->setClipRect(clientClip);
-    listBoxBank->getSprite(0)->rebuildMesh();
+    box->setClipRect(clientClip);
 
     if (clipRect)
         clientClip.clipAgainst(*clipRect);
@@ -477,7 +476,7 @@ void CGUIListBox::updateMesh()
         if (frameRect.LRC.Y >= AbsoluteRect.ULC.Y &&
                 frameRect.ULC.Y <= AbsoluteRect.LRC.Y) {
             if (i == Selected && hl)
-                listBoxBank->addSprite({{toRectT<f32>(frameRect), {itemColor, itemColor, itemColor, itemColor}}}, &clientClip);
+                drawBatch->addRectsSprite({{toRectT<f32>(frameRect), itemColor}}, &clientClip);
 
             recti textRect = frameRect;
             textRect.ULC.X += 3;
@@ -510,10 +509,10 @@ void CGUIListBox::updateMesh()
                         getItemOverrideColor(i, EGUI_LBC_TEXT) : getItemDefaultColor(EGUI_LBC_TEXT);
                 }
 
-                auto itemText = listBoxBank->addTextSprite(Items[i].Text,
+                auto itemText = drawBatch->addTextSprite(Items[i].Text,
                     toRectT<f32>(textRect), textColor, &clientClip);
-                itemText->setAlignment(GUIAlignment::UpperLeft, GUIAlignment::Center);
-                itemText->updateBuffer(toRectT<f32>(textRect));
+                itemText->getTextObj().setAlignment(GUIAlignment::UpperLeft, GUIAlignment::Center);
+                itemText->setBoundRect(toRectT<f32>(textRect));
 
                 textRect.ULC.X -= ItemsIconWidth + 3;
             }
@@ -522,6 +521,8 @@ void CGUIListBox::updateMesh()
         frameRect.ULC.Y += ItemHeight;
         frameRect.LRC.Y += ItemHeight;
     }
+
+    drawBatch->rebuild();
 
     Rebuild = false;
 }
@@ -533,7 +534,7 @@ void CGUIListBox::draw()
 		return;
 
     updateMesh();
-    listBoxBank->drawBank();
+    drawBatch->draw();
 
 	IGUIElement::draw();
 }

@@ -9,6 +9,7 @@
 #include <Render/TTFont.h>
 
 class Client;
+class SpriteDrawBatch;
 class UITextSprite;
 
 class GUIItemImage : public gui::IGUIElement
@@ -32,5 +33,6 @@ private:
 	Client *m_client;
     std::wstring m_label;
 
-    std::unique_ptr<UITextSprite> m_text;
+    std::unique_ptr<SpriteDrawBatch> drawBatch;
+    UITextSprite *m_text;
 };

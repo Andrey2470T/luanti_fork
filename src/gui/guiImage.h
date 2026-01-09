@@ -7,8 +7,7 @@
 #include "IGUIImage.h"
 #include <variant>
 
-class ImageSprite;
-class Image2D9Slice;
+class SpriteDrawBatch;
 
 namespace gui
 {
@@ -107,7 +106,7 @@ private:
 	bool DrawBackground;
     rectf MiddleRect;
 
-    std::variant<std::shared_ptr<ImageSprite>, std::shared_ptr<Image2D9Slice>> Image;
+    std::unique_ptr<SpriteDrawBatch> drawBatch;
 };
 
 } // end namespace gui

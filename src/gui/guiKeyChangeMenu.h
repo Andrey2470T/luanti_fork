@@ -12,6 +12,7 @@
 #include "IGUIButton.h"
 #include "IGUIStaticText.h"
 
+class SpriteDrawBatch;
 class UIRects;
 
 struct key_setting
@@ -60,5 +61,6 @@ private:
 	gui::IGUIStaticText *key_used_text = nullptr;
 	std::vector<key_setting *> key_settings;
 
-    std::unique_ptr<UIRects> box;
+    std::unique_ptr<SpriteDrawBatch> drawBatch;
+    UIRects *box;
 };

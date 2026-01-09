@@ -21,6 +21,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "modalMenu.h"
 
 class Client;
+class SpriteDrawBatch;
 class UIRects;
 
 class GUIPasswordChange : public GUIModalMenu
@@ -55,5 +56,6 @@ private:
 	std::wstring m_newpass = L"";
 	std::wstring m_newpass_confirm = L"";
 
-    std::unique_ptr<UIRects> m_box;
+    std::unique_ptr<SpriteDrawBatch> drawBatch;
+    UIRects *m_box;
 };

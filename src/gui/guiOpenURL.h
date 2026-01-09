@@ -21,7 +21,8 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <string>
 
 class Client;
-class UISprite;
+class SpriteDrawBatch;
+class UIRects;
 
 class GUIOpenURLMenu : public GUIModalMenu
 {
@@ -46,5 +47,6 @@ protected:
 private:
 	std::string url;
 
-    std::unique_ptr<UISprite> openURLBox;
+    std::unique_ptr<SpriteDrawBatch> drawBatch;
+    UIRects *rect;
 };

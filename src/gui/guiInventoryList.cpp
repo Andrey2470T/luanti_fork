@@ -39,10 +39,11 @@ GUIInventoryList::GUIInventoryList(gui::IGUIEnvironment *env,
 	m_fs_menu(fs_menu),
 	m_options(options),
 	m_font(font),
-    m_slots_rects(std::make_unique<UIRects>(env->getRenderSystem(), 0)),
+    drawBatch(std::make_unique<SpriteDrawBatch>(env->getRenderSystem(), env->getResourceCache())),
 	m_hovered_i(-1),
 	m_already_warned(false)
 {
+    drawBatch->addRectsSprite({});
 }
 
 void GUIInventoryList::updateMesh()
@@ -81,7 +82,8 @@ void GUIInventoryList::updateMesh()
 
     const s32 list_size = (s32)ilist->getSize();
 
-    m_slots_rects->clear();
+    auto listRects = dynamic_cast<UIRects *>(drawBatch->getSprite(0));
+    listRects->clear();
 
     for (s32 i = 0; i < m_geom.X * m_geom.Y; i++) {
         s32 item_i = i + m_start_item_i;
@@ -104,9 +106,9 @@ void GUIInventoryList::updateMesh()
 
         // layer 0
         if (hovering) {
-            m_slots_rects->addRect(toRectT<f32>(rect), {m_options.slotbg_h});
+            listRects->addRect({toRectT<f32>(rect), m_options.slotbg_h});
         } else {
-            m_slots_rects->addRect(toRectT<f32>(rect), {m_options.slotbg_n});
+            listRects->addRect({toRectT<f32>(rect), m_options.slotbg_n});
         }
 
         // Draw inv slot borders
@@ -117,14 +119,11 @@ void GUIInventoryList::updateMesh()
             s32 y2 = rect.LRC.Y;
             s32 border = 1;
 
-            std::array<img::color8, 4> colors = {
-                m_options.slotbordercolor, m_options.slotbordercolor,
-                m_options.slotbordercolor, m_options.slotbordercolor
-            };
-            m_slots_rects->addRect(rectf(v2f(x1 - border, y1 - border), v2f(x2 + border, y1)), colors);
-            m_slots_rects->addRect(rectf(v2f(x1 - border, y2), v2f(x2 + border, y2 + border)), colors);
-            m_slots_rects->addRect(rectf(v2f(x1 - border, y1), v2f(x1, y2)), colors);
-            m_slots_rects->addRect(rectf(v2f(x2, y1), v2f(x2 + border, y2)), colors);
+            RectColors colors = m_options.slotbordercolor;
+            listRects->addRect({rectf(v2f(x1 - border, y1 - border), v2f(x2 + border, y1)), colors});
+            listRects->addRect({rectf(v2f(x1 - border, y2), v2f(x2 + border, y2 + border)), colors});
+            listRects->addRect({rectf(v2f(x1 - border, y1), v2f(x1, y2)), colors});
+            listRects->addRect({rectf(v2f(x2, y1), v2f(x2 + border, y2)), colors});
         }
 
         // layer 1
@@ -165,7 +164,7 @@ void GUIInventoryList::updateMesh()
         }
     }
 
-    m_slots_rects->rebuildMesh();
+    drawBatch->rebuild();
 
     Rebuild = false;
 }
@@ -176,7 +175,7 @@ void GUIInventoryList::draw()
 		return;
 
     updateMesh();
-    m_slots_rects->draw();
+    drawBatch->draw();
 
 	IGUIElement::draw();
 }

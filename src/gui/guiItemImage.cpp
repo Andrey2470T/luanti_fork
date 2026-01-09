@@ -16,10 +16,10 @@ GUIItemImage::GUIItemImage(gui::IGUIEnvironment *env, gui::IGUIElement *parent,
 	render::TTFont *font, Client *client) :
 	gui::IGUIElement(EGUIET_ELEMENT, env, parent, id, rectangle),
     m_item_name(item_name), m_font(font), m_client(client), m_label(),
-    m_text(std::make_unique<UITextSprite>(env->getRenderSystem()->getFontManager(), env->getSkin(),
-        L"", env->getRenderSystem()->getRenderer(), env->getResourceCache()))
+    drawBatch(std::make_unique<SpriteDrawBatch>(env->getRenderSystem(), env->getResourceCache()))
 {
-    m_text->setOverrideFont(m_font);
+    m_text = drawBatch->addTextSprite(L"");
+    m_text->getTextObj().setOverrideFont(m_font);
 }
 
 void GUIItemImage::updateMesh()
@@ -36,8 +36,10 @@ void GUIItemImage::updateMesh()
     img::color8 color = img::white;
 
     m_text->setText(m_label);
-    m_text->updateBuffer(toRectT<f32>(AbsoluteRect));
+    m_text->setBoundRect(toRectT<f32>(AbsoluteRect));
     m_text->setClipRect(AbsoluteClippingRect);
+
+    drawBatch->rebuild();
 
     Rebuild = false;
 }
@@ -53,7 +55,7 @@ void GUIItemImage::draw()
 	}
 
     updateMesh();
-    m_text->draw();
+    drawBatch->draw();
 
 	IGUIElement::draw();
 }

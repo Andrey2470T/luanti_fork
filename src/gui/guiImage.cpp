@@ -19,17 +19,12 @@ CGUIImage::CGUIImage(IGUIEnvironment *environment, IGUIElement *parent, s32 id, 
         IGUIImage(environment, parent, id, rectangle), Texture(0), Color(img::white),
         UseAlphaChannel(false), ScaleImage(false), DrawBounds(0.f, 0.f, 1.f, 1.f), DrawBackground(true),
         MiddleRect(middle),
-        Image(std::make_unique<ImageSprite>(Environment->getRenderSystem(),
-            Environment->getResourceCache()))
+        drawBatch(std::make_unique<SpriteDrawBatch>(environment->getRenderSystem(), environment->getResourceCache()))
 {
-    if (MiddleRect.getArea() == 0) {
-        Image = std::make_shared<ImageSprite>(Environment->getRenderSystem(),
-            Environment->getResourceCache());
-    }
-    else {
-        Image = std::make_shared<Image2D9Slice>(environment->getResourceCache(),
-            environment->getRenderSystem());
-    }
+    if (MiddleRect.getArea() == 0)
+        drawBatch->addRectsSprite({{}});
+    else
+        drawBatch->addImage2D9Slice({}, {}, {}, nullptr);
 }
 
 //! sets an image
@@ -79,56 +74,50 @@ void CGUIImage::updateMesh()
         }
 
         recti clippingRect;
-        std::array<img::color8, 4> Colors = UISprite::defaultColors;
+        RectColors Colors;
 
         clippingRect = AbsoluteClippingRect;
         checkBounds(clippingRect);
         if (ScaleImage) {
-            Colors = {Color, Color, Color, Color};
+            Colors = Color;
         } else {
             clippingRect.clipAgainst(AbsoluteClippingRect);
         }
         if (MiddleRect.getArea() == 0) {
-            auto img = std::get<std::shared_ptr<ImageSprite>>(Image);
-            img->update(Texture, toRectT<f32>(AbsoluteRect), Colors, &clippingRect, AnimParams);
+            auto img = dynamic_cast<UIRects *>(drawBatch->getSprite(0));
+            img->updateRect(0, {toRectT<f32>(AbsoluteRect), Colors, Texture, AnimParams});
+            img->setClipRect(clippingRect);
 
             if (FrameOffset)
                 pool->getAnimatedTileByImage(Texture)->frame_offset = FrameOffset.value();
-            img->draw();
         }
         else {
-            auto sliced_img = std::get<std::shared_ptr<Image2D9Slice>>(Image);
+            auto sliced_img = dynamic_cast<Image2D9Slice *>(drawBatch->getSprite(0));
             sliced_img->updateRects(toRectT<f32>(sourceRect), MiddleRect, toRectT<f32>(AbsoluteRect),
                 Texture, Colors, &clippingRect, AnimParams);
 
             if (FrameOffset)
                 pool->getAnimatedTileByImage(Texture)->frame_offset = FrameOffset.value();
-            sliced_img->draw();
         }
     } else if (DrawBackground) {
         recti clippingRect(AbsoluteClippingRect);
         checkBounds(clippingRect);
 
         auto color = skin->getColor(EGDC_3D_DARK_SHADOW);
-        std::array<img::color8, 4> Colors = {color, color, color, color};
+        RectColors Colors = color;
         if (MiddleRect.getArea() == 0) {
-            auto img = std::get<std::shared_ptr<ImageSprite>>(Image);
-            img->update(nullptr, toRectT<f32>(AbsoluteRect), Colors, &clippingRect, AnimParams);
-
-            if (FrameOffset)
-                pool->getAnimatedTileByImage(Texture)->frame_offset = FrameOffset.value();
-            img->draw();
+            auto img = dynamic_cast<UIRects *>(drawBatch->getSprite(0));
+            img->updateRect(0, {toRectT<f32>(AbsoluteRect), Colors});
+            img->setClipRect(clippingRect);
         }
         else {
-            auto sliced_img = std::get<std::shared_ptr<Image2D9Slice>>(Image);
+            auto sliced_img = dynamic_cast<Image2D9Slice *>(drawBatch->getSprite(0));
             sliced_img->updateRects(toRectT<f32>(SourceRect), MiddleRect, toRectT<f32>(AbsoluteRect),
                 nullptr, Colors, &clippingRect, AnimParams);
-
-            if (FrameOffset)
-                pool->getAnimatedTileByImage(Texture)->frame_offset = FrameOffset.value();
-            sliced_img->draw();
         }
     }
+
+    drawBatch->rebuild();
 
     Rebuild = false;
 }
@@ -141,12 +130,7 @@ void CGUIImage::draw()
 
     updateMesh();
 
-    if (MiddleRect.getArea() == 0) {
-        std::get<std::shared_ptr<ImageSprite>>(Image)->draw();
-    }
-    else {
-        std::get<std::shared_ptr<Image2D9Slice>>(Image)->draw();
-    }
+    drawBatch->draw();
 
 	IGUIElement::draw();
 }

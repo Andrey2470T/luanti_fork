@@ -11,6 +11,7 @@ the arrow buttons where there is insufficient space.
 */
 
 #include "guiScrollBar.h"
+#include "client/ui/extra_images.h"
 #include "gui/IGUIEnvironment.h"
 #include "guiButton.h"
 #include "porting.h"
@@ -27,15 +28,15 @@ GUIScrollBar::GUIScrollBar(IGUIEnvironment *environment, IGUIElement *parent, s3
 		dragged_by_slider(false), tray_clicked(false), scroll_pos(0),
 		draw_center(0), thumb_size(0), min_pos(0), max_pos(100), small_step(10),
         large_step(50), drag_offset(0), page_size(100), border_size(0),
-        box(std::make_unique<UISprite>(nullptr, environment->getRenderSystem()->getRenderer(),
-            environment->getResourceCache(), std::vector<UIPrimitiveType>{
-            UIPrimitiveType::RECTANGLE, UIPrimitiveType::RECTANGLE}, true))
+        drawBatch(std::make_unique<SpriteDrawBatch>(environment->getRenderSystem(), environment->getResourceCache()))
 {
 	refreshControls();
 	setNotClipped(false);
 	setTabStop(true);
 	setTabOrder(-1);
 	setPos(0);
+
+    box = drawBatch->addRectsSprite({});
 }
 
 bool GUIScrollBar::OnEvent(const core::Event &event)
@@ -173,7 +174,7 @@ void GUIScrollBar::updateMesh()
     slider_rect = AbsoluteRect;
     img::color8 color = skin->getColor(EGDC_SCROLLBAR);
 
-    box->getShape()->addRectangle(toRectT<f32>(slider_rect), {color, color, color, color});
+    box->addRect({toRectT<f32>(slider_rect), color});
 
     if (!equals(range(), 0.0f)) {
     if (is_horizontal) {
@@ -188,11 +189,11 @@ void GUIScrollBar::updateMesh()
                 slider_rect.ULC.Y + thumb_size;
     }
 
-        skin->add3DButtonPaneStandard(box.get(), toRectT<f32>(slider_rect));
-}
-
-    box->rebuildMesh();
+        skin->add3DButtonPaneStandard(box, toRectT<f32>(slider_rect));
+    }
     box->setClipRect(AbsoluteClippingRect);
+
+    drawBatch->rebuild();
 }
 
 void GUIScrollBar::draw()
@@ -201,7 +202,7 @@ void GUIScrollBar::draw()
 		return;
 
     updateMesh();
-    box->draw();
+    drawBatch->draw();
 
 	IGUIElement::draw();
 }

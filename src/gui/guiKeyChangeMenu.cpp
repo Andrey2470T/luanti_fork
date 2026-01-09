@@ -71,8 +71,9 @@ enum
 GUIKeyChangeMenu::GUIKeyChangeMenu(gui::IGUIEnvironment* env,
         gui::IGUIElement* parent, s32 id, IMenuManager *menumgr) :
         GUIModalMenu(env, parent, id, menumgr),
-        box(std::make_unique<UIRects>(env->getRenderSystem(), 1))
+        drawBatch(std::make_unique<SpriteDrawBatch>(env->getRenderSystem(), env->getResourceCache()))
 {
+    box = drawBatch->addRectsSprite({{}});
 	init_keys();
 }
 
@@ -197,9 +198,10 @@ void GUIKeyChangeMenu::drawMenu()
 		return;
 
     img::color8 bgcolor(img::PF_RGBA8, 0, 0, 0, 140);
-    box->updateRect(0, toRectT<f32>(AbsoluteRect), {bgcolor, bgcolor, bgcolor, bgcolor}, true);
+    box->updateRect(0, {toRectT<f32>(AbsoluteRect), bgcolor});
     box->setClipRect(AbsoluteClippingRect);
-    box->draw();
+    drawBatch->update();
+    drawBatch->draw();
 
 	gui::IGUIElement::draw();
 }
