@@ -31,7 +31,7 @@ public:
 
     std::wstring getText() const
     {
-        text.getText();
+        return text.getText();
     }
     void setText(const EnrichedString &textstr)
     {

@@ -33,18 +33,15 @@ struct RectColors
     static const std::array<img::color8, 4> defaultColors;
     std::array<img::color8, 4> colors=defaultColors;
 
-    RectColors(const img::color8 &color)
-    {
-        colors = {color, color, color, color};
-    }
-    RectColors(const std::initializer_list<img::color8> &_colors={img::white, img::white, img::white, img::white})
-    {
-        std::copy(_colors.begin(), _colors.end(), colors.begin());
-    }
+    RectColors(const img::color8 &color=img::white)
+        : colors{color, color, color, color}
+    {}
+    RectColors(const img::color8 &color1, const img::color8 &color2, const img::color8 &color3, const img::color8 &color4)
+        : colors{color1, color2, color3, color4}
+    {}
     RectColors(const std::array<img::color8, 4> &_colors)
-    {
-        colors = _colors;
-    }
+        : colors(_colors)
+    {}
 
     const img::color8 &operator[](u8 index) const
     {
@@ -113,6 +110,12 @@ class UIShape
 public:
 	UIShape() = default;
 
+    UIShape(const UIShape&) = delete;
+    UIShape& operator=(const UIShape&) = delete;
+
+    UIShape(UIShape&&) = default;
+    UIShape& operator=(UIShape&&) = default;
+
     UIPrimitiveType getPrimitiveType(u32 n) const
     {
         auto p = primitives.at(n).get();
@@ -171,7 +174,7 @@ public:
 
     void updateBuffer(MeshBuffer *buf, u32 vertexOffset=0, u32 indexOffset=0);
 private:
-    void updateBuffer(MeshBuffer *buf, u32 primitiveNum, u32 vertexOffset=0, u32 indexOffset=0);
+    void updatePrimInBuffer(MeshBuffer *buf, u32 primitiveNum, u32 vertexOffset=0, u32 indexOffset=0);
 };
 
 class SpriteDrawBatch;
@@ -251,14 +254,6 @@ public:
     virtual void appendToBatch() = 0;
     //  Update the meshbuffer directly
     virtual void updateBatch() = 0;
-    
-    // Draws all or part of primitives
-    /*virtual void draw(
-        std::optional<u32> primOffset=std::nullopt,
-        std::optional<u32> primCount=std::nullopt) = 0;*/
-//protected:
-    //bool checkPrimitives(std::optional<u32> &offset, std::optional<u32> &count);
-    //void drawPart(u32 pOffset=0, u32 pCount=1);
 };
 
 /*enum class BankAlignmentType : u8
@@ -299,6 +294,18 @@ struct TexturedRect
     RectColors colors = RectColors::defaultColors;
     img::Image *image = nullptr;
     std::optional<AtlasTileAnim> anim=std::nullopt;
+
+    TexturedRect() = default;
+
+    TexturedRect(const rectf& _area, const RectColors& _colors, img::Image* _image = nullptr,
+        std::optional<AtlasTileAnim> _anim=std::nullopt)
+        : area(_area), colors(_colors), image(_image), anim(_anim)
+    {}
+
+    TexturedRect(const rectf& _area, const img::color8& singleColor, img::Image* _image = nullptr,
+        std::optional<AtlasTileAnim> _anim=std::nullopt)
+        : area(_area), colors(singleColor), image(_image), anim(_anim)
+    {}
 };
 
 class UIRects;
@@ -310,6 +317,12 @@ struct SpriteDrawChunk
     render::Texture2D *texture = nullptr;
     recti clipRect;
     u32 rectsN;
+
+    SpriteDrawChunk() = default;
+
+    SpriteDrawChunk(render::Texture2D *_texture, const recti &_clipRect, u32 _rectsN)
+        : texture(_texture), clipRect(_clipRect), rectsN(_rectsN)
+    {}
 };
 
 class SpriteDrawBatch
@@ -332,9 +345,7 @@ class SpriteDrawBatch
 
     bool updateBatch = false;
 public:
-    SpriteDrawBatch(RenderSystem *_rndsys, ResourceCache *_cache)
-        : rndsys(_rndsys), cache(_cache)
-    {}
+    SpriteDrawBatch(RenderSystem *_rndsys, ResourceCache *_cache);
 
     v2u getSize() const
     {

@@ -153,6 +153,8 @@ void UIRects::updateRect(u32 n, const TexturedRect &rect, std::optional<rectf> s
         tileRect = srcRect.value();
     shape.updateRectangle(n, rect.area, rect.colors, tileRect);
 
+    images.resize(shape.getPrimitiveCount());
+
     if (images.at(n) != rect.image)
         images.at(n) = rect.image;
 
@@ -163,10 +165,13 @@ void UIRects::appendToBatch()
 {
     if (!changed)
         return;
+
+    images.resize(shape.getPrimitiveCount());
+
     std::vector<SpriteDrawChunk> chunks;
     for (u32 k = 0; k < shape.getPrimitiveCount(); k++) {
         render::Texture2D *tex = images[k] ? guiPool->getAtlasByTile(images[k])->getTexture() : nullptr;
-        chunks.emplace_back(tex, clipRect, 1);
+        chunks.push_back({tex, clipRect, 1});
     }
     drawBatch->addSpriteChunks(this, chunks);
 

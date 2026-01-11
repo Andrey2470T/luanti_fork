@@ -1,5 +1,6 @@
 #include "sprite.h"
 #include "batcher2d.h"
+#include "client/mesh/defaultVertexTypes.h"
 #include "client/render/renderer.h"
 #include <Render/Texture2D.h>
 #include "client/render/rendersystem.h"
@@ -304,12 +305,12 @@ void UIShape::scale(const v2f &scale, std::optional<v2f> c)
 void UIShape::updateBuffer(MeshBuffer *buf, u32 vertexOffset, u32 indexOffset)
 {
     for (auto dirtyPrim : dirtyPrimitives)
-        updateBuffer(buf, dirtyPrim, vertexOffset, indexOffset);
+        updatePrimInBuffer(buf, dirtyPrim, vertexOffset, indexOffset);
 
     dirtyPrimitives.clear();
 }
 
-void UIShape::updateBuffer(MeshBuffer *buf, u32 primitiveNum, u32 vertexOffset, u32 indexOffset)
+void UIShape::updatePrimInBuffer(MeshBuffer *buf, u32 primitiveNum, u32 vertexOffset, u32 indexOffset)
 {
     auto foundDirtyPrim = std::find(dirtyPrimitives.begin(), dirtyPrimitives.end(), primitiveNum);
 
@@ -392,6 +393,10 @@ void BankAutoAlignment::alignSprite(u32 spriteID, std::optional<rectf> overrideR
     rectf oldArea = sprite->getArea();
     sprite->getShape()->move(area.getCenter() - oldArea.getCenter());
 }*/
+
+SpriteDrawBatch::SpriteDrawBatch(RenderSystem *_rndsys, ResourceCache *_cache)
+    : rndsys(_rndsys), cache(_cache), buffer(std::make_unique<MeshBuffer>(true, VType2D))
+{}
 
 // if auto-align is enabled, the rects areas must be absolute, otherwise - relative to the ulc
 UIRects *SpriteDrawBatch::addRectsSprite(const std::vector<TexturedRect> &rects,
@@ -509,7 +514,7 @@ void SpriteDrawBatch::rebuild()
 {
     std::vector<UIPrimitiveType> prims;
     for (auto &sprite : sprites) {
-        auto shape = sprite->getShape();
+        auto &shape = sprite->getShape();
 
         for (u32 i = 0; i < shape.getPrimitiveCount(); i++)
             prims.push_back(shape.getPrimitiveType(i));
@@ -542,6 +547,20 @@ void SpriteDrawBatch::rebuild()
 
 void SpriteDrawBatch::update()
 {
+    std::vector<UIPrimitiveType> prims;
+    for (auto &sprite : sprites) {
+        auto &shape = sprite->getShape();
+
+        for (u32 i = 0; i < shape.getPrimitiveCount(); i++)
+            prims.push_back(shape.getPrimitiveType(i));
+    }
+
+    // As clear() is not called, it should reallocate only once
+    buffer->reallocateData(
+        UIShape::countRequiredVCount(prims),
+        UIShape::countRequiredICount(prims)
+    );
+
     u32 rectOffset = 0;
     for (auto &sprite : sprites) {
         sprite->updateBatch();
@@ -602,7 +621,7 @@ void SpriteDrawBatch::batch()
         for (auto &chunk : spriteToChunks.second) {
             auto &texBatch = subBatch[chunk.texture];
 
-            auto clipToRectsIt = std::find(texBatch.begin(), texBatch.end(),
+            auto clipToRectsIt = std::find_if(texBatch.begin(), texBatch.end(),
                 [&chunk] (const auto &clipToRect)
                 {
                     return chunk.clipRect == clipToRect.first;
@@ -610,7 +629,7 @@ void SpriteDrawBatch::batch()
 
             std::vector<std::tuple<UISprite *, u32, u32>> *rectRanges = nullptr;
             if (clipToRectsIt == texBatch.end()) {
-                texBatch.emplace_back(chunk.clipRect);
+                texBatch.emplace_back(chunk.clipRect, std::vector<std::tuple<UISprite *, u32, u32>>());
                 rectRanges = &(texBatch.back().second);
             }
             else

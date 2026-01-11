@@ -3456,26 +3456,21 @@ void GUIFormSpecMenu::drawMenu()
     v2u wndSize = m_rndsys->getWindowSize();
     recti allbg(0, 0, wndSize.X, wndSize.Y);
 
-    u32 cur_render_rect = 0;
     if (m_bgfullscreen || m_bgnonfullscreen) {
+        m_menu->addRect({});
+
         if (m_bgfullscreen) {
-            m_menu->clear();
             m_menu->updateRect(0, {toRectT<f32>(allbg), m_fullscreen_bgcolor});
             m_menu->setClipRect(allbg);
             drawBatch->update();
             drawBatch->draw();
-
-            cur_render_rect++;
         }
 
         if (m_bgnonfullscreen) {
-            m_menu->clear();
             m_menu->updateRect(0, {toRectT<f32>(AbsoluteRect), m_bgcolor});
             m_menu->setClipRect(AbsoluteClippingRect);
             drawBatch->update();
             drawBatch->draw();
-
-            cur_render_rect++;
         }
     }
 
@@ -3538,12 +3533,10 @@ void GUIFormSpecMenu::drawMenu()
 	if (hovered) {
 		if (m_show_debug) {
 			recti rect = hovered->getAbsoluteClippingRect();
-            m_menu->clear();
             m_menu->updateRect(0, {toRectT<f32>(rect), img::colorU32NumberToObject(0x22FFFF00)});
             m_menu->setClipRect(rect);
             drawBatch->update();
             drawBatch->draw();
-            cur_render_rect++;
 		}
 
 		// find the formspec-element of the hovered IGUIElement (a parent)

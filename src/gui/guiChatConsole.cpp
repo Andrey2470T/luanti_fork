@@ -418,7 +418,7 @@ void GUIChatConsole::updatePrompt()
 				y + font_height * (cursor_len ? m_cursor_height+1 : 1)
 			);
             auto cursor = dynamic_cast<UIRects *>(drawBatch->getSprite(3));
-            cursor->updateRect(0, {toRectT<f32>(destrect)});
+            cursor->updateRect(0, {toRectT<f32>(destrect), RectColors::defaultColors});
             cursor->setClipRect(AbsoluteClippingRect);
 		}
 	}

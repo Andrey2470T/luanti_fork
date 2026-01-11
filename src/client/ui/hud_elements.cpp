@@ -153,8 +153,8 @@ void HudStatbar::update()
 {
     sprite->clear();
 
-    const img::color8 color = img::white;
-    const RectColors colors = {color, color, color, color};
+    img::color8 color = img::white;
+    RectColors colors = {color, color, color, color};
 
     img1 = cache->getOrLoad<img::Image>(ResourceType::IMAGE, elem->text);
     if (!img1)
@@ -355,7 +355,7 @@ void HudImageWaypoint::update()
         (elem->number >> 8)  & 0xFF,
         (elem->number >> 0)  & 0xFF, 255);
 
-    imgSprite->updateRect(0, {img_rect, {color, color, color, color}, img1});
+    imgSprite->updateRect(0, {img_rect, color, img1});
 }
 
 HudImage::HudImage(Client *client, const HudElement *elem, SpriteDrawBatch *drawBatch)
@@ -735,7 +735,7 @@ void HudHotbar::update()
     HudInventoryList::update();
 
     if (g_touchcontrols && background_img.empty()) {
-        auto shape = sprite->getShape();
+        auto &shape = sprite->getShape();
         for (u32 i = 0; i < shape.getPrimitiveCount(); i++) {
             auto rect = shape.getPrimitiveArea(i);
 

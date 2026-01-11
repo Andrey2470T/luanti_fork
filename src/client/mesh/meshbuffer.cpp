@@ -18,7 +18,7 @@ MeshBuffer::MeshBuffer(u32 vertexCount, u32 indexCount, bool createIBO,
     : Type(createIBO ? MeshBufferType::VERTEX_INDEX : MeshBufferType::VERTEX)
 {
     if (uploadData)
-        VAO = std::make_shared<render::Mesh>(nullptr, vertexCount, nullptr, indexCount, descr, createIBO, usage);
+        VAO = std::make_shared<render::Mesh>(vertexCount, indexCount, descr, createIBO, usage);
     else
         VAO = std::make_shared<render::Mesh>(descr, usage);
     initData(vertexCount, indexCount);
@@ -150,13 +150,15 @@ void MeshBuffer::setIndexAt(u32 index, s32 pos)
 
 void MeshBuffer::reallocateData(u32 vertexCount, u32 indexCount)
 {
-    if (vertexCount != VBuffer.Data->count())
+    bool vbuffer_modified = vertexCount != VBuffer.Data->count();
+    bool ibuffer_modified = hasIBO() && indexCount != IBuffer.Data->count();
+    if (vbuffer_modified)
         VBuffer.Data->reallocate(vertexCount);
 
-    if (hasIBO() && indexCount != IBuffer.Data->count())
+    if (ibuffer_modified)
         IBuffer.Data->reallocate(indexCount);
 
-    if (vertexCount != VBuffer.Data->count() || (hasIBO() && indexCount != IBuffer.Data->count()))
+    if (vbuffer_modified || ibuffer_modified)
         VAO->reallocate(vertexCount, hasIBO() ? indexCount : 0);
 }
 
@@ -165,7 +167,7 @@ void MeshBuffer::uploadData()
     if (VBuffer.Dirty) {
         u32 startV = VBuffer.DirtyRange.first != -1 ? VBuffer.DirtyRange.first : 0;
         u32 endV = VBuffer.DirtyRange.second != -1 ? VBuffer.DirtyRange.second : VBuffer.Data->count();
-        VAO->uploadVertexData(VBuffer.Data->data(), endV - startV + 1, startV);
+        VAO->uploadVertexData(VBuffer.Data->data(), endV - startV, startV);
 
         VBuffer.Dirty = false;
         VBuffer.DirtyRange = {-1, -1};
@@ -174,7 +176,7 @@ void MeshBuffer::uploadData()
     if (hasIBO() && IBuffer.Dirty) {
         u32 startI = IBuffer.DirtyRange.first != -1 ? IBuffer.DirtyRange.first : 0;
         u32 endI = IBuffer.DirtyRange.second != -1 ? IBuffer.DirtyRange.second : IBuffer.Data->count();
-        VAO->uploadIndexData((u32 *)IBuffer.Data->data(), endI - startI + 1, startI);
+        VAO->uploadIndexData((u32 *)IBuffer.Data->data(), endI - startI, startI);
 
         IBuffer.Dirty = false;
         IBuffer.DirtyRange = {-1, -1};

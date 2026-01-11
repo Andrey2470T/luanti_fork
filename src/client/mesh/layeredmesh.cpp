@@ -202,7 +202,7 @@ void LayeredMesh::updateIndexBuffers()
         for (u32 index_i = 0; index_i < bufs_indices.at(buf_i).size(); index_i++)
             buffers.at(buf_i)->setIndexAt(bufs_indices.at(buf_i).at(index_i), index_i);
         
-        buffers.at(buf_i)->uploadIndexData();
+        buffers.at(buf_i)->uploadData();
     }
 }
 

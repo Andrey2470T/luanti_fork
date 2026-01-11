@@ -132,7 +132,10 @@ Minimap *RenderSystem::getDefaultMinimap() const
 void RenderSystem::activateAtlas(img::Image *img, bool basic_pool)
 {
     auto pool = getPool(basic_pool);
-    auto texture = pool->getAtlasByTile(img)->getTexture();
+    render::Texture2D *texture = nullptr;
+
+    if (img)
+        texture = pool->getAtlasByTile(img)->getTexture();
     renderer->setTexture(texture);
 }
 

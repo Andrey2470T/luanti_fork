@@ -45,7 +45,7 @@ inline static const char *yawToDirectionString(int yaw)
 GameUI::GameUI(Client *client)
     : rndsys(client->getRenderSystem()),
         drawBatch(std::make_unique<SpriteDrawBatch>(rndsys, client->getResourceCache())),
-         hud(std::make_unique<Hud>(client, drawBatch.get()))
+        hud(std::make_unique<Hud>(client, drawBatch.get()))
 {
     auto guienv = rndsys->getGUIEnvironment();
 	if (guienv && guienv->getSkin())

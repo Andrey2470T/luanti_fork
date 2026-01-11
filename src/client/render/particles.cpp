@@ -69,9 +69,9 @@ Particle::Particle(RenderSystem *rnd_sys,
             {"BlendMode", ByteArrayElementType::U8}
         }}, 1);
     newData.setM4x4(m_particle_data.transform, 0, 0);
-    newData.setColor8(m_particle_data.light_color, 0, 1);
-    newData.setV2F(toV2T<f32>(m_particle_data.tile_coords), 0, 2);
-    newData.setV2F(toV2T<f32>(m_particle_data.tile_size), 0, 3);
+    newData.setColor8(m_particle_data.light_color, 1, 0);
+    newData.setV2F(toV2T<f32>(m_particle_data.tile_coords), 2, 0);
+    newData.setV2F(toV2T<f32>(m_particle_data.tile_size), 3, 0);
 
     setBlending(newData);
 
@@ -160,9 +160,9 @@ void Particle::updateDataInTexture()
             {"BlendMode", ByteArrayElementType::U8}
         }}, 1);
     newData.setM4x4(m_particle_data.transform, 0, 0);
-    newData.setColor8(m_particle_data.light_color, 0, 1);
-    newData.setV2F(toV2T<f32>(m_particle_data.tile_coords), 0, 2);
-    newData.setV2F(toV2T<f32>(m_particle_data.tile_size), 0, 3);
+    newData.setColor8(m_particle_data.light_color, 1, 0);
+    newData.setV2F(toV2T<f32>(m_particle_data.tile_coords), 2, 0);
+    newData.setV2F(toV2T<f32>(m_particle_data.tile_size), 3, 0);
 
     setBlending(newData);
 
@@ -295,7 +295,7 @@ void Particle::setBlending(ByteArray &sampleArr)
         break;
     }
     m_particle_data.blend_mode = (u8)blendType;
-    sampleArr.setUInt8(m_particle_data.blend_mode, 0, 4);
+    sampleArr.setUInt8(m_particle_data.blend_mode, 4, 0);
 }
 
 /*

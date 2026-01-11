@@ -19,7 +19,8 @@ GUIBox::GUIBox(gui::IGUIEnvironment *env, gui::IGUIElement *parent, s32 id,
     m_borderwidths(borderwidths),
     drawBatch(std::make_unique<SpriteDrawBatch>(env->getRenderSystem(), env->getResourceCache()))
 {
-    drawBatch->addSprite(new UIRects(env->getResourceCache(), drawBatch.get(), env->getRenderSystem()->getPool(false), 5));
+    m_box = new UIRects(env->getResourceCache(), drawBatch.get(), env->getRenderSystem()->getPool(false), 5);
+    drawBatch->addSprite(m_box);
 }
 
 void GUIBox::updateMesh()

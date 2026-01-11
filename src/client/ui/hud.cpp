@@ -29,21 +29,21 @@ Hud::Hud(Client *_client, SpriteDrawBatch *_drawBatch)
     initCrosshair();
 
     if (g_settings->getBool("enable_minimap")) {
-        if (client->getProtoVersion() < 44) {
+        //if (client->getProtoVersion() < 44) {
             HudElement *minimap = new HudElement{HUD_ELEM_MINIMAP, v2f(1, 0), "", v2f(), "", 0 , 0, 0, v2f(-1, 1),
                 v2f(-10, 10), v3f(), v2i(256, 256), 0, "", 0};
             u32 id = player->getFreeHudID();
             hudsprites.emplace_back(id, std::make_unique<HudMinimap>(client, minimap));
             builtinMinimapID = id;
-        }
+        //}
     }
-    if (client->getProtoVersion() < 46) {
+    //if (client->getProtoVersion() < 46) {
         HudElement *hotbar = new HudElement{HUD_ELEM_HOTBAR, v2f(0.5, 1), "", v2f(), "", 0 , 0, 0, v2f(0, -1),
             v2f(0, -4), v3f(), v2i(), 0, "", 0};
         u32 id = player->getFreeHudID();
         hudsprites.emplace_back(id, std::make_unique<HudHotbar>(client, hotbar, drawBatch));
         builtinHotbarID = id;
-    }
+    //}
 
     resortElements();
 }

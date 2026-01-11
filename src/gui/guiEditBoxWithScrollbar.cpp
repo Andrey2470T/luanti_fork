@@ -259,7 +259,7 @@ void GUIEditBoxWithScrollBar::draw()
 		return;
 
     updateMesh();
-    drawBatch->drawBank();
+    drawBatch->draw();
 
 	// draw children
     IGUIElement::draw();

@@ -204,7 +204,7 @@ void RenderCAO::updateAppearance(std::string mod)
         updateVertexColor(false);
     }
 
-    m_model->getMesh()->getBuffer(0)->uploadVertexData();
+    m_model->getMesh()->getBuffer(0)->uploadData();
 }
 
 void RenderCAO::setAttachment(object_t parent_id, const std::string &bone,

@@ -166,7 +166,7 @@ void CGUISpriteBank::update2DSprite(u32 index, const recti &destRect,
 
 void CGUISpriteBank::draw2DSprite()
 {
-    SpriteBank->draw();
+    drawBatch->draw();
 }
 
 } // namespace gui

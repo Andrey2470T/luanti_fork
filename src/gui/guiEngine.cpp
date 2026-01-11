@@ -453,7 +453,7 @@ void GUIEngine::drawOverlay()
 		return;
 
 	/* Draw background texture */
-    m_overlay->updateRect(0, {rectf(0, 0, screensize.X, screensize.Y)});
+    m_overlay->updateRect(0, {rectf(0, 0, screensize.X, screensize.Y), RectColors::defaultColors});
 }
 
 /******************************************************************************/
