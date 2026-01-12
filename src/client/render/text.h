@@ -6,6 +6,7 @@
 #include "gui/GUISkin.h"
 
 class FontManager;
+class UITextSprite;
 
 // Text used for 2d and 3d display
 class Text
@@ -33,9 +34,8 @@ class Text
 
     FontManager *mgr;
 
-public:
     bool needsUpdate = true;
-
+public:
     Text(
         FontManager *font_manager, GUISkin *guiskin,
         std::variant<EnrichedString, std::wstring> text,
@@ -170,6 +170,8 @@ public:
     {
         setText(EnrichedString(text));
     }
+
+    friend class UITextSprite;
 private:
     void updateText(std::optional<rectf> clipRect=std::nullopt);
 };

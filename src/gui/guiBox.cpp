@@ -101,7 +101,7 @@ void GUIBox::updateMesh()
         m_box->updateRect(i+1, {toRectT<f32>(border_rects[i]), m_bordercolors[i]});
 
     m_box->setClipRect(AbsoluteClippingRect);
-    drawBatch->update();
+    drawBatch->rebuild();
     
     Rebuild = false;
 }

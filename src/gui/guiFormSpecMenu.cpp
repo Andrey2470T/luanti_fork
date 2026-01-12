@@ -3462,14 +3462,14 @@ void GUIFormSpecMenu::drawMenu()
         if (m_bgfullscreen) {
             m_menu->updateRect(0, {toRectT<f32>(allbg), m_fullscreen_bgcolor});
             m_menu->setClipRect(allbg);
-            drawBatch->update();
+            drawBatch->rebuild();
             drawBatch->draw();
         }
 
         if (m_bgnonfullscreen) {
             m_menu->updateRect(0, {toRectT<f32>(AbsoluteRect), m_bgcolor});
             m_menu->setClipRect(AbsoluteClippingRect);
-            drawBatch->update();
+            drawBatch->rebuild();
             drawBatch->draw();
         }
     }
@@ -3535,7 +3535,7 @@ void GUIFormSpecMenu::drawMenu()
 			recti rect = hovered->getAbsoluteClippingRect();
             m_menu->updateRect(0, {toRectT<f32>(rect), img::colorU32NumberToObject(0x22FFFF00)});
             m_menu->setClipRect(rect);
-            drawBatch->update();
+            drawBatch->rebuild();
             drawBatch->draw();
 		}
 

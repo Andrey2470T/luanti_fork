@@ -24,7 +24,7 @@ LoadScreen::LoadScreen(ResourceCache *_cache, RenderSystem *_system, FontManager
     progress_rect = drawBatch->addRectsSprite({
         {progress_img_size, RectColors::defaultColors, progress_img}}, nullptr, 1);
 
-    progress_text = drawBatch->addTextSprite(L"", std::nullopt, img::white, nullptr, 2);
+    progress_text = drawBatch->addTextSprite(L"Text", std::nullopt, img::white, nullptr, 2);
 }
 
 void LoadScreen::draw(v2u screensize, const std::wstring &text, f32 dtime, bool menu_clouds,

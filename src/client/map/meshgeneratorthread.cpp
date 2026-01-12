@@ -210,7 +210,7 @@ MeshUpdateWorkerThread::MeshUpdateWorkerThread(Client *client, MeshUpdateQueue *
 
 void MeshUpdateWorkerThread::doUpdate()
 {
-	QueuedMeshUpdate *q;
+    QueuedMeshUpdate *q;
 	while ((q = m_queue_in->pop())) {
 		if (m_generation_interval)
 			sleep_ms(m_generation_interval);
@@ -235,7 +235,7 @@ void MeshUpdateWorkerThread::doUpdate()
 
         if (stopRequested())
             break;
-	}
+    }
 }
 
 /*

@@ -140,7 +140,7 @@ void CGUISpriteBank::update2DSprite(u32 index, const v2i &pos,
 
     Image->updateRect(0, {toRectT<f32>(r), color, tex});
     Image->setClipRect(*clip);
-    drawBatch->update();
+    drawBatch->rebuild();
 }
 
 void CGUISpriteBank::update2DSprite(u32 index, const recti &destRect,
@@ -161,7 +161,7 @@ void CGUISpriteBank::update2DSprite(u32 index, const recti &destRect,
 
     Image->updateRect(0, {toRectT<f32>(destRect), {colors[0], colors[1], colors[2], colors[3]}});
     Image->setClipRect(*clip);
-    drawBatch->update();
+    drawBatch->rebuild();
 }
 
 void CGUISpriteBank::draw2DSprite()

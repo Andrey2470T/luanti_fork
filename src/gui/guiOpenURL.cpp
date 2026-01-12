@@ -154,7 +154,7 @@ void GUIOpenURLMenu::drawMenu()
     img::color8 bgcolor(img::PF_RGBA8, 0, 0, 0, 140);
     rect->updateRect(0, {toRectT<f32>(AbsoluteRect), bgcolor});
     rect->setClipRect(AbsoluteClippingRect);
-    drawBatch->update();
+    drawBatch->rebuild();
     drawBatch->draw();
 
 	gui::IGUIElement::draw();

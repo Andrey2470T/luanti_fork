@@ -347,7 +347,7 @@ void GUIEngine::run()
 			// the menu.
             drawHeader();
 
-            headerDrawBatch->update();
+            headerDrawBatch->rebuild();
             headerDrawBatch->draw();
 
             m_rndsys->endDraw();

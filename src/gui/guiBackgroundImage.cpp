@@ -59,7 +59,7 @@ void GUIBackgroundImage::updateMesh()
         img->updateRects(toRectT<f32>(srcrect), toRectT<f32>(rect), toRectT<f32>(m_middle), texture);
 	}
 
-    drawBatch->update();
+    drawBatch->rebuild();
 	
 	Rebuild = false;
 }

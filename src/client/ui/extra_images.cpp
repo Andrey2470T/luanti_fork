@@ -46,10 +46,8 @@ void Image2D9Slice::appendToBatch()
 {
     if (!changed)
         return;
-    auto tex = guiPool->getAtlasByTile(image)->getTexture();
+    render::Texture2D *tex = image ? guiPool->getAtlasByTile(image)->getTexture() : nullptr;
     drawBatch->addSpriteChunks(this, {{tex, clipRect, 9}});
-
-    changed = false;
 }
 void Image2D9Slice::updateBatch()
 {
@@ -99,7 +97,12 @@ void Image2D9Slice::createSlice(u8 x, u8 y)
         break;
     };
 
-    shape.addRectangle(destRect, rectColors, srcRect);
+    if (image) {
+        u32 atlasSize = guiPool->getAtlasByTile(image)->getTextureSize();
+        shape.addRectangle(destRect, rectColors, srcRect);
+    }
+    else
+        shape.addRectangle(destRect, rectColors, srcRect);
 }
 
 void Image2D9Slice::createSlices()
@@ -117,6 +120,8 @@ UIRects::UIRects(ResourceCache *resCache, SpriteDrawBatch *drawBatch, AtlasPool 
 {
     for (u32 k = 0; k < init_rects_count; k++)
         shape.addRectangle({}, RectColors::defaultColors);
+
+    images.resize(init_rects_count);
 
     changed = true;
 }
@@ -139,8 +144,15 @@ void UIRects::addRect(const TexturedRect &rect, std::optional<rectf> srcRect)
 
     if (srcRect.has_value())
         tileRect = srcRect.value();
-    shape.addRectangle(rect.area, rect.colors, tileRect);
+
     images.push_back(rect.image);
+
+    if (rect.image) {
+        u32 atlasSize = guiPool->getAtlasByTile(rect.image)->getTextureSize();
+        shape.addRectangle(rect.area, rect.colors, tileRect);
+    }
+    else
+        shape.addRectangle(rect.area, rect.colors, tileRect);
 
     changed = true;
 }
@@ -151,12 +163,16 @@ void UIRects::updateRect(u32 n, const TexturedRect &rect, std::optional<rectf> s
 
     if (srcRect.has_value())
         tileRect = srcRect.value();
-    shape.updateRectangle(n, rect.area, rect.colors, tileRect);
 
     images.resize(shape.getPrimitiveCount());
+    images.at(n) = rect.image;
 
-    if (images.at(n) != rect.image)
-        images.at(n) = rect.image;
+    if (images.at(n)) {
+        u32 atlasSize = guiPool->getAtlasByTile(images.at(n))->getTextureSize();
+        shape.updateRectangle(n, rect.area, rect.colors, tileRect);
+    }
+    else
+        shape.updateRectangle(n, rect.area, rect.colors, tileRect);
 
     changed = true;
 }
@@ -174,8 +190,6 @@ void UIRects::appendToBatch()
         chunks.push_back({tex, clipRect, 1});
     }
     drawBatch->addSpriteChunks(this, chunks);
-
-    changed = false;
 }
 void UIRects::updateBatch()
 {

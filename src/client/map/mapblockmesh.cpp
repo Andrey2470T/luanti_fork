@@ -152,7 +152,7 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data)
             u32 offset = mesh_layer.second.offset;
             u32 count = mesh_layer.second.count;
 
-            for (u32 k = offset; k < offset+count; k++) {
+            /*for (u32 k = offset; k < offset+count; k++) {
                 u32 index = buffer->getIndexAt(k);
                 // Apply material type
                 svtSetMType(buffer, layer->material_type, index);
@@ -161,7 +161,7 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data)
                     svtSetHWColor(buffer, layer->color, index);
             }
 
-            MeshOperations::recalculateMeshAtlasUVs(buffer, offset, count, atlas_size, src_rect);
+            MeshOperations::recalculateMeshAtlasUVs(buffer, offset, count, atlas_size, src_rect);*/
         }
     }
 

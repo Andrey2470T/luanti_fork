@@ -356,44 +356,6 @@ void UIShape::updatePrimInBuffer(MeshBuffer *buf, u32 primitiveNum, u32 vertexOf
     }
 }
 
-/*
-void BankAutoAlignment::centerBank()
-{
-    v2f center_shift = center - bank->getArea().getCenter();
-    bank->move(center_shift);
-}
-
-void BankAutoAlignment::alignSprite(u32 spriteID, std::optional<rectf> overrideRect)
-{
-    if (spriteID == 0)
-        return;
-    auto sprite = bank->getSprite(spriteID);
-    v2f rectSizef = toV2T<f32>(sprite->getSize());
-    rectf area(rectSizef);
-
-    if (overrideRect) {
-        rectSizef = overrideRect->getSize();
-        area = overrideRect.value();
-    }
-
-    auto prevSpriteArea = bank->getSprite(spriteID-1)->getArea();
-    if (alignType == BankAlignmentType::HORIZONTAL) {
-        area.ULC.X = prevSpriteArea.LRC.X;
-        area.LRC.X = area.ULC.X + rectSizef.X;
-        area.ULC.Y = (prevSpriteArea.ULC.Y + prevSpriteArea.LRC.Y)/2.0f - rectSizef.Y/2.0f;
-        area.LRC.Y = (prevSpriteArea.ULC.Y + prevSpriteArea.LRC.Y)/2.0f + rectSizef.Y/2.0f;
-    }
-    else {
-        area.ULC.Y = prevSpriteArea.LRC.Y;
-        area.LRC.Y = area.ULC.Y + rectSizef.Y;
-        area.ULC.X = (prevSpriteArea.ULC.X + prevSpriteArea.LRC.X)/2.0f - rectSizef.X/2.0f;
-        area.LRC.X = (prevSpriteArea.ULC.X + prevSpriteArea.LRC.X)/2.0f + rectSizef.X/2.0f;
-    }
-
-    rectf oldArea = sprite->getArea();
-    sprite->getShape()->move(area.getCenter() - oldArea.getCenter());
-}*/
-
 SpriteDrawBatch::SpriteDrawBatch(RenderSystem *_rndsys, ResourceCache *_cache)
     : rndsys(_rndsys), cache(_cache), buffer(std::make_unique<MeshBuffer>(true, VType2D))
 {}
@@ -514,18 +476,13 @@ void SpriteDrawBatch::rebuild()
 {
     std::vector<UIPrimitiveType> prims;
     for (auto &sprite : sprites) {
+        sprite->appendToBatch();
+
         auto &shape = sprite->getShape();
 
         for (u32 i = 0; i < shape.getPrimitiveCount(); i++)
             prims.push_back(shape.getPrimitiveType(i));
-
-        sprite->appendToBatch();
     }
-
-    if (!updateBatch)
-        return;
-
-    buffer->clear();
 
     buffer->reallocateData(
         UIShape::countRequiredVCount(prims),
@@ -534,45 +491,15 @@ void SpriteDrawBatch::rebuild()
 
     u32 rectOffset = 0;
     for (auto &sprite : sprites) {
-        sprite->getShape().updateBuffer(buffer.get(), rectOffset*4, rectOffset*6);
+        if (sprite->changed) {
+            sprite->changed = false;
+
+            sprite->getShape().updateBuffer(buffer.get(), rectOffset*4, rectOffset*6);
+        }
         rectOffset += sprite->getShape().getPrimitiveCount();
     }
 
     buffer->uploadData();
-
-    batch();
-
-    updateBatch = false;
-}
-
-void SpriteDrawBatch::update()
-{
-    std::vector<UIPrimitiveType> prims;
-    for (auto &sprite : sprites) {
-        auto &shape = sprite->getShape();
-
-        for (u32 i = 0; i < shape.getPrimitiveCount(); i++)
-            prims.push_back(shape.getPrimitiveType(i));
-    }
-
-    // As clear() is not called, it should reallocate only once
-    buffer->reallocateData(
-        UIShape::countRequiredVCount(prims),
-        UIShape::countRequiredICount(prims)
-    );
-
-    u32 rectOffset = 0;
-    for (auto &sprite : sprites) {
-        sprite->updateBatch();
-
-        sprite->getShape().updateBuffer(buffer.get(), rectOffset*4, rectOffset*6);
-
-        u32 curRectCount = sprite->getShape().getPrimitiveCount();
-        buffer->setDirtyRange(rectOffset*4, (rectOffset+curRectCount)*4);
-        buffer->uploadData();
-
-        rectOffset += curRectCount;
-    }
 
     if (updateBatch) {
         batch();
@@ -587,38 +514,61 @@ void SpriteDrawBatch::draw()
     rnd->setDefaultShader(true, true);
     rnd->setDefaultUniforms(1.0f, 1, 0.5f, img::BM_COUNT);
 
-    for (auto &subBatch : subBatches) {
-        for (auto &texBatch : subBatch.second) {
-            rnd->setTexture(texBatch.first);
+    for (auto &chunksLevel : batchedChunks) {
+        for (auto &chunk : chunksLevel.second) {
+            rnd->setTexture(chunk.texture);
+            rnd->setClipRect(chunk.clipRect);
 
-            for (auto &clipRectToRects : texBatch.second) {
-                rnd->setClipRect(clipRectToRects.first);
+            u32 indexOffset = chunk.rectsOffset*6;
+            u32 indexCount = chunk.rectsCount*6;
 
-                for (auto &rects : clipRectToRects.second) {
-                    if (!(std::get<0>(rects)->isVisible()))
-                        continue;
-
-                    u32 indexOffset = std::get<1>(rects)*6;
-                    u32 indexCount = (std::get<2>(rects)-std::get<1>(rects)+1)*6;
-
-                    rnd->draw(buffer.get(), render::PT_TRIANGLES, indexOffset, indexCount);
-                }
-            }
+            rnd->draw(buffer.get(), render::PT_TRIANGLES, indexOffset, indexCount);
         }
     }
 }
 
 void SpriteDrawBatch::batch()
 {
+    batchedChunks.clear();
+
+    u32 rectsOffset = 0;
+    for (auto &sprite : sprites) {
+        if (!sprite->isVisible())
+            continue;
+
+        auto &spriteToChunks = chunks[sprite.get()];
+        u32 depthLevel = sprite->getDepthLevel();
+
+        auto &chunksLevel = batchedChunks[depthLevel];
+
+        for (auto &chunk : spriteToChunks) {
+            if (chunksLevel.empty())
+                chunksLevel.emplace_back(chunk.texture, chunk.clipRect, chunk.rectsCount, rectsOffset);
+            else {
+                auto &lastBatchedChunk = chunksLevel.back();
+
+                if (lastBatchedChunk == chunk)
+                    lastBatchedChunk.rectsCount += chunk.rectsCount;
+                else
+                    chunksLevel.emplace_back(chunk.texture, chunk.clipRect, chunk.rectsCount, rectsOffset);
+            }
+
+            rectsOffset += chunk.rectsCount;
+        }
+    }
+}
+/*void SpriteDrawBatch::batch()
+{
     subBatches.clear();
 
     u32 curRectN = 0;
-    for (auto &spriteToChunks : chunks) {
-        u32 depthLevel = spriteToChunks.first->getDepthLevel();
+    for (auto &sprite : sprites) {
+        auto &spriteToChunks = chunks[sprite.get()];
+        u32 depthLevel = sprite->getDepthLevel();
 
         DrawSubBatch &subBatch = subBatches[depthLevel];
 
-        for (auto &chunk : spriteToChunks.second) {
+        for (auto &chunk : spriteToChunks) {
             auto &texBatch = subBatch[chunk.texture];
 
             auto clipToRectsIt = std::find_if(texBatch.begin(), texBatch.end(),
@@ -644,12 +594,12 @@ void SpriteDrawBatch::batch()
             }
 
             if (!wasExtended)
-                rectRanges->emplace_back(spriteToChunks.first, curRectN, curRectN+chunk.rectsN);
+                rectRanges->emplace_back(sprite.get(), curRectN, curRectN+chunk.rectsN);
 
             curRectN += chunk.rectsN;
         }
     }
-}
+}*/
 
 bool SpriteDrawBatch::extendRectsRange(std::tuple<UISprite *, u32, u32> &curRange, const std::pair<u32, u32> &newRange)
 {

@@ -45,7 +45,7 @@ void CGUITab::updateMesh()
     if (skin && DrawBackground) {
         box->updateRect(0, {toRectT<f32>(AbsoluteRect), BackColor});
         box->setClipRect(AbsoluteClippingRect);
-        drawBatch->update();
+        drawBatch->rebuild();
     }
 
     Rebuild = false;

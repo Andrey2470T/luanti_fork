@@ -200,7 +200,7 @@ void GUIKeyChangeMenu::drawMenu()
     img::color8 bgcolor(img::PF_RGBA8, 0, 0, 0, 140);
     box->updateRect(0, {toRectT<f32>(AbsoluteRect), bgcolor});
     box->setClipRect(AbsoluteClippingRect);
-    drawBatch->update();
+    drawBatch->rebuild();
     drawBatch->draw();
 
 	gui::IGUIElement::draw();

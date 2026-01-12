@@ -83,6 +83,9 @@ void Text::setText(const EnrichedString &_text)
 
 void Text::updateText(std::optional<rectf> clipRect)
 {
+    if (!needsUpdate)
+        return;
+
     brokenText.clear();
 
     // Update word wrap

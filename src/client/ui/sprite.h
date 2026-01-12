@@ -179,8 +179,8 @@ private:
 
 class SpriteDrawBatch;
 
-// 2D mesh consisting from some count of rectangles
-// with some mapped texture on them (or without it)
+// 2D object consisting from some count of primitives which are injected
+// into the single SpriteDrawBatch meshbuffer
 class UISprite
 {
 protected:
@@ -197,7 +197,7 @@ protected:
     u8 depthLevel = 0;
 
 public:
-    bool changed = false;
+    bool changed = true;
 
     UISprite(ResourceCache *_cache, SpriteDrawBatch *_drawBatch, u32 _depthLevel=0)
         : cache(_cache), drawBatch(_drawBatch), depthLevel(_depthLevel)
@@ -235,13 +235,18 @@ public:
 
     void setVisible(bool yes)
     {
-        visible = yes;
+        if (visible != yes) {
+            visible = yes;
+            changed = true;
+        }
     }
 
     void setClipRect(const recti &r)
     {
-        clipRect = r;
-        changed = true;
+        if (clipRect != r) {
+            clipRect = r;
+            changed = true;
+        }
     }
 
     void clear()
@@ -255,36 +260,6 @@ public:
     //  Update the meshbuffer directly
     virtual void updateBatch() = 0;
 };
-
-/*enum class BankAlignmentType : u8
-{
-    HORIZONTAL,
-    VERTICAL,
-    DISABLED
-};
-
-class BankAutoAlignment
-{
-    BankAlignmentType alignType;
-
-    v2f center;
-
-    UISpriteBank *bank = nullptr;
-public:
-    BankAutoAlignment(BankAlignmentType _alignType, UISpriteBank *_bank)
-        : alignType(_alignType), bank(_bank)
-    {
-        assert(alignType != BankAlignmentType::DISABLED);
-    }
-
-    void setCenter(const v2f &c)
-    {
-        center = c;
-    }
-
-    void centerBank();
-    void alignSprite(u32 spriteID, std::optional<rectf> overrideRect=std::nullopt);
-};*/
 
 typedef std::pair<u32, u32> AtlasTileAnim;
 
@@ -316,15 +291,22 @@ struct SpriteDrawChunk
 {
     render::Texture2D *texture = nullptr;
     recti clipRect;
-    u32 rectsN;
+    u32 rectsOffset = 0;
+    u32 rectsCount;
 
     SpriteDrawChunk() = default;
 
-    SpriteDrawChunk(render::Texture2D *_texture, const recti &_clipRect, u32 _rectsN)
-        : texture(_texture), clipRect(_clipRect), rectsN(_rectsN)
+    SpriteDrawChunk(render::Texture2D *_texture, const recti &_clipRect, u32 _rectsCount, u32 _rectsOffset=0)
+        : texture(_texture), clipRect(_clipRect), rectsOffset(_rectsOffset), rectsCount(_rectsCount)
     {}
+
+    bool operator==(const SpriteDrawChunk &other)
+    {
+        return (texture == other.texture && clipRect == other.clipRect);
+    }
 };
 
+// Collection of all sprites packed in the single meshbuffer
 class SpriteDrawBatch
 {
     RenderSystem *rndsys;
@@ -335,10 +317,7 @@ class SpriteDrawBatch
 
     std::unordered_map<UISprite *, std::vector<SpriteDrawChunk>> chunks;
 
-    typedef std::unordered_map<render::Texture2D *,
-        std::vector<std::pair<recti, std::vector<std::tuple<UISprite *, u32, u32>>>>> DrawSubBatch;
-
-    std::unordered_map<u32, DrawSubBatch> subBatches; // map depth level to its subbatch
+    std::map<u32, std::vector<SpriteDrawChunk>> batchedChunks;
 
     rectf maxArea;
     bool maxAreaInit = false;
@@ -420,7 +399,6 @@ public:
     }
 
     void rebuild();
-    void update();
 
     void draw();
 private:

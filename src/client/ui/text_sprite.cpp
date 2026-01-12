@@ -14,6 +14,12 @@ void UITextSprite::appendToBatch()
     if (!text.needsUpdate && !changed)
         return;
 
+    std::optional<rectf> brect;
+
+    if (boundRect.getArea() != 0)
+        brect = boundRect;
+    text.updateText(brect);
+
     text.needsUpdate = false;
 
     clear();
@@ -74,6 +80,7 @@ void UITextSprite::appendToBatch()
                 continue;
 
             auto tex = atlas->getTexture();
+            u32 texSize = atlas->getTextureSize();
 
             u32 shadowOffset, shadowAlpha;
             font->getShadowParameters(&shadowOffset, &shadowAlpha);
@@ -118,8 +125,6 @@ void UITextSprite::appendToBatch()
     }
 
     drawBatch->addSpriteChunks(this, chunks);
-
-    changed = false;
 }
 
 
