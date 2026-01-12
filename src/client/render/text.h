@@ -173,5 +173,5 @@ public:
 
     friend class UITextSprite;
 private:
-    void updateText(std::optional<rectf> clipRect=std::nullopt);
+    void updateText(rectf clipRect);
 };

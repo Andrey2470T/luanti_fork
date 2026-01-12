@@ -81,7 +81,7 @@ void Text::setText(const EnrichedString &_text)
     needsUpdate = true;
 }
 
-void Text::updateText(std::optional<rectf> clipRect)
+void Text::updateText(rectf clipRect)
 {
     if (!needsUpdate)
         return;
@@ -98,7 +98,7 @@ void Text::updateText(std::optional<rectf> clipRect)
     EnrichedString whitespace;
     u32 size = text.size();
     u32 length = 0;
-    u32 elWidth = clipRect.has_value() ? clipRect->getWidth() : textWidth;
+    u32 elWidth = clipRect.getWidth();
     if (drawBorder)
         elWidth -= 2*skin->getSize(GUIDefaultSize::TextDistanceX);
 

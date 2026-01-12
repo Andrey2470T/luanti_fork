@@ -20,8 +20,8 @@ Image2D9Slice::Image2D9Slice(ResourceCache *resCache, SpriteDrawBatch *drawBatch
     updateRects(src_rect, dest_rect, middle_rect, baseImg, colors, nullptr, anim);
 }
 
-void Image2D9Slice::updateRects(const rectf &src_rect, const rectf &dest_rect, const rectf &middle_rect, img::Image *img,
-    const RectColors &colors, const recti *clipRect, std::optional<AtlasTileAnim> anim)
+void Image2D9Slice::updateRects(const rectf &src_rect, const rectf &dest_rect, const rectf &middle_rect,
+    img::Image *img, const RectColors &colors, const recti *clipRect, std::optional<AtlasTileAnim> anim)
 {
     if (middleRect.LRC.X < 0)
         middleRect.LRC.X += srcRect.getWidth();
@@ -97,12 +97,7 @@ void Image2D9Slice::createSlice(u8 x, u8 y)
         break;
     };
 
-    if (image) {
-        u32 atlasSize = guiPool->getAtlasByTile(image)->getTextureSize();
-        shape.addRectangle(destRect, rectColors, srcRect);
-    }
-    else
-        shape.addRectangle(destRect, rectColors, srcRect);
+    shape.addRectangle(destRect, rectColors, srcRect);
 }
 
 void Image2D9Slice::createSlices()
@@ -129,11 +124,8 @@ UIRects::UIRects(ResourceCache *resCache, SpriteDrawBatch *drawBatch, AtlasPool 
     const std::vector<TexturedRect> &rects, u32 depthLevel)
     : UISprite(resCache, drawBatch, depthLevel), guiPool(pool)
 {
-    for (auto &rect : rects) {
-        rectf tileRect = rect.image ? guiPool->getTileRect(rect.image, false, true) : rectf();
-        shape.addRectangle(rect.area, rect.colors, tileRect);
-        images.push_back(rect.image);
-    }
+    for (auto &rect : rects)
+        addRect(rect);
 
     changed = true;
 }
@@ -147,12 +139,7 @@ void UIRects::addRect(const TexturedRect &rect, std::optional<rectf> srcRect)
 
     images.push_back(rect.image);
 
-    if (rect.image) {
-        u32 atlasSize = guiPool->getAtlasByTile(rect.image)->getTextureSize();
-        shape.addRectangle(rect.area, rect.colors, tileRect);
-    }
-    else
-        shape.addRectangle(rect.area, rect.colors, tileRect);
+    shape.addRectangle(rect.area, rect.colors, tileRect);
 
     changed = true;
 }
@@ -167,12 +154,7 @@ void UIRects::updateRect(u32 n, const TexturedRect &rect, std::optional<rectf> s
     images.resize(shape.getPrimitiveCount());
     images.at(n) = rect.image;
 
-    if (images.at(n)) {
-        u32 atlasSize = guiPool->getAtlasByTile(images.at(n))->getTextureSize();
-        shape.updateRectangle(n, rect.area, rect.colors, tileRect);
-    }
-    else
-        shape.updateRectangle(n, rect.area, rect.colors, tileRect);
+    shape.updateRectangle(n, rect.area, rect.colors, tileRect);
 
     changed = true;
 }

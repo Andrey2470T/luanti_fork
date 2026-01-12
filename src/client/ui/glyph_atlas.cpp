@@ -373,8 +373,7 @@ std::optional<u64> FontManager::addFont(render::FontMode mode, render::FontStyle
     u16 font_shadow  = 0;
     u16 font_shadow_alpha = 0;
     g_settings->getU16NoEx(prefix + "font_shadow", font_shadow);
-    g_settings->getU16NoEx(prefix + "font_shadow_alpha",
-                           font_shadow_alpha);
+    g_settings->getU16NoEx(prefix + "font_shadow_alpha", font_shadow_alpha);
 
     std::string path_setting;
     if (mode == render::FontMode::FALLBACK)

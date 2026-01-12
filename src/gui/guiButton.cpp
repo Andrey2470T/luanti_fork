@@ -302,18 +302,18 @@ void GUIButton::updateMesh()
 		}
 
 		// PATCH
-		img::Image* texture = ButtonImages[(u32)imageState].Texture;
+        img::Image* texture = ButtonImages[(u32)imageState].Texture;
         std::array<img::color8, 4> image_colors = { BgColor, BgColor, BgColor, BgColor };
 		if (BgMiddle.getArea() == 0) {
             auto img = dynamic_cast<UIRects *>(ImageBox);
-            img->updateRect(0, {toRectT<f32>(ScaleImage? AbsoluteRect : recti(pos, sourceRect.getSize())),
+            img->updateRect(0, {toRectT<f32>(ScaleImage? AbsoluteRect : recti(pos, pos+sourceRect.getSize())),
                 image_colors, texture});
             img->setClipRect(AbsoluteClippingRect);
 
 		} else {
             auto sliced_img = dynamic_cast<Image2D9Slice *>(ImageBox);
             sliced_img->updateRects(toRectT<f32>(sourceRect), toRectT<f32>(BgMiddle),
-                toRectT<f32>(ScaleImage ? AbsoluteRect : recti(pos, sourceRect.getSize())),
+                toRectT<f32>(ScaleImage ? AbsoluteRect : recti(pos, pos+sourceRect.getSize())),
                 texture, image_colors, &AbsoluteClippingRect);
 		}
         ImageBox->setVisible(true);
@@ -362,7 +362,7 @@ void GUIButton::draw()
     if (SpriteBank && isEnabled())
         SpriteBank->draw2DSprite();
 
-    IGUIElement::draw();
+    //IGUIElement::draw();
 }
 
 void GUIButton::updateSprite(EGUI_BUTTON_STATE state, u32 startTime, const v2i& center)

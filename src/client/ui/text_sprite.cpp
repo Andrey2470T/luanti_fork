@@ -14,11 +14,7 @@ void UITextSprite::appendToBatch()
     if (!text.needsUpdate && !changed)
         return;
 
-    std::optional<rectf> brect;
-
-    if (boundRect.getArea() != 0)
-        brect = boundRect;
-    text.updateText(brect);
+    text.updateText(shape.getMaxArea());
 
     text.needsUpdate = false;
 
@@ -26,7 +22,7 @@ void UITextSprite::appendToBatch()
 
     if (text.isDrawBackground()) {
         auto bg_color = text.getBackgroundColor();
-        shape.addRectangle(boundRect, {bg_color, bg_color, bg_color, bg_color});
+        shape.addRectangle(boundRect, bg_color);
     }
 
     auto skin = text.getSkin();
@@ -65,7 +61,7 @@ void UITextSprite::appendToBatch()
 
     auto color = text.getActiveColor();
 
-    RectColors arrColors = {color, color, color, color};
+    RectColors arrColors = color;
 
     v2f line_offset = offset;
     u32 char_n = 0;
@@ -78,9 +74,6 @@ void UITextSprite::appendToBatch()
 
             if (!atlas)
                 continue;
-
-            auto tex = atlas->getTexture();
-            u32 texSize = atlas->getTextureSize();
 
             u32 shadowOffset, shadowAlpha;
             font->getShadowParameters(&shadowOffset, &shadowAlpha);
@@ -97,7 +90,7 @@ void UITextSprite::appendToBatch()
                 auto textColors = text.getTextColors();
 
                 if (char_n < textColors.size())
-                    arrColors = {textColors.at(char_n), textColors.at(char_n), textColors.at(char_n), textColors.at(char_n)};
+                    arrColors = textColors.at(char_n);
             }
             if (shadowOffset) {
                 rectf shadowGlyphPos = glyphPos;
@@ -114,7 +107,7 @@ void UITextSprite::appendToBatch()
 
             shape.addRectangle(glyphPos, arrColors, glyphUV);
 
-            chunks.emplace_back(tex, clipRect, shadowOffset ? 2 : 1);
+            chunks.emplace_back(atlas->getTexture(), clipRect, shadowOffset ? 2 : 1);
 
             line_offset.X += glyph->advance;
             char_n++;

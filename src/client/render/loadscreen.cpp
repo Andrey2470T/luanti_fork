@@ -19,12 +19,12 @@ LoadScreen::LoadScreen(ResourceCache *_cache, RenderSystem *_system, FontManager
     auto progress_img_size = rectf(v2f(), toV2T<f32>(progress_img->getSize()));
 
     progress_bg_rect = drawBatch->addRectsSprite({
-        {progress_bg_img_size, RectColors::defaultColors, progress_bg_img}}, nullptr, 0);
+        {progress_bg_img_size, img::red, progress_bg_img}}, nullptr, 0);
 
     progress_rect = drawBatch->addRectsSprite({
-        {progress_img_size, RectColors::defaultColors, progress_img}}, nullptr, 1);
+        {progress_img_size, img::red, progress_img}}, nullptr, 1);
 
-    progress_text = drawBatch->addTextSprite(L"Text", std::nullopt, img::white, nullptr, 2);
+    progress_text = drawBatch->addTextSprite(L"", std::nullopt, img::white, nullptr, 2);
 }
 
 void LoadScreen::draw(v2u screensize, const std::wstring &text, f32 dtime, bool menu_clouds,
@@ -72,8 +72,8 @@ void LoadScreen::draw(v2u screensize, const std::wstring &text, f32 dtime, bool 
             rectf new_progress_bg_size(pb_pos, pb_pos + v2f(pb_size.X, pb_size.Y));
             rectf new_progress_size(p_pos, p_pos + v2f(p_size.X, p_size.Y));
 
-            progress_bg_rect->updateRect(0, {new_progress_bg_size, RectColors::defaultColors, progress_bg_img});
-            progress_rect->updateRect(0, {new_progress_size, RectColors::defaultColors, progress_img});
+            progress_bg_rect->updateRect(0, {new_progress_bg_size, img::red, progress_bg_img});
+            progress_rect->updateRect(0, {new_progress_size, img::red, progress_img});
 
             progress_cliprect = recti(0, p_size.Y, percent_max * p_size.X / 100, 0);
             progress_cliprect += toV2T<s32>(p_pos);
