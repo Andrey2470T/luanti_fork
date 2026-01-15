@@ -647,7 +647,8 @@ void CGUITabControl::updateMesh()
 			recti textClipRect(frameRect); // TODO: exact size depends on borders in draw3DTabButton which we don't get with current interface
 			textClipRect.clipAgainst(AbsoluteClippingRect);
 
-            drawBatch->addTextSprite(text, toRectT<f32>(frameRect),Tabs[i]->getTextColor(), &textClipRect);
+            drawBatch->addTextSprite(text, toRectT<f32>(frameRect),Tabs[i]->getTextColor(), &textClipRect, 0,
+                false, GUIAlignment::Center);
 		}
 	}
 
@@ -668,7 +669,8 @@ void CGUITabControl::updateMesh()
 			recti textClipRect(frameRect); // TODO: exact size depends on borders in draw3DTabButton which we don't get with current interface
 			textClipRect.clipAgainst(AbsoluteClippingRect);
             auto TabText = drawBatch->addTextSprite(activeTab->getText(),
-                toRectT<f32>(frameRect), activeTab->getTextColor(), &textClipRect);
+                toRectT<f32>(frameRect), activeTab->getTextColor(), &textClipRect, 0,
+                false, GUIAlignment::Center);
             TabText->getTextObj().setAlignment(GUIAlignment::Center, GUIAlignment::Center);
 
 			tr.ULC.X = AbsoluteRect.ULC.X;
@@ -696,7 +698,8 @@ void CGUITabControl::updateMesh()
 
 			// draw text
             drawBatch->addTextSprite(activeTab->getText(),
-                toRectT<f32>(frameRect), activeTab->getTextColor(), &frameRect);
+                toRectT<f32>(frameRect), activeTab->getTextColor(), &frameRect, 0,
+                false, GUIAlignment::Center);
 
             tabButton = drawBatch->addRectsSprite({});
             tabButton->setClipRect(AbsoluteClippingRect);

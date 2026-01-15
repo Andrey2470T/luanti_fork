@@ -25,6 +25,7 @@ LoadScreen::LoadScreen(ResourceCache *_cache, RenderSystem *_system, FontManager
         {progress_img_size, img::white, progress_img}}, nullptr, 1);
 
     progress_text = drawBatch->addTextSprite(L"", std::nullopt, img::white, nullptr, 2);
+    progress_text->getTextObj().setAlignment(GUIAlignment::Center, GUIAlignment::Center);
 }
 
 void LoadScreen::draw(v2u screensize, const std::wstring &text, f32 dtime, bool menu_clouds,
@@ -63,8 +64,8 @@ void LoadScreen::draw(v2u screensize, const std::wstring &text, f32 dtime, bool 
         }
         // draw progress bar
         if ((percent_min >= 0) && (percent_max <= 100)) {
-            auto pb_size = progress_bg_img->getSize() * scale_f;
-            auto p_size = progress_img->getSize() * scale_f;
+            v2f pb_size = toV2T<f32>(progress_bg_img->getSize()) * scale_f;
+            v2f p_size = toV2T<f32>(progress_img->getSize()) * scale_f;
 
             v2f pb_pos(center.X - pb_size.X / 2, center.Y - pb_size.Y / 2);\
             v2f p_pos(center.X - p_size.X / 2, center.Y - p_size.Y / 2);
@@ -75,7 +76,7 @@ void LoadScreen::draw(v2u screensize, const std::wstring &text, f32 dtime, bool 
             progress_bg_rect->updateRect(0, {new_progress_bg_size, img::white, progress_bg_img});
             progress_rect->updateRect(0, {new_progress_size, img::white, progress_img});
 
-            progress_cliprect = recti(0, p_size.Y, percent_max * p_size.X / 100, 0);
+            progress_cliprect = recti(0, p_size.Y, percent_max * p_size.X / 100.0f, 0);
             progress_cliprect += toV2T<s32>(p_pos);
 
             progress_rect->setClipRect(progress_cliprect);

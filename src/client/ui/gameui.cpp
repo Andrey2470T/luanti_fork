@@ -64,6 +64,7 @@ void GameUI::init()
 
 	// Chat text
     chattext = drawBatch->addTextSprite(L"", std::nullopt, img::white, nullptr, 0, true);
+    chattext->getTextObj().enableOverrideColor(false);
 	u16 chat_font_size = g_settings->getU16("chat_font_size");
 	if (chat_font_size != 0) {
         chattext->getTextObj().setOverrideFont(font_mgr->getFontOrCreate(

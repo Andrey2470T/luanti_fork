@@ -356,7 +356,7 @@ public:
         const recti *clipRect=nullptr,
         u32 depthLevel=0,
         bool wordWrap=false,
-        GUIAlignment horizAlign=GUIAlignment::Center,
+        GUIAlignment horizAlign=GUIAlignment::UpperLeft,
         GUIAlignment vertAlign=GUIAlignment::Center);
 
     u32 getSpriteCount() const
