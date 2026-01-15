@@ -76,7 +76,7 @@ void LoadScreen::draw(v2u screensize, const std::wstring &text, f32 dtime, bool 
             progress_bg_rect->updateRect(0, {new_progress_bg_size, img::white, progress_bg_img});
             progress_rect->updateRect(0, {new_progress_size, img::white, progress_img});
 
-            progress_cliprect = recti(0, p_size.Y, percent_max * p_size.X / 100.0f, 0);
+            recti progress_cliprect(0, 0, percent_max * p_size.X / 100.0f, p_size.Y);
             progress_cliprect += toV2T<s32>(p_pos);
 
             progress_rect->setClipRect(progress_cliprect);

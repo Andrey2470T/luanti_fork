@@ -39,8 +39,6 @@ class LoadScreen
     img::Image *progress_bg_img;
     img::Image *progress_img;
 
-    recti progress_cliprect;
-
     bool draw_clouds;
     s32 last_percent = 0;
 public:
