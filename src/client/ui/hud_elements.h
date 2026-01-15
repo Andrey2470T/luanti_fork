@@ -136,8 +136,6 @@ public:
 
 class HudInventoryList : public HudSprite
 {
-    InventoryList *invlist;
-    u32 invlistOffset = 0;
     std::optional<u32> selectedItemIndex;
 
     u32 padding;
@@ -147,10 +145,13 @@ class HudInventoryList : public HudSprite
 
     std::string background_selected_img;
 protected:
+    InventoryList *invlist;
+    u32 invlistOffset = 0;
     u32 invlistItemCount;
     std::string background_img;
 public:
-    HudInventoryList(Client *_client, const HudElement *elem, SpriteDrawBatch *drawBatch);
+    HudInventoryList(Client *_client, const HudElement *elem, SpriteDrawBatch *drawBatch,
+        InventoryList *_invlist=nullptr);
     ~HudInventoryList();
 
     void setInventoryList(InventoryList *_list, u32 list_offset, u32 list_itemcount)

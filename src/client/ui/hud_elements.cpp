@@ -523,7 +523,8 @@ static void setting_changed_callback(const std::string &name, void *data)
     static_cast<HudInventoryList*>(data)->updateScalingSetting();
 }
 
-HudInventoryList::HudInventoryList(Client *_client, const HudElement *elem, SpriteDrawBatch *drawBatch)
+HudInventoryList::HudInventoryList(Client *_client, const HudElement *elem, SpriteDrawBatch *drawBatch,
+    InventoryList *_invlist)
     : HudSprite(_client, elem, drawBatch->addRectsSprite({}, nullptr, elem->z_index))
 {
     updateScalingSetting();
@@ -531,6 +532,7 @@ HudInventoryList::HudInventoryList(Client *_client, const HudElement *elem, Spri
     g_settings->registerChangedCallback("display_density_factor", setting_changed_callback, this);
     g_settings->registerChangedCallback("hud_scaling", setting_changed_callback, this);
 
+    setInventoryList(_invlist, 0, _invlist->getSize());
     updateBackgroundImages();
 }
 
@@ -709,17 +711,14 @@ rectf HudInventoryList::getSlotRect(u32 n) const
 }
 
 HudHotbar::HudHotbar(Client *client, const HudElement *elem, SpriteDrawBatch *drawBatch)
-    : HudInventoryList(client, elem, drawBatch)
+    : HudInventoryList(client, elem, drawBatch, client->getEnv().getLocalPlayer()->inventory.getList("main"))
 {
-    auto inv = client->getEnv().getLocalPlayer()->inventory;
-    InventoryList *mainlist = inv.getList("main");
-    if (!mainlist) {
+    if (!invlist) {
         // Silently ignore this. We may not be initialized completely.
         return;
     }
 
-    setInventoryList(mainlist, 0, 0);
-    updateMaxHotbarItemCount();
+    //updateMaxHotbarItemCount();
 }
 
 void HudHotbar::updateSelectedSlot()

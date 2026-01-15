@@ -117,8 +117,14 @@ void Renderer::setDefaultShader(bool transparent, bool glBlend)
 
 void Renderer::setTexture(Texture2D *tex)
 {
+    if (!curShader)
+        return;
+
     context->setActiveUnit(0, tex);
     curTexture = tex;
+
+    bool useTexture = curTexture != nullptr;
+    curShader->setUniformInt("mTextureUsage0", (s32)useTexture);
 }
 
 void Renderer::setShader(Shader *shd)
@@ -133,9 +139,6 @@ void Renderer::setDefaultUniforms(f32 thickness, u8 alphaDiscard, f32 alphaRef, 
         return;
 
     curShader->setUniformFloat("mThickness", thickness);
-
-    bool useTexture = curTexture != nullptr;
-    curShader->setUniformInt("mTextureUsage0", (s32)useTexture);
 
     if (!use3DMode) {
         auto cur_viewport = context->getViewportSize();

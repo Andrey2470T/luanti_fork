@@ -362,7 +362,7 @@ void GUIButton::draw()
     if (SpriteBank && isEnabled())
         SpriteBank->draw2DSprite();
 
-    //IGUIElement::draw();
+    IGUIElement::draw();
 }
 
 void GUIButton::updateSprite(EGUI_BUTTON_STATE state, u32 startTime, const v2i& center)

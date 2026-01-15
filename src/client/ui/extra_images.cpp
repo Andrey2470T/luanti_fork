@@ -137,6 +137,7 @@ void UIRects::addRect(const TexturedRect &rect, std::optional<rectf> srcRect)
     if (srcRect.has_value())
         tileRect = srcRect.value();
 
+    images.resize(shape.getPrimitiveCount());
     images.push_back(rect.image);
 
     shape.addRectangle(rect.area, rect.colors, tileRect);

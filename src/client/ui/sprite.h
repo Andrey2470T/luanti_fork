@@ -381,6 +381,22 @@ public:
         chunks.clear();
     }
 
+    void setVisible(bool yes)
+    {
+        for (auto &sprite : sprites)
+            sprite->setVisible(yes);
+    }
+
+    bool isVisible() const
+    {
+        bool visible = false;
+
+        for (auto &sprite : sprites)
+            visible = sprite->isVisible();
+
+        return visible;
+    }
+
     void addSpriteChunks(UISprite *sprite, const std::vector<SpriteDrawChunk> &addchunks)
     {
         auto &chunk = chunks[sprite];

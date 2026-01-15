@@ -516,20 +516,13 @@ void SpriteDrawBatch::draw()
 
     for (auto &chunksLevel : batchedChunks) {
         for (auto &chunk : chunksLevel.second) {
-            if (chunk.texture)
-                rnd->setTexture(chunk.texture);
-            if (chunk.clipRect != recti())
-                rnd->setClipRect(chunk.clipRect);
+            rnd->setTexture(chunk.texture);
+            rnd->setClipRect(chunk.clipRect);
 
             u32 indexOffset = chunk.rectsOffset*6;
             u32 indexCount = chunk.rectsCount*6;
 
             rnd->draw(buffer.get(), render::PT_TRIANGLES, indexOffset, indexCount);
-
-            if (chunk.texture)
-                rnd->setTexture(nullptr);
-            if (chunk.clipRect != recti())
-                rnd->setClipRect(recti());
         }
     }
 }

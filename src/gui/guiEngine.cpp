@@ -29,6 +29,7 @@
 #include "IGUIStaticText.h"
 #include "util/tracy_wrapper.h"
 #include "client/ui/extra_images.h"
+#include "client/ui/batcher2d.h"
 
 #if USE_SOUND
     #include "client/sound/soundopenal.h"
@@ -77,13 +78,15 @@ GUIEngine::GUIEngine(JoystickController *joystick,
 	m_data(data),
     m_rescache(cache),
     m_kill(kill),
-    baseDrawBatch(std::make_unique<SpriteDrawBatch>(m_rndsys, m_rescache)),
-    headerDrawBatch(std::make_unique<SpriteDrawBatch>(m_rndsys, m_rescache))
+    m_background(std::make_unique<SpriteDrawBatch>(m_rndsys, m_rescache)),
+    m_overlay(std::make_unique<SpriteDrawBatch>(m_rndsys, m_rescache)),
+    m_header(std::make_unique<SpriteDrawBatch>(m_rndsys, m_rescache)),
+    m_footer(std::make_unique<SpriteDrawBatch>(m_rndsys, m_rescache))
 {
-    m_background = baseDrawBatch->addRectsSprite({{}});
-    m_overlay = baseDrawBatch->addRectsSprite({{}});
-    m_header = headerDrawBatch->addRectsSprite({{}});
-    m_footer = baseDrawBatch->addRectsSprite({{}});
+    m_background->addRectsSprite({{}});
+    m_overlay->addRectsSprite({{}});
+    m_header->addRectsSprite({{}});
+    m_footer->addRectsSprite({{}});
 
 	// initialize texture pointers
 	for (image_definition &texture : m_textures) {
@@ -336,9 +339,6 @@ void GUIEngine::run()
 
             drawFooter();
 
-            baseDrawBatch->rebuild();
-            baseDrawBatch->draw();
-
             m_rndsys->getGUIEnvironment()->drawAll();
 
 			// The header *must* be drawn after the menu because it uses
@@ -346,9 +346,6 @@ void GUIEngine::run()
 			// The header *can* be drawn after the menu because it never intersects
 			// the menu.
             drawHeader();
-
-            headerDrawBatch->rebuild();
-            headerDrawBatch->draw();
 
             m_rndsys->endDraw();
 		}
@@ -399,13 +396,16 @@ void GUIEngine::drawBackground()
 
 	img::Image* texture = m_textures[TEX_LAYER_BACKGROUND].texture;
 
-    m_background->clear();
+    auto background = dynamic_cast<UIRects *>(m_background->getSprite(0));
 
 	/* If no texture, draw background of solid color */
 	if(!texture){
         img::color8 color(img::PF_RGBA8,80,58,37,255);
 		recti rect(0, 0, screensize.X, screensize.Y);
-        m_background->addRect({toRectT<f32>(rect), color});
+        background->updateRect(0, {toRectT<f32>(rect), color});
+        m_background->rebuild();
+        m_background->draw();
+
 		return;
 	}
 
@@ -418,8 +418,11 @@ void GUIEngine::drawBackground()
 				MYMAX(sourcesize.Y,m_textures[TEX_LAYER_BACKGROUND].minsize));
 		for (unsigned int x = 0; x < screensize.X; x += tilesize.X )
 		{
-			for (unsigned int y = 0; y < screensize.Y; y += tilesize.Y )
-                m_background->addRect({rectf(x, y, x+tilesize.X, y+tilesize.Y), img::white, texture});
+            for (unsigned int y = 0; y < screensize.Y; y += tilesize.Y ) {
+                background->updateRect(0, {rectf(x, y, x+tilesize.X, y+tilesize.Y), img::white, texture});
+                m_background->rebuild();
+                m_background->draw();
+            }
 		}
 		return;
 	}
@@ -437,8 +440,11 @@ void GUIEngine::drawBackground()
 		(s32) screensize.X - (s32) bg_size.X,
 		(s32) screensize.Y - (s32) bg_size.Y
 	) / 2;
+
 	/* Draw background texture */
-    m_background->addRect({rectf(offset.X, offset.Y, bg_size.X + offset.X, bg_size.Y + offset.Y), img::white, texture});
+    background->updateRect(0, {rectf(offset.X, offset.Y, bg_size.X + offset.X, bg_size.Y + offset.Y), img::white, texture});
+    m_background->rebuild();
+    m_background->draw();
 }
 
 /******************************************************************************/
@@ -452,8 +458,12 @@ void GUIEngine::drawOverlay()
 	if(!texture)
 		return;
 
+    auto overlay = dynamic_cast<UIRects *>(m_overlay->getSprite(0));
+
 	/* Draw background texture */
-    m_overlay->updateRect(0, {rectf(0, 0, screensize.X, screensize.Y), RectColors::defaultColors});
+    overlay->updateRect(0, {rectf(0, 0, screensize.X, screensize.Y), RectColors::defaultColors});
+    m_overlay->rebuild();
+    m_overlay->draw();
 }
 
 /******************************************************************************/
@@ -467,6 +477,8 @@ void GUIEngine::drawHeader()
 	// If no texture, draw nothing
     if (!texture)
 		return;
+
+    auto header = dynamic_cast<UIRects *>(m_header->getSprite(0));
 
 	/*
 	 * Calculate the maximum rectangle
@@ -510,7 +522,9 @@ void GUIEngine::drawHeader()
 	// 2. Move
 	desired_rect.constrainTo(max_rect);
 
-    m_header->updateRect(0, {toRectT<f32>(desired_rect), img::white, texture});
+    header->updateRect(0, {toRectT<f32>(desired_rect), img::white, texture});
+    m_header->rebuild();
+    m_header->draw();
 }
 
 /******************************************************************************/
@@ -522,7 +536,9 @@ void GUIEngine::drawFooter()
 
 	/* If no texture, draw nothing */
 	if(!texture)
-		return;
+        return;
+
+    auto footer = dynamic_cast<UIRects *>(m_footer->getSprite(0));
 
 	f32 mult = (((f32)screensize.X)) /
 			((f32)texture->getSize().X);
@@ -538,7 +554,9 @@ void GUIEngine::drawFooter()
 		rect += v2i(screensize.X/2,screensize.Y-footersize.Y);
 		rect -= v2i(footersize.X/2, 0);
 
-        m_footer->updateRect(0, {toRectT<f32>(rect), img::white, texture});
+        footer->updateRect(0, {toRectT<f32>(rect), img::white, texture});
+        m_footer->rebuild();
+        m_footer->draw();
 	}
 }
 

@@ -333,6 +333,8 @@ void Clouds::render(Camera *camera)
     rnd->setTransformMatrix(TMatrix::World, translate);
 
     rnd->setShader(m_shader);
+    rnd->setTexture(nullptr);
+    rnd->setClipRect(recti());
 
     const f32 cloud_full_radius = cloud_size * m_cloud_radius_i;
 
