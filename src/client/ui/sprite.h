@@ -351,6 +351,10 @@ public:
         const std::vector<TexturedRect> &rects,
         u32 depthLevel=0,
         const recti *clipRect=nullptr);
+	UIRects *addRectsSprite(
+        u32 rectsCount,
+        u32 depthLevel=0,
+        const recti *clipRect=nullptr);
     Image2D9Slice *addImage2D9Slice(
         const rectf &src_rect, const rectf &dest_rect,
         const rectf &middle_rect, img::Image *baseImg,

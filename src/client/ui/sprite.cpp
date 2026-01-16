@@ -379,6 +379,25 @@ UIRects *SpriteDrawBatch::addRectsSprite(const std::vector<TexturedRect> &rects,
     return rectsSprite;
 }
 
+UIRects *SpriteDrawBatch::addRectsSprite(
+    u32 rectsCount,
+    u32 depthLevel,
+    const recti *clipRect)
+{
+	UIRects *rectsSprite = new UIRects(cache, this, rndsys->getPool(false), rectsCount, depthLevel);
+    sprites.emplace_back(rectsSprite);
+
+    updateBatch = true;
+
+    auto rectsMaxArea = rectsSprite->getArea();
+    updateMaxArea(maxArea, rectsMaxArea.ULC, rectsMaxArea.LRC, maxAreaInit);
+    
+    if (clipRect)
+        rectsSprite->setClipRect(*clipRect);
+
+    return rectsSprite;
+}
+
 Image2D9Slice *SpriteDrawBatch::addImage2D9Slice(
     const rectf &src_rect, const rectf &dest_rect,
     const rectf &middle_rect, img::Image *baseImg,

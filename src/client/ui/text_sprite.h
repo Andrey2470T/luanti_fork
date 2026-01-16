@@ -61,8 +61,10 @@ public:
 
     void setBoundRect(const rectf &newRect)
     {
-        boundRect = newRect;
-        text.needsUpdate = true;
+    	if (boundRect != newRect) {
+        	boundRect = newRect;
+        	text.needsUpdate = true;
+    	}
     }
 
     void appendToBatch() override;

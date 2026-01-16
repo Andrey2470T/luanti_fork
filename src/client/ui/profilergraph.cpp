@@ -12,7 +12,7 @@
 ProfilerGraph::ProfilerGraph(SpriteDrawBatch *_drawBatch, u8 _number, img::color8 _color)
     : drawBatch(_drawBatch), color(_color), number(_number)
 {
-    graph = drawBatch->addRectsSprite({});
+    graph = drawBatch->addRectsSprite(log_max_size);
     text = drawBatch->addTextSprite(L"", 0, std::nullopt, color, nullptr, true);
 }
 
@@ -51,10 +51,12 @@ void ProfilerGraph::update(const std::string &id, f32 new_value, s32 x_left, s32
     s32 graph1h = graphh;
     bool relativegraph = (show_min != 0 && show_min != show_max);
     f32 lastscaledvalue = 0.0;
+    
+    sts::list<f32> fullValues = values;
+    fullValues.resize(log_max_size);
 
-    graph->clear();
-
-    for (auto &v : values) {
+    for (u32 k = 0; k < fullValues.size(); k++) {
+    	f32 &v = fullValues.at(k);
         float scaledvalue = 1.0;
 
         if (show_max != show_min)
@@ -86,7 +88,7 @@ void ProfilerGraph::update(const std::string &id, f32 new_value, s32 x_left, s32
 
         rectf line_r(start_pos, end_pos+normal);
 
-        graph->addRect({line_r, {actualColor, actualColor, actualColor, actualColor}});
+        graph->updateRect(k, {line_r, actualColor});
 
         x++;
     }
