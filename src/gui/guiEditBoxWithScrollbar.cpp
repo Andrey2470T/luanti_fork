@@ -58,6 +58,7 @@ GUIEditBoxWithScrollBar::GUIEditBoxWithScrollBar(const wchar_t* text, bool borde
 void GUIEditBoxWithScrollBar::setDrawBackground(bool draw)
 {
 	m_background = draw;
+    Rebuild = true;
 }
 
 
@@ -87,10 +88,22 @@ void GUIEditBoxWithScrollBar::updateMesh()
     if (isEnabled())
         bgCol = focus ? EGDC_FOCUSED_EDITABLE : EGDC_EDITABLE;
 
+    render::TTFont* font = getActiveFont();
+
+    bool drawCursor = isEnabled() && font && focus && (porting::getTimeMs() - m_blink_start_time) % 700 < 350;
+
+    if (m_draw_cursor != drawCursor) {
+        m_draw_cursor = drawCursor;
+        Rebuild = true;
+    }
+
+    if (!Rebuild)
+        return;
+
     drawBatch->clear();
 
     if ((!m_border && m_background) || m_border) {
-        UIRects *editBoxRects = drawBatch->addRectsSprite({});
+        UIRects *editBoxRects = drawBatch->addRectsSprite({}, 0);
         editBoxRects->setClipRect(AbsoluteClippingRect);
 
         if (!m_border && m_background)
@@ -107,8 +120,6 @@ void GUIEditBoxWithScrollBar::updateMesh()
     local_clip_rect.clipAgainst(AbsoluteClippingRect);
 
     // draw the text
-
-    render::TTFont* font = getActiveFont();
 
     s32 cursor_line = 0;
     s32 charcursorpos = 0;
@@ -175,7 +186,7 @@ void GUIEditBoxWithScrollBar::updateMesh()
 
 
                 // draw normal text
-                drawBatch->addTextSprite(*txt_line, toRectT<f32>(m_current_text_rect),
+                drawBatch->addTextSprite(*txt_line, 0, toRectT<f32>(m_current_text_rect),
                     m_override_color_enabled ? m_override_color : skin->getColor(EGDC_BUTTON_TEXT), &local_clip_rect);
 
                 // draw mark and marked text
@@ -211,13 +222,14 @@ void GUIEditBoxWithScrollBar::updateMesh()
 
 
                     // draw mark
-                    drawBatch->addRectsSprite({{toRectT<f32>(m_current_text_rect), skin->getColor(EGDC_HIGH_LIGHT)}}, &local_clip_rect);
+                    drawBatch->addRectsSprite({{toRectT<f32>(m_current_text_rect), skin->getColor(EGDC_HIGH_LIGHT)}},
+                        0, &local_clip_rect);
 
                     // draw marked text
                     s = txt_line->substr(lineStartPos, lineEndPos - lineStartPos);
 
                     if (s.size())
-                        drawBatch->addTextSprite(s, toRectT<f32>(m_current_text_rect),
+                        drawBatch->addTextSprite(s, 0, toRectT<f32>(m_current_text_rect),
                             m_override_color_enabled ? m_override_color : skin->getColor(EGDC_HIGH_LIGHT_TEXT), &local_clip_rect);
                 }
             }
@@ -239,17 +251,19 @@ void GUIEditBoxWithScrollBar::updateMesh()
                 font->getKerningSizeForTwoChars(L'_',
                     m_cursor_pos - start_pos > 0 ? (*txt_line)[m_cursor_pos - start_pos - 1] : 0);*/
 
-            if (focus && (porting::getTimeMs() - m_blink_start_time) % 700 < 350) {
+            if (drawCursor) {
                 setTextRect(cursor_line);
                 m_current_text_rect.ULC.X += charcursorpos;
 
-                drawBatch->addTextSprite(L"_", toRectT<f32>(m_current_text_rect),
+                drawBatch->addTextSprite(L"_", 0, toRectT<f32>(m_current_text_rect),
                     m_override_color_enabled ? m_override_color : skin->getColor(EGDC_BUTTON_TEXT), &local_clip_rect);
             }
         }
     }
 
     drawBatch->rebuild();
+
+    Rebuild = false;
 }
 
 //! draws the element and its children

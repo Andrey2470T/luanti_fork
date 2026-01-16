@@ -476,7 +476,7 @@ void CGUIListBox::updateMesh()
         if (frameRect.LRC.Y >= AbsoluteRect.ULC.Y &&
                 frameRect.ULC.Y <= AbsoluteRect.LRC.Y) {
             if (i == Selected && hl)
-                drawBatch->addRectsSprite({{toRectT<f32>(frameRect), itemColor}}, &clientClip);
+                drawBatch->addRectsSprite({{toRectT<f32>(frameRect), itemColor}}, 0, &clientClip);
 
             recti textRect = frameRect;
             textRect.ULC.X += 3;
@@ -509,7 +509,7 @@ void CGUIListBox::updateMesh()
                         getItemOverrideColor(i, EGUI_LBC_TEXT) : getItemDefaultColor(EGUI_LBC_TEXT);
                 }
 
-                auto itemText = drawBatch->addTextSprite(Items[i].Text,
+                auto itemText = drawBatch->addTextSprite(Items[i].Text, 0,
                     toRectT<f32>(textRect), textColor, &clientClip);
                 itemText->getTextObj().setAlignment(GUIAlignment::UpperLeft, GUIAlignment::Center);
                 itemText->setBoundRect(toRectT<f32>(textRect));

@@ -659,12 +659,12 @@ void GUITable::updateMesh()
 
     bool draw_background = m_background.A() > 0;
     if (m_border) {
-        auto border = drawBatch->addRectsSprite({});
+        auto border = drawBatch->addRectsSprite({}, 0);
         border->setClipRect(AbsoluteClippingRect);
         skin->add3DSunkenPane(border, m_background, true, draw_background, toRectT<f32>(AbsoluteRect));
     }
     else if (draw_background)
-        drawBatch->addRectsSprite({{toRectT<f32>(AbsoluteRect), m_background}}, &AbsoluteClippingRect);
+        drawBatch->addRectsSprite({{toRectT<f32>(AbsoluteRect), m_background}}, 0, &AbsoluteClippingRect);
 
     // get clipping rect
 
@@ -700,7 +700,7 @@ void GUITable::updateMesh()
         img::color8 color = m_color;
 
         if (is_sel) {
-            drawBatch->addRectsSprite({{toRectT<f32>(row_rect), m_highlight}}, &client_clip);
+            drawBatch->addRectsSprite({{toRectT<f32>(row_rect), m_highlight}}, 1, &client_clip);
             color = m_highlight_text;
         }
 
@@ -747,7 +747,7 @@ void GUITable::drawCell(const Cell *cell, img::color8 color,
             text_rect.LRC.X = row_rect.ULC.X
                     + cell->xpos + m_font->getTextWidth(text);
 
-            drawBatch->addTextSprite(text, toRectT<f32>(text_rect), color, &client_clip);
+            drawBatch->addTextSprite(text, 2, toRectT<f32>(text_rect), color, &client_clip);
 		}
 	}
 	else if (cell->content_type == COLUMN_TYPE_IMAGE) {
@@ -770,7 +770,7 @@ void GUITable::drawCell(const Cell *cell, img::color8 color,
 			if (imgh < rowh)
 				dest_rect += v2i(0, (rowh - imgh) / 2);
 
-            drawBatch->addRectsSprite({{toRectT<f32>(dest_rect), RectColors::defaultColors, image}}, &client_clip);
+            drawBatch->addRectsSprite({{toRectT<f32>(dest_rect), RectColors::defaultColors, image}}, 2, &client_clip);
 		}
 	}
 }

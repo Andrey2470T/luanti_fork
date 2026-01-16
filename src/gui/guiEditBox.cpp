@@ -25,6 +25,7 @@ void GUIEditBox::setOverrideFont(render::TTFont *font)
 	m_override_font = font;
 
 	breakText();
+    Rebuild = true;
 }
 
 //! Get the font which is used right now for drawing
@@ -43,6 +44,7 @@ void GUIEditBox::setOverrideColor(img::color8 color)
 {
 	m_override_color = color;
 	m_override_color_enabled = true;
+    Rebuild = true;
 }
 
 img::color8 GUIEditBox::getOverrideColor() const
@@ -54,6 +56,7 @@ img::color8 GUIEditBox::getOverrideColor() const
 void GUIEditBox::enableOverrideColor(bool enable)
 {
 	m_override_color_enabled = enable;
+    Rebuild = true;
 }
 
 //! Enables or disables word wrap
@@ -61,12 +64,14 @@ void GUIEditBox::setWordWrap(bool enable)
 {
 	m_word_wrap = enable;
 	breakText();
+    Rebuild = true;
 }
 
 //! Enables or disables newlines.
 void GUIEditBox::setMultiLine(bool enable)
 {
 	m_multiline = enable;
+    Rebuild = true;
 }
 
 //! Enables or disables automatic scrolling with cursor position
@@ -74,6 +79,7 @@ void GUIEditBox::setMultiLine(bool enable)
 void GUIEditBox::setAutoScroll(bool enable)
 {
 	m_autoscroll = enable;
+    Rebuild = true;
 }
 
 void GUIEditBox::setPasswordBox(bool password_box, wchar_t password_char)
@@ -92,6 +98,7 @@ void GUIEditBox::setTextAlignment(EGUI_ALIGNMENT horizontal, EGUI_ALIGNMENT vert
 {
 	m_halign = horizontal;
 	m_valign = vertical;
+    Rebuild = true;
 }
 
 //! Sets the new caption of this element.
@@ -102,6 +109,7 @@ void GUIEditBox::setText(const wchar_t *text)
 		m_cursor_pos = Text.size();
 	m_hscroll_pos = 0;
 	breakText();
+    Rebuild = true;
 }
 
 //! Sets the maximum amount of characters which may be entered in the box.
@@ -137,11 +145,13 @@ v2u GUIEditBox::getTextDimension()
 void GUIEditBox::setDrawBorder(bool border)
 {
 	m_border = border;
+    Rebuild = true;
 }
 
 void GUIEditBox::setWritable(bool can_write_text)
 {
 	m_writable = can_write_text;
+    Rebuild = true;
 }
 
 //! set text markers
@@ -161,6 +171,7 @@ void GUIEditBox::setTextMarkers(s32 begin, s32 end)
 		}
 
 		sendGuiEvent(EGET_EDITBOX_MARKING_CHANGED);
+        Rebuild = true;
 	}
 }
 
@@ -190,17 +201,23 @@ bool GUIEditBox::OnEvent(const core::Event &event)
 					setTextMarkers(0, 0);
 				}
 			}
+            Rebuild = true;
 			break;
 		case EET_KEY_INPUT_EVENT:
-			if (processKey(event))
+            if (processKey(event)) {
+                Rebuild = true;
 				return true;
+            }
 			break;
 		case EET_MOUSE_INPUT_EVENT:
-			if (processMouse(event))
+            if (processMouse(event)) {
+                Rebuild = true;
 				return true;
+            }
 			break;
 		case EET_STRING_INPUT_EVENT:
 			inputString(*event.StringInput.Str);
+            Rebuild = true;
 			return true;
 		default:
 			break;
@@ -822,6 +839,7 @@ void GUIEditBox::updateVScrollBar()
 			// manage a newline or a deleted line
 			m_vscroll_pos = m_vscrollbar->getPos();
 		}
+        Rebuild = true;
 	}
 
 	// check if a vertical scrollbar is needed ?

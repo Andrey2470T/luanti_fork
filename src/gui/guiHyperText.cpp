@@ -935,15 +935,16 @@ void TextDrawer::place(const recti &dest_rect)
 void TextDrawer::draw(const recti &clip_rect,
 		const v2i &dest_offset)
 {
-	v2i offset = dest_offset;
-	offset.Y += m_voffset;
+    if (changed) {
+    v2i offset = dest_offset;
+    offset.Y += m_voffset;
 
     drawBatch->clear();
 
-	if (m_text.background_type == ParsedText::BACKGROUND_COLOR)
+    if (m_text.background_type == ParsedText::BACKGROUND_COLOR)
         drawBatch->addRectsSprite({{toRectT<f32>(clip_rect), m_text.background_color}});
 
-	for (auto &p : m_text.m_paragraphs) {
+    for (auto &p : m_text.m_paragraphs) {
 		for (auto &el : p.elements) {
             recti rect(el.pos + offset, el.dim.X, el.dim.Y);
 			if (!rect.isRectCollided(clip_rect))
@@ -962,7 +963,7 @@ void TextDrawer::draw(const recti &clip_rect,
 					break;
 
 				if (el.type == ParsedText::ELEMENT_TEXT)
-                    drawBatch->addTextSprite(el.text, toRectT<f32>(rect), color, &clip_rect);
+                    drawBatch->addTextSprite(el.text, 0, toRectT<f32>(rect), color, &clip_rect);
 
 				if (el.underline &&  el.drawwidth) {
 					s32 linepos = el.pos.Y + offset.Y +
@@ -973,7 +974,7 @@ void TextDrawer::draw(const recti &clip_rect,
 							el.pos.X + offset.X + el.drawwidth,
 							linepos + (el.baseline >> 3));
 
-                    drawBatch->addRectsSprite({{toRectT<f32>(linerect), {color}}}, &clip_rect);
+                    drawBatch->addRectsSprite({{toRectT<f32>(linerect), {color}}}, 0, &clip_rect);
 				}
 			} break;
 
@@ -981,7 +982,7 @@ void TextDrawer::draw(const recti &clip_rect,
 				img::Image *texture =
                         m_guienv->getResourceCache()->getOrLoad<img::Image>(ResourceType::IMAGE, wide_to_utf8(el.text));
                 if (texture)
-                    drawBatch->addRectsSprite({{toRectT<f32>(rect), img::white, texture}}, &clip_rect);
+                    drawBatch->addRectsSprite({{toRectT<f32>(rect), img::white, texture}}, 0, &clip_rect);
 			} break;
 
 			case ParsedText::ELEMENT_ITEM: {
@@ -1000,6 +1001,10 @@ void TextDrawer::draw(const recti &clip_rect,
 	}
 
     drawBatch->rebuild();
+
+    changed = false;
+    }
+
     drawBatch->draw();
 }
 
@@ -1072,6 +1077,7 @@ bool GUIHyperText::OnEvent(const core::Event &event)
 			event.GUI.Type == EGET_SCROLL_BAR_CHANGED &&
             event.GUI.Caller == m_vscrollbar) {
 		m_text_scrollpos.Y = -m_vscrollbar->getPos();
+        m_drawer.changed = true;
 	}
 
 	// Reset hover if element left
@@ -1093,6 +1099,7 @@ bool GUIHyperText::OnEvent(const core::Event &event)
 			m_vscrollbar->setPosInterpolated(m_vscrollbar->getTargetPos() -
                     event.MouseInput.WheelDelta * m_vscrollbar->getSmallStep());
 			m_text_scrollpos.Y = -m_vscrollbar->getPos();
+            m_drawer.changed = true;
 			m_drawer.draw(m_display_text_rect, m_text_scrollpos);
 			checkHover(event.MouseInput.X, event.MouseInput.Y);
 			return true;

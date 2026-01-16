@@ -362,8 +362,8 @@ SpriteDrawBatch::SpriteDrawBatch(RenderSystem *_rndsys, ResourceCache *_cache)
 
 // if auto-align is enabled, the rects areas must be absolute, otherwise - relative to the ulc
 UIRects *SpriteDrawBatch::addRectsSprite(const std::vector<TexturedRect> &rects,
-    const recti *clipRect,
-    u32 depthLevel)
+    u32 depthLevel,
+    const recti *clipRect)
 {
     UIRects *rectsSprite = new UIRects(cache, this, rndsys->getPool(false), rects, depthLevel);
     sprites.emplace_back(rectsSprite);
@@ -398,10 +398,10 @@ Image2D9Slice *SpriteDrawBatch::addImage2D9Slice(
 }
 
 UITextSprite *SpriteDrawBatch::addTextSprite(const std::wstring &text,
+    u32 depthLevel,
     std::optional<std::variant<rectf, v2f>> shift,
     const img::color8 &textColor,
     const recti *clipRect,
-    u32 depthLevel,
     bool wordWrap,
     GUIAlignment horizAlign,
     GUIAlignment vertAlign)
@@ -514,100 +514,93 @@ void SpriteDrawBatch::draw()
     rnd->setDefaultShader(true, true);
     rnd->setDefaultUniforms(1.0f, 1, 0.5f, img::BM_COUNT);
 
-    for (auto &chunksLevel : batchedChunks) {
-        for (auto &chunk : chunksLevel.second) {
+    for (auto &chunksLevel : levels) {
+        for (auto &chunk : chunksLevel.second.chunks) {
             rnd->setTexture(chunk.texture);
             rnd->setClipRect(chunk.clipRect);
 
-            u32 indexOffset = chunk.rectsOffset*6;
-            u32 indexCount = chunk.rectsCount*6;
+			for (auto &group : chunk.groups) {
+	            u32 indexOffset = group.first*6;
+            	u32 indexCount = group.second*6;
 
-            rnd->draw(buffer.get(), render::PT_TRIANGLES, indexOffset, indexCount);
+            	rnd->draw(buffer.get(), render::PT_TRIANGLES, indexOffset, indexCount);
+			}
         }
     }
 }
 
 void SpriteDrawBatch::batch()
 {
-    batchedChunks.clear();
+    levels.clear();
 
     u32 rectsOffset = 0;
-    for (auto &sprite : sprites) {
-        if (!sprite->isVisible())
-            continue;
 
+    u32 lastDepthLevel = 0;
+
+    for (auto &sprite : sprites) {
         auto &spriteToChunks = chunks[sprite.get()];
         u32 depthLevel = sprite->getDepthLevel();
 
-        auto &chunksLevel = batchedChunks[depthLevel];
+        if (!sprite->isVisible()) {
+            for (auto &chunk : spriteToChunks)
+                rectsOffset += chunk.rectsCount;
+            continue;
+        }
 
+		// The batching occurs within the certain depth level
+        auto &chunksLevel = levels[depthLevel];
+
+		// Merging the same chunks (by texture and clip rectsCount) into single batched chunk
+        // It is necessary to split the merged chunks into groups since they can locate
+        // in the vector unnecessarily in the "one after another" order
         for (auto &chunk : spriteToChunks) {
-            if (chunksLevel.empty())
-                chunksLevel.emplace_back(chunk.texture, chunk.clipRect, chunk.rectsCount, rectsOffset);
-            else {
-                auto &lastBatchedChunk = chunksLevel.back();
+            auto foundBatchedChunkIt = std::find(chunksLevel.chunks.begin(), chunksLevel.chunks.end(), chunk);
 
-                if (lastBatchedChunk == chunk)
-                    lastBatchedChunk.rectsCount += chunk.rectsCount;
-                else
-                    chunksLevel.emplace_back(chunk.texture, chunk.clipRect, chunk.rectsCount, rectsOffset);
+            if (foundBatchedChunkIt != chunksLevel.chunks.end()) {
+                u32 curBatchedChunkId = std::distance(chunksLevel.chunks.begin(), foundBatchedChunkIt);
+            	
+                if (chunksLevel.lastBatchedChunkId != curBatchedChunkId || lastDepthLevel != depthLevel) {
+                    lastDepthLevel = depthLevel;
+
+                    auto &lastBatchedChunk = chunksLevel.chunks.at(chunksLevel.lastBatchedChunkId);
+                    lastBatchedChunk.groups.emplace_back(
+                        chunksLevel.curChunkRectOffset, chunksLevel.curChunkRectCount);
+
+                    chunksLevel.lastBatchedChunkId = curBatchedChunkId;
+            		
+                    chunksLevel.curChunkRectOffset = rectsOffset;
+                    chunksLevel.curChunkRectCount = chunk.rectsCount;
+            	}
+            	else
+                    chunksLevel.curChunkRectCount += chunk.rectsCount;
+        	}
+            else {
+                if (!chunksLevel.chunks.empty()) {
+                    auto &lastBatchedChunk = chunksLevel.chunks.at(chunksLevel.lastBatchedChunkId);
+                    lastBatchedChunk.groups.emplace_back(
+                        chunksLevel.curChunkRectOffset, chunksLevel.curChunkRectCount);
+            	}
+            
+                chunksLevel.chunks.emplace_back(chunk.texture, chunk.clipRect);
+                chunksLevel.curChunkRectOffset = rectsOffset;
+                chunksLevel.curChunkRectCount = chunk.rectsCount;
+            	
+                chunksLevel.lastBatchedChunkId = chunksLevel.chunks.size()-1;
             }
 
             rectsOffset += chunk.rectsCount;
         }
+
+        lastDepthLevel = depthLevel;
     }
-}
-/*void SpriteDrawBatch::batch()
-{
-    subBatches.clear();
 
-    u32 curRectN = 0;
-    for (auto &sprite : sprites) {
-        auto &spriteToChunks = chunks[sprite.get()];
-        u32 depthLevel = sprite->getDepthLevel();
-
-        DrawSubBatch &subBatch = subBatches[depthLevel];
-
-        for (auto &chunk : spriteToChunks) {
-            auto &texBatch = subBatch[chunk.texture];
-
-            auto clipToRectsIt = std::find_if(texBatch.begin(), texBatch.end(),
-                [&chunk] (const auto &clipToRect)
-                {
-                    return chunk.clipRect == clipToRect.first;
-                });
-
-            std::vector<std::tuple<UISprite *, u32, u32>> *rectRanges = nullptr;
-            if (clipToRectsIt == texBatch.end()) {
-                texBatch.emplace_back(chunk.clipRect, std::vector<std::tuple<UISprite *, u32, u32>>());
-                rectRanges = &(texBatch.back().second);
-            }
-            else
-                rectRanges = &((*clipToRectsIt).second);
-
-            bool wasExtended = false;
-            for (u32 k = 0; k < rectRanges->size(); k++) {
-                if (extendRectsRange(rectRanges->at(k), {curRectN, curRectN+chunk.rectsN})) {
-                    wasExtended = true;
-                    break;
-                }
-            }
-
-            if (!wasExtended)
-                rectRanges->emplace_back(sprite.get(), curRectN, curRectN+chunk.rectsN);
-
-            curRectN += chunk.rectsN;
+    // Fix: Finalize the last accumulated group for each depth level
+    for (auto &levelPair : levels) {
+        auto &chunksLevel = levelPair.second;
+        if (!chunksLevel.chunks.empty() && chunksLevel.curChunkRectCount > 0) {
+            auto &lastBatchedChunk = chunksLevel.chunks.at(chunksLevel.lastBatchedChunkId);
+            lastBatchedChunk.groups.emplace_back(
+                chunksLevel.curChunkRectOffset, chunksLevel.curChunkRectCount);
         }
     }
-}*/
-
-bool SpriteDrawBatch::extendRectsRange(std::tuple<UISprite *, u32, u32> &curRange, const std::pair<u32, u32> &newRange)
-{
-    if ((newRange.first - std::get<2>(curRange)) > 1 || (std::get<1>(curRange) - newRange.second) > 1)
-        return false;
-
-    std::get<1>(curRange) = std::min(newRange.first, std::get<1>(curRange));
-    std::get<2>(curRange) = std::max(newRange.second, std::get<2>(curRange));
-
-    return true;
 }

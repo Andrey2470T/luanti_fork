@@ -61,6 +61,8 @@ protected:
 	bool m_bg_color_used;
 	img::color8 m_bg_color;
 
+    bool m_draw_cursor = false;
+
     std::unique_ptr<SpriteDrawBatch> drawBatch;
 };
 

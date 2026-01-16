@@ -58,12 +58,12 @@ void GameUI::init()
     auto font_mgr = rndsys->getFontManager();
 
     // First line of debug text
-    minimal_debugtext = drawBatch->addTextSprite(utf8_to_wide(PROJECT_NAME_C), v2f(5, 5));
+    minimal_debugtext = drawBatch->addTextSprite(utf8_to_wide(PROJECT_NAME_C), 0, v2f(5, 5));
     // Second line of debug text
-    basic_debugtext = drawBatch->addTextSprite(L"", v2f(5, 5 + minimal_debugtext->getTextHeight()));
+    basic_debugtext = drawBatch->addTextSprite(L"", 0, v2f(5, 5 + minimal_debugtext->getTextHeight()));
 
 	// Chat text
-    chattext = drawBatch->addTextSprite(L"", std::nullopt, img::white, nullptr, 0, true);
+    chattext = drawBatch->addTextSprite(L"", 0, std::nullopt, img::white, nullptr, true);
     chattext->getTextObj().enableOverrideColor(false);
 	u16 chat_font_size = g_settings->getU16("chat_font_size");
 	if (chat_font_size != 0) {
@@ -75,7 +75,7 @@ void GameUI::init()
 	// If in debug mode, object debug infos shown here, too.
 	// Located on the left on the screen, below chat.
     u32 chat_font_height = chattext->getLineHeight();
-    infotext = drawBatch->addTextSprite(L"", v2f(100, chat_font_height * (g_settings->getU16("recent_chat_messages") + 3)));
+    infotext = drawBatch->addTextSprite(L"", 0, v2f(100, chat_font_height * (g_settings->getU16("recent_chat_messages") + 3)));
 
 	// Status text (displays info when showing and hiding GUI stuff, etc.)
     last_status_text = L"<Status>";

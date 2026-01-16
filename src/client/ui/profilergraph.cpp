@@ -13,7 +13,7 @@ ProfilerGraph::ProfilerGraph(SpriteDrawBatch *_drawBatch, u8 _number, img::color
     : drawBatch(_drawBatch), color(_color), number(_number)
 {
     graph = drawBatch->addRectsSprite({});
-    text = drawBatch->addTextSprite(L"", std::nullopt, color, nullptr, true);
+    text = drawBatch->addTextSprite(L"", 0, std::nullopt, color, nullptr, true);
 }
 
 void ProfilerGraph::update(const std::string &id, f32 new_value, s32 x_left, s32 y_bottom)

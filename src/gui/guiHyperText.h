@@ -164,6 +164,7 @@ public:
 			const v2i &dest_offset);
 	ParsedText::Element *getElementAt(v2i pos);
 	ParsedText::Tag *m_hovertag;
+    bool changed = true;
 
 protected:
 	struct RectWithMargin

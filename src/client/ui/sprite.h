@@ -291,19 +291,27 @@ struct SpriteDrawChunk
 {
     render::Texture2D *texture = nullptr;
     recti clipRect;
-    u32 rectsOffset = 0;
     u32 rectsCount;
+    std::vector<std::pair<u32, u32>> groups;
 
     SpriteDrawChunk() = default;
 
-    SpriteDrawChunk(render::Texture2D *_texture, const recti &_clipRect, u32 _rectsCount, u32 _rectsOffset=0)
-        : texture(_texture), clipRect(_clipRect), rectsOffset(_rectsOffset), rectsCount(_rectsCount)
+    SpriteDrawChunk(render::Texture2D *_texture, const recti &_clipRect, u32 _rectsCount=0)
+        : texture(_texture), clipRect(_clipRect), rectsCount(_rectsCount)
     {}
 
     bool operator==(const SpriteDrawChunk &other)
     {
         return (texture == other.texture && clipRect == other.clipRect);
     }
+};
+
+struct SpriteDrawChunksLevel
+{
+    std::vector<SpriteDrawChunk> chunks;
+    u32 curChunkRectOffset = 0;
+    u32 curChunkRectCount = 0;
+    u32 lastBatchedChunkId = 0;
 };
 
 // Collection of all sprites packed in the single meshbuffer
@@ -317,7 +325,7 @@ class SpriteDrawBatch
 
     std::unordered_map<UISprite *, std::vector<SpriteDrawChunk>> chunks;
 
-    std::map<u32, std::vector<SpriteDrawChunk>> batchedChunks;
+    std::map<u32, SpriteDrawChunksLevel> levels;
 
     rectf maxArea;
     bool maxAreaInit = false;
@@ -341,8 +349,8 @@ public:
     }
     UIRects *addRectsSprite(
         const std::vector<TexturedRect> &rects,
-        const recti *clipRect=nullptr,
-        u32 depthLevel=0);
+        u32 depthLevel=0,
+        const recti *clipRect=nullptr);
     Image2D9Slice *addImage2D9Slice(
         const rectf &src_rect, const rectf &dest_rect,
         const rectf &middle_rect, img::Image *baseImg,
@@ -351,10 +359,10 @@ public:
         std::optional<AtlasTileAnim> anim=std::nullopt);
     UITextSprite *addTextSprite(
         const std::wstring &text,
+        u32 depthLevel=0,
         std::optional<std::variant<rectf, v2f>> shift=std::nullopt,
         const img::color8 &textColor=img::white,
         const recti *clipRect=nullptr,
-        u32 depthLevel=0,
         bool wordWrap=false,
         GUIAlignment horizAlign=GUIAlignment::UpperLeft,
         GUIAlignment vertAlign=GUIAlignment::Center);
@@ -419,5 +427,4 @@ public:
     void draw();
 private:
     void batch();
-    bool extendRectsRange(std::tuple<UISprite *, u32, u32> &curRange, const std::pair<u32, u32> &newRange);
 };

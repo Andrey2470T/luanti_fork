@@ -125,7 +125,7 @@ HudSprite::~HudSprite()
 }
 
 HudText::HudText(Client *client, const HudElement *elem, SpriteDrawBatch *drawBatch)
-    : HudSprite(client, elem, drawBatch->addTextSprite(L"", std::nullopt, img::white, nullptr, elem->z_index))
+    : HudSprite(client, elem, drawBatch->addTextSprite(L"", elem->z_index))
 {
     update();
 }
@@ -144,7 +144,7 @@ void HudText::update()
 }
 
 HudStatbar::HudStatbar(Client *client, const HudElement *elem, SpriteDrawBatch *drawBatch)
-    : HudSprite(client, elem, drawBatch->addRectsSprite({}, nullptr, elem->z_index))
+    : HudSprite(client, elem, drawBatch->addRectsSprite({}, elem->z_index))
 {
     update();
 }
@@ -299,7 +299,7 @@ bool Waypoint::calculateScreenPos(v2f *pos)
 }
 
 HudTextWaypoint::HudTextWaypoint(Client *_client, const HudElement *elem, SpriteDrawBatch *drawBatch)
-    : HudSprite(_client, elem, drawBatch->addTextSprite(L"", std::nullopt, img::white, nullptr, elem->z_index)),
+    : HudSprite(_client, elem, drawBatch->addTextSprite(L"", elem->z_index)),
       Waypoint(_client)
 {
     update();
@@ -337,7 +337,7 @@ void HudTextWaypoint::update()
 }
 
 HudImageWaypoint::HudImageWaypoint(Client *_client, const HudElement *elem, SpriteDrawBatch *drawBatch)
-    : HudSprite(_client, elem, drawBatch->addRectsSprite({}, nullptr, elem->z_index)), Waypoint(_client)
+    : HudSprite(_client, elem, drawBatch->addRectsSprite({}, elem->z_index)), Waypoint(_client)
 {
     update();
 }
@@ -359,7 +359,7 @@ void HudImageWaypoint::update()
 }
 
 HudImage::HudImage(Client *client, const HudElement *elem, SpriteDrawBatch *drawBatch)
-    : HudSprite(client, elem, drawBatch->addRectsSprite({}, nullptr, elem->z_index))
+    : HudSprite(client, elem, drawBatch->addRectsSprite({}, elem->z_index))
 {
     update();
 }
@@ -373,7 +373,7 @@ void HudImage::update()
 }
 
 HudCompass::HudCompass(Client *_client, const HudElement *elem, SpriteDrawBatch *drawBatch)
-    : HudSprite(_client, elem, drawBatch->addRectsSprite({}, nullptr, elem->z_index))
+    : HudSprite(_client, elem, drawBatch->addRectsSprite({}, elem->z_index))
 {
     update();
 }
@@ -525,7 +525,7 @@ static void setting_changed_callback(const std::string &name, void *data)
 
 HudInventoryList::HudInventoryList(Client *_client, const HudElement *elem, SpriteDrawBatch *drawBatch,
     InventoryList *_invlist)
-    : HudSprite(_client, elem, drawBatch->addRectsSprite({}, nullptr, elem->z_index))
+    : HudSprite(_client, elem, drawBatch->addRectsSprite({}, elem->z_index))
 {
     updateScalingSetting();
     g_settings->registerChangedCallback("dpi_change_notifier", setting_changed_callback, this);

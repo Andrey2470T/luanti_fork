@@ -104,7 +104,7 @@ void CGUICheckBox::updateMesh()
     drawBatch->clear();
 
     if (skin) {
-        UIRects *CheckBoxRects = drawBatch->addRectsSprite({});
+        UIRects *CheckBoxRects = drawBatch->addRectsSprite({}, 0);
         CheckBoxRects->setClipRect(AbsoluteClippingRect);
 
         recti frameRect(AbsoluteRect);
@@ -145,8 +145,10 @@ void CGUICheckBox::updateMesh()
             std::string tex_name = "checkbox_" + std::to_string(sprite_res) + ".png";
             auto sprite_tex = Environment->getResourceCache()->get<img::Image>(ResourceType::IMAGE, tex_name);
 
-            if (sprite_tex)
-                CheckBoxRects->addRect({toRectT<f32>(checkRect), RectColors::defaultColors, sprite_tex});
+            if (sprite_tex) {
+                drawBatch->addRectsSprite(
+                    {{toRectT<f32>(checkRect), RectColors::defaultColors, sprite_tex}}, 1);
+            }
 
         }
 
@@ -158,7 +160,7 @@ void CGUICheckBox::updateMesh()
             render::TTFont *font = skin->getFont();
             if (font) {
                 img::color8 text_c = skin->getColor(isEnabled() ? EGDC_BUTTON_TEXT : EGDC_GRAY_TEXT);
-                drawBatch->addTextSprite(Text, toRectT<f32>(checkRect), text_c);
+                drawBatch->addTextSprite(Text, 0, toRectT<f32>(checkRect), text_c);
             }
         }
     }
