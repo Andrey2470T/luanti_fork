@@ -376,7 +376,7 @@ void set_default_settings()
 	settings->setDefault("font_path_bold_italic", porting::getDataPath("fonts" DIR_DELIM "Arimo-BoldItalic.ttf"));
 	settings->setDefault("font_bold", "false");
 	settings->setDefault("font_italic", "false");
-	settings->setDefault("font_shadow", "1");
+    settings->setDefault("font_shadow", "0");
 	settings->setDefault("font_shadow_alpha", "127");
 	settings->setDefault("font_size_divisible_by", "1");
 	settings->setDefault("mono_font_path", porting::getDataPath("fonts" DIR_DELIM "Cousine-Regular.ttf"));

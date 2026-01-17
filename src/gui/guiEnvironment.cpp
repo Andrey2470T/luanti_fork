@@ -420,7 +420,6 @@ bool CGUIEnvironment::postEventFromUser(const core::Event &event)
 
 	break;
 	case EET_MOUSE_INPUT_EVENT:
-
 		updateHoveredElement(v2i(event.MouseInput.X, event.MouseInput.Y));
 
 		if (Hovered != Focus) {
@@ -441,6 +440,9 @@ bool CGUIEnvironment::postEventFromUser(const core::Event &event)
 					   event.MouseInput.Type == EMIE_MOUSE_MOVED) {
 				setFocus(focusCandidate);
 			}
+            else if (event.MouseInput.Type == EMIE_MOUSE_WHEEL) {
+                setFocus(focusCandidate);
+            }
 		}
 
 		// sending input to focus

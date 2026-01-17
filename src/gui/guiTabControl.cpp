@@ -60,10 +60,10 @@ void CGUITab::draw()
     updateMesh();
 
     if (Environment->getSkin() && DrawBackground) {
-        drawBatch->draw();
+      drawBatch->draw();
     }
 
-	IGUIElement::draw();
+    IGUIElement::draw();
 }
 
 //! sets if the tab should draw its background

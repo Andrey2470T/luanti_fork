@@ -52,11 +52,13 @@ void ProfilerGraph::update(const std::string &id, f32 new_value, s32 x_left, s32
     bool relativegraph = (show_min != 0 && show_min != show_max);
     f32 lastscaledvalue = 0.0;
     
-    sts::list<f32> fullValues = values;
+    std::list<f32> fullValues = values;
     fullValues.resize(log_max_size);
 
+    auto fullValuesIt = fullValues.begin();
+
     for (u32 k = 0; k < fullValues.size(); k++) {
-    	f32 &v = fullValues.at(k);
+        f32 &v = *(fullValuesIt++);
         float scaledvalue = 1.0;
 
         if (show_max != show_min)
