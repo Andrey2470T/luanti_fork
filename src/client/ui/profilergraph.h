@@ -51,9 +51,7 @@ class ProfilerGraphSet
 
     bool is_visible = false;
 public:
-    ProfilerGraphSet(RenderSystem *_rndsys, ResourceCache *_cache)
-        : rndsys(_rndsys), cache(_cache), drawBatch(std::make_unique<SpriteDrawBatch>(rndsys, cache))
-    {}
+    ProfilerGraphSet(RenderSystem *_rndsys, ResourceCache *_cache);
 
     void addGraph(const std::string &id, u8 number, img::color8 color = img::white)
     {
@@ -66,5 +64,5 @@ public:
         is_visible = visible;
     }
 
-    void draw() const;
+    void draw();
 };

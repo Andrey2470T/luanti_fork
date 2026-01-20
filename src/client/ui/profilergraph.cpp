@@ -123,6 +123,10 @@ void ProfilerGraph::updateText(const std::string &id, f32 show_min, f32 show_max
     text->setBoundRect(rectf(ulc_x, ulc_y, lrc_x, lrc_y));
 }
 
+ProfilerGraphSet::ProfilerGraphSet(RenderSystem *_rndsys, ResourceCache *_cache)
+    : rndsys(_rndsys), cache(_cache), drawBatch(std::make_unique<SpriteDrawBatch>(rndsys, cache))
+{}
+
 void ProfilerGraphSet::put(const Profiler::GraphValues &values)
 {
     if (!is_visible)
@@ -134,7 +138,7 @@ void ProfilerGraphSet::put(const Profiler::GraphValues &values)
         graphs.at(v.first)->update(v.first, v.second, 10, wnd_size.Y - 10);
 }
 
-void ProfilerGraphSet::draw() const
+void ProfilerGraphSet::draw()
 {
     if (!is_visible)
         return;

@@ -395,8 +395,6 @@ void GameUI::render()
     
     //for (auto &nt : nametags)
     //    nt->draw();
-
-    graph_set->draw();
 }
 
 void GameUI::updateDebugState(Client *client)

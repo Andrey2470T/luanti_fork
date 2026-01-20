@@ -34,6 +34,7 @@ class Hud
 
     // Crosshair is not controlled by mods yet
     UIRects *crosshair;
+    UIRects *crosshair2;
 
     u32 builtinMinimapID;
     u32 builtinHotbarID;
