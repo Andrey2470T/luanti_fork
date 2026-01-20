@@ -277,7 +277,7 @@ void Text::updateText(rectf clipRect)
     }
 
     if (wordWrap) {
-        for (auto line : brokenText)
+        for (const auto& line : brokenText)
             textWidth = std::max(textWidth, font->getTextWidth(line.getString()));
     }
     else

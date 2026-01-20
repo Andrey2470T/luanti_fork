@@ -67,14 +67,14 @@ void UIShape::addLine(
         const v2f &start_p, const v2f &end_p,
         const img::color8 &start_c, const img::color8 &end_c) {
     primitives.emplace_back((Primitive *)(new Line(start_p, end_p, start_c, end_c)));
-    dirtyPrimitives.insert(primitives.size()-1);
+    primCountChanged = true;
     updateMaxArea(maxArea, start_p, end_p, maxAreaInit);
 }
 void UIShape::addTriangle(
         const v2f &p1, const v2f &p2, const v2f &p3,
         const img::color8 &c1, const img::color8 &c2, const img::color8 &c3) {
     primitives.emplace_back((Primitive *)(new Triangle(p1, p2, p3, c1, c2, c3)));
-    dirtyPrimitives.insert(primitives.size()-1);
+    primCountChanged = true;
     updateMaxArea(maxArea, v2f(p1.X, p3.Y), p2, maxAreaInit);
 }
 void UIShape::addRectangle(
@@ -88,12 +88,12 @@ void UIShape::addRectangle(
     tcoords.LRC = v2f(texr.LRC.X * invW, texr.LRC.Y * invH);
 
     primitives.emplace_back((Primitive *)(new Rectangle(r, colors, tcoords)));
-    dirtyPrimitives.insert(primitives.size()-1);
+    primCountChanged = true;
     updateMaxArea(maxArea, r.ULC, r.LRC, maxAreaInit);
 }
 void UIShape::addEllipse(f32 a, f32 b, const v2f &center, const img::color8 &c) {
     primitives.emplace_back((Primitive *)(new Ellipse(a, b, center, c)));
-    dirtyPrimitives.insert(primitives.size()-1);
+    primCountChanged = true;
     updateMaxArea(maxArea, center - v2f(a/2, b/2), center+v2f(a/2, b/2), maxAreaInit);
 }
 
@@ -107,7 +107,6 @@ void UIShape::updateLine(
     line->start_c = start_c;
     line->end_c = end_c;
 
-    dirtyPrimitives.insert(n);
     updateMaxArea(maxArea, start_p, end_p, maxAreaInit);
 }
 void UIShape::updateTriangle(
@@ -122,7 +121,6 @@ void UIShape::updateTriangle(
     trig->c2 = c2;
     trig->c3 = c3;
 
-    dirtyPrimitives.insert(n);
     updateMaxArea(maxArea, v2f(p1.X, p3.Y), p2, maxAreaInit);
 }
 void UIShape::updateRectangle(
@@ -142,7 +140,6 @@ void UIShape::updateRectangle(
     rect->colors = colors;
     rect->texr = tcoords;
 
-    dirtyPrimitives.insert(n);
     updateMaxArea(maxArea, r.ULC, r.LRC, maxAreaInit);
 }
 void UIShape::updateEllipse(u32 n, f32 a, f32 b, const v2f &center, const img::color8 &c)
@@ -153,7 +150,6 @@ void UIShape::updateEllipse(u32 n, f32 a, f32 b, const v2f &center, const img::c
     ellipse->center = center;
     ellipse->c = c;
 
-    dirtyPrimitives.insert(n);
     updateMaxArea(maxArea, center - v2f(a/2, b/2), center+v2f(a/2, b/2), maxAreaInit);
 }
 
@@ -194,8 +190,6 @@ void UIShape::movePrimitive(u32 n, const v2f &shift)
     default:
         return;
     }
-
-    dirtyPrimitives.insert(n);
 }
 void UIShape::scalePrimitive(u32 n, const v2f &scale, std::optional<v2f> center)
 {
@@ -242,8 +236,6 @@ void UIShape::scalePrimitive(u32 n, const v2f &scale, std::optional<v2f> center)
     default:
         return;
     }
-
-    dirtyPrimitives.insert(n);
 }
 
 u32 UIShape::countRequiredVCount(const std::vector<UIPrimitiveType> &primitives)
@@ -274,6 +266,7 @@ void UIShape::removePrimitive(u32 i)
         return;
 
     primitives.erase(primitives.begin()+i);
+    primCountChanged = true;
 
     for (u32 i = 0; i < primitives.size(); i++) {
         rectf primArea = getPrimitiveArea(i);
@@ -283,8 +276,8 @@ void UIShape::removePrimitive(u32 i)
 void UIShape::clear()
 {
     primitives.clear();
-    dirtyPrimitives.clear();
     maxArea = rectf();
+    primCountChanged = true;
     maxAreaInit = false;
 }
 
@@ -304,19 +297,12 @@ void UIShape::scale(const v2f &scale, std::optional<v2f> c)
 
 void UIShape::updateBuffer(MeshBuffer *buf, u32 vertexOffset, u32 indexOffset)
 {
-    for (auto dirtyPrim : dirtyPrimitives)
-        updatePrimInBuffer(buf, dirtyPrim, vertexOffset, indexOffset);
-
-    dirtyPrimitives.clear();
+    for (u32 k = 0; k < primitives.size(); k++)
+        updatePrimInBuffer(buf, k, vertexOffset, indexOffset);
 }
 
 void UIShape::updatePrimInBuffer(MeshBuffer *buf, u32 primitiveNum, u32 vertexOffset, u32 indexOffset)
 {
-    auto foundDirtyPrim = std::find(dirtyPrimitives.begin(), dirtyPrimitives.end(), primitiveNum);
-
-    if (foundDirtyPrim == dirtyPrimitives.end())
-        return;
-
     Primitive *p = primitives.at(primitiveNum).get();
 
     u32 startV = 0;
@@ -493,9 +479,15 @@ void SpriteDrawBatch::remove(u32 n)
 
 void SpriteDrawBatch::rebuild()
 {
+    bool wasPrimCountChanged = false;
     std::vector<UIPrimitiveType> prims;
     for (auto &sprite : sprites) {
         sprite->appendToBatch();
+
+        if (sprite->getShape().primCountChanged) {
+            wasPrimCountChanged = true;
+            sprite->getShape().primCountChanged = false;
+        }
 
         auto &shape = sprite->getShape();
 
@@ -510,9 +502,8 @@ void SpriteDrawBatch::rebuild()
 
     u32 rectOffset = 0;
     for (auto &sprite : sprites) {
-        if (sprite->changed) {
+        if (sprite->changed || wasPrimCountChanged) {
             sprite->changed = false;
-
             sprite->getShape().updateBuffer(buffer.get(), rectOffset*4, rectOffset*6);
         }
         rectOffset += sprite->getShape().getPrimitiveCount();
@@ -554,8 +545,6 @@ void SpriteDrawBatch::batch()
 
     u32 rectsOffset = 0;
 
-    u32 lastDepthLevel = 0;
-
     for (auto &sprite : sprites) {
         auto &spriteToChunks = chunks[sprite.get()];
         u32 depthLevel = sprite->getDepthLevel();
@@ -577,49 +566,27 @@ void SpriteDrawBatch::batch()
 
             if (foundBatchedChunkIt != chunksLevel.chunks.end()) {
                 u32 curBatchedChunkId = std::distance(chunksLevel.chunks.begin(), foundBatchedChunkIt);
-            	
-                if (chunksLevel.lastBatchedChunkId != curBatchedChunkId || lastDepthLevel != depthLevel) {
-                    lastDepthLevel = depthLevel;
+
+                if (chunksLevel.lastBatchedChunkId != curBatchedChunkId) {
+                    chunksLevel.lastBatchedChunkId = curBatchedChunkId;
 
                     auto &lastBatchedChunk = chunksLevel.chunks.at(chunksLevel.lastBatchedChunkId);
-                    lastBatchedChunk.groups.emplace_back(
-                        chunksLevel.curChunkRectOffset, chunksLevel.curChunkRectCount);
-
-                    chunksLevel.lastBatchedChunkId = curBatchedChunkId;
-            		
-                    chunksLevel.curChunkRectOffset = rectsOffset;
-                    chunksLevel.curChunkRectCount = chunk.rectsCount;
+                    lastBatchedChunk.groups.emplace_back(rectsOffset, chunk.rectsCount);
             	}
-            	else
-                    chunksLevel.curChunkRectCount += chunk.rectsCount;
+                else {
+                    auto &lastBatchedChunk = chunksLevel.chunks.at(chunksLevel.lastBatchedChunkId);
+                    lastBatchedChunk.groups.back().second += chunk.rectsCount;
+                }
         	}
             else {
-                if (!chunksLevel.chunks.empty()) {
-                    auto &lastBatchedChunk = chunksLevel.chunks.at(chunksLevel.lastBatchedChunkId);
-                    lastBatchedChunk.groups.emplace_back(
-                        chunksLevel.curChunkRectOffset, chunksLevel.curChunkRectCount);
-            	}
-            
-                chunksLevel.chunks.emplace_back(chunk.texture, chunk.clipRect);
-                chunksLevel.curChunkRectOffset = rectsOffset;
-                chunksLevel.curChunkRectCount = chunk.rectsCount;
-            	
+                chunksLevel.chunks.emplace_back(chunk.texture, chunk.clipRect);    	
                 chunksLevel.lastBatchedChunkId = chunksLevel.chunks.size()-1;
+
+                auto &lastBatchedChunk = chunksLevel.chunks.back();
+                lastBatchedChunk.groups.emplace_back(rectsOffset, chunk.rectsCount);
             }
 
             rectsOffset += chunk.rectsCount;
-        }
-
-        lastDepthLevel = depthLevel;
-    }
-
-    // Fix: Finalize the last accumulated group for each depth level
-    for (auto &levelPair : levels) {
-        auto &chunksLevel = levelPair.second;
-        if (!chunksLevel.chunks.empty() && chunksLevel.curChunkRectCount > 0) {
-            auto &lastBatchedChunk = chunksLevel.chunks.at(chunksLevel.lastBatchedChunkId);
-            lastBatchedChunk.groups.emplace_back(
-                chunksLevel.curChunkRectOffset, chunksLevel.curChunkRectCount);
         }
     }
 }

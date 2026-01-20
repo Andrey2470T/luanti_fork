@@ -390,6 +390,7 @@ void GameUI::render()
 
     drawBatch->rebuild();
     drawBatch->draw();
+
     hud->renderMinimaps();
     
     //for (auto &nt : nametags)

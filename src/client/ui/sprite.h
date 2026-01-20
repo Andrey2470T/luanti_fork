@@ -103,11 +103,12 @@ class UIShape
 	};
 
     std::vector<std::unique_ptr<Primitive>> primitives;
-    std::unordered_set<u32> dirtyPrimitives;
 
     rectf maxArea;
     bool maxAreaInit = false;
 public:
+    bool primCountChanged = true;
+
 	UIShape() = default;
 
     UIShape(const UIShape&) = delete;
@@ -309,8 +310,6 @@ struct SpriteDrawChunk
 struct SpriteDrawChunksLevel
 {
     std::vector<SpriteDrawChunk> chunks;
-    u32 curChunkRectOffset = 0;
-    u32 curChunkRectCount = 0;
     u32 lastBatchedChunkId = 0;
 };
 
