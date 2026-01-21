@@ -159,6 +159,7 @@ void RenderSystem::beginDraw(u16 flags, img::color8 color, f32 depth, u8 stencil
 
 void RenderSystem::endDraw()
 {
+    renderer->disableScissorTest();
     window->SwapWindow();
 }
 
