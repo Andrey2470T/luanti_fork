@@ -347,9 +347,11 @@ void Clouds::render(Camera *camera)
 
     rnd->getFogParams(fog_type, fog_color, fog_start, fog_end, fog_density);
 
-    // Set our own fog, unless it was already disabled
-    rnd->setFogParams(fog_type, fog_color, cloud_full_radius * 0.5,
-        cloud_full_radius*1.2, fog_density);
+    if (fog_start < FOG_RANGE_ALL) {
+        // Set our own fog, unless it was already disabled
+        rnd->setFogParams(fog_type, fog_color, cloud_full_radius * 0.5,
+            cloud_full_radius*1.2, fog_density);
+    }
     
     rnd->draw(m_mesh.get());
 

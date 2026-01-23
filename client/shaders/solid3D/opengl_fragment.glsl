@@ -19,12 +19,10 @@ void main()
 	if (bool(mTextureUsage0))
 		Color *= texelFetch(mTexture0, ivec2(vTexCoord.x, vTexCoord.y), 0);
 
-	if (bool(FogParams.enable))
-	{
-		float FogFactor = computeFog(vViewPos);
-		vec4 FogColor = FogParams.color;
-		FogColor.a = 1.0;
-		Color = mix(FogColor, Color, FogFactor);
+	if (FogParams.enable) {
+		float fogFactor = computeFog(vViewPos);
+		vec4 fogColor = vec4(FogParams.color_r, FogParams.color_g, FogParams.color_b, FogParams.color_a);
+		Color = mix(fogColor, Color, fogFactor);
 	}
 
 	outColor = Color;

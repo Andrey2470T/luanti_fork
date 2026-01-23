@@ -7,7 +7,7 @@ layout (location = 4) in vec4 hwcolor;
 #include <matrices>
 
 out lowp vec4 vColor;
-out highp vec3 vEyeVec;
+out vec3 vEyeVec;
 
 void main(void)
 {

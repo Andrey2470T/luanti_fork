@@ -26,12 +26,10 @@ void main(void)
 
 	vec4 col = vec4(base.rgb * vColor.rgb, 1.0);
 
-    if (bool(FogParams.enable))
-	{
-		float FogFactor = computeFog(vEyeVec);
-		vec4 FogColor = FogParams.color;
-		FogColor.a = 1.0;
-		col = mix(FogColor, col, FogFactor);
+    if (FogParams.enable) {
+		float fogFactor = computeFog(vEyeVec);
+		vec4 fogColor = vec4(FogParams.color_r, FogParams.color_g, FogParams.color_b, FogParams.color_a);
+		col = mix(fogColor, col, fogFactor);
 	}
 
 	ivec2 fbCoords = ivec2(gl_FragCoord.x, gl_FragCoord.y);

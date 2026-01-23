@@ -207,9 +207,9 @@ void Renderer::enableFog(bool enable)
 
     ByteArray &byteArr = fog_buffer->getUniformsData();
 
-    byteArr.setUInt32((u32)enable, 0, 0);
+    byteArr.setUInt32(enable, 0, 0);
 
-    fog_buffer->uploadSubData(0, sizeof(u32));
+    fog_buffer->uploadSubData(0, byteArr.bytesCount());
 }
 
 void Renderer::setFogParams(FogType type, img::colorf color, f32 start, f32 end, f32 density)
@@ -231,7 +231,7 @@ void Renderer::setFogParams(FogType type, img::colorf color, f32 start, f32 end,
     byteArr.setFloat(end, 4, 0);
     byteArr.setFloat(density, 5, 0);
 
-    fog_buffer->uploadSubData(sizeof(u32), byteArr.bytesCount()-sizeof(u32));
+    fog_buffer->uploadSubData(0, byteArr.bytesCount());
 }
 
 matrix4 Renderer::getTransformMatrix(TMatrix type) const

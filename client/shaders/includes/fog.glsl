@@ -1,7 +1,10 @@
 layout (std140) uniform mFogParams {
-    int enable;
-    int type;
-    vec4 color;
+	bool enable;
+	int type;
+	float color_r;
+	float color_g;
+	float color_b;
+	float color_a;
     float start;
     float end;
     float density;
