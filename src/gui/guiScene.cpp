@@ -61,7 +61,7 @@ void GUIScene::setTexture(u32 idx, img::Image *texture)
     auto buffer = m_model->getMesh()->getBuffer(0);
     auto layer = m_model->getMesh()->getBufferLayer(0, idx);
 
-    basic_pool->updateMeshUVs(buffer, layer.second.offset, layer.second.count, texture, layer.first->tile_ref, true);
+    basic_pool->updateMeshUVs(buffer, layer.second.offset, layer.second.count, texture, layer.first->tile_ref, true, true);
 
     layer.first->tile_ref = texture;
 }

@@ -1212,7 +1212,7 @@ void RenderCAO::updateLayerUVs(std::string new_texture, u8 layer_id)
     auto buffer = m_model->getMesh()->getBuffer(0);
     auto layer = m_model->getMesh()->getBufferLayer(0, layer_id);
 
-    basic_pool->updateMeshUVs(buffer, layer.second.offset, layer.second.count, img, layer.first->tile_ref, true);
+    basic_pool->updateMeshUVs(buffer, layer.second.offset, layer.second.count, img, layer.first->tile_ref, true, true);
 
     layer.first->tile_ref = img;
 }

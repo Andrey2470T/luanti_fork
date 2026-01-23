@@ -151,20 +151,20 @@ void Batcher3D::face(MeshBuffer *buf, const std::array<v3f, 4> &positions,
             index(buf, curVIndex+indices[i]);
     }
 
-    vertex(buf, positions[0], colors[0], normals[0], uvs.ULC);
-    vertex(buf, positions[1], colors[1], normals[1], v2f(uvs.LRC.X, uvs.ULC.Y));
-    vertex(buf, positions[2], colors[2], normals[2], uvs.LRC);
-    vertex(buf, positions[3], colors[3], normals[3], v2f(uvs.ULC.X, uvs.LRC.Y));
+    vertex(buf, positions[0], colors[0], normals[0], v2f(uvs.ULC.X, uvs.LRC.Y));
+    vertex(buf, positions[1], colors[1], normals[1], uvs.LRC);
+    vertex(buf, positions[2], colors[2], normals[2], v2f(uvs.LRC.X, uvs.ULC.Y));
+    vertex(buf, positions[3], colors[3], normals[3], uvs.ULC);
 }
 
 void Batcher3D::face(MeshBuffer *buf, const rectf &positions, const v3f &rotation,
     const std::array<img::color8, 4> &colors, const rectf &uvs, const std::array<v3f, 4> &normals)
 {
     std::array<v3f, 4> positions3d = {
-        v3f(positions.ULC.X, positions.ULC.Y, 0.0f),
-        v3f(positions.LRC.X, positions.ULC.Y, 0.0f),
+        v3f(positions.ULC.X, positions.LRC.Y, 0.0f),
         v3f(positions.LRC.X, positions.LRC.Y, 0.0f),
-        v3f(positions.ULC.X, positions.LRC.Y, 0.0f)
+        v3f(positions.LRC.X, positions.ULC.Y, 0.0f),
+        v3f(positions.ULC.X, positions.ULC.Y, 0.0f)
     };
 
     if (rotation.X != 0.0f)

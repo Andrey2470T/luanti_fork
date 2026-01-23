@@ -19,7 +19,7 @@ void main()
 	//vec4 TextureCoord0 = vec4(uv.x, uv.y, 1.0, 1.0);
 	vTexCoord = uv;//vec4(Matrices.texture0 * TextureCoord0).xy;
 
-	vVertexColor = color.bgra;
+	vVertexColor = color;
 	vViewPos = (Matrices.worldView * vec4(pos, 1.0)).xyz;
 }
 

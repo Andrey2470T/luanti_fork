@@ -297,15 +297,18 @@ void AtlasPool::updateAnimatedTiles(f32 time)
 }
 
 void AtlasPool::updateMeshUVs(MeshBuffer *buffer, u32 start_index, u32 index_count, img::Image *tile,
-    std::optional<img::Image *> oldTile, bool force_add, std::optional<AtlasTileAnim> anim)
+    img::Image* oldTile, bool toUV, bool force_add, std::optional<AtlasTileAnim> anim)
 {
     std::optional<u32> oldAtlasSize;
     std::optional<rectf> oldTileRect;
 
-    if (oldTile.has_value()) {
-        auto prev_atlas = getAtlasByTile(oldTile.value());
-        oldAtlasSize = prev_atlas->getTextureSize();
-        oldTileRect = getTileRect(oldTile.value());
+    if (oldTile) {
+        auto prev_atlas = getAtlasByTile(oldTile);
+
+        if (prev_atlas) {
+            oldAtlasSize = prev_atlas->getTextureSize();
+            oldTileRect = getTileRect(oldTile);
+        }
     }
 
     auto atlas = getAtlasByTile(tile, force_add, anim);
@@ -313,14 +316,14 @@ void AtlasPool::updateMeshUVs(MeshBuffer *buffer, u32 start_index, u32 index_cou
     rectf newTileRect = getTileRect(tile);
 
     MeshOperations::recalculateMeshAtlasUVs(buffer, start_index, index_count,
-        newAtlasSize, newTileRect, oldAtlasSize, oldTileRect);
+        newAtlasSize, newTileRect, oldAtlasSize, oldTileRect, toUV);
     buffer->uploadData();
 }
 
 void AtlasPool::updateAllMeshUVs(MeshBuffer *buffer, img::Image *tile,
-    std::optional<img::Image *> oldTile, bool force_add, std::optional<AtlasTileAnim> anim)
+    img::Image *oldTile, bool toUV, bool force_add, std::optional<AtlasTileAnim> anim)
 {
-    updateMeshUVs(buffer, 0, buffer->getIndexCount(), tile, oldTile, force_add, anim);
+    updateMeshUVs(buffer, 0, buffer->getIndexCount(), tile, oldTile, toUV, force_add, anim);
 }
 
 void AtlasPool::forceAddTile(img::Image *img, std::optional<AtlasTileAnim> anim)

@@ -288,18 +288,29 @@ void MeshOperations::recalculateNormals(MeshBuffer *mesh, bool smooth, bool angl
 }
 
 void MeshOperations::recalculateMeshAtlasUVs(MeshBuffer *mesh, u32 start_index, u32 index_count, u32 newAtlasSize,
-    const rectf &newImgRect, std::optional<u32> oldAtlasSize, std::optional<rectf> oldImgRect)
+    const rectf &newImgRect, std::optional<u32> oldAtlasSize, std::optional<rectf> oldImgRect, bool toUV)
 {
-    std::map<u32, v2f> passedUVs;
+    std::map<u32, std::pair<bool, v2f>> passedUVs;
 
     for (u32 i = start_index; i < start_index + index_count; i++) {
         u32 index = mesh->getIndexAt(i);
+
+        if (passedUVs[index].first)
+            continue;
+
         v2f cur_uv = svtGetUV(mesh, index);
 
         if (oldAtlasSize.has_value() && oldImgRect.has_value()) {
             v2u pixel_coords;
-            pixel_coords.X = round32(cur_uv.X * oldAtlasSize.value() - oldImgRect.value().ULC.X);
-            pixel_coords.Y = round32(cur_uv.Y * oldAtlasSize.value() - oldImgRect.value().ULC.Y);
+
+            if (toUV) {
+                pixel_coords.X = round32(cur_uv.X * oldAtlasSize.value() - oldImgRect.value().ULC.X);
+                pixel_coords.Y = round32(cur_uv.Y * oldAtlasSize.value() - oldImgRect.value().LRC.Y);
+            }
+            else {
+                pixel_coords.X = cur_uv.X - oldImgRect.value().ULC.X;
+                pixel_coords.Y = cur_uv.Y - oldImgRect.value().LRC.Y;
+            }
 
             cur_uv.X = (f32)pixel_coords.X / oldImgRect->getWidth();
             cur_uv.Y = (f32)pixel_coords.Y / oldImgRect->getHeight();
@@ -309,14 +320,21 @@ void MeshOperations::recalculateMeshAtlasUVs(MeshBuffer *mesh, u32 start_index, 
         u32 rel_y = round32(cur_uv.Y * newImgRect.getHeight());
 
         v2f new_uv;
-        new_uv.X = (f32)(rel_x + newImgRect.ULC.X) / newAtlasSize;
-        new_uv.Y = (f32)(rel_y + newImgRect.ULC.Y) / newAtlasSize;
 
-        passedUVs[index] = new_uv;
+        if (toUV) {
+            new_uv.X = (f32)(rel_x + newImgRect.ULC.X) / newAtlasSize;
+            new_uv.Y = (f32)(rel_y + newImgRect.LRC.Y) / newAtlasSize;
+        }
+        else {
+            new_uv.X = rel_x + newImgRect.ULC.X;
+            new_uv.Y = rel_y + newImgRect.LRC.Y;
+        }
+
+        passedUVs[index] = std::make_pair(true, new_uv);
     }
 
-    for (auto &uv : passedUVs)
-        svtSetUV(mesh, uv.second, uv.first);
+    //for (auto &uv : passedUVs)
+    //    svtSetUV(mesh, uv.second.second, uv.first);
 }
 
 /*void setMaterialFilters(video::SMaterialLayer &tex, bool bilinear, bool trilinear, bool anisotropic)

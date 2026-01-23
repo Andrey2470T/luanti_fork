@@ -58,8 +58,8 @@ void FpsControl::limit(core::MainWindow *wnd, f32 *dtime)
 Renderer::Renderer(ResourceCache *res_cache, const recti &viewportSize, u32 maxTexUnits)
     : context(std::make_unique<DrawContext>(viewportSize, maxTexUnits)), resCache(res_cache)
 {
-    createDefaultShaders();
     createUBOs();
+    createDefaultShaders();
 }
 
 void Renderer::setRenderState(bool mode3d)
@@ -380,8 +380,11 @@ void Renderer::createDefaultShaders()
 {
     auto standard2d = resCache->getOrLoad<render::Shader>(ResourceType::SHADER, "standard2D");
     auto solid3d = resCache->getOrLoad<render::Shader>(ResourceType::SHADER, "solid3D");
+    setUniformBlocks(solid3d);
     auto transparent3d = resCache->getOrLoad<render::Shader>(ResourceType::SHADER, "transparent3D");
+    setUniformBlocks(transparent3d);
     auto textureBlend3d = resCache->getOrLoad<render::Shader>(ResourceType::SHADER, "textureBlend3D");
+    setUniformBlocks(textureBlend3d);
 
     defaultShaders["standard2D"] = standard2d;
     defaultShaders["solid3D"] = solid3d;

@@ -108,6 +108,6 @@ public:
     */
     static void recalculateMeshAtlasUVs(MeshBuffer *mesh, u32 start_index, u32 index_count,
         u32 newAtlasSize, const rectf &newImgRect, std::optional<u32> oldAtlasSize=std::nullopt,
-        std::optional<rectf> oldImgRect=std::nullopt);
+        std::optional<rectf> oldImgRect=std::nullopt, bool toUV=true);
 
 };

@@ -7,7 +7,6 @@ uniform sampler2D mTexture0;
 
 in vec2 vTexCoord;
 in vec4 vVertexColor;
-in float vFogCoord;
 in vec3 vViewPos;
 
 out vec4 outColor;

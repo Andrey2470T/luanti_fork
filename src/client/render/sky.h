@@ -31,6 +31,9 @@ class Sun
     std::unique_ptr<MeshBuffer> m_sunrise_mesh;
     bool m_first_update = true;
 
+    matrix4 m_rotation;
+    matrix4 m_sunrise_rotation;
+
     img::color8 m_base_color;
 public:
     Sun(RenderSystem *rndsys, ResourceCache *cache);
@@ -69,6 +72,8 @@ class Moon
     std::unique_ptr<MeshBuffer> m_mesh;
     bool m_first_update = true;
 
+    matrix4 m_rotation;
+
     img::color8 m_base_color;
 public:
     Moon(RenderSystem *rndsys);
@@ -103,7 +108,7 @@ class Stars
 
     bool m_first_update = true;
 
-    matrix4 m_world;
+    matrix4 m_sky_rotation;
 
     u64 m_seed = 0;
 public:

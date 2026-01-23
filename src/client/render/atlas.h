@@ -155,9 +155,9 @@ public:
     void updateAnimatedTiles(f32 time);
 
     void updateMeshUVs(MeshBuffer *buffer, u32 start_index, u32 index_count, img::Image *tile,
-        std::optional<img::Image *> oldTile=std::nullopt, bool force_add=false, std::optional<AtlasTileAnim> anim=std::nullopt);
+        img::Image* oldTile=nullptr, bool toUV=true, bool force_add=false, std::optional<AtlasTileAnim> anim=std::nullopt);
     void updateAllMeshUVs(MeshBuffer *buffer, img::Image *tile,
-        std::optional<img::Image *> oldTile=std::nullopt, bool force_add=false, std::optional<AtlasTileAnim> anim=std::nullopt);
+        img::Image* oldTile=nullptr, bool toUV=true, bool force_add=false, std::optional<AtlasTileAnim> anim=std::nullopt);
 private:
     void forceAddTile(img::Image *img, std::optional<AtlasTileAnim> anim=std::nullopt);
 };

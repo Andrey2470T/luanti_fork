@@ -85,7 +85,7 @@ void SelectionMesh::updateMesh(const v3f &new_pos, const v3s16 &camera_offset,
         layer->tile_ref = halo_img;
         buf = MeshOperations::convertNodeboxesToMesh({halo_box}, nullptr, 0.5f);
 
-        rndsys->getPool(true)->updateAllMeshUVs(buf, halo_img, std::nullopt, false);
+        rndsys->getPool(true)->updateAllMeshUVs(buf, halo_img);
 
         MeshOperations::colorizeMesh(buf, light_color);
         img::color8 face_color(img::PF_RGBA8,
