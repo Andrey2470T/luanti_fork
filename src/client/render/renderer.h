@@ -55,6 +55,8 @@ struct FpsControl {
 };
 
 struct Jitter {
+    Jitter() : max(0.0f), min(0.0f), avg(0.0f), counter(0.0f),
+        max_sample(0.0f), min_sample(0.0f), max_fraction(0.0f) {}
     f32 max, min, avg, counter, max_sample, min_sample, max_fraction;
 };
 

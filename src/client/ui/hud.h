@@ -30,7 +30,7 @@ class Hud
     LocalPlayer *player;
     ResourceCache *cache;
 
-    SpriteDrawBatch *drawBatch;
+    std::unique_ptr<SpriteDrawBatch> drawBatch;
 
     // Crosshair is not controlled by mods yet
     UIRects *crosshair;
@@ -46,7 +46,7 @@ public:
     const std::string crosshair_img = "crosshair.png";
     const std::string object_crosshair_img = "object_crosshair.png";
 
-    Hud(Client *_client, SpriteDrawBatch *_drawBatch);
+    Hud(Client *_client);
 
 	bool hasElementOfType(HudElementType type);
 
@@ -62,7 +62,7 @@ public:
 
     void setHudVisible(bool visible);
 
-    void renderMinimaps();
+    void render();
 private:
     HudSprite *findSprite(u32 id);
     void initCrosshair();

@@ -22,9 +22,10 @@
 #include "batcher2d.h"
 #include "client/render/atlas.h"
 
-Hud::Hud(Client *_client, SpriteDrawBatch *_drawBatch)
+Hud::Hud(Client *_client)
     : client(_client), player(client->getEnv().getLocalPlayer()),
-      cache(client->getResourceCache()), drawBatch(_drawBatch)
+      cache(client->getResourceCache()),
+      drawBatch(std::make_unique<SpriteDrawBatch>(client->getRenderSystem(), client->getResourceCache()))
 {
     initCrosshair();
 
@@ -41,7 +42,7 @@ Hud::Hud(Client *_client, SpriteDrawBatch *_drawBatch)
         HudElement *hotbar = new HudElement{HUD_ELEM_HOTBAR, v2f(0.5, 1), "", v2f(), "", 0 , 0, 0, v2f(0, -1),
             v2f(0, -4), v3f(), v2i(), 0, "", 0};
         u32 id = player->getFreeHudID();
-        hudsprites.emplace_back(id, std::make_unique<HudHotbar>(client, hotbar, drawBatch));
+        hudsprites.emplace_back(id, std::make_unique<HudHotbar>(client, hotbar, drawBatch.get()));
         builtinHotbarID = id;
     }
 
@@ -122,33 +123,33 @@ void Hud::addHUDElement(u32 id, const HudElement *elem)
 
     switch(elem->type) {
     case HUD_ELEM_IMAGE:
-        hudsprites.emplace_back(id, std::make_unique<HudImage>(client, elem, drawBatch));
+        hudsprites.emplace_back(id, std::make_unique<HudImage>(client, elem, drawBatch.get()));
         break;
     case HUD_ELEM_TEXT:
-        hudsprites.emplace_back(id, std::make_unique<HudText>(client, elem, drawBatch));
+        hudsprites.emplace_back(id, std::make_unique<HudText>(client, elem, drawBatch.get()));
         break;
     case HUD_ELEM_STATBAR:
-        hudsprites.emplace_back(id, std::make_unique<HudStatbar>(client, elem, drawBatch));
+        hudsprites.emplace_back(id, std::make_unique<HudStatbar>(client, elem, drawBatch.get()));
         break;
     case HUD_ELEM_INVENTORY:
-        hudsprites.emplace_back(id, std::make_unique<HudInventoryList>(client, elem, drawBatch));
+        hudsprites.emplace_back(id, std::make_unique<HudInventoryList>(client, elem, drawBatch.get()));
         break;
     case HUD_ELEM_WAYPOINT: {
-        hudsprites.emplace_back(id, std::make_unique<HudTextWaypoint>(client, elem, drawBatch));
+        hudsprites.emplace_back(id, std::make_unique<HudTextWaypoint>(client, elem, drawBatch.get()));
         break;
     }
     case HUD_ELEM_IMAGE_WAYPOINT: {
-        hudsprites.emplace_back(id, std::make_unique<HudImageWaypoint>(client, elem, drawBatch));
+        hudsprites.emplace_back(id, std::make_unique<HudImageWaypoint>(client, elem, drawBatch.get()));
         break;
     }
     case HUD_ELEM_COMPASS:
-        hudsprites.emplace_back(id, std::make_unique<HudCompass>(client, elem, drawBatch));
+        hudsprites.emplace_back(id, std::make_unique<HudCompass>(client, elem, drawBatch.get()));
         break;
     case HUD_ELEM_MINIMAP:
         hudsprites.emplace_back(id, std::make_unique<HudMinimap>(client, elem));
         break;
     case HUD_ELEM_HOTBAR:
-        hudsprites.emplace_back(id, std::make_unique<HudHotbar>(client, elem, drawBatch));
+        hudsprites.emplace_back(id, std::make_unique<HudHotbar>(client, elem, drawBatch.get()));
         break;
     }
 
@@ -201,8 +202,11 @@ void Hud::setHudVisible(bool visible)
         sprite.second->setVisible(visible);
 }
 
-void Hud::renderMinimaps()
+void Hud::render()
 {
+    drawBatch->rebuild();
+    drawBatch->draw();
+
     for (auto &sprite : hudsprites) {
         if (sprite.second->getType() == HUD_ELEM_MINIMAP)
             dynamic_cast<HudMinimap *>(sprite.second.get())->draw();

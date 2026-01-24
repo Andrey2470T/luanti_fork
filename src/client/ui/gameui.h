@@ -169,6 +169,7 @@ private:
     std::unique_ptr<ProfilerGraphSet> graph_set;
 
     std::unique_ptr<SpriteDrawBatch> drawBatch;
+    std::unique_ptr<SpriteDrawBatch> chattextDrawBatch;
 
     std::unique_ptr<Hud> hud;
 };

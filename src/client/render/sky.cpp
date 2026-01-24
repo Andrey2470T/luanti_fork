@@ -215,15 +215,15 @@ void Sun::updateSunrise(float time_of_day)
     float mid1 = 0.25;
     float mid = wicked_time_of_day < 0.5 ? mid1 : (1.0 - mid1);
     float a_ = 1.0f - std::fabs(wicked_time_of_day - mid) * 35.0f;
-    float a = easeCurve(MYMAX(0, MYMIN(1, a_)));
+    float a = easeCurve(std::clamp<f32>(a_, 0.0f, 1.0f));
     //std::cerr<<"a_="<<a_<<" a="<<a<<std::endl;
     float y = -(1.0 - a) * 0.22;
 
     std::array<v3f, 4> newPositions = {
-        v3f(-1, -0.05, -1),
-        v3f(1, -0.05, -1),
-        v3f(1,   0.2, -1),
-        v3f(-1,   0.2, -1)
+        v3f(-1, -0.05 + y, -1.025),
+        v3f(1, -0.05 + y, -1.025),
+        v3f(1,   0.2 + y, -1.025),
+        v3f(-1,   0.2 + y, -1.025)
     };
 
     f32 y_rot = 0;
@@ -234,12 +234,11 @@ void Sun::updateSunrise(float time_of_day)
             y_rot = 90;
         else
             // Switch from -Z (south) to -X (west)
-            y = -90;
+            y_rot = -90;
 
         svtSetPos(m_sunrise_mesh.get(), pos, i);
     }
 
-    m_sunrise_rotation.setTranslation(v3f(0, y, 0));
     m_sunrise_rotation.setRotationDegrees(v3f(0, y_rot, 0));
 
     m_sunrise_mesh->uploadData();
@@ -470,14 +469,14 @@ Sky::Sky(RenderSystem *rndsys, ResourceCache *cache) :
 
     for (u32 j = 0; j < 6; j++) {
         img::color8 c = img::white;
-        // Use 1.05 rather than 1.0 to avoid colliding with the
+        // Use 1.1 rather than 1.0 to avoid colliding with the
         // sun, moon and stars, as this is a background skybox.
 
         std::array<v3f, 4> positions = {
-            v3f(-1.05, -1.05, -1.05),
-            v3f(1.05, -1.05, -1.05),
-            v3f(1.05,  1.05, -1.05),
-            v3f(-1.05,  1.05, -1.05)
+            v3f(-1.1, -1.1, -1.1),
+            v3f(1.1, -1.1, -1.1),
+            v3f(1.1,  1.1, -1.1),
+            v3f(-1.1,  1.1, -1.1)
         };
 
         for (v3f &pos : positions) {
@@ -513,10 +512,10 @@ Sky::Sky(RenderSystem *rndsys, ResourceCache *cache) :
 
     for (u32 j = 0; j < 4; j++) {
         std::array<v3f, 4> positions = {
-            v3f(-1, -0.02, -1),
-            v3f(1, -0.02, -1),
-            v3f(1, 0.45, -1),
-            v3f(-1, 0.45, -1)
+            v3f(-1, -0.02, -1.05),
+            v3f(1, -0.02, -1.05),
+            v3f(1, 0.45, -1.05),
+            v3f(-1, 0.45, -1.05)
         };
 
         for (v3f &pos : positions) {
@@ -542,10 +541,10 @@ Sky::Sky(RenderSystem *rndsys, ResourceCache *cache) :
 
     for (u32 j = 0; j < 4; j++) {
         std::array<v3f, 4> positions = {
-            v3f(-1, -1.0,  -1),
-            v3f(1, -1.0,  -1),
-            v3f(1, -0.02, -1),
-            v3f(-1, -0.02, -1)
+            v3f(-1, -1.0,  -1.05),
+            v3f(1, -1.0,  -1.05),
+            v3f(1, -0.02, -1.05),
+            v3f(-1, -0.02, -1.05)
         };
 
         for (v3f &pos : positions) {
@@ -565,10 +564,10 @@ Sky::Sky(RenderSystem *rndsys, ResourceCache *cache) :
 
     Batcher3D::face(m_far_cloudyfog_mesh.get(),
         {
-            v3f(-1, -1.0, -1),
-            v3f(1, -1.0, -1),
-            v3f(1, -1.0, 1),
-            v3f(-1, -1.0, 1)
+            v3f(-1, -1.05, -1),
+            v3f(1, -1.05, -1),
+            v3f(1, -1.05, 1),
+            v3f(-1, -1.05, 1)
     }, {}, {v2f(1.0f, 1.0f), v2f(0.0f, 0.0f)});
 
     m_far_cloudyfog_mesh->uploadData();
@@ -628,7 +627,7 @@ void Sky::render(PlayerCamera *camera)
             rnd->setDefaultShader(true);
             rnd->setTexture(nullptr);
             rnd->setDefaultUniforms(1.0f, 0, 0.5f, img::BM_COUNT);
-            //rnd->draw(m_cloudyfog_mesh.get());
+            rnd->draw(m_cloudyfog_mesh.get());
         }
 
 		// Draw stars before sun and moon to be behind them
@@ -654,7 +653,7 @@ void Sky::render(PlayerCamera *camera)
             rnd->setDefaultShader(true);
             rnd->setTexture(nullptr);
             rnd->setDefaultUniforms(1.0f, 0, 0.5f, img::BM_COUNT);
-            //rnd->draw(m_far_cloudyfog_mesh.get());
+            rnd->draw(m_far_cloudyfog_mesh.get());
         }
 
         rnd->enableFog(fog_enabled);
@@ -963,9 +962,9 @@ float getWickedTimeOfDay(float time_of_day)
 void Sky::updateCloudyFogColor()
 {
     svtSetColor(m_cloudyfog_mesh.get(), m_bgcolor, 0);
-    svtSetColor(m_cloudyfog_mesh.get(), m_bgcolor, 0);
-    svtSetColor(m_cloudyfog_mesh.get(), m_skycolor, 0);
-    svtSetColor(m_cloudyfog_mesh.get(), m_skycolor, 0);
+    svtSetColor(m_cloudyfog_mesh.get(), m_bgcolor, 1);
+    svtSetColor(m_cloudyfog_mesh.get(), m_skycolor, 2);
+    svtSetColor(m_cloudyfog_mesh.get(), m_skycolor, 3);
 
     MeshOperations::colorizeMesh(m_far_cloudyfog_mesh.get(), m_bgcolor);
 

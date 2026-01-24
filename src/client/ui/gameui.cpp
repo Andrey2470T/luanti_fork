@@ -45,7 +45,8 @@ inline static const char *yawToDirectionString(int yaw)
 GameUI::GameUI(Client *client)
     : rndsys(client->getRenderSystem()),
         drawBatch(std::make_unique<SpriteDrawBatch>(rndsys, client->getResourceCache())),
-        hud(std::make_unique<Hud>(client, drawBatch.get()))
+        chattextDrawBatch(std::make_unique<SpriteDrawBatch>(rndsys, client->getResourceCache())),
+        hud(std::make_unique<Hud>(client))
 {
     auto guienv = rndsys->getGUIEnvironment();
 	if (guienv && guienv->getSkin())
@@ -63,7 +64,7 @@ void GameUI::init()
     basic_debugtext = drawBatch->addTextSprite(L"", 0, v2f(5, 5 + minimal_debugtext->getTextHeight()));
 
 	// Chat text
-    chattext = drawBatch->addTextSprite(L"", 0, std::nullopt, img::white, nullptr, true);
+    chattext = chattextDrawBatch->addTextSprite(L"", 0, std::nullopt, img::white, nullptr, true);
     chattext->getTextObj().enableOverrideColor(false);
 	u16 chat_font_size = g_settings->getU16("chat_font_size");
 	if (chat_font_size != 0) {
@@ -391,7 +392,10 @@ void GameUI::render()
     drawBatch->rebuild();
     drawBatch->draw();
 
-    hud->renderMinimaps();
+    chattextDrawBatch->rebuild();
+    chattextDrawBatch->draw();
+
+    hud->render();
     
     //for (auto &nt : nametags)
     //    nt->draw();
