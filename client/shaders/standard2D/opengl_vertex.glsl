@@ -13,5 +13,5 @@ void main()
 	gl_Position = mProjection * vec4(pos, 0.0, 1.0);
 	gl_PointSize = mThickness;
 	vTexCoord = uv;
-	vVertexColor = color.bgra;
+	vVertexColor = color;
 }

@@ -16,8 +16,8 @@ void main()
 		vec4 texColor = texelFetch(mTexture0, ivec2(vTexCoord.x, vTexCoord.y), 0);
 
 		Color *= texColor;
-		//if (texColor.r == 0 && texColor.g == 0 && texColor.b == 0 && texColor.a == 1)
-		//	Color.a = 0;
+		if (texColor.r == 0 && texColor.g == 0 && texColor.b == 0 && texColor.a == 1)
+			Color.a = 0;
 	}
 
 	outColor = Color;
