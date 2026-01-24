@@ -14,9 +14,11 @@ void UITextSprite::appendToBatch()
     if (!text.needsUpdate && !changed)
         return;
 
-    text.updateText(shape.getMaxArea());
+    changed = false;
 
-    text.needsUpdate = false;
+    u32 lastRectsCount = shape.getPrimitiveCount();
+
+    text.updateText(shape.getMaxArea());
 
     clear();
 
@@ -117,7 +119,10 @@ void UITextSprite::appendToBatch()
         line_offset.Y += lineHeight;
     }
 
+    u32 curRectsCount = shape.getPrimitiveCount();
+
+    if (lastRectsCount == curRectsCount)
+        shape.changeFlag = UIShape::ChangeFlags::COUNT_CHANGED_NOREBUILD;
+
     drawBatch->addSpriteChunks(this, chunks);
 }
-
-

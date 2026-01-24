@@ -40,7 +40,6 @@ public:
     	std::optional<AtlasTileAnim> anim=std::nullopt);
 
     void appendToBatch() override;
-    void updateBatch() override;
 private:
     void createSlice(u8 x, u8 y);
     void createSlices();
@@ -60,6 +59,5 @@ public:
     void updateRect(u32 n, const TexturedRect &rects, std::optional<rectf> srcRect=std::nullopt);
 
     void appendToBatch() override;
-    void updateBatch() override;
 };
 

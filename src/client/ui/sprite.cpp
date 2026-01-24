@@ -67,14 +67,14 @@ void UIShape::addLine(
         const v2f &start_p, const v2f &end_p,
         const img::color8 &start_c, const img::color8 &end_c) {
     primitives.emplace_back((Primitive *)(new Line(start_p, end_p, start_c, end_c)));
-    primCountChanged = true;
+    changeFlag = ChangeFlags::COUNT_CHANGED;
     updateMaxArea(maxArea, start_p, end_p, maxAreaInit);
 }
 void UIShape::addTriangle(
         const v2f &p1, const v2f &p2, const v2f &p3,
         const img::color8 &c1, const img::color8 &c2, const img::color8 &c3) {
     primitives.emplace_back((Primitive *)(new Triangle(p1, p2, p3, c1, c2, c3)));
-    primCountChanged = true;
+    changeFlag = ChangeFlags::COUNT_CHANGED;
     updateMaxArea(maxArea, v2f(p1.X, p3.Y), p2, maxAreaInit);
 }
 void UIShape::addRectangle(
@@ -88,12 +88,12 @@ void UIShape::addRectangle(
     tcoords.LRC = v2f(texr.LRC.X * invW, texr.LRC.Y * invH);
 
     primitives.emplace_back((Primitive *)(new Rectangle(r, colors, tcoords)));
-    primCountChanged = true;
+    changeFlag = ChangeFlags::COUNT_CHANGED;
     updateMaxArea(maxArea, r.ULC, r.LRC, maxAreaInit);
 }
 void UIShape::addEllipse(f32 a, f32 b, const v2f &center, const img::color8 &c) {
     primitives.emplace_back((Primitive *)(new Ellipse(a, b, center, c)));
-    primCountChanged = true;
+    changeFlag = ChangeFlags::COUNT_CHANGED;
     updateMaxArea(maxArea, center - v2f(a/2, b/2), center+v2f(a/2, b/2), maxAreaInit);
 }
 
@@ -107,6 +107,8 @@ void UIShape::updateLine(
     line->start_c = start_c;
     line->end_c = end_c;
 
+    changeFlag = ChangeFlags::CHANGED;
+    dirtyPrimitives.emplace(n);
     updateMaxArea(maxArea, start_p, end_p, maxAreaInit);
 }
 void UIShape::updateTriangle(
@@ -121,6 +123,8 @@ void UIShape::updateTriangle(
     trig->c2 = c2;
     trig->c3 = c3;
 
+    changeFlag = ChangeFlags::CHANGED;
+    dirtyPrimitives.emplace(n);
     updateMaxArea(maxArea, v2f(p1.X, p3.Y), p2, maxAreaInit);
 }
 void UIShape::updateRectangle(
@@ -140,6 +144,8 @@ void UIShape::updateRectangle(
     rect->colors = colors;
     rect->texr = tcoords;
 
+    changeFlag = ChangeFlags::CHANGED;
+    dirtyPrimitives.emplace(n);
     updateMaxArea(maxArea, r.ULC, r.LRC, maxAreaInit);
 }
 void UIShape::updateEllipse(u32 n, f32 a, f32 b, const v2f &center, const img::color8 &c)
@@ -150,6 +156,8 @@ void UIShape::updateEllipse(u32 n, f32 a, f32 b, const v2f &center, const img::c
     ellipse->center = center;
     ellipse->c = c;
 
+    changeFlag = ChangeFlags::CHANGED;
+    dirtyPrimitives.emplace(n);
     updateMaxArea(maxArea, center - v2f(a/2, b/2), center+v2f(a/2, b/2), maxAreaInit);
 }
 
@@ -190,6 +198,9 @@ void UIShape::movePrimitive(u32 n, const v2f &shift)
     default:
         return;
     }
+
+    changeFlag = ChangeFlags::CHANGED;
+    dirtyPrimitives.emplace(n);
 }
 void UIShape::scalePrimitive(u32 n, const v2f &scale, std::optional<v2f> center)
 {
@@ -236,6 +247,9 @@ void UIShape::scalePrimitive(u32 n, const v2f &scale, std::optional<v2f> center)
     default:
         return;
     }
+
+    changeFlag = ChangeFlags::CHANGED;
+    dirtyPrimitives.emplace(n);
 }
 
 u32 UIShape::countRequiredVCount(const std::vector<UIPrimitiveType> &primitives)
@@ -266,7 +280,7 @@ void UIShape::removePrimitive(u32 i)
         return;
 
     primitives.erase(primitives.begin()+i);
-    primCountChanged = true;
+    changeFlag = ChangeFlags::COUNT_CHANGED;
 
     for (u32 i = 0; i < primitives.size(); i++) {
         rectf primArea = getPrimitiveArea(i);
@@ -276,8 +290,9 @@ void UIShape::removePrimitive(u32 i)
 void UIShape::clear()
 {
     primitives.clear();
+    dirtyPrimitives.clear();
     maxArea = rectf();
-    primCountChanged = true;
+    changeFlag = ChangeFlags::COUNT_CHANGED;
     maxAreaInit = false;
 }
 
@@ -295,10 +310,21 @@ void UIShape::scale(const v2f &scale, std::optional<v2f> c)
         scalePrimitive(i, scale, center);
 }
 
-void UIShape::updateBuffer(MeshBuffer *buf, u32 vertexOffset, u32 indexOffset)
+void UIShape::updateBuffer(MeshBuffer *buf, bool forceFull, u32 vertexOffset, u32 indexOffset)
 {
-    for (u32 k = 0; k < primitives.size(); k++)
-        updatePrimInBuffer(buf, k, vertexOffset, indexOffset);
+    if (forceFull || changeFlag == ChangeFlags::COUNT_CHANGED ||
+            changeFlag == ChangeFlags::COUNT_CHANGED_NOREBUILD) {
+        for (u32 k = 0; k < primitives.size(); k++)
+            updatePrimInBuffer(buf, k, vertexOffset, indexOffset);
+    }
+    else if (changeFlag == ChangeFlags::CHANGED) {
+        for (u32 k : dirtyPrimitives)
+            updatePrimInBuffer(buf, k, vertexOffset, indexOffset);
+
+        dirtyPrimitives.clear();
+    }
+
+    changeFlag = ChangeFlags::NONE;
 }
 
 void UIShape::updatePrimInBuffer(MeshBuffer *buf, u32 primitiveNum, u32 vertexOffset, u32 indexOffset)
@@ -484,10 +510,8 @@ void SpriteDrawBatch::rebuild()
     for (auto &sprite : sprites) {
         sprite->appendToBatch();
 
-        if (sprite->getShape().primCountChanged) {
+        if (sprite->getShape().changeFlag == UIShape::ChangeFlags::COUNT_CHANGED)
             wasPrimCountChanged = true;
-            sprite->getShape().primCountChanged = false;
-        }
 
         auto &shape = sprite->getShape();
 
@@ -502,9 +526,9 @@ void SpriteDrawBatch::rebuild()
 
     u32 rectOffset = 0;
     for (auto &sprite : sprites) {
-        if (sprite->changed || wasPrimCountChanged) {
-            sprite->changed = false;
-            sprite->getShape().updateBuffer(buffer.get(), rectOffset*4, rectOffset*6);
+        if (sprite->getShape().changeFlag != UIShape::ChangeFlags::NONE || wasPrimCountChanged) {
+            sprite->getShape().updateBuffer(buffer.get(), wasPrimCountChanged, rectOffset*4, rectOffset*6);
+            updateBatch = true;
         }
         rectOffset += sprite->getShape().getPrimitiveCount();
     }

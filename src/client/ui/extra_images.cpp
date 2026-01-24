@@ -33,25 +33,23 @@ void Image2D9Slice::updateRects(const rectf &src_rect, const rectf &dest_rect, c
 	if (img && img != image ) {
         image = img;
         srcRect = guiPool->getTileRect(image, false, true);
+        changed = true;
     }
     if (clipRect)
         setClipRect(*clipRect);
 
     createSlices();
-
-    changed = true;
 }
 
 void Image2D9Slice::appendToBatch()
 {
     if (!changed)
         return;
+
+    changed = false;
+
     render::Texture2D *tex = image ? guiPool->getAtlasByTile(image)->getTexture() : nullptr;
     drawBatch->addSpriteChunks(this, {{tex, clipRect, 9}});
-}
-void Image2D9Slice::updateBatch()
-{
-    appendToBatch();
 }
 
 void Image2D9Slice::createSlice(u8 x, u8 y)
@@ -165,6 +163,8 @@ void UIRects::appendToBatch()
     if (!changed)
         return;
 
+    changed = false;
+
     images.resize(shape.getPrimitiveCount());
 
     std::vector<SpriteDrawChunk> chunks;
@@ -173,8 +173,4 @@ void UIRects::appendToBatch()
         chunks.push_back({tex, clipRect, 1});
     }
     drawBatch->addSpriteChunks(this, chunks);
-}
-void UIRects::updateBatch()
-{
-    appendToBatch();
 }

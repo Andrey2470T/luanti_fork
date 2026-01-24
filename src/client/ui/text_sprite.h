@@ -68,5 +68,4 @@ public:
     }
 
     void appendToBatch() override;
-    void updateBatch() override {}
 };

@@ -286,5 +286,5 @@ void Text::updateText(rectf clipRect)
     lineHeight = font->getLineHeight();
     textHeight = lineHeight * brokenText.size();
 
-    needsUpdate = true;
+    needsUpdate = false;
 }

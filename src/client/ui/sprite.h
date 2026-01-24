@@ -7,6 +7,7 @@
 #include "client/mesh/meshbuffer.h"
 #include "gui/GUIEnums.h"
 #include <Render/DrawContext.h>
+#include <set>
 #include <unordered_set>
 #include <variant>
 #include <tuple>
@@ -103,11 +104,19 @@ class UIShape
 	};
 
     std::vector<std::unique_ptr<Primitive>> primitives;
+    std::set<u32> dirtyPrimitives;
 
     rectf maxArea;
     bool maxAreaInit = false;
 public:
-    bool primCountChanged = true;
+    enum class ChangeFlags {
+        COUNT_CHANGED,           // the shape primitives count was changed (add or remove was called)
+        COUNT_CHANGED_NOREBUILD, // the shape primitives count was changed (add or remove was called), but dont trigger the full rebuild (workaround for text sprite)
+        CHANGED,                 // only the shape primitives themselves were changed (update was called)
+        NONE                     // the shape was not changed
+    };
+
+    ChangeFlags changeFlag = ChangeFlags::COUNT_CHANGED;
 
 	UIShape() = default;
 
@@ -173,7 +182,7 @@ public:
     void move(const v2f &shift);
     void scale(const v2f &scale, std::optional<v2f> c);
 
-    void updateBuffer(MeshBuffer *buf, u32 vertexOffset=0, u32 indexOffset=0);
+    void updateBuffer(MeshBuffer *buf, bool forceFull = false, u32 vertexOffset=0, u32 indexOffset=0);
 private:
     void updatePrimInBuffer(MeshBuffer *buf, u32 primitiveNum, u32 vertexOffset=0, u32 indexOffset=0);
 };
@@ -253,13 +262,10 @@ public:
     void clear()
     {
         shape.clear();
-        changed = true;
     }
     
     // Appends new draw chunks in the draw batch
     virtual void appendToBatch() = 0;
-    //  Update the meshbuffer directly
-    virtual void updateBatch() = 0;
 };
 
 typedef std::pair<u32, u32> AtlasTileAnim;
