@@ -26,7 +26,6 @@ enum MaterialType{
 };
 
 // Material flags
-// Should backface culling be enabled?
 #define MATERIAL_FLAG_BACKFACE_CULLING 0x01
 #define MATERIAL_FLAG_TRANSPARENT 0x02
 #define MATERIAL_FLAG_HARDWARE_COLORIZED 0x04

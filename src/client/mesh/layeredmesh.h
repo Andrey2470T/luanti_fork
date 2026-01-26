@@ -16,8 +16,8 @@ class Camera;
 // Layer of some mesh buffer
 struct LayeredMeshPart
 {
-	u8 buffer_id;
-    u8 layer_id;
+    MeshBuffer *buf_ref;
+    std::shared_ptr<TileLayer> layer;
 
     u32 offset = 0; // number of start index in the index buffer
     u32 count = 0; // count of buffer indices starting from "offset"
@@ -28,8 +28,8 @@ struct LayeredMeshPart
     std::vector<u32> indices;
 
     LayeredMeshPart() = default;
-    LayeredMeshPart(u8 _buffer_id, u8 _layer_id, u32 _offset, u32 _count)
-        : buffer_id(_buffer_id), layer_id(_layer_id), offset(_offset), count(_count)
+    LayeredMeshPart(MeshBuffer *_buf_ref, std::shared_ptr<TileLayer> _layer, u32 _offset, u32 _count)
+        : buf_ref(_buf_ref), layer(_layer), offset(_offset), count(_count)
     {}
 };
 
@@ -48,7 +48,8 @@ struct LayeredMeshTriangle
     {}
 };
 
-typedef std::pair<std::shared_ptr<TileLayer>, LayeredMeshPart> MeshLayer;
+typedef std::map<std::shared_ptr<TileLayer>, LayeredMeshPart> BufferLayers;
+typedef std::pair<std::shared_ptr<TileLayer>, LayeredMeshPart> BufferLayer;
 
 // Mesh buffers each divided into layers with unique tile layer
 // Supports transparent auto sorting and frustum culling
@@ -57,9 +58,9 @@ class LayeredMesh
 {
     std::vector<std::unique_ptr<MeshBuffer>> buffers;
     // Indexed by buffer_id
-    std::vector<std::vector<MeshLayer>> layers;
+    std::unordered_map<MeshBuffer *, BufferLayers> layers;
 
-    f32 radius_sq = 0.0f;
+    f32 radius_sq = 0.0f; // in BS space, maximal distance from the center to the farest mapblock vertex
     v3f center_pos; // relative BS coords, e.g. a half-side of a mapblock cube
     v3f abs_pos; // absolute BS coords, for mapblock it is a min corner
     v3f abs_rot;
@@ -79,7 +80,7 @@ class LayeredMesh
     std::vector<LayeredMeshPart> partial_layers;
 public:
     LayeredMesh() = default;
-    LayeredMesh(const v3f &center, const v3f &abs_center);
+    LayeredMesh(const v3f &_center_pos, const v3f &_abs_pos);
 
     f32 getBoundingSphereRadius() const
     {
@@ -100,22 +101,23 @@ public:
         return buffers.size();
     }
 
-    u8 getBufferLayersCount(u8 buffer_id) const
-    {
-        return layers.at(buffer_id).size();
-    }
-
     MeshBuffer *getBuffer(u8 buffer_id) const
     {
         return buffers.at(buffer_id).get();
     }
 
-    MeshLayer &getBufferLayer(u8 buffer_id, u8 layer_id)
+    BufferLayers &getBufferLayers(MeshBuffer *buf)
     {
-        return layers.at(buffer_id).at(layer_id);
+        return layers[buf];
+    }
+    LayeredMeshPart &getBufferLayer(
+        MeshBuffer *buf,
+        std::shared_ptr<TileLayer> layer)
+    {
+        return layers[buf][layer];
     }
     
-    std::vector<MeshLayer> getAllLayers() const;
+    std::vector<BufferLayer> getAllLayers() const;
     std::vector<LayeredMeshPart> getPartialLayers() const
     {
     	return partial_layers;
@@ -130,16 +132,22 @@ public:
     void addNewBuffer(MeshBuffer *buffer)
     {
         buffers.emplace_back(std::unique_ptr<MeshBuffer>(buffer));
-        layers.emplace_back();
+        layers[buffer];
         recalculateBoundingRadius();
     }
     // adds the layer in the last buffer
-    void addNewLayer(std::shared_ptr<TileLayer> layer, const LayeredMeshPart &mesh_p)
+    void addNewLayer(
+        MeshBuffer *buffer,
+        std::shared_ptr<TileLayer> layer,
+        const LayeredMeshPart &mesh_p)
     {
-        layers.back().emplace_back(layer, mesh_p);
+        assert(!layers.empty());
+        layers[buffer][layer] = mesh_p;
     }
 
-    MeshLayer &findLayer(std::shared_ptr<TileLayer> layer, render::VertexTypeDescriptor vType,
+    LayeredMeshPart *findLayer(
+        std::shared_ptr<TileLayer> layer,
+        render::VertexTypeDescriptor vType,
         u32 vertexCount, u32 indexCount);
 
     void recalculateBoundingRadius();
@@ -151,7 +159,7 @@ public:
     
     bool isFrustumCulled(const Camera *camera, f32 extra_radius)
     {
-        return camera->frustumCull(center_pos, radius_sq + extra_radius*extra_radius);
+        return camera->frustumCull(abs_pos + center_pos, radius_sq + extra_radius*extra_radius);
     }
 private:
     bool isHardwareHolorized(u8 buf_i) const;

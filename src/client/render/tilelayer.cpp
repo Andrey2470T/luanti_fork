@@ -16,7 +16,7 @@
  */
 bool TileLayer::operator==(const TileLayer &other) const
 {
-    return
+    return (
         alpha_discard == other.alpha_discard &&
         tile_ref == other.tile_ref &&
         shader == other.shader &&
@@ -25,7 +25,7 @@ bool TileLayer::operator==(const TileLayer &other) const
         color == other.color &&
         scale == other.scale &&
         rotation == other.rotation &&
-        emissive_light == other.emissive_light;
+        emissive_light == other.emissive_light);
 }
 
 void TileLayer::setupRenderState(Client *client) const
@@ -33,6 +33,8 @@ void TileLayer::setupRenderState(Client *client) const
     auto rndsys = client->getRenderSystem();
     auto rnd = rndsys->getRenderer();
     rnd->setRenderState(true);
+
+    rnd->setClipRect(recti());
 
     auto ctxt = rnd->getContext();
 
@@ -56,7 +58,7 @@ void TileLayer::setupRenderState(Client *client) const
         ctxt->setActiveUnit(i+1, textures.at(i));
 
     // Workaround
-    if (thing == RenderThing::NODE || thing == RenderThing::OBJECT) {
+    if (shader && (thing == RenderThing::NODE || thing == RenderThing::OBJECT)) {
         u32 daynight_ratio = (f32)client->getEnv().getDayNightRatio();
         shader->setUniformFloat("mDayNightRatio", (f32)daynight_ratio);
 
