@@ -48,8 +48,8 @@ struct LayeredMeshTriangle
     {}
 };
 
-typedef std::map<TileLayer, LayeredMeshPart> BufferLayers;
 typedef std::pair<TileLayer, LayeredMeshPart> BufferLayer;
+typedef std::vector<BufferLayer> BufferLayers;
 
 // Mesh buffers each divided into layers with unique tile layer
 // Supports transparent auto sorting and frustum culling
@@ -110,12 +110,9 @@ public:
     {
         return layers[buf];
     }
-    LayeredMeshPart &getBufferLayer(
+    LayeredMeshPart *getBufferLayer(
         MeshBuffer *buf,
-        const TileLayer &layer)
-    {
-        return layers[buf][layer];
-    }
+        const TileLayer &layer);
     
     std::vector<BufferLayer> getAllLayers() const;
     std::vector<LayeredMeshPart> getPartialLayers() const
@@ -142,7 +139,7 @@ public:
         const LayeredMeshPart &mesh_p)
     {
         assert(!layers.empty());
-        layers[buffer][layer] = mesh_p;
+        layers[buffer].emplace_back(layer, mesh_p);
     }
 
     void recalculateBoundingRadius();

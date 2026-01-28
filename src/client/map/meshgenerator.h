@@ -45,11 +45,6 @@ private:
 		
 		// UNIFIED LIGHTING - calculated once per node
 		NodeLighting lighting;
-		
-		// Transform (for some drawtypes)
-		v3f translation;
-		v3f rotation;               // In degrees
-		v3f scale;
 	} cur_node;
 
 	// Tile management
@@ -63,7 +58,6 @@ private:
     void appendQuad(
 		const std::array<v3f, 4> &positions,
 		const std::array<v3f, 4> &normals,
-		const std::array<img::color8, 4> &colors,
 		const TileSpec &tile,
 		const rectf *uv = nullptr
 	);

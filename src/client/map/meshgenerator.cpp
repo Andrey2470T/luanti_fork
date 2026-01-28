@@ -120,7 +120,6 @@ img::color8 MeshGenerator::calculateVertexColor(
 void MeshGenerator::appendQuad(
 	const std::array<v3f, 4> &positions,
 	const std::array<v3f, 4> &normals,
-	const std::array<img::color8, 4> &colors,
 	const TileSpec &tile,
 	const rectf *uv)
 {
@@ -129,13 +128,20 @@ void MeshGenerator::appendQuad(
         mergeMeshPart(tile[1], TwoColorNodeVType, 4, 6);
     }
     else {
+        std::array<v3f, 4> transformed_positions = positions;
+        std::array<img::color8, 4> colors;
+        for (int i = 0; i < 4; i++) {
+            transformed_positions[i] += cur_node.origin;
+            colors[i] = calculateVertexColor(transformed_positions[i], normals[i],
+                cur_node.lighting, cur_node.f->light_source);
+        }
         rectf uvs = uv ? *uv : rectf(v2f(0.0, 1.0), v2f(1.0, 0.0));
 
         auto buf1 = findBuffer(tile[0], NodeVType, 4, 6);
-        Batcher3D::face(buf1, positions, colors, uvs, normals);
+        Batcher3D::face(buf1, transformed_positions, colors, uvs, normals);
 
         auto buf2 = findBuffer(tile[1], TwoColorNodeVType, 4, 6);
-        Batcher3D::face(buf2, positions, colors, uvs, normals);
+        Batcher3D::face(buf2, transformed_positions, colors, uvs, normals);
     }
 }
 
@@ -177,10 +183,10 @@ void MeshGenerator::appendCuboid(
             colors[face*4+3] = face_colors[3];
 
             auto buf1 = findBuffer(tiles[face][0], NodeVType, 4, 6);
-            Batcher3D::boxFace(buf1, (BoxFaces)face, box, colors, uvs, face_mask);
+            Batcher3D::boxFace(buf1, (BoxFaces)face, transformed_box, colors, uvs, face_mask);
 
             auto buf2 = findBuffer(tiles[face][1], TwoColorNodeVType, 4, 6);
-            Batcher3D::boxFace(buf2, (BoxFaces)face, box, colors, uvs, face_mask);
+            Batcher3D::boxFace(buf2, (BoxFaces)face, transformed_box, colors, uvs, face_mask);
 
         }
 	}
@@ -192,7 +198,6 @@ void MeshGenerator::appendCuboid(
 
 void MeshGenerator::appendSolidNode()
 {
-	// STEP 1: Determine visible faces and get tiles
 	u8 visible_faces = 0;
 	std::array<TileSpec, 6> tiles;
 
@@ -238,16 +243,6 @@ void MeshGenerator::appendSolidNode()
 	if (!visible_faces)
 		return;  // All faces culled
 
-	// STEP 2: Calculate lighting ONCE
-	calculateNodeLighting(
-		cur_node.lighting,
-		blockpos_nodes + cur_node.p,
-		data->m_smooth_lighting,
-		data
-	);
-
-	// STEP 3: Draw
-	cur_node.origin = intToFloat(cur_node.p, BS);
 	aabbf box(v3f(-0.5 * BS), v3f(0.5 * BS));
 	
     appendCuboid(box, tiles, cur_node.lighting, visible_faces);
@@ -255,14 +250,6 @@ void MeshGenerator::appendSolidNode()
 
 void MeshGenerator::appendLiquidNode()
 {
-	// Calculate base lighting
-	calculateNodeLighting(
-		cur_node.lighting,
-		blockpos_nodes + cur_node.p,
-		data->m_smooth_lighting,
-		data
-	);
-
 	prepareLiquidNodeDrawing();
 	getLiquidNeighborhood();
 	calculateCornerLevels();
@@ -276,14 +263,6 @@ void MeshGenerator::appendLiquidNode()
 
 void MeshGenerator::appendGlasslikeNode()
 {
-	// Calculate lighting
-	calculateNodeLighting(
-		cur_node.lighting,
-		blockpos_nodes + cur_node.p,
-		data->m_smooth_lighting,
-		data
-	);
-
 	TileSpec tile;
 	useTile(&tile, 0, 0, 0);
 
@@ -303,42 +282,28 @@ void MeshGenerator::appendGlasslikeNode()
 			v3f(-BS/2, -BS/2, -BS/2),
 		};
 
-		// Rotate based on face
-		for (v3f &vertex : vertices) {
-			switch (face) {
-			case D6D_ZP: vertex.rotateXZBy(180); break;
-			case D6D_YP: vertex.rotateYZBy( 90); break;
-			case D6D_XP: vertex.rotateXZBy( 90); break;
-			case D6D_ZN: vertex.rotateXZBy(  0); break;
-			case D6D_YN: vertex.rotateYZBy(-90); break;
-			case D6D_XN: vertex.rotateXZBy(-90); break;
-			}
+        // Rotate based on face
+        for (v3f &vertex : vertices) {
+            switch (face) {
+            case D6D_ZP: vertex.rotateXZBy(180); break;
+            case D6D_YP: vertex.rotateYZBy( 90); break;
+            case D6D_XP: vertex.rotateXZBy( 90); break;
+            case D6D_ZN: vertex.rotateXZBy(  0); break;
+            case D6D_YN: vertex.rotateYZBy(-90); break;
+            case D6D_XN: vertex.rotateXZBy(-90); break;
+            }
 		}
 
 		// Calculate colors
 		v3f dir_f = v3f(dir.X, dir.Y, dir.Z);
 		std::array<v3f, 4> normals = {dir_f, dir_f, dir_f, dir_f};
-		std::array<img::color8, 4> colors;
-		
-		for (int i = 0; i < 4; i++) {
-			colors[i] = calculateVertexColor(vertices[i], normals[i],
-				cur_node.lighting, cur_node.f->light_source);
-		}
 
-        appendQuad(vertices, normals, colors, tile);
+        appendQuad(vertices, normals, tile);
 	}
 }
 
 void MeshGenerator::appendAllfacesNode()
 {
-	// Calculate lighting
-	calculateNodeLighting(
-		cur_node.lighting,
-		blockpos_nodes + cur_node.p,
-		data->m_smooth_lighting,
-		data
-	);
-
 	static const aabbf box(-BS/2, -BS/2, -BS/2, BS/2, BS/2, BS/2);
 	std::array<TileSpec, 6> tiles;
 	
@@ -351,20 +316,11 @@ void MeshGenerator::appendAllfacesNode()
 	for (int face = 0; face < 6; face++)
 		getTile(nodebox_tile_dirs[face], &tiles[face]);
 
-	cur_node.origin = intToFloat(cur_node.p, BS);
     appendCuboid(box, tiles, cur_node.lighting, 0xff);
 }
 
 void MeshGenerator::appendTorchlikeNode()
 {
-	// Calculate lighting
-	calculateNodeLighting(
-		cur_node.lighting,
-		blockpos_nodes + cur_node.p,
-		data->m_smooth_lighting,
-		data
-	);
-
 	u8 wall = cur_node.n.getWallMounted(nodedef);
 	u8 tileindex = 0;
 	switch (wall) {
@@ -386,64 +342,50 @@ void MeshGenerator::appendTorchlikeNode()
 		v3f(-size, -size, 0),
 	};
 
-	for (v3f &vertex : vertices) {
-		switch (wall) {
-		case DWM_YP:
-			vertex.Y += -size + BS/2;
-			vertex.rotateXZBy(-45);
-			break;
-		case DWM_YN:
-			vertex.Y += size - BS/2;
-			vertex.rotateXZBy(45);
-			break;
-		case DWM_XP:
-			vertex.X += -size + BS/2;
-			break;
-		case DWM_XN:
-			vertex.X += -size + BS/2;
-			vertex.rotateXZBy(180);
-			break;
-		case DWM_ZP:
-			vertex.X += -size + BS/2;
-			vertex.rotateXZBy(90);
-			break;
-		case DWM_ZN:
-			vertex.X += -size + BS/2;
-			vertex.rotateXZBy(-90);
-			break;
-		case DWM_S1:
-			vertex.Y += -size + BS/2;
-			vertex.rotateXZBy(45);
-			break;
-		case DWM_S2:
-			vertex.Y += size - BS/2;
-			vertex.rotateXZBy(-45);
-			break;
-		}
+    for (v3f &vertex : vertices) {
+        switch (wall) {
+        case DWM_YP:
+            vertex.Y += -size + BS/2;
+            vertex.rotateXZBy(-45);
+            break;
+        case DWM_YN:
+            vertex.Y += size - BS/2;
+            vertex.rotateXZBy(45);
+            break;
+        case DWM_XP:
+            vertex.X += -size + BS/2;
+            break;
+        case DWM_XN:
+            vertex.X += -size + BS/2;
+            vertex.rotateXZBy(180);
+            break;
+        case DWM_ZP:
+            vertex.X += -size + BS/2;
+            vertex.rotateXZBy(90);
+            break;
+        case DWM_ZN:
+            vertex.X += -size + BS/2;
+            vertex.rotateXZBy(-90);
+            break;
+        case DWM_S1:
+            vertex.Y += -size + BS/2;
+            vertex.rotateXZBy(45);
+            break;
+        case DWM_S2:
+            vertex.Y += size - BS/2;
+            vertex.rotateXZBy(-45);
+            break;
+        }
 	}
 
 	// Calculate colors with interpolation
 	std::array<v3f, 4> normals = {v3f(0,0,-1), v3f(0,0,-1), v3f(0,0,-1), v3f(0,0,-1)};
-	std::array<img::color8, 4> colors;
-	
-	for (int i = 0; i < 4; i++) {
-		colors[i] = calculateVertexColor(vertices[i], normals[i],
-			cur_node.lighting, cur_node.f->light_source);
-	}
 
-    appendQuad(vertices, normals, colors, tile);
+    appendQuad(vertices, normals, tile);
 }
 
 void MeshGenerator::appendSignlikeNode()
 {
-	// Calculate lighting
-	calculateNodeLighting(
-		cur_node.lighting,
-		blockpos_nodes + cur_node.p,
-		data->m_smooth_lighting,
-		data
-	);
-
 	u8 wall = cur_node.n.getWallMounted(nodedef);
 	TileSpec tile;
 	useTile(&tile, 0, 0, MATERIAL_FLAG_BACKFACE_CULLING);
@@ -458,46 +400,32 @@ void MeshGenerator::appendSignlikeNode()
 		v3f(BS/2 - offset, -size,  size),
 	};
 
-	for (v3f &vertex : vertices) {
-		switch (wall) {
-		case DWM_YP: vertex.rotateXYBy( 90); break;
-		case DWM_YN: vertex.rotateXYBy(-90); break;
-		case DWM_XP: vertex.rotateXZBy(  0); break;
-		case DWM_XN: vertex.rotateXZBy(180); break;
-		case DWM_ZP: vertex.rotateXZBy( 90); break;
-		case DWM_ZN: vertex.rotateXZBy(-90); break;
-		case DWM_S1:
-			vertex.rotateXYBy( 90);
-			vertex.rotateXZBy(90);
-			break;
-		case DWM_S2:
-			vertex.rotateXYBy(-90);
-			vertex.rotateXZBy(-90);
-			break;
-		}
+    for (v3f &vertex : vertices) {
+        switch (wall) {
+        case DWM_YP: vertex.rotateXYBy( 90); break;
+        case DWM_YN: vertex.rotateXYBy(-90); break;
+        case DWM_XP: vertex.rotateXZBy(  0); break;
+        case DWM_XN: vertex.rotateXZBy(180); break;
+        case DWM_ZP: vertex.rotateXZBy( 90); break;
+        case DWM_ZN: vertex.rotateXZBy(-90); break;
+        case DWM_S1:
+            vertex.rotateXYBy( 90);
+            vertex.rotateXZBy(90);
+            break;
+        case DWM_S2:
+            vertex.rotateXYBy(-90);
+            vertex.rotateXZBy(-90);
+            break;
+        }
 	}
 
 	std::array<v3f, 4> normals = {v3f(1,0,0), v3f(1,0,0), v3f(1,0,0), v3f(1,0,0)};
-	std::array<img::color8, 4> colors;
-	
-	for (int i = 0; i < 4; i++) {
-		colors[i] = calculateVertexColor(vertices[i], normals[i],
-			cur_node.lighting, cur_node.f->light_source);
-	}
 
-    appendQuad(vertices, normals, colors, tile);
+    appendQuad(vertices, normals, tile);
 }
 
 void MeshGenerator::appendPlantlikeNode()
 {
-	// Calculate lighting
-	calculateNodeLighting(
-		cur_node.lighting,
-		blockpos_nodes + cur_node.p,
-		data->m_smooth_lighting,
-		data
-	);
-
 	TileSpec tile;
 	useTile(&tile);
     appendPlantlike(tile, false);
@@ -526,14 +454,6 @@ void MeshGenerator::appendPlantlikeRootedNode()
 
 void MeshGenerator::appendFirelikeNode()
 {
-	// Calculate lighting
-	calculateNodeLighting(
-		cur_node.lighting,
-		blockpos_nodes + cur_node.p,
-		data->m_smooth_lighting,
-		data
-	);
-
 	TileSpec tile;
 	useTile(&tile);
 
@@ -583,14 +503,6 @@ void MeshGenerator::appendFirelikeNode()
 
 void MeshGenerator::appendFencelikeNode()
 {
-	// Calculate lighting
-	calculateNodeLighting(
-		cur_node.lighting,
-		blockpos_nodes + cur_node.p,
-		data->m_smooth_lighting,
-		data
-	);
-
 	TileSpec tile_nocrack;
 	useTile(&tile_nocrack, 0, 0, 0);
 
@@ -613,7 +525,6 @@ void MeshGenerator::appendFencelikeNode()
 		rectf(v2f(0.750, 0.000), v2f(1.000, 1.000))
 	};
 
-	cur_node.origin = intToFloat(cur_node.p, BS);
     appendCuboid(post, {tile_rot}, cur_node.lighting, 0xff, &postuv);
 
 	// Check +X neighbor
@@ -667,14 +578,6 @@ void MeshGenerator::appendFencelikeNode()
 
 void MeshGenerator::appendRaillikeNode()
 {
-	// Calculate lighting
-	calculateNodeLighting(
-		cur_node.lighting,
-		blockpos_nodes + cur_node.p,
-		data->m_smooth_lighting,
-		data
-	);
-
 	cur_rail.raillike_group = cur_node.f->getGroup(raillike_groupname);
 
 	static const v3s16 rail_direction[4] = {
@@ -735,26 +638,12 @@ void MeshGenerator::appendRaillikeNode()
 			vertex.rotateXZBy(angle);
 
 	std::array<v3f, 4> normals = {v3f(0,1,0), v3f(0,1,0), v3f(0,1,0), v3f(0,1,0)};
-	std::array<img::color8, 4> colors;
-	
-	for (int i = 0; i < 4; i++) {
-		colors[i] = calculateVertexColor(vertices[i], normals[i],
-			cur_node.lighting, cur_node.f->light_source);
-	}
 
-    appendQuad(vertices, normals, colors, tile);
+    appendQuad(vertices, normals, tile);
 }
 
 void MeshGenerator::appendNodeboxNode()
 {
-	// Calculate lighting
-	calculateNodeLighting(
-		cur_node.lighting,
-		blockpos_nodes + cur_node.p,
-		data->m_smooth_lighting,
-		data
-	);
-
 	static const v3s16 nodebox_tile_dirs[6] = {
 		v3s16(0, 1, 0), v3s16(0, -1, 0),
 		v3s16(1, 0, 0), v3s16(-1, 0, 0),
@@ -852,7 +741,6 @@ void MeshGenerator::appendNodeboxNode()
 	}
 
 	// Draw all boxes
-	cur_node.origin = intToFloat(cur_node.p, BS);
 	for (auto &box : boxes) {
 		u8 mask = getNodeBoxMask(box, solid_neighbors, sametype_neighbors);
         appendCuboid(box, tiles, cur_node.lighting, mask);
@@ -861,14 +749,6 @@ void MeshGenerator::appendNodeboxNode()
 
 void MeshGenerator::appendMeshNode()
 {
-	// Calculate lighting
-	calculateNodeLighting(
-		cur_node.lighting,
-		blockpos_nodes + cur_node.p,
-		data->m_smooth_lighting,
-		data
-	);
-
 	u8 facedir = 0;
 	int degrotate = 0;
 
@@ -1003,14 +883,8 @@ void MeshGenerator::appendPlantlikeQuad(const TileSpec &tile,
 
 	// Calculate colors with interpolation
 	std::array<v3f, 4> normals = {v3f(0,0,-1), v3f(0,0,-1), v3f(0,0,-1), v3f(0,0,-1)};
-	std::array<img::color8, 4> colors;
-	
-	for (int i = 0; i < 4; i++) {
-		colors[i] = calculateVertexColor(vertices[i], normals[i],
-			cur_node.lighting, cur_node.f->light_source);
-	}
 
-    appendQuad(vertices, normals, colors, tile);
+    appendQuad(vertices, normals, tile);
 }
 
 void MeshGenerator::appendPlantlike(const TileSpec &tile, bool is_rooted)
@@ -1111,14 +985,8 @@ void MeshGenerator::appendFirelikeQuad(const TileSpec &tile,
 	}
 
 	std::array<v3f, 4> normals = {v3f(0,0,-1), v3f(0,0,-1), v3f(0,0,-1), v3f(0,0,-1)};
-	std::array<img::color8, 4> colors;
-	
-	for (int i = 0; i < 4; i++) {
-		colors[i] = calculateVertexColor(vertices[i], normals[i],
-			cur_node.lighting, cur_node.f->light_source);
-	}
 
-    appendQuad(vertices, normals, colors, tile);
+    appendQuad(vertices, normals, tile);
 }
 
 // Liquid functions (keep as-is, already use unified lighting via cur_node.lighting)
@@ -1284,13 +1152,7 @@ void MeshGenerator::appendLiquidSides()
 				uv.LRC = v2f(vertex.u, v);
 		}
 
-		std::array<img::color8, 4> colors;
-		for (int i = 0; i < 4; i++) {
-			colors[i] = calculateVertexColor(positions[i], normals[i],
-				cur_node.lighting, cur_node.f->light_source);
-		}
-
-        appendQuad(positions, normals, colors, cur_liquid.tile, &uv);
+        appendQuad(positions, normals, cur_liquid.tile, &uv);
 	}
 }
 
@@ -1361,13 +1223,7 @@ void MeshGenerator::appendLiquidTop()
 
 	std::swap(uv.ULC, uv.LRC);
 
-	std::array<img::color8, 4> colors;
-	for (int i = 0; i < 4; i++) {
-		colors[i] = calculateVertexColor(positions[i], normals[i],
-			cur_node.lighting, cur_node.f->light_source);
-	}
-
-    appendQuad(positions, normals, colors, cur_liquid.tile_top, &uv);
+    appendQuad(positions, normals, cur_liquid.tile_top, &uv);
 }
 
 void MeshGenerator::appendLiquidBottom()
@@ -1381,13 +1237,7 @@ void MeshGenerator::appendLiquidBottom()
 	std::array<v3f, 4> normals = {v3f(0,-1,0), v3f(0,-1,0), v3f(0,-1,0), v3f(0,-1,0)};
 	rectf uv(v2f(0,1), v2f(1,0));
 
-	std::array<img::color8, 4> colors;
-	for (int i = 0; i < 4; i++) {
-		colors[i] = calculateVertexColor(positions[i], normals[i],
-			cur_node.lighting, cur_node.f->light_source);
-	}
-
-    appendQuad(positions, normals, colors, cur_liquid.tile_top, &uv);
+    appendQuad(positions, normals, cur_liquid.tile_top, &uv);
 }
 
 // Node tile functions (same as original)
@@ -1514,11 +1364,14 @@ void MeshGenerator::appendNode()
 	if (cur_node.f->drawtype == NDT_AIRLIKE)
 		return;
 
-	// Solid nodes handle lighting differently (after culling)
-	if (cur_node.f->drawtype != NDT_NORMAL && 
-		cur_node.f->drawtype != NDT_LIQUID) {
-		cur_node.origin = intToFloat(cur_node.p, BS);
-	}
+    cur_node.origin = intToFloat(cur_node.p, BS);
+
+    calculateNodeLighting(
+        cur_node.lighting,
+        blockpos_nodes + cur_node.p,
+        data->m_smooth_lighting,
+        data
+    );
 
 	switch (cur_node.f->drawtype) {
 	case NDT_LIQUID:
@@ -1543,6 +1396,9 @@ void MeshGenerator::appendNode()
 void MeshGenerator::generate()
 {
 	ZoneScoped;
+
+    if (!first_stage)
+        return; // forbid the regenerating
 
     allocate();
 

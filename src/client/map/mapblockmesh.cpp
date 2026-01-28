@@ -130,38 +130,36 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data)
 
     for (u8 buf_i = 0; buf_i < m_mesh->getBuffersCount(); buf_i++) {
         auto buffer = m_mesh->getBuffer(buf_i);
-        for (u8 layer_i = 0; layer_i < m_mesh->getBufferLayersCount(buf_i); layer_i++) {
-            auto mesh_layer = m_mesh->getBufferLayer(buf_i, layer_i);
-            auto layer = mesh_layer.first;
+        auto &mesh_layers = m_mesh->getBufferLayers(buffer);
+        for (auto &mesh_layer : mesh_layers) {
+            auto &layer = mesh_layer.first;
 
-            layer->thing = RenderThing::NODE;
-            layer->material_flags |= MATERIAL_FLAG_BACKFACE_CULLING;
+            layer.thing = RenderThing::NODE;
+            layer.material_flags |= MATERIAL_FLAG_BACKFACE_CULLING;
 
-            auto atlas = basicPool->getAtlasByTile(layer->tile_ref);
-            auto src_rect = basicPool->getTileRect(layer->tile_ref);
+            auto atlas = basicPool->getAtlasByTile(layer.tile_ref);
+            auto src_rect = basicPool->getTileRect(layer.tile_ref);
 
             std::string shadername = "block";
-            if (layer->material_flags & MATERIAL_FLAG_HARDWARE_COLORIZED)
+            if (layer.material_flags & MATERIAL_FLAG_HARDWARE_COLORIZED)
                 shadername = "block_hw";
 
-            layer->use_default_shader = false;
-            layer->shader = m_client->getResourceCache()->get<render::Shader>(ResourceType::SHADER, shadername);
+            layer.use_default_shader = false;
+            layer.shader = m_client->getResourceCache()->get<render::Shader>(ResourceType::SHADER, shadername);
 
             u32 atlas_size = atlas ? atlas->getTextureSize() : 0;
 
-            u32 offset = mesh_layer.second.offset;
-            u32 count = mesh_layer.second.count;
+            auto &mp = mesh_layer.second;
 
-            /*for (u32 k = offset; k < offset+count; k++) {
-                u32 index = buffer->getIndexAt(k);
+            for (u32 k = mp.vertex_offset; k < mp.vertex_offset+mp.vertex_count; k++) {
                 // Apply material type
-                svtSetMType(buffer, layer->material_type, index);
+                svtSetMType(buffer, layer.material_type, k);
                 // Apply hw color
-                if (layer->material_flags & MATERIAL_FLAG_HARDWARE_COLORIZED)
-                    svtSetHWColor(buffer, layer->color, index);
+                if (layer.material_flags & MATERIAL_FLAG_HARDWARE_COLORIZED)
+                    svtSetHWColor(buffer, layer.color, k);
             }
 
-            MeshOperations::recalculateMeshAtlasUVs(buffer, offset, count, atlas_size, src_rect);*/
+            MeshOperations::recalculateMeshAtlasUVs(buffer, mp.offset, mp.count, atlas_size, src_rect);
         }
     }
 
@@ -202,7 +200,7 @@ void MapBlockMesh::addInDrawList(DistanceSortedDrawList *drawlist, bool shadow)
 {
     if (!uploaded) {
         for (u8 buf_i = 0; buf_i < m_mesh->getBuffersCount(); buf_i++)
-            m_mesh->getBuffer(buf_i)->uploadData();
+            m_mesh->getBuffer(buf_i)->flush();
         uploaded = true;
     }
     drawlist->addLayeredMesh(m_mesh.get());

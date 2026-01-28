@@ -62,6 +62,15 @@ public:
         return hasIBO() ? IBuffer.Data->count() : 0;
     }
 
+    const void *getVertexData() const
+    {
+        return VBuffer.Data->data();
+    }
+    const u32 *getIndexData() const
+    {
+        return reinterpret_cast<const u32 *>(IBuffer.Data->data());
+    }
+
 	render::Mesh *getVAO() const
 	{
         return VAO ? VAO.get() : nullptr;

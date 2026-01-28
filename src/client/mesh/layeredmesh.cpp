@@ -27,6 +27,18 @@ LayeredMesh::LayeredMesh(const v3f &_center_pos, const v3f &_abs_pos)
     : center_pos(_center_pos), abs_pos(_abs_pos)
 {}
 
+LayeredMeshPart *LayeredMesh::getBufferLayer(
+    MeshBuffer *buf,
+    const TileLayer &layer)
+{
+    auto foundLayer = std::find_if(layers[buf].begin(), layers[buf].end(),
+        [layer] (auto &curLayer) { return curLayer.first == layer; });
+
+    if (foundLayer == layers[buf].end())
+        return nullptr;
+    return &(foundLayer->second);
+}
+
 std::vector<BufferLayer> LayeredMesh::getAllLayers() const
 {
     std::vector<BufferLayer> all_layers;
@@ -83,19 +95,22 @@ void LayeredMesh::updateIndexBuffers()
 {
     if (transparent_triangles.empty()) return;
 
-    std::unordered_map<MeshBuffer *, std::pair<u32, std::vector<u32>>> bufs_indices;
+    std::unordered_map<MeshBuffer *, std::vector<u32>> bufs_indices;
 
 	// Firstly render solid layers
 	for (u8 buf_i = 0; buf_i < getBuffersCount(); buf_i++) {
         auto buffer = getBuffer(buf_i);
+        auto indices = buffer->getIndexData();
+        auto &buf_indices = bufs_indices[buffer];
         for (auto &layer : layers[buffer]) {
             if (!(layer.first.material_flags & MATERIAL_FLAG_TRANSPARENT)) {
-                layer.second.offset = bufs_indices[buffer].first;
-				layer.second.count = layer.second.indices.size();
-
-                bufs_indices[buffer].first += layer.second.count;
-                bufs_indices[buffer].second.insert(bufs_indices[buffer].second.end(),
-                    layer.second.indices.begin(), layer.second.indices.end());
+                u32 buf_indices_count = buf_indices.size();
+                buf_indices.resize(buf_indices_count+layer.second.count);
+                memcpy(
+                    buf_indices.data()+buf_indices_count*sizeof(u32),
+                    indices+layer.second.offset*sizeof(u32),
+                    layer.second.count*sizeof(u32)
+                );
             }
         }
 	}
@@ -111,20 +126,19 @@ void LayeredMesh::updateIndexBuffers()
 			last_buf = trig.buf_ref;
 			last_layer = trig.layer;
 		}
-        else if (*last_buf == trig.buf_ref && last_layer == trig.layer) {
+        else if (last_buf == trig.buf_ref && last_layer == trig.layer) {
 			partial_layers.back().count += 3;
 			add_partial_layer = false;
         }
         
 	    if (add_partial_layer) {
 		    partial_layers.emplace_back(
-                trig.buf_ref, trig.layer, bufs_indices[trig.buf_ref].first, 3);
+                trig.buf_ref, trig.layer, bufs_indices[trig.buf_ref].size(), 3);
         }
         
-        bufs_indices[trig.buf_ref].first += 3;
-        bufs_indices[trig.buf_ref].second.push_back(trig.p1);
-        bufs_indices[trig.buf_ref].second.push_back(trig.p2);
-        bufs_indices[trig.buf_ref].second.push_back(trig.p3);
+        bufs_indices[trig.buf_ref].push_back(trig.p1);
+        bufs_indices[trig.buf_ref].push_back(trig.p2);
+        bufs_indices[trig.buf_ref].push_back(trig.p3);
         
         last_buf = trig.buf_ref;
         last_layer = trig.layer;
@@ -133,8 +147,8 @@ void LayeredMesh::updateIndexBuffers()
     // upload new indices lists for each buffer
     for (u8 buf_i = 0; buf_i < getBuffersCount(); buf_i++) {
         auto buffer = getBuffer(buf_i);
-        for (u32 index_i = 0; index_i < bufs_indices[buffer].second.size(); index_i++)
-            buffer->setIndexAt(bufs_indices[buffer].second.at(index_i), index_i);
+        for (u32 index_i = 0; index_i < bufs_indices[buffer].size(); index_i++)
+            buffer->setIndexAt(bufs_indices[buffer].at(index_i), index_i);
         
         buffers.at(buf_i)->uploadData();
     }
