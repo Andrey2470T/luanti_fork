@@ -171,7 +171,7 @@ void ClientEnvironment::step(f32 dtime)
     m_local_player->getInteraction()->step(dtime);
 
     /* Update ClientMap */
-    //m_map->step(dtime);
+    m_map->step(dtime);
 }
 
 /*void ClientEnvironment::addSimpleObject(ClientSimpleObject *simple)

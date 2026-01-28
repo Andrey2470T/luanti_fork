@@ -15,7 +15,7 @@ class SelectionMesh;
 class BlockBounds;
 class Camera;
 
-typedef std::pair<std::shared_ptr<TileLayer>,
+typedef std::pair<TileLayer,
     std::vector<std::pair<LayeredMeshPart, LayeredMesh*>>> BatchedLayer;
 
 class DistanceSortedDrawList;
@@ -70,6 +70,7 @@ class DistanceSortedDrawList
 
     std::atomic<bool> needs_update_drawlist;
     std::atomic<bool> needs_update_shadow_drawlist;
+    std::atomic<bool> needs_upload_indices;
 
     v3f cur_light_pos;
 

@@ -78,6 +78,8 @@ class LayeredMesh
     std::vector<LayeredMeshTriangle> transparent_triangles;
 
     std::vector<LayeredMeshPart> partial_layers;
+
+    std::unordered_map<MeshBuffer *, std::vector<u32>> bufs_indices;
 public:
     LayeredMesh() = default;
     LayeredMesh(const v3f &_center_pos, const v3f &_abs_pos);
@@ -89,6 +91,11 @@ public:
     v3f getBoundingSphereCenter() const
     {
         return abs_pos + center_pos;
+    }
+
+    v3f getAbsoluteMeshPos() const
+    {
+        return abs_pos;
     }
 
     v3f &getRotation()
@@ -120,6 +127,11 @@ public:
     	return partial_layers;
     }
 
+    std::unordered_map<MeshBuffer *, std::vector<u32>> &getBuffersIndices()
+    {
+        return bufs_indices;
+    }
+
     void setCenter(const v3f &center, const v3f &abs_center)
     {
         center_pos = center;
@@ -147,11 +159,11 @@ public:
     void splitTransparentLayers();
     void transparentSort(const v3f &cam_pos);
     
-    void updateIndexBuffers();
+    bool updateIndexBuffers();
     
     bool isFrustumCulled(const Camera *camera, f32 extra_radius)
     {
-        return camera->frustumCull(abs_pos + center_pos, radius_sq + extra_radius*extra_radius);
+        return camera->frustumCull(getBoundingSphereCenter(), radius_sq + extra_radius*extra_radius);
     }
 private:
     bool isHardwareHolorized(u8 buf_i) const;

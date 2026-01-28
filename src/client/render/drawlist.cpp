@@ -42,7 +42,6 @@ DistanceSortedDrawList::~DistanceSortedDrawList()
     g_settings->deregisterAllChangedCallbacks(this);
 
     drawlist_thread->stop();
-    drawlist_thread->wait();
 }
 
 // The meshes_mutex must be locked externally before this call!
@@ -145,11 +144,11 @@ void DistanceSortedDrawList::updateList()
 
     meshes_mutex.unlock();
 
+    MutexAutoLock drawlist_lock(drawlist_mutex);
+
     // Resort the new mesh list
     mesh_sorter.camera_pos = cameraPos;
     updated_meshes.sort(mesh_sorter);
-
-    MutexAutoLock drawlist_lock(drawlist_mutex);
 
     f32 sorting_distance = cache_transparency_sorting_distance * BS;
 
@@ -160,7 +159,7 @@ void DistanceSortedDrawList::updateList()
         auto all_layers = mesh->getAllLayers();
 
         for (auto &layer : all_layers) {
-            if (layer.first->material_flags & MATERIAL_FLAG_TRANSPARENT)
+            if (layer.first.material_flags & MATERIAL_FLAG_TRANSPARENT)
                 continue;
 
             auto find_layer = std::find_if(layers.begin(), layers.end(),
@@ -182,15 +181,14 @@ void DistanceSortedDrawList::updateList()
 
         if (distance_sq <= std::pow(sorting_distance + radius, 2.0f)) {
             mesh->transparentSort(cameraPos);
+            needs_upload_indices = mesh->updateIndexBuffers();
 
             auto partial_layers = mesh->getPartialLayers();
 
             for (auto &partial_layer : partial_layers) {
-            	auto buf_layer = mesh->getBufferLayer(partial_layer.buffer_id, partial_layer.layer_id);
-
                 std::vector<std::pair<LayeredMeshPart, LayeredMesh *>> mesh_parts;
                 mesh_parts.emplace_back(partial_layer, mesh);
-                layers.emplace_back(buf_layer.first, mesh_parts);
+                layers.emplace_back(partial_layer.layer, mesh_parts);
             }
         }
     }
@@ -222,33 +220,29 @@ void DistanceSortedDrawList::render()
 
     MutexAutoLock drawlist_lock(drawlist_mutex);
 
-    v3f cameraPos = camera->getPosition();
-    f32 sorting_distance = cache_transparency_sorting_distance * BS;
+    if (needs_upload_indices) {
+        needs_upload_indices = false;
 
-    for (auto &mesh : updated_meshes) {
-        v3f center = mesh->getBoundingSphereCenter();
-        f32 radius = mesh->getBoundingSphereRadius();
-        f32 distance_sq = cameraPos.getDistanceFromSQ(center);
-
-        if (distance_sq <= std::pow(sorting_distance + radius, 2.0f))
-            mesh->updateIndexBuffers();
+        for (auto &mesh : updated_meshes) {
+            // upload new indices lists for each buffer
+            for (u8 buf_i = 0; buf_i < mesh->getBuffersCount(); buf_i++)
+                mesh->getBuffer(buf_i)->uploadData();
+        }
     }
 
-    updated_meshes.clear();
-
     for (auto &l : layers) {
-        l.first->setupRenderState(client);
+        l.first.setupRenderState(client);
 
         for (auto &mesh_l : l.second) {
             matrix4 t;
-            v3f center = mesh_l.second->getBoundingSphereCenter();
-            t.setTranslation(center - intToFloat(cameraOffset, BS));
+            v3f meshPos = mesh_l.second->getAbsoluteMeshPos();
+            t.setTranslation(meshPos - intToFloat(cameraOffset, BS));
             t.setRotationDegrees(mesh_l.second->getRotation());
             rnd->setTransformMatrix(TMatrix::World, t);
 
             auto &lp = mesh_l.first;
 
-            rnd->draw(mesh_l.second->getBuffer(lp.buffer_id), render::PT_TRIANGLES, lp.offset, lp.count);
+            rnd->draw(lp.buf_ref, render::PT_TRIANGLES, lp.offset, lp.count);
         }
     }
 }
@@ -269,13 +263,13 @@ void DistanceSortedDrawList::renderShadows(TileLayer &override_layer)
         rnd->setTransformMatrix(TMatrix::World, t);
 
         for (auto &l : m->getAllLayers()) {
-            override_layer.material_type = l.first->material_type;
+            override_layer.material_type = l.first.material_type;
             override_layer.setupRenderState(client);
 
-            if (translucent_foliage && l.first->material_type & TILE_MATERIAL_WAVING_LEAVES)
+            if (translucent_foliage && l.first.material_type & TILE_MATERIAL_WAVING_LEAVES)
                 ctxt->setCullMode(render::CM_FRONT);
 
-            rnd->draw(m->getBuffer(l.second.buffer_id), render::PT_TRIANGLES, l.second.offset, l.second.count);
+            rnd->draw(l.second.buf_ref, render::PT_TRIANGLES, l.second.offset, l.second.count);
         }
     }
 }

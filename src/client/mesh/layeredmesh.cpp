@@ -91,11 +91,11 @@ void LayeredMesh::transparentSort(const v3f &cam_pos)
 	std::sort(transparent_triangles.begin(), transparent_triangles.end(), trig_sorter);
 }
 
-void LayeredMesh::updateIndexBuffers()
+bool LayeredMesh::updateIndexBuffers()
 {
-    if (transparent_triangles.empty()) return;
+    if (transparent_triangles.empty()) return false;
 
-    std::unordered_map<MeshBuffer *, std::vector<u32>> bufs_indices;
+    bufs_indices.clear();
 
 	// Firstly render solid layers
 	for (u8 buf_i = 0; buf_i < getBuffersCount(); buf_i++) {
@@ -143,15 +143,14 @@ void LayeredMesh::updateIndexBuffers()
         last_buf = trig.buf_ref;
         last_layer = trig.layer;
     }
-    
-    // upload new indices lists for each buffer
+
     for (u8 buf_i = 0; buf_i < getBuffersCount(); buf_i++) {
         auto buffer = getBuffer(buf_i);
         for (u32 index_i = 0; index_i < bufs_indices[buffer].size(); index_i++)
             buffer->setIndexAt(bufs_indices[buffer].at(index_i), index_i);
-        
-        buffers.at(buf_i)->uploadData();
     }
+    
+    return true;
 }
 
 bool LayeredMesh::isHardwareHolorized(u8 buf_i) const
