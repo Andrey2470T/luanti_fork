@@ -60,7 +60,7 @@ private:
 		u8 reset_flags = 0, bool special = false);
 
 	// Core drawing primitives
-	void drawQuad(
+    void appendQuad(
 		const std::array<v3f, 4> &positions,
 		const std::array<v3f, 4> &normals,
 		const std::array<img::color8, 4> &colors,
@@ -68,7 +68,7 @@ private:
 		const rectf *uv = nullptr
 	);
 
-	void drawCuboid(
+    void appendCuboid(
 		const aabbf &box,
 		const std::array<TileSpec, 6> &tiles,
 		const NodeLighting &lighting,
@@ -91,26 +91,26 @@ private:
 	);
 
 	// Drawtype implementations (simplified with unified lighting)
-	void drawSolidNode();
-	void drawLiquidNode();
-	void drawGlasslikeNode();
-	void drawGlasslikeFramedNode();
-	void drawAllfacesNode();
-	void drawTorchlikeNode();
-	void drawSignlikeNode();
-	void drawPlantlikeNode();
-	void drawPlantlikeRootedNode();
-	void drawFirelikeNode();
-	void drawFencelikeNode();
-	void drawRaillikeNode();
-	void drawNodeboxNode();
-	void drawMeshNode();
+    void appendSolidNode();
+    void appendLiquidNode();
+    void appendGlasslikeNode();
+    void appendGlasslikeFramedNode();
+    void appendAllfacesNode();
+    void appendTorchlikeNode();
+    void appendSignlikeNode();
+    void appendPlantlikeNode();
+    void appendPlantlikeRootedNode();
+    void appendFirelikeNode();
+    void appendFencelikeNode();
+    void appendRaillikeNode();
+    void appendNodeboxNode();
+    void appendMeshNode();
 
 	// Drawtype-specific helpers
-	void drawPlantlikeQuad(const TileSpec &tile, float rotation,
+    void appendPlantlikeQuad(const TileSpec &tile, float rotation,
 		float quad_offset = 0, bool offset_top_only = false);
-    void drawPlantlike(const TileSpec &tile, bool is_rooted);
-	void drawFirelikeQuad(const TileSpec &tile, float rotation,
+    void appendPlantlike(const TileSpec &tile, bool is_rooted);
+    void appendFirelikeQuad(const TileSpec &tile, float rotation,
 		float opening_angle, float offset_h, float offset_v = 0.0);
 
 	// Liquid-specific
@@ -137,9 +137,9 @@ private:
 	void getLiquidNeighborhood();
 	void calculateCornerLevels();
 	f32 getCornerLevel(int i, int k) const;
-	void drawLiquidSides();
-	void drawLiquidTop();
-	void drawLiquidBottom();
+    void appendLiquidSides();
+    void appendLiquidTop();
+    void appendLiquidBottom();
 
 	// Raillike-specific
 	static const std::string raillike_groupname;
@@ -170,5 +170,34 @@ private:
 
 	// Common
 	void errorUnknownDrawtype();
-	void drawNode();
+    void appendNode();
+
+    struct InterimBuffer {
+        render::VertexTypeDescriptor vertexType;
+        u32 vertexCount, indexCount;
+    };
+
+    struct InterimBufferLayer {
+        u32 vertexCount, indexCount;
+        u32 curVertexOffset = 0;
+        u32 curIndexOffset = 0;
+    };
+
+    // The mapblock mesh generation goes over two stages (allocation, then generation)
+    bool first_stage = true;
+
+    // Maps tile layer to (current vertex offset, current index offset) pair
+    typedef std::map<TileLayer, InterimBufferLayer> InterimBufferLayers;
+
+    std::vector<std::pair<InterimBuffer, InterimBufferLayers>> interim_buffers;
+    void mergeMeshPart(
+        const TileLayer &layer,
+        render::VertexTypeDescriptor vType,
+        u32 vertexCount, u32 indexCount);
+
+    MeshBuffer *findBuffer( const TileLayer &layer,
+        render::VertexTypeDescriptor vType,
+        u32 vertexCount, u32 indexCount);
+
+    void allocate();
 };

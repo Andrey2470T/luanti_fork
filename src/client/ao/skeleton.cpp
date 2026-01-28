@@ -96,7 +96,7 @@ void Skeleton::fillMeshAttribs(LayeredMesh *mesh)
     for (u32 k = 0; k < mesh->getBuffersCount(); k++) {
         auto buf = mesh->getBuffer(k);
 
-        if (buf->getVAO()->getVertexType().Name != "AnimatedObject3D")
+        if (buf->getVertexType().Name != "AnimatedObject3D")
             continue;
 
         for (u32 i = 0; i < buf->getVertexCount(); i++) {

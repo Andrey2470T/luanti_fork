@@ -23,7 +23,7 @@ void Batcher3D::vertex(MeshBuffer *buf, v3f pos,
     if (applyFaceShading)
         MeshOperations::applyFacesShading(newColor, normal);*/
 
-    auto vType = buf->getVAO()->getVertexType();
+    auto vType = buf->getVertexType();
     if (vType.Name == "Node3D")
         NVT(buf, pos, color, normal, uv);
     else if (vType.Name == "TwoColorNode3D")
@@ -180,6 +180,28 @@ void Batcher3D::face(MeshBuffer *buf, const rectf &positions, const v3f &rotatio
 void Batcher3D::box(MeshBuffer *buf, const aabbf &box, const std::array<img::color8, 24> &colors,
     const std::array<rectf, 6> *uvs, u8 mask)
 {
+    // Up
+    boxFace(buf, BoxFaces::TOP, box, colors, uvs, mask);
+    // Down
+    boxFace(buf, BoxFaces::BOTTOM, box, colors, uvs, mask);
+    // Right
+    boxFace(buf, BoxFaces::RIGHT, box, colors, uvs, mask);
+    // Left
+    boxFace(buf, BoxFaces::LEFT, box, colors, uvs, mask);
+    // Back
+    boxFace(buf, BoxFaces::BACK, box, colors, uvs, mask);
+    // Front
+    boxFace(buf, BoxFaces::FRONT, box, colors, uvs, mask);
+}
+
+void Batcher3D::boxFace(
+    MeshBuffer *buf,
+    BoxFaces faceNum,
+    const aabbf &box,
+    const std::array<img::color8, 24> &colors,
+    const std::array<rectf, 6> *uvs,
+    u8 mask)
+{
     // Auto calculation of uvs
     auto calc_uv = [] (u32 face_w, u32 face_h)
     {
@@ -206,7 +228,7 @@ void Batcher3D::box(MeshBuffer *buf, const aabbf &box, const std::array<img::col
     v3f box_size = box.getExtent();
 
     // Up
-    if (mask & (1 << 0)) {
+    if (faceNum == BoxFaces::TOP && (mask & (1 << 0))) {
         rectf up_uv = uvs ? (*uvs)[0] : calc_uv(box_size.X, box_size.Z);
         face(
             buf,
@@ -218,7 +240,7 @@ void Batcher3D::box(MeshBuffer *buf, const aabbf &box, const std::array<img::col
         );
     }
     // Down
-    if (mask & (1 << 1)) {
+    else if (faceNum == BoxFaces::BOTTOM && (mask & (1 << 1))) {
         rectf down_uv = uvs ? (*uvs)[1] : calc_uv(box_size.X, box_size.Z);
         face(
             buf,
@@ -230,7 +252,7 @@ void Batcher3D::box(MeshBuffer *buf, const aabbf &box, const std::array<img::col
         );
     }
     // Right
-    if (mask & (1 << 2)) {
+    else if (faceNum == BoxFaces::RIGHT && (mask & (1 << 2))) {
         rectf right_uv = uvs ? (*uvs)[2] : calc_uv(box_size.Z, box_size.Y);
         face(
             buf,
@@ -242,7 +264,7 @@ void Batcher3D::box(MeshBuffer *buf, const aabbf &box, const std::array<img::col
         );
     }
     // Left
-    if (mask & (1 << 3)) {
+    else if (faceNum == BoxFaces::LEFT && (mask & (1 << 3))) {
         rectf left_uv = uvs ? (*uvs)[3] : calc_uv(box_size.Z, box_size.Y);
         face(
             buf,
@@ -254,7 +276,7 @@ void Batcher3D::box(MeshBuffer *buf, const aabbf &box, const std::array<img::col
         );
     }
     // Back
-    if (mask & (1 << 4)) {
+    else if (faceNum == BoxFaces::BACK && (mask & (1 << 4))) {
         rectf back_uv = uvs ? (*uvs)[4] : calc_uv(box_size.X, box_size.Y);
         face(
             buf,
@@ -266,7 +288,7 @@ void Batcher3D::box(MeshBuffer *buf, const aabbf &box, const std::array<img::col
         );
     }
     // Front
-    if (mask & (1 << 5)) {
+    else if (faceNum == BoxFaces::FRONT && (mask & (1 << 5))) {
         rectf front_uv = uvs ? (*uvs)[5] : calc_uv(box_size.X, box_size.Y);
         face(
             buf,

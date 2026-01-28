@@ -294,7 +294,7 @@ struct TileDef
 class Model;
 struct TileLayer;
 
-typedef std::array<std::shared_ptr<TileLayer>, 2> TileSpec;
+typedef std::array<TileLayer, 2> TileSpec;
 
 struct ContentFeatures
 {

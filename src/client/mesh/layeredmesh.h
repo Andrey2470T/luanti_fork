@@ -4,20 +4,20 @@
 #include <BasicIncludes.h>
 #include <Render/VertexTypeDescriptor.h>
 #include "client/render/camera.h"
+#include "client/render/tilelayer.h"
 #include <Utils/Quaternion.h>
 
 #define HAS_HW(layer) \
     layer->material_flags & MATERIAL_FLAG_HARDWARE_COLORIZED
 
 class MeshBuffer;
-struct TileLayer;
 class Camera;
 
 // Layer of some mesh buffer
 struct LayeredMeshPart
 {
     MeshBuffer *buf_ref;
-    std::shared_ptr<TileLayer> layer;
+    TileLayer layer;
 
     u32 offset = 0; // number of start index in the index buffer
     u32 count = 0; // count of buffer indices starting from "offset"
@@ -28,7 +28,7 @@ struct LayeredMeshPart
     std::vector<u32> indices;
 
     LayeredMeshPart() = default;
-    LayeredMeshPart(MeshBuffer *_buf_ref, std::shared_ptr<TileLayer> _layer, u32 _offset, u32 _count)
+    LayeredMeshPart(MeshBuffer *_buf_ref, const TileLayer &_layer, u32 _offset, u32 _count)
         : buf_ref(_buf_ref), layer(_layer), offset(_offset), count(_count)
     {}
 };
@@ -37,19 +37,19 @@ struct LayeredMeshPart
 struct LayeredMeshTriangle
 {
     MeshBuffer *buf_ref;
-    std::shared_ptr<TileLayer> layer;
+    TileLayer layer;
 
     u32 p1, p2, p3;
 
     v3f getCenter() const;
 
-    LayeredMeshTriangle(MeshBuffer *_buf_ref, std::shared_ptr<TileLayer> _layer, u32 _p1, u32 _p2, u32 _p3)
+    LayeredMeshTriangle(MeshBuffer *_buf_ref, const TileLayer &_layer, u32 _p1, u32 _p2, u32 _p3)
         : buf_ref(_buf_ref), layer(_layer), p1(_p1), p2(_p2), p3(_p3)
     {}
 };
 
-typedef std::map<std::shared_ptr<TileLayer>, LayeredMeshPart> BufferLayers;
-typedef std::pair<std::shared_ptr<TileLayer>, LayeredMeshPart> BufferLayer;
+typedef std::map<TileLayer, LayeredMeshPart> BufferLayers;
+typedef std::pair<TileLayer, LayeredMeshPart> BufferLayer;
 
 // Mesh buffers each divided into layers with unique tile layer
 // Supports transparent auto sorting and frustum culling
@@ -112,7 +112,7 @@ public:
     }
     LayeredMeshPart &getBufferLayer(
         MeshBuffer *buf,
-        std::shared_ptr<TileLayer> layer)
+        const TileLayer &layer)
     {
         return layers[buf][layer];
     }
@@ -138,17 +138,12 @@ public:
     // adds the layer in the last buffer
     void addNewLayer(
         MeshBuffer *buffer,
-        std::shared_ptr<TileLayer> layer,
+        const TileLayer &layer,
         const LayeredMeshPart &mesh_p)
     {
         assert(!layers.empty());
         layers[buffer][layer] = mesh_p;
     }
-
-    LayeredMeshPart *findLayer(
-        std::shared_ptr<TileLayer> layer,
-        render::VertexTypeDescriptor vType,
-        u32 vertexCount, u32 indexCount);
 
     void recalculateBoundingRadius();
 

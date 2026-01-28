@@ -2,25 +2,21 @@
 #include <assert.h>
 
 MeshBuffer::MeshBuffer(bool createIBO, const render::VertexTypeDescriptor &descr,
-    render::MeshUsage usage, bool uploadData)
+    render::MeshUsage usage, bool deferUpload)
     : Type(createIBO ? MeshBufferType::VERTEX_INDEX : MeshBufferType::VERTEX)
 {
-    if (uploadData)
+    if (!deferUpload)
         VAO = std::make_shared<render::Mesh>(descr, createIBO, usage);
-    else
-        VAO = std::make_shared<render::Mesh>(descr, usage);
     initData(0, 0);
 }
 // Creates either VERTEX or VERTEX_INDEX buffer types allocating the storage for 'vertexCount' and 'indexCount'
 MeshBuffer::MeshBuffer(u32 vertexCount, u32 indexCount, bool createIBO,
     const render::VertexTypeDescriptor &descr,
-    render::MeshUsage usage, bool uploadData)
+    render::MeshUsage usage, bool deferUpload)
     : Type(createIBO ? MeshBufferType::VERTEX_INDEX : MeshBufferType::VERTEX)
 {
-    if (uploadData)
+    if (!deferUpload)
         VAO = std::make_shared<render::Mesh>(vertexCount, indexCount, descr, createIBO, usage);
-    else
-        VAO = std::make_shared<render::Mesh>(descr, usage);
     initData(vertexCount, indexCount);
 }
 
@@ -158,12 +154,14 @@ void MeshBuffer::reallocateData(u32 vertexCount, u32 indexCount)
     if (ibuffer_modified)
         IBuffer.Data->reallocate(indexCount);
 
-    if (vbuffer_modified || ibuffer_modified)
+    if (VAO && (vbuffer_modified || ibuffer_modified))
         VAO->reallocate(vertexCount, hasIBO() ? indexCount : 0);
 }
 
 void MeshBuffer::uploadData()
 {
+    if (!VAO)
+        return;
     if (VBuffer.Dirty) {
         u32 startV = VBuffer.DirtyRange.first != -1 ? VBuffer.DirtyRange.first : 0;
         u32 endV = VBuffer.DirtyRange.second != -1 ? VBuffer.DirtyRange.second : VBuffer.Data->count();
@@ -183,6 +181,16 @@ void MeshBuffer::uploadData()
     }
 }
 
+void MeshBuffer::flush()
+{
+    if (VAO)
+        return;
+
+    VAO = std::make_shared<render::Mesh>(
+        VBuffer.Data->count(), hasIBO() ? IBuffer.Data->count() : 0, Descriptor, hasIBO());
+    uploadData();
+}
+
 void MeshBuffer::clear()
 {
     VBuffer.Data->clear();
@@ -198,7 +206,7 @@ MeshBuffer *MeshBuffer::copy() const
 {
     MeshBuffer *new_mesh = new MeshBuffer(
         VBuffer.Data->count(), hasIBO() ? IBuffer.Data->count() : 0,
-        Type != MeshBufferType::VERTEX, VAO->getVertexType());
+        Type != MeshBufferType::VERTEX, Descriptor);
 
     memcpy(new_mesh->VBuffer.Data->data(), VBuffer.Data->data(), VBuffer.Data->bytesCount());
 
@@ -222,15 +230,13 @@ void MeshBuffer::initData(u32 vertexCount, u32 indexCount)
 void MeshBuffer::createSubMeshBuffer(u32 count, bool vBuffer)
 {
     if (vBuffer) {
-        auto vType = VAO->getVertexType();
-
         // Convert VertexTypeDescriptor to ByteArrayDescriptor for the VBuffer
         std::vector<ByteArrayElement> elements;
-        elements.resize(vType.Attributes.size());
+        elements.resize(Descriptor.Attributes.size());
 
         for (u32 i = 0; i < elements.size(); i++) {
             auto &elem = elements[i];
-            auto &attribute = vType.Attributes[i];
+            auto &attribute = Descriptor.Attributes[i];
 
             elem.Name = attribute.Name;
 
@@ -257,7 +263,7 @@ void MeshBuffer::createSubMeshBuffer(u32 count, bool vBuffer)
             else
                 elem.Type = ByteArrayElementType::U16;
         }
-        ByteArrayDescriptor vBufferDesc(vType.Name, elements);
+        ByteArrayDescriptor vBufferDesc(Descriptor.Name, elements);
         VBuffer.Data = std::make_unique<ByteArray>(vBufferDesc, count);
     }
     else {

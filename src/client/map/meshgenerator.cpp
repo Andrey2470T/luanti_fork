@@ -47,8 +47,8 @@ void MeshGenerator::useTile(TileSpec *tile_ret, int index, u8 set_flags,
 		getTile(index, tile_ret);
 
 	for (auto &layer : *tile_ret) {
-		layer->material_flags |= set_flags;
-		layer->material_flags &= ~reset_flags;
+        layer.material_flags |= set_flags;
+        layer.material_flags &= ~reset_flags;
 	}
 }
 
@@ -65,14 +65,14 @@ void MeshGenerator::getTile(v3s16 direction, TileSpec *tile_ret)
 void MeshGenerator::getSpecialTile(int index, TileSpec *tile_ret)
 {
 	*tile_ret = cur_node.f->special_tiles[index];
-	std::shared_ptr<TileLayer> top_layer;
+    TileLayer top_layer;
 
 	for (auto &layer : *tile_ret) {
-		if (!layer->tile_ref)
+        if (!layer.tile_ref)
 			continue;
 		top_layer = layer;
-		if (!(layer->material_flags & MATERIAL_FLAG_HARDWARE_COLORIZED))
-			cur_node.n.getColor(*cur_node.f, &layer->color);
+        if (!(layer.material_flags & MATERIAL_FLAG_HARDWARE_COLORIZED))
+            cur_node.n.getColor(*cur_node.f, &layer.color);
 	}
 }
 
@@ -117,32 +117,29 @@ img::color8 MeshGenerator::calculateVertexColor(
 // CORE DRAWING PRIMITIVES
 // ============================================================================
 
-#define SELECT_VERTEXTYPE(layer) \
-    layer->material_flags & MATERIAL_FLAG_HARDWARE_COLORIZED ? \
-    TwoColorNodeVType : NodeVType
-
-void MeshGenerator::drawQuad(
+void MeshGenerator::appendQuad(
 	const std::array<v3f, 4> &positions,
 	const std::array<v3f, 4> &normals,
 	const std::array<img::color8, 4> &colors,
 	const TileSpec &tile,
 	const rectf *uv)
 {
-	rectf uvs = uv ? *uv : rectf(v2f(0.0, 1.0), v2f(1.0, 0.0));
+    if (first_stage) {
+        mergeMeshPart(tile[0], NodeVType, 4, 6);
+        mergeMeshPart(tile[1], TwoColorNodeVType, 4, 6);
+    }
+    else {
+        rectf uvs = uv ? *uv : rectf(v2f(0.0, 1.0), v2f(1.0, 0.0));
 
-	auto layer1 = collector->findLayer(tile[0], SELECT_VERTEXTYPE(tile[0]), 4, 6);
-	auto buf1 = collector->getBuffer(layer1.second.buffer_id);
-	
-    //Batcher3D::face(buf1, positions, colors, uv ? *uv : uvs, normals);
+        auto buf1 = findBuffer(tile[0], NodeVType, 4, 6);
+        Batcher3D::face(buf1, positions, colors, uvs, normals);
 
-	// Second layer
-	auto layer2 = collector->findLayer(tile[1], SELECT_VERTEXTYPE(tile[1]), 4, 6);
-	auto buf2 = collector->getBuffer(layer2.second.buffer_id);
-	
-    //Batcher3D::face(buf2, positions, colors, uv ? *uv : uvs, normals);
+        auto buf2 = findBuffer(tile[1], TwoColorNodeVType, 4, 6);
+        Batcher3D::face(buf2, positions, colors, uvs, normals);
+    }
 }
 
-void MeshGenerator::drawCuboid(
+void MeshGenerator::appendCuboid(
 	const aabbf &box,
 	const std::array<TileSpec, 6> &tiles,
 	const NodeLighting &lighting,
@@ -161,47 +158,44 @@ void MeshGenerator::drawCuboid(
 
     std::array<img::color8, 24> colors;
 
-    u8 face_count = 0;
-
 	for (int face = 0; face < 6; face++) {
         if (!(face_mask & (1 << face)))
 			continue;  // Face is culled
 
-		// Get face colors from pre-calculated lighting
-        std::array<img::color8, 4> face_colors = calculateFaceColors(
-			face, lighting, cur_node.f->light_source);
+        if (first_stage) {
+            mergeMeshPart(tiles[face][0], NodeVType, 4, 6);
+            mergeMeshPart(tiles[face][1], TwoColorNodeVType, 4, 6);
+        }
+        else {
+            // Get face colors from pre-calculated lighting
+            std::array<img::color8, 4> face_colors = calculateFaceColors(
+                face, lighting, cur_node.f->light_source);
 
-        colors[face*4] = face_colors[0];
-        colors[face*4+1] = face_colors[1];
-        colors[face*4+2] = face_colors[2];
-        colors[face*4+3] = face_colors[3];
+            colors[face*4] = face_colors[0];
+            colors[face*4+1] = face_colors[1];
+            colors[face*4+2] = face_colors[2];
+            colors[face*4+3] = face_colors[3];
 
-        ++face_count;
+            auto buf1 = findBuffer(tiles[face][0], NodeVType, 4, 6);
+            Batcher3D::boxFace(buf1, (BoxFaces)face, box, colors, uvs, face_mask);
+
+            auto buf2 = findBuffer(tiles[face][1], TwoColorNodeVType, 4, 6);
+            Batcher3D::boxFace(buf2, (BoxFaces)face, box, colors, uvs, face_mask);
+
+        }
 	}
-
-    auto layer1 = collector->findLayer(tiles[0][0], SELECT_VERTEXTYPE(tiles[0][0]), face_count*4, face_count*6);
-    auto buf1 = collector->getBuffer(layer1.second.buffer_id);
-    //Batcher3D::box(buf1, box, colors, uvs, face_mask);
-
-    auto layer2 = collector->findLayer(tiles[0][1], SELECT_VERTEXTYPE(tiles[0][1]), face_count*4, face_count*6);
-    auto buf2 = collector->getBuffer(layer2.second.buffer_id);
-    //Batcher3D::box(buf2, box, colors, uvs, face_mask);
 }
 
 // ============================================================================
 // DRAWTYPE IMPLEMENTATIONS
 // ============================================================================
 
-void MeshGenerator::drawSolidNode()
+void MeshGenerator::appendSolidNode()
 {
 	// STEP 1: Determine visible faces and get tiles
 	u8 visible_faces = 0;
 	std::array<TileSpec, 6> tiles;
 
-    for (int face = 0; face < 6; face++) {
-        tiles[face][0] = std::make_shared<TileLayer>();
-        tiles[face][1] = std::make_shared<TileLayer>();
-    }
 	static const v3s16 tile_dirs[6] = {
 		v3s16(0, 1, 0), v3s16(0, -1, 0),
 		v3s16(1, 0, 0), v3s16(-1, 0, 0),
@@ -237,7 +231,7 @@ void MeshGenerator::drawSolidNode()
 		
 		for (auto &layer : tiles[face]) {
 			if (backface_culling)
-				layer->material_flags |= MATERIAL_FLAG_BACKFACE_CULLING;
+                layer.material_flags |= MATERIAL_FLAG_BACKFACE_CULLING;
 		}
 	}
 
@@ -255,12 +249,11 @@ void MeshGenerator::drawSolidNode()
 	// STEP 3: Draw
 	cur_node.origin = intToFloat(cur_node.p, BS);
 	aabbf box(v3f(-0.5 * BS), v3f(0.5 * BS));
-	u8 mask = ~visible_faces;  // Invert for mask
 	
-	drawCuboid(box, tiles, cur_node.lighting, mask);
+    appendCuboid(box, tiles, cur_node.lighting, visible_faces);
 }
 
-void MeshGenerator::drawLiquidNode()
+void MeshGenerator::appendLiquidNode()
 {
 	// Calculate base lighting
 	calculateNodeLighting(
@@ -274,14 +267,14 @@ void MeshGenerator::drawLiquidNode()
 	getLiquidNeighborhood();
 	calculateCornerLevels();
 	
-	drawLiquidSides();
+    appendLiquidSides();
 	if (!cur_liquid.top_is_same_liquid)
-		drawLiquidTop();
+        appendLiquidTop();
 	if (cur_liquid.draw_bottom)
-		drawLiquidBottom();
+        appendLiquidBottom();
 }
 
-void MeshGenerator::drawGlasslikeNode()
+void MeshGenerator::appendGlasslikeNode()
 {
 	// Calculate lighting
 	calculateNodeLighting(
@@ -332,11 +325,11 @@ void MeshGenerator::drawGlasslikeNode()
 				cur_node.lighting, cur_node.f->light_source);
 		}
 
-		drawQuad(vertices, normals, colors, tile);
+        appendQuad(vertices, normals, colors, tile);
 	}
 }
 
-void MeshGenerator::drawAllfacesNode()
+void MeshGenerator::appendAllfacesNode()
 {
 	// Calculate lighting
 	calculateNodeLighting(
@@ -348,11 +341,6 @@ void MeshGenerator::drawAllfacesNode()
 
 	static const aabbf box(-BS/2, -BS/2, -BS/2, BS/2, BS/2, BS/2);
 	std::array<TileSpec, 6> tiles;
-
-    for (int face = 0; face < 6; face++) {
-        tiles[face][0] = std::make_shared<TileLayer>();
-        tiles[face][1] = std::make_shared<TileLayer>();
-    }
 	
 	static const v3s16 nodebox_tile_dirs[6] = {
 		v3s16(0, 1, 0), v3s16(0, -1, 0),
@@ -364,10 +352,10 @@ void MeshGenerator::drawAllfacesNode()
 		getTile(nodebox_tile_dirs[face], &tiles[face]);
 
 	cur_node.origin = intToFloat(cur_node.p, BS);
-	drawCuboid(box, tiles, cur_node.lighting, 0);
+    appendCuboid(box, tiles, cur_node.lighting, 0xff);
 }
 
-void MeshGenerator::drawTorchlikeNode()
+void MeshGenerator::appendTorchlikeNode()
 {
 	// Calculate lighting
 	calculateNodeLighting(
@@ -443,10 +431,10 @@ void MeshGenerator::drawTorchlikeNode()
 			cur_node.lighting, cur_node.f->light_source);
 	}
 
-	drawQuad(vertices, normals, colors, tile);
+    appendQuad(vertices, normals, colors, tile);
 }
 
-void MeshGenerator::drawSignlikeNode()
+void MeshGenerator::appendSignlikeNode()
 {
 	// Calculate lighting
 	calculateNodeLighting(
@@ -497,10 +485,10 @@ void MeshGenerator::drawSignlikeNode()
 			cur_node.lighting, cur_node.f->light_source);
 	}
 
-	drawQuad(vertices, normals, colors, tile);
+    appendQuad(vertices, normals, colors, tile);
 }
 
-void MeshGenerator::drawPlantlikeNode()
+void MeshGenerator::appendPlantlikeNode()
 {
 	// Calculate lighting
 	calculateNodeLighting(
@@ -512,12 +500,12 @@ void MeshGenerator::drawPlantlikeNode()
 
 	TileSpec tile;
 	useTile(&tile);
-	drawPlantlike(tile, false);
+    appendPlantlike(tile, false);
 }
 
-void MeshGenerator::drawPlantlikeRootedNode()
+void MeshGenerator::appendPlantlikeRootedNode()
 {
-	drawSolidNode();
+    appendSolidNode();
 	
 	TileSpec tile;
 	useTile(&tile, 0, 0, 0, true);
@@ -532,11 +520,11 @@ void MeshGenerator::drawPlantlikeRootedNode()
 		data
 	);
 	
-	drawPlantlike(tile, true);
+    appendPlantlike(tile, true);
 	cur_node.p.Y--;
 }
 
-void MeshGenerator::drawFirelikeNode()
+void MeshGenerator::appendFirelikeNode()
 {
 	// Calculate lighting
 	calculateNodeLighting(
@@ -568,32 +556,32 @@ void MeshGenerator::drawFirelikeNode()
 	bool drawBottomFire = neighbor[D6D_YP];
 
 	if (drawBasicFire || neighbor[D6D_ZP])
-		drawFirelikeQuad(tile, 0, -10, 0.4 * BS);
+        appendFirelikeQuad(tile, 0, -10, 0.4 * BS);
 	else if (drawBottomFire)
-		drawFirelikeQuad(tile, 0, 70, 0.47 * BS, 0.484 * BS);
+        appendFirelikeQuad(tile, 0, 70, 0.47 * BS, 0.484 * BS);
 
 	if (drawBasicFire || neighbor[D6D_XN])
-		drawFirelikeQuad(tile, 90, -10, 0.4 * BS);
+        appendFirelikeQuad(tile, 90, -10, 0.4 * BS);
 	else if (drawBottomFire)
-		drawFirelikeQuad(tile, 90, 70, 0.47 * BS, 0.484 * BS);
+        appendFirelikeQuad(tile, 90, 70, 0.47 * BS, 0.484 * BS);
 
 	if (drawBasicFire || neighbor[D6D_ZN])
-		drawFirelikeQuad(tile, 180, -10, 0.4 * BS);
+        appendFirelikeQuad(tile, 180, -10, 0.4 * BS);
 	else if (drawBottomFire)
-		drawFirelikeQuad(tile, 180, 70, 0.47 * BS, 0.484 * BS);
+        appendFirelikeQuad(tile, 180, 70, 0.47 * BS, 0.484 * BS);
 
 	if (drawBasicFire || neighbor[D6D_XP])
-		drawFirelikeQuad(tile, 270, -10, 0.4 * BS);
+        appendFirelikeQuad(tile, 270, -10, 0.4 * BS);
 	else if (drawBottomFire)
-		drawFirelikeQuad(tile, 270, 70, 0.47 * BS, 0.484 * BS);
+        appendFirelikeQuad(tile, 270, 70, 0.47 * BS, 0.484 * BS);
 
 	if (drawBasicFire) {
-		drawFirelikeQuad(tile, 45, 0, 0.0);
-		drawFirelikeQuad(tile, -45, 0, 0.0);
+        appendFirelikeQuad(tile, 45, 0, 0.0);
+        appendFirelikeQuad(tile, -45, 0, 0.0);
 	}
 }
 
-void MeshGenerator::drawFencelikeNode()
+void MeshGenerator::appendFencelikeNode()
 {
 	// Calculate lighting
 	calculateNodeLighting(
@@ -607,8 +595,8 @@ void MeshGenerator::drawFencelikeNode()
 	useTile(&tile_nocrack, 0, 0, 0);
 
 	TileSpec tile_rot = tile_nocrack;
-	tile_rot[0]->rotation = TileRotation::R90;
-	tile_rot[1]->rotation = TileRotation::R90;
+    tile_rot[0].rotation = TileRotation::R90;
+    tile_rot[1].rotation = TileRotation::R90;
 
 	static const f32 post_rad = BS / 8;
 	static const f32 bar_rad  = BS / 16;
@@ -626,7 +614,7 @@ void MeshGenerator::drawFencelikeNode()
 	};
 
 	cur_node.origin = intToFloat(cur_node.p, BS);
-    drawCuboid(post, {tile_rot}, cur_node.lighting, 0, &postuv);
+    appendCuboid(post, {tile_rot}, cur_node.lighting, 0xff, &postuv);
 
 	// Check +X neighbor
 	v3s16 p2 = cur_node.p;
@@ -648,8 +636,8 @@ void MeshGenerator::drawFencelikeNode()
             rectf(v2f(0.000, 0.875), v2f(1.000, 1.000)),
         };
 
-        drawCuboid(bar_x1, {tile_nocrack}, cur_node.lighting, 0, &xrailuv);
-        drawCuboid(bar_x2, {tile_nocrack}, cur_node.lighting, 0, &xrailuv);
+        appendCuboid(bar_x1, {tile_nocrack}, cur_node.lighting, 0xff, &xrailuv);
+        appendCuboid(bar_x2, {tile_nocrack}, cur_node.lighting, 0xff, &xrailuv);
 	}
 
 	// Check +Z neighbor
@@ -672,12 +660,12 @@ void MeshGenerator::drawFencelikeNode()
             rectf(v2f(0.6250, 0.6250), v2f(0.7500, 0.7500))
         };
 
-        drawCuboid(bar_z1, {tile_nocrack}, cur_node.lighting, 0, &zrailuv);
-        drawCuboid(bar_z2, {tile_nocrack}, cur_node.lighting, 0, &zrailuv);
+        appendCuboid(bar_z1, {tile_nocrack}, cur_node.lighting, 0xff, &zrailuv);
+        appendCuboid(bar_z2, {tile_nocrack}, cur_node.lighting, 0xff, &zrailuv);
 	}
 }
 
-void MeshGenerator::drawRaillikeNode()
+void MeshGenerator::appendRaillikeNode()
 {
 	// Calculate lighting
 	calculateNodeLighting(
@@ -754,10 +742,10 @@ void MeshGenerator::drawRaillikeNode()
 			cur_node.lighting, cur_node.f->light_source);
 	}
 
-	drawQuad(vertices, normals, colors, tile);
+    appendQuad(vertices, normals, colors, tile);
 }
 
-void MeshGenerator::drawNodeboxNode()
+void MeshGenerator::appendNodeboxNode()
 {
 	// Calculate lighting
 	calculateNodeLighting(
@@ -774,11 +762,8 @@ void MeshGenerator::drawNodeboxNode()
 	};
 
 	std::array<TileSpec, 6> tiles;
-	for (int face = 0; face < 6; face++) {
-        tiles[face][0] = std::make_shared<TileLayer>();
-        tiles[face][1] = std::make_shared<TileLayer>();
+    for (int face = 0; face < 6; face++)
 		getTile(nodebox_tile_dirs[face], &tiles[face]);
-	}
 
 	bool param2_is_rotation =
 		cur_node.f->param_type_2 == CPT2_COLORED_FACEDIR ||
@@ -828,7 +813,7 @@ void MeshGenerator::drawNodeboxNode()
 	// Box splitting for transparent nodes (same as original)
 	bool isTransparent = false;
 	for (const TileSpec &tile : tiles) {
-		if (tile[0]->material_flags & MATERIAL_FLAG_TRANSPARENT) {
+        if (tile[0].material_flags & MATERIAL_FLAG_TRANSPARENT) {
 			isTransparent = true;
 			break;
 		}
@@ -870,11 +855,11 @@ void MeshGenerator::drawNodeboxNode()
 	cur_node.origin = intToFloat(cur_node.p, BS);
 	for (auto &box : boxes) {
 		u8 mask = getNodeBoxMask(box, solid_neighbors, sametype_neighbors);
-		drawCuboid(box, tiles, cur_node.lighting, mask);
+        appendCuboid(box, tiles, cur_node.lighting, mask);
 	}
 }
 
-void MeshGenerator::drawMeshNode()
+void MeshGenerator::appendMeshNode()
 {
 	// Calculate lighting
 	calculateNodeLighting(
@@ -904,45 +889,55 @@ void MeshGenerator::drawMeshNode()
 	if (cur_node.f->mesh_ptr) {
 		auto layered_mesh = cur_node.f->mesh_ptr->getMesh();
 
-        auto buf = layered_mesh->getBuffer(0)->copy();
+        MeshBuffer *buf = nullptr;
+        if (!first_stage) {
+            buf = layered_mesh->getBuffer(0)->copy();
 
-        bool modified = true;
-        if (facedir)
-            MeshOperations::rotateMeshBy6dFacedir(buf, facedir);
-        else if (degrotate)
-            MeshOperations::rotateMeshXZby(buf, 1.5f * degrotate);
-        else
-            modified = false;
+            bool modified = true;
+            if (facedir)
+                MeshOperations::rotateMeshBy6dFacedir(buf, facedir);
+            else if (degrotate)
+                MeshOperations::rotateMeshXZby(buf, 1.5f * degrotate);
+            else
+                modified = false;
 
-        if (modified)
-            buf->recalculateBoundingBox();
+            if (modified)
+                buf->recalculateBoundingBox();
+        }
 
-        for (u8 k = 0; k < layered_mesh->getBufferLayersCount(0); k++) {
+        auto buffer_layers = layered_mesh->getBufferLayers(layered_mesh->getBuffer(0));
+        u8 k = 0;
+        for (const auto &buffer_layer : buffer_layers) {
             TileSpec tile;
             useTile(&tile, MYMIN(k, 5));
 
-            auto mp = layered_mesh->getBufferLayer(0, k).second;
-            auto layer = collector->findLayer(tile[0], SELECT_VERTEXTYPE(tile[0]),
-                mp.vertex_count, mp.count);
-            auto collector_buf = collector->getBuffer(layer.second.buffer_id);
+            const auto &mesh_part = buffer_layer.second;
+            if (first_stage)
+                mergeMeshPart(tile[0], NodeVType, mesh_part.vertex_count, mesh_part.count);
+            else {
+                auto collector_buf = findBuffer(tile[0], NodeVType, mesh_part.vertex_count, mesh_part.count);
 
-            for (u32 j = mp.vertex_offset; j < mp.vertex_offset + mp.vertex_count; j++) {
-                v3f pos = svtGetPos(buf, j);
-                pos += cur_node.origin;
+                for (u32 j = mesh_part.vertex_offset; j < mesh_part.vertex_offset + mesh_part.vertex_count; j++) {
+                    v3f pos = svtGetPos(buf, j);
+                    pos += cur_node.origin;
 
-                img::color8 color = svtGetColor(buf, j);
-                v3f normal = svtGetNormal(buf, j);
-                color = calculateVertexColor(pos, svtGetNormal(buf, j),
-                    cur_node.lighting, cur_node.f->light_source);
+                    img::color8 color = svtGetColor(buf, j);
+                    v3f normal = svtGetNormal(buf, j);
+                    color = calculateVertexColor(pos, normal,
+                         cur_node.lighting, cur_node.f->light_source);
 
-                //Batcher3D::vertex(collector_buf, pos, color, normal, svtGetUV(buf, j));
+                    Batcher3D::vertex(collector_buf, pos, color, normal, svtGetUV(buf, j));
+                }
+
+                for (u32 j = mesh_part.offset; j < mesh_part.offset + mesh_part.count; j++)
+                    Batcher3D::index(collector_buf, buf->getIndexAt(j));
             }
 
-            //for (u32 j = mp.offset; j < mp.offset + mp.count; j++)
-                //Batcher3D::index(collector_buf, buf->getIndexAt(j));
+            ++k;
         }
 
-        delete buf;
+        if (buf)
+            delete buf;
 	} else {
 		warningstream << "drawMeshNode(): missing mesh" << std::endl;
 		return;
@@ -953,7 +948,7 @@ void MeshGenerator::drawMeshNode()
 // HELPER FUNCTIONS (mostly same as original)
 // ============================================================================
 
-void MeshGenerator::drawPlantlikeQuad(const TileSpec &tile,
+void MeshGenerator::appendPlantlikeQuad(const TileSpec &tile,
 		float rotation, float quad_offset, bool offset_top_only)
 {
 	const f32 scale = cur_plant.scale;
@@ -1015,10 +1010,10 @@ void MeshGenerator::drawPlantlikeQuad(const TileSpec &tile,
 			cur_node.lighting, cur_node.f->light_source);
 	}
 
-	drawQuad(vertices, normals, colors, tile);
+    appendQuad(vertices, normals, colors, tile);
 }
 
-void MeshGenerator::drawPlantlike(const TileSpec &tile, bool is_rooted)
+void MeshGenerator::appendPlantlike(const TileSpec &tile, bool is_rooted)
 {
 	cur_plant.draw_style = PLANT_STYLE_CROSS;
 	cur_plant.offset = v3f(0, 0, 0);
@@ -1070,34 +1065,34 @@ void MeshGenerator::drawPlantlike(const TileSpec &tile, bool is_rooted)
 
 	switch (cur_plant.draw_style) {
 	case PLANT_STYLE_CROSS:
-		drawPlantlikeQuad(tile, 46);
-		drawPlantlikeQuad(tile, -44);
+        appendPlantlikeQuad(tile, 46);
+        appendPlantlikeQuad(tile, -44);
 		break;
 	case PLANT_STYLE_CROSS2:
-		drawPlantlikeQuad(tile, 91);
-		drawPlantlikeQuad(tile, 1);
+        appendPlantlikeQuad(tile, 91);
+        appendPlantlikeQuad(tile, 1);
 		break;
 	case PLANT_STYLE_STAR:
-		drawPlantlikeQuad(tile, 121);
-		drawPlantlikeQuad(tile, 241);
-		drawPlantlikeQuad(tile, 1);
+        appendPlantlikeQuad(tile, 121);
+        appendPlantlikeQuad(tile, 241);
+        appendPlantlikeQuad(tile, 1);
 		break;
 	case PLANT_STYLE_HASH:
-		drawPlantlikeQuad(tile,   1, BS/4);
-		drawPlantlikeQuad(tile,  91, BS/4);
-		drawPlantlikeQuad(tile, 181, BS/4);
-		drawPlantlikeQuad(tile, 271, BS/4);
+        appendPlantlikeQuad(tile,   1, BS/4);
+        appendPlantlikeQuad(tile,  91, BS/4);
+        appendPlantlikeQuad(tile, 181, BS/4);
+        appendPlantlikeQuad(tile, 271, BS/4);
 		break;
 	case PLANT_STYLE_HASH2:
-		drawPlantlikeQuad(tile,   1, -BS/2, true);
-		drawPlantlikeQuad(tile,  91, -BS/2, true);
-		drawPlantlikeQuad(tile, 181, -BS/2, true);
-		drawPlantlikeQuad(tile, 271, -BS/2, true);
+        appendPlantlikeQuad(tile,   1, -BS/2, true);
+        appendPlantlikeQuad(tile,  91, -BS/2, true);
+        appendPlantlikeQuad(tile, 181, -BS/2, true);
+        appendPlantlikeQuad(tile, 271, -BS/2, true);
 		break;
 	}
 }
 
-void MeshGenerator::drawFirelikeQuad(const TileSpec &tile,
+void MeshGenerator::appendFirelikeQuad(const TileSpec &tile,
 		float rotation, float opening_angle, float offset_h, float offset_v)
 {
 	const f32 scale = BS / 2 * cur_node.f->visual_scale;
@@ -1123,7 +1118,7 @@ void MeshGenerator::drawFirelikeQuad(const TileSpec &tile,
 			cur_node.lighting, cur_node.f->light_source);
 	}
 
-	drawQuad(vertices, normals, colors, tile);
+    appendQuad(vertices, normals, colors, tile);
 }
 
 // Liquid functions (keep as-is, already use unified lighting via cur_node.lighting)
@@ -1226,7 +1221,7 @@ f32 MeshGenerator::getCornerLevel(int i, int k) const
 	return 0;
 }
 
-void MeshGenerator::drawLiquidSides()
+void MeshGenerator::appendLiquidSides()
 {
 	struct LiquidFaceDesc {
 		v3s16 dir;
@@ -1295,11 +1290,11 @@ void MeshGenerator::drawLiquidSides()
 				cur_node.lighting, cur_node.f->light_source);
 		}
 
-		drawQuad(positions, normals, colors, cur_liquid.tile, &uv);
+        appendQuad(positions, normals, colors, cur_liquid.tile, &uv);
 	}
 }
 
-void MeshGenerator::drawLiquidTop()
+void MeshGenerator::appendLiquidTop()
 {
 	static const int corner_resolve[4][2] = {{0, 1}, {1, 1}, {1, 0}, {0, 0}};
 
@@ -1372,10 +1367,10 @@ void MeshGenerator::drawLiquidTop()
 			cur_node.lighting, cur_node.f->light_source);
 	}
 
-	drawQuad(positions, normals, colors, cur_liquid.tile_top, &uv);
+    appendQuad(positions, normals, colors, cur_liquid.tile_top, &uv);
 }
 
-void MeshGenerator::drawLiquidBottom()
+void MeshGenerator::appendLiquidBottom()
 {
 	std::array<v3f, 4> positions = {
 		v3f(-BS/2, -BS/2, -BS/2),
@@ -1392,7 +1387,7 @@ void MeshGenerator::drawLiquidBottom()
 			cur_node.lighting, cur_node.f->light_source);
 	}
 
-	drawQuad(positions, normals, colors, cur_liquid.tile_top, &uv);
+    appendQuad(positions, normals, colors, cur_liquid.tile_top, &uv);
 }
 
 // Node tile functions (same as original)
@@ -1403,11 +1398,11 @@ void MeshGenerator::getNodeTileN(MapNode mn, const v3s16 &p, u8 tileindex, MeshM
 	const ContentFeatures &f = ndef->get(mn);
 	tile = f.tiles[tileindex];
 	
-	for (auto layer : tile) {
-		if (!layer->tile_ref)
+    for (auto &layer : tile) {
+        if (!layer.tile_ref)
 			continue;
-		if (!(layer->material_flags & MATERIAL_FLAG_HARDWARE_COLORIZED))
-			mn.getColor(f, &(layer->color));
+        if (!(layer.material_flags & MATERIAL_FLAG_HARDWARE_COLORIZED))
+            mn.getColor(f, &(layer.color));
 	}
 }
 
@@ -1462,8 +1457,9 @@ void MeshGenerator::getNodeTile(MapNode mn, const v3s16 &p, const v3s16 &dir, Me
 	};
 	
 	getNodeTileN(mn, p, dir_to_tile[facedir][dir_i].tile, data, tile);
-	tile[0]->rotation = tile[0]->material_flags & MATERIAL_FLAG_WORLD_ALIGNED ? TileRotation::RNone : dir_to_tile[facedir][dir_i].rotation;
-	tile[1]->rotation = tile[1]->material_flags & MATERIAL_FLAG_WORLD_ALIGNED ? TileRotation::RNone : dir_to_tile[facedir][dir_i].rotation;
+
+    for (auto &layer : tile)
+        layer.rotation = layer.material_flags & MATERIAL_FLAG_WORLD_ALIGNED ? TileRotation::RNone : dir_to_tile[facedir][dir_i].rotation;
 }
 
 bool MeshGenerator::isSameRail(v3s16 dir)
@@ -1513,7 +1509,7 @@ void MeshGenerator::errorUnknownDrawtype()
 	FATAL_ERROR("Unknown drawtype");
 }
 
-void MeshGenerator::drawNode()
+void MeshGenerator::appendNode()
 {
 	if (cur_node.f->drawtype == NDT_AIRLIKE)
 		return;
@@ -1526,20 +1522,20 @@ void MeshGenerator::drawNode()
 
 	switch (cur_node.f->drawtype) {
 	case NDT_LIQUID:
-	case NDT_NORMAL:            drawSolidNode(); break;
-	case NDT_FLOWINGLIQUID:     drawLiquidNode(); break;
-	case NDT_GLASSLIKE:         drawGlasslikeNode(); break;
-	case NDT_GLASSLIKE_FRAMED:  drawGlasslikeFramedNode(); break;
-	case NDT_ALLFACES:          drawAllfacesNode(); break;
-	case NDT_TORCHLIKE:         drawTorchlikeNode(); break;
-	case NDT_SIGNLIKE:          drawSignlikeNode(); break;
-	case NDT_PLANTLIKE:         drawPlantlikeNode(); break;
-	case NDT_PLANTLIKE_ROOTED:  drawPlantlikeRootedNode(); break;
-	case NDT_FIRELIKE:          drawFirelikeNode(); break;
-	case NDT_FENCELIKE:         drawFencelikeNode(); break;
-	case NDT_RAILLIKE:          drawRaillikeNode(); break;
-	case NDT_NODEBOX:           drawNodeboxNode(); break;
-	case NDT_MESH:              drawMeshNode(); break;
+    case NDT_NORMAL:            appendSolidNode(); break;
+    case NDT_FLOWINGLIQUID:     appendLiquidNode(); break;
+    case NDT_GLASSLIKE:         appendGlasslikeNode(); break;
+    case NDT_GLASSLIKE_FRAMED:  appendGlasslikeFramedNode(); break;
+    case NDT_ALLFACES:          appendAllfacesNode(); break;
+    case NDT_TORCHLIKE:         appendTorchlikeNode(); break;
+    case NDT_SIGNLIKE:          appendSignlikeNode(); break;
+    case NDT_PLANTLIKE:         appendPlantlikeNode(); break;
+    case NDT_PLANTLIKE_ROOTED:  appendPlantlikeRootedNode(); break;
+    case NDT_FIRELIKE:          appendFirelikeNode(); break;
+    case NDT_FENCELIKE:         appendFencelikeNode(); break;
+    case NDT_RAILLIKE:          appendRaillikeNode(); break;
+    case NDT_NODEBOX:           appendNodeboxNode(); break;
+    case NDT_MESH:              appendMeshNode(); break;
 	default:                    errorUnknownDrawtype(); break;
 	}
 }
@@ -1548,17 +1544,127 @@ void MeshGenerator::generate()
 {
 	ZoneScoped;
 
+    allocate();
+
+    first_stage = false;
+
 	for (cur_node.p.Z = 0; cur_node.p.Z < data->m_side_length; cur_node.p.Z++)
 	for (cur_node.p.Y = 0; cur_node.p.Y < data->m_side_length; cur_node.p.Y++)
 	for (cur_node.p.X = 0; cur_node.p.X < data->m_side_length; cur_node.p.X++) {
 		cur_node.n = data->m_vmanip.getNodeNoEx(blockpos_nodes + cur_node.p);
 		cur_node.f = &nodedef->get(cur_node.n);
-		drawNode();
+        appendNode();
 	}
 }
 
+void MeshGenerator::mergeMeshPart(const TileLayer &layer,
+    render::VertexTypeDescriptor vType,
+    u32 vertexCount, u32 indexCount)
+{
+    for (u8 i = 0; i < interim_buffers.size(); i++) {
+        auto &buffer = interim_buffers.at(i).first;
+        // The buffer is overfilled or vertex type is different from the required one
+        if (((u64)buffer.vertexCount + vertexCount > (u64)T_MAX(u32)) ||
+            (vType.Name != buffer.vertexType.Name))
+            continue;
+
+        buffer.vertexCount += vertexCount;
+        buffer.indexCount += indexCount;
+
+        auto &buf_layer = interim_buffers.at(i).second[layer];
+        buf_layer.vertexCount += vertexCount;
+        buf_layer.indexCount += indexCount;
+
+        return;
+    }
+
+    InterimBuffer buffer = {vType, vertexCount, indexCount};
+    InterimBufferLayers buf_layers;
+    buf_layers[layer].vertexCount = vertexCount;
+    buf_layers[layer].indexCount = indexCount;
+    interim_buffers.emplace_back(buffer, buf_layers);
+}
+
+MeshBuffer *MeshGenerator::findBuffer(const TileLayer &layer,
+    render::VertexTypeDescriptor vType,
+    u32 vertexCount, u32 indexCount)
+{
+    for (u8 buf_i = 0; buf_i < collector->getBuffersCount(); buf_i++) {
+        auto buffer = collector->getBuffer(buf_i);
+
+        auto &buf_layer = interim_buffers.at(buf_i).second[layer];
+
+        if (buffer->getVertexType().Name != vType.Name || buf_layer.vertexCount == 0)
+            continue;
+
+        buffer->setVertexOffset(buf_layer.curVertexOffset);
+        buffer->setIndexOffset(buf_layer.curIndexOffset);
+        buf_layer.curVertexOffset += vertexCount;
+        buf_layer.curIndexOffset += indexCount;
+
+        return buffer;
+    }
+
+    return nullptr;
+}
+
+void MeshGenerator::allocate()
+{
+    for (cur_node.p.Z = 0; cur_node.p.Z < data->m_side_length; cur_node.p.Z++)
+    for (cur_node.p.Y = 0; cur_node.p.Y < data->m_side_length; cur_node.p.Y++)
+    for (cur_node.p.X = 0; cur_node.p.X < data->m_side_length; cur_node.p.X++) {
+        cur_node.n = data->m_vmanip.getNodeNoEx(blockpos_nodes + cur_node.p);
+        cur_node.f = &nodedef->get(cur_node.n);
+
+        switch (cur_node.f->drawtype) {
+        case NDT_AIRLIKE:           break;
+        case NDT_LIQUID:
+        case NDT_NORMAL:            appendSolidNode(); break;
+        case NDT_FLOWINGLIQUID:     appendLiquidNode(); break;
+        case NDT_GLASSLIKE:         appendGlasslikeNode(); break;
+        case NDT_GLASSLIKE_FRAMED:  appendGlasslikeFramedNode(); break;
+        case NDT_ALLFACES:          appendAllfacesNode(); break;
+        case NDT_TORCHLIKE:         appendTorchlikeNode(); break;
+        case NDT_SIGNLIKE:          appendSignlikeNode(); break;
+        case NDT_PLANTLIKE:         appendPlantlikeNode(); break;
+        case NDT_PLANTLIKE_ROOTED:  appendPlantlikeRootedNode(); break;
+        case NDT_FIRELIKE:          appendFirelikeNode(); break;
+        case NDT_FENCELIKE:         appendFencelikeNode(); break;
+        case NDT_RAILLIKE:          appendRaillikeNode(); break;
+        case NDT_NODEBOX:           appendNodeboxNode(); break;
+        case NDT_MESH:              appendMeshNode(); break;
+        default:                    errorUnknownDrawtype(); break;
+        }
+    }
+
+    for (auto &buffer : interim_buffers) {
+        auto mesh_buffer = new MeshBuffer(
+            buffer.first.vertexCount, buffer.first.indexCount, true, buffer.first.vertexType,
+            render::MeshUsage::STATIC, true);
+        collector->addNewBuffer(mesh_buffer);
+
+        u32 vertex_offset = 0;
+        u32 index_offset = 0;
+
+        for (auto &layer : buffer.second) {
+            layer.second.curVertexOffset = vertex_offset;
+            layer.second.curIndexOffset = index_offset;
+
+            LayeredMeshPart mesh_part = {
+                mesh_buffer, layer.first, layer.second.curIndexOffset, layer.second.indexCount
+            };
+            mesh_part.vertex_offset = layer.second.curVertexOffset;
+            mesh_part.vertex_count = layer.second.vertexCount;
+            collector->addNewLayer(mesh_buffer, layer.first, mesh_part);
+
+            vertex_offset += layer.second.vertexCount;
+            index_offset += layer.second.indexCount;
+        }
+    }
+}
+
 // Glasslike framed - keep as original for now (complex, needs full rewrite)
-void MeshGenerator::drawGlasslikeFramedNode()
+void MeshGenerator::appendGlasslikeFramedNode()
 {
 	// TODO: Implement with unified lighting
 	// For now, call original implementation

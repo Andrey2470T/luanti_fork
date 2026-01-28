@@ -29,22 +29,29 @@ class MeshBuffer
     SubMeshBuffer VBuffer;
     SubMeshBuffer IBuffer;
 
+    render::VertexTypeDescriptor Descriptor;
+
     std::shared_ptr<render::Mesh> VAO;
 
 	aabbf BoundingBox;
 public:
     // Creates either VERTEX or VERTEX_INDEX buffer types
     MeshBuffer(bool createIBO = true, const render::VertexTypeDescriptor &descr=render::DefaultVType,
-        render::MeshUsage usage=render::MeshUsage::STATIC, bool uploadData=true);
+        render::MeshUsage usage=render::MeshUsage::STATIC, bool deferUpload=false);
     // Creates either VERTEX or VERTEX_INDEX buffer types allocating the storage for 'vertexCount' and 'indexCount'
     MeshBuffer(u32 vertexCount, u32 indexCount=0, bool createIBO = true,
         const render::VertexTypeDescriptor &descr=render::DefaultVType,
-        render::MeshUsage usage=render::MeshUsage::STATIC, bool uploadData=true);
+        render::MeshUsage usage=render::MeshUsage::STATIC, bool deferUpload=false);
 
 	MeshBufferType getType() const
 	{
         return Type;
 	}
+
+    render::VertexTypeDescriptor getVertexType() const
+    {
+        return Descriptor;
+    }
 
     u32 getVertexCount() const
     {
@@ -57,7 +64,7 @@ public:
 
 	render::Mesh *getVAO() const
 	{
-        return VAO.get();
+        return VAO ? VAO.get() : nullptr;
 	}
 
     u8 getUInt8Attr(u32 attrN, u32 vertexN) const;
@@ -122,6 +129,8 @@ public:
 
     void uploadData();
 
+    void flush();
+
     void clear();
 
 	MeshBuffer *copy() const;
@@ -133,7 +142,7 @@ public:
 
     bool operator==(const MeshBuffer *other_buffer) const
     {
-        return VAO.get() == other_buffer->getVAO();
+        return VAO ? (VAO.get() == other_buffer->getVAO()) : false;
     }
 private:
     void initData(u32 vertexCount=0, u32 indexCount=0);

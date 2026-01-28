@@ -38,35 +38,6 @@ std::vector<BufferLayer> LayeredMesh::getAllLayers() const
     return all_layers;
 }
 
-LayeredMeshPart *LayeredMesh::findLayer(
-    std::shared_ptr<TileLayer> layer,
-    render::VertexTypeDescriptor vType,
-    u32 vertexCount, u32 indexCount)
-{
-    for (u8 i = 0; i < getBuffersCount(); i++) {
-        auto buffer = getBuffer(i);
-
-        // The buffer is overfilled or vertex type is different from the required one
-        if (((u64)buffer->getVertexCount() + vertexCount > (u64)T_MAX(u32)) ||
-                (vType.Name != buffer->getVAO()->getVertexType().Name))
-            continue;
-
-        auto &buf_layers = layers[buffer];
-        auto &mesh_part = buf_layers[layer];
-
-        mesh_part.buf_ref = buffer;
-        mesh_part.layer = layer;
-        mesh_part.count += indexCount;
-        mesh_part.vertex_count += vertexCount;
-
-        recalculateBoundingRadius();
-
-        return &mesh_part;
-    }
-
-    return nullptr;
-}
-
 void LayeredMesh::recalculateBoundingRadius()
 {
     radius_sq = 0.0f;
@@ -87,7 +58,7 @@ void LayeredMesh::splitTransparentLayers()
 	for (u8 buf_i = 0; buf_i < getBuffersCount(); buf_i++) {
         auto buffer = getBuffer(buf_i);
         for (auto &layer : layers[buffer]) {
-			if (!(layer.first->material_flags & MATERIAL_FLAG_TRANSPARENT))
+            if (!(layer.first.material_flags & MATERIAL_FLAG_TRANSPARENT))
 			    continue;
 			
 			auto &layer_indices = layer.second.indices;
@@ -117,8 +88,8 @@ void LayeredMesh::updateIndexBuffers()
 	// Firstly render solid layers
 	for (u8 buf_i = 0; buf_i < getBuffersCount(); buf_i++) {
         auto buffer = getBuffer(buf_i);
-        for (auto &layer : layers[getBuffer(buf_i)]) {
-			if (!(layer.first->material_flags & MATERIAL_FLAG_TRANSPARENT)) {
+        for (auto &layer : layers[buffer]) {
+            if (!(layer.first.material_flags & MATERIAL_FLAG_TRANSPARENT)) {
                 layer.second.offset = bufs_indices[buffer].first;
 				layer.second.count = layer.second.indices.size();
 
@@ -133,14 +104,14 @@ void LayeredMesh::updateIndexBuffers()
 	partial_layers.clear();
 	
 	MeshBuffer *last_buf = nullptr;
-	std::shared_ptr<TileLayer> last_layer;
+    TileLayer last_layer;
 	for (auto &trig : transparent_triangles) {
 		bool add_partial_layer = true;
 		if (!last_buf) {
 			last_buf = trig.buf_ref;
 			last_layer = trig.layer;
 		}
-        else if (*last_buf == trig.buf_ref && *last_layer == *trig.layer) {
+        else if (*last_buf == trig.buf_ref && last_layer == trig.layer) {
 			partial_layers.back().count += 3;
 			add_partial_layer = false;
         }
@@ -171,7 +142,7 @@ void LayeredMesh::updateIndexBuffers()
 
 bool LayeredMesh::isHardwareHolorized(u8 buf_i) const
 {
-    return buffers.at(buf_i)->getVAO()->getVertexType().Name == "TwoColorNode3D";
+    return buffers.at(buf_i)->getVertexType().Name == "TwoColorNode3D";
 }
 
 	

@@ -13,6 +13,16 @@ enum Batcher3DVertexType
     B3DVT_AOVT
 };
 
+enum class BoxFaces
+{
+    TOP = 0,
+    BOTTOM,
+    RIGHT,
+    LEFT,
+    BACK,
+    FRONT
+};
+
 // Class creating meshbuffers of various 3D shapes (point, line, quad, cube and etc)
 class Batcher3D
 {
@@ -87,6 +97,13 @@ public:
     {
         box(buf, {v3f(-1.0f, -1.0f, -1.0f), v3f(1.0f, 1.0f, 1.0f)}, colors);
     }
+    static void boxFace(
+        MeshBuffer *buf,
+        BoxFaces faceNum,
+        const aabbf &box,
+        const std::array<img::color8, 24> &colors,
+        const std::array<rectf, 6> *uvs=nullptr,
+        u8 mask=0xff);
     static void lineBox(
         MeshBuffer *buf,
         const aabbf &box,

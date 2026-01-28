@@ -318,14 +318,6 @@ void ContentFeatures::reset()
 		Cached stuff
 	*/
 #if CHECK_CLIENT_BUILD()
-    for (u8 i = 0; i < 6; i++) {
-        tiles[i][0] = std::make_shared<TileLayer>();
-        tiles[i][1] = std::make_shared<TileLayer>();
-    }
-    for (u8 i = 0; i < CF_SPECIAL_COUNT; i++) {
-        special_tiles[i][0] = std::make_shared<TileLayer>();
-        special_tiles[i][1] = std::make_shared<TileLayer>();
-    }
 	solidness = 2;
 	visual_solidness = 0;
 	backface_culling = true;
@@ -665,64 +657,64 @@ void ContentFeatures::deSerialize(std::istream &is, u16 protocol_version)
 
 #if CHECK_CLIENT_BUILD()
 static void fillTileAttribs(AtlasPool *basic_pool, ResourceCache *cache,
-        std::shared_ptr<TileLayer> layer,
+        TileLayer &layer,
         const TileSpec &tile, const TileDef &tiledef, img::color8 color,
         u8 material_type, bool backface_culling,
         const ImageSettings &tsettings)
 {
-    layer->tile_ref = cache->getOrLoad<img::Image>(ResourceType::IMAGE, tiledef.name, true, true, true);
+    layer.tile_ref = cache->getOrLoad<img::Image>(ResourceType::IMAGE, tiledef.name, true, true, true);
 
-    layer->material_type = material_type;
+    layer.material_type = material_type;
 
     bool has_scale = tiledef.scale > 0;
     bool use_autoscale = tsettings.autoscale_mode == AUTOSCALE_FORCE ||
         (tsettings.autoscale_mode == AUTOSCALE_ENABLE && !has_scale);
-    if (use_autoscale && layer->tile_ref) {
-        auto img_size = layer->tile_ref->getSize();
+    if (use_autoscale && layer.tile_ref) {
+        auto img_size = layer.tile_ref->getSize();
         float base_size = tsettings.node_texture_size;
         float size = std::fmin(img_size.X, img_size.Y);
-        layer->scale = std::fmax(base_size, size) / base_size;
+        layer.scale = std::fmax(base_size, size) / base_size;
     } else if (has_scale) {
-        layer->scale = tiledef.scale;
+        layer.scale = tiledef.scale;
     } else {
-        layer->scale = 1;
+        layer.scale = 1;
     }
-    if (!(layer->material_flags & MATERIAL_FLAG_WORLD_ALIGNED)) layer->scale = 1;
+    if (!(layer.material_flags & MATERIAL_FLAG_WORLD_ALIGNED)) layer.scale = 1;
 
 	// Material flags
 	if (backface_culling)
-		layer->material_flags |= MATERIAL_FLAG_BACKFACE_CULLING;
+        layer.material_flags |= MATERIAL_FLAG_BACKFACE_CULLING;
 	if (tiledef.animation.type != TAT_NONE)
-		layer->material_flags |= MATERIAL_FLAG_ANIMATION;
+        layer.material_flags |= MATERIAL_FLAG_ANIMATION;
 
 	// Color
     if (tiledef.has_color) {
-        layer->material_flags |= MATERIAL_FLAG_HARDWARE_COLORIZED;
-		layer->color = tiledef.color;
+        layer.material_flags |= MATERIAL_FLAG_HARDWARE_COLORIZED;
+        layer.color = tiledef.color;
     }
 	else
-		layer->color = color;
+        layer.color = color;
 
 
 	// Animation parameters
     s32 frame_count = 1;
     s32 frame_length_ms = 0;
-	if (layer->material_flags & MATERIAL_FLAG_ANIMATION) {
-        assert(layer->tile_ref);
+    if (layer.material_flags & MATERIAL_FLAG_ANIMATION) {
+        assert(layer.tile_ref);
 		int frame_length_ms = 0;
-        tiledef.animation.determineParams(layer->tile_ref->getSize(),
+        tiledef.animation.determineParams(layer.tile_ref->getSize(),
 				&frame_count, &frame_length_ms, NULL);
-		layer->animation_frame_count = frame_count;
-        layer->animation_frame_length_ms = frame_length_ms;
+        layer.animation_frame_count = frame_count;
+        layer.animation_frame_length_ms = frame_length_ms;
 	}
 
     if (frame_count == 1)
-		layer->material_flags &= ~MATERIAL_FLAG_ANIMATION;
+        layer.material_flags &= ~MATERIAL_FLAG_ANIMATION;
 
-    if (layer->material_flags & MATERIAL_FLAG_ANIMATION)
-        basic_pool->addAnimatedTile(layer->tile_ref, {frame_length_ms, frame_count});
+    if (layer.material_flags & MATERIAL_FLAG_ANIMATION)
+        basic_pool->addAnimatedTile(layer.tile_ref, {frame_length_ms, frame_count});
     else
-        basic_pool->addTile(layer->tile_ref);
+        basic_pool->addTile(layer.tile_ref);
 }
 
 static bool isWorldAligned(AlignStyle style, WorldAlignMode mode, NodeDrawType drawtype)
@@ -894,8 +886,8 @@ void ContentFeatures::updateTextures(Client *client, const ImageSettings &tsetti
 	for (u16 j = 0; j < 6; j++) {
         if (isWorldAligned(tdef[j].align_style,
                            tsettings.world_aligned_mode, drawtype)) {
-            tiles[j][0]->material_flags |= MATERIAL_FLAG_WORLD_ALIGNED;
-            tiles[j][1]->material_flags |= MATERIAL_FLAG_WORLD_ALIGNED;
+            tiles[j][0].material_flags |= MATERIAL_FLAG_WORLD_ALIGNED;
+            tiles[j][1].material_flags |= MATERIAL_FLAG_WORLD_ALIGNED;
         }
 
         fillTileAttribs(basic_pool, cache, tiles[j][0], tiles[j], tdef[j],

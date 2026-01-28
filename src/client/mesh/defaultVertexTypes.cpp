@@ -76,7 +76,7 @@ img::color8 svtGetColor(MeshBuffer *buf, u32 num)
 }
 v3f svtGetNormal(MeshBuffer *buf, u32 num)
 {
-    auto vertexType = buf->getVAO()->getVertexType();
+    auto vertexType = buf->getVertexType();
 
     if (vertexType.InitNormal)
         return buf->getV3FAttr(2, num);
@@ -84,7 +84,7 @@ v3f svtGetNormal(MeshBuffer *buf, u32 num)
 }
 v2f svtGetUV(MeshBuffer *buf, u32 num)
 {
-    auto vertexType = buf->getVAO()->getVertexType();
+    auto vertexType = buf->getVertexType();
     if (vertexType.Name == "Standard2D")
         return buf->getV2FAttr(2, num);
     else
@@ -92,7 +92,7 @@ v2f svtGetUV(MeshBuffer *buf, u32 num)
 }
 v3f svtGetUV3D(MeshBuffer *buf, u32 num)
 {
-    auto vertexType = buf->getVAO()->getVertexType();
+    auto vertexType = buf->getVertexType();
 
     if (vertexType.InitUV && vertexType.UVCount == 3)
         return buf->getV3FAttr(3, num);
@@ -106,7 +106,7 @@ img::color8 svtGetHWColor(MeshBuffer *buf, u32 num)
 {
     u32 attr_n = 4;
 
-    if (buf->getVAO()->getVertexType().Name == "TwoColorNode3D") {
+    if (buf->getVertexType().Name == "TwoColorNode3D") {
         attr_n = 5;
         return buf->getRGBAttr(attr_n, num);
     }
@@ -130,14 +130,14 @@ void svtSetColor(MeshBuffer *buf, const img::color8 &c, u32 num)
 }
 void svtSetNormal(MeshBuffer *buf, const v3f &normal, u32 num)
 {
-    auto vertexType = buf->getVAO()->getVertexType();
+    auto vertexType = buf->getVertexType();
 
     if (vertexType.InitNormal)
         buf->setV3FAttr(normal, 2, num);
 }
 void svtSetUV(MeshBuffer *buf, const v2f &uv, u32 num)
 {
-    auto vertexType = buf->getVAO()->getVertexType();
+    auto vertexType = buf->getVertexType();
 
     if (vertexType.InitUV && vertexType.UVCount == 2) {
         if (vertexType.Name == "Standard2D")
@@ -149,7 +149,7 @@ void svtSetUV(MeshBuffer *buf, const v2f &uv, u32 num)
 
 void svtSetUV3D(MeshBuffer *buf, const v3f &uv, u32 num)
 {
-    auto vertexType = buf->getVAO()->getVertexType();
+    auto vertexType = buf->getVertexType();
 
     if (vertexType.InitUV && vertexType.UVCount == 3)
         buf->setV3FAttr(uv, 3, num);
@@ -164,7 +164,7 @@ void svtSetHWColor(MeshBuffer *buf, const img::color8 &hw_c, u32 num)
 {
     u32 attr_n = 4;
 
-    if (buf->getVAO()->getVertexType().Name == "TwoColorNode3D") {
+    if (buf->getVertexType().Name == "TwoColorNode3D") {
         attr_n = 5;
         buf->setRGBAAttr(hw_c, attr_n, num);
     }
@@ -175,7 +175,7 @@ void svtSetHWColor(MeshBuffer *buf, const img::color8 &hw_c, u32 num)
 
 void fillEmptyCustomAttribs(MeshBuffer *buf, u8 firstCustomAtrribIndex)
 {
-    auto vertexType = buf->getVAO()->getVertexType();
+    auto vertexType = buf->getVertexType();
 
     for (u8 i = firstCustomAtrribIndex; i < vertexType.Attributes.size(); i++) {
         auto &attrib = vertexType.Attributes[i];
@@ -247,7 +247,7 @@ void SVT(
     buf->setV3FAttr(pos, 0);
     buf->setRGBAAttr(c, 1);
 
-    auto vertexType = buf->getVAO()->getVertexType();
+    auto vertexType = buf->getVertexType();
 
     if (vertexType.InitNormal) {
         buf->setV3FAttr(normal, 2);
@@ -267,7 +267,7 @@ void NVT(
     MeshBuffer *buf, const v3f &pos, const img::color8 &c,
     const v3f &normal, const v2f &uv, u8 matType)
 {
-    assert(buf->getVAO()->getVertexType().Name == "Node3D");
+    assert(buf->getVertexType().Name == "Node3D");
 
     buf->setV3FAttr(pos, 0);
     buf->setRGBAAttr(c, 1);
@@ -281,7 +281,7 @@ void TCNVT(
     MeshBuffer *buf, const v3f &pos, const img::color8 &c,
     const v3f &normal, const v2f &uv, u8 matType, const img::color8 &hw_c)
 {
-    assert(buf->getVAO()->getVertexType().Name == "TwoColorNode3D");
+    assert(buf->getVertexType().Name == "TwoColorNode3D");
 
     buf->setV3FAttr(pos, 0);
     buf->setRGBAAttr(c, 1);
@@ -296,7 +296,7 @@ void TCNVT(
 void VT2D(
     MeshBuffer *buf, const v2f &pos, const img::color8 &c, const v2f &uv)
 {
-    assert(buf->getVAO()->getVertexType().Name == "Standard2D");
+    assert(buf->getVertexType().Name == "Standard2D");
 
     buf->setV2FAttr(pos, 0);
     buf->setRGBAAttr(c, 1);
@@ -307,7 +307,7 @@ void AOVT(
     MeshBuffer *buf, const v3f &pos, const img::color8 &c,
     const v3f &normal, const v2f &uv, u8 matType, const v2f &bones, const v2f &weights)
 {
-    assert(buf->getVAO()->getVertexType().Name == "AnimatedObject3D");
+    assert(buf->getVertexType().Name == "AnimatedObject3D");
 
     buf->setV3FAttr(pos, 0);
     buf->setRGBAAttr(c, 1);
@@ -322,7 +322,7 @@ void SBVT(
     MeshBuffer *buf, const v3f &pos, const img::color8 &c,
     const v3f &normal, const v2f &uv, const img::color8 &hw_c)
 {
-    assert(buf->getVAO()->getVertexType().Name == "Skybox3D");
+    assert(buf->getVertexType().Name == "Skybox3D");
 
     buf->setV3FAttr(pos, 0);
     buf->setRGBAAttr(c, 1);

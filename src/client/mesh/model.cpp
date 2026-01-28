@@ -157,7 +157,7 @@ void Model::processMesh(u8 mat_i, const std::vector<aiMesh *> &meshes)
     std::shared_ptr<TileLayer> tilelayer = std::make_shared<TileLayer>();
     mesh->addNewLayer(tilelayer, mesh_part);
 
-    auto vType = buf->getVAO()->getVertexType();
+    auto vType = buf->getVertexType();
 
     for (u32 i = 0; i < meshes.size(); i++) {
         auto m = meshes[i];
