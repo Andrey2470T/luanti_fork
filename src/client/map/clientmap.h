@@ -34,13 +34,11 @@ public:
 	*/
     MapSector *emergeSector(v2s16 p) override;
 
-	void getBlocksInViewRange(v3s16 cam_pos_nodes,
-		v3s16 *p_blocks_min, v3s16 *p_blocks_max, float range=-1.0f);
+    void getBlocksInViewRange(v3s16 cam_pos_nodes,
+        v3s16 *p_blocks_min, v3s16 *p_blocks_max, float range=-1.0f);
 
     void update();
-    void updateShadowBlocks(const v3f &shadow_light_pos, const v3f &shadow_light_dir, f32 radius);
-	// @brief Calculate statistics about the map and keep the blocks alive
-	void touchMapBlocks();
+    //void updateShadowBlocks(const v3f &shadow_light_pos, const v3f &shadow_light_dir, f32 radius);
 
     bool addActiveObject(u16 id);
     void updateMapBlocksActiveObjects();
@@ -82,9 +80,6 @@ protected:
 private:
 	Client *m_client;
 
-    std::list<MapBlock*> m_visible_mapblocks;
-    std::list<MapBlock*> m_visible_shadow_mapblocks;
-
     std::unique_ptr<MeshUpdateManager> m_mesh_update_manager;
 
     std::list<u16> m_pending_to_add_caos;
@@ -99,5 +94,4 @@ private:
 
     const f32 update_draw_list_delta = 0.2f;
     f32 update_draw_list_timer = 0.0f;
-    f32 touch_blocks_timer = 0.0f;
 };

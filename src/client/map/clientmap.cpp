@@ -104,13 +104,6 @@ void ClientMap::update()
     ScopeProfiler sp(g_profiler, "CM::update()", SPT_AVG);
 
     auto drawlist = m_client->getRenderSystem()->getDrawList();
-    drawlist->lockMeshes();
-
-    for (auto &block : m_visible_mapblocks) {
-        block->mesh->removeFromDrawList(drawlist);
-		block->refDrop();
-	}
-    m_visible_mapblocks.clear();
 
     const v3s16 cam_pos_nodes = floatToInt(m_client->getEnv().getLocalPlayer()->getCamera()->getPosition(), BS);
 
@@ -139,27 +132,26 @@ void ClientMap::update()
         // Loop through blocks in sector
         sector->getBlocks(sectorblocks);
         for (auto &block : sectorblocks) {
-            MapBlockMesh *mesh = block->mesh;
-
-            if (!mesh)
-                continue;
-
-            m_visible_mapblocks.push_back(block);
-
-            mesh->addInDrawList(drawlist);
-
             block->resetUsageTimer();
-            blocks_in_range_with_mesh++;
+
+            if (block->mesh) {
+                // Upload new mapblock mesh buffers to GPU
+                if (!block->mesh->m_upload) {
+                    auto mesh = block->mesh->getMesh();
+                    for (u8 buf_i = 0; buf_i < mesh->getBuffersCount(); buf_i++)
+                        mesh->getBuffer(buf_i)->flush();
+                    block->mesh->m_upload = false;
+                }
+                blocks_in_range_with_mesh++;
+            }
         }
 	}
-
-    drawlist->unlockMeshes();
 
     g_profiler->avg("MapBlocks loaded [#]", blocks_loaded);
     g_profiler->avg("MapBlocks with mesh [#]", blocks_in_range_with_mesh);
 }
 
-void ClientMap::updateShadowBlocks(const v3f &shadow_light_pos, const v3f &shadow_light_dir, f32 radius)
+/*void ClientMap::updateShadowBlocks(const v3f &shadow_light_pos, const v3f &shadow_light_dir, f32 radius)
 {
     ScopeProfiler sp(g_profiler, "CM::updateShadowBlocks()", SPT_AVG);
 
@@ -210,21 +202,7 @@ void ClientMap::updateShadowBlocks(const v3f &shadow_light_pos, const v3f &shado
 
     g_profiler->avg("MapBlocks loaded [#]", blocks_loaded);
     g_profiler->avg("MapBlocks with mesh [#]", blocks_in_range_with_mesh);
-}
-
-void ClientMap::touchMapBlocks()
-{
-    auto control = m_client->getRenderSystem()->getDrawList()->getDrawControl();
-    if (control.range_all)
-		return;
-
-	ScopeProfiler sp(g_profiler, "CM::touchMapBlocks()", SPT_AVG);
-
-    for (auto &visible_block : m_visible_mapblocks) {
-        // Keep the block alive as long as it is in range.
-        visible_block->resetUsageTimer();
-    }
-}
+}*/
 
 bool ClientMap::addActiveObject(u16 id)
 {
@@ -232,6 +210,8 @@ bool ClientMap::addActiveObject(u16 id)
 
     v3s16 blockpos = getContainerPos(floatToInt(cao->getPosition(), BS), BS);
 
+    // If the mapblock in which the AO is locating is not loaded yet,
+    // wait until it is not loaded, after add in updateMapBlocksActiveObjects()
     if (!getBlockNoCreateNoEx(blockpos)) {
         m_pending_to_add_caos.push_back(id);
         return false;
@@ -250,11 +230,13 @@ bool ClientMap::addActiveObject(u16 id)
 
 void ClientMap::updateMapBlocksActiveObjects()
 {
+    // Add pending objects in which mapblocks
     auto it = m_pending_to_add_caos.begin();
     while (it != m_pending_to_add_caos.end()) {
         if (addActiveObject(*it))
             m_pending_to_add_caos.erase(it);
     }
+    // If AOs moved in another mapblocks, update their active objects sets
     for (auto &sector_it : m_sectors) {
         MapBlockVect sectorblocks;
         sector_it.second->getBlocks(sectorblocks);
@@ -266,7 +248,7 @@ void ClientMap::updateMapBlocksActiveObjects()
 
                 if (blockpos != block->getPos()) {
                     block->mesh->removeActiveObject(ao_id);
-                    getBlockNoCreate(blockpos)->mesh->addActiveObject(ao_id);
+                    addActiveObject(ao_id);
                 }
             }
         }
@@ -605,15 +587,11 @@ void ClientMap::step(f32 dtime)
             shadow_renderer->setForceUpdateShadowMap();*/
     }
 
-
-    updateMapBlocksActiveObjects();
-
     /*
         Update block draw list every 200ms or when camera direction has
         changed much
     */
     update_draw_list_timer += dtime;
-    touch_blocks_timer += dtime;
 
     auto camera = m_client->getEnv().getLocalPlayer()->getCamera();
 
@@ -622,11 +600,10 @@ void ClientMap::step(f32 dtime)
     if (update_draw_list_timer >= update_draw_list_delta
             || camera->isNecessaryUpdateDrawList()
     ) {
+        updateMapBlocksActiveObjects();
+        m_client->getRenderSystem()->getDrawList()->forceUpdate();
         update_draw_list_timer = 0;
         update();
-    } else if (touch_blocks_timer > update_draw_list_delta) {
-        touchMapBlocks();
-        touch_blocks_timer = 0;
     }
     /* else if (RenderingEngine::get_shadow_renderer()) {
         updateShadows();

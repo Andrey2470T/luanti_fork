@@ -108,14 +108,13 @@ public:
     {
         return m_active_objects;
     }
-
-    void addInDrawList(DistanceSortedDrawList *drawlist, bool shadow=false);
-    void removeFromDrawList(DistanceSortedDrawList *drawlist, bool shadow=false);
+    bool m_upload = true;
 
 private:
-    Client *m_client;
+    void addInDrawList(bool shadow=false);
+    void removeFromDrawList(bool shadow=false);
 
-    bool uploaded = false;
+    Client *m_client;
 
 	std::unique_ptr<LayeredMesh> m_mesh;
     std::vector<std::shared_ptr<MinimapMapblock>> m_minimap_mapblocks;

@@ -14,7 +14,7 @@ class AnimationManager;
 class ResourceCache;
 class TileLayer;
 
-typedef std::pair<std::shared_ptr<TileLayer>, LayeredMeshPart> MeshLayer;
+typedef std::pair<TileLayer, LayeredMeshPart> MeshLayer;
 
 class Model
 {

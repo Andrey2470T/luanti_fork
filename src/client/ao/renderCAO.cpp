@@ -2,6 +2,7 @@
 #include "client/ao/nametag.h"
 #include "client/core/client.h"
 #include "client/player/playercamera.h"
+#include "client/render/drawlist.h"
 #include "client/render/renderer.h"
 #include "client/ui/minimap.h"
 #include "itemgroup.h"
@@ -142,15 +143,21 @@ void RenderCAO::addMesh()
     }
 
     updateVertexColor(true);
-    m_model->getMesh()->splitTransparentLayers();
 
-    m_model->getMesh()->getBuffer(0)->uploadData();
+    auto mesh = m_model->getMesh();
+    mesh->splitTransparentLayers();
+    mesh->getBuffer(0)->uploadData();
+
+    if (isVisible())
+        m_rndsys->getDrawList()->addLayeredMesh(mesh);
 }
 
 void RenderCAO::removeMesh()
 {
     if (m_model) {
         auto mesh = m_model->getMesh();
+
+        m_rndsys->getDrawList()->removeLayeredMesh(mesh);
 
         for (u8 k = 0; k < mesh->getBufferLayersCount(0); k++) {
             auto tile = mesh->getBufferLayer(0, k).first;

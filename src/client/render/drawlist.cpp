@@ -47,6 +47,8 @@ DistanceSortedDrawList::~DistanceSortedDrawList()
 // The meshes_mutex must be locked externally before this call!
 void DistanceSortedDrawList::addLayeredMesh(LayeredMesh *newMesh, bool shadow)
 {
+	MutexAutoLock meshes_lock(meshes_mutex);
+
     auto &list = shadow ? shadow_meshes : meshes;
     auto find_mesh = std::find(list.begin(), list.end(), newMesh);
 
@@ -64,6 +66,8 @@ void DistanceSortedDrawList::addLayeredMesh(LayeredMesh *newMesh, bool shadow)
 // The meshes_mutex must be locked externally before this call!
 void DistanceSortedDrawList::removeLayeredMesh(LayeredMesh *mesh, bool shadow)
 {
+	MutexAutoLock meshes_lock(meshes_mutex);
+
     auto &list = shadow ? shadow_meshes : meshes;
     list.remove(mesh);
 
@@ -142,17 +146,15 @@ void DistanceSortedDrawList::updateList()
         updated_meshes.push_back(mesh);
     }
 
-    meshes_mutex.unlock();
-
-    MutexAutoLock drawlist_lock(drawlist_mutex);
-
     // Resort the new mesh list
     mesh_sorter.camera_pos = cameraPos;
     updated_meshes.sort(mesh_sorter);
+    
+    meshes_mutex.unlock();
 
     f32 sorting_distance = cache_transparency_sorting_distance * BS;
 
-    layers.clear();
+    std::list<BatchedLayer> newlayers;
 
     // At first add solid layers, then transparent
     for (auto &mesh : updated_meshes) {
@@ -162,15 +164,15 @@ void DistanceSortedDrawList::updateList()
             if (layer.first.material_flags & MATERIAL_FLAG_TRANSPARENT)
                 continue;
 
-            auto find_layer = std::find_if(layers.begin(), layers.end(),
+            auto find_layer = std::find_if(newlayers.begin(), newlayers.end(),
                 [layer] (const BatchedLayer &cur_layer)
                 {
                     return cur_layer.first == layer.first;
             });
             
-            if (find_layer == layers.end()) {
-                layers.emplace_back(layer.first, std::vector<std::pair<LayeredMeshPart, LayeredMesh *>>());
-                find_layer = std::prev(layers.end());
+            if (find_layer == newlayers.end()) {
+                newlayers.emplace_back(layer.first, std::vector<std::pair<LayeredMeshPart, LayeredMesh *>>());
+                find_layer = std::prev(newlayers.end());
             }
             find_layer->second.emplace_back(layer.second, mesh);
         }
@@ -188,10 +190,13 @@ void DistanceSortedDrawList::updateList()
             for (auto &partial_layer : partial_layers) {
                 std::vector<std::pair<LayeredMeshPart, LayeredMesh *>> mesh_parts;
                 mesh_parts.emplace_back(partial_layer, mesh);
-                layers.emplace_back(partial_layer.layer, mesh_parts);
+                newlayers.emplace_back(partial_layer.layer, mesh_parts);
             }
         }
     }
+    
+    MutexAutoLock drawlist_lock(drawlist_mutex);
+    layers = newlayers;
 }
 
 void DistanceSortedDrawList::resortShadowList()
@@ -218,9 +223,8 @@ void DistanceSortedDrawList::render()
 
     v3s16 cameraOffset = camera->getOffset();
 
-    MutexAutoLock drawlist_lock(drawlist_mutex);
-
     if (needs_upload_indices) {
+    	MutexAutoLock meshes_lock(meshes_mutex);
         needs_upload_indices = false;
 
         for (auto &mesh : updated_meshes) {
@@ -229,6 +233,8 @@ void DistanceSortedDrawList::render()
                 mesh->getBuffer(buf_i)->uploadData();
         }
     }
+    
+    MutexAutoLock drawlist_lock(drawlist_mutex);
 
     for (auto &l : layers) {
         l.first.setupRenderState(client);
@@ -247,7 +253,7 @@ void DistanceSortedDrawList::render()
     }
 }
 
-void DistanceSortedDrawList::renderShadows(TileLayer &override_layer)
+/*void DistanceSortedDrawList::renderShadows(TileLayer &override_layer)
 {
     auto rndsys = client->getRenderSystem();
     auto rnd = rndsys->getRenderer();
@@ -272,7 +278,7 @@ void DistanceSortedDrawList::renderShadows(TileLayer &override_layer)
             rnd->draw(l.second.buf_ref, render::PT_TRIANGLES, l.second.offset, l.second.count);
         }
     }
-}
+}*/
 
 void *DrawListUpdateThread::run()
 {

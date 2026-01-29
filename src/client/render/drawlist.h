@@ -117,22 +117,6 @@ public:
     {
         return block_bounds.get();
     }
-
-    void lockMeshes(bool shadow=false)
-    {
-        if (!shadow)
-            meshes_mutex.lock();
-        else
-            shadow_meshes_mutex.lock();
-    }
-
-    void unlockMeshes(bool shadow=false)
-    {
-        if (!shadow)
-            meshes_mutex.unlock();
-        else
-            shadow_meshes_mutex.unlock();
-    }
     
     void forceUpdate()
     {
@@ -153,7 +137,7 @@ public:
     void resortShadowList();
 
     void render();
-    void renderShadows(TileLayer &override_layer);
+    //void renderShadows(TileLayer &override_layer);
 
     void onSettingChanged(std::string_view name, bool all);
 private:

@@ -164,10 +164,13 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data)
     }
 
     m_mesh->splitTransparentLayers();
+    addInDrawList();
 }
 
 MapBlockMesh::~MapBlockMesh()
 {
+    removeFromDrawList();
+
     u32 sz = 0;
     for (u8 buf_i = 0; buf_i < m_mesh->getBuffersCount(); buf_i++) {
         sz += m_mesh->getBuffer(buf_i)->getVertexCount();
@@ -196,38 +199,14 @@ void MapBlockMesh::removeActiveObject(u16 id)
     m_active_objects.erase(found_ao);
 }
 
-void MapBlockMesh::addInDrawList(DistanceSortedDrawList *drawlist, bool shadow)
+void MapBlockMesh::addInDrawList(bool shadow)
 {
-    if (!uploaded) {
-        for (u8 buf_i = 0; buf_i < m_mesh->getBuffersCount(); buf_i++)
-            m_mesh->getBuffer(buf_i)->flush();
-        uploaded = true;
-    }
+    auto drawlist = m_client->getRenderSystem()->getDrawList();
     drawlist->addLayeredMesh(m_mesh.get());
-
-    for (u16 ao_id : m_active_objects) {
-        auto cao = dynamic_cast<RenderCAO*>(m_client->getEnv().getActiveObject(ao_id));
-
-        if (!cao)
-            continue;
-
-        if (!cao->isVisible())
-            continue;
-
-        drawlist->addLayeredMesh(cao->getModel()->getMesh());
-    }
 }
 
-void MapBlockMesh::removeFromDrawList(DistanceSortedDrawList *drawlist, bool shadow)
+void MapBlockMesh::removeFromDrawList(bool shadow)
 {
+    auto drawlist = m_client->getRenderSystem()->getDrawList();
     drawlist->removeLayeredMesh(m_mesh.get());
-
-    for (u16 ao_id : m_active_objects) {
-        auto cao = dynamic_cast<RenderCAO*>(m_client->getEnv().getActiveObject(ao_id));
-
-        if (!cao)
-            continue;
-
-        drawlist->removeLayeredMesh(cao->getModel()->getMesh());
-    }
 }

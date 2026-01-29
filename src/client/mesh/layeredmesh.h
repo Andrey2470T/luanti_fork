@@ -24,9 +24,6 @@ struct LayeredMeshPart
     u32 vertex_offset = 0; // number of start vertex for this part (used only in the model load)
     u32 vertex_count = 0; // count of buffer vertices for this part (used only in the model load)
 
-    // After 3d vertex batching, new indices are mandatory to be added also here
-    std::vector<u32> indices;
-
     LayeredMeshPart() = default;
     LayeredMeshPart(MeshBuffer *_buf_ref, const TileLayer &_layer, u32 _offset, u32 _count)
         : buf_ref(_buf_ref), layer(_layer), offset(_offset), count(_count)
