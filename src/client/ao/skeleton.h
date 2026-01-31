@@ -70,7 +70,7 @@ public:
     {
         AnimateNormals = animate;
     }
-    void updateTileLayer(std::shared_ptr<TileLayer> layer);
+    void updateTileLayer(TileLayer &layer);
     // The method updates the animate normals bool and data texture
     void updateDataTexture();
     // The bones count per a vertex also has the limit, therefore this method selects out the most "affecting" bones ids and their weights

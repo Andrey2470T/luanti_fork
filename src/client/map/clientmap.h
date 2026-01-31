@@ -82,7 +82,7 @@ private:
 
     std::unique_ptr<MeshUpdateManager> m_mesh_update_manager;
 
-    std::list<u16> m_pending_to_add_caos;
+    std::set<u16> m_pending_to_add_caos;
 
     // The number of blocks the client will combine for mesh generation.
     MeshGrid m_mesh_grid;

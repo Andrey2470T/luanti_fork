@@ -57,7 +57,7 @@ class LayeredMesh
     // Indexed by buffer_id
     std::unordered_map<MeshBuffer *, BufferLayers> layers;
 
-    f32 radius_sq = 0.0f; // in BS space, maximal distance from the center to the farest mapblock vertex
+    f32 radius = 0.0f; // in BS space, maximal distance from the center to the farest mapblock vertex
     v3f center_pos; // relative BS coords, e.g. a half-side of a mapblock cube
     v3f abs_pos; // absolute BS coords, for mapblock it is a min corner
     v3f abs_rot;
@@ -83,7 +83,7 @@ public:
 
     f32 getBoundingSphereRadius() const
     {
-        return radius_sq;
+        return radius;
     }
     v3f getBoundingSphereCenter() const
     {
@@ -160,7 +160,7 @@ public:
     
     bool isFrustumCulled(const Camera *camera, f32 extra_radius)
     {
-        return camera->frustumCull(getBoundingSphereCenter(), radius_sq + extra_radius*extra_radius);
+        return camera->frustumCull(getBoundingSphereCenter(), radius + extra_radius);
     }
 private:
     bool isHardwareHolorized(u8 buf_i) const;

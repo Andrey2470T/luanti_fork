@@ -13,6 +13,9 @@ class Model;
 struct TileLayer;
 class SpriteDrawBatch;
 class UIRects;
+struct LayeredMeshPart;
+
+typedef std::pair<TileLayer, LayeredMeshPart> BufferLayer;
 
 class GUIScene : public gui::IGUIElement
 {
@@ -21,7 +24,7 @@ public:
 		 gui::IGUIElement *parent, recti rect, s32 id = -1);
 
     void setModel(Model *model);
-	void setTexture(u32 idx, img::Image *texture);
+    void setTexture(BufferLayer &buf_layer, img::Image *texture);
 	void setBackgroundColor(const img::color8 &color) noexcept { m_bgcolor = color; };
     void setFrameLoop(s32 begin, s32 end);
 	void setAnimationSpeed(f32 speed);

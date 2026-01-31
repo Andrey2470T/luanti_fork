@@ -33,7 +33,8 @@ public:
     Model(AnimationManager *_mgr, const aiScene *scene);
 
     static Model *load(AnimationManager *_mgr, const std::string &name);
-    static Model *loadFromMem(AnimationManager *_mgr, void *mem, s32 size, const std::string &format);
+    static Model *loadFromMem(AnimationManager *_mgr,
+        void *mem, s32 size, const std::string &format);
 
     LayeredMesh *getMesh() const
     {
@@ -52,7 +53,8 @@ public:
 private:
     void processMesh(u8 mat_i, const std::vector<aiMesh *> &meshes);
 
-    void setBoneRelations(std::vector<Bone *> &bones, u8 &boneID, aiNode *curNode, std::optional<u8> parentID = std::nullopt);
+    void setBoneRelations(std::vector<Bone *> &bones, u8 &boneID,
+        aiNode *curNode, std::optional<u8> parentID = std::nullopt);
     void setBoneWeights(aiSkeleton *skeleton, aiNode *node, Bone *bone);
 
     void processBones(const aiScene *scene);

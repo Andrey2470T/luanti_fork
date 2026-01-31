@@ -64,11 +64,11 @@ void SelectionMesh::updateMesh(const v3f &new_pos, const v3s16 &camera_offset,
     mesh = std::make_unique<LayeredMesh>(v3f(max_box.getRadius()), pos_with_offset);
     mesh->getRotation() = rotation;
 
-    std::shared_ptr<TileLayer> layer = std::make_shared<TileLayer>();
-    layer->thing = RenderThing::BOX;
-    layer->alpha_discard = 1;
-    layer->material_flags = MATERIAL_FLAG_TRANSPARENT;
-    layer->use_default_shader = true;
+    TileLayer layer;
+    layer.thing = RenderThing::BOX;
+    layer.alpha_discard = 1;
+    layer.material_flags = MATERIAL_FLAG_TRANSPARENT;
+    layer.use_default_shader = true;
 
     // Use single halo box instead of multiple overlapping boxes.
     // Temporary solution - problem can be solved with multiple
@@ -82,7 +82,7 @@ void SelectionMesh::updateMesh(const v3f &new_pos, const v3s16 &camera_offset,
         for (const auto &sbox : boxes)
             halo_box.addInternalBox(sbox);
 
-        layer->tile_ref = halo_img;
+        layer.tile_ref = halo_img;
         buf = MeshOperations::convertNodeboxesToMesh({halo_box}, nullptr, 0.5f);
 
         rndsys->getPool(true)->updateAllMeshUVs(buf, halo_img);
@@ -103,7 +103,7 @@ void SelectionMesh::updateMesh(const v3f &new_pos, const v3s16 &camera_offset,
         for (auto &box : boxes)
             Batcher3D::lineBox(buf, box, res_color);
 
-        layer->line_thickness = thickness;
+        layer.line_thickness = thickness;
     }
 
     buf->uploadData();
@@ -111,7 +111,7 @@ void SelectionMesh::updateMesh(const v3f &new_pos, const v3s16 &camera_offset,
 
     LayeredMeshPart mesh_p;
     mesh_p.count = buf->getIndexCount();
-    mesh->addNewLayer(layer, mesh_p);
+    mesh->addNewLayer(buf, layer, mesh_p);
 
     mesh->splitTransparentLayers();
 
@@ -198,19 +198,19 @@ void BlockBounds::updateMesh(Client *client, DistanceSortedDrawList *drawlist)
                 );
         }
 
-    std::shared_ptr<TileLayer> layer = std::make_shared<TileLayer>();
-    layer->thing = RenderThing::BOX;
-    layer->alpha_discard = 1;
-    layer->material_flags = MATERIAL_FLAG_TRANSPARENT;
-    layer->use_default_shader = true;
-    layer->line_thickness = thickness;
+    TileLayer layer;
+    layer.thing = RenderThing::BOX;
+    layer.alpha_discard = 1;
+    layer.material_flags = MATERIAL_FLAG_TRANSPARENT;
+    layer.use_default_shader = true;
+    layer.line_thickness = thickness;
 
     buf->uploadData();
     mesh->addNewBuffer(buf);
 
     LayeredMeshPart mesh_p;
     mesh_p.count = buf->getIndexCount();
-    mesh->addNewLayer(layer, mesh_p);
+    mesh->addNewLayer(buf, layer, mesh_p);
 
     mesh->splitTransparentLayers();
 

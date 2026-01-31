@@ -57,13 +57,16 @@ class DistanceSortedDrawList
     std::list<LayeredMesh *> meshes;
     std::list<LayeredMesh *> shadow_meshes;
 
-    std::list<LayeredMesh *> updated_meshes;
-
+    // Blocks meshes list
     std::mutex meshes_mutex;
+    // Block shadow_meshes list
     std::mutex shadow_meshes_mutex;
 
+    std::list<LayeredMesh *> visible_meshes;
+    
     std::list<BatchedLayer> layers;
 
+    // Blocks visible_meshes and layers lists
     std::mutex drawlist_mutex;
 
     std::unique_ptr<DrawListUpdateThread> drawlist_thread;

@@ -75,10 +75,10 @@ std::vector<Bone *> Skeleton::getAllBones() const
     return bones;
 }
 
-void Skeleton::updateTileLayer(std::shared_ptr<TileLayer> layer)
+void Skeleton::updateTileLayer(TileLayer &layer)
 {
-    layer->bone_offset = BoneOffset;
-    layer->animate_normals = (s32)AnimateNormals;
+    layer.bone_offset = BoneOffset;
+    layer.animate_normals = (s32)AnimateNormals;
 }
 
 void Skeleton::updateDataTexture()

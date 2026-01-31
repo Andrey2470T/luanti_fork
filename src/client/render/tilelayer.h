@@ -72,9 +72,9 @@ struct TileLayer
     // '0' = alpha discard, '1' = alpha discard ref, '2' = no discard (solid)
     s32 alpha_discard = 2;
 
-    img::Image *tile_ref;
+    img::Image *tile_ref = nullptr;
 
-	render::Shader *shader;
+    render::Shader *shader = nullptr;
 
     bool use_default_shader = true;
 

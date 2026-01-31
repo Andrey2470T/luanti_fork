@@ -89,11 +89,12 @@ void Camera::updateMatrices()
     m_world_matrix.setTranslation(m_position);
 }
 
-bool Camera::frustumCull(const v3f &position, f32 radiusSq) const
+bool Camera::frustumCull(const v3f &position, f32 radius) const
 {
+    v3f offset_f = intToFloat(m_offset, BS);
     for (auto &plane : m_frustum.Planes) {
         auto dist = plane.getDistanceTo(position);
-        if (dist*dist > radiusSq)
+        if (dist > radius)
             return true;
     }
     return false;

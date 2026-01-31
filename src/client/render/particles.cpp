@@ -812,13 +812,13 @@ bool ParticleManager::getNodeParticleParams(const MapNode &n,
 
 	float size = (myrand_range(0,8)) / 64.0f;
 	p.size = BS * size;
-    if (tile->scale) size /= tile->scale;
+    if (tile.scale) size /= tile.scale;
 	texsize = v2f(size * 2.0f, size * 2.0f);
 	texpos.X = (myrand_range(0,64)) / 64.0f - texsize.X;
 	texpos.Y = (myrand_range(0,64)) / 64.0f - texsize.Y;
 
-    if (tile->material_flags & MATERIAL_FLAG_HARDWARE_COLORIZED)
-        *color = tile->color;
+    if (tile.material_flags & MATERIAL_FLAG_HARDWARE_COLORIZED)
+        *color = tile.color;
 	else
 		n.getColor(f, color);
 

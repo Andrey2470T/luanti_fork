@@ -56,7 +56,7 @@ void Draw3D::run(PipelineContext &context)
 
     rnd_sys->getSky()->render(camera);
     rnd_sys->getClouds()->render(camera);
-    //rnd_sys->getDrawList()->render();
+    rnd_sys->getDrawList()->render();
     //rnd_sys->getParticleManager()->renderParticles();
 }
 

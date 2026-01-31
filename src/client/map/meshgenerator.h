@@ -181,7 +181,7 @@ private:
     bool first_stage = true;
 
     // Maps tile layer to (current vertex offset, current index offset) pair
-    typedef std::map<TileLayer, InterimBufferLayer> InterimBufferLayers;
+    typedef std::vector<std::pair<TileLayer, InterimBufferLayer>> InterimBufferLayers;
 
     std::vector<std::pair<InterimBuffer, InterimBufferLayers>> interim_buffers;
     void mergeMeshPart(

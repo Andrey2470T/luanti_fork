@@ -136,7 +136,7 @@ void ClientMap::update()
 
             if (block->mesh) {
                 // Upload new mapblock mesh buffers to GPU
-                if (!block->mesh->m_upload) {
+                if (block->mesh->m_upload) {
                     auto mesh = block->mesh->getMesh();
                     for (u8 buf_i = 0; buf_i < mesh->getBuffersCount(); buf_i++)
                         mesh->getBuffer(buf_i)->flush();
@@ -213,13 +213,13 @@ bool ClientMap::addActiveObject(u16 id)
     // If the mapblock in which the AO is locating is not loaded yet,
     // wait until it is not loaded, after add in updateMapBlocksActiveObjects()
     if (!getBlockNoCreateNoEx(blockpos)) {
-        m_pending_to_add_caos.push_back(id);
+        m_pending_to_add_caos.emplace(id);
         return false;
     }
     MapBlock *block = getBlockNoCreate(blockpos);
 
     if (!block->mesh) {
-        m_pending_to_add_caos.push_back(id);
+        m_pending_to_add_caos.emplace(id);
         return false;
     }
 
@@ -231,10 +231,15 @@ bool ClientMap::addActiveObject(u16 id)
 void ClientMap::updateMapBlocksActiveObjects()
 {
     // Add pending objects in which mapblocks
-    auto it = m_pending_to_add_caos.begin();
-    while (it != m_pending_to_add_caos.end()) {
-        if (addActiveObject(*it))
-            m_pending_to_add_caos.erase(it);
+
+    if (!m_pending_to_add_caos.empty()) {
+        auto it = m_pending_to_add_caos.begin();
+        while (it != m_pending_to_add_caos.end()) {
+            if (addActiveObject(*it))
+                it = m_pending_to_add_caos.erase(it);
+            else
+                ++it;
+        }
     }
     // If AOs moved in another mapblocks, update their active objects sets
     for (auto &sector_it : m_sectors) {
@@ -242,6 +247,8 @@ void ClientMap::updateMapBlocksActiveObjects()
         sector_it.second->getBlocks(sectorblocks);
 
         for (auto &block : sectorblocks) {
+            if (!block->mesh)
+                continue;
             for (u16 ao_id : block->mesh->getActiveObjects()) {
                 auto cao = m_client->getEnv().getActiveObject(ao_id);
                 v3s16 blockpos = getContainerPos(floatToInt(cao->getPosition(), BS), BS);

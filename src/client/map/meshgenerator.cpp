@@ -1427,17 +1427,29 @@ void MeshGenerator::mergeMeshPart(const TileLayer &layer,
         buffer.vertexCount += vertexCount;
         buffer.indexCount += indexCount;
 
-        auto &buf_layer = interim_buffers.at(i).second[layer];
-        buf_layer.vertexCount += vertexCount;
-        buf_layer.indexCount += indexCount;
+        auto &buf_layers = interim_buffers.at(i).second;
+        auto found_buf_layer = std::find_if(buf_layers.begin(), buf_layers.end(),
+            [layer] (const std::pair<TileLayer, InterimBufferLayer> &cur_buf_layer)
+        { return layer == cur_buf_layer.first; });
+
+        if (found_buf_layer == buf_layers.end()) {
+            InterimBufferLayer buf_layer = {vertexCount, indexCount};
+            buf_layers.emplace_back(layer, buf_layer);
+        }
+        else {
+            auto &buf_layer = *found_buf_layer;
+            buf_layer.second.vertexCount += vertexCount;
+            buf_layer.second.indexCount += indexCount;
+        }
 
         return;
     }
 
     InterimBuffer buffer = {vType, vertexCount, indexCount};
     InterimBufferLayers buf_layers;
-    buf_layers[layer].vertexCount = vertexCount;
-    buf_layers[layer].indexCount = indexCount;
+
+    InterimBufferLayer buf_layer = {vertexCount, indexCount};
+    buf_layers.emplace_back(layer, buf_layer);
     interim_buffers.emplace_back(buffer, buf_layers);
 }
 
@@ -1448,7 +1460,11 @@ MeshBuffer *MeshGenerator::findBuffer(const TileLayer &layer,
     for (u8 buf_i = 0; buf_i < collector->getBuffersCount(); buf_i++) {
         auto buffer = collector->getBuffer(buf_i);
 
-        auto &buf_layer = interim_buffers.at(buf_i).second[layer];
+        auto &buf_layers = interim_buffers.at(buf_i).second;
+        auto found_buf_layer = std::find_if(buf_layers.begin(), buf_layers.end(),
+            [layer] (const std::pair<TileLayer, InterimBufferLayer> &cur_buf_layer)
+        { return layer == cur_buf_layer.first; });
+        auto &buf_layer = found_buf_layer->second;
 
         if (buffer->getVertexType().Name != vType.Name || buf_layer.vertexCount == 0)
             continue;

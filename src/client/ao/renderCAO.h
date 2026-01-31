@@ -9,6 +9,9 @@ class Model;
 class AnimationManager;
 class BoneAnimation;
 class PlayerCamera;
+struct LayeredMeshPart;
+
+typedef std::pair<TileLayer, LayeredMeshPart> BufferLayer;
 
 // CAO able to be rendered and animated
 class RenderCAO : public GenericCAO
@@ -28,7 +31,7 @@ private:
 
     img::color8 m_base_color = img::white;
 
-    void updateLayerUVs(std::string new_texture, u8 layer_id);
+    void updateLayerUVs(std::string new_texture, BufferLayer &buf_layer);
 
     aabbf m_selection_box = aabbf(-BS/3.,-BS/3.,-BS/3., BS/3.,BS/3.,BS/3.);
 

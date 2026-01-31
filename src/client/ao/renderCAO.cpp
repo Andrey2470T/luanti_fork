@@ -132,19 +132,19 @@ void RenderCAO::addMesh()
 
     m_model = new_model;
 
-    for (u32 i = 0; i < m_model->getMesh()->getBufferLayersCount(0); i++) {
-        auto &layer = m_model->getMesh()->getBufferLayer(0, i);
-        layer.first->shader = m_cache->getOrLoad<render::Shader>(ResourceType::SHADER,
+    auto mesh = m_model->getMesh();
+
+    for (auto &buf_layer : mesh->getBufferLayers(mesh->getBuffer(0))) {
+        buf_layer.first.shader = m_cache->getOrLoad<render::Shader>(ResourceType::SHADER,
             m_model->getSkeleton() ? "object_skinned" : "object");
-        m_rndsys->getRenderer()->setUniformBlocks(layer.first->shader);
+        m_rndsys->getRenderer()->setUniformBlocks(buf_layer.first.shader);
 
         if (m_model->getSkeleton())
-            layer.first->textures.push_back(m_anim_mgr->getBonesTexture()->getGLTexture());
+            buf_layer.first.textures.push_back(m_anim_mgr->getBonesTexture()->getGLTexture());
     }
 
     updateVertexColor(true);
 
-    auto mesh = m_model->getMesh();
     mesh->splitTransparentLayers();
     mesh->getBuffer(0)->uploadData();
 
@@ -159,11 +159,11 @@ void RenderCAO::removeMesh()
 
         m_rndsys->getDrawList()->removeLayeredMesh(mesh);
 
-        for (u8 k = 0; k < mesh->getBufferLayersCount(0); k++) {
-            auto tile = mesh->getBufferLayer(0, k).first;
+        for (auto &layer : mesh->getBufferLayers(mesh->getBuffer(0))) {
+            auto tile = layer.first;
 
-            if (tile->tile_ref)
-                m_cache->clearResource<img::Image>(ResourceType::IMAGE, tile->tile_ref);
+            if (tile.tile_ref)
+                m_cache->clearResource<img::Image>(ResourceType::IMAGE, tile.tile_ref);
         }
     }
 
@@ -175,33 +175,22 @@ void RenderCAO::updateAppearance(std::string mod)
     m_previous_texture_modifier = m_current_texture_modifier;
     m_current_texture_modifier = mod;
 
-    u8 layers_n;
+    auto mesh = m_model->getMesh();
 
-    if (m_prop.visual == "sprite")
-        layers_n = 1;
-    else if (m_prop.visual == "upright_sprite")
-        layers_n = 2;
-    else if (m_prop.visual == "cube")
-        layers_n = 6;
-    else
-        layers_n = m_model->getMesh()->getBufferLayersCount(0);
-
-    //m_tile_layer.textures.push_back(dynamic_cast<render::Texture *>(m_anim_mgr->getBonesTexture()->getGLTexture()));
-
-    for (u8 i = 0; i < layers_n; i++) {
+    u8 layer_i = 0;
+    for (auto &buf_layer : mesh->getBufferLayers(mesh->getBuffer(0))) {
         std::string texturestring = "no_texture.png";
         if (!m_prop.textures.empty())
-            texturestring = m_prop.textures.at(i);
+            texturestring = m_prop.textures.at(layer_i);
         texturestring += mod;
 
-        updateLayerUVs(texturestring, i);
+        updateLayerUVs(texturestring, buf_layer);
 
         if (m_prop.visual == "mesh") {
-            auto layer = m_model->getMesh()->getBufferLayer(0, i);
             if (m_prop.backface_culling)
-                layer.first->material_flags |= MATERIAL_FLAG_BACKFACE_CULLING;
+                buf_layer.first.material_flags |= MATERIAL_FLAG_BACKFACE_CULLING;
             else
-                layer.first->material_flags &= ~MATERIAL_FLAG_BACKFACE_CULLING;
+                buf_layer.first.material_flags &= ~MATERIAL_FLAG_BACKFACE_CULLING;
         }
     }
 
@@ -360,8 +349,8 @@ void RenderCAO::step(float dtime, ClientEnvironment *env)
         auto skeleton = m_model->getSkeleton();
 
         if (skeleton) {
-            for (u8 i = 0; i < m_model->getMesh()->getBufferLayersCount(0); i++)
-                skeleton->updateTileLayer(m_model->getMesh()->getBufferLayer(0, i).first);
+            for (auto &buf_layer : m_model->getMesh()->getBufferLayers(m_model->getMesh()->getBuffer(0)))
+                skeleton->updateTileLayer(buf_layer.first);
         }
     }
 
@@ -1203,12 +1192,12 @@ Model *addSpriteModel(TileLayer &layer, v3f position, v3f visual_size)
     mesh_p.count = 6;
 
     MeshLayer mesh_l;
-    mesh_l.first = std::make_shared<TileLayer>(layer);
+    mesh_l.first = layer;
     mesh_l.second = mesh_p;
     return new Model(position, {mesh_l}, sprite);
 }
 
-void RenderCAO::updateLayerUVs(std::string new_texture, u8 layer_id)
+void RenderCAO::updateLayerUVs(std::string new_texture, BufferLayer &buf_layer)
 {
     auto img = m_cache->getOrLoad<img::Image>(ResourceType::IMAGE, new_texture);
 
@@ -1217,11 +1206,11 @@ void RenderCAO::updateLayerUVs(std::string new_texture, u8 layer_id)
 
     auto basic_pool = m_rndsys->getPool(true);
     auto buffer = m_model->getMesh()->getBuffer(0);
-    auto layer = m_model->getMesh()->getBufferLayer(0, layer_id);
 
-    basic_pool->updateMeshUVs(buffer, layer.second.offset, layer.second.count, img, layer.first->tile_ref, true, true);
+    basic_pool->updateMeshUVs(buffer, buf_layer.second.offset, buf_layer.second.count,
+        img, buf_layer.first.tile_ref, true, true);
 
-    layer.first->tile_ref = img;
+    buf_layer.first.tile_ref = img;
 }
 
 Model *addUprightSpriteModel(TileLayer &layer, v3f position, v3f visual_size, bool is_player)
@@ -1241,7 +1230,7 @@ Model *addUprightSpriteModel(TileLayer &layer, v3f position, v3f visual_size, bo
     mesh_p.count = 6;
 
     MeshLayer mesh_l;
-    mesh_l.first = std::make_shared<TileLayer>(layer);
+    mesh_l.first = layer;
     mesh_l.second = mesh_p;
     return new Model(position, {mesh_l}, sprite);
 }
@@ -1257,7 +1246,7 @@ Model *addCubeModel(TileLayer &layer, v3f position, v3f visual_size)
     mesh_p.count = 6 * 6;
 
     MeshLayer mesh_l;
-    mesh_l.first = std::make_shared<TileLayer>(layer);
+    mesh_l.first = layer;
     mesh_l.second = mesh_p;
     return new Model(position, {mesh_l}, cube);
 }
@@ -1280,9 +1269,8 @@ Model *addMeshModel(TileLayer &layer, v3f position, v3f visual_size, ResourceCac
 
         MeshOperations::scaleMesh(buffer, visual_size);
 
-        for (u8 i = 0; i < 6; i++) {
-            auto &buf_layer = mesh->getBufferLayer(0, i);
-            buf_layer.first = std::make_shared<TileLayer>(layer);
+        for (auto &buf_layer : mesh->getBufferLayers(buffer)) {
+            buf_layer.first = layer;
         }
     }
 

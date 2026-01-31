@@ -46,7 +46,7 @@ Model::Model(v3f pos, const std::vector<MeshLayer> &layers, MeshBuffer *buffer)
     mesh->addNewBuffer(buffer);
 
     for (auto layer : layers)
-        mesh->addNewLayer(layer.first, layer.second);
+        mesh->addNewLayer(buffer, layer.first, layer.second);
 }
 
 Model::Model(AnimationManager *_mgr, const aiScene *scene)
@@ -146,16 +146,17 @@ void Model::processMesh(u8 mat_i, const std::vector<aiMesh *> &meshes)
     }
     buf->reallocateData(vertexCount + vertices_put, indexCount + indices_put);
 
+    TileLayer tilelayer;
+
     LayeredMeshPart mesh_part;
-    mesh_part.buffer_id = 0;
-    mesh_part.layer_id = mat_i;
+    mesh_part.buf_ref = buf;
+    mesh_part.layer = tilelayer;
     mesh_part.offset = indexCount;
     mesh_part.count = indices_put;
     mesh_part.vertex_offset = vertexCount;
     mesh_part.vertex_count = vertices_put;
 
-    std::shared_ptr<TileLayer> tilelayer = std::make_shared<TileLayer>();
-    mesh->addNewLayer(tilelayer, mesh_part);
+    mesh->addNewLayer(buf, tilelayer, mesh_part);
 
     auto vType = buf->getVertexType();
 

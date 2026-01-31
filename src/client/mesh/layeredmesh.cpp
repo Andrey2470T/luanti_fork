@@ -52,15 +52,17 @@ std::vector<BufferLayer> LayeredMesh::getAllLayers() const
 
 void LayeredMesh::recalculateBoundingRadius()
 {
-    radius_sq = 0.0f;
+    radius = 0.0f;
 
     for (auto &buffer : buffers) {
         for (u32 k = 0; k < buffer->getVertexCount(); k++) {
             v3f p = buffer->getV3FAttr(0, k);
 
-            radius_sq = std::max(radius_sq, (p - center_pos).getLengthSQ());
+            radius = std::max(radius, (p - center_pos).getLengthSQ());
         }
     }
+
+    radius = std::sqrt(radius);
 }
 
 void LayeredMesh::splitTransparentLayers()
@@ -69,17 +71,21 @@ void LayeredMesh::splitTransparentLayers()
 	
 	for (u8 buf_i = 0; buf_i < getBuffersCount(); buf_i++) {
         auto buffer = getBuffer(buf_i);
+        auto indices = buffer->getIndexData();
         for (auto &layer : layers[buffer]) {
             if (!(layer.first.material_flags & MATERIAL_FLAG_TRANSPARENT))
 			    continue;
 			
-			auto &layer_indices = layer.second.indices;
-			transparent_triangles.reserve(transparent_triangles.capacity() + layer_indices.size() / 3);
+            u32 offset = layer.second.offset;
+            u32 count = layer.second.count;
+            transparent_triangles.reserve(transparent_triangles.capacity() + count / 3);
 			
-			for (u32 index = 0; index < layer_indices.size() / 3; index+=3) {
+            for (u32 index = 0; index < count / 3; index+=3) {
 			    transparent_triangles.emplace_back(
                     buffer, layer.first,
-                    layer_indices.at(index), layer_indices.at(index+1), layer_indices.at(index+2));
+                    *(indices+(offset+index)),
+                    *(indices+(offset+index+1)),
+                    *(indices+(offset+index+2)));
             }
         }
     }

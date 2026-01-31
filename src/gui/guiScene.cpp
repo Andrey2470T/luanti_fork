@@ -55,15 +55,15 @@ void GUIScene::setModel(Model *model)
     m_model->getMesh()->getBuffer(0)->uploadData();
 }
 
-void GUIScene::setTexture(u32 idx, img::Image *texture)
+void GUIScene::setTexture(BufferLayer &buf_layer, img::Image *texture)
 {
     auto basic_pool = Environment->getRenderSystem()->getPool(true);
     auto buffer = m_model->getMesh()->getBuffer(0);
-    auto layer = m_model->getMesh()->getBufferLayer(0, idx);
 
-    basic_pool->updateMeshUVs(buffer, layer.second.offset, layer.second.count, texture, layer.first->tile_ref, true, true);
+    basic_pool->updateMeshUVs(buffer, buf_layer.second.offset, buf_layer.second.count,
+                              texture, buf_layer.first.tile_ref, true, true);
 
-    layer.first->tile_ref = texture;
+    buf_layer.first.tile_ref = texture;
 }
 
 void GUIScene::draw()
@@ -115,7 +115,7 @@ void GUIScene::draw()
 
         auto lmesh = m_model->getMesh();
         for (auto &layer : lmesh->getAllLayers()) {
-            layer.first->setupRenderState(m_client);
+            layer.first.setupRenderState(m_client);
 
             auto &ml = layer.second;
 

@@ -110,15 +110,19 @@ void DistanceSortedDrawList::updateList()
 
     needs_update_drawlist = false;
 
-    MutexAutoLock meshes_lock(meshes_mutex);
+    std::list<LayeredMesh *> local_meshes;
+    std::list<LayeredMesh *> local_visible_meshes;
 
-    updated_meshes.clear();
+    {
+        MutexAutoLock meshes_lock(meshes_mutex);
+        local_meshes = meshes;
+    }
 
     //MeshGrid mesh_grid = client->getMeshGrid();
 
     v3f cameraPos = camera->getPosition();
 
-    for (auto &mesh : meshes) {
+    for (auto &mesh : local_meshes) {
         v3f center = mesh->getBoundingSphereCenter();
         f32 radius = mesh->getBoundingSphereRadius();
 
@@ -132,9 +136,8 @@ void DistanceSortedDrawList::updateList()
         // Only do coarse culling here, to account for fast camera movement.
         // This is needed because this function is not called every frame.
         f32 frustum_cull_extra_radius = 300.0f;
-        if (mesh->isFrustumCulled(camera, frustum_cull_extra_radius)) {
+        if (mesh->isFrustumCulled(camera, frustum_cull_extra_radius))
             continue;
-        }
 
         // NOTE: works only for mapblocks now
         // Raytraced occlusion culling - send rays from the camera to the block's corners
@@ -143,21 +146,19 @@ void DistanceSortedDrawList::updateList()
             continue;
         }*/
 
-        updated_meshes.push_back(mesh);
+        local_visible_meshes.push_back(mesh);
     }
 
     // Resort the new mesh list
     mesh_sorter.camera_pos = cameraPos;
-    updated_meshes.sort(mesh_sorter);
-    
-    meshes_mutex.unlock();
+    local_visible_meshes.sort(mesh_sorter);
 
     f32 sorting_distance = cache_transparency_sorting_distance * BS;
 
     std::list<BatchedLayer> newlayers;
 
     // At first add solid layers, then transparent
-    for (auto &mesh : updated_meshes) {
+    for (auto &mesh : local_visible_meshes) {
         auto all_layers = mesh->getAllLayers();
 
         for (auto &layer : all_layers) {
@@ -194,9 +195,12 @@ void DistanceSortedDrawList::updateList()
             }
         }
     }
-    
-    MutexAutoLock drawlist_lock(drawlist_mutex);
-    layers = newlayers;
+
+    {
+        MutexAutoLock drawlist_lock(drawlist_mutex);
+        visible_meshes = local_visible_meshes;
+        layers = newlayers;
+    }
 }
 
 void DistanceSortedDrawList::resortShadowList()
@@ -223,34 +227,39 @@ void DistanceSortedDrawList::render()
 
     v3s16 cameraOffset = camera->getOffset();
 
+    MutexAutoLock drawlist_lock(drawlist_mutex);
+
     if (needs_upload_indices) {
-    	MutexAutoLock meshes_lock(meshes_mutex);
         needs_upload_indices = false;
 
-        for (auto &mesh : updated_meshes) {
+        for (auto &mesh : visible_meshes) {
             // upload new indices lists for each buffer
             for (u8 buf_i = 0; buf_i < mesh->getBuffersCount(); buf_i++)
                 mesh->getBuffer(buf_i)->uploadData();
         }
     }
-    
-    MutexAutoLock drawlist_lock(drawlist_mutex);
 
     for (auto &l : layers) {
         l.first.setupRenderState(client);
 
         for (auto &mesh_l : l.second) {
+            auto &lp = mesh_l.first;
+
+            if (!lp.buf_ref->getVAO())
+                continue;
             matrix4 t;
             v3f meshPos = mesh_l.second->getAbsoluteMeshPos();
             t.setTranslation(meshPos - intToFloat(cameraOffset, BS));
             t.setRotationDegrees(mesh_l.second->getRotation());
             rnd->setTransformMatrix(TMatrix::World, t);
 
-            auto &lp = mesh_l.first;
 
             rnd->draw(lp.buf_ref, render::PT_TRIANGLES, lp.offset, lp.count);
         }
     }
+
+    if (draw_control.show_wireframe)
+        ctxt->setPolygonMode(render::CM_FRONT_AND_BACK, render::PM_FILL);
 }
 
 /*void DistanceSortedDrawList::renderShadows(TileLayer &override_layer)

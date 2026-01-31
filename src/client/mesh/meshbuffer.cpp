@@ -3,7 +3,8 @@
 
 MeshBuffer::MeshBuffer(bool createIBO, const render::VertexTypeDescriptor &descr,
     render::MeshUsage usage, bool deferUpload)
-    : Type(createIBO ? MeshBufferType::VERTEX_INDEX : MeshBufferType::VERTEX)
+    : Type(createIBO ? MeshBufferType::VERTEX_INDEX : MeshBufferType::VERTEX),
+      Descriptor(descr)
 {
     if (!deferUpload)
         VAO = std::make_shared<render::Mesh>(descr, createIBO, usage);
@@ -13,7 +14,8 @@ MeshBuffer::MeshBuffer(bool createIBO, const render::VertexTypeDescriptor &descr
 MeshBuffer::MeshBuffer(u32 vertexCount, u32 indexCount, bool createIBO,
     const render::VertexTypeDescriptor &descr,
     render::MeshUsage usage, bool deferUpload)
-    : Type(createIBO ? MeshBufferType::VERTEX_INDEX : MeshBufferType::VERTEX)
+    : Type(createIBO ? MeshBufferType::VERTEX_INDEX : MeshBufferType::VERTEX),
+      Descriptor(descr)
 {
     if (!deferUpload)
         VAO = std::make_shared<render::Mesh>(vertexCount, indexCount, descr, createIBO, usage);

@@ -2811,8 +2811,11 @@ void GUIFormSpecMenu::parseModel(parserData *data, const std::string &element)
     e->setModel(model);
 
     auto lmesh = model->getMesh();
-    for (u32 i = 0; i < lmesh->getBufferLayersCount(0); ++i) {
-        e->setTexture(i, m_cache->getOrLoad<img::Image>(ResourceType::IMAGE, unescape_string(textures[i])));
+    u8 buf_layer_n = 0;
+    for (auto &buf_layer : lmesh->getBufferLayers(lmesh->getBuffer(0))) {
+        e->setTexture(buf_layer, m_cache->getOrLoad<img::Image>(
+            ResourceType::IMAGE, unescape_string(textures[buf_layer_n])));
+        ++buf_layer_n;
     }
 
 	if (vec_rot.size() >= 2)
