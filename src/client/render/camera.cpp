@@ -93,7 +93,7 @@ bool Camera::frustumCull(const v3f &position, f32 radius) const
 {
     v3f offset_f = intToFloat(m_offset, BS);
     for (auto &plane : m_frustum.Planes) {
-        auto dist = plane.getDistanceTo(position);
+        auto dist = plane.getDistanceTo(position-offset_f);
         if (dist > radius)
             return true;
     }

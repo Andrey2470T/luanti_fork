@@ -13,6 +13,41 @@
 class MeshBuffer;
 class Camera;
 
+struct LayeredMeshMaterial
+{
+    std::vector<render::Texture *> textures;
+
+    bool use_default_shader = true;
+    render::Shader *shader = nullptr;
+
+    // '0' = alpha discard, '1' = alpha discard ref, '2' = no discard (solid)
+    s32 alpha_discard = 2;
+
+    u8 material_flags =
+        //0 // <- DEBUG, Use the one below
+        MATERIAL_FLAG_BACKFACE_CULLING;
+        //MATERIAL_FLAG_TILEABLE_HORIZONTAL
+        //MATERIAL_FLAG_TILEABLE_VERTICAL;
+
+    f32 line_thickness = 1.0f;
+
+    //! NOTE: this is a dirty workaround to handle uniforms setting in the drawlist
+    //! When the custom materials support is done, it will be removed
+    RenderThing thing;
+
+    s32 bone_offset = 0;
+    s32 animate_normals = 0;
+
+    bool operator==(const LayeredMeshMaterial &other) const;
+
+    bool operator!=(const LayeredMeshMaterial &other) const
+    {
+        return !(*this == other);
+    }
+
+    void setupRenderState(Client *client) const;
+};
+
 // Layer of some mesh buffer
 struct LayeredMeshPart
 {

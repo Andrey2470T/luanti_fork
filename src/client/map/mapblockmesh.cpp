@@ -159,7 +159,10 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data)
                     svtSetHWColor(buffer, layer.color, k);
             }
 
-            MeshOperations::recalculateMeshAtlasUVs(buffer, mp.offset, mp.count, atlas_size, src_rect);
+            if (atlas) {
+                MeshOperations::recalculateMeshAtlasUVs(buffer, mp.offset, mp.count, atlas_size, src_rect,
+                    std::nullopt, std::nullopt, false);
+            }
         }
     }
 
