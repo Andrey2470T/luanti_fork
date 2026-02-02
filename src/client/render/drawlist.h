@@ -15,8 +15,8 @@ class SelectionMesh;
 class BlockBounds;
 class Camera;
 
-typedef std::pair<TileLayer,
-    std::vector<std::pair<LayeredMeshPart, LayeredMesh*>>> BatchedLayer;
+typedef std::vector<std::pair<LayeredMeshPart, u32>> BatchedLayerParts;
+typedef std::pair<TileLayer, BatchedLayerParts> BatchedLayer;
 
 class DistanceSortedDrawList;
 
@@ -54,15 +54,16 @@ class DistanceSortedDrawList
     Client *client;
     Camera *camera;
 
-    std::list<LayeredMesh *> meshes;
-    std::list<LayeredMesh *> shadow_meshes;
+    std::unordered_map<u32, LayeredMesh *> meshes;
+    std::unordered_map<u32, LayeredMesh *> shadow_meshes;
+    u32 meshes_free_id = 0;
 
     // Blocks meshes list
     std::mutex meshes_mutex;
     // Block shadow_meshes list
     std::mutex shadow_meshes_mutex;
 
-    std::list<LayeredMesh *> visible_meshes;
+    std::list<u32> visible_meshes;
     
     std::list<BatchedLayer> layers;
 
@@ -80,6 +81,20 @@ class DistanceSortedDrawList
     std::unique_ptr<SelectionMesh> selection_mesh;
     std::unique_ptr<BlockBounds> block_bounds;
 
+    class LayeredMeshSorter
+    {
+    public:
+        std::unordered_map<u32, LayeredMesh *> *meshes_ref = nullptr;
+        v3f camera_pos;
+
+        LayeredMeshSorter() = default;
+
+        bool operator() (const u32 m1_n, const u32 m2_n) const;
+    };
+
+    LayeredMeshSorter mesh_sorter;
+    DrawControl draw_control;
+
     bool cache_trilinear_filter;
     bool cache_bilinear_filter;
     bool cache_anistropic_filter;
@@ -93,19 +108,6 @@ public:
 
     void addLayeredMesh(LayeredMesh *newMesh, bool shadow=false);
     void removeLayeredMesh(LayeredMesh *mesh, bool shadow=false);
-
-    class LayeredMeshSorter
-    {
-    public:
-        v3f camera_pos;
-
-        LayeredMeshSorter() = default;
-
-        bool operator() (const LayeredMesh *m1, const LayeredMesh *m2) const;
-    };
-
-    LayeredMeshSorter mesh_sorter;
-    DrawControl draw_control;
 
     DrawControl &getDrawControl()
     {
@@ -137,7 +139,7 @@ public:
     }
 
     void updateList();
-    void resortShadowList();
+    //void resortShadowList();
 
     void render();
     //void renderShadows(TileLayer &override_layer);
