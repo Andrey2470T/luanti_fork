@@ -24,14 +24,6 @@ static const std::string ClientMap_settings[] = {
     "enable_translucent_foliage"
 };
 
-void LayeredMeshRef::deleteIfMarked()
-{
-    if (marked_for_deletion) {
-        delete ptr;
-        ptr = nullptr;
-    }
-}
-
 DistanceSortedDrawList::DistanceSortedDrawList(Client *_client)
     : client(_client), camera(client->getEnv().getLocalPlayer()->getCamera())
 {
@@ -77,11 +69,11 @@ s32 DistanceSortedDrawList::addLayeredMesh(LayeredMesh *newMesh, bool shadow)
     return mesh_id;
 }
 
-void DistanceSortedDrawList::removeLayeredMesh(u32 meshId, LayeredMesh *mesh, bool shadow)
+void DistanceSortedDrawList::removeLayeredMesh(u32 meshId, bool shadow)
 {
     std::unique_lock delete_lock(delete_mutex);
 
-    pending_to_delete_meshes[meshId] = mesh;
+    back_delete_meshes.emplace(meshId);
 
     if (!shadow)
         needs_update_drawlist = true;
@@ -134,10 +126,12 @@ void DistanceSortedDrawList::updateList()
         std::shared_lock delete_lock(delete_mutex);
         std::unique_lock meshes_lock(meshes_mutex);
 
-        for (auto &mesh_p : pending_to_delete_meshes) {
-            meshes_free_id = std::min(meshes_free_id, mesh_p.first);
-            meshes.erase(mesh_p.first);
+        for (auto &meshId : back_delete_meshes) {
+            meshes_free_id = std::min(meshes_free_id, meshId);
+            front_delete_meshes.emplace(meshes[meshId]);
+            meshes.erase(meshId);
         }
+        back_delete_meshes.clear();
 
         local_meshes = meshes;
     }
@@ -254,12 +248,12 @@ void DistanceSortedDrawList::render()
 
     v3s16 cameraOffset = camera->getOffset();
 
-    if (!pending_to_delete_meshes.empty()) {
+    if (!front_delete_meshes.empty()) {
         std::unique_lock delete_lock(delete_mutex);
 
-        for (auto &mesh_p : pending_to_delete_meshes)
-            delete mesh_p.second;
-        pending_to_delete_meshes.clear();
+        for (auto mesh : front_delete_meshes)
+            delete mesh;
+        front_delete_meshes.clear();
     }
     if (needs_upload_indices) {
         std::shared_lock meshes_lock(meshes_mutex);

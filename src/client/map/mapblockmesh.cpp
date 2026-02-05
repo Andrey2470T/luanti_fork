@@ -212,6 +212,8 @@ void MapBlockMesh::removeFromDrawList(bool shadow)
 {
     auto drawlist = m_client->getRenderSystem()->getDrawList();
 
-    if (m_drawlist_id != -1)
-        drawlist->removeLayeredMesh(m_drawlist_id, m_mesh);
+    if (m_drawlist_id != -1) {
+        drawlist->removeLayeredMesh(m_drawlist_id);
+        m_mesh = nullptr;
+    }
 }

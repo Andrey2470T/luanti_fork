@@ -45,10 +45,12 @@ void SelectionMesh::updateMesh(const v3f &new_pos, const v3s16 &camera_offset,
     if (new_pos == pos || mode == HIGHLIGHT_NONE)
         return;
 
-    if (drawlist_id != -1)
-        drawlist->removeLayeredMesh(drawlist_id, mesh);
+    if (drawlist_id != -1) {
+        drawlist->removeLayeredMesh(drawlist_id);
+        mesh = nullptr;
+    }
 
-    if (new_boxes.empty() && mesh)
+    if (new_boxes.empty())
         return;
 
     boxes = new_boxes;
@@ -139,8 +141,10 @@ BlockBounds::Mode BlockBounds::toggle(Client *client, DistanceSortedDrawList *dr
 
 void BlockBounds::updateMesh(Client *client, DistanceSortedDrawList *drawlist)
 {
-    if (drawlist_id != -1)
-        drawlist->removeLayeredMesh(drawlist_id, mesh);
+    if (drawlist_id != -1) {
+        drawlist->removeLayeredMesh(drawlist_id);
+        mesh = nullptr;
+    }
 
     if (mode == BLOCK_BOUNDS_OFF)
         return;

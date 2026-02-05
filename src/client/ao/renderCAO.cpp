@@ -157,7 +157,7 @@ void RenderCAO::removeMesh()
     if (m_model) {
         auto mesh = m_model->getMesh();
 
-        m_rndsys->getDrawList()->removeLayeredMesh(m_drawlist_id, mesh);
+        m_rndsys->getDrawList()->removeLayeredMesh(m_drawlist_id);
         m_drawlist_id = -1;
 
         for (auto &layer : mesh->getBufferLayers(mesh->getBuffer(0))) {

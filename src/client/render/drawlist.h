@@ -49,37 +49,6 @@ struct DrawControl
     bool show_wireframe = false;
 };
 
-class LayeredMeshRef {
-private:
-    LayeredMesh* ptr;
-    bool marked_for_deletion{false};
-
-public:
-    LayeredMeshRef(LayeredMesh* p) : ptr(p) {}
-
-    void markForDeletion()
-    {
-        marked_for_deletion = true;
-    }
-
-    bool isMarked() const
-    {
-        return marked_for_deletion;
-    }
-
-    LayeredMesh *operator*()
-    {
-        return ptr;
-    }
-
-    const LayeredMesh *operator*() const
-    {
-        return ptr;
-    }
-
-    void deleteIfMarked();
-};
-
 // Sorted by distance list of layers batched from each layered mesh
 // Allows sorting different objects (mapblocks, objects) together in the single list in order to avoid transparency issues
 class DistanceSortedDrawList
@@ -98,7 +67,8 @@ class DistanceSortedDrawList
 
     std::list<u32> visible_meshes;
 
-    std::unordered_map<u32, LayeredMesh *> pending_to_delete_meshes;
+    std::set<u32> back_delete_meshes;
+    std::set<LayeredMesh *> front_delete_meshes;
     std::shared_mutex delete_mutex;
     
     std::list<BatchedLayer> layers;
@@ -143,7 +113,7 @@ public:
     ~DistanceSortedDrawList();
 
     s32 addLayeredMesh(LayeredMesh *newMesh, bool shadow=false);
-    void removeLayeredMesh(u32 meshId, LayeredMesh *mesh, bool shadow=false);
+    void removeLayeredMesh(u32 meshId, bool shadow=false);
 
     DrawControl &getDrawControl()
     {
