@@ -239,4 +239,22 @@ bool LayeredMesh::isHardwareHolorized(u8 buf_i) const
     return buffers.at(buf_i)->getVertexType().Name == "TwoColorNode3D";
 }
 
+LayeredMesh *LayeredMesh::copy()
+{
+    auto new_mesh = new LayeredMesh(center_pos, abs_pos);
+
+    for (u32 buf_i = 0; buf_i < buffers.size(); buf_i++) {
+        auto original_mesh = getBuffer(buf_i);
+        auto copied_mesh = original_mesh->copy();
+        new_mesh->buffers.emplace_back(copied_mesh);
+
+        new_mesh->layers[copied_mesh] = getBufferLayers(original_mesh);
+
+        for (auto &layer : new_mesh->layers[copied_mesh])
+            layer.second.buf_ref = copied_mesh;
+    }
+
+    return new_mesh;
+}
+
 	

@@ -21,6 +21,7 @@ private:
     ResourceCache *m_cache;
 
     AnimationManager *m_anim_mgr;
+    s32 m_drawlist_id = -1;
     Model *m_model = nullptr;
     TileLayer m_tile_layer;
 

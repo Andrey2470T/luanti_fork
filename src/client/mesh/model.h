@@ -18,7 +18,7 @@ typedef std::pair<TileLayer, LayeredMeshPart> MeshLayer;
 
 class Model
 {
-    std::unique_ptr<LayeredMesh> mesh;
+    LayeredMesh *mesh = nullptr;
 
     Skeleton *skeleton = nullptr;
     BoneAnimation *animation = nullptr;
@@ -27,10 +27,14 @@ class Model
     std::vector<Bone *> bones;
 
     AnimationManager *mgr;
+
+    bool own_mesh = false;
 public:
-    Model(AnimationManager *_mgr);
-    Model(v3f pos, const std::vector<MeshLayer> &layers, MeshBuffer *buffer);
+    Model(AnimationManager *_mgr, bool _own_mesh=false);
+    Model(v3f pos, const std::vector<MeshLayer> &layers, MeshBuffer *buffer, bool _own_mesh=false);
     Model(AnimationManager *_mgr, const aiScene *scene);
+
+    ~Model();
 
     static Model *load(AnimationManager *_mgr, const std::string &name);
     static Model *loadFromMem(AnimationManager *_mgr,
@@ -38,7 +42,7 @@ public:
 
     LayeredMesh *getMesh() const
     {
-        return mesh.get();
+        return mesh;
     }
 
     Skeleton *getSkeleton() const
@@ -50,6 +54,8 @@ public:
     {
         return animation;
     }
+
+    Model *copy();
 private:
     void processMesh(u8 mat_i, const std::vector<aiMesh *> &meshes);
 

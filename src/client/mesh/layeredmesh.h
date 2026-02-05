@@ -197,6 +197,8 @@ public:
     {
         return camera->frustumCull(getBoundingSphereCenter(), radius + extra_radius);
     }
+
+    LayeredMesh *copy();
 private:
     bool isHardwareHolorized(u8 buf_i) const;
 };

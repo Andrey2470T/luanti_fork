@@ -20,7 +20,8 @@ class SelectionMesh
         HIGHLIGHT_NONE
     } mode;
 
-    std::unique_ptr<LayeredMesh> mesh;
+    s32 drawlist_id = -1;
+    LayeredMesh *mesh = nullptr;
 
     std::vector<aabbf> boxes;
     aabbf default_halo_box = aabbf(v3f(100.0f), v3f(-100.0f));
@@ -49,7 +50,7 @@ public:
     }
     LayeredMesh *getMesh() const
     {
-        return mesh.get();
+        return mesh;
     }
     std::vector<aabbf> *getSelectionBoxes() { return &boxes; }
 
@@ -80,7 +81,8 @@ class BlockBounds
 {
     RenderSystem *rndsys;
 
-    std::unique_ptr<LayeredMesh> mesh;
+    s32 drawlist_id = -1;
+    LayeredMesh *mesh = nullptr;
 
     f32 thickness;
 public:
@@ -99,7 +101,7 @@ public:
     }
     LayeredMesh *getMesh() const
     {
-        return mesh.get();
+        return mesh;
     }
     Mode toggle(Client *client, DistanceSortedDrawList *drawlist);
     void disable()

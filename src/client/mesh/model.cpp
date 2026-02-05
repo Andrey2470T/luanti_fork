@@ -36,13 +36,14 @@ KeyChannelInterpMode convertFromAssimpInterp(aiAnimBehaviour b)
     };
 }
 
-Model::Model(AnimationManager *_mgr)
-    : mgr(_mgr)
+Model::Model(AnimationManager *_mgr, bool _own_mesh)
+    : mgr(_mgr), own_mesh(_own_mesh)
 {}
 
-Model::Model(v3f pos, const std::vector<MeshLayer> &layers, MeshBuffer *buffer)
+Model::Model(v3f pos, const std::vector<MeshLayer> &layers, MeshBuffer *buffer, bool _own_mesh)
+    : own_mesh(_own_mesh)
 {
-    mesh = std::make_unique<LayeredMesh>(v3f(), pos);
+    mesh = new LayeredMesh(v3f(), pos);
     mesh->addNewBuffer(buffer);
 
     for (auto layer : layers)
@@ -50,7 +51,7 @@ Model::Model(v3f pos, const std::vector<MeshLayer> &layers, MeshBuffer *buffer)
 }
 
 Model::Model(AnimationManager *_mgr, const aiScene *scene)
-    : mgr(_mgr)
+    : mgr(_mgr), own_mesh(true)
 {
     // aka Material Groups
     // The material groups order defines the meshes groups one
@@ -58,7 +59,7 @@ Model::Model(AnimationManager *_mgr, const aiScene *scene)
     bool has_skeleton = scene->hasSkeletons();
     bool has_anim = scene->HasAnimations();
 
-    mesh = std::make_unique<LayeredMesh>();
+    mesh = new LayeredMesh();
     mesh->addNewBuffer(new MeshBuffer(true, has_skeleton ? AOVType : NodeVType));
 
     // process meshes
@@ -79,6 +80,12 @@ Model::Model(AnimationManager *_mgr, const aiScene *scene)
         if (has_anim)
             processAnimations(scene);
     }
+}
+
+Model::~Model()
+{
+    if (own_mesh && mesh)
+        delete mesh;
 }
 
 Model *Model::load(AnimationManager *_mgr, const std::string &name)
@@ -223,7 +230,7 @@ void Model::setBoneWeights(aiSkeleton *skeleton, aiNode *node, Bone *bone)
 void Model::processBones(const aiScene *scene)
 {
     skeleton = new Skeleton(mgr->getBonesTexture(), mgr->getBonesCount());
-    skeleton->setAnimatedMesh(mesh.get());
+    skeleton->setAnimatedMesh(mesh);
     mgr->addSkeleton(skeleton);
 
     // process bones (indexes of "bones" and "skeleton->mBones" coincide)
@@ -253,7 +260,7 @@ void Model::processBones(const aiScene *scene)
         nodes.push_back(bone);
     skeleton->addBones(nodes);
 
-    skeleton->fillMeshAttribs(mesh.get());
+    skeleton->fillMeshAttribs(mesh);
 }
 
 void Model::processAnimations(const aiScene *scene)
@@ -328,4 +335,16 @@ void Model::processAnimations(const aiScene *scene)
     posKeys.clear();
     rotKeys.clear();
     scaleKeys.clear();
+}
+
+Model *Model::copy()
+{
+    auto new_model = new Model(mgr, false);
+    new_model->mesh = mesh->copy();
+    new_model->skeleton = skeleton;
+    new_model->animation = animation;
+    new_model->bone_mappings = bone_mappings;
+    new_model->bones = bones;
+
+    return new_model;
 }

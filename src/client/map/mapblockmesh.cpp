@@ -88,7 +88,7 @@ void MeshMakeData::fillSingleNode(MapNode data, MapNode padding)
 */
 
 MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data)
-    :  m_client(client), m_mesh(std::make_unique<LayeredMesh>(v3f((data->m_side_length * 0.5f - 0.5f) * BS),
+    :  m_client(client), m_mesh(new LayeredMesh(v3f((data->m_side_length * 0.5f - 0.5f) * BS),
       intToFloat(data->m_blockpos * MAP_BLOCKSIZE, BS)))
 {
 	ZoneScoped;
@@ -122,7 +122,7 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data)
 
     {
 		// Generate everything
-        MeshGenerator(data, m_mesh.get()).generate();
+        MeshGenerator(data, m_mesh).generate();
     }
 
 
@@ -205,11 +205,13 @@ void MapBlockMesh::removeActiveObject(u16 id)
 void MapBlockMesh::addInDrawList(bool shadow)
 {
     auto drawlist = m_client->getRenderSystem()->getDrawList();
-    drawlist->addLayeredMesh(m_mesh.get());
+    m_drawlist_id = drawlist->addLayeredMesh(m_mesh);
 }
 
 void MapBlockMesh::removeFromDrawList(bool shadow)
 {
     auto drawlist = m_client->getRenderSystem()->getDrawList();
-    drawlist->removeLayeredMesh(m_mesh.get());
+
+    if (m_drawlist_id != -1)
+        drawlist->removeLayeredMesh(m_drawlist_id, m_mesh);
 }

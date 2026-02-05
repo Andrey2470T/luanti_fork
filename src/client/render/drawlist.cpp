@@ -8,6 +8,7 @@
 #include "renderer.h"
 #include "rendersystem.h"
 #include "client/player/selection.h"
+#include <shared_mutex>
 
 static void on_settings_changed(const std::string &name, void *data)
 {
@@ -22,6 +23,14 @@ static const std::string ClientMap_settings[] = {
     "enable_dynamic_shadows",
     "enable_translucent_foliage"
 };
+
+void LayeredMeshRef::deleteIfMarked()
+{
+    if (marked_for_deletion) {
+        delete ptr;
+        ptr = nullptr;
+    }
+}
 
 DistanceSortedDrawList::DistanceSortedDrawList(Client *_client)
     : client(_client), camera(client->getEnv().getLocalPlayer()->getCamera())
@@ -46,47 +55,33 @@ DistanceSortedDrawList::~DistanceSortedDrawList()
     drawlist_thread->stop();
 }
 
-void DistanceSortedDrawList::addLayeredMesh(LayeredMesh *newMesh, bool shadow)
+s32 DistanceSortedDrawList::addLayeredMesh(LayeredMesh *newMesh, bool shadow)
 {
-    if (!newMesh || newMesh->getBuffersCount() == 0) return;
+    if (!newMesh || newMesh->getBuffersCount() == 0) return -1;
 
-	MutexAutoLock meshes_lock(meshes_mutex);
+    std::unique_lock meshes_lock(meshes_mutex);
 
     auto &list = shadow ? shadow_meshes : meshes;
 
-    auto foundMesh = std::find_if(list.begin(), list.end(),
-        [newMesh] (const auto &curMesh) { return newMesh == curMesh.second; });
-
-    if (foundMesh != list.end())
-        return;
+    u32 mesh_id = meshes_free_id;
+    list[mesh_id] = newMesh;
 
     while (list.find(meshes_free_id) != list.end())
         meshes_free_id++;
-
-    list[meshes_free_id] = newMesh;
 
     if (!shadow)
         needs_update_drawlist = true;
     else
         needs_update_shadow_drawlist = true;
+
+    return mesh_id;
 }
 
-void DistanceSortedDrawList::removeLayeredMesh(LayeredMesh *mesh, bool shadow)
+void DistanceSortedDrawList::removeLayeredMesh(u32 meshId, LayeredMesh *mesh, bool shadow)
 {
-    if (!mesh) return;
+    std::unique_lock delete_lock(delete_mutex);
 
-	MutexAutoLock meshes_lock(meshes_mutex);
-
-    auto &list = shadow ? shadow_meshes : meshes;
-
-    auto foundMesh = std::find_if(list.begin(), list.end(),
-        [mesh] (const auto &curMesh) { return mesh == curMesh.second; });
-
-    if (foundMesh == list.end())
-        return;
-
-    meshes_free_id = std::min(meshes_free_id, foundMesh->first);
-    list.erase(foundMesh);
+    pending_to_delete_meshes[meshId] = mesh;
 
     if (!shadow)
         needs_update_drawlist = true;
@@ -132,15 +127,24 @@ void DistanceSortedDrawList::updateList()
 
     v3f cameraPos = camera->getPosition();
 
-    //std::unordered_map<u32, LayeredMesh *> local_meshes;
+    std::unordered_map<u32, LayeredMesh *> local_meshes;
     std::list<u32> local_visible_meshes;
 
     {
-        MutexAutoLock meshes_lock(meshes_mutex);
+        std::shared_lock delete_lock(delete_mutex);
+        std::unique_lock meshes_lock(meshes_mutex);
+
+        for (auto &mesh_p : pending_to_delete_meshes) {
+            meshes_free_id = std::min(meshes_free_id, mesh_p.first);
+            meshes.erase(mesh_p.first);
+        }
+
+        local_meshes = meshes;
+    }
 
     //MeshGrid mesh_grid = client->getMeshGrid();
 
-    for (auto &mesh_p : meshes) {
+    for (auto &mesh_p : local_meshes) {
         auto mesh = mesh_p.second;
         v3f center = mesh->getBoundingSphereCenter();
         f32 radius = mesh->getBoundingSphereRadius();
@@ -172,15 +176,13 @@ void DistanceSortedDrawList::updateList()
     mesh_sorter.camera_pos = cameraPos;
     local_visible_meshes.sort(mesh_sorter);
 
-    }
-
     f32 sorting_distance = cache_transparency_sorting_distance * BS;
 
     std::list<BatchedLayer> newlayers;
 
     // At first add solid layers, then transparent
     for (auto &mesh_n : local_visible_meshes) {
-        auto mesh = meshes[mesh_n];
+        auto mesh = local_meshes[mesh_n];
         auto all_layers = mesh->getAllLayers();
 
         for (auto &layer : all_layers) {
@@ -219,8 +221,11 @@ void DistanceSortedDrawList::updateList()
     }
 
     {
-        MutexAutoLock drawlist_lock(drawlist_mutex);
+        std::unique_lock meshes_lock(meshes_mutex);
         visible_meshes = local_visible_meshes;
+    }
+    {
+        std::unique_lock drawlist_lock(drawlist_mutex);
         layers = newlayers;
     }
 }
@@ -249,9 +254,16 @@ void DistanceSortedDrawList::render()
 
     v3s16 cameraOffset = camera->getOffset();
 
-    MutexAutoLock drawlist_lock(drawlist_mutex);
+    if (!pending_to_delete_meshes.empty()) {
+        std::unique_lock delete_lock(delete_mutex);
 
+        for (auto &mesh_p : pending_to_delete_meshes)
+            delete mesh_p.second;
+        pending_to_delete_meshes.clear();
+    }
     if (needs_upload_indices) {
+        std::shared_lock meshes_lock(meshes_mutex);
+
         needs_upload_indices = false;
 
         for (auto &mesh_n : visible_meshes) {
@@ -264,6 +276,8 @@ void DistanceSortedDrawList::render()
                 mesh->getBuffer(buf_i)->uploadData();
         }
     }
+
+    std::shared_lock drawlist_lock(drawlist_mutex);
 
     for (auto &l : layers) {
         l.first.setupRenderState(client);

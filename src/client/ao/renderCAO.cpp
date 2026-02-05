@@ -149,7 +149,7 @@ void RenderCAO::addMesh()
     mesh->getBuffer(0)->uploadData();
 
     if (isVisible())
-        m_rndsys->getDrawList()->addLayeredMesh(mesh);
+        m_drawlist_id = m_rndsys->getDrawList()->addLayeredMesh(mesh);
 }
 
 void RenderCAO::removeMesh()
@@ -157,7 +157,8 @@ void RenderCAO::removeMesh()
     if (m_model) {
         auto mesh = m_model->getMesh();
 
-        m_rndsys->getDrawList()->removeLayeredMesh(mesh);
+        m_rndsys->getDrawList()->removeLayeredMesh(m_drawlist_id, mesh);
+        m_drawlist_id = -1;
 
         for (auto &layer : mesh->getBufferLayers(mesh->getBuffer(0))) {
             auto tile = layer.first;
@@ -1254,7 +1255,7 @@ Model *addCubeModel(TileLayer &layer, v3f position, v3f visual_size)
 Model *addMeshModel(TileLayer &layer, v3f position, v3f visual_size, ResourceCache *cache,
     std::string mesh)
 {
-    auto model = cache->get<Model>(ResourceType::MODEL, mesh);
+    auto model = cache->get<Model>(ResourceType::MODEL, mesh)->copy();
 
     if (model) {
         auto mesh = model->getMesh();

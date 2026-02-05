@@ -656,7 +656,6 @@ bool Client::loadMedia(const std::string &data, const std::string &filename,
         if (!model) {
             errorstream<<"Client: Cannot create model from data of "
                     <<"file \""<<filename<<"\""<<std::endl;
-            delete model;
             return false;
         }
 

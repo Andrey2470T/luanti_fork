@@ -313,11 +313,11 @@ void MeshOperations::recalculateMeshAtlasUVs(MeshBuffer *mesh, u32 start_index, 
             }
 
             cur_uv.X = (f32)pixel_coords.X / oldImgRect->getWidth();
-            cur_uv.Y = (f32)pixel_coords.Y / oldImgRect->getHeight();
+            cur_uv.Y = (f32)pixel_coords.Y / (oldImgRect->ULC.Y - oldImgRect->LRC.Y);
         }
 
         u32 rel_x = round32(cur_uv.X * newImgRect.getWidth());
-        u32 rel_y = round32(cur_uv.Y * newImgRect.getHeight());
+        u32 rel_y = round32(cur_uv.Y * (newImgRect.ULC.Y - newImgRect.LRC.Y));
 
         v2f new_uv;
 
@@ -333,8 +333,8 @@ void MeshOperations::recalculateMeshAtlasUVs(MeshBuffer *mesh, u32 start_index, 
         passedUVs[index] = std::make_pair(true, new_uv);
     }
 
-    //for (auto &uv : passedUVs)
-    //    svtSetUV(mesh, uv.second.second, uv.first);
+    for (auto &uv : passedUVs)
+        svtSetUV(mesh, uv.second.second, uv.first);
 }
 
 /*void setMaterialFilters(video::SMaterialLayer &tex, bool bilinear, bool trilinear, bool anisotropic)

@@ -77,7 +77,7 @@ public:
 
 	LayeredMesh *getMesh() const
 	{
-		return m_mesh.get();
+        return m_mesh;
 	}
 
     std::vector<std::shared_ptr<MinimapMapblock>> moveMinimapMapblocks()
@@ -116,7 +116,8 @@ private:
 
     Client *m_client;
 
-	std::unique_ptr<LayeredMesh> m_mesh;
+    s32 m_drawlist_id = -1;
+    LayeredMesh *m_mesh = nullptr;
     std::vector<std::shared_ptr<MinimapMapblock>> m_minimap_mapblocks;
 
     std::set<u16> m_active_objects; // all AOs currently locating within the mapblock

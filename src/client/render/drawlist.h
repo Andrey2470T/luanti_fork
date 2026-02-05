@@ -6,6 +6,8 @@
 #include <memory>
 #include <list>
 #include <atomic>
+#include <set>
+#include <shared_mutex>
 
 class Client;
 class LayeredMesh;
@@ -47,6 +49,37 @@ struct DrawControl
     bool show_wireframe = false;
 };
 
+class LayeredMeshRef {
+private:
+    LayeredMesh* ptr;
+    bool marked_for_deletion{false};
+
+public:
+    LayeredMeshRef(LayeredMesh* p) : ptr(p) {}
+
+    void markForDeletion()
+    {
+        marked_for_deletion = true;
+    }
+
+    bool isMarked() const
+    {
+        return marked_for_deletion;
+    }
+
+    LayeredMesh *operator*()
+    {
+        return ptr;
+    }
+
+    const LayeredMesh *operator*() const
+    {
+        return ptr;
+    }
+
+    void deleteIfMarked();
+};
+
 // Sorted by distance list of layers batched from each layered mesh
 // Allows sorting different objects (mapblocks, objects) together in the single list in order to avoid transparency issues
 class DistanceSortedDrawList
@@ -56,19 +89,22 @@ class DistanceSortedDrawList
 
     std::unordered_map<u32, LayeredMesh *> meshes;
     std::unordered_map<u32, LayeredMesh *> shadow_meshes;
-    u32 meshes_free_id = 0;
+    u32 meshes_free_id{0};
 
-    // Blocks meshes list
-    std::mutex meshes_mutex;
+    // Blocks meshes and visible_meshes lists
+    std::shared_mutex meshes_mutex;
     // Block shadow_meshes list
-    std::mutex shadow_meshes_mutex;
+    std::shared_mutex shadow_meshes_mutex;
 
     std::list<u32> visible_meshes;
+
+    std::unordered_map<u32, LayeredMesh *> pending_to_delete_meshes;
+    std::shared_mutex delete_mutex;
     
     std::list<BatchedLayer> layers;
 
-    // Blocks visible_meshes and layers lists
-    std::mutex drawlist_mutex;
+    // Blocks layers list
+    std::shared_mutex drawlist_mutex;
 
     std::unique_ptr<DrawListUpdateThread> drawlist_thread;
 
@@ -106,8 +142,8 @@ public:
 
     ~DistanceSortedDrawList();
 
-    void addLayeredMesh(LayeredMesh *newMesh, bool shadow=false);
-    void removeLayeredMesh(LayeredMesh *mesh, bool shadow=false);
+    s32 addLayeredMesh(LayeredMesh *newMesh, bool shadow=false);
+    void removeLayeredMesh(u32 meshId, LayeredMesh *mesh, bool shadow=false);
 
     DrawControl &getDrawControl()
     {

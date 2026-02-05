@@ -45,12 +45,11 @@ void SelectionMesh::updateMesh(const v3f &new_pos, const v3s16 &camera_offset,
     if (new_pos == pos || mode == HIGHLIGHT_NONE)
         return;
 
-    if (new_boxes.empty() && mesh) {
-        mesh.reset();
-        return;
-    }
+    if (drawlist_id != -1)
+        drawlist->removeLayeredMesh(drawlist_id, mesh);
 
-    drawlist->removeLayeredMesh(mesh.get());
+    if (new_boxes.empty() && mesh)
+        return;
 
     boxes = new_boxes;
     pos = new_pos;
@@ -61,7 +60,7 @@ void SelectionMesh::updateMesh(const v3f &new_pos, const v3s16 &camera_offset,
     for (auto &box : boxes)
         max_box.addInternalBox(box);
 
-    mesh = std::make_unique<LayeredMesh>(v3f(max_box.getRadius()), pos_with_offset);
+    mesh = new LayeredMesh(v3f(max_box.getRadius()), pos_with_offset);
     mesh->getRotation() = rotation;
 
     TileLayer layer;
@@ -115,7 +114,7 @@ void SelectionMesh::updateMesh(const v3f &new_pos, const v3s16 &camera_offset,
 
     mesh->splitTransparentLayers();
 
-    drawlist->addLayeredMesh(mesh.get());
+    drawlist_id = drawlist->addLayeredMesh(mesh);
 }
 
 
@@ -140,12 +139,11 @@ BlockBounds::Mode BlockBounds::toggle(Client *client, DistanceSortedDrawList *dr
 
 void BlockBounds::updateMesh(Client *client, DistanceSortedDrawList *drawlist)
 {
-    if (mode == BLOCK_BOUNDS_OFF) {
-        mesh.reset();
-        return;
-    }
+    if (drawlist_id != -1)
+        drawlist->removeLayeredMesh(drawlist_id, mesh);
 
-    drawlist->removeLayeredMesh(mesh.get());
+    if (mode == BLOCK_BOUNDS_OFF)
+        return;
 
     u16 mesh_chunk_size = std::max<u16>(1, g_settings->getU16("client_mesh_chunk"));
 
@@ -160,7 +158,7 @@ void BlockBounds::updateMesh(Client *client, DistanceSortedDrawList *drawlist)
     s16 radius = mode == BLOCK_BOUNDS_NEAR ?
         rangelim(g_settings->getU16("show_block_bounds_radius_near"), 0, 1000) : 0;
 
-    mesh = std::make_unique<LayeredMesh>(v3f(radius * MAP_BLOCKSIZE * BS),
+    mesh = new LayeredMesh(v3f(radius * MAP_BLOCKSIZE * BS),
         intToFloat(block_pos * MAP_BLOCKSIZE, BS) - cam_offset);
     MeshBuffer *buf = new MeshBuffer(4 * radius * radius * 3, 0, false);
 
@@ -214,5 +212,5 @@ void BlockBounds::updateMesh(Client *client, DistanceSortedDrawList *drawlist)
 
     mesh->splitTransparentLayers();
 
-    drawlist->addLayeredMesh(mesh.get());
+    drawlist_id = drawlist->addLayeredMesh(mesh);
 }
