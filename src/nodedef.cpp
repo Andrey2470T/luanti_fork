@@ -919,7 +919,7 @@ void ContentFeatures::updateTextures(Client *client, const ImageSettings &tsetti
 
     if (drawtype == NDT_MESH && !mesh.empty()) {
 		// Read the mesh and apply scale
-        mesh_ptr = cache->get<Model>(ResourceType::MODEL, mesh);
+        mesh_ptr = cache->get<Model>(ResourceType::MODEL, mesh)->copy(true);
 		if (mesh_ptr) {
             v3f scale = v3f(BS) * visual_scale;
 

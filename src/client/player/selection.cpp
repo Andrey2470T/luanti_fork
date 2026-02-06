@@ -45,10 +45,9 @@ void SelectionMesh::updateMesh(const v3f &new_pos, const v3s16 &camera_offset,
     if (new_pos == pos || mode == HIGHLIGHT_NONE)
         return;
 
-    if (drawlist_id != -1) {
-        drawlist->removeLayeredMesh(drawlist_id);
-        mesh = nullptr;
-    }
+    //drawlist->removeLayeredMesh(drawlist_id);
+    //drawlist_id = -1;
+    mesh = nullptr;
 
     if (new_boxes.empty())
         return;
@@ -116,7 +115,7 @@ void SelectionMesh::updateMesh(const v3f &new_pos, const v3s16 &camera_offset,
 
     mesh->splitTransparentLayers();
 
-    drawlist_id = drawlist->addLayeredMesh(mesh);
+    //drawlist_id = drawlist->addLayeredMesh(mesh);
 }
 
 
@@ -141,10 +140,9 @@ BlockBounds::Mode BlockBounds::toggle(Client *client, DistanceSortedDrawList *dr
 
 void BlockBounds::updateMesh(Client *client, DistanceSortedDrawList *drawlist)
 {
-    if (drawlist_id != -1) {
-        drawlist->removeLayeredMesh(drawlist_id);
-        mesh = nullptr;
-    }
+    //drawlist->removeLayeredMesh(drawlist_id);
+    //drawlist_id = -1;
+    mesh = nullptr;
 
     if (mode == BLOCK_BOUNDS_OFF)
         return;
@@ -216,5 +214,5 @@ void BlockBounds::updateMesh(Client *client, DistanceSortedDrawList *drawlist)
 
     mesh->splitTransparentLayers();
 
-    drawlist_id = drawlist->addLayeredMesh(mesh);
+    //drawlist_id = drawlist->addLayeredMesh(mesh);
 }

@@ -35,8 +35,6 @@ GUIScene::GUIScene(Client *client, gui::IGUIEnvironment *env,
     m_layer->material_type = TILE_MATERIAL_ALPHA;
     m_layer->use_default_shader = false;
 
-    std::string shadername = m_model->getSkeleton() ? "object_skinned" : "object";
-    m_layer->shader = env->getResourceCache()->getOrLoad<render::Shader>(ResourceType::SHADER, shadername);
     m_layer->textures.push_back(
         env->getRenderSystem()->getAnimationManager()->getBonesTexture()->getGLTexture());
     //m_smgr->getParameters()->setAttribute(scene::ALLOW_ZWRITE_ON_TRANSPARENT, true);
@@ -48,20 +46,30 @@ void GUIScene::setModel(Model *model)
     if (model == m_model)
         return;
 
-    m_model->getMesh()->splitTransparentLayers();
+    if (m_model) {
+        delete m_model;
+        m_model = nullptr;
+    }
 
-    m_model = model;
+    if (m_model) {
+        m_model = model;
+        m_model->getMesh()->splitTransparentLayers();
+        m_model->getMesh()->getBuffer(0)->uploadData();
 
-    m_model->getMesh()->getBuffer(0)->uploadData();
+        std::string shadername = m_model->getSkeleton() ? "object_skinned" : "object";
+        m_layer->shader = Environment->getResourceCache()->getOrLoad<render::Shader>(ResourceType::SHADER, shadername);
+    }
 }
 
 void GUIScene::setTexture(BufferLayer &buf_layer, img::Image *texture)
 {
+    if (!m_model) return;
+
     auto basic_pool = Environment->getRenderSystem()->getPool(true);
     auto buffer = m_model->getMesh()->getBuffer(0);
 
     basic_pool->updateMeshUVs(buffer, buf_layer.second.offset, buf_layer.second.count,
-                              texture, buf_layer.first.tile_ref, true, true);
+        texture, buf_layer.first.tile_ref, true, true);
 
     buf_layer.first.tile_ref = texture;
 }
@@ -163,6 +171,8 @@ void GUIScene::setStyles(const std::array<StyleSpec, StyleSpec::NUM_STATES> &sty
  */
 void GUIScene::setFrameLoop(s32 begin, s32 end)
 {
+    if (!m_model) return;
+
     auto anim = m_model->getAnimation();
 
     if (!anim)
@@ -180,6 +190,8 @@ void GUIScene::setFrameLoop(s32 begin, s32 end)
  */
 void GUIScene::setAnimationSpeed(f32 speed)
 {
+    if (!m_model) return;
+
     auto anim = m_model->getAnimation();
 
     if (!anim)
@@ -192,6 +204,8 @@ void GUIScene::setAnimationSpeed(f32 speed)
 
 inline void GUIScene::calcOptimalDistance()
 {
+    if (!m_model) return;
+
     aabbf box = m_model->getMesh()->getBuffer(0)->getBoundingBox();
 	f32 width  = box.MaxEdge.X - box.MinEdge.X;
 	f32 height = box.MaxEdge.Y - box.MinEdge.Y;

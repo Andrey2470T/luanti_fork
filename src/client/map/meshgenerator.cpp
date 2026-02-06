@@ -128,8 +128,8 @@ void MeshGenerator::appendQuad(
 	const rectf *uv)
 {
     if (first_stage) {
-        mergeMeshPart(tile[0], NodeVType, 4, 6);
-        mergeMeshPart(tile[1], TwoColorNodeVType, 4, 6);
+        mergeMeshPart(tile[0], SELECT_VERTEXTYPE(tile[0]), 4, 6);
+        mergeMeshPart(tile[1], SELECT_VERTEXTYPE(tile[1]), 4, 6);
     }
     else {
         std::array<v3f, 4> transformed_positions = positions;
@@ -186,10 +186,10 @@ void MeshGenerator::appendCuboid(
             colors[face*4+2] = face_colors[2];
             colors[face*4+3] = face_colors[3];
 
-            auto buf1 = findBuffer(tiles[face][0], NodeVType, 4, 6);
+            auto buf1 = findBuffer(tiles[face][0], SELECT_VERTEXTYPE(tiles[face][0]), 4, 6);
             Batcher3D::boxFace(buf1, (BoxFaces)face, transformed_box, colors, uvs, face_mask);
 
-            auto buf2 = findBuffer(tiles[face][1], TwoColorNodeVType, 4, 6);
+            auto buf2 = findBuffer(tiles[face][1], SELECT_VERTEXTYPE(tiles[face][1]), 4, 6);
             Batcher3D::boxFace(buf2, (BoxFaces)face, transformed_box, colors, uvs, face_mask);
 
         }
@@ -799,7 +799,8 @@ void MeshGenerator::appendMeshNode()
             if (first_stage)
                 mergeMeshPart(tile[0], SELECT_VERTEXTYPE(tile[0]), mesh_part.vertex_count, mesh_part.count);
             else {
-                auto collector_buf = findBuffer(tile[0], NodeVType, mesh_part.vertex_count, mesh_part.count);
+                auto collector_buf = findBuffer(tile[0], SELECT_VERTEXTYPE(tile[0]),
+                    mesh_part.vertex_count, mesh_part.count);
 
                 for (u32 j = mesh_part.vertex_offset; j < mesh_part.vertex_offset + mesh_part.vertex_count; j++) {
                     v3f pos = svtGetPos(buf, j);

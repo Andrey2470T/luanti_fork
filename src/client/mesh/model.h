@@ -55,7 +55,7 @@ public:
         return animation;
     }
 
-    Model *copy();
+    Model *copy(bool own_mesh=false);
 private:
     void processMesh(u8 mat_i, const std::vector<aiMesh *> &meshes);
 

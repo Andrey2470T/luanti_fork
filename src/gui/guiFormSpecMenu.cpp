@@ -2788,7 +2788,7 @@ void GUIFormSpecMenu::parseModel(parserData *data, const std::string &element)
 	if (!data->explicit_size)
 		warningstream << "invalid use of model without a size[] element" << std::endl;
 
-    Model *model = m_cache->get<Model>(ResourceType::MODEL, meshstr);
+    Model *model = m_cache->get<Model>(ResourceType::MODEL, meshstr)->copy(true);
 
     if (!model) {
 		errorstream << "Invalid model element: Unable to load mesh:"

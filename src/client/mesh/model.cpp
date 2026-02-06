@@ -337,9 +337,9 @@ void Model::processAnimations(const aiScene *scene)
     scaleKeys.clear();
 }
 
-Model *Model::copy()
+Model *Model::copy(bool own_mesh)
 {
-    auto new_model = new Model(mgr, false);
+    auto new_model = new Model(mgr, own_mesh);
     new_model->mesh = mesh->copy();
     new_model->skeleton = skeleton;
     new_model->animation = animation;

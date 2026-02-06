@@ -69,8 +69,10 @@ s32 DistanceSortedDrawList::addLayeredMesh(LayeredMesh *newMesh, bool shadow)
     return mesh_id;
 }
 
-void DistanceSortedDrawList::removeLayeredMesh(u32 meshId, bool shadow)
+void DistanceSortedDrawList::removeLayeredMesh(s32 meshId, bool shadow)
 {
+    if (meshId == -1) return;
+
     std::unique_lock delete_lock(delete_mutex);
 
     back_delete_meshes.emplace(meshId);
@@ -123,7 +125,7 @@ void DistanceSortedDrawList::updateList()
     std::list<u32> local_visible_meshes;
 
     {
-        std::shared_lock delete_lock(delete_mutex);
+        std::unique_lock delete_lock(delete_mutex);
         std::unique_lock meshes_lock(meshes_mutex);
 
         for (auto &meshId : back_delete_meshes) {
@@ -140,6 +142,8 @@ void DistanceSortedDrawList::updateList()
 
     for (auto &mesh_p : local_meshes) {
         auto mesh = mesh_p.second;
+
+        if (!mesh) continue;
         v3f center = mesh->getBoundingSphereCenter();
         f32 radius = mesh->getBoundingSphereRadius();
 
@@ -177,6 +181,8 @@ void DistanceSortedDrawList::updateList()
     // At first add solid layers, then transparent
     for (auto &mesh_n : local_visible_meshes) {
         auto mesh = local_meshes[mesh_n];
+
+        if (!mesh) continue;
         auto all_layers = mesh->getAllLayers();
 
         for (auto &layer : all_layers) {
@@ -272,6 +278,7 @@ void DistanceSortedDrawList::render()
     }
 
     std::shared_lock drawlist_lock(drawlist_mutex);
+    std::shared_lock meshes_lock(meshes_mutex);
 
     for (auto &l : layers) {
         l.first.setupRenderState(client);

@@ -113,7 +113,7 @@ public:
     ~DistanceSortedDrawList();
 
     s32 addLayeredMesh(LayeredMesh *newMesh, bool shadow=false);
-    void removeLayeredMesh(u32 meshId, bool shadow=false);
+    void removeLayeredMesh(s32 meshId, bool shadow=false);
 
     DrawControl &getDrawControl()
     {
