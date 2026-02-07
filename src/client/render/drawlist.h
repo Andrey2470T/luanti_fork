@@ -67,14 +67,11 @@ class DistanceSortedDrawList
 
     std::list<u32> visible_meshes;
 
-    std::set<u32> back_delete_meshes;
-    std::set<LayeredMesh *> front_delete_meshes;
-    std::shared_mutex delete_mutex;
+    std::set<std::pair<LayeredMesh *, bool>> back_meshes_queue;
+    std::set<std::pair<LayeredMesh *, bool>> front_meshes_queue;
+    std::shared_mutex queue_mutex;
     
     std::list<BatchedLayer> layers;
-
-    // Blocks layers list
-    std::shared_mutex drawlist_mutex;
 
     std::unique_ptr<DrawListUpdateThread> drawlist_thread;
 
@@ -112,8 +109,8 @@ public:
 
     ~DistanceSortedDrawList();
 
-    s32 addLayeredMesh(LayeredMesh *newMesh, bool shadow=false);
-    void removeLayeredMesh(s32 meshId, bool shadow=false);
+    void addLayeredMesh(LayeredMesh *newMesh, bool shadow=false);
+    void removeLayeredMesh(LayeredMesh *mesh, bool shadow=false);
 
     DrawControl &getDrawControl()
     {

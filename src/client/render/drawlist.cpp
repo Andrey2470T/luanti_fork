@@ -47,35 +47,27 @@ DistanceSortedDrawList::~DistanceSortedDrawList()
     drawlist_thread->stop();
 }
 
-s32 DistanceSortedDrawList::addLayeredMesh(LayeredMesh *newMesh, bool shadow)
+void DistanceSortedDrawList::addLayeredMesh(LayeredMesh *newMesh, bool shadow)
 {
-    if (!newMesh || newMesh->getBuffersCount() == 0) return -1;
+    if (!newMesh || newMesh->getBuffersCount() == 0) return;
 
-    std::unique_lock meshes_lock(meshes_mutex);
+    std::unique_lock queue_lock(queue_mutex);
 
-    auto &list = shadow ? shadow_meshes : meshes;
-
-    u32 mesh_id = meshes_free_id;
-    list[mesh_id] = newMesh;
-
-    while (list.find(meshes_free_id) != list.end())
-        meshes_free_id++;
+    back_meshes_queue.emplace(newMesh, true);
 
     if (!shadow)
         needs_update_drawlist = true;
     else
         needs_update_shadow_drawlist = true;
-
-    return mesh_id;
 }
 
-void DistanceSortedDrawList::removeLayeredMesh(s32 meshId, bool shadow)
+void DistanceSortedDrawList::removeLayeredMesh(LayeredMesh *mesh, bool shadow)
 {
-    if (meshId == -1) return;
+    if (!mesh) return;
 
-    std::unique_lock delete_lock(delete_mutex);
+    std::unique_lock queue_lock(queue_mutex);
 
-    back_delete_meshes.emplace(meshId);
+    back_meshes_queue.emplace(mesh, false);
 
     if (!shadow)
         needs_update_drawlist = true;
@@ -125,26 +117,43 @@ void DistanceSortedDrawList::updateList()
     std::list<u32> local_visible_meshes;
 
     {
-        std::unique_lock delete_lock(delete_mutex);
-        std::unique_lock meshes_lock(meshes_mutex);
+        std::shared_lock queue_lock(queue_mutex);
 
-        for (auto &meshId : back_delete_meshes) {
-            meshes_free_id = std::min(meshes_free_id, meshId);
-            front_delete_meshes.emplace(meshes[meshId]);
-            meshes.erase(meshId);
+        {
+            std::shared_lock meshes_lock(meshes_mutex);
+            local_meshes = meshes;
         }
-        back_delete_meshes.clear();
 
-        local_meshes = meshes;
+        for (auto &mesh_p : back_meshes_queue) {
+            if (mesh_p.second) {
+                while (local_meshes.find(meshes_free_id) != local_meshes.end()) {
+                    meshes_free_id++;
+                }
+
+                local_meshes[meshes_free_id] = mesh_p.first;
+                meshes_free_id++;
+            }
+            else {
+                auto foundMesh = std::find_if(local_meshes.begin(), local_meshes.end(),
+                    [mesh_p] (auto &curMeshP) { return mesh_p.first == curMeshP.second; });
+
+                if (foundMesh != local_meshes.end()) {
+                    u32 deleted_id = foundMesh->first;
+                    local_meshes.erase(foundMesh);
+
+                    if (deleted_id < meshes_free_id) {
+                        meshes_free_id = deleted_id;
+                    }
+                }
+            }
+        }
     }
-
-    //MeshGrid mesh_grid = client->getMeshGrid();
 
     for (auto &mesh_p : local_meshes) {
         auto mesh = mesh_p.second;
 
-        if (!mesh) continue;
-        v3f center = mesh->getBoundingSphereCenter();
+        //if (!mesh) continue;
+        v3f center = mesh->getBoundingSphereCenter() - intToFloat(camera->getOffset(), BS);
         f32 radius = mesh->getBoundingSphereRadius();
 
         // Check that the mesh distance doesn't exceed the wanted range
@@ -159,13 +168,6 @@ void DistanceSortedDrawList::updateList()
         f32 frustum_cull_extra_radius = 300.0f;
         if (mesh->isFrustumCulled(camera, frustum_cull_extra_radius))
             continue;
-
-        // NOTE: works only for mapblocks now
-        // Raytraced occlusion culling - send rays from the camera to the block's corners
-        /*if (!draw_control.range_all && mesh_grid.cell_size < 4 &&
-                isMeshOccluded(mesh, mesh_grid.cell_size)) {
-            continue;
-        }*/
 
         local_visible_meshes.push_back(mesh_p.first);
     }
@@ -182,7 +184,6 @@ void DistanceSortedDrawList::updateList()
     for (auto &mesh_n : local_visible_meshes) {
         auto mesh = local_meshes[mesh_n];
 
-        if (!mesh) continue;
         auto all_layers = mesh->getAllLayers();
 
         for (auto &layer : all_layers) {
@@ -202,7 +203,7 @@ void DistanceSortedDrawList::updateList()
             find_layer->second.emplace_back(layer.second, mesh_n);
         }
 
-        v3f center = mesh->getBoundingSphereCenter();
+        v3f center = mesh->getBoundingSphereCenter() - intToFloat(camera->getOffset(), BS);
         f32 radius = mesh->getBoundingSphereRadius();
         f32 distance_sq = cameraPos.getDistanceFromSQ(center);
 
@@ -222,12 +223,21 @@ void DistanceSortedDrawList::updateList()
 
     {
         std::unique_lock meshes_lock(meshes_mutex);
+        meshes = local_meshes;
         visible_meshes = local_visible_meshes;
-    }
-    {
-        std::unique_lock drawlist_lock(drawlist_mutex);
         layers = newlayers;
     }
+    {
+        std::unique_lock queue_lock(queue_mutex);
+        for (auto &mesh_p : back_meshes_queue) {
+            if (mesh_p.second)
+                front_meshes_queue.emplace(mesh_p.first, true);
+            else
+                front_meshes_queue.emplace(mesh_p.first, false);
+        }
+        back_meshes_queue.clear();
+    }
+
 }
 
 /*void DistanceSortedDrawList::resortShadowList()
@@ -254,16 +264,23 @@ void DistanceSortedDrawList::render()
 
     v3s16 cameraOffset = camera->getOffset();
 
-    if (!front_delete_meshes.empty()) {
-        std::unique_lock delete_lock(delete_mutex);
+    if (!front_meshes_queue.empty()) {
+        std::unique_lock queue_lock(queue_mutex);
 
-        for (auto mesh : front_delete_meshes)
-            delete mesh;
-        front_delete_meshes.clear();
+        for (auto &queue_mesh: front_meshes_queue) {
+            if (queue_mesh.second) {
+                for (u8 buf_i = 0; buf_i < queue_mesh.first->getBuffersCount(); buf_i++)
+                    queue_mesh.first->getBuffer(buf_i)->flush();
+            }
+            else
+                delete queue_mesh.first;
+        }
+        front_meshes_queue.clear();
     }
-    if (needs_upload_indices) {
-        std::shared_lock meshes_lock(meshes_mutex);
 
+    std::shared_lock meshes_lock(meshes_mutex);
+
+    if (needs_upload_indices) {
         needs_upload_indices = false;
 
         for (auto &mesh_n : visible_meshes) {
@@ -276,9 +293,6 @@ void DistanceSortedDrawList::render()
                 mesh->getBuffer(buf_i)->uploadData();
         }
     }
-
-    std::shared_lock drawlist_lock(drawlist_mutex);
-    std::shared_lock meshes_lock(meshes_mutex);
 
     for (auto &l : layers) {
         l.first.setupRenderState(client);

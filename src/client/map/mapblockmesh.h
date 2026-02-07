@@ -104,11 +104,10 @@ public:
     void addActiveObject(u16 id);
     void removeActiveObject(u16 id);
 
-    const std::set<u16> &getActiveObjects() const
+    std::set<u16> getActiveObjects()
     {
         return m_active_objects;
     }
-    bool m_upload = true;
 
 private:
     void addInDrawList(bool shadow=false);
@@ -116,7 +115,6 @@ private:
 
     Client *m_client;
 
-    s32 m_drawlist_id = -1;
     LayeredMesh *m_mesh = nullptr;
     std::vector<std::shared_ptr<MinimapMapblock>> m_minimap_mapblocks;
 

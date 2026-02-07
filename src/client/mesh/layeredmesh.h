@@ -95,7 +95,7 @@ class LayeredMesh
     f32 radius = 0.0f; // in BS space, maximal distance from the center to the farest mapblock vertex
     v3f center_pos; // relative BS coords, e.g. a half-side of a mapblock cube
     v3f abs_pos; // absolute BS coords, for mapblock it is a min corner
-    v3f abs_rot;
+    v3f abs_rot{0.0f, 0.0f, 0.0f};
 
     struct TransparentTrianglesSorter
     {
@@ -154,7 +154,7 @@ public:
         const TileLayer &layer);
     
     std::vector<BufferLayer> getAllLayers() const;
-    std::vector<LayeredMeshPart> getPartialLayers() const
+    const std::vector<LayeredMeshPart> &getPartialLayers() const
     {
     	return partial_layers;
     }

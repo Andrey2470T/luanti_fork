@@ -74,8 +74,10 @@ void UITextSprite::appendToBatch()
         for (const wchar_t &ch : str.getString()) {
             auto atlas = fontAtlases->getAtlasByChar(ch);
 
-            if (!atlas)
+            if (!atlas) {
+                char_n++;
                 continue;
+            }
 
             u32 shadowOffset, shadowAlpha;
             font->getShadowParameters(&shadowOffset, &shadowAlpha);

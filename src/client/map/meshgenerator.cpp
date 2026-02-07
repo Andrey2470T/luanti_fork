@@ -30,7 +30,7 @@ MeshGenerator::MeshGenerator(MeshMakeData *input, LayeredMesh *output):
 	data(input),
 	collector(output),
 	nodedef(data->m_nodedef),
-	blockpos_nodes(data->m_blockpos * MAP_BLOCKSIZE)
+    blockpos_nodes(data->m_blockpos * MAP_BLOCKSIZE)
 {
 }
 
@@ -163,8 +163,8 @@ void MeshGenerator::appendCuboid(
 		transformed_box.MinEdge *= cur_node.f->visual_scale;
 		transformed_box.MaxEdge *= cur_node.f->visual_scale;
 	}
-	transformed_box.MinEdge += cur_node.origin;
-	transformed_box.MaxEdge += cur_node.origin;
+    transformed_box.MinEdge += cur_node.origin;
+    transformed_box.MaxEdge += cur_node.origin;
 
     std::array<img::color8, 24> colors;
 

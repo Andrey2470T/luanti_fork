@@ -122,6 +122,7 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data)
 
     {
 		// Generate everything
+        //v3f offset = intToFloat((data->m_blockpos - mesh_grid.getMeshPos(data->m_blockpos)) * MAP_BLOCKSIZE, BS);
         MeshGenerator(data, m_mesh).generate();
     }
 
@@ -205,13 +206,11 @@ void MapBlockMesh::removeActiveObject(u16 id)
 void MapBlockMesh::addInDrawList(bool shadow)
 {
     auto drawlist = m_client->getRenderSystem()->getDrawList();
-    m_drawlist_id = drawlist->addLayeredMesh(m_mesh);
+    drawlist->addLayeredMesh(m_mesh);
 }
 
 void MapBlockMesh::removeFromDrawList(bool shadow)
 {
     auto drawlist = m_client->getRenderSystem()->getDrawList();
-
-    drawlist->removeLayeredMesh(m_drawlist_id);
-    m_drawlist_id = -1;
+    drawlist->removeLayeredMesh(m_mesh);
 }

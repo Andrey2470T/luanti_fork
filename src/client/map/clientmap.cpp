@@ -134,16 +134,8 @@ void ClientMap::update()
         for (auto &block : sectorblocks) {
             block->resetUsageTimer();
 
-            if (block->mesh) {
-                // Upload new mapblock mesh buffers to GPU
-                if (block->mesh->m_upload) {
-                    auto mesh = block->mesh->getMesh();
-                    for (u8 buf_i = 0; buf_i < mesh->getBuffersCount(); buf_i++)
-                        mesh->getBuffer(buf_i)->flush();
-                    block->mesh->m_upload = false;
-                }
+            if (block->mesh)
                 blocks_in_range_with_mesh++;
-            }
         }
 	}
 
@@ -249,7 +241,8 @@ void ClientMap::updateMapBlocksActiveObjects()
         for (auto &block : sectorblocks) {
             if (!block->mesh)
                 continue;
-            for (u16 ao_id : block->mesh->getActiveObjects()) {
+            auto active_objects = block->mesh->getActiveObjects();
+            for (u16 ao_id : active_objects) {
                 auto cao = m_client->getEnv().getActiveObject(ao_id);
                 v3s16 blockpos = getContainerPos(floatToInt(cao->getPosition(), BS), BS);
 
