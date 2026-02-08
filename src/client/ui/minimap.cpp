@@ -588,7 +588,7 @@ void Minimap::drawMinimap(recti rect)
 
     rndsys->activateAtlas(minimap_overlay, false);
 
-    MeshOperations::recalculateMeshAtlasUVs(m_buffer.get(), 0, 6,
+    MeshOperations::recalculateMeshAtlasUVs(m_buffer.get(), 0, 4,
         guiPool->getAtlasByTile(minimap_overlay)->getTextureSize(), guiPool->getTileRect(minimap_overlay),
         minimap_texture->getWidth(), rectf(v2f(), toV2T<f32>(minimap_texture->getSize())), false);
     m_buffer->uploadData();
@@ -605,7 +605,7 @@ void Minimap::drawMinimap(recti rect)
     rndsys->activateAtlas(data->player_marker, false);
     m_renderer->setTransformMatrix(TMatrix::World, matrix);
 
-    MeshOperations::recalculateMeshAtlasUVs(m_buffer.get(), 0, 6,
+    MeshOperations::recalculateMeshAtlasUVs(m_buffer.get(), 0, 4,
         guiPool->getAtlasByTile(data->player_marker)->getTextureSize(), guiPool->getTileRect(data->player_marker),
         guiPool->getAtlasByTile(minimap_overlay)->getTextureSize(), guiPool->getTileRect(minimap_overlay), false);
     m_buffer->uploadData();
@@ -620,7 +620,7 @@ void Minimap::drawMinimap(recti rect)
 	// Draw player markers
     m_renderer->draw(m_buffer.get());
 
-    MeshOperations::recalculateMeshAtlasUVs(m_buffer.get(), 0, 6,
+    MeshOperations::recalculateMeshAtlasUVs(m_buffer.get(), 0, 4,
         minimap_texture->getWidth(), rectf(v2f(), toV2T<f32>(minimap_texture->getSize())),
         guiPool->getAtlasByTile(data->player_marker)->getTextureSize(), guiPool->getTileRect(data->player_marker)), false;
     m_buffer->uploadData();

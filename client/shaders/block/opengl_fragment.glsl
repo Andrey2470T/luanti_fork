@@ -29,9 +29,9 @@ in vec3 vPosition;
 in vec3 vWorldPosition;
 in lowp vec4 vColor;
 #ifdef GL_ES
-flat in mediump ivec2 vTexCoord;
+in mediump vec2 vTexCoord;
 #else
-flat in ivec2 vTexCoord;
+in vec2 vTexCoord;
 #endif
 
 #ifdef ENABLE_DYNAMIC_SHADOWS
@@ -43,7 +43,7 @@ flat in ivec2 vTexCoord;
 #endif
 
 
-in highp vec3 vEyeVec;
+in vec3 vEyeVec;
 in float vNightRatio;
 flat in int vMaterialType;
 
@@ -411,7 +411,7 @@ out vec4 outColor;
 
 void main(void)
 {
-	vec4 base = texelFetch(baseTexture, vTexCoord, 0).rgba;
+	vec4 base = texelFetch(baseTexture, ivec2(vTexCoord.x, vTexCoord.y), 0).rgba;
 	// If alpha is zero, we can just discard the pixel. This fixes transparency
 	// on GPUs like GC7000L, where GL_ALPHA_TEST is not implemented in mesa,
 	// and also on GLES 2, where GL_ALPHA_TEST is missing entirely.
@@ -547,26 +547,5 @@ void main(void)
 		col = mix(fogColor, col, fogFactor);
 	}
 
-	outColor = col;
-	// Due to a bug in some (older ?) graphics stacks (possibly in the glsl compiler ?),
-	// the fog will only be rendered correctly if the last operation before the
-	// clamp() is an addition. Else, the clamp() seems to be ignored.
-	// E.g. the following won't work:
-	//      float clarity = clamp(fogShadingParameter
-	//		* (fogDistance - length(eyeVec)) / fogDistance), 0.0, 1.0);
-	// As additions usually come for free following a multiplication, the new formula
-	// should be more efficient as well.
-	// Note: clarity = (1 - fogginess)
-	//float clarity = clamp(FogParams.density
-	//	- FogParams.density * length(vEyeVec) / FogParams.end, 0.0, 1.0);
-	//float fogColorMax = max(max(FogParams.color.r, FogParams.color.g), FogParams.color.b);
-	// Prevent zero division.
-	//if (fogColorMax < 0.0000001) fogColorMax = 1.0;
-	// For high clarity (light fog) we tint the fog color.
-	// For this to not make the fog color artificially dark we need to normalize using the
-	// fog color's brightest value. We then blend our base color with this to make the fog.
-	//col = mix(FogParams.color * pow(FogParams.color / fogColorMax, vec4(2.0 * clarity)), col, clarity);
-	//col = vec4(col.rgb, base.a);
-
-	//gl_FragData[0] = col;
+	outColor = vec4(col.rgb, 0.5);
 }

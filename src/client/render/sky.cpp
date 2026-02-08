@@ -942,7 +942,7 @@ void Sky::addTextureToSkybox(const std::string &texture, u8 id)
     auto last_image = m_skybox_images[id];
     m_skybox_images[id] = m_cache->getOrLoad<img::Image>(ResourceType::IMAGE, texture);
 
-    m_rndsys->getPool(true)->updateMeshUVs(m_skybox_mesh.get(), id*6, 6, m_skybox_images[id], last_image, false, true);
+    m_rndsys->getPool(true)->updateMeshUVs(m_skybox_mesh.get(), id*4, 4, m_skybox_images[id], last_image, false, true);
 }
 
 float getWickedTimeOfDay(float time_of_day)

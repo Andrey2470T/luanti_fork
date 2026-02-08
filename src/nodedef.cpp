@@ -666,6 +666,13 @@ static void fillTileAttribs(AtlasPool *basic_pool, ResourceCache *cache,
 
     layer.material_type = material_type;
 
+    if (material_type == TILE_MATERIAL_ALPHA ||
+        material_type == TILE_MATERIAL_PLAIN_ALPHA ||
+        material_type == TILE_MATERIAL_LIQUID_TRANSPARENT ||
+        material_type == TILE_MATERIAL_WAVING_LIQUID_TRANSPARENT) {
+        layer.material_type |= MATERIAL_FLAG_TRANSPARENT;
+    }
+
     bool has_scale = tiledef.scale > 0;
     bool use_autoscale = tsettings.autoscale_mode == AUTOSCALE_FORCE ||
         (tsettings.autoscale_mode == AUTOSCALE_ENABLE && !has_scale);

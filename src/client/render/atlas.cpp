@@ -323,7 +323,7 @@ void AtlasPool::updateMeshUVs(MeshBuffer *buffer, u32 start_index, u32 index_cou
 void AtlasPool::updateAllMeshUVs(MeshBuffer *buffer, img::Image *tile,
     img::Image *oldTile, bool toUV, bool force_add, std::optional<AtlasTileAnim> anim)
 {
-    updateMeshUVs(buffer, 0, buffer->getIndexCount(), tile, oldTile, toUV, force_add, anim);
+    updateMeshUVs(buffer, 0, buffer->getVertexCount(), tile, oldTile, toUV, force_add, anim);
 }
 
 void AtlasPool::forceAddTile(img::Image *img, std::optional<AtlasTileAnim> anim)

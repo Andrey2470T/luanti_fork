@@ -290,15 +290,8 @@ void MeshOperations::recalculateNormals(MeshBuffer *mesh, bool smooth, bool angl
 void MeshOperations::recalculateMeshAtlasUVs(MeshBuffer *mesh, u32 start_index, u32 index_count, u32 newAtlasSize,
     const rectf &newImgRect, std::optional<u32> oldAtlasSize, std::optional<rectf> oldImgRect, bool toUV)
 {
-    std::map<u32, std::pair<bool, v2f>> passedUVs;
-
     for (u32 i = start_index; i < start_index + index_count; i++) {
-        u32 index = mesh->getIndexAt(i);
-
-        if (passedUVs[index].first)
-            continue;
-
-        v2f cur_uv = svtGetUV(mesh, index);
+        v2f cur_uv = svtGetUV(mesh, i);
 
         if (oldAtlasSize.has_value() && oldImgRect.has_value()) {
             v2u pixel_coords;
@@ -316,8 +309,8 @@ void MeshOperations::recalculateMeshAtlasUVs(MeshBuffer *mesh, u32 start_index, 
             cur_uv.Y = (f32)pixel_coords.Y / (oldImgRect->ULC.Y - oldImgRect->LRC.Y);
         }
 
-        u32 rel_x = round32(cur_uv.X * newImgRect.getWidth());
-        u32 rel_y = round32(cur_uv.Y * (newImgRect.ULC.Y - newImgRect.LRC.Y));
+        u32 rel_x = round32(cur_uv.X * std::fabs((f32)newImgRect.LRC.X - (f32)newImgRect.ULC.X));
+        u32 rel_y = round32(cur_uv.Y * std::fabs((f32)newImgRect.LRC.Y - (f32)newImgRect.ULC.Y));
 
         v2f new_uv;
 
@@ -330,11 +323,8 @@ void MeshOperations::recalculateMeshAtlasUVs(MeshBuffer *mesh, u32 start_index, 
             new_uv.Y = rel_y + newImgRect.LRC.Y;
         }
 
-        passedUVs[index] = std::make_pair(true, new_uv);
+        svtSetUV(mesh, new_uv, i);
     }
-
-    for (auto &uv : passedUVs)
-        svtSetUV(mesh, uv.second.second, uv.first);
 }
 
 /*void setMaterialFilters(video::SMaterialLayer &tex, bool bilinear, bool trilinear, bool anisotropic)

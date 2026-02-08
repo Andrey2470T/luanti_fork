@@ -68,7 +68,7 @@ void GUIScene::setTexture(BufferLayer &buf_layer, img::Image *texture)
     auto basic_pool = Environment->getRenderSystem()->getPool(true);
     auto buffer = m_model->getMesh()->getBuffer(0);
 
-    basic_pool->updateMeshUVs(buffer, buf_layer.second.offset, buf_layer.second.count,
+    basic_pool->updateMeshUVs(buffer, buf_layer.second.vertex_offset, buf_layer.second.vertex_count,
         texture, buf_layer.first.tile_ref, true, true);
 
     buf_layer.first.tile_ref = texture;

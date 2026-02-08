@@ -272,8 +272,8 @@ void DistanceSortedDrawList::render()
                 for (u8 buf_i = 0; buf_i < queue_mesh.first->getBuffersCount(); buf_i++)
                     queue_mesh.first->getBuffer(buf_i)->flush();
             }
-            else
-                delete queue_mesh.first;
+            //else
+            //    delete queue_mesh.first;
         }
         front_meshes_queue.clear();
     }

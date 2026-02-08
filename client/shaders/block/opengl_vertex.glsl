@@ -30,9 +30,9 @@ out lowp vec4 vColor;
 // lie within the same bounds when MSAA is en- and disabled.
 // This fixes the stripes problem with nearest-neighbor textures and MSAA.
 #ifdef GL_ES
-flat out mediump ivec2 vTexCoord;
+out mediump vec2 vTexCoord;
 #else
-flat out ivec2 vTexCoord;
+out vec2 vTexCoord;
 #endif
 #ifdef ENABLE_DYNAMIC_SHADOWS
 	out float vCosLight;
@@ -45,7 +45,7 @@ flat out ivec2 vTexCoord;
 
 out float vAreaEnableParallax;
 
-out highp vec3 vEyeVec;
+out vec3 vEyeVec;
 out float vNightRatio;
 flat out int vMaterialType;
 
@@ -142,7 +142,7 @@ float snoise(vec3 p)
 
 void main(void)
 {
-	vTexCoord = ivec2(uv.x, uv.y);
+	vTexCoord = uv;
 	vMaterialType = materialType;
 
 	float disp_x;
@@ -187,7 +187,7 @@ void main(void)
 	gl_Position = Matrices.worldViewProj * cpos;
 
 	vPosition = gl_Position.xyz;
-	vEyeVec = -(Matrices.worldView * cpos).xyz;
+	vEyeVec = (Matrices.worldView * cpos).xyz;
 #ifdef SECONDSTAGE
 	normalPass = normalize((normal+1)/2);
 #endif

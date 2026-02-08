@@ -161,7 +161,7 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data)
             }
 
             if (atlas) {
-                MeshOperations::recalculateMeshAtlasUVs(buffer, mp.offset, mp.count, atlas_size, src_rect,
+                MeshOperations::recalculateMeshAtlasUVs(buffer, mp.vertex_offset, mp.vertex_count, atlas_size, src_rect,
                     std::nullopt, std::nullopt, false);
             }
         }
