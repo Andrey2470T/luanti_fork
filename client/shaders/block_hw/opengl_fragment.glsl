@@ -412,7 +412,7 @@ out vec4 outColor;
 
 void main(void)
 {
-	vec4 base = texelFetch(baseTexture, ivec2(vTexCoord.x, vTexCoord.y), 0).rgba;
+	vec4 base = texelFetch(baseTexture, ivec2(vTexCoord.x, vTexCoord.y), 0);
 	base.rgb *= vHWColor;
 	// If alpha is zero, we can just discard the pixel. This fixes transparency
 	// on GPUs like GC7000L, where GL_ALPHA_TEST is not implemented in mesa,
@@ -549,5 +549,5 @@ void main(void)
 		col = mix(fogColor, col, fogFactor);
 	}
 
-	outColor = vec4(col.rgb, 0.5);
+	outColor = vec4(col.rgb, base.a);
 }

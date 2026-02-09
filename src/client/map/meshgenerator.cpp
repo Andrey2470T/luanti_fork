@@ -129,7 +129,7 @@ void MeshGenerator::appendQuad(
 {
     if (first_stage) {
         mergeMeshPart(tile[0], SELECT_VERTEXTYPE(tile[0]), 4, 6);
-        //mergeMeshPart(tile[1], SELECT_VERTEXTYPE(tile[1]), 4, 6);
+        mergeMeshPart(tile[1], SELECT_VERTEXTYPE(tile[1]), 4, 6);
     }
     else {
         std::array<v3f, 4> transformed_positions = positions;
@@ -141,11 +141,15 @@ void MeshGenerator::appendQuad(
         }
         rectf uvs = uv ? *uv : rectf(v2f(0.0, 1.0), v2f(1.0, 0.0));
 
-        auto buf1 = findBuffer(tile[0], SELECT_VERTEXTYPE(tile[0]), 4, 6);
-        Batcher3D::face(buf1, transformed_positions, colors, uvs, normals);
+        if (tile[0].tile_ref) {
+            auto buf1 = findBuffer(tile[0], SELECT_VERTEXTYPE(tile[0]), 4, 6);
+            Batcher3D::face(buf1, transformed_positions, colors, uvs, normals);
+        }
 
-        //auto buf2 = findBuffer(tile[1], SELECT_VERTEXTYPE(tile[1]), 4, 6);
-        //Batcher3D::face(buf2, transformed_positions, colors, uvs, normals);
+        if (tile[1].tile_ref) {
+            auto buf2 = findBuffer(tile[1], SELECT_VERTEXTYPE(tile[1]), 4, 6);
+            Batcher3D::face(buf2, transformed_positions, colors, uvs, normals);
+        }
     }
 }
 
@@ -174,7 +178,7 @@ void MeshGenerator::appendCuboid(
 
         if (first_stage) {
             mergeMeshPart(tiles[face][0], SELECT_VERTEXTYPE(tiles[face][0]), 4, 6);
-            //mergeMeshPart(tiles[face][1], SELECT_VERTEXTYPE(tiles[face][1]), 4, 6);
+            mergeMeshPart(tiles[face][1], SELECT_VERTEXTYPE(tiles[face][1]), 4, 6);
         }
         else {
             // Get face colors from pre-calculated lighting
@@ -186,11 +190,15 @@ void MeshGenerator::appendCuboid(
             colors[face*4+2] = face_colors[2];
             colors[face*4+3] = face_colors[3];
 
-            auto buf1 = findBuffer(tiles[face][0], SELECT_VERTEXTYPE(tiles[face][0]), 4, 6);
-            Batcher3D::boxFace(buf1, (BoxFaces)face, transformed_box, colors, uvs, face_mask);
+            if (tiles[face][0].tile_ref) {
+                auto buf1 = findBuffer(tiles[face][0], SELECT_VERTEXTYPE(tiles[face][0]), 4, 6);
+                Batcher3D::boxFace(buf1, (BoxFaces)face, transformed_box, colors, uvs, face_mask);
+            }
 
-            //auto buf2 = findBuffer(tiles[face][1], SELECT_VERTEXTYPE(tiles[face][1]), 4, 6);
-            //Batcher3D::boxFace(buf2, (BoxFaces)face, transformed_box, colors, uvs, face_mask);
+            if (tiles[face][1].tile_ref) {
+                auto buf2 = findBuffer(tiles[face][1], SELECT_VERTEXTYPE(tiles[face][1]), 4, 6);
+                Batcher3D::boxFace(buf2, (BoxFaces)face, transformed_box, colors, uvs, face_mask);
+            }
 
         }
 	}
@@ -798,7 +806,7 @@ void MeshGenerator::appendMeshNode()
             const auto &mesh_part = buffer_layer.second;
             if (first_stage)
                 mergeMeshPart(tile[0], SELECT_VERTEXTYPE(tile[0]), mesh_part.vertex_count, mesh_part.count);
-            else {
+            else if (tile[0].tile_ref) {
                 auto collector_buf = findBuffer(tile[0], SELECT_VERTEXTYPE(tile[0]),
                     mesh_part.vertex_count, mesh_part.count);
 
@@ -1422,6 +1430,8 @@ void MeshGenerator::mergeMeshPart(const TileLayer &layer,
     render::VertexTypeDescriptor vType,
     u32 vertexCount, u32 indexCount)
 {
+    if (!layer.tile_ref)
+        return;
     for (u8 i = 0; i < interim_buffers.size(); i++) {
         auto &buffer = interim_buffers.at(i).first;
         // The buffer is overfilled or vertex type is different from the required one

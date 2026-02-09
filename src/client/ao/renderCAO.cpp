@@ -146,7 +146,6 @@ void RenderCAO::addMesh()
     updateVertexColor(true);
 
     mesh->splitTransparentLayers();
-    mesh->getBuffer(0)->uploadData();
 
     if (isVisible())
         m_rndsys->getDrawList()->addLayeredMeshes({mesh});
