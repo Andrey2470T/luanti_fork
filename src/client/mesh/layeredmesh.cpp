@@ -93,7 +93,7 @@ bool LayeredMesh::TransparentTrianglesSorter::operator()(const LayeredMeshTriang
     v3f trig2_c = trig2.getCenter();
 
     f32 dist1 = trig1_c.getDistanceFromSQ(camera_pos);
-    f32 dist2 = trig2_c.getDistanceFrom(camera_pos);
+    f32 dist2 = trig2_c.getDistanceFromSQ(camera_pos);
 
     return dist1 > dist2;
 }
@@ -153,14 +153,14 @@ void LayeredMesh::splitTransparentLayers()
 			
             u32 offset = layer.second.offset;
             u32 count = layer.second.count;
-            transparent_triangles.reserve(transparent_triangles.capacity() + count / 3);
+            transparent_triangles.reserve(transparent_triangles.size() + count / 3);
 			
-            for (u32 index = 0; index < count / 3; index+=3) {
+            for (u32 index = 0; index < count; index+=3) {
 			    transparent_triangles.emplace_back(
                     buffer, layer.first,
-                    *(indices+(offset+index)),
-                    *(indices+(offset+index+1)),
-                    *(indices+(offset+index+2)));
+                    indices[offset + index],
+                    indices[offset + index + 1],
+                    indices[offset + index + 2]);
             }
         }
     }
@@ -168,6 +168,7 @@ void LayeredMesh::splitTransparentLayers()
 
 void LayeredMesh::transparentSort(const v3f &cam_pos)
 {
+    if (transparent_triangles.empty()) return;
 	trig_sorter.camera_pos = cam_pos;
 	std::sort(transparent_triangles.begin(), transparent_triangles.end(), trig_sorter);
 }
@@ -188,8 +189,8 @@ bool LayeredMesh::updateIndexBuffers()
                 u32 buf_indices_count = buf_indices.size();
                 buf_indices.resize(buf_indices_count+layer.second.count);
                 memcpy(
-                    buf_indices.data()+buf_indices_count*sizeof(u32),
-                    indices+layer.second.offset*sizeof(u32),
+                    buf_indices.data()+buf_indices_count,
+                    indices+layer.second.offset,
                     layer.second.count*sizeof(u32)
                 );
             }

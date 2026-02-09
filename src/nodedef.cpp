@@ -670,7 +670,7 @@ static void fillTileAttribs(AtlasPool *basic_pool, ResourceCache *cache,
         material_type == TILE_MATERIAL_PLAIN_ALPHA ||
         material_type == TILE_MATERIAL_LIQUID_TRANSPARENT ||
         material_type == TILE_MATERIAL_WAVING_LIQUID_TRANSPARENT) {
-        layer.material_type |= MATERIAL_FLAG_TRANSPARENT;
+        layer.material_flags |= MATERIAL_FLAG_TRANSPARENT;
     }
 
     bool has_scale = tiledef.scale > 0;

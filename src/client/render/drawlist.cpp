@@ -176,7 +176,7 @@ void DistanceSortedDrawList::updateList()
     mesh_sorter.camera_pos = cameraPos;
     local_visible_meshes.sort(mesh_sorter);
 
-    f32 sorting_distance = cache_transparency_sorting_distance * BS;
+    f32 sorting_distance = cache_transparency_sorting_distance * BS * 5;
 
     std::list<BatchedLayer> newlayers;
 
@@ -209,7 +209,8 @@ void DistanceSortedDrawList::updateList()
 
         if (distance_sq <= std::pow(sorting_distance + radius, 2.0f)) {
             mesh->transparentSort(cameraPos);
-            needs_upload_indices = mesh->updateIndexBuffers();
+            if (mesh->updateIndexBuffers())
+                needs_upload_indices = true;
 
             auto partial_layers = mesh->getPartialLayers();
 
@@ -286,8 +287,10 @@ void DistanceSortedDrawList::render()
         for (auto &mesh_n : visible_meshes) {
             auto mesh = meshes[mesh_n];
 
-            if (!mesh)
+            if (!mesh) {
+                meshes.erase(mesh_n);
                 continue;
+            }
             // upload new indices lists for each buffer
             for (u8 buf_i = 0; buf_i < mesh->getBuffersCount(); buf_i++)
                 mesh->getBuffer(buf_i)->uploadData();
@@ -300,8 +303,10 @@ void DistanceSortedDrawList::render()
         for (auto &mesh_l : l.second) {
             auto mesh = meshes[mesh_l.second];
 
-            if (!mesh)
+            if (!mesh) {
+                meshes.erase(mesh_l.second);
                 continue;
+            }
             auto &lp = mesh_l.first;
 
             if (!lp.buf_ref->getVAO())
