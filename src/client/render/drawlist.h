@@ -17,7 +17,7 @@ class SelectionMesh;
 class BlockBounds;
 class Camera;
 
-typedef std::vector<std::pair<LayeredMeshPart, u32>> BatchedLayerParts;
+typedef std::vector<std::pair<LayeredMeshPart, LayeredMesh *>> BatchedLayerParts;
 typedef std::pair<TileLayer, BatchedLayerParts> BatchedLayer;
 
 class DistanceSortedDrawList;
@@ -65,13 +65,14 @@ class DistanceSortedDrawList
     // Block shadow_meshes list
     std::shared_mutex shadow_meshes_mutex;
 
-    std::list<u32> visible_meshes;
+    std::list<LayeredMesh *> visible_meshes;
 
-    std::set<std::pair<LayeredMesh *, bool>> back_meshes_queue;
-    std::set<std::pair<LayeredMesh *, bool>> front_meshes_queue;
+    std::unordered_map<LayeredMesh *, bool> back_meshes_queue;
+    std::unordered_map<LayeredMesh *, bool> front_meshes_queue;
     std::shared_mutex queue_mutex;
     
     std::list<BatchedLayer> layers;
+    std::shared_mutex layers_mutex;
 
     std::unique_ptr<DrawListUpdateThread> drawlist_thread;
 
@@ -87,12 +88,11 @@ class DistanceSortedDrawList
     class LayeredMeshSorter
     {
     public:
-        std::unordered_map<u32, LayeredMesh *> *meshes_ref = nullptr;
         v3f camera_pos;
 
         LayeredMeshSorter() = default;
 
-        bool operator() (const u32 m1_n, const u32 m2_n) const;
+        bool operator() (const LayeredMesh *m1, const LayeredMesh *m2) const;
     };
 
     LayeredMeshSorter mesh_sorter;
@@ -109,8 +109,8 @@ public:
 
     ~DistanceSortedDrawList();
 
-    void addLayeredMesh(LayeredMesh *newMesh, bool shadow=false);
-    void removeLayeredMesh(LayeredMesh *mesh, bool shadow=false);
+    void addLayeredMeshes(const std::set<LayeredMesh *> &newMeshes, bool shadow=false);
+    void removeLayeredMeshes(const std::set<LayeredMesh *> &meshes, bool shadow=false);
 
     DrawControl &getDrawControl()
     {

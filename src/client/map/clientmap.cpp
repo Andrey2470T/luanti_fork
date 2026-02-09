@@ -538,6 +538,7 @@ void ClientMap::step(f32 dtime)
                     } else {
                         // Replace with the new mesh
                         block->mesh = r.mesh;
+                        m_add_meshes.emplace(block->mesh->getMesh());
                         //if (r.urgent)
                         //    force_update_shadows = true;
                     }
@@ -601,9 +602,17 @@ void ClientMap::step(f32 dtime)
             || camera->isNecessaryUpdateDrawList()
     ) {
         updateMapBlocksActiveObjects();
-        m_client->getRenderSystem()->getDrawList()->forceUpdate();
-        update_draw_list_timer = 0;
+
+        auto drawlist = m_client->getRenderSystem()->getDrawList();
+        drawlist->addLayeredMeshes(m_add_meshes);
+        drawlist->removeLayeredMeshes(m_delete_meshes);
+        m_add_meshes.clear();
+        m_delete_meshes.clear();
+
+        drawlist->forceUpdate();
+
         update();
+        update_draw_list_timer = 0;
     }
     /* else if (RenderingEngine::get_shadow_renderer()) {
         updateShadows();

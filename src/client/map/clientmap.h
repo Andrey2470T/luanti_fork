@@ -11,6 +11,7 @@
 class Client;
 class DistanceSortedDrawList;
 class MeshUpdateManager;
+class LayeredMesh;
 
 /*
 	ClientMap
@@ -50,6 +51,11 @@ public:
     MeshGrid getMeshGrid()
     {
         return m_mesh_grid;
+    }
+
+    void pushToDeletedMeshes(LayeredMesh *mesh)
+    {
+        m_delete_meshes.emplace(mesh);
     }
 
     void startMeshUpdate();
@@ -94,4 +100,7 @@ private:
 
     const f32 update_draw_list_delta = 0.2f;
     f32 update_draw_list_timer = 0.0f;
+
+    std::set<LayeredMesh *> m_add_meshes;
+    std::set<LayeredMesh *> m_delete_meshes;
 };

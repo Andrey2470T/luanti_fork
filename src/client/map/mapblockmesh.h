@@ -110,9 +110,6 @@ public:
     }
 
 private:
-    void addInDrawList(bool shadow=false);
-    void removeFromDrawList(bool shadow=false);
-
     Client *m_client;
 
     LayeredMesh *m_mesh = nullptr;

@@ -149,7 +149,7 @@ void RenderCAO::addMesh()
     mesh->getBuffer(0)->uploadData();
 
     if (isVisible())
-        m_rndsys->getDrawList()->addLayeredMesh(mesh);
+        m_rndsys->getDrawList()->addLayeredMeshes({mesh});
 }
 
 void RenderCAO::removeMesh()
@@ -157,7 +157,7 @@ void RenderCAO::removeMesh()
     if (m_model) {
         auto mesh = m_model->getMesh();
 
-        m_rndsys->getDrawList()->removeLayeredMesh(mesh);
+        m_rndsys->getDrawList()->removeLayeredMeshes({mesh});
 
         for (auto &layer : mesh->getBufferLayers(mesh->getBuffer(0))) {
             auto tile = layer.first;

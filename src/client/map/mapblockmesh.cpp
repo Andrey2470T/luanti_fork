@@ -4,6 +4,7 @@
 
 #include "mapblockmesh.h"
 #include "client/core/client.h"
+#include "client/map/clientmap.h"
 #include "client/render/renderer.h"
 #include "mapblock.h"
 #include "map.h"
@@ -168,12 +169,11 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data)
     }
 
     m_mesh->splitTransparentLayers();
-    addInDrawList();
 }
 
 MapBlockMesh::~MapBlockMesh()
 {
-    removeFromDrawList();
+    m_client->getEnv().getClientMap().pushToDeletedMeshes(m_mesh);
 
     u32 sz = 0;
     for (u8 buf_i = 0; buf_i < m_mesh->getBuffersCount(); buf_i++) {
@@ -201,16 +201,4 @@ void MapBlockMesh::removeActiveObject(u16 id)
         return;
 
     m_active_objects.erase(found_ao);
-}
-
-void MapBlockMesh::addInDrawList(bool shadow)
-{
-    auto drawlist = m_client->getRenderSystem()->getDrawList();
-    drawlist->addLayeredMesh(m_mesh);
-}
-
-void MapBlockMesh::removeFromDrawList(bool shadow)
-{
-    auto drawlist = m_client->getRenderSystem()->getDrawList();
-    drawlist->removeLayeredMesh(m_mesh);
 }
