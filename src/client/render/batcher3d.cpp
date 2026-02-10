@@ -306,10 +306,11 @@ void Batcher3D::lineBox(MeshBuffer *buf, const aabbf &box, const img::color8 &co
     assert(buf->hasIBO());
 
     // Draws the lines as flattened triangles to be transparenct-sorted in the drawlist
-    std::array<u32, 36> indices = {
-        5, 1, 1,    1, 3, 3,    3, 7, 7,    7, 5, 5,
-        0, 2, 2,    2, 6, 6,    6, 4, 4,    4, 0, 0,
-        1, 0, 0,    3, 2, 2,    7, 6, 6,    5, 4, 4
+    std::array<u32, 12> indices = {
+        0, 1,  1, 5,  5, 4,  4, 0, // front
+        2, 3,  3, 7,  7, 6,  6, 2, // back
+        1, 3,  0, 2, // left side
+        5, 7,  4, 6  // right side
     };
 
     u32 curVIndex = buf->getVertexOffset();

@@ -2,9 +2,9 @@
 #include <assert.h>
 
 MeshBuffer::MeshBuffer(bool createIBO, const render::VertexTypeDescriptor &descr,
-    render::MeshUsage usage, bool deferUpload)
+    render::MeshUsage usage, render::PrimitiveType primType, bool deferUpload)
     : Type(createIBO ? MeshBufferType::VERTEX_INDEX : MeshBufferType::VERTEX),
-      Descriptor(descr)
+      Descriptor(descr), PrimType(primType)
 {
     if (!deferUpload)
         VAO = std::make_shared<render::Mesh>(descr, createIBO, usage);
@@ -13,9 +13,9 @@ MeshBuffer::MeshBuffer(bool createIBO, const render::VertexTypeDescriptor &descr
 // Creates either VERTEX or VERTEX_INDEX buffer types allocating the storage for 'vertexCount' and 'indexCount'
 MeshBuffer::MeshBuffer(u32 vertexCount, u32 indexCount, bool createIBO,
     const render::VertexTypeDescriptor &descr,
-    render::MeshUsage usage, bool deferUpload)
+    render::MeshUsage usage, render::PrimitiveType primType, bool deferUpload)
     : Type(createIBO ? MeshBufferType::VERTEX_INDEX : MeshBufferType::VERTEX),
-      Descriptor(descr)
+      Descriptor(descr), PrimType(primType)
 {
     if (!deferUpload)
         VAO = std::make_shared<render::Mesh>(vertexCount, indexCount, descr, createIBO, usage);
@@ -208,7 +208,8 @@ MeshBuffer *MeshBuffer::copy() const
 {
     MeshBuffer *new_mesh = new MeshBuffer(
         VBuffer.Data->count(), hasIBO() ? IBuffer.Data->count() : 0,
-        Type != MeshBufferType::VERTEX, Descriptor);
+        Type != MeshBufferType::VERTEX, Descriptor, render::MeshUsage::STATIC,
+        PrimType, !VAO);
 
     memcpy(new_mesh->VBuffer.Data->data(), VBuffer.Data->data(), VBuffer.Data->bytesCount());
 

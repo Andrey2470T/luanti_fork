@@ -30,6 +30,7 @@ class MeshBuffer
     SubMeshBuffer IBuffer;
 
     render::VertexTypeDescriptor Descriptor;
+    render::PrimitiveType PrimType;
 
     std::shared_ptr<render::Mesh> VAO;
 
@@ -37,11 +38,12 @@ class MeshBuffer
 public:
     // Creates either VERTEX or VERTEX_INDEX buffer types
     MeshBuffer(bool createIBO = true, const render::VertexTypeDescriptor &descr=render::DefaultVType,
-        render::MeshUsage usage=render::MeshUsage::STATIC, bool deferUpload=false);
+        render::MeshUsage usage=render::MeshUsage::STATIC, render::PrimitiveType primType=render::PT_TRIANGLES, bool deferUpload=false);
     // Creates either VERTEX or VERTEX_INDEX buffer types allocating the storage for 'vertexCount' and 'indexCount'
     MeshBuffer(u32 vertexCount, u32 indexCount=0, bool createIBO = true,
         const render::VertexTypeDescriptor &descr=render::DefaultVType,
-        render::MeshUsage usage=render::MeshUsage::STATIC, bool deferUpload=false);
+        render::MeshUsage usage=render::MeshUsage::STATIC,
+        render::PrimitiveType primType=render::PT_TRIANGLES, bool deferUpload=false);
 
 	MeshBufferType getType() const
 	{
@@ -51,6 +53,11 @@ public:
     render::VertexTypeDescriptor getVertexType() const
     {
         return Descriptor;
+    }
+    
+    render::PrimitiveType getPrimitiveType() const
+    {
+    	return PrimType;
     }
 
     u32 getVertexCount() const

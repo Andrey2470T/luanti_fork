@@ -85,7 +85,7 @@ PointedThing PlayerInteraction::updatePointedThing(
 
 	// Update selection mesh light level and vertex colors
 	if (!selectionboxes->empty()) {
-        selection->updateMesh(pos, camera_offset, *selectionboxes, rndsys->getDrawList());
+        selection->updateMesh(pos, *selectionboxes, rndsys->getDrawList());
         v3s16 p = floatToInt(pos, BS);
 
         std::vector<v3s16> positions(6);

@@ -60,7 +60,9 @@ Model::Model(AnimationManager *_mgr, const aiScene *scene)
     bool has_anim = scene->HasAnimations();
 
     mesh = new LayeredMesh();
-    mesh->addNewBuffer(new MeshBuffer(true, has_skeleton ? AOVType : NodeVType));
+    mesh->addNewBuffer(new MeshBuffer(
+    	true, has_skeleton ? AOVType : NodeVType,
+    	render::MeshUsage::STATIC, render::PT_TRIANGLES, true));
 
     // process meshes
     std::map<u32, std::vector<aiMesh *>> sortedMeshes;

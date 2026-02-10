@@ -31,7 +31,6 @@ class SelectionMesh
 
     v3f pos;
     v3f pos_with_offset;
-    v3f rotation;
 
     v3f face_normal;
 
@@ -41,8 +40,9 @@ class SelectionMesh
 public:
     SelectionMesh(RenderSystem *_rndsys, ResourceCache *_cache);
 
-    void updateMesh(const v3f &new_pos, const v3s16 &camera_offset,
-        const std::vector<aabbf> &new_boxes, DistanceSortedDrawList *drawlist);
+    void updateMesh(
+    	const v3f &new_pos, const std::vector<aabbf> &new_boxes,
+    	DistanceSortedDrawList *drawlist);
 
     bool isDisabled() const
     {
@@ -56,18 +56,13 @@ public:
 
     v3f getPos() const { return pos; }
 
-    void setRotation(v3f rot) { rotation = rot; }
-    v3f getRotation() const { return rotation; }
-
-    void updateCameraOffset(const v3s16 &camera_offset, DistanceSortedDrawList *drawlist)
-    {
-        updateMesh(pos, camera_offset, boxes, drawlist);
+    void setRotation(v3f rot) {
+    	if (mesh)
+    		mesh->getRotation() = rot;
     }
+    v3f getRotation() const { mesh ? return mesh->getRotation() : v3f(); }
 
-    void setLightColor(const img::color8 &c)
-    {
-        light_color = c;
-    }
+    void setLightColor(const img::color8 &c);
 
     void setSelectedFaceNormal(const v3f &normal)
     {

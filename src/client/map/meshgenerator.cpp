@@ -1428,7 +1428,8 @@ MeshGenerator::DynamicBufferLayer &MeshGenerator::DynamicBuffer::allocateNewLaye
     auto newMeshData = new MeshBuffer(
         MeshGenerator::initialVBufferCount,
         MeshGenerator::initialIBufferCount,
-        true, vertexType, render::MeshUsage::STATIC, true);
+        true, vertexType, render::MeshUsage::STATIC,
+        render::PT_TRIANGLES, true);
     layers.emplace_back(layer, std::make_unique<MeshBuffer>(newMeshData));
 
     return layers.back();
@@ -1436,8 +1437,7 @@ MeshGenerator::DynamicBufferLayer &MeshGenerator::DynamicBuffer::allocateNewLaye
 
 void MeshGenerator::DynamicBuffer::mergeLayers(LayeredMesh *outputMesh)
 {
-    auto mergedBuffer = new MeshBuffer(vertexCount, indexCount, true,
-        vertexType, render::MeshUsage::STATIC, true);
+    auto mergedBuffer = new MeshBuffer(vertexCount, indexCount, true, vertexType);
 
     for (auto &layer : layers) {
         // trim the mesh data

@@ -39,8 +39,9 @@ SelectionMesh::SelectionMesh(RenderSystem *_rndsys, ResourceCache *_cache)
         thickness = std::clamp<f32>((f32)g_settings->getS16("selectionbox_width"), 1.0f, 5.0f);
 }
 
-void SelectionMesh::updateMesh(const v3f &new_pos, const v3s16 &camera_offset,
-    const std::vector<aabbf> &new_boxes, DistanceSortedDrawList *drawlist)
+void SelectionMesh::updateMesh(
+	const v3f &new_pos, const std::vector<aabbf> &new_boxes,
+	DistanceSortedDrawList *drawlist)
 {
     if (new_pos == pos || mode == HIGHLIGHT_NONE)
         return;
@@ -53,7 +54,6 @@ void SelectionMesh::updateMesh(const v3f &new_pos, const v3s16 &camera_offset,
 
     boxes = new_boxes;
     pos = new_pos;
-    pos_with_offset = pos - intToFloat(camera_offset, BS);
 
     aabbf max_box;
 
@@ -66,7 +66,8 @@ void SelectionMesh::updateMesh(const v3f &new_pos, const v3s16 &camera_offset,
     TileLayer layer;
     layer.thing = RenderThing::BOX;
     layer.alpha_discard = 2;
-    layer.material_flags = MATERIAL_FLAG_TRANSPARENT;
+    if (mode == HIGHLIGHT_HALO)
+    	layer.material_flags = MATERIAL_FLAG_TRANSPARENT;
     layer.use_default_shader = true;
 
     // Use single halo box instead of multiple overlapping boxes.
@@ -85,35 +86,52 @@ void SelectionMesh::updateMesh(const v3f &new_pos, const v3s16 &camera_offset,
         buf = MeshOperations::convertNodeboxesToMesh({halo_box}, nullptr, 0.5f);
 
         rndsys->getPool(true)->updateAllMeshUVs(buf, halo_img);
-
-        MeshOperations::colorizeMesh(buf, light_color);
-        img::color8 face_color(img::PF_RGBA8,
-            light_color.R() * 1.5f,
-            light_color.G() * 1.5f,
-            light_color.B() * 1.5f,
-            0);
-        MeshOperations::setMeshColorByNormal(buf, face_normal, face_color);
     }
     else {
-        img::color8 res_color = base_color * light_color;
-        res_color.A(255);
-
-        buf = new MeshBuffer(8 * boxes.size(), 36 * boxes.size());
+        buf = new MeshBuffer(8 * boxes.size(), 12 * boxes.size(), true,
+        	render::DefaultVType, render::MeshUsage::STATIC, render::PT_LINES);
         for (auto &box : boxes)
-            Batcher3D::lineBox(buf, box, res_color);
+            Batcher3D::lineBox(buf, box);
 
         layer.line_thickness = thickness;
     }
 
     mesh->addNewBuffer(buf);
 
-    LayeredMeshPart mesh_p;
-    mesh_p.count = buf->getIndexCount();
+    LayeredMeshPart mesh_p = {
+    	buf, layer, 0, buf->getIndexCount(), 0, buf->getVertexCount()
+    };
     mesh->addNewLayer(buf, layer, mesh_p);
 
     mesh->splitTransparentLayers();
 
     drawlist->addLayeredMeshes({mesh});
+}
+
+void SelectionMesh::setLightColor(const img::color8 &c)
+{
+	if (!mesh || lightColor == c)
+		return;
+		
+	lightColor = c;
+	
+	auto buf = mesh->getBuffer(0);
+	if (mode == HIGHLIGHT_HALO) {
+		MeshOperations::colorizeMesh(buf, light_color);
+        img::color8 face_color(img::PF_RGBA8,
+            light_color.R() * 1.5f,
+            light_color.G() * 1.5f,
+            light_color.B() * 1.5f,
+            0);
+        MeshOperations::setMeshColorByNormal(buf, face_normal, face_color);
+	}
+	else {
+		img::color8 res_color = base_color * light_color;
+        res_color.A(255);
+        MeshOperations::colorizeMesh(buf, res_color);
+	}
+	
+	buf->uploadData();
 }
 
 
