@@ -144,6 +144,8 @@ public:
 
 	MeshBuffer *copy() const;
 
+    void extendByBuffer(const MeshBuffer *otherBuffer);
+
     bool hasIBO() const
     {
         return Type == MeshBufferType::VERTEX_INDEX;

@@ -27,12 +27,12 @@ enum class QuadDiagonal {
 class MeshGenerator
 {
 public:
-    MeshGenerator(MeshMakeData *input, LayeredMesh *output);
+    MeshGenerator(MeshMakeData *_input, LayeredMesh *_output);
 	void generate();
 
 private:
-	MeshMakeData *const data;
-	LayeredMesh *const collector;
+    MeshMakeData *const input;
+    LayeredMesh *const output;
 	const NodeDefManager *const nodedef;
 	const v3s16 blockpos_nodes;
 
@@ -166,32 +166,34 @@ private:
 	void errorUnknownDrawtype();
     void appendNode();
 
-    struct InterimBuffer {
+    struct DynamicBufferLayer {
+        TileLayer tileLayer;
+        std::unique_ptr<MeshBuffer> data;
+    };
+
+    static u32 initialVBufferCount;
+    static u32 initialIBufferCount;
+
+    struct DynamicBuffer {
         render::VertexTypeDescriptor vertexType;
-        u32 vertexCount, indexCount;
+        u32 vertexCount = 0;
+        u32 indexCount = 0;
+
+        std::vector<DynamicBufferLayer> layers = {};
+
+        DynamicBufferLayer &allocateNewLayer(const TileLayer &layer);
+        // After the allocating and filling the ready layers meshbuffers will be merged within each dynamic buffer
+        void mergeLayers(LayeredMesh *outputMesh);
     };
 
-    struct InterimBufferLayer {
-        u32 vertexCount, indexCount;
-        u32 curVertexOffset = 0;
-        u32 curIndexOffset = 0;
+    struct DynamicCollector {
+        std::vector<DynamicBuffer> buffers;
+
+        MeshBuffer *findBuffer(
+            const TileLayer &layer,
+            render::VertexTypeDescriptor vType,
+            u32 vertexCount, u32 indexCount);
     };
 
-    // The mapblock mesh generation goes over two stages (allocation, then generation)
-    bool first_stage = true;
-
-    // Maps tile layer to (current vertex offset, current index offset) pair
-    typedef std::vector<std::pair<TileLayer, InterimBufferLayer>> InterimBufferLayers;
-
-    std::vector<std::pair<InterimBuffer, InterimBufferLayers>> interim_buffers;
-    void mergeMeshPart(
-        const TileLayer &layer,
-        render::VertexTypeDescriptor vType,
-        u32 vertexCount, u32 indexCount);
-
-    MeshBuffer *findBuffer( const TileLayer &layer,
-        render::VertexTypeDescriptor vType,
-        u32 vertexCount, u32 indexCount);
-
-    void allocate();
+    DynamicCollector collector;
 };

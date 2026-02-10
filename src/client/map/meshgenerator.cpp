@@ -26,11 +26,11 @@
 
 const std::string MeshGenerator::raillike_groupname = "connect_to_raillike";
 
-MeshGenerator::MeshGenerator(MeshMakeData *input, LayeredMesh *output):
-	data(input),
-	collector(output),
-	nodedef(data->m_nodedef),
-    blockpos_nodes(data->m_blockpos * MAP_BLOCKSIZE)
+MeshGenerator::MeshGenerator(MeshMakeData *_input, LayeredMesh *_output):
+    input(_input),
+    output(_output),
+    nodedef(input->m_nodedef),
+    blockpos_nodes(input->m_blockpos * MAP_BLOCKSIZE)
 {
 }
 
@@ -54,12 +54,12 @@ void MeshGenerator::useTile(TileSpec *tile_ret, int index, u8 set_flags,
 
 void MeshGenerator::getTile(int index, TileSpec *tile_ret)
 {
-	getNodeTileN(cur_node.n, cur_node.p, index, data, *tile_ret);
+    getNodeTileN(cur_node.n, cur_node.p, index, input, *tile_ret);
 }
 
 void MeshGenerator::getTile(v3s16 direction, TileSpec *tile_ret)
 {
-	getNodeTile(cur_node.n, cur_node.p, direction, data, *tile_ret);
+    getNodeTile(cur_node.n, cur_node.p, direction, input, *tile_ret);
 }
 
 void MeshGenerator::getSpecialTile(int index, TileSpec *tile_ret)
@@ -127,29 +127,23 @@ void MeshGenerator::appendQuad(
 	const TileSpec &tile,
 	const rectf *uv)
 {
-    if (first_stage) {
-        mergeMeshPart(tile[0], SELECT_VERTEXTYPE(tile[0]), 4, 6);
-        mergeMeshPart(tile[1], SELECT_VERTEXTYPE(tile[1]), 4, 6);
+    std::array<v3f, 4> transformed_positions = positions;
+    std::array<img::color8, 4> colors;
+    for (int i = 0; i < 4; i++) {
+        transformed_positions[i] += cur_node.origin;
+        colors[i] = calculateVertexColor(transformed_positions[i], normals[i],
+        cur_node.lighting, cur_node.f->light_source);
     }
-    else {
-        std::array<v3f, 4> transformed_positions = positions;
-        std::array<img::color8, 4> colors;
-        for (int i = 0; i < 4; i++) {
-            transformed_positions[i] += cur_node.origin;
-            colors[i] = calculateVertexColor(transformed_positions[i], normals[i],
-                cur_node.lighting, cur_node.f->light_source);
-        }
-        rectf uvs = uv ? *uv : rectf(v2f(0.0, 1.0), v2f(1.0, 0.0));
+    rectf uvs = uv ? *uv : rectf(v2f(0.0, 1.0), v2f(1.0, 0.0));
 
-        if (tile[0].tile_ref) {
-            auto buf1 = findBuffer(tile[0], SELECT_VERTEXTYPE(tile[0]), 4, 6);
-            Batcher3D::face(buf1, transformed_positions, colors, uvs, normals);
-        }
+    if (tile[0].tile_ref) {
+        auto buf1 = collector.findBuffer(tile[0], SELECT_VERTEXTYPE(tile[0]), 4, 6);
+        Batcher3D::face(buf1, transformed_positions, colors, uvs, normals);
+    }
 
-        if (tile[1].tile_ref) {
-            auto buf2 = findBuffer(tile[1], SELECT_VERTEXTYPE(tile[1]), 4, 6);
-            Batcher3D::face(buf2, transformed_positions, colors, uvs, normals);
-        }
+    if (tile[1].tile_ref) {
+        auto buf2 = collector.findBuffer(tile[1], SELECT_VERTEXTYPE(tile[1]), 4, 6);
+        Batcher3D::face(buf2, transformed_positions, colors, uvs, normals);
     }
 }
 
@@ -176,30 +170,23 @@ void MeshGenerator::appendCuboid(
         if (!(face_mask & (1 << face)))
 			continue;  // Face is culled
 
-        if (first_stage) {
-            mergeMeshPart(tiles[face][0], SELECT_VERTEXTYPE(tiles[face][0]), 4, 6);
-            mergeMeshPart(tiles[face][1], SELECT_VERTEXTYPE(tiles[face][1]), 4, 6);
+        // Get face colors from pre-calculated lighting
+        std::array<img::color8, 4> face_colors = calculateFaceColors(
+            face, lighting, cur_node.f->light_source);
+
+        colors[face*4] = face_colors[0];
+        colors[face*4+1] = face_colors[1];
+        colors[face*4+2] = face_colors[2];
+        colors[face*4+3] = face_colors[3];
+
+        if (tiles[face][0].tile_ref) {
+            auto buf1 = collector.findBuffer(tiles[face][0], SELECT_VERTEXTYPE(tiles[face][0]), 4, 6);
+            Batcher3D::boxFace(buf1, (BoxFaces)face, transformed_box, colors, uvs, face_mask);
         }
-        else {
-            // Get face colors from pre-calculated lighting
-            std::array<img::color8, 4> face_colors = calculateFaceColors(
-                face, lighting, cur_node.f->light_source);
 
-            colors[face*4] = face_colors[0];
-            colors[face*4+1] = face_colors[1];
-            colors[face*4+2] = face_colors[2];
-            colors[face*4+3] = face_colors[3];
-
-            if (tiles[face][0].tile_ref) {
-                auto buf1 = findBuffer(tiles[face][0], SELECT_VERTEXTYPE(tiles[face][0]), 4, 6);
-                Batcher3D::boxFace(buf1, (BoxFaces)face, transformed_box, colors, uvs, face_mask);
-            }
-
-            if (tiles[face][1].tile_ref) {
-                auto buf2 = findBuffer(tiles[face][1], SELECT_VERTEXTYPE(tiles[face][1]), 4, 6);
-                Batcher3D::boxFace(buf2, (BoxFaces)face, transformed_box, colors, uvs, face_mask);
-            }
-
+        if (tiles[face][1].tile_ref) {
+            auto buf2 = collector.findBuffer(tiles[face][1], SELECT_VERTEXTYPE(tiles[face][1]), 4, 6);
+            Batcher3D::boxFace(buf2, (BoxFaces)face, transformed_box, colors, uvs, face_mask);
         }
 	}
 }
@@ -222,7 +209,7 @@ void MeshGenerator::appendSolidNode()
 	content_t n1 = cur_node.n.getContent();
 	for (int face = 0; face < 6; face++) {
 		v3s16 p2 = blockpos_nodes + cur_node.p + tile_dirs[face];
-		MapNode neighbor = data->m_vmanip.getNodeNoEx(p2);
+        MapNode neighbor = input->m_vmanip.getNodeNoEx(p2);
 		content_t n2 = neighbor.getContent();
 		
 		bool backface_culling = cur_node.f->drawtype == NDT_NORMAL;
@@ -281,7 +268,7 @@ void MeshGenerator::appendGlasslikeNode()
 	for (int face = 0; face < 6; face++) {
 		v3s16 dir = g_6dirs[face];
 		v3s16 neighbor_pos = blockpos_nodes + cur_node.p + dir;
-		MapNode neighbor = data->m_vmanip.getNodeNoExNoEmerge(neighbor_pos);
+        MapNode neighbor = input->m_vmanip.getNodeNoExNoEmerge(neighbor_pos);
 		
 		if (neighbor.getContent() == cur_node.n.getContent())
 			continue;
@@ -456,8 +443,8 @@ void MeshGenerator::appendPlantlikeRootedNode()
 	calculateNodeLighting(
 		cur_node.lighting,
 		blockpos_nodes + cur_node.p,
-		data->m_smooth_lighting,
-		data
+        input->m_smooth_lighting,
+        input
 	);
 	
     appendPlantlike(tile, true);
@@ -476,7 +463,7 @@ void MeshGenerator::appendFirelikeNode()
 	
 	for (int i = 0; i < 6; i++) {
 		v3s16 n2p = blockpos_nodes + cur_node.p + g_6dirs[i];
-		MapNode n2 = data->m_vmanip.getNodeNoEx(n2p);
+        MapNode n2 = input->m_vmanip.getNodeNoEx(n2p);
 		content_t n2c = n2.getContent();
 		if (n2c != CONTENT_IGNORE && n2c != CONTENT_AIR && n2c != current) {
 			neighbor[i] = true;
@@ -542,7 +529,7 @@ void MeshGenerator::appendFencelikeNode()
 	// Check +X neighbor
 	v3s16 p2 = cur_node.p;
 	p2.X++;
-	MapNode n2 = data->m_vmanip.getNodeNoEx(blockpos_nodes + p2);
+    MapNode n2 = input->m_vmanip.getNodeNoEx(blockpos_nodes + p2);
 	const ContentFeatures *f2 = &nodedef->get(n2);
 	
 	if (f2->drawtype == NDT_FENCELIKE) {
@@ -566,7 +553,7 @@ void MeshGenerator::appendFencelikeNode()
 	// Check +Z neighbor
 	p2 = cur_node.p;
 	p2.Z++;
-	n2 = data->m_vmanip.getNodeNoEx(blockpos_nodes + p2);
+    n2 = input->m_vmanip.getNodeNoEx(blockpos_nodes + p2);
 	f2 = &nodedef->get(n2);
 	
 	if (f2->drawtype == NDT_FENCELIKE) {
@@ -690,7 +677,7 @@ void MeshGenerator::appendNodeboxNode()
 	for (int dir = 0; dir != 6; dir++) {
 		u8 flag = 1 << dir;
 		v3s16 p2 = blockpos_nodes + cur_node.p + nodebox_tile_dirs[dir];
-		MapNode n2 = data->m_vmanip.getNodeNoEx(p2);
+        MapNode n2 = input->m_vmanip.getNodeNoEx(p2);
 
 		if (n2.param0 == cur_node.n.param0 &&
 				(!param2_is_rotation || cur_node.n.param2 == n2.param2) &&
@@ -702,7 +689,7 @@ void MeshGenerator::appendNodeboxNode()
 
 		if (cur_node.f->node_box.type == NODEBOX_CONNECTED) {
 			p2 = blockpos_nodes + cur_node.p + nodebox_connection_dirs[dir];
-			n2 = data->m_vmanip.getNodeNoEx(p2);
+            n2 = input->m_vmanip.getNodeNoEx(p2);
 			if (nodedef->nodeboxConnects(cur_node.n, n2, flag))
 				neighbors_set |= flag;
 		}
@@ -781,21 +768,18 @@ void MeshGenerator::appendMeshNode()
 	if (cur_node.f->mesh_ptr) {
 		auto layered_mesh = cur_node.f->mesh_ptr->getMesh();
 
-        MeshBuffer *buf = nullptr;
-        if (!first_stage) {
-            buf = layered_mesh->getBuffer(0)->copy();
+        MeshBuffer *buf = layered_mesh->getBuffer(0)->copy();
 
-            bool modified = true;
-            if (facedir)
-                MeshOperations::rotateMeshBy6dFacedir(buf, facedir);
-            else if (degrotate)
-                MeshOperations::rotateMeshXZby(buf, 1.5f * degrotate);
-            else
-                modified = false;
+        bool modified = true;
+        if (facedir)
+            MeshOperations::rotateMeshBy6dFacedir(buf, facedir);
+        else if (degrotate)
+            MeshOperations::rotateMeshXZby(buf, 1.5f * degrotate);
+        else
+            modified = false;
 
-            if (modified)
-                buf->recalculateBoundingBox();
-        }
+        if (modified)
+            buf->recalculateBoundingBox();
 
         auto buffer_layers = layered_mesh->getBufferLayers(layered_mesh->getBuffer(0));
         u8 k = 0;
@@ -804,10 +788,9 @@ void MeshGenerator::appendMeshNode()
             useTile(&tile, MYMIN(k, 5));
 
             const auto &mesh_part = buffer_layer.second;
-            if (first_stage)
-                mergeMeshPart(tile[0], SELECT_VERTEXTYPE(tile[0]), mesh_part.vertex_count, mesh_part.count);
-            else if (tile[0].tile_ref) {
-                auto collector_buf = findBuffer(tile[0], SELECT_VERTEXTYPE(tile[0]),
+
+            if (tile[0].tile_ref) {
+                auto collector_buf = collector.findBuffer(tile[0], SELECT_VERTEXTYPE(tile[0]),
                     mesh_part.vertex_count, mesh_part.count);
 
                 for (u32 j = mesh_part.vertex_offset; j < mesh_part.vertex_offset + mesh_part.vertex_count; j++) {
@@ -1009,8 +992,8 @@ void MeshGenerator::prepareLiquidNodeDrawing()
 	getSpecialTile(0, &cur_liquid.tile_top);
 	getSpecialTile(1, &cur_liquid.tile);
 
-	MapNode ntop    = data->m_vmanip.getNodeNoEx(blockpos_nodes + cur_node.p + v3s16(0,  1, 0));
-	MapNode nbottom = data->m_vmanip.getNodeNoEx(blockpos_nodes + cur_node.p + v3s16(0, -1, 0));
+    MapNode ntop    = input->m_vmanip.getNodeNoEx(blockpos_nodes + cur_node.p + v3s16(0,  1, 0));
+    MapNode nbottom = input->m_vmanip.getNodeNoEx(blockpos_nodes + cur_node.p + v3s16(0, -1, 0));
 	
 	cur_liquid.c_flowing = cur_node.f->liquid_alternative_flowing_id;
 	cur_liquid.c_source = cur_node.f->liquid_alternative_source_id;
@@ -1034,7 +1017,7 @@ void MeshGenerator::getLiquidNeighborhood()
 	for (int u = -1; u <= 1; u++) {
 		LiquidData::NeighborData &neighbor = cur_liquid.neighbors[w + 1][u + 1];
 		v3s16 p2 = cur_node.p + v3s16(u, 0, w);
-		MapNode n2 = data->m_vmanip.getNodeNoEx(blockpos_nodes + p2);
+        MapNode n2 = input->m_vmanip.getNodeNoEx(blockpos_nodes + p2);
 		neighbor.content = n2.getContent();
 		neighbor.level = -0.5f;
 		neighbor.is_same_liquid = false;
@@ -1057,7 +1040,7 @@ void MeshGenerator::getLiquidNeighborhood()
 		}
 
 		p2.Y++;
-		n2 = data->m_vmanip.getNodeNoEx(blockpos_nodes + p2);
+        n2 = input->m_vmanip.getNodeNoEx(blockpos_nodes + p2);
 		if (n2.getContent() == cur_liquid.c_source || n2.getContent() == cur_liquid.c_flowing)
 			neighbor.top_is_same_liquid = true;
 	}
@@ -1186,7 +1169,7 @@ void MeshGenerator::appendLiquidTop()
 		int u = corner_resolve[i][0];
 		int w = corner_resolve[i][1];
 
-		if (data->m_enable_water_reflections) {
+        if (input->m_enable_water_reflections) {
 			int x = positions[i].X > 0;
 			int z = positions[i].Z > 0;
 
@@ -1327,7 +1310,7 @@ void MeshGenerator::getNodeTile(MapNode mn, const v3s16 &p, const v3s16 &dir, Me
 
 bool MeshGenerator::isSameRail(v3s16 dir)
 {
-	MapNode node2 = data->m_vmanip.getNodeNoEx(blockpos_nodes + cur_node.p + dir);
+    MapNode node2 = input->m_vmanip.getNodeNoEx(blockpos_nodes + cur_node.p + dir);
 	if (node2.getContent() == cur_node.n.getContent())
 		return true;
 	const ContentFeatures &def2 = nodedef->get(node2);
@@ -1382,8 +1365,8 @@ void MeshGenerator::appendNode()
     calculateNodeLighting(
         cur_node.lighting,
         blockpos_nodes + cur_node.p,
-        data->m_smooth_lighting,
-        data
+        input->m_smooth_lighting,
+        input
     );
 
 	switch (cur_node.f->drawtype) {
@@ -1410,144 +1393,16 @@ void MeshGenerator::generate()
 {
 	ZoneScoped;
 
-    if (!first_stage)
-        return; // forbid the regenerating
-
-    allocate();
-
-    first_stage = false;
-
-	for (cur_node.p.Z = 0; cur_node.p.Z < data->m_side_length; cur_node.p.Z++)
-	for (cur_node.p.Y = 0; cur_node.p.Y < data->m_side_length; cur_node.p.Y++)
-	for (cur_node.p.X = 0; cur_node.p.X < data->m_side_length; cur_node.p.X++) {
-		cur_node.n = data->m_vmanip.getNodeNoEx(blockpos_nodes + cur_node.p);
+    for (cur_node.p.Z = 0; cur_node.p.Z < input->m_side_length; cur_node.p.Z++)
+    for (cur_node.p.Y = 0; cur_node.p.Y < input->m_side_length; cur_node.p.Y++)
+    for (cur_node.p.X = 0; cur_node.p.X < input->m_side_length; cur_node.p.X++) {
+        cur_node.n = input->m_vmanip.getNodeNoEx(blockpos_nodes + cur_node.p);
 		cur_node.f = &nodedef->get(cur_node.n);
         appendNode();
 	}
-}
 
-void MeshGenerator::mergeMeshPart(const TileLayer &layer,
-    render::VertexTypeDescriptor vType,
-    u32 vertexCount, u32 indexCount)
-{
-    if (!layer.tile_ref)
-        return;
-    for (u8 i = 0; i < interim_buffers.size(); i++) {
-        auto &buffer = interim_buffers.at(i).first;
-        // The buffer is overfilled or vertex type is different from the required one
-        if (((u64)buffer.vertexCount + vertexCount > (u64)T_MAX(u32)) ||
-            (vType.Name != buffer.vertexType.Name))
-            continue;
-
-        buffer.vertexCount += vertexCount;
-        buffer.indexCount += indexCount;
-
-        auto &buf_layers = interim_buffers.at(i).second;
-        auto found_buf_layer = std::find_if(buf_layers.begin(), buf_layers.end(),
-            [layer] (const std::pair<TileLayer, InterimBufferLayer> &cur_buf_layer)
-        { return layer == cur_buf_layer.first; });
-
-        if (found_buf_layer == buf_layers.end()) {
-            InterimBufferLayer buf_layer = {vertexCount, indexCount};
-            buf_layers.emplace_back(layer, buf_layer);
-        }
-        else {
-            auto &buf_layer = *found_buf_layer;
-            buf_layer.second.vertexCount += vertexCount;
-            buf_layer.second.indexCount += indexCount;
-        }
-
-        return;
-    }
-
-    InterimBuffer buffer = {vType, vertexCount, indexCount};
-    InterimBufferLayers buf_layers;
-
-    InterimBufferLayer buf_layer = {vertexCount, indexCount};
-    buf_layers.emplace_back(layer, buf_layer);
-    interim_buffers.emplace_back(buffer, buf_layers);
-}
-
-MeshBuffer *MeshGenerator::findBuffer(const TileLayer &layer,
-    render::VertexTypeDescriptor vType,
-    u32 vertexCount, u32 indexCount)
-{
-    for (u8 buf_i = 0; buf_i < collector->getBuffersCount(); buf_i++) {
-        auto buffer = collector->getBuffer(buf_i);
-
-        auto &buf_layers = interim_buffers.at(buf_i).second;
-        auto found_buf_layer = std::find_if(buf_layers.begin(), buf_layers.end(),
-            [layer] (const std::pair<TileLayer, InterimBufferLayer> &cur_buf_layer)
-        { return layer == cur_buf_layer.first; });
-        auto &buf_layer = found_buf_layer->second;
-
-        if (buffer->getVertexType().Name != vType.Name || buf_layer.vertexCount == 0)
-            continue;
-
-        buffer->setVertexOffset(buf_layer.curVertexOffset);
-        buffer->setIndexOffset(buf_layer.curIndexOffset);
-        buf_layer.curVertexOffset += vertexCount;
-        buf_layer.curIndexOffset += indexCount;
-
-        return buffer;
-    }
-
-    return nullptr;
-}
-
-void MeshGenerator::allocate()
-{
-    for (cur_node.p.Z = 0; cur_node.p.Z < data->m_side_length; cur_node.p.Z++)
-    for (cur_node.p.Y = 0; cur_node.p.Y < data->m_side_length; cur_node.p.Y++)
-    for (cur_node.p.X = 0; cur_node.p.X < data->m_side_length; cur_node.p.X++) {
-        cur_node.n = data->m_vmanip.getNodeNoEx(blockpos_nodes + cur_node.p);
-        cur_node.f = &nodedef->get(cur_node.n);
-
-        switch (cur_node.f->drawtype) {
-        case NDT_AIRLIKE:           break;
-        case NDT_LIQUID:
-        case NDT_NORMAL:            appendSolidNode(); break;
-        case NDT_FLOWINGLIQUID:     appendLiquidNode(); break;
-        case NDT_GLASSLIKE:         appendGlasslikeNode(); break;
-        case NDT_GLASSLIKE_FRAMED:  appendGlasslikeFramedNode(); break;
-        case NDT_ALLFACES:          appendAllfacesNode(); break;
-        case NDT_TORCHLIKE:         appendTorchlikeNode(); break;
-        case NDT_SIGNLIKE:          appendSignlikeNode(); break;
-        case NDT_PLANTLIKE:         appendPlantlikeNode(); break;
-        case NDT_PLANTLIKE_ROOTED:  appendPlantlikeRootedNode(); break;
-        case NDT_FIRELIKE:          appendFirelikeNode(); break;
-        case NDT_FENCELIKE:         appendFencelikeNode(); break;
-        case NDT_RAILLIKE:          appendRaillikeNode(); break;
-        case NDT_NODEBOX:           appendNodeboxNode(); break;
-        case NDT_MESH:              appendMeshNode(); break;
-        default:                    errorUnknownDrawtype(); break;
-        }
-    }
-
-    for (auto &buffer : interim_buffers) {
-        auto mesh_buffer = new MeshBuffer(
-            buffer.first.vertexCount, buffer.first.indexCount, true, buffer.first.vertexType,
-            render::MeshUsage::STATIC, true);
-        collector->addNewBuffer(mesh_buffer);
-
-        u32 vertex_offset = 0;
-        u32 index_offset = 0;
-
-        for (auto &layer : buffer.second) {
-            layer.second.curVertexOffset = vertex_offset;
-            layer.second.curIndexOffset = index_offset;
-
-            LayeredMeshPart mesh_part = {
-                mesh_buffer, layer.first, layer.second.curIndexOffset, layer.second.indexCount
-            };
-            mesh_part.vertex_offset = layer.second.curVertexOffset;
-            mesh_part.vertex_count = layer.second.vertexCount;
-            collector->addNewLayer(mesh_buffer, layer.first, mesh_part);
-
-            vertex_offset += layer.second.vertexCount;
-            index_offset += layer.second.indexCount;
-        }
-    }
+    for (auto &buffer : collector.buffers)
+        buffer.mergeLayers(output);
 }
 
 // Glasslike framed - keep as original for now (complex, needs full rewrite)
@@ -1556,4 +1411,99 @@ void MeshGenerator::appendGlasslikeFramedNode()
 	// TODO: Implement with unified lighting
 	// For now, call original implementation
 	warningstream << "drawGlasslikeFramedNode() not yet implemented in unified generator" << std::endl;
+}
+
+u32 MeshGenerator::initialVBufferCount = 24 * 16 * 16 * 16 / 12;
+u32 MeshGenerator::initialIBufferCount = 36 * 16 * 16 * 16 / 12;
+
+MeshGenerator::DynamicBufferLayer &MeshGenerator::DynamicBuffer::allocateNewLayer(const TileLayer &layer)
+{
+    // Preallocate the buffer storage basing on assumption that usually
+    // each chunk (16x16x16) is filled fully with only regular nodes
+    // without face culling (all 6 faces are visible, 24 vertices and
+    // and 36 indices per a node) and that mesh data is uniformly
+    // distributed between 12 chunk layers.
+    // The layers buffers will be either extended if necessary and
+    // trimmed at the end with the excessive unused byte data
+    auto newMeshData = new MeshBuffer(
+        MeshGenerator::initialVBufferCount,
+        MeshGenerator::initialIBufferCount,
+        true, vertexType, render::MeshUsage::STATIC, true);
+    layers.emplace_back(layer, std::make_unique<MeshBuffer>(newMeshData));
+
+    return layers.back();
+}
+
+void MeshGenerator::DynamicBuffer::mergeLayers(LayeredMesh *outputMesh)
+{
+    auto mergedBuffer = new MeshBuffer(vertexCount, indexCount, true,
+        vertexType, render::MeshUsage::STATIC, true);
+
+    for (auto &layer : layers) {
+        // trim the mesh data
+        layer.data->reallocateData(layer.data->getVertexOffset(), layer.data->getIndexOffset());
+        mergedBuffer->extendByBuffer(layer.data.get());
+    }
+
+    outputMesh->addNewBuffer(mergedBuffer);
+
+    u32 vertexOffset = 0;
+    u32 indexOffset = 0;
+
+    for (auto &layer : layers) {
+        LayeredMeshPart mesh_part = {
+            mergedBuffer, layer.tileLayer, indexOffset, layer.data->getIndexCount()
+        };
+        mesh_part.vertex_offset = vertexOffset;
+        mesh_part.vertex_count = layer.data->getVertexCount();
+        outputMesh->addNewLayer(mergedBuffer, layer.tileLayer, mesh_part);
+
+        vertexOffset += layer.data->getVertexCount();
+        indexOffset += layer.data->getIndexCount();
+    }
+}
+
+MeshBuffer *MeshGenerator::DynamicCollector::findBuffer(
+    const TileLayer &layer,
+    render::VertexTypeDescriptor vType,
+    u32 vertexCount,
+    u32 indexCount)
+{
+    for (auto &buffer : buffers) {
+        if (((u64)buffer.vertexCount + vertexCount > (u64)T_MAX(u32)) ||
+            (vType.Name != buffer.vertexType.Name))
+            continue;
+
+        buffer.vertexCount += vertexCount;
+        buffer.indexCount += indexCount;
+
+        auto foundLayer = std::find_if(buffer.layers.begin(), buffer.layers.end(),
+            [layer] (const auto &curLayer)
+        { return layer == curLayer.tileLayer; });
+
+        if (foundLayer == buffer.layers.end()) {
+            return buffer.allocateNewLayer(layer).data.get();
+        }
+        else {
+            auto &bufLayer = *foundLayer;
+
+            u32 vertexOffset = bufLayer.data->getVertexOffset();
+            u32 indexOffset = bufLayer.data->getIndexOffset();
+            u32 newVertexCount = vertexOffset + 1 + vertexCount;
+            u32 newIndexCount = indexOffset + 1 + indexCount;
+
+            if (newVertexCount > bufLayer.data->getVertexCount())
+                bufLayer.data->reallocateData(newVertexCount, newIndexCount);
+
+            bufLayer.data->setVertexOffset(vertexOffset + vertexCount);
+            bufLayer.data->setIndexOffset(indexOffset + indexCount);
+
+            return bufLayer.data.get();
+        }
+    }
+
+    buffers.emplace_back(vType);
+    buffers.back().allocateNewLayer(layer);
+
+    return buffers.back().layers.back().data.get();
 }

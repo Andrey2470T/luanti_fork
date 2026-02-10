@@ -221,6 +221,31 @@ MeshBuffer *MeshBuffer::copy() const
     return new_mesh;
 }
 
+void MeshBuffer::extendByBuffer(const MeshBuffer *otherBuffer)
+{
+    u32 curVertexCount = VBuffer.Data->count();
+    u32 curIndexCount = IBuffer.Data->count();
+
+    u32 curVertexBytes = VBuffer.Data->bytesCount();
+
+    reallocateData(
+        curVertexCount + otherBuffer->getVertexCount(),
+        curIndexCount + otherBuffer->getIndexCount());
+
+    memcpy((u8 *)VBuffer.Data->data()+curVertexBytes,
+        (u8 *)otherBuffer->getVertexData(), otherBuffer->VBuffer.Data->bytesCount());
+
+    std::vector<u32> shiftedIndices;
+    shiftedIndices.resize(otherBuffer->getIndexCount());
+
+    auto otherIndexData = (u32 *)otherBuffer->getIndexData();
+    for (u32 i = 0; i < shiftedIndices.size(); i++)
+        shiftedIndices[i] = curVertexCount + otherIndexData[i];
+
+    memcpy((u32 *)IBuffer.Data->data()+curIndexCount,
+        shiftedIndices.data(), shiftedIndices.size());
+}
+
 void MeshBuffer::initData(u32 vertexCount, u32 indexCount)
 {
     createSubMeshBuffer(vertexCount);
