@@ -54,11 +54,8 @@ public:
 
     v3f getPos() const { return pos; }
 
-    void setRotation(v3f rot) {
-    	if (mesh)
-    		mesh->getRotation() = rot;
-    }
-    v3f getRotation() const { mesh ? return mesh->getRotation() : v3f(); }
+    void setRotation(v3f rot);
+    v3f getRotation() const;
 
     void setLightColor(const img::color8 &c, const v3f &normal=v3f());
 };

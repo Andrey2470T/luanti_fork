@@ -173,8 +173,6 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data)
 
 MapBlockMesh::~MapBlockMesh()
 {
-    m_client->getEnv().getClientMap().pushToDeletedMeshes(m_mesh);
-
     u32 sz = 0;
     for (u8 buf_i = 0; buf_i < m_mesh->getBuffersCount(); buf_i++) {
         sz += m_mesh->getBuffer(buf_i)->getVertexCount();

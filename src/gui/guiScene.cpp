@@ -127,7 +127,7 @@ void GUIScene::draw()
 
             auto &ml = layer.second;
 
-            rnd->draw(lmesh->getBuffer(0), render::PT_TRIANGLES, ml.offset, ml.count);
+            rnd->draw(lmesh->getBuffer(0), ml.offset, ml.count);
         }
     }
 

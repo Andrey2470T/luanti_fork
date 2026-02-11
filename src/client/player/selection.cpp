@@ -61,7 +61,6 @@ void SelectionMesh::updateMesh(
         max_box.addInternalBox(box);
 
     mesh = new LayeredMesh(v3f(max_box.getRadius()), pos);
-    mesh->getRotation() = rotation;
 
     TileLayer layer;
     layer.thing = RenderThing::BOX;
@@ -88,7 +87,7 @@ void SelectionMesh::updateMesh(
         rndsys->getPool(true)->updateAllMeshUVs(buf, halo_img);
     }
     else {
-        buf = new MeshBuffer(8 * boxes.size(), 12 * boxes.size(), true,
+        buf = new MeshBuffer(8 * boxes.size(), 24 * boxes.size(), true,
         	render::DefaultVType, render::MeshUsage::STATIC, render::PT_LINES);
         for (auto &box : boxes)
             Batcher3D::lineBox(buf, box);
@@ -99,8 +98,10 @@ void SelectionMesh::updateMesh(
     mesh->addNewBuffer(buf);
 
     LayeredMeshPart mesh_p = {
-    	buf, layer, 0, buf->getIndexCount(), 0, buf->getVertexCount()
+        buf, layer, 0, buf->getIndexCount()
     };
+    mesh_p.vertex_offset = 0;
+    mesh_p.vertex_count = buf->getVertexCount();
     mesh->addNewLayer(buf, layer, mesh_p);
 
     mesh->splitTransparentLayers();
@@ -108,12 +109,21 @@ void SelectionMesh::updateMesh(
     drawlist->addLayeredMeshes({mesh});
 }
 
+void SelectionMesh::setRotation(v3f rot) {
+    if (mesh)
+        mesh->getRotation() = rot;
+}
+
+v3f SelectionMesh::getRotation() const {
+    return mesh ? mesh->getRotation() : v3f();
+}
+
 void SelectionMesh::setLightColor(const img::color8 &c, const v3f &normal)
 {
-	if (!mesh || lightColor == c || face_normal == normal)
+    if (!mesh || light_color == c || face_normal == normal)
 		return;
 		
-	lightColor = c;
+    light_color = c;
 	face_normal = normal;
 	
 	auto buf = mesh->getBuffer(0);
@@ -230,9 +240,10 @@ void BlockBounds::updateMesh(Client *client, DistanceSortedDrawList *drawlist)
     mesh->addNewBuffer(buf);
 
     LayeredMeshPart mesh_p = {
-    	buf, layer, 0, buf->getIndexCount(), 0, buf->getVertexCount()
+        buf, layer, 0, buf->getIndexCount()
     };
-
+    mesh_p.vertex_offset = 0;
+    mesh_p.vertex_count = buf->getVertexCount();
     mesh->addNewLayer(buf, layer, mesh_p);
 
     mesh->splitTransparentLayers();

@@ -781,7 +781,7 @@ void MeshGenerator::appendMeshNode()
         if (modified)
             buf->recalculateBoundingBox();
 
-        auto buffer_layers = layered_mesh->getBufferLayers(layered_mesh->getBuffer(0));
+        auto buffer_layers = layered_mesh->getBufferLayers(buf);
         u8 k = 0;
         for (const auto &buffer_layer : buffer_layers) {
             TileSpec tile;
@@ -1402,7 +1402,7 @@ void MeshGenerator::generate()
 	}
 
     for (auto &buffer : collector.buffers)
-        buffer.mergeLayers(output);
+        buffer->mergeLayers(output);
 }
 
 // Glasslike framed - keep as original for now (complex, needs full rewrite)
@@ -1413,10 +1413,14 @@ void MeshGenerator::appendGlasslikeFramedNode()
 	warningstream << "drawGlasslikeFramedNode() not yet implemented in unified generator" << std::endl;
 }
 
+MeshGenerator::DynamicBufferLayer::DynamicBufferLayer(const TileLayer &_tileLayer, MeshBuffer *_data)
+    : tileLayer(_tileLayer), data(std::unique_ptr<MeshBuffer>(_data))
+{}
+
 u32 MeshGenerator::initialVBufferCount = 24 * 16 * 16 * 16 / 12;
 u32 MeshGenerator::initialIBufferCount = 36 * 16 * 16 * 16 / 12;
 
-MeshGenerator::DynamicBufferLayer &MeshGenerator::DynamicBuffer::allocateNewLayer(const TileLayer &layer)
+MeshGenerator::DynamicBufferLayer *MeshGenerator::DynamicBuffer::allocateNewLayer(const TileLayer &layer)
 {
     // Preallocate the buffer storage basing on assumption that usually
     // each chunk (16x16x16) is filled fully with only regular nodes
@@ -1430,19 +1434,21 @@ MeshGenerator::DynamicBufferLayer &MeshGenerator::DynamicBuffer::allocateNewLaye
         MeshGenerator::initialIBufferCount,
         true, vertexType, render::MeshUsage::STATIC,
         render::PT_TRIANGLES, true);
-    layers.emplace_back(layer, std::make_unique<MeshBuffer>(newMeshData));
+    layers.emplace_back(std::make_unique<DynamicBufferLayer>(layer, newMeshData));
 
-    return layers.back();
+    return layers.back().get();
 }
 
 void MeshGenerator::DynamicBuffer::mergeLayers(LayeredMesh *outputMesh)
 {
-    auto mergedBuffer = new MeshBuffer(vertexCount, indexCount, true, vertexType);
+    auto mergedBuffer = new MeshBuffer(
+        vertexCount, indexCount, true, vertexType,
+        render::MeshUsage::STATIC, render::PT_TRIANGLES, true);
 
     for (auto &layer : layers) {
         // trim the mesh data
-        layer.data->reallocateData(layer.data->getVertexOffset(), layer.data->getIndexOffset());
-        mergedBuffer->extendByBuffer(layer.data.get());
+        layer->data->reallocateData(layer->data->getVertexOffset(), layer->data->getIndexOffset());
+        mergedBuffer->extendByBuffer(layer->data.get());
     }
 
     outputMesh->addNewBuffer(mergedBuffer);
@@ -1452,58 +1458,53 @@ void MeshGenerator::DynamicBuffer::mergeLayers(LayeredMesh *outputMesh)
 
     for (auto &layer : layers) {
         LayeredMeshPart mesh_part = {
-            mergedBuffer, layer.tileLayer, indexOffset, layer.data->getIndexCount()
+            mergedBuffer, layer->tileLayer, indexOffset, layer->data->getIndexCount()
         };
         mesh_part.vertex_offset = vertexOffset;
-        mesh_part.vertex_count = layer.data->getVertexCount();
-        outputMesh->addNewLayer(mergedBuffer, layer.tileLayer, mesh_part);
+        mesh_part.vertex_count = layer->data->getVertexCount();
+        outputMesh->addNewLayer(mergedBuffer, layer->tileLayer, mesh_part);
 
-        vertexOffset += layer.data->getVertexCount();
-        indexOffset += layer.data->getIndexCount();
+        vertexOffset += layer->data->getVertexCount();
+        indexOffset += layer->data->getIndexCount();
     }
 }
 
 MeshBuffer *MeshGenerator::DynamicCollector::findBuffer(
     const TileLayer &layer,
-    render::VertexTypeDescriptor vType,
+    const render::VertexTypeDescriptor &vType,
     u32 vertexCount,
     u32 indexCount)
 {
     for (auto &buffer : buffers) {
-        if (((u64)buffer.vertexCount + vertexCount > (u64)T_MAX(u32)) ||
-            (vType.Name != buffer.vertexType.Name))
+        if (((u64)buffer->vertexCount + vertexCount > (u64)T_MAX(u32)) ||
+                (vType.Name != buffer->vertexType.Name))
             continue;
 
-        buffer.vertexCount += vertexCount;
-        buffer.indexCount += indexCount;
+        buffer->vertexCount += vertexCount;
+        buffer->indexCount += indexCount;
 
-        auto foundLayer = std::find_if(buffer.layers.begin(), buffer.layers.end(),
+        auto foundLayer = std::find_if(buffer->layers.begin(), buffer->layers.end(),
             [layer] (const auto &curLayer)
-        { return layer == curLayer.tileLayer; });
+        { return layer == curLayer->tileLayer; });
 
-        if (foundLayer == buffer.layers.end()) {
-            return buffer.allocateNewLayer(layer).data.get();
+        if (foundLayer == buffer->layers.end()) {
+            return buffer->allocateNewLayer(layer)->data.get();
         }
         else {
-            auto &bufLayer = *foundLayer;
+            auto bufData = (*foundLayer)->data.get();
 
-            u32 vertexOffset = bufLayer.data->getVertexOffset();
-            u32 indexOffset = bufLayer.data->getIndexOffset();
+            u32 vertexOffset = bufData->getVertexOffset();
+            u32 indexOffset = bufData->getIndexOffset();
             u32 newVertexCount = vertexOffset + 1 + vertexCount;
             u32 newIndexCount = indexOffset + 1 + indexCount;
 
-            if (newVertexCount > bufLayer.data->getVertexCount())
-                bufLayer.data->reallocateData(newVertexCount, newIndexCount);
+            if (newVertexCount > bufData->getVertexCount())
+                bufData->reallocateData(newVertexCount, newIndexCount);
 
-            bufLayer.data->setVertexOffset(vertexOffset + vertexCount);
-            bufLayer.data->setIndexOffset(indexOffset + indexCount);
-
-            return bufLayer.data.get();
+            return bufData;
         }
     }
 
-    buffers.emplace_back(vType);
-    buffers.back().allocateNewLayer(layer);
-
-    return buffers.back().layers.back().data.get();
+    buffers.emplace_back(std::make_unique<DynamicBuffer>(vType));
+    return buffers.back()->allocateNewLayer(layer)->data.get();
 }

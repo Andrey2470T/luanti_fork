@@ -60,16 +60,14 @@ class DistanceSortedDrawList
     std::unordered_map<u32, LayeredMesh *> shadow_meshes;
     u32 meshes_free_id{0};
 
-    // Blocks meshes and visible_meshes lists
-    std::shared_mutex meshes_mutex;
     // Block shadow_meshes list
-    std::shared_mutex shadow_meshes_mutex;
+    std::mutex shadow_meshes_mutex;
 
     std::list<LayeredMesh *> visible_meshes;
 
     std::unordered_map<LayeredMesh *, bool> back_meshes_queue;
     std::unordered_map<LayeredMesh *, bool> front_meshes_queue;
-    std::shared_mutex queue_mutex;
+    std::mutex queue_mutex;
     
     std::list<BatchedLayer> layers;
     std::shared_mutex layers_mutex;

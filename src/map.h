@@ -21,6 +21,9 @@ class MapSector;
 class NodeMetadata;
 class IGameDef;
 class IRollbackManager;
+#if CHECK_CLIENT_BUILD()
+class LayeredMesh;
+#endif
 
 /*
 	MapEditEvent
@@ -178,8 +181,14 @@ public:
 		Updates usage timers and unloads unused blocks and sectors.
 		Saves modified blocks before unloading if possible.
 	*/
+#if CHECK_CLIENT_BUILD()
 	void timerUpdate(float dtime, float unload_timeout, s32 max_loaded_blocks,
-			std::vector<v3s16> *unloaded_blocks=NULL);
+        std::vector<v3s16> *unloaded_blocks=nullptr,
+        std::vector<LayeredMesh *> *unloaded_meshes=nullptr);
+#else
+    void timerUpdate(float dtime, float unload_timeout, s32 max_loaded_blocks,
+        std::vector<v3s16> *unloaded_blocks=nullptr);
+#endif
 
 	/*
 		Unloads all blocks with a zero refCount().

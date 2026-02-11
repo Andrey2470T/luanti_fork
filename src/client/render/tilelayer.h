@@ -116,3 +116,47 @@ struct TileLayer
     s32 bone_offset;
     s32 animate_normals;
 };
+
+struct Color8Hash {
+    std::size_t operator()(const img::color8 &c) const noexcept {
+        return std::hash<u32>{}(c.data()) ^
+               (std::hash<int>{}(static_cast<int>(c.getFormat())) << 1);
+    }
+};
+
+struct ShaderPtrHash {
+    std::size_t operator()(const render::Shader* shader) const noexcept {
+        if (!shader) {
+            return 0;
+        }
+        return std::hash<u32>{}(shader->getProgram());
+    }
+};
+
+struct TileLayerHash {
+    std::size_t operator()(const TileLayer& layer) const noexcept {
+        std::size_t hash = 0;
+
+        hash ^= std::hash<u8>{}(layer.alpha_discard);
+        hash ^= std::hash<img::Image*>{}(layer.tile_ref) << 1;
+
+        ShaderPtrHash shaderHash;
+        hash ^= shaderHash(layer.shader) << 2;
+
+        hash ^= std::hash<u8>{}(layer.material_type) << 3;
+        hash ^= std::hash<u8>{}(layer.material_flags) << 4;
+
+        Color8Hash colorHash;
+        hash ^= colorHash(layer.color) << 5;
+
+        hash ^= std::hash<u32>{}(layer.animation_frame_length_ms) << 6;
+        hash ^= std::hash<u32>{}(layer.animation_frame_count) << 7;
+
+        hash ^= std::hash<u8>{}(layer.scale) << 8;
+        hash ^= std::hash<u32>{}(*reinterpret_cast<const u32*>(&layer.line_thickness)) << 9;
+        hash ^= std::hash<u8>{}(static_cast<u8>(layer.rotation)) << 10;
+        hash ^= std::hash<u8>{}(layer.emissive_light) << 11;
+
+        return hash;
+    }
+};

@@ -300,13 +300,13 @@ void Renderer::setDataTexParams(DataTexture *tex)
     curShader->setUniformInt("mDataTexDim", tex->texDim);
 }
 
-void Renderer::draw(MeshBuffer *buffer, PrimitiveType type,
-    u32 offset, std::optional<u32> count)
+void Renderer::draw(MeshBuffer *buffer, u32 offset, std::optional<u32> count)
 {
     auto vao = buffer->getVAO();
 
+    auto primType = buffer->getPrimitiveType();
     if (!count.has_value()) {
-        switch (type) {
+        switch (primType) {
         case render::PT_POINTS:
         case render::PT_POINT_SPRITES:
             count = buffer->getVertexCount();
@@ -323,10 +323,10 @@ void Renderer::draw(MeshBuffer *buffer, PrimitiveType type,
             break;
         }
     }
-    vao->draw(type, count.value(), offset);
+    vao->draw(primType, count.value(), offset);
 
     stats.drawcalls++;
-    stats.drawn_primitives += calcPrimitiveCount(type, count.value());
+    stats.drawn_primitives += calcPrimitiveCount(primType, count.value());
 }
 
 void Renderer::updateStats(f32 dtime)

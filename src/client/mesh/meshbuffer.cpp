@@ -1,8 +1,12 @@
 #include "meshbuffer.h"
 #include <assert.h>
 
-MeshBuffer::MeshBuffer(bool createIBO, const render::VertexTypeDescriptor &descr,
-    render::MeshUsage usage, render::PrimitiveType primType, bool deferUpload)
+MeshBuffer::MeshBuffer(
+    bool createIBO,
+    const render::VertexTypeDescriptor &descr,
+    render::MeshUsage usage,
+    render::PrimitiveType primType,
+    bool deferUpload)
     : Type(createIBO ? MeshBufferType::VERTEX_INDEX : MeshBufferType::VERTEX),
       Descriptor(descr), PrimType(primType)
 {
@@ -11,9 +15,13 @@ MeshBuffer::MeshBuffer(bool createIBO, const render::VertexTypeDescriptor &descr
     initData(0, 0);
 }
 // Creates either VERTEX or VERTEX_INDEX buffer types allocating the storage for 'vertexCount' and 'indexCount'
-MeshBuffer::MeshBuffer(u32 vertexCount, u32 indexCount, bool createIBO,
+MeshBuffer::MeshBuffer(
+    u32 vertexCount, u32 indexCount,
+    bool createIBO,
     const render::VertexTypeDescriptor &descr,
-    render::MeshUsage usage, render::PrimitiveType primType, bool deferUpload)
+    render::MeshUsage usage,
+    render::PrimitiveType primType,
+    bool deferUpload)
     : Type(createIBO ? MeshBufferType::VERTEX_INDEX : MeshBufferType::VERTEX),
       Descriptor(descr), PrimType(primType)
 {

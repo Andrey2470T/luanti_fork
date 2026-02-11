@@ -141,8 +141,7 @@ public:
     // Data texture parameters
     void setDataTexParams(DataTexture *tex);
 
-    void draw(MeshBuffer *buffer, PrimitiveType type=PT_TRIANGLES,
-        u32 offset=0, std::optional<u32> count=std::nullopt);
+    void draw(MeshBuffer *buffer, u32 offset=0, std::optional<u32> count=std::nullopt);
 
     void updateStats(f32 dtime);
 private:

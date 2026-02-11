@@ -694,10 +694,6 @@ void PlayerInteraction::step(f32 dtime)
 
     auto drawlist = rndsys->getDrawList();
     auto draw_control = drawlist->getDrawControl();
-    auto selection = drawlist->getSelectionMesh();
-	// Note that updating the selection mesh every frame is not particularly efficient,
-	// but the halo rendering code is already inefficient so there's no point in optimizing it here
-    selection->updateCameraOffset(camera_offset, drawlist);
 
 	// Allow digging again if button is not pressed
     if (digging_blocked && !input->isKeyDown(KeyType::DIG))
@@ -722,7 +718,6 @@ void PlayerInteraction::step(f32 dtime)
 			} else {
 				infostream << "Pointing away from node (stopped digging)" << std::endl;
                 digging = false;
-                selection->updateCameraOffset(camera_offset, drawlist);
 			}
 		}
 

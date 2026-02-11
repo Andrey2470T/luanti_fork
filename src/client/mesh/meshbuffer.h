@@ -37,13 +37,20 @@ class MeshBuffer
 	aabbf BoundingBox;
 public:
     // Creates either VERTEX or VERTEX_INDEX buffer types
-    MeshBuffer(bool createIBO = true, const render::VertexTypeDescriptor &descr=render::DefaultVType,
-        render::MeshUsage usage=render::MeshUsage::STATIC, render::PrimitiveType primType=render::PT_TRIANGLES, bool deferUpload=false);
-    // Creates either VERTEX or VERTEX_INDEX buffer types allocating the storage for 'vertexCount' and 'indexCount'
-    MeshBuffer(u32 vertexCount, u32 indexCount=0, bool createIBO = true,
+    MeshBuffer(
+        bool createIBO = true,
         const render::VertexTypeDescriptor &descr=render::DefaultVType,
         render::MeshUsage usage=render::MeshUsage::STATIC,
-        render::PrimitiveType primType=render::PT_TRIANGLES, bool deferUpload=false);
+        render::PrimitiveType primType=render::PT_TRIANGLES,
+        bool deferUpload=false);
+    // Creates either VERTEX or VERTEX_INDEX buffer types allocating the storage for 'vertexCount' and 'indexCount'
+    MeshBuffer(
+        u32 vertexCount, u32 indexCount=0,
+        bool createIBO = true,
+        const render::VertexTypeDescriptor &descr=render::DefaultVType,
+        render::MeshUsage usage=render::MeshUsage::STATIC,
+        render::PrimitiveType primType=render::PT_TRIANGLES,
+        bool deferUpload=false);
 
 	MeshBufferType getType() const
 	{

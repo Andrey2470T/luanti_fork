@@ -557,7 +557,7 @@ void SpriteDrawBatch::draw()
 	            u32 indexOffset = group.first*6;
             	u32 indexCount = group.second*6;
 
-            	rnd->draw(buffer.get(), render::PT_TRIANGLES, indexOffset, indexCount);
+                rnd->draw(buffer.get(), indexOffset, indexCount);
 			}
         }
     }

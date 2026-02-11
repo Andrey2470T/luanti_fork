@@ -53,11 +53,6 @@ public:
         return m_mesh_grid;
     }
 
-    void pushToDeletedMeshes(LayeredMesh *mesh)
-    {
-        m_delete_meshes.emplace(mesh);
-    }
-
     void startMeshUpdate();
     void stopMeshUpdate();
     bool isMeshUpdateRunning() const;

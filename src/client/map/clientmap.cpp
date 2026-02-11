@@ -457,11 +457,15 @@ void ClientMap::step(f32 dtime)
     const float map_timer_and_unload_dtime = 5.25;
     if(m_map_timer_and_unload_interval.step(dtime, map_timer_and_unload_dtime)) {
         std::vector<v3s16> deleted_blocks;
+        std::vector<LayeredMesh *> deleted_meshes;
         timerUpdate(map_timer_and_unload_dtime,
             m_unload_unused_data_timeout,
             m_mapblock_limit,
-            &deleted_blocks);
+            &deleted_blocks,
+            &deleted_meshes);
 
+        for (auto mesh : deleted_meshes)
+            m_delete_meshes.emplace(mesh);
         /*
             Send info to server
             NOTE: This loop is intentionally iterated the way it is.
@@ -523,6 +527,8 @@ void ClientMap::step(f32 dtime)
 
             if (block) {
                 // Delete the old mesh
+                if (block->mesh)
+                    m_delete_meshes.emplace(block->mesh->getMesh());
                 delete block->mesh;
                 block->mesh = nullptr;
                 block->solid_sides = r.solid_sides;

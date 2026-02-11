@@ -169,6 +169,8 @@ private:
     struct DynamicBufferLayer {
         TileLayer tileLayer;
         std::unique_ptr<MeshBuffer> data;
+
+        DynamicBufferLayer(const TileLayer &_tileLayer, MeshBuffer *_data);
     };
 
     static u32 initialVBufferCount;
@@ -179,19 +181,23 @@ private:
         u32 vertexCount = 0;
         u32 indexCount = 0;
 
-        std::vector<DynamicBufferLayer> layers = {};
+        std::vector<std::unique_ptr<DynamicBufferLayer>> layers = {};
 
-        DynamicBufferLayer &allocateNewLayer(const TileLayer &layer);
+        DynamicBuffer(const render::VertexTypeDescriptor &_vertexType)
+            : vertexType(_vertexType)
+        {}
+
+        DynamicBufferLayer *allocateNewLayer(const TileLayer &layer);
         // After the allocating and filling the ready layers meshbuffers will be merged within each dynamic buffer
         void mergeLayers(LayeredMesh *outputMesh);
     };
 
     struct DynamicCollector {
-        std::vector<DynamicBuffer> buffers;
+        std::vector<std::unique_ptr<DynamicBuffer>> buffers;
 
         MeshBuffer *findBuffer(
             const TileLayer &layer,
-            render::VertexTypeDescriptor vType,
+            const render::VertexTypeDescriptor &vType,
             u32 vertexCount, u32 indexCount);
     };
 

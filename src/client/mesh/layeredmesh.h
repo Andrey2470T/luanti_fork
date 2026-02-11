@@ -112,6 +112,7 @@ class LayeredMesh
     std::vector<LayeredMeshPart> partial_layers;
 
     std::unordered_map<MeshBuffer *, std::vector<u32>> bufs_indices;
+
 public:
     LayeredMesh() = default;
     LayeredMesh(const v3f &_center_pos, const v3f &_abs_pos);

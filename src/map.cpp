@@ -3,6 +3,7 @@
 // Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "map.h"
+#include "client/map/mapblockmesh.h"
 #include "mapsector.h"
 #include "mapblock.h"
 #include "voxel.h"
@@ -273,8 +274,14 @@ struct TimeOrderedMapBlock {
 /*
 	Updates usage timers
 */
+#if CHECK_CLIENT_BUILD()
 void Map::timerUpdate(float dtime, float unload_timeout, s32 max_loaded_blocks,
-		std::vector<v3s16> *unloaded_blocks)
+    std::vector<v3s16> *unloaded_blocks,
+    std::vector<LayeredMesh *> *unloaded_meshes)
+#else
+void Map::timerUpdate(float dtime, float unload_timeout, s32 max_loaded_blocks,
+        std::vector<v3s16> *unloaded_blocks)
+#endif
 {
 	bool save_before_unloading = maySaveBlocks();
 
@@ -316,11 +323,15 @@ void Map::timerUpdate(float dtime, float unload_timeout, s32 max_loaded_blocks,
 						saved_blocks_count++;
 					}
 
-					// Delete from memory
-					sector->deleteBlock(block);
+                    if (unloaded_blocks)
+                        unloaded_blocks->push_back(p);
 
-					if (unloaded_blocks)
-						unloaded_blocks->push_back(p);
+#if CHECK_CLIENT_BUILD()
+                    if (unloaded_meshes)
+                        unloaded_meshes->push_back(block->mesh->getMesh());
+#endif
+                    // Delete from memory
+                    sector->deleteBlock(block);
 
 					deleted_blocks_count++;
 				} else {
@@ -372,11 +383,16 @@ void Map::timerUpdate(float dtime, float unload_timeout, s32 max_loaded_blocks,
 				saved_blocks_count++;
 			}
 
-			// Delete from memory
-			b.sect->deleteBlock(block);
+            if (unloaded_blocks)
+                unloaded_blocks->push_back(p);
 
-			if (unloaded_blocks)
-				unloaded_blocks->push_back(p);
+#if CHECK_CLIENT_BUILD()
+            if (unloaded_meshes)
+                unloaded_meshes->push_back(block->mesh->getMesh());
+#endif
+
+            // Delete from memory
+            b.sect->deleteBlock(block);
 
 			deleted_blocks_count++;
 			block_count_all--;
@@ -415,10 +431,14 @@ void Map::timerUpdate(float dtime, float unload_timeout, s32 max_loaded_blocks,
 	}
 }
 
+#if CHECK_CLIENT_BUILD()
 void Map::unloadUnreferencedBlocks(std::vector<v3s16> *unloaded_blocks)
 {
 	timerUpdate(0.0, -1.0, 0, unloaded_blocks);
 }
+#else
+
+#endif
 
 void Map::deleteSectors(std::vector<v2s16> &sectorList)
 {
