@@ -419,7 +419,7 @@ void GameUI::updateDebugState(Client *client)
 
     auto drawlist = client->getRenderSystem()->getDrawList();
     if (!has_basic_debug)
-        drawlist->getBlockBounds()->disable();
+        drawlist->getBlockBounds()->disable(client, drawlist);
     if (!has_debug) {
         drawlist->getDrawControl().show_wireframe = false;
         player->getCamera()->disable_update = false;

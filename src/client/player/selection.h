@@ -20,7 +20,6 @@ class SelectionMesh
         HIGHLIGHT_NONE
     } mode;
 
-    s32 drawlist_id = -1;
     LayeredMesh *mesh = nullptr;
 
     std::vector<aabbf> boxes;
@@ -30,7 +29,6 @@ class SelectionMesh
     img::color8 light_color;
 
     v3f pos;
-    v3f pos_with_offset;
 
     v3f face_normal;
 
@@ -62,12 +60,7 @@ public:
     }
     v3f getRotation() const { mesh ? return mesh->getRotation() : v3f(); }
 
-    void setLightColor(const img::color8 &c);
-
-    void setSelectedFaceNormal(const v3f &normal)
-    {
-        face_normal = normal;
-    }
+    void setLightColor(const img::color8 &c, const v3f &normal=v3f());
 };
 
 class Client;
@@ -76,7 +69,6 @@ class BlockBounds
 {
     RenderSystem *rndsys;
 
-    s32 drawlist_id = -1;
     LayeredMesh *mesh = nullptr;
 
     f32 thickness;
@@ -99,10 +91,7 @@ public:
         return mesh;
     }
     Mode toggle(Client *client, DistanceSortedDrawList *drawlist);
-    void disable()
-    {
-        mode = BLOCK_BOUNDS_OFF;
-    }
+    void disable(Client *client, DistanceSortedDrawList *drawlist);
 private:
     void updateMesh(Client *client, DistanceSortedDrawList *drawlist);
 };

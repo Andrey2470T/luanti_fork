@@ -108,12 +108,13 @@ void SelectionMesh::updateMesh(
     drawlist->addLayeredMeshes({mesh});
 }
 
-void SelectionMesh::setLightColor(const img::color8 &c)
+void SelectionMesh::setLightColor(const img::color8 &c, const v3f &normal)
 {
-	if (!mesh || lightColor == c)
+	if (!mesh || lightColor == c || face_normal == normal)
 		return;
 		
 	lightColor = c;
+	face_normal = normal;
 	
 	auto buf = mesh->getBuffer(0);
 	if (mode == HIGHLIGHT_HALO) {
@@ -136,7 +137,7 @@ void SelectionMesh::setLightColor(const img::color8 &c)
 
 
 BlockBounds::BlockBounds(RenderSystem *_rndsys)
-    : rndsys(_rndsys)//, mesh(std::make_unique<MeshBuffer>(false, render::DefaultVType, render::MeshUsage::DYNAMIC))
+    : rndsys(_rndsys)
 {
     thickness = std::clamp<f32>((f32)g_settings->getS16("selectionbox_width"), 1.0f, 5.0f);
 }
@@ -152,6 +153,12 @@ BlockBounds::Mode BlockBounds::toggle(Client *client, DistanceSortedDrawList *dr
     updateMesh(client, drawlist);
 
     return mode;
+}
+
+void BlockBounds::disable(Client *client, DistanceSortedDrawList *drawlist)
+{
+	mode = BLOCK_BOUNDS_OFF;
+	updateMesh(client, drawlist);
 }
 
 void BlockBounds::updateMesh(Client *client, DistanceSortedDrawList *drawlist)
@@ -176,7 +183,7 @@ void BlockBounds::updateMesh(Client *client, DistanceSortedDrawList *drawlist)
         rangelim(g_settings->getU16("show_block_bounds_radius_near"), 0, 1000) : 0;
 
     mesh = new LayeredMesh(v3f(radius * MAP_BLOCKSIZE * BS),
-        intToFloat(block_pos * MAP_BLOCKSIZE, BS) - cam_offset);
+        intToFloat(block_pos * MAP_BLOCKSIZE, BS));
     MeshBuffer *buf = new MeshBuffer(4 * radius * radius * 3, 0, false);
 
     for (s16 x = -radius; x <= radius + 1; x++)
@@ -222,8 +229,10 @@ void BlockBounds::updateMesh(Client *client, DistanceSortedDrawList *drawlist)
 
     mesh->addNewBuffer(buf);
 
-    LayeredMeshPart mesh_p;
-    mesh_p.count = buf->getIndexCount();
+    LayeredMeshPart mesh_p = {
+    	buf, layer, 0, buf->getIndexCount(), 0, buf->getVertexCount()
+    };
+
     mesh->addNewLayer(buf, layer, mesh_p);
 
     mesh->splitTransparentLayers();

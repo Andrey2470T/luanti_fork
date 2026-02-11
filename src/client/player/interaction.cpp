@@ -33,7 +33,6 @@ PointedThing PlayerInteraction::updatePointedThing(
 	auto selection = rndsys->getDrawList()->getSelectionMesh();
 	auto selectionboxes = selection->getSelectionBoxes();
 	selectionboxes->clear();
-	selection->setSelectedFaceNormal(v3f());
 	static thread_local const bool show_entity_selectionbox = g_settings->getBool(
 		"show_entity_selectionbox");
 
@@ -48,6 +47,7 @@ PointedThing PlayerInteraction::updatePointedThing(
     PointedThing result;
 
     v3f pos;
+    v3f selected_face_normal;
 	env.continueRaycast(&s, &result);
 	if (result.type == POINTEDTHING_OBJECT) {
 		pointing_at_object = true;
@@ -64,7 +64,7 @@ PointedThing PlayerInteraction::updatePointedThing(
 			else
 				selection->setRotation(v3f());
 		}
-		selection->setSelectedFaceNormal(result.raw_intersection_normal);
+		selected_face_normal = result.raw_intersection_normal;
 	} else if (result.type == POINTEDTHING_NODE) {
 		// Update selection boxes
 		MapNode n = map.getNode(result.node_undersurface);
@@ -80,7 +80,7 @@ PointedThing PlayerInteraction::updatePointedThing(
 		}
         pos = intToFloat(result.node_undersurface, BS);
 		selection->setRotation(v3f());
-		selection->setSelectedFaceNormal(result.intersection_normal);
+		selected_face_normal = result.intersection_normal;
 	}
 
 	// Update selection mesh light level and vertex colors
@@ -107,7 +107,7 @@ PointedThing PlayerInteraction::updatePointedThing(
         c.B(round32(c.B() * (0.8 + sin_b)));
 
 		// Set mesh final color
-		selection->setLightColor(c);
+		selection->setLightColor(c, selected_face_normal);
 	}
 	return result;
 }
