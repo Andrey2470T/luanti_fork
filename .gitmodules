@@ -1,0 +1,10 @@
+[submodule "lib/assimp"]
+	path = lib/assimp
+	url = https://github.com/assimp/assimp
+	branch = v5.3.0
+[submodule "lib/irrlicht_redo"]
+	path = lib/irrlicht_redo
+	url = https://github.com/Andrey2470T/irrlicht_redo
+[submodule "lib/rectpack2D"]
+	path = lib/rectpack2D
+	url = https://github.com/TeamHypersomnia/rectpack2D

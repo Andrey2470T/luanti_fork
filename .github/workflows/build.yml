@@ -38,15 +38,12 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
       - name: Install deps
         run: |
           source ./util/ci/common.sh
           install_linux_deps g++-7
-          
-      - name: Add submodules
-        run: |
-          source ./util/ci/common.sh
-          add_submodules
 
       - name: Build
         run: |
@@ -64,15 +61,12 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
       - name: Install deps
         run: |
           source ./util/ci/common.sh
           install_linux_deps g++-12 libluajit-5.1-dev
-
-      - name: Add submodules
-        run: |
-          source ./util/ci/common.sh
-          add_submodules
 
       - name: Build
         run: |
@@ -90,15 +84,12 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
       - name: Install deps
         run: |
           source ./util/ci/common.sh
           install_linux_deps clang-7 valgrind
-          
-      - name: Add submodules
-        run: |
-          source ./util/ci/common.sh
-          add_submodules
 
       - name: Build
         run: |
@@ -120,15 +111,12 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
       - name: Install deps
         run: |
           source ./util/ci/common.sh
           install_linux_deps clang-14 gdb
-          
-      - name: Add submodules
-        run: |
-          source ./util/ci/common.sh
-          add_submodules
 
       - name: Build
         run: |
@@ -151,15 +139,12 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
       - name: Install deps
         run: |
           source ./util/ci/common.sh
           install_linux_deps clang-9
-          
-      - name: Add submodules
-        run: |
-          source ./util/ci/common.sh
-          add_submodules
 
       - name: Build prometheus-cpp
         run: |
@@ -192,6 +177,8 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
       - name: Install compiler
         run: |
           sudo apt-get update && sudo apt-get install -y gettext
@@ -209,6 +196,8 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
       - name: Install compiler
         run: |
           sudo apt-get update && sudo apt-get install -y gettext
@@ -249,6 +238,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
 
       - name: Checkout IrrlichtMt
         run: |

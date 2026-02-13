@@ -41,13 +41,3 @@ install_macos_deps() {
 	brew unlink $(brew ls --formula)
 	brew link "${pkgs[@]}"
 }
-
-add_submodules() {
-	cd ./lib
-
-	sudo git submodule add -b v5.3.0 https://github.com/assimp/assimp.git
-	sudo git submodule add https://github.com/Andrey2470T/irrlicht_redo.git
-	sudo git submodule add https://github.com/TeamHypersomnia/rectpack2D.git
-	
-	cd ..
-}
