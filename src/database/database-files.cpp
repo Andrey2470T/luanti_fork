@@ -48,7 +48,7 @@ void PlayerDatabaseFiles::deSerialize(RemotePlayer *p, std::istream &is,
 	p->m_dirty = true;
 	//args.getS32("version"); // Version field value not used
 	const std::string &name = args.get("name");
-	strlcpy(p->m_name, name.c_str(), PLAYERNAME_SIZE);
+    strncpy(p->m_name, name.c_str(), PLAYERNAME_SIZE);
 
 	if (sao) {
 		try {

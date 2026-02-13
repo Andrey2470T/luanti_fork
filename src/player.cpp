@@ -33,7 +33,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 Player::Player(const char *name, IItemDefManager *idef):
 	inventory(idef)
 {
-	strlcpy(m_name, name, PLAYERNAME_SIZE);
+    strncpy(m_name, name, PLAYERNAME_SIZE);
 
 	inventory.clear();
 	inventory.addList("main", PLAYER_INVENTORY_SIZE);

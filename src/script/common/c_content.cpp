@@ -1624,7 +1624,7 @@ u32 read_flags_table(lua_State *L, int table, FlagDesc *flagdesc, u32 *flagmask)
 				flags |= flagdesc[i].flag;
 		}
 
-		strlcpy(fnamebuf + 2, flagdesc[i].name, sizeof(fnamebuf) - 2);
+        strncpy(fnamebuf + 2, flagdesc[i].name, sizeof(fnamebuf) - 2);
 		if (getboolfield(L, table, fnamebuf, result))
 			mask |= flagdesc[i].flag;
 	}

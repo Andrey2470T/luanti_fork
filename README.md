@@ -1,14 +1,11 @@
-Minetest
+Luanti Fork 1.0.0
 ========
 
 ![Build Status](https://github.com/minetest/minetest/workflows/build/badge.svg)
 [![Translation status](https://hosted.weblate.org/widgets/minetest/-/svg-badge.svg)](https://hosted.weblate.org/engage/minetest/?utm_source=widget)
 [![License](https://img.shields.io/badge/license-LGPLv2.1%2B-blue.svg)](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html)
 
-Minetest is a free open-source voxel game engine with easy modding and game creation.
-
-Copyright (C) 2010-2022 Perttu Ahola <celeron55@gmail.com>
-and contributors (see source file comments and the version control log)
+My independent Minetest (Luanti) fork with the integrated IrrlichtRedo and bunch of new features.
 
 Table of Contents
 ------------------
@@ -25,11 +22,11 @@ Table of Contents
 
 Further documentation
 ----------------------
-- Website: https://minetest.net/
-- Wiki: https://wiki.minetest.net/
-- Developer wiki: https://dev.minetest.net/
-- Forum: https://forum.minetest.net/
-- GitHub: https://github.com/minetest/minetest/
+- Website: https://luanti.org/
+- Wiki: https://wiki.luanti.org/
+- Developer wiki: https://dev.luanti.org/
+- Forum: https://forum.luanti.org/
+- GitHub: https://github.com/Andrey2470T/luanti_fork/
 - [doc/](doc/) directory of source distribution
 
 Default controls

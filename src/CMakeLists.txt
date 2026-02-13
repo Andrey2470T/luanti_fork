@@ -1,4 +1,4 @@
-project(minetest)
+project(luanti_fork)
 
 INCLUDE(CheckTypeSize)
 INCLUDE(CheckIncludeFiles)
@@ -116,6 +116,36 @@ endif()
 
 if(BUILD_CLIENT)
 	find_package(Freetype REQUIRED)
+
+	# Assimp loading
+	set(ASSIMP_LOADED FALSE)
+	if(EXISTS "${CMAKE_SOURCE_DIR}/lib/assimp")
+		message(STATUS "Using Assimp submodule at subdirectory 'lib/assimp'")
+
+		set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+    	set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE BOOL "" FORCE)
+    	set(ASSIMP_BUILD_SAMPLES OFF CACHE BOOL "" FORCE)
+    	set(ASSIMP_INSTALL OFF CACHE BOOL "" FORCE)
+    	set(ASSIMP_INJECT_DEBUG_POSTFIX OFF CACHE BOOL "" FORCE)
+
+    	add_subdirectory(${CMAKE_SOURCE_DIR}/lib/assimp ${CMAKE_BINARY_DIR}/assimp)
+
+    	if(NOT TARGET assimp)
+			message(STATUS "Could not add Assimp as the subdirectory ('Assimp' target is missing), trying to find the system version...")
+    	else()
+			set(ASSIMP_LOADED TRUE)
+		endif()
+	endif()
+
+	if(NOT ASSIMP_LOADED)
+		find_package(assimp 5.3.0)
+
+		if(assimp_FOUND)
+			message(STATUS "Assimp system version enabled")
+		else()
+			message(FATAL_ERROR "Could not find Assimp system version")
+		endif()
+	endif()
 endif()
 
 option(ENABLE_CURSES "Enable ncurses console" TRUE)
@@ -538,7 +568,8 @@ if(BUILD_CLIENT)
 	target_link_libraries(
 		${PROJECT_NAME}
 		${ZLIB_LIBRARIES}
-		IrrlichtMt::IrrlichtMt
+		IrrlichtRedo::IrrlichtRedo
+		rectpack2D
 		${ZSTD_LIBRARY}
 		${SOUND_LIBRARIES}
 		${SQLITE3_LIBRARY}
@@ -547,6 +578,8 @@ if(BUILD_CLIENT)
 		${JSON_LIBRARY}
 		${LUA_BIT_LIBRARY}
 		${FREETYPE_LIBRARY}
+		assimp
+		ZipExtractor
 		${PLATFORM_LIBS}
 	)
 	if(NOT USE_LUAJIT)
@@ -604,7 +637,7 @@ if(BUILD_SERVER)
 	add_dependencies(${PROJECT_NAME}server GenerateVersion)
 
 	get_target_property(
-		IRRLICHT_INCLUDES IrrlichtMt::IrrlichtMt INTERFACE_INCLUDE_DIRECTORIES)
+		IRRLICHT_INCLUDES IrrlichtRedo::IrrlichtRedo INTERFACE_INCLUDE_DIRECTORIES)
 	# Doesn't work without PRIVATE/PUBLIC/INTERFACE mode specified.
 	target_include_directories(${PROJECT_NAME}server PRIVATE ${IRRLICHT_INCLUDES})
 	target_link_libraries(
@@ -617,6 +650,7 @@ if(BUILD_SERVER)
 		${LUA_BIT_LIBRARY}
 		${GMP_LIBRARY}
 		${PLATFORM_LIBS}
+		ZipExtractor
 	)
 	set_target_properties(${PROJECT_NAME}server PROPERTIES
 		COMPILE_DEFINITIONS "SERVER")
@@ -913,7 +947,7 @@ elseif (USE_GETTEXT)
 	set(MO_FILES)
 
 	foreach(LOCALE ${GETTEXT_USED_LOCALES})
-		set(PO_FILE_PATH "${GETTEXT_PO_PATH}/${LOCALE}/${PROJECT_NAME}.po")
+		set(PO_FILE_PATH "${GETTEXT_PO_PATH}/${LOCALE}/minetest.po")
 		set_mo_paths(MO_BUILD_PATH MO_DEST_PATH ${LOCALE})
 		set(MO_FILE_PATH "${MO_BUILD_PATH}/${PROJECT_NAME}.mo")
 

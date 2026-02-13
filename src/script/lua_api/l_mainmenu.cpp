@@ -960,7 +960,7 @@ int ModApiMainMenu::l_get_active_driver(lua_State *L)
 
 int ModApiMainMenu::l_get_active_renderer(lua_State *L)
 {
-	lua_pushstring(L, wide_to_utf8(RenderingEngine::get_video_driver()->getName()).c_str());
+    lua_pushstring(L, RenderingEngine::get_video_driver()->getName());
 	return 1;
 }
 

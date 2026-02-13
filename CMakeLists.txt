@@ -1,15 +1,8 @@
-cmake_minimum_required(VERSION 3.5)
-
-# Set policies up to 3.9 since we want to enable the IPO option
-if(${CMAKE_VERSION} VERSION_LESS 3.9)
-	cmake_policy(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION})
-else()
-	cmake_policy(VERSION 3.9)
-endif()
+cmake_minimum_required(VERSION 3.12)
 
 # This can be read from ${PROJECT_NAME} after project() is called
-project(minetest)
-set(PROJECT_NAME_CAPITALIZED "Minetest")
+project(luanti_fork)
+set(PROJECT_NAME_CAPITALIZED "LuantiFork")
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
@@ -17,8 +10,8 @@ set(GCC_MINIMUM_VERSION "7.5")
 set(CLANG_MINIMUM_VERSION "7.0.1")
 
 # You should not need to edit these manually, use util/bump_version.sh
-set(VERSION_MAJOR 5)
-set(VERSION_MINOR 8)
+set(VERSION_MAJOR 1)
+set(VERSION_MINOR 0)
 set(VERSION_PATCH 0)
 set(VERSION_EXTRA "" CACHE STRING "Stuff to append to version string")
 
@@ -76,79 +69,6 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 if(ANDROID)
 	cmake_minimum_required(VERSION 3.20)
 	include(MinetestAndroidLibs)
-endif()
-
-
-set(IRRLICHTMT_BUILD_DIR "" CACHE PATH "Path to IrrlichtMt build directory.")
-if(ANDROID)
-	# currently manually provided
-elseif(NOT "${IRRLICHTMT_BUILD_DIR}" STREQUAL "")
-	find_package(IrrlichtMt QUIET
-		PATHS "${IRRLICHTMT_BUILD_DIR}"
-		NO_DEFAULT_PATH
-	)
-
-	if(NOT TARGET IrrlichtMt::IrrlichtMt)
-		# find_package() searches certain subdirectories. ${PATH}/cmake is not
-		# the only one, but it is the one where IrrlichtMt is supposed to export
-		# IrrlichtMtConfig.cmake
-		message(FATAL_ERROR "Could not find IrrlichtMtConfig.cmake in ${IRRLICHTMT_BUILD_DIR}/cmake.")
-	endif()
-elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/lib/irrlichtmt")
-	message(STATUS "Using user-provided IrrlichtMt at subdirectory 'lib/irrlichtmt'")
-	if(BUILD_CLIENT)
-		# tell IrrlichtMt to create a static library
-		set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared library" FORCE)
-		add_subdirectory(lib/irrlichtmt EXCLUDE_FROM_ALL)
-		unset(BUILD_SHARED_LIBS CACHE)
-
-		if(NOT TARGET IrrlichtMt)
-			message(FATAL_ERROR "IrrlichtMt project is missing a CMake target?!")
-		endif()
-	else()
-		add_library(IrrlichtMt::IrrlichtMt INTERFACE IMPORTED)
-		set_target_properties(IrrlichtMt::IrrlichtMt PROPERTIES
-			INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/lib/irrlichtmt/include")
-	endif()
-else()
-	find_package(IrrlichtMt QUIET)
-	if(NOT TARGET IrrlichtMt::IrrlichtMt)
-		string(CONCAT explanation_msg
-			"The Minetest team has forked Irrlicht to make their own customizations. "
-			"It can be found here: https://github.com/minetest/irrlicht\n"
-			"For example use: git clone --depth=1 https://github.com/minetest/irrlicht lib/irrlichtmt\n")
-		if(BUILD_CLIENT)
-			message(FATAL_ERROR "IrrlichtMt is required to build the client, but it was not found.\n${explanation_msg}")
-		endif()
-
-		include(MinetestFindIrrlichtHeaders)
-		if(NOT IRRLICHT_INCLUDE_DIR)
-			message(FATAL_ERROR "IrrlichtMt headers are required to build the server, but none found.\n${explanation_msg}")
-		endif()
-		message(STATUS "Found IrrlichtMt headers: ${IRRLICHT_INCLUDE_DIR}")
-		add_library(IrrlichtMt::IrrlichtMt INTERFACE IMPORTED)
-		# Note that we can't use target_include_directories() since that doesn't work for IMPORTED targets before CMake 3.11
-		set_target_properties(IrrlichtMt::IrrlichtMt PROPERTIES
-			INTERFACE_INCLUDE_DIRECTORIES "${IRRLICHT_INCLUDE_DIR}")
-	endif()
-endif()
-
-if(ANDROID)
-	# skipped for now
-elseif(BUILD_CLIENT AND TARGET IrrlichtMt::IrrlichtMt)
-	# retrieve version somehow
-	if(NOT IrrlichtMt_VERSION)
-		get_target_property(IrrlichtMt_VERSION IrrlichtMt VERSION)
-	endif()
-	message(STATUS "Found IrrlichtMt ${IrrlichtMt_VERSION}")
-
-	set(TARGET_VER_S 1.9.0mt13)
-	string(REPLACE "mt" "." TARGET_VER ${TARGET_VER_S})
-	if(IrrlichtMt_VERSION VERSION_LESS ${TARGET_VER})
-		message(FATAL_ERROR "At least IrrlichtMt ${TARGET_VER_S} is required to build")
-	elseif(NOT DEVELOPMENT_BUILD AND IrrlichtMt_VERSION VERSION_GREATER ${TARGET_VER})
-		message(FATAL_ERROR "IrrlichtMt ${TARGET_VER_S} is required to build")
-	endif()
 endif()
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
@@ -301,7 +221,47 @@ if(APPLE)
 	install(FILES "misc/Info.plist" DESTINATION "${BUNDLE_PATH}/Contents")
 endif()
 
-# Library pack
+# Libraries
+
+# Irrlicht Redo loading
+
+if(BUILD_CLIENT AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/lib/irrlicht_redo")
+	message(STATUS "Using IrrlichtRedo submodule at subdirectory 'lib/irrlicht_redo'")
+
+	# tell IrrlichtRedo to create a static library
+	set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared library" FORCE)
+	add_subdirectory(lib/irrlicht_redo)
+	unset(BUILD_SHARED_LIBS CACHE)
+
+	if(NOT TARGET IrrlichtRedo)
+		message(FATAL_ERROR "Failed to add IrrlichtRedo as the subdirectory ('IrrlichtRedo' target is missing)")
+	endif()
+else()
+	message(STATUS "Using IrrlichtRedo as imported library")
+
+	add_library(IrrlichtRedo::IrrlichtRedo INTERFACE IMPORTED)
+	if (NOT TARGET IrrlichtRedo::IrrlichtRedo)
+		message(FATAL_ERROR "Failed to add IrrlichtRedo as the imported library ('IrrlichtRedo::IrrlichtRedo' target is missing)")
+	endif()
+	set_target_properties(IrrlichtRedo::IrrlichtRedo PROPERTIES
+		INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/lib/irrlicht_redo/include")
+endif()
+
+if(NOT ANDROID AND BUILD_CLIENT)
+	# retrieve version somehow
+	if(NOT IrrlichtRedo_VERSION)
+		get_target_property(IrrlichtRedo_VERSION IrrlichtRedo VERSION)
+	endif()
+	message(STATUS "Found IrrlichtRedo ${IrrlichtRedo_VERSION}")
+
+	set(REQUIRED_VERSION 1.0.0)
+	if(IrrlichtRedo_VERSION VERSION_LESS ${REQUIRED_VERSION})
+		message(FATAL_ERROR "At least IrrlichtRedo ${REQUIRED_VERSION} is required to build")
+	elseif(NOT DEVELOPMENT_BUILD AND IrrlichtRedo_VERSION VERSION_GREATER ${REQUIRED_VERSION})
+		message(FATAL_ERROR "IrrlichtMt ${REQUIRED_VERSION} is required to build")
+	endif()
+endif()
+
 find_package(GMP REQUIRED)
 find_package(Json REQUIRED)
 find_package(Lua REQUIRED)
@@ -312,6 +272,10 @@ endif()
 if(BUILD_BENCHMARKS)
 	add_subdirectory(lib/catch2)
 endif()
+
+add_subdirectory(lib/zipextractor)
+
+add_subdirectory(lib/rectpack2D)
 
 # Subdirectories
 # Be sure to add all relevant definitions above this

@@ -1508,7 +1508,7 @@ bool Game::createClient(const GameStartData &start_data)
 			: wstrgettext("Multiplayer");
 	str += L"]";
 	str += L" [";
-	str += driver->getName();
+    str += utf8_to_wide(driver->getName());
 	str += L"]";
 
 	device->setWindowCaption(str.c_str());
