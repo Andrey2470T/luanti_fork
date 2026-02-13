@@ -3,7 +3,7 @@
 # Linux build only
 install_linux_deps() {
 	local pkgs=(
-		cmake gettext postgresql
+		cmake gettext postgresql libsdl2-dev
 		libpng-dev libjpeg-dev libxi-dev libgl1-mesa-dev
 		libsqlite3-dev libhiredis-dev libogg-dev libgmp-dev libvorbis-dev
 		libopenal-dev libpq-dev libleveldb-dev libcurl4-openssl-dev libzstd-dev
@@ -30,7 +30,7 @@ install_linux_deps() {
 # macOS build only
 install_macos_deps() {
 	local pkgs=(
-		cmake gettext freetype gmp jpeg-turbo jsoncpp leveldb
+		cmake gettext sdl2 freetype gmp jpeg-turbo jsoncpp leveldb
 		libogg libpng libvorbis luajit zstd
 	)
 	export HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1
