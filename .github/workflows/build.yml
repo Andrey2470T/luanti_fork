@@ -42,6 +42,11 @@ jobs:
         run: |
           source ./util/ci/common.sh
           install_linux_deps g++-7
+          
+      - name: Add submodules
+        run: |
+          source ./util/ci/common.sh
+          add_submodules
 
       - name: Build
         run: |
@@ -64,6 +69,11 @@ jobs:
           source ./util/ci/common.sh
           install_linux_deps g++-12 libluajit-5.1-dev
 
+      - name: Add submodules
+        run: |
+          source ./util/ci/common.sh
+          add_submodules
+
       - name: Build
         run: |
           ./util/ci/build.sh
@@ -84,6 +94,11 @@ jobs:
         run: |
           source ./util/ci/common.sh
           install_linux_deps clang-7 valgrind
+          
+      - name: Add submodules
+        run: |
+          source ./util/ci/common.sh
+          add_submodules
 
       - name: Build
         run: |
@@ -109,6 +124,11 @@ jobs:
         run: |
           source ./util/ci/common.sh
           install_linux_deps clang-14 gdb
+          
+      - name: Add submodules
+        run: |
+          source ./util/ci/common.sh
+          add_submodules
 
       - name: Build
         run: |
@@ -135,6 +155,11 @@ jobs:
         run: |
           source ./util/ci/common.sh
           install_linux_deps clang-9
+          
+      - name: Add submodules
+        run: |
+          source ./util/ci/common.sh
+          add_submodules
 
       - name: Build prometheus-cpp
         run: |
