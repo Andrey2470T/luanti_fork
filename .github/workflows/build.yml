@@ -48,7 +48,7 @@ env:
 jobs:
   # Older gcc version (should be close to our minimum supported version)
   gcc_7:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
         with:
@@ -94,7 +94,7 @@ jobs:
 
   # Older clang version (should be close to our minimum supported version)
   clang_7:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
         with:
@@ -149,7 +149,7 @@ jobs:
   # Build with prometheus-cpp (server-only)
   clang_9_prometheus:
     name: "clang_9 (PROMETHEUS=1)"
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
         with:
@@ -177,7 +177,7 @@ jobs:
 
   docker:
     name: "Docker image"
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
       - name: Build docker image
@@ -187,7 +187,7 @@ jobs:
 
   win32:
     name: "MinGW cross-compiler (32-bit)"
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
         with:
@@ -206,7 +206,7 @@ jobs:
 
   win64:
     name: "MinGW cross-compiler (64-bit)"
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
         with:
