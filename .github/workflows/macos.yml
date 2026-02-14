@@ -20,12 +20,23 @@ on:
       - '**/CMakeLists.txt'
       - 'cmake/Modules/**'
       - '.github/workflows/macos.yml'
+  workflow_dispatch:
+    paths:
+      - 'lib/**.[ch]'
+      - 'lib/**.cpp'
+      - 'src/**.[ch]'
+      - 'src/**.cpp'
+      - '**/CMakeLists.txt'
+      - 'cmake/Modules/**'
+      - '.github/workflows/macos.yml'
 
 jobs:
   build:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
       - name: Install deps
         run: |
           source ./util/ci/common.sh
@@ -33,7 +44,6 @@ jobs:
 
       - name: Build
         run: |
-          git clone https://github.com/minetest/irrlicht lib/irrlichtmt --depth 1 -b $(cat misc/irrlichtmt_tag.txt)
           mkdir build
           cd build
           cmake .. \
@@ -47,7 +57,7 @@ jobs:
 
       - name: Test
         run: |
-          ./build/macos/minetest.app/Contents/MacOS/minetest --run-unittests
+          ./build/macos/minetest.app/Contents/MacOS/luanti_fork --run-unittests
 
       # Zipping the built .app preserves permissions on the contained files,
       #   which the GitHub artifact pipeline would otherwise strip away.

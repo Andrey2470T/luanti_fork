@@ -18,6 +18,14 @@ on:
       - 'src/**.cpp'
       - 'android/**'
       - '.github/workflows/android.yml'
+  workflow_dispatch:
+    paths:
+      - 'lib/**.[ch]'
+      - 'lib/**.cpp'
+      - 'src/**.[ch]'
+      - 'src/**.cpp'
+      - 'android/**'
+      - '.github/workflows/android.yml'
 
 jobs:
   build:

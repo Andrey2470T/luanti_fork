@@ -28,6 +28,19 @@ on:
       - '.github/workflows/**.yml'
       - 'Dockerfile'
       - '.dockerignore'
+  workflow_dispatch:
+    paths:
+      - 'lib/**.[ch]'
+      - 'lib/**.cpp'
+      - 'src/**.[ch]'
+      - 'src/**.cpp'
+      - '**/CMakeLists.txt'
+      - 'cmake/Modules/**'
+      - 'util/buildbot/**'
+      - 'util/ci/**'
+      - '.github/workflows/**.yml'
+      - 'Dockerfile'
+      - '.dockerignore'
 
 env:
   MINETEST_POSTGRESQL_CONNECT_STRING: 'host=localhost user=minetest password=minetest dbname=minetest'
@@ -54,7 +67,7 @@ jobs:
 
       - name: Test
         run: |
-          ./bin/minetest --run-unittests
+          ./bin/luanti_fork --run-unittests
 
   # Current gcc version
   gcc_12:
@@ -77,7 +90,7 @@ jobs:
 
       - name: Test
         run: |
-          ./bin/minetest --run-unittests
+          ./bin/luanti_fork --run-unittests
 
   # Older clang version (should be close to our minimum supported version)
   clang_7:
@@ -100,11 +113,11 @@ jobs:
 
       - name: Unittest
         run: |
-          ./bin/minetest --run-unittests
+          ./bin/luanti_fork --run-unittests
 
       - name: Valgrind
         run: |
-          valgrind --leak-check=full --leak-check-heuristics=all --undef-value-errors=no --error-exitcode=9 ./bin/minetest --run-unittests
+          valgrind --leak-check=full --leak-check-heuristics=all --undef-value-errors=no --error-exitcode=9 ./bin/luanti_fork --run-unittests
 
   # Current clang version
   clang_14:
@@ -127,7 +140,7 @@ jobs:
 
       - name: Test
         run: |
-          ./bin/minetest --run-unittests
+          ./bin/luanti_fork --run-unittests
 
       - name: Integration test + devtest
         run: |
@@ -160,7 +173,7 @@ jobs:
 
       - name: Test
         run: |
-          ./bin/minetestserver --run-unittests
+          ./bin/luanti_forkserver --run-unittests
 
   docker:
     name: "Docker image"
@@ -170,7 +183,7 @@ jobs:
       - name: Build docker image
         run: |
           docker build . -t minetest:latest
-          docker run --rm minetest:latest /usr/local/bin/minetestserver --version
+          docker run --rm minetest:latest /usr/local/bin/luanti_forkserver --version
 
   win32:
     name: "MinGW cross-compiler (32-bit)"
