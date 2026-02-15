@@ -3,7 +3,27 @@ name: macos
 # build on c/cpp changes or workflow changes
 on:
   push:
+    paths:
+      - 'lib/**.[ch]'
+      - 'lib/**.cpp'
+      - 'src/**.[ch]'
+      - 'src/**.cpp'
+      - '**/CMakeLists.txt'
+      - 'cmake/Modules/**'
+      - 'po/**.po'
+      - 'util/ci/**'
+      - '.github/workflows/macos.yml'
   pull_request:
+    paths:
+      - 'lib/**.[ch]'
+      - 'lib/**.cpp'
+      - 'src/**.[ch]'
+      - 'src/**.cpp'
+      - '**/CMakeLists.txt'
+      - 'cmake/Modules/**'
+      - 'po/**.po'
+      - 'util/ci/**'
+      - '.github/workflows/macos.yml'
   workflow_dispatch:
 
 jobs:
