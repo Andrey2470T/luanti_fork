@@ -130,7 +130,7 @@ std::tuple<ALuint, ALuint, ALuint> SoundDataOpenStream::getOrLoadBufferAt(ALuint
 	// equivalent: the first element from the right such that `!(m_start > offset)`
 	// (from the right, `offset` is a lower bound to the `m_start`s)
 	auto lower_rit = std::lower_bound(m_bufferss.rbegin(), m_bufferss.rend(), offset,
-            [](ALuint offset, const ContiguousBuffers &bufs) {
+            [](const ContiguousBuffers &bufs, ALuint offset) {
 				return bufs.m_start > offset;
 			});
 
