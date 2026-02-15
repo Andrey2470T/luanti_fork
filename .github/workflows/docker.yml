@@ -27,17 +27,6 @@ on:
       - 'Dockerfile'
       - '.dockerignore'
   workflow_dispatch:
-    paths:
-      - 'lib/**.[ch]'
-      - 'lib/**.cpp'
-      - 'src/**.[ch]'
-      - 'src/**.cpp'
-      - '**/CMakeLists.txt'
-      - 'cmake/Modules/**'
-      - 'util/ci/**'
-      - '.github/workflows/docker.yml'
-      - 'Dockerfile'
-      - '.dockerignore'
       
 env:
   REGISTRY: ghcr.io

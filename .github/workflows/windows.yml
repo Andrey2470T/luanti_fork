@@ -26,17 +26,6 @@ on:
       - 'util/ci/**'
       - '.github/workflows/windows.yml'
   workflow_dispatch:
-    paths:
-      - 'lib/**.[ch]'
-      - 'lib/**.cpp'
-      - 'src/**.[ch]'
-      - 'src/**.cpp'
-      - '**/CMakeLists.txt'
-      - 'cmake/Modules/**'
-      - 'po/**.po'
-      - 'util/buildbot/**'
-      - 'util/ci/**'
-      - '.github/workflows/windows.yml'
       
 jobs:
   mingw:

@@ -31,19 +31,7 @@ on:
       - 'util/helper_mod/**'
       - '.github/workflows/linux.yml'
   workflow_dispatch:
-    paths:
-      - 'lib/**.[ch]'
-      - 'lib/**.cpp'
-      - 'src/**.[ch]'
-      - 'src/**.cpp'
-      - '**/CMakeLists.txt'
-      - 'cmake/Modules/**'
-      - 'po/**.po'
-      - 'client/shaders/**'
-      - 'util/buildbot/**'
-      - 'util/ci/**'
-      - 'util/helper_mod/**'
-      - '.github/workflows/linux.yml'
+
 env:
   MINETEST_POSTGRESQL_CONNECT_STRING: 'host=localhost user=minetest password=minetest dbname=minetest'
 

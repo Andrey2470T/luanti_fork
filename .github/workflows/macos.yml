@@ -25,16 +25,6 @@ on:
       - 'util/ci/**'
       - '.github/workflows/macos.yml'
   workflow_dispatch:
-    paths:
-      - 'lib/**.[ch]'
-      - 'lib/**.cpp'
-      - 'src/**.[ch]'
-      - 'src/**.cpp'
-      - '**/CMakeLists.txt'
-      - 'cmake/Modules/**'
-      - 'po/**.po'
-      - 'util/ci/**'
-      - '.github/workflows/macos.yml'
 
 jobs:
   build-older-macos:

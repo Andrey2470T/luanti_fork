@@ -22,6 +22,7 @@ on:
       - 'cmake/Modules/**'
       - 'util/ci/**'
       - '.github/workflows/cpp_lint.yml'
+  workflow_dispatch:
 
 env:
   CLANG_TIDY: clang-tidy-15

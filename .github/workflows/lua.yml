@@ -14,6 +14,7 @@ on:
       - 'games/devtest/**.lua'
       - 'util/ci/**'
       - '.github/workflows/lua.yml'
+  workflow_dispatch:
 
 jobs:
   # Note that the integration tests are also run build.yml, but only when C++ code is changed.
