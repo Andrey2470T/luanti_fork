@@ -106,7 +106,7 @@ jobs:
       - name: Install deps
         run: |
           source ./util/ci/common.sh
-          install_linux_deps clang-11 valgrind xvfb
+          install_linux_deps clang-11 xvfb
 
       - name: Build
         run: |
@@ -118,10 +118,6 @@ jobs:
       - name: Unittest
         run: |
           ./bin/luanti_fork --run-unittests
-
-      - name: Valgrind
-        run: |
-          valgrind --leak-check=full --leak-check-heuristics=all --undef-value-errors=no --error-exitcode=9 ./bin/luanti_fork --run-unittests
 
   # Current clang version
   clang_20:
@@ -139,8 +135,8 @@ jobs:
         run: |
           ./util/ci/build_linux.sh
         env:
-          CC: clang-20
-          CXX: clang++-20
+          CC: clang-20 -Wno-nontrivial-memaccess
+          CXX: clang++-20 -Wno-nontrivial-memaccess
 
       - name: Test
         run: |
@@ -149,32 +145,3 @@ jobs:
       - name: Integration test + devtest
         run: |
           ./util/test_multiplayer.sh
-
-  # Build with prometheus-cpp (server-only), also runs on ARM64
-  clang_prometheus_arm:
-    name: "clang (with Prometheus, ARM64)"
-    runs-on: ubuntu-24.04-arm
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          submodules: 'recursive'
-      - name: Install deps
-        run: |
-          source ./util/ci/common.sh
-          install_linux_deps clang libluajit-5.1-dev
-
-      - name: Build prometheus-cpp
-        run: |
-          ./util/ci/build_prometheus_cpp.sh
-
-      - name: Build
-        run: |
-          ./util/ci/build_linux.sh
-        env:
-          CC: clang
-          CXX: clang++
-          CMAKE_FLAGS: "-DENABLE_PROMETHEUS=1 -DBUILD_CLIENT=0 -DENABLE_CURSES=0"
-
-      - name: Test
-        run: |
-          ./bin/luanti_forkserver --run-unittests

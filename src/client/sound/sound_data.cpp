@@ -23,8 +23,8 @@ with this program; ifnot, write to the Free Software Foundation, Inc.,
 */
 
 #include "sound_data.h"
-
 #include "sound_constants.h"
+#include <algorithm>
 
 namespace sound {
 
@@ -130,7 +130,7 @@ std::tuple<ALuint, ALuint, ALuint> SoundDataOpenStream::getOrLoadBufferAt(ALuint
 	// equivalent: the first element from the right such that `!(m_start > offset)`
 	// (from the right, `offset` is a lower bound to the `m_start`s)
 	auto lower_rit = std::lower_bound(m_bufferss.rbegin(), m_bufferss.rend(), offset,
-			[](const ContiguousBuffers &bufs, ALuint offset) {
+            [](ALuint offset, const ContiguousBuffers &bufs) {
 				return bufs.m_start > offset;
 			});
 

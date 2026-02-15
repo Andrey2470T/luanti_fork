@@ -148,7 +148,7 @@ jobs:
       - name: Unittests
         # need this workaround for stdout to work
         run: |
-          $proc = start .\bin\Release\luanti.exe --run-unittests -NoNewWindow -Wait -PassThru
+          $proc = start .\bin\Release\luanti_fork.exe --run-unittests -NoNewWindow -Wait -PassThru
           exit $proc.ExitCode
         continue-on-error: true # FIXME!!
 
