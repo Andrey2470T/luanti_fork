@@ -34,7 +34,7 @@ public:
 
 	KeyPress(const char *name);
 
-	KeyPress(const irr::SEvent::SKeyInput &in, bool prefer_character = false);
+	KeyPress(const SEvent::SKeyInput &in, bool prefer_character = false);
 
 	bool operator==(const KeyPress &o) const
 	{
@@ -45,12 +45,12 @@ public:
 	const char *name() const;
 
 protected:
-	static bool valid_kcode(irr::EKEY_CODE k)
+	static bool valid_kcode(EKEY_CODE k)
 	{
-		return k > 0 && k < irr::KEY_KEY_CODES_COUNT;
+		return k > 0 && k < KEY_KEY_CODES_COUNT;
 	}
 
-	irr::EKEY_CODE Key = irr::KEY_KEY_CODES_COUNT;
+	EKEY_CODE Key = KEY_KEY_CODES_COUNT;
 	wchar_t Char = L'\0';
 	std::string m_name = "";
 };
@@ -64,4 +64,4 @@ KeyPress getKeySetting(const char *settingname);
 // Clear fast lookup cache
 void clearKeyCache();
 
-irr::EKEY_CODE keyname_to_keycode(const char *name);
+EKEY_CODE keyname_to_keycode(const char *name);

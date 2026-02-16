@@ -1,4 +1,7 @@
 cmake_minimum_required(VERSION 3.12)
+if(POLICY CMP0177)
+    cmake_policy(SET CMP0177 NEW)
+endif()
 
 # This can be read from ${PROJECT_NAME} after project() is called
 project(luanti_fork)
@@ -272,6 +275,8 @@ endif()
 if(BUILD_BENCHMARKS)
 	add_subdirectory(lib/catch2)
 endif()
+
+add_subdirectory(lib/tiniergltf)
 
 add_subdirectory(lib/zipextractor)
 

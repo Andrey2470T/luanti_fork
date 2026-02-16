@@ -32,7 +32,7 @@ class IGameDef;
 struct TileSpec;
 struct TileDef;
 
-namespace irr::video { class IVideoDriver; }
+namespace video { class IVideoDriver; }
 
 typedef std::vector<video::SColor> Palette;
 

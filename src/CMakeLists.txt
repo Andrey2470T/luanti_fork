@@ -114,7 +114,7 @@ if(ENABLE_TOUCH)
 	add_definitions(-DHAVE_TOUCHSCREENGUI)
 endif()
 
-if(BUILD_CLIENT)
+if(FALSE)
 	find_package(Freetype REQUIRED)
 
 	# Assimp loading

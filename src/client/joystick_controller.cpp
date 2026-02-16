@@ -26,7 +26,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/string.h"
 #include "util/numeric.h"
 
-bool JoystickButtonCmb::isTriggered(const irr::SEvent::SJoystickEvent &ev) const
+bool JoystickButtonCmb::isTriggered(const SEvent::SJoystickEvent &ev) const
 {
 	u32 buttons = ev.ButtonStates;
 
@@ -34,7 +34,7 @@ bool JoystickButtonCmb::isTriggered(const irr::SEvent::SJoystickEvent &ev) const
 	return buttons == compare_mask;
 }
 
-bool JoystickAxisCmb::isTriggered(const irr::SEvent::SJoystickEvent &ev) const
+bool JoystickAxisCmb::isTriggered(const SEvent::SJoystickEvent &ev) const
 {
 	s16 ax_val = ev.Axis[axis_to_compare];
 
@@ -213,7 +213,7 @@ JoystickController::JoystickController()
 	clear();
 }
 
-void JoystickController::onJoystickConnect(const std::vector<irr::SJoystickInfo> &joystick_infos)
+void JoystickController::onJoystickConnect(const std::vector<SJoystickInfo> &joystick_infos)
 {
 	s32         id     = g_settings->getS32("joystick_id");
 	std::string layout = g_settings->get("joystick_type");
@@ -245,7 +245,7 @@ void JoystickController::setLayoutFromControllerName(const std::string &name)
 	}
 }
 
-bool JoystickController::handleEvent(const irr::SEvent::SJoystickEvent &ev)
+bool JoystickController::handleEvent(const SEvent::SJoystickEvent &ev)
 {
 	if (ev.Joystick != m_joystick_id)
 		return false;

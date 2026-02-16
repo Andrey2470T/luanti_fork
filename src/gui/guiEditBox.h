@@ -26,7 +26,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <vector>
 
 using namespace irr;
-using namespace irr::gui;
+using namespace gui;
 
 class GUIEditBox : public IGUIEditBox
 {

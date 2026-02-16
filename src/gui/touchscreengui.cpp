@@ -33,7 +33,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <iostream>
 #include <algorithm>
 
-using namespace irr::core;
+using namespace core;
 
 TouchScreenGUI *g_touchscreengui;
 
@@ -204,7 +204,7 @@ void AutoHideButtonBar::addButton(touch_gui_button_id button_id, const wchar_t *
 	else
 		button_size = m_lower_right.Y - m_upper_left.Y;
 
-	irr::core::rect<int> current_button;
+	core::rect<int> current_button;
 
 	if (m_dir == AHBB_Dir_Right_Left || m_dir == AHBB_Dir_Left_Right) {
 		int x_start = 0;
@@ -284,7 +284,7 @@ bool AutoHideButtonBar::isButton(const SEvent &event)
 		for (const auto &button : m_buttons) {
 			if (button->gui_button == element) {
 				SEvent translated{};
-				translated.EventType        = irr::EET_KEY_INPUT_EVENT;
+				translated.EventType        = EET_KEY_INPUT_EVENT;
 				translated.KeyInput.Key     = button->keycode;
 				translated.KeyInput.Control = false;
 				translated.KeyInput.Shift   = false;
@@ -608,7 +608,7 @@ void TouchScreenGUI::handleButtonEvent(touch_gui_button_id button,
 {
 	button_info *btn = &m_buttons[button];
 	SEvent translated{};
-	translated.EventType        = irr::EET_KEY_INPUT_EVENT;
+	translated.EventType        = EET_KEY_INPUT_EVENT;
 	translated.KeyInput.Key     = btn->keycode;
 	translated.KeyInput.Control = false;
 	translated.KeyInput.Shift   = false;
@@ -968,7 +968,7 @@ void TouchScreenGUI::applyJoystickStatus()
 {
 	if (m_joystick_triggers_aux1) {
 		SEvent translated{};
-		translated.EventType            = irr::EET_KEY_INPUT_EVENT;
+		translated.EventType            = EET_KEY_INPUT_EVENT;
 		translated.KeyInput.Key         = id_to_keycode(aux1_id);
 		translated.KeyInput.PressedDown = false;
 		m_receiver->OnEvent(translated);
@@ -1023,7 +1023,7 @@ void TouchScreenGUI::step(float dtime)
 
 			button.repeat_counter           = 0.0f;
 			SEvent translated {};
-			translated.EventType            = irr::EET_KEY_INPUT_EVENT;
+			translated.EventType            = EET_KEY_INPUT_EVENT;
 			translated.KeyInput.Key         = button.keycode;
 			translated.KeyInput.PressedDown = false;
 			m_receiver->OnEvent(translated);

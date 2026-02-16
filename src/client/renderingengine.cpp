@@ -84,7 +84,7 @@ static std::optional<video::E_DRIVER_TYPE> chooseVideoDriver()
 	return std::nullopt;
 }
 
-static irr::IrrlichtDevice *createDevice(SIrrlichtCreationParameters params, std::optional<video::E_DRIVER_TYPE> requested_driver)
+static IrrlichtDevice *createDevice(SIrrlichtCreationParameters params, std::optional<video::E_DRIVER_TYPE> requested_driver)
 {
 	if (requested_driver) {
 		params.DriverType = *requested_driver;
@@ -131,7 +131,7 @@ RenderingEngine::RenderingEngine(IEventReceiver *receiver)
 
 	SIrrlichtCreationParameters params = SIrrlichtCreationParameters();
 	if (tracestream)
-		params.LoggingLevel = irr::ELL_DEBUG;
+		params.LoggingLevel = ELL_DEBUG;
 	params.WindowSize = core::dimension2d<u32>(screen_w, screen_h);
 	params.AntiAlias = fsaa;
 	params.Fullscreen = fullscreen;
@@ -321,7 +321,7 @@ void RenderingEngine::draw_scene(video::SColor skycolor, bool show_hud,
 	core->draw(skycolor, show_hud, show_minimap, draw_wield_tool, draw_crosshair);
 }
 
-const VideoDriverInfo &RenderingEngine::getVideoDriverInfo(irr::video::E_DRIVER_TYPE type)
+const VideoDriverInfo &RenderingEngine::getVideoDriverInfo(video::E_DRIVER_TYPE type)
 {
 	static const std::unordered_map<int, VideoDriverInfo> driver_info_map = {
 		{(int)video::EDT_NULL,   {"null",   "NULL Driver"}},
@@ -350,7 +350,7 @@ float RenderingEngine::getDisplayDensity()
 }
 
 void RenderingEngine::autosaveScreensizeAndCo(
-		const irr::core::dimension2d<u32> initial_screen_size,
+		const core::dimension2d<u32> initial_screen_size,
 		const bool initial_window_maximized)
 {
 	if (!g_settings->getBool("autosave_screensize"))
@@ -362,10 +362,10 @@ void RenderingEngine::autosaveScreensizeAndCo(
 	// the settings.
 
 	// Screen size
-	const irr::core::dimension2d<u32> current_screen_size =
+	const core::dimension2d<u32> current_screen_size =
 		RenderingEngine::get_video_driver()->getScreenSize();
 	// Don't replace good value with (0, 0)
-	if (current_screen_size != irr::core::dimension2d<u32>(0, 0) &&
+	if (current_screen_size != core::dimension2d<u32>(0, 0) &&
 			current_screen_size != initial_screen_size) {
 		g_settings->setU16("screen_w", current_screen_size.Width);
 		g_settings->setU16("screen_h", current_screen_size.Height);

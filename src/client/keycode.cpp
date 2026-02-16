@@ -35,21 +35,21 @@ public:
 
 struct table_key {
 	const char *Name;
-	irr::EKEY_CODE Key;
+	EKEY_CODE Key;
 	wchar_t Char; // L'\0' means no character assigned
 	const char *LangName; // NULL means it doesn't have a human description
 };
 
 #define DEFINEKEY1(x, lang) /* Irrlicht key without character */ \
-	{ #x, irr::x, L'\0', lang },
+	{ #x, x, L'\0', lang },
 #define DEFINEKEY2(x, ch, lang) /* Irrlicht key with character */ \
-	{ #x, irr::x, ch, lang },
+	{ #x, x, ch, lang },
 #define DEFINEKEY3(ch) /* single Irrlicht key (e.g. KEY_KEY_X) */ \
-	{ "KEY_KEY_" TOSTRING(ch), irr::KEY_KEY_ ## ch, (wchar_t) *TOSTRING(ch), TOSTRING(ch) },
+	{ "KEY_KEY_" TOSTRING(ch), KEY_KEY_ ## ch, (wchar_t) *TOSTRING(ch), TOSTRING(ch) },
 #define DEFINEKEY4(ch) /* single Irrlicht function key (e.g. KEY_F3) */ \
-	{ "KEY_F" TOSTRING(ch), irr::KEY_F ## ch, L'\0', "F" TOSTRING(ch) },
+	{ "KEY_F" TOSTRING(ch), KEY_F ## ch, L'\0', "F" TOSTRING(ch) },
 #define DEFINEKEY5(ch) /* key without Irrlicht keycode */ \
-	{ ch, irr::KEY_KEY_CODES_COUNT, (wchar_t) *ch, ch },
+	{ ch, KEY_KEY_CODES_COUNT, (wchar_t) *ch, ch },
 
 #define N_(text) text
 
@@ -257,7 +257,7 @@ struct table_key lookup_keyname(const char *name)
 	throw UnknownKeycode(name);
 }
 
-struct table_key lookup_keykey(irr::EKEY_CODE key)
+struct table_key lookup_keykey(EKEY_CODE key)
 {
 	for (const auto &table_key : table) {
 		if (table_key.Key == key)
@@ -284,7 +284,7 @@ struct table_key lookup_keychar(wchar_t Char)
 KeyPress::KeyPress(const char *name)
 {
 	if (strlen(name) == 0) {
-		Key = irr::KEY_KEY_CODES_COUNT;
+		Key = KEY_KEY_CODES_COUNT;
 		Char = L'\0';
 		m_name = "";
 		return;
@@ -312,7 +312,7 @@ KeyPress::KeyPress(const char *name)
 	}
 
 	// It's not a known key, complain and try to do something
-	Key = irr::KEY_KEY_CODES_COUNT;
+	Key = KEY_KEY_CODES_COUNT;
 	int chars_read = mbtowc(&Char, name, 1);
 	FATAL_ERROR_IF(chars_read != 1, "Unexpected multibyte character");
 	m_name = "";
@@ -320,10 +320,10 @@ KeyPress::KeyPress(const char *name)
 		<< "', falling back to first char." << std::endl;
 }
 
-KeyPress::KeyPress(const irr::SEvent::SKeyInput &in, bool prefer_character)
+KeyPress::KeyPress(const SEvent::SKeyInput &in, bool prefer_character)
 {
 	if (prefer_character)
-		Key = irr::KEY_KEY_CODES_COUNT;
+		Key = KEY_KEY_CODES_COUNT;
 	else
 		Key = in.Key;
 	Char = in.Char;
@@ -382,7 +382,7 @@ void clearKeyCache()
 	g_key_setting_cache.clear();
 }
 
-irr::EKEY_CODE keyname_to_keycode(const char *name)
+EKEY_CODE keyname_to_keycode(const char *name)
 {
 	return lookup_keyname(name).Key;
 }

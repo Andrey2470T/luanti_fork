@@ -22,7 +22,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <vector2d.h>
 #include <vector3d.h>
 
-namespace irr::core {
+namespace core {
 
 	template <class T>
 	std::ostream &operator<< (std::ostream &os, vector2d<T> vec)

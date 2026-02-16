@@ -347,8 +347,8 @@ void ClientLauncher::init_input()
 		input = new RealInputHandler(receiver);
 
 	if (g_settings->getBool("enable_joysticks")) {
-		irr::core::array<irr::SJoystickInfo> infos;
-		std::vector<irr::SJoystickInfo> joystick_infos;
+		core::array<SJoystickInfo> infos;
+		std::vector<SJoystickInfo> joystick_infos;
 
 		// Make sure this is called maximum once per
 		// irrlicht device, otherwise it will give you

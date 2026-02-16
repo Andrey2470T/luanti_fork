@@ -38,7 +38,7 @@ inline u32 clamp_u8(s32 value)
 	return (u32) MYMIN(MYMAX(value, 0), 255);
 }
 
-inline bool isInCtrlKeys(const irr::EKEY_CODE& kc)
+inline bool isInCtrlKeys(const EKEY_CODE& kc)
 {
 	return kc == KEY_LCONTROL || kc == KEY_RCONTROL || kc == KEY_CONTROL;
 }
@@ -324,7 +324,7 @@ void GUIChatConsole::drawText()
 			core::rect<s32> destrect(
 				x, y, x + m_fontsize.X * fragment.text.size(), y + m_fontsize.Y);
 
-			if (m_font->getType() == irr::gui::EGFT_CUSTOM) {
+			if (m_font->getType() == gui::EGFT_CUSTOM) {
 				// Draw colored text if possible
 				gui::CGUITTFont *tmp = static_cast<gui::CGUITTFont*>(m_font);
 				tmp->draw(

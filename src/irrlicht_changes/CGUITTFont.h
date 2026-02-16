@@ -390,7 +390,7 @@ namespace gui
 
 			void createSharedPlane();
 
-			irr::IrrlichtDevice* Device;
+			IrrlichtDevice* Device;
 			gui::IGUIEnvironment* Environment;
 			video::IVideoDriver* Driver;
 			io::path filename;

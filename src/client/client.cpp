@@ -817,7 +817,7 @@ bool Client::loadMedia(const std::string &data, const std::string &filename,
 	}
 
 	const char *model_ext[] = {
-		".x", ".b3d", ".obj",
+		".x", ".b3d", ".obj", ".gltf",
 		NULL
 	};
 	name = removeStringEnd(filename, model_ext);
@@ -1883,8 +1883,8 @@ float Client::getCurRate()
 
 void Client::makeScreenshot()
 {
-	irr::video::IVideoDriver *driver = m_rendering_engine->get_video_driver();
-	irr::video::IImage* const raw_image = driver->createScreenShot();
+	video::IVideoDriver *driver = m_rendering_engine->get_video_driver();
+	video::IImage* const raw_image = driver->createScreenShot();
 
 	if (!raw_image)
 		return;
@@ -1929,7 +1929,7 @@ void Client::makeScreenshot()
 	if (serial == SCREENSHOT_MAX_SERIAL_TRIES) {
 		infostream << "Could not find suitable filename for screenshot" << std::endl;
 	} else {
-		irr::video::IImage* const image =
+		video::IImage* const image =
 				driver->createImage(video::ECF_R8G8B8, raw_image->getDimension());
 
 		if (image) {

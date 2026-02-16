@@ -33,8 +33,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "client/game.h"
 
 using namespace irr;
-using namespace irr::core;
-using namespace irr::gui;
+using namespace core;
+using namespace gui;
 
 typedef enum
 {
@@ -134,7 +134,7 @@ public:
 
 private:
 	ISimpleTextureSource *m_texturesource = nullptr;
-	irr::video::IVideoDriver *m_driver;
+	video::IVideoDriver *m_driver;
 	IGUIEnvironment *m_guienv;
 	IEventReceiver *m_receiver;
 	button_info m_starter;
