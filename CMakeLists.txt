@@ -276,8 +276,6 @@ if(BUILD_BENCHMARKS)
 	add_subdirectory(lib/catch2)
 endif()
 
-add_subdirectory(lib/tiniergltf)
-
 add_subdirectory(lib/zipextractor)
 
 add_subdirectory(lib/rectpack2D)

@@ -267,7 +267,7 @@ Accepted formats are:
 
     images: .png, .jpg, .tga, (deprecated:) .bmp
     sounds: .ogg vorbis
-    models: .x, .b3d, .obj, .gltf
+    models: .x, .b3d, .obj
 
 Other formats won't be sent to the client (e.g. you can store .blend files
 in a folder for convenience, without the risk that such files are transferred)
@@ -283,53 +283,6 @@ in one of its parents, the parent's file is used.
 
 Although it is discouraged, a mod can overwrite a media file of any mod that it
 depends on by supplying a file with an equal name.
-
-Only a subset of model file format features is supported:
-
-Simple textured meshes (with multiple textures), optionally with normals.
-The .x, .b3d and .gltf formats additionally support (a single) animation.
-
-#### glTF
-
-Binary glTF (`.glb`) files are supported and recommended over `.gltf` files
-due to their space savings.
-
-Bone weights should be normalized, e.g. using ["normalize all" in Blender](https://docs.blender.org/manual/en/4.2/grease_pencil/modes/weight_paint/weights_menu.html#normalize-all).
-
-Note that nodes using matrix transforms must not be animated.
-This also extends to bone overrides, which must not be applied to them.
-
-You can use the [Khronos glTF validator](https://github.com/KhronosGroup/glTF-Validator)
-to check whether a model is a valid glTF file.
-
-Many glTF features are not supported *yet*, including:
-
-* Animations
-  * Only a single animation is supported, use frame ranges within this animation.
-  * `CUBICSPLINE` interpolation is not supported.
-* Cameras
-* Materials
-  * Only base color textures are supported
-  * Backface culling is overridden
-  * Double-sided materials don't work
-* Alternative means of supplying data
-  * Embedded images. You can use `gltfutil.py` from the
-    [modding tools](https://github.com/luanti-org/modtools) to strip or extract embedded images.
-  * References to files via URIs
-
-Textures are supplied solely via the same means as for the other model file formats:
-The `textures` object property, the `tiles` node definition field and
-the list of textures used in the `model[]` formspec element.
-
-The order in which textures are to be supplied
-is that in which they appear in the `textures` array in the glTF file.
-
-Do not rely on glTF features not being supported; they may be supported in the future.
-The backwards compatibility guarantee does not extend to ignoring unsupported features.
-
-For example, if your model used an emissive material,
-you should expect that a future version of Luanti may respect this,
-and thus cause your model to render differently there.
 
 Naming conventions
 ------------------
@@ -9033,13 +8986,6 @@ Used by `minetest.register_node`.
 
     mesh = "",
     -- File name of mesh when using "mesh" drawtype
-    -- The center of the node is the model origin.
-    -- For legacy reasons, this uses a different scale depending on the mesh:
-    -- 1. For glTF models: 10 units = 1 node (consistent with the scale for entities).
-    -- 2. For obj models: 1 unit = 1 node.
-    -- 3. For b3d and x models: 1 unit = 1 node if static, otherwise 10 units = 1 node.
-    -- Using static glTF or obj models is recommended.
-    -- You can use the `visual_scale` multiplier to achieve the expected scale.
 
     selection_box = {
         -- see [Node boxes] for possibilities
