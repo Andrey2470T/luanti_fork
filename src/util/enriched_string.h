@@ -23,8 +23,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <vector>
 #include <SColor.h>
 
-using namespace irr;
-
 class EnrichedString {
 public:
 	EnrichedString();

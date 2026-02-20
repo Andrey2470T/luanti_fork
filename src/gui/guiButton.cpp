@@ -16,7 +16,6 @@
 #include "StyleSpec.h"
 #include "util/numeric.h"
 
-using namespace irr;
 using namespace gui;
 
 // Multiply with a color to get the default corresponding hovered color

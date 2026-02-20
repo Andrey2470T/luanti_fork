@@ -25,7 +25,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "IGUIEnvironment.h"
 #include "itemdef.h"
 
-using namespace irr;
 using namespace gui;
 
 GUIButtonItemImage::GUIButtonItemImage(gui::IGUIEnvironment *environment,

@@ -27,10 +27,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include <irrTypes.h>
 
-using namespace irr;
-
-namespace irr {
-
 // Define missing constant for vector math with 16-bit numbers
 namespace core {
 	template <typename T>
@@ -41,8 +37,6 @@ namespace core {
 	{
 		return 0;
 	}
-}
-
 }
 
 #define S8_MIN  (-0x7F - 1)

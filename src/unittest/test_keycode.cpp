@@ -80,28 +80,28 @@ void TestKeycode::testCreateFromString()
 void TestKeycode::testCreateFromSKeyInput()
 {
 	KeyPress k;
-	SEvent::SKeyInput in;
+	irr::SEvent::SKeyInput in;
 
 	// Character key
-	in.Key = KEY_KEY_3;
+	in.Key = irr::KEY_KEY_3;
 	in.Char = L'3';
 	k = KeyPress(in);
 	UASSERTEQ_STR(k.sym(), "KEY_KEY_3");
 
 	// Non-Character key
-	in.Key = KEY_RSHIFT;
+	in.Key = irr::KEY_RSHIFT;
 	in.Char = L'\0';
 	k = KeyPress(in);
 	UASSERTEQ_STR(k.sym(), "KEY_RSHIFT");
 
 	// Irrlicht-unknown key
-	in.Key = KEY_KEY_CODES_COUNT;
+	in.Key = irr::KEY_KEY_CODES_COUNT;
 	in.Char = L'?';
 	k = KeyPress(in);
 	UASSERTEQ_STR(k.sym(), "?");
 
 	// prefer_character mode
-	in.Key = KEY_COMMA;
+	in.Key = irr::KEY_COMMA;
 	in.Char = L'G';
 	k = KeyPress(in, true);
 	UASSERTEQ_STR(k.sym(), "KEY_KEY_G");
@@ -114,15 +114,15 @@ void TestKeycode::testCompare()
 	UASSERT(!(KeyPress("5") == KeyPress("KEY_NUMPAD5")));
 
 	// Matching char suffices
-	// note: This is a real-world example, Irrlicht maps XK_equal to KEY_PLUS on Linux
-	SEvent::SKeyInput in;
-	in.Key = KEY_PLUS;
+	// note: This is a real-world example, Irrlicht maps XK_equal to irr::KEY_PLUS on Linux
+	irr::SEvent::SKeyInput in;
+	in.Key = irr::KEY_PLUS;
 	in.Char = L'=';
 	UASSERT(KeyPress("=") == KeyPress(in));
 
 	// Matching keycode suffices
-	SEvent::SKeyInput in2;
-	in.Key = in2.Key = KEY_OEM_CLEAR;
+	irr::SEvent::SKeyInput in2;
+	in.Key = in2.Key = irr::KEY_OEM_CLEAR;
 	in.Char = L'\0';
 	in2.Char = L';';
 	UASSERT(KeyPress(in) == KeyPress(in2));

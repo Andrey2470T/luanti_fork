@@ -25,8 +25,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <string>
 #include "irrlichttypes_extrabloated.h"
 
-using namespace irr;
-
 class ISimpleTextureSource;
 class Client;
 class GUIScrollBar;

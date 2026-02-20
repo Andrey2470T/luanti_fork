@@ -13,8 +13,6 @@
 #include "guiSkin.h"
 #include "StyleSpec.h"
 
-using namespace irr;
-
 class ISimpleTextureSource;
 
 class GUIButton : public gui::IGUIButton

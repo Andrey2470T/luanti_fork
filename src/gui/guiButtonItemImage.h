@@ -22,8 +22,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "guiButton.h"
 #include "IGUIButton.h"
 
-using namespace irr;
-
 class Client;
 class GUIItemImage;
 

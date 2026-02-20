@@ -291,7 +291,6 @@ std::vector<video::E_DRIVER_TYPE> RenderingEngine::getSupportedVideoDrivers()
 	static const video::E_DRIVER_TYPE glDrivers[] = {
 		video::EDT_OPENGL,
 		video::EDT_OGLES2,
-		video::EDT_OGLES1,
 		video::EDT_NULL,
 	};
 	std::vector<video::E_DRIVER_TYPE> drivers;
@@ -326,7 +325,6 @@ const VideoDriverInfo &RenderingEngine::getVideoDriverInfo(video::E_DRIVER_TYPE 
 	static const std::unordered_map<int, VideoDriverInfo> driver_info_map = {
 		{(int)video::EDT_NULL,   {"null",   "NULL Driver"}},
 		{(int)video::EDT_OPENGL, {"opengl", "OpenGL"}},
-		{(int)video::EDT_OGLES1, {"ogles1", "OpenGL ES1"}},
 		{(int)video::EDT_OGLES2, {"ogles2", "OpenGL ES2"}},
 	};
 	return driver_info_map.at((int)type);

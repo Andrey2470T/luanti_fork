@@ -14,9 +14,6 @@
 #include "CGUITTFont.h"
 #include "util/string.h"
 
-namespace irr
-{
-
 namespace gui
 {
 //! constructor
@@ -579,5 +576,3 @@ s32 StaticText::getTextWidth() const
 
 
 } // end namespace gui
-
-} // end namespace irr

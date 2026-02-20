@@ -24,8 +24,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "guiAnimatedImage.h"
 #include "irr_ptr.h"
 
-using namespace irr;
-
 class GUIButtonImage : public GUIButton
 {
 public:

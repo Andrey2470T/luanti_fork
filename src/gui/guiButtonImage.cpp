@@ -26,7 +26,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "IVideoDriver.h"
 #include "StyleSpec.h"
 
-using namespace irr;
 using namespace gui;
 
 GUIButtonImage::GUIButtonImage(gui::IGUIEnvironment *environment,

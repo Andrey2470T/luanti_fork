@@ -357,7 +357,7 @@ void TestUtilities::testWrapRows()
 void TestUtilities::testEnrichedString()
 {
 	EnrichedString str(L"Test bar");
-	video::SColor color(0xFF, 0, 0, 0xFF);
+	irr::video::SColor color(0xFF, 0, 0, 0xFF);
 
 	UASSERT(str.substr(1, 3).getString() == L"est");
 	str += L" BUZZ";

@@ -18,9 +18,6 @@
 #include <IGUIEnvironment.h>
 
 
-namespace irr
-{
-
 namespace gui
 {
 
@@ -189,8 +186,6 @@ namespace gui
 
 
 } // end namespace gui
-
-} // end namespace irr
 
 inline void setStaticText(gui::IGUIStaticText *static_text, const EnrichedString &text)
 {

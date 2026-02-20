@@ -41,126 +41,146 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #ifndef _WIN32
 
-static bool convert(const char *to, const char *from, char *outbuf,
-		size_t *outbuf_size, char *inbuf, size_t inbuf_size)
-{
-	iconv_t cd = iconv_open(to, from);
+namespace {
+    class IconvSmartPointer {
+        iconv_t m_cd;
+        static const iconv_t null_value;
+    public:
+        IconvSmartPointer() : m_cd(null_value) {}
+        ~IconvSmartPointer() { reset(); }
 
-	char *inbuf_ptr = inbuf;
-	char *outbuf_ptr = outbuf;
+        DISABLE_CLASS_COPY(IconvSmartPointer)
+        ALLOW_CLASS_MOVE(IconvSmartPointer)
 
-	size_t *inbuf_left_ptr = &inbuf_size;
+        iconv_t get() const { return m_cd; }
+        operator bool() const { return m_cd != null_value; }
+        void reset(iconv_t cd = null_value) {
+            if (m_cd != null_value)
+                iconv_close(m_cd);
+            m_cd = cd;
+        }
+    };
 
-	const size_t old_outbuf_size = *outbuf_size;
-	size_t old_size = inbuf_size;
-	while (inbuf_size > 0) {
-		iconv(cd, &inbuf_ptr, inbuf_left_ptr, &outbuf_ptr, outbuf_size);
-		if (inbuf_size == old_size) {
-			iconv_close(cd);
-			return false;
-		}
-		old_size = inbuf_size;
-	}
-
-	iconv_close(cd);
-	*outbuf_size = old_outbuf_size - *outbuf_size;
-	return true;
+    // note that this can't be constexpr if iconv_t is a pointer
+    const iconv_t IconvSmartPointer::null_value = (iconv_t) -1;
 }
 
-#ifdef __ANDROID__
-// On Android iconv disagrees how big a wchar_t is for whatever reason
-const char *DEFAULT_ENCODING = "UTF-32LE";
-#elif defined(__NetBSD__) || defined(__OpenBSD__) || defined(__FreeBSD__)
-	// NetBSD does not allow "WCHAR_T" as a charset input to iconv.
-	#include <sys/endian.h>
-	#if BYTE_ORDER == BIG_ENDIAN
-	const char *DEFAULT_ENCODING = "UTF-32BE";
-	#else
-	const char *DEFAULT_ENCODING = "UTF-32LE";
-	#endif
-#else
-const char *DEFAULT_ENCODING = "WCHAR_T";
-#endif
-
-std::wstring utf8_to_wide(const std::string &input)
+static bool convert(iconv_t cd, char *outbuf, size_t *outbuf_size,
+    char *inbuf, size_t inbuf_size)
 {
-	const size_t inbuf_size = input.length();
-	// maximum possible size, every character is sizeof(wchar_t) bytes
-	size_t outbuf_size = input.length() * sizeof(wchar_t);
+    // reset conversion state
+    iconv(cd, nullptr, nullptr, nullptr, nullptr);
 
-	char *inbuf = new char[inbuf_size]; // intentionally NOT null-terminated
-	memcpy(inbuf, input.c_str(), inbuf_size);
-	std::wstring out;
-	out.resize(outbuf_size / sizeof(wchar_t));
+    char *inbuf_ptr = inbuf;
+    char *outbuf_ptr = outbuf;
 
-#if defined(__ANDROID__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__FreeBSD__)
-	static_assert(sizeof(wchar_t) == 4, "Unexpected wide char size");
-#endif
+    const size_t old_outbuf_size = *outbuf_size;
+    size_t old_size = inbuf_size;
+    while (inbuf_size > 0) {
+        iconv(cd, &inbuf_ptr, &inbuf_size, &outbuf_ptr, outbuf_size);
+        if (inbuf_size == old_size) {
+            return false;
+        }
+        old_size = inbuf_size;
+    }
 
-	char *outbuf = reinterpret_cast<char*>(&out[0]);
-	if (!convert(DEFAULT_ENCODING, "UTF-8", outbuf, &outbuf_size, inbuf, inbuf_size)) {
-		infostream << "Couldn't convert UTF-8 string 0x" << hex_encode(input)
-			<< " into wstring" << std::endl;
-		delete[] inbuf;
-		return L"<invalid UTF-8 string>";
-	}
-	delete[] inbuf;
-
-	out.resize(outbuf_size / sizeof(wchar_t));
-	return out;
+    *outbuf_size = old_outbuf_size - *outbuf_size;
+    return true;
 }
 
-std::string wide_to_utf8(const std::wstring &input)
+// select right encoding for wchar_t size
+constexpr auto DEFAULT_ENCODING = ([] () -> const char* {
+    constexpr auto sz = sizeof(wchar_t);
+    static_assert(sz == 2 || sz == 4, "Unexpected wide char size");
+    if constexpr (sz == 2) {
+        return (BYTE_ORDER == BIG_ENDIAN) ? "UTF-16BE" : "UTF-16LE";
+    } else {
+        return (BYTE_ORDER == BIG_ENDIAN) ? "UTF-32BE" : "UTF-32LE";
+    }
+})();
+
+std::wstring utf8_to_wide(std::string_view input)
 {
-	const size_t inbuf_size = input.length() * sizeof(wchar_t);
-	// maximum possible size: utf-8 encodes codepoints using 1 up to 4 bytes
-	size_t outbuf_size = input.length() * 4;
+    thread_local IconvSmartPointer cd;
+    if (!cd)
+        cd.reset(iconv_open(DEFAULT_ENCODING, "UTF-8"));
 
-	char *inbuf = new char[inbuf_size]; // intentionally NOT null-terminated
-	memcpy(inbuf, input.c_str(), inbuf_size);
-	std::string out;
-	out.resize(outbuf_size);
+    const size_t inbuf_size = input.length();
+    // maximum possible size, every character is sizeof(wchar_t) bytes
+    size_t outbuf_size = input.length() * sizeof(wchar_t);
 
-	if (!convert("UTF-8", DEFAULT_ENCODING, &out[0], &outbuf_size, inbuf, inbuf_size)) {
-		infostream << "Couldn't convert wstring 0x" << hex_encode(inbuf, inbuf_size)
-			<< " into UTF-8 string" << std::endl;
-		delete[] inbuf;
-		return "<invalid wide string>";
-	}
-	delete[] inbuf;
+    char *inbuf = new char[inbuf_size]; // intentionally NOT null-terminated
+    memcpy(inbuf, input.data(), inbuf_size);
+    std::wstring out;
+    out.resize(outbuf_size / sizeof(wchar_t));
 
-	out.resize(outbuf_size);
-	return out;
+    char *outbuf = reinterpret_cast<char*>(&out[0]);
+    if (!convert(cd.get(), outbuf, &outbuf_size, inbuf, inbuf_size)) {
+        infostream << "Couldn't convert UTF-8 string 0x" << hex_encode(input)
+            << " into wstring" << std::endl;
+        delete[] inbuf;
+        return L"<invalid UTF-8 string>";
+    }
+    delete[] inbuf;
+
+    out.resize(outbuf_size / sizeof(wchar_t));
+    return out;
+}
+
+std::string wide_to_utf8(std::wstring_view input)
+{
+    thread_local IconvSmartPointer cd;
+    if (!cd)
+        cd.reset(iconv_open("UTF-8", DEFAULT_ENCODING));
+
+    const size_t inbuf_size = input.length() * sizeof(wchar_t);
+    // maximum possible size: utf-8 encodes codepoints using 1 up to 4 bytes
+    size_t outbuf_size = input.length() * 4;
+
+    char *inbuf = new char[inbuf_size]; // intentionally NOT null-terminated
+    memcpy(inbuf, input.data(), inbuf_size);
+    std::string out;
+    out.resize(outbuf_size);
+
+    if (!convert(cd.get(), &out[0], &outbuf_size, inbuf, inbuf_size)) {
+        infostream << "Couldn't convert wstring 0x" << hex_encode(inbuf, inbuf_size)
+            << " into UTF-8 string" << std::endl;
+        delete[] inbuf;
+        return "<invalid wide string>";
+    }
+    delete[] inbuf;
+
+    out.resize(outbuf_size);
+    return out;
 }
 
 #else // _WIN32
 
-std::wstring utf8_to_wide(const std::string &input)
+std::wstring utf8_to_wide(std::string_view input)
 {
-	size_t outbuf_size = input.size() + 1;
-	wchar_t *outbuf = new wchar_t[outbuf_size];
-	memset(outbuf, 0, outbuf_size * sizeof(wchar_t));
-	MultiByteToWideChar(CP_UTF8, 0, input.c_str(), input.size(),
-		outbuf, outbuf_size);
-	std::wstring out(outbuf);
-	delete[] outbuf;
-	return out;
+    size_t outbuf_size = input.size() + 1;
+    wchar_t *outbuf = new wchar_t[outbuf_size];
+    memset(outbuf, 0, outbuf_size * sizeof(wchar_t));
+    MultiByteToWideChar(CP_UTF8, 0, input.data(), input.size(),
+        outbuf, outbuf_size);
+    std::wstring out(outbuf);
+    delete[] outbuf;
+    return out;
 }
 
-std::string wide_to_utf8(const std::wstring &input)
+std::string wide_to_utf8(std::wstring_view input)
 {
-	size_t outbuf_size = (input.size() + 1) * 6;
-	char *outbuf = new char[outbuf_size];
-	memset(outbuf, 0, outbuf_size);
-	WideCharToMultiByte(CP_UTF8, 0, input.c_str(), input.size(),
-		outbuf, outbuf_size, NULL, NULL);
-	std::string out(outbuf);
-	delete[] outbuf;
-	return out;
+    size_t outbuf_size = (input.size() + 1) * 6;
+    char *outbuf = new char[outbuf_size];
+    memset(outbuf, 0, outbuf_size);
+    WideCharToMultiByte(CP_UTF8, 0, input.data(), input.size(),
+        outbuf, outbuf_size, NULL, NULL);
+    std::string out(outbuf);
+    delete[] outbuf;
+    return out;
 }
 
 #endif // _WIN32
-
 
 std::string urlencode(const std::string &str)
 {

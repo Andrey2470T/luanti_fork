@@ -40,8 +40,6 @@
 #include "util/basic_macros.h"
 #include FT_FREETYPE_H
 
-namespace irr
-{
 namespace gui
 {
 	struct SGUITTFace;
@@ -411,4 +409,3 @@ namespace gui
 	};
 
 } // end namespace gui
-} // end namespace irr

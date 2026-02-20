@@ -16,14 +16,13 @@ the arrow buttons where there is insufficient space.
 
 class ISimpleTextureSource;
 
-using namespace irr;
 using namespace gui;
 
 class GUIScrollBar : public IGUIElement
 {
 public:
 	GUIScrollBar(IGUIEnvironment *environment, IGUIElement *parent, s32 id,
-			core::rect<s32> rectangle, bool horizontal, bool auto_scale,
+            core::rect<s32> rectangle, bool horizontal, bool auto_scale,
 			ISimpleTextureSource *tsrc);
 
 	enum ArrowVisibility

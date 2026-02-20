@@ -25,7 +25,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "guiScrollBar.h"
 #include <vector>
 
-using namespace irr;
 using namespace gui;
 
 class GUIEditBox : public IGUIEditBox

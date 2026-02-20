@@ -10,8 +10,6 @@
 #include <string>
 #include "ITexture.h"
 
-namespace irr
-{
 namespace video
 {
 	class IVideoDriver;
@@ -355,6 +353,5 @@ inline void setShading(video::SColor &color,f32 s) // :PATCH:
 		color.setBlue(color.getBlue() + (255 - color.getBlue()) * s);
 	}
 }
-} // end namespace irr
 
 #endif

@@ -556,10 +556,8 @@ void ShadowRenderer::createShaders()
 		m_shadow_depth_cb = new ShadowDepthShaderCB();
 
 		depth_shader = gpu->addHighLevelShaderMaterial(
-				readShaderFile(depth_shader_vs).c_str(), "vertexMain",
-				video::EVST_VS_1_1,
-				readShaderFile(depth_shader_fs).c_str(), "pixelMain",
-				video::EPST_PS_1_2, m_shadow_depth_cb, video::EMT_ONETEXTURE_BLEND);
+                readShaderFile(depth_shader_vs).c_str(),
+                readShaderFile(depth_shader_fs).c_str(), "", m_shadow_depth_cb, video::EMT_ONETEXTURE_BLEND);
 
 		if (depth_shader == -1) {
 			// upsi, something went wrong loading shader.
@@ -595,10 +593,8 @@ void ShadowRenderer::createShaders()
 		m_shadow_depth_entity_cb = new ShadowDepthShaderCB();
 
 		depth_shader_entities = gpu->addHighLevelShaderMaterial(
-				readShaderFile(depth_shader_vs).c_str(), "vertexMain",
-				video::EVST_VS_1_1,
-				readShaderFile(depth_shader_fs).c_str(), "pixelMain",
-				video::EPST_PS_1_2, m_shadow_depth_entity_cb);
+                readShaderFile(depth_shader_vs).c_str(),
+                readShaderFile(depth_shader_fs).c_str(), "", m_shadow_depth_entity_cb);
 
 		if (depth_shader_entities == -1) {
 			// upsi, something went wrong loading shader.
@@ -633,10 +629,8 @@ void ShadowRenderer::createShaders()
 		m_shadow_mix_cb = new shadowScreenQuadCB();
 		m_screen_quad = new shadowScreenQuad();
 		mixcsm_shader = gpu->addHighLevelShaderMaterial(
-				readShaderFile(depth_shader_vs).c_str(), "vertexMain",
-				video::EVST_VS_1_1,
-				readShaderFile(depth_shader_fs).c_str(), "pixelMain",
-				video::EPST_PS_1_2, m_shadow_mix_cb);
+                readShaderFile(depth_shader_vs).c_str(),
+                readShaderFile(depth_shader_fs).c_str(), "", m_shadow_mix_cb);
 
 		m_screen_quad->getMaterial().MaterialType =
 				(video::E_MATERIAL_TYPE)mixcsm_shader;
@@ -672,10 +666,8 @@ void ShadowRenderer::createShaders()
 		m_shadow_depth_trans_cb = new ShadowDepthShaderCB();
 
 		depth_shader_trans = gpu->addHighLevelShaderMaterial(
-				readShaderFile(depth_shader_vs).c_str(), "vertexMain",
-				video::EVST_VS_1_1,
-				readShaderFile(depth_shader_fs).c_str(), "pixelMain",
-				video::EPST_PS_1_2, m_shadow_depth_trans_cb);
+                readShaderFile(depth_shader_vs).c_str(),
+                readShaderFile(depth_shader_fs).c_str(), "", m_shadow_depth_trans_cb);
 
 		if (depth_shader_trans == -1) {
 			// upsi, something went wrong loading shader.

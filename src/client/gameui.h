@@ -27,7 +27,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/pointedthing.h"
 #include "game.h"
 
-using namespace irr;
 class Client;
 class GUIChatConsole;
 struct MapDrawControl;

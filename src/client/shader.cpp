@@ -40,8 +40,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "client/tile.h"
 #include "config.h"
 
-#include <mt_opengl.h>
-
 /*
 	A cache from shader name to shader path
 */
@@ -665,18 +663,10 @@ ShaderInfo ShaderSource::generateShader(const std::string &name,
 		#define textureFlags texture2
 	)";
 
-	// Since this is the first time we're using the GL bindings be extra careful.
-	// This should be removed before 5.6.0 or similar.
-	if (!GL.GetString) {
-		errorstream << "OpenGL procedures were not loaded correctly, "
-			"please open a bug report with details about your platform/OS." << std::endl;
-		abort();
-	}
-
 	bool use_discard = use_gles;
 	// For renderers that should use discard instead of GL_ALPHA_TEST
-	const char *renderer = reinterpret_cast<const char*>(GL.GetString(GL.RENDERER));
-	if (strstr(renderer, "GC7000"))
+    auto renderer = driver->getVendorInfo();
+    if (strstr(renderer.c_str(), "GC7000"))
 		use_discard = true;
 	if (use_discard) {
 		if (shaderinfo.base_material == video::EMT_TRANSPARENT_ALPHA_CHANNEL)
@@ -786,10 +776,10 @@ ShaderInfo ShaderSource::generateShader(const std::string &name,
 	irr_ptr<ShaderCallback> cb{new ShaderCallback(m_setter_factories)};
 	infostream<<"Compiling high level shaders for "<<name<<std::endl;
 	s32 shadermat = gpu->addHighLevelShaderMaterial(
-		vertex_shader.c_str(), nullptr, video::EVST_VS_1_1,
-		fragment_shader.c_str(), nullptr, video::EPST_PS_1_1,
-		geometry_shader_ptr, nullptr, video::EGST_GS_4_0, scene::EPT_TRIANGLES, scene::EPT_TRIANGLES, 0,
-		cb.get(), shaderinfo.base_material,  1);
+        vertex_shader.c_str(),
+        fragment_shader.c_str(),
+        geometry_shader_ptr, "", scene::EPT_TRIANGLES, scene::EPT_TRIANGLES, 0,
+        cb.get(), shaderinfo.base_material);
 	if (shadermat == -1) {
 		errorstream<<"generate_shader(): "
 				"failed to generate \""<<name<<"\", "

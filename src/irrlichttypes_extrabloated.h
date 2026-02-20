@@ -25,6 +25,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <IMesh.h>
 #include <IImage.h>
 #include <IrrlichtDevice.h>
+#include <IVideoDriver.h>
 #include <IMeshSceneNode.h>
 #include <IDummyTransformationSceneNode.h>
 #include <SMesh.h>
