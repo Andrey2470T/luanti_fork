@@ -30,7 +30,7 @@ jobs:
 
     - name: Build
       run: |
-        ./util/ci/build.sh
+        ./util/ci/build_linux.sh
       env:
         CC: clang
         CXX: clang++

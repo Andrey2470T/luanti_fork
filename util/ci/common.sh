@@ -4,7 +4,7 @@
 install_linux_deps() {
 	local pkgs=(
 		cmake gettext postgresql libsdl2-dev libfreetype-dev
-		libpng-dev libjpeg-dev libxi-dev libgl1-mesa-dev
+		libpng-dev libjpeg-dev libxi-dev libgl1-mesa-dev libglew-dev
 		libsqlite3-dev libhiredis-dev libogg-dev libgmp-dev libvorbis-dev
 		libopenal-dev libpq-dev libleveldb-dev libcurl4-openssl-dev libzstd-dev
 	)
@@ -38,7 +38,7 @@ install_macos_brew_deps() {
 	brew uninstall cmake || :
 	local pkgs=(
 		cmake gettext freetype gmp jpeg-turbo jsoncpp leveldb
-		libogg libpng libvorbis luajit zstd sdl2
+		libogg libpng libvorbis luajit zstd sdl2 glew
 	)
 	export HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1
 	export HOMEBREW_NO_INSTALL_CLEANUP=1
