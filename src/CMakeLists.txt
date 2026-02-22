@@ -580,7 +580,7 @@ if(BUILD_CLIENT)
 		${JSON_LIBRARY}
 		${LUA_BIT_LIBRARY}
 		${FREETYPE_LIBRARY}
-		assimp
+		#assimp
 		ZipExtractor
 		${PLATFORM_LIBS}
 	)
