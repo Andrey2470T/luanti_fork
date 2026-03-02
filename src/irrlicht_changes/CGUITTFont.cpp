@@ -36,13 +36,11 @@
 #include <locale>
 #include "CGUITTFont.h"
 
-namespace irr
-{
 namespace gui
 {
 
 // Manages the FT_Face cache.
-struct SGUITTFace : public virtual irr::IReferenceCounted
+struct SGUITTFace : public virtual IReferenceCounted
 {
 	SGUITTFace() : face_buffer(0), face_buffer_size(0)
 	{
@@ -305,7 +303,7 @@ bool CGUITTFont::load(const io::path& filename, const u32 size, const bool antia
 	if (filename.size() == 0) return false;
 
 	io::IFileSystem* filesystem = Environment->getFileSystem();
-	irr::ILogger* logger = (Device != 0 ? Device->getLogger() : 0);
+	ILogger* logger = (Device != 0 ? Device->getLogger() : 0);
 	this->size = size;
 	this->filename = filename;
 
@@ -316,7 +314,7 @@ bool CGUITTFont::load(const io::path& filename, const u32 size, const bool antia
 
 	// Log.
 	if (logger)
-        logger->log("CGUITTFont", core::stringc(core::stringc(L"Creating new font: ") + core::stringc(filename) + L" " + core::stringc(size) + "pt " + (antialias ? "+antialias " : "-antialias ") + (transparency ? L"+transparency" : L"-transparency")).c_str(), irr::ELL_INFORMATION);
+        logger->log("CGUITTFont", core::stringc(core::stringc(L"Creating new font: ") + core::stringc(filename) + L" " + core::stringc(size) + "pt " + (antialias ? "+antialias " : "-antialias ") + (transparency ? L"+transparency" : L"-transparency")).c_str(), ELL_INFORMATION);
 
 	// Grab the face.
 	SGUITTFace* face = 0;
@@ -332,7 +330,7 @@ bool CGUITTFont::load(const io::path& filename, const u32 size, const bool antia
 			io::IReadFile* file = filesystem->createAndOpenFile(filename);
 			if (file == 0)
 			{
-                if (logger) logger->log("CGUITTFont", "Failed to open the file.", irr::ELL_INFORMATION);
+                if (logger) logger->log("CGUITTFont", "Failed to open the file.", ELL_INFORMATION);
 
 				c_faces.erase(filename);
 				delete face;
@@ -347,7 +345,7 @@ bool CGUITTFont::load(const io::path& filename, const u32 size, const bool antia
 			// Create the face.
 			if (FT_New_Memory_Face(c_library, face->face_buffer, face->face_buffer_size, 0, &face->face))
 			{
-                if (logger) logger->log("CGUITTFont", "FT_New_Memory_Face failed.", irr::ELL_INFORMATION);
+                if (logger) logger->log("CGUITTFont", "FT_New_Memory_Face failed.", ELL_INFORMATION);
 
 				c_faces.erase(filename);
 				delete face;
@@ -359,7 +357,7 @@ bool CGUITTFont::load(const io::path& filename, const u32 size, const bool antia
 		{
 			if (FT_New_Face(c_library, reinterpret_cast<const char*>(filename.c_str()), 0, &face->face))
 			{
-                if (logger) logger->log("CGUITTFont", "FT_New_Face failed.", irr::ELL_INFORMATION);
+                if (logger) logger->log("CGUITTFont", "FT_New_Face failed.", ELL_INFORMATION);
 
 				c_faces.erase(filename);
 				delete face;
@@ -1270,4 +1268,3 @@ std::u32string CGUITTFont::convertWCharToU32String(const wchar_t* const charArra
 
 
 } // end namespace gui
-} // end namespace irr

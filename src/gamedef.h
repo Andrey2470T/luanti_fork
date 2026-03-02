@@ -35,7 +35,7 @@ class ModChannel;
 class ModStorage;
 class ModStorageDatabase;
 
-namespace irr::scene {
+namespace scene {
 	class IAnimatedMesh;
 	class ISceneManager;
 }

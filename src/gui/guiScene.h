@@ -23,7 +23,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "ICameraSceneNode.h"
 #include "StyleSpec.h"
 
-using namespace irr;
+
 
 class GUIScene : public gui::IGUIElement
 {

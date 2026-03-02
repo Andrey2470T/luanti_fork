@@ -12,8 +12,6 @@
 #include "IVideoDriver.h"
 #include "IAttributes.h"
 
-namespace irr
-{
 namespace gui
 {
 
@@ -1034,4 +1032,3 @@ void GUISkin::getColors(video::SColor* colors)
 // END PATCH
 
 } // end namespace gui
-} // end namespace irr

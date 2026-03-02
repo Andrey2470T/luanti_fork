@@ -597,7 +597,7 @@ void tree_fruit_placement(MMVManip &vmanip, v3f p0, TreeDef &tree_definition)
 }
 
 
-irr::core::matrix4 setRotationAxisRadians(irr::core::matrix4 M, double angle, v3f axis)
+core::matrix4 setRotationAxisRadians(core::matrix4 M, double angle, v3f axis)
 {
 	double c = cos(angle);
 	double s = sin(angle);
@@ -625,7 +625,7 @@ irr::core::matrix4 setRotationAxisRadians(irr::core::matrix4 M, double angle, v3
 }
 
 
-v3f transposeMatrix(irr::core::matrix4 M, v3f v)
+v3f transposeMatrix(core::matrix4 M, v3f v)
 {
 	v3f translated;
 	double x = M[0] * v.X + M[4] * v.Y + M[8]  * v.Z +M[12];

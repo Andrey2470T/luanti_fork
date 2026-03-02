@@ -33,7 +33,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "settings.h"
 #include "camera.h" // CameraModes
 
-using namespace irr::core;
+using namespace core;
 
 static video::SMaterial baseMaterial()
 {
@@ -160,7 +160,7 @@ void Sky::render()
 		video::SColor mooncolor2 = mooncolor2_f.toSColor();
 
 		// Calculate offset normalized to the X dimension of a 512x1 px tonemap
-		float offset = (1.0 - fabs(sin((m_time_of_day - 0.5) * irr::core::PI))) * 511;
+		float offset = (1.0 - fabs(sin((m_time_of_day - 0.5) * core::PI))) * 511;
 
 		if (m_sun_tonemap) {
 			u8 * texels = (u8 *)m_sun_tonemap->lock();

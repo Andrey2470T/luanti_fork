@@ -150,8 +150,8 @@ class GUIFormSpecMenu : public GUIModalMenu
 	struct TooltipSpec
 	{
 		TooltipSpec() = default;
-		TooltipSpec(const std::wstring &a_tooltip, irr::video::SColor a_bgcolor,
-				irr::video::SColor a_color):
+		TooltipSpec(const std::wstring &a_tooltip, video::SColor a_bgcolor,
+				video::SColor a_color):
 			tooltip(translate_string(a_tooltip)),
 			bgcolor(a_bgcolor),
 			color(a_color)
@@ -159,8 +159,8 @@ class GUIFormSpecMenu : public GUIModalMenu
 		}
 
 		std::wstring tooltip;
-		irr::video::SColor bgcolor;
-		irr::video::SColor color;
+		video::SColor bgcolor;
+		video::SColor color;
 	};
 
 public:
@@ -490,8 +490,8 @@ private:
 
 	void tryClose();
 
-	void showTooltip(const std::wstring &text, const irr::video::SColor &color,
-		const irr::video::SColor &bgcolor);
+	void showTooltip(const std::wstring &text, const video::SColor &color,
+		const video::SColor &bgcolor);
 
 	/**
 	 * In formspec version < 2 the elements were not ordered properly. Some element

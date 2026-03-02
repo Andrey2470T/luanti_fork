@@ -84,8 +84,8 @@ namespace treegen {
 		PseudoRandom ps, TreeDef &tree_definition);
 	void tree_fruit_placement(MMVManip &vmanip, v3f p0,
 		TreeDef &tree_definition);
-	irr::core::matrix4 setRotationAxisRadians(irr::core::matrix4 M, double angle, v3f axis);
+	core::matrix4 setRotationAxisRadians(core::matrix4 M, double angle, v3f axis);
 
-	v3f transposeMatrix(irr::core::matrix4 M ,v3f v);
+	v3f transposeMatrix(core::matrix4 M ,v3f v);
 
 }; // namespace treegen

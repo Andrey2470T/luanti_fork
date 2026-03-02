@@ -90,12 +90,12 @@ void FontEngine::cleanCache()
 }
 
 /******************************************************************************/
-irr::gui::IGUIFont *FontEngine::getFont(FontSpec spec)
+gui::IGUIFont *FontEngine::getFont(FontSpec spec)
 {
 	return getFont(spec, false);
 }
 
-irr::gui::IGUIFont *FontEngine::getFont(FontSpec spec, bool may_fail)
+gui::IGUIFont *FontEngine::getFont(FontSpec spec, bool may_fail)
 {
 	if (spec.mode == FM_Unspecified) {
 		spec.mode = m_currentMode;

@@ -14,9 +14,6 @@
 #include "CGUITTFont.h"
 #include "util/string.h"
 
-namespace irr
-{
-
 namespace gui
 {
 //! constructor
@@ -94,7 +91,7 @@ void StaticText::draw()
 				getTextWidth();
 		}
 
-		irr::video::SColor previous_color(255, 255, 255, 255);
+		video::SColor previous_color(255, 255, 255, 255);
 		for (const EnrichedString &str : BrokenText) {
 			if (HAlign == EGUIA_LOWERRIGHT)
 			{
@@ -102,7 +99,7 @@ void StaticText::draw()
 					font->getDimension(str.c_str()).Width;
 			}
 
-			if (font->getType() == irr::gui::EGFT_CUSTOM) {
+			if (font->getType() == gui::EGFT_CUSTOM) {
 				CGUITTFont *tmp = static_cast<CGUITTFont*>(font);
 				tmp->draw(str,
 					r, HAlign == EGUIA_CENTER, VAlign == EGUIA_CENTER,
@@ -324,7 +321,7 @@ void StaticText::updateText()
 		elWidth -= 2*skin->getSize(EGDS_TEXT_DISTANCE_X);
 	wchar_t c;
 
-	//std::vector<irr::video::SColor> colors;
+	//std::vector<video::SColor> colors;
 
 	// We have to deal with right-to-left and left-to-right differently
 	// However, most parts of the following code is the same, it's just
@@ -579,5 +576,3 @@ s32 StaticText::getTextWidth() const
 
 
 } // end namespace gui
-
-} // end namespace irr

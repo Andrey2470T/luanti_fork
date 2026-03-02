@@ -40,8 +40,6 @@
 #include "util/basic_macros.h"
 #include FT_FREETYPE_H
 
-namespace irr
-{
 namespace gui
 {
 	struct SGUITTFace;
@@ -390,7 +388,7 @@ namespace gui
 
 			void createSharedPlane();
 
-			irr::IrrlichtDevice* Device;
+			IrrlichtDevice* Device;
 			gui::IGUIEnvironment* Environment;
 			video::IVideoDriver* Driver;
 			io::path filename;
@@ -411,4 +409,3 @@ namespace gui
 	};
 
 } // end namespace gui
-} // end namespace irr

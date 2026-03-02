@@ -465,9 +465,9 @@ inline v3f getPitchYawRoll(const core::matrix4 &m)
 }
 
 // Muliply the RGB value of a color linearly, and clamp to black/white
-inline irr::video::SColor multiplyColorValue(const irr::video::SColor &color, float mod)
+inline video::SColor multiplyColorValue(const video::SColor &color, float mod)
 {
-	return irr::video::SColor(color.getAlpha(),
+	return video::SColor(color.getAlpha(),
 			core::clamp<u32>(color.getRed() * mod, 0, 255),
 			core::clamp<u32>(color.getGreen() * mod, 0, 255),
 			core::clamp<u32>(color.getBlue() * mod, 0, 255));

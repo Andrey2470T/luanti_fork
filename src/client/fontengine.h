@@ -65,9 +65,9 @@ public:
 	~FontEngine();
 
 	// Get best possible font specified by FontSpec
-	irr::gui::IGUIFont *getFont(FontSpec spec);
+	gui::IGUIFont *getFont(FontSpec spec);
 
-	irr::gui::IGUIFont *getFont(unsigned int font_size=FONT_SIZE_UNSPECIFIED,
+	gui::IGUIFont *getFont(unsigned int font_size=FONT_SIZE_UNSPECIFIED,
 			FontMode mode=FM_Unspecified)
 	{
 		FontSpec spec(font_size, mode, m_default_bold, m_default_italic);
@@ -130,7 +130,7 @@ public:
 	void readSettings();
 
 private:
-	irr::gui::IGUIFont *getFont(FontSpec spec, bool may_fail);
+	gui::IGUIFont *getFont(FontSpec spec, bool may_fail);
 
 	/** update content of font cache in case of a setting change made it invalid */
 	void updateFontCache();
@@ -151,7 +151,7 @@ private:
 	std::recursive_mutex m_font_mutex;
 
 	/** internal storage for caching fonts of different size */
-	std::map<unsigned int, irr::gui::IGUIFont*> m_font_cache[FM_MaxMode << 2];
+	std::map<unsigned int, gui::IGUIFont*> m_font_cache[FM_MaxMode << 2];
 
 	/** default font size to use */
 	unsigned int m_default_size[FM_MaxMode];

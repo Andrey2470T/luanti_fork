@@ -25,7 +25,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <string>
 #include "irrlichttypes_extrabloated.h"
 
-using namespace irr;
+
 
 class ISimpleTextureSource;
 class Client;
@@ -99,8 +99,8 @@ public:
 
 		gui::IGUIFont *font;
 
-		irr::video::SColor color;
-		irr::video::SColor hovercolor;
+		video::SColor color;
+		video::SColor hovercolor;
 		bool underline;
 
 		s32 baseline = 0;
@@ -130,7 +130,7 @@ public:
 	s32 margin = 3;
 	ValignType valign = VALIGN_TOP;
 	BackgroundType background_type = BACKGROUND_NONE;
-	irr::video::SColor background_color;
+	video::SColor background_color;
 
 	Tag m_root_tag;
 
