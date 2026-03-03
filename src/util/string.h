@@ -76,8 +76,8 @@ struct FlagDesc {
 
 // Try to avoid converting between wide and UTF-8 unless you need to
 // input/output stuff via Irrlicht
-std::wstring utf8_to_wide(const std::string &input);
-std::string wide_to_utf8(const std::wstring &input);
+[[nodiscard]] std::wstring utf8_to_wide(std::string_view input);
+[[nodiscard]] std::string wide_to_utf8(std::wstring_view input);
 
 std::string urlencode(const std::string &str);
 std::string urldecode(const std::string &str);
