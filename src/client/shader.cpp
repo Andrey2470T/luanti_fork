@@ -40,8 +40,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "client/tile.h"
 #include "config.h"
 
-#include <mt_opengl.h>
-
 /*
 	A cache from shader name to shader path
 */
@@ -665,17 +663,9 @@ ShaderInfo ShaderSource::generateShader(const std::string &name,
 		#define textureFlags texture2
 	)";
 
-	// Since this is the first time we're using the GL bindings be extra careful.
-	// This should be removed before 5.6.0 or similar.
-	if (!GL.GetString) {
-		errorstream << "OpenGL procedures were not loaded correctly, "
-			"please open a bug report with details about your platform/OS." << std::endl;
-		abort();
-	}
-
 	bool use_discard = use_gles;
 	// For renderers that should use discard instead of GL_ALPHA_TEST
-	const char *renderer = reinterpret_cast<const char*>(GL.GetString(GL.RENDERER));
+	const char *renderer = reinterpret_cast<const char*>(driver->getVendorInfo().c_str());
 	if (strstr(renderer, "GC7000"))
 		use_discard = true;
 	if (use_discard) {
