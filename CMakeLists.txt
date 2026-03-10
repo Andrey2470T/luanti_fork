@@ -5,7 +5,7 @@ endif()
 
 # This can be read from ${PROJECT_NAME} after project() is called
 project(luanti)
-set(PROJECT_NAME_CAPITALIZED "Luanti")
+set(PROJECT_NAME_CAPITALIZED "LuantiFork")
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
@@ -13,8 +13,8 @@ set(GCC_MINIMUM_VERSION "7.5")
 set(CLANG_MINIMUM_VERSION "7.0.1")
 
 # You should not need to edit these manually, use util/bump_version.sh
-set(VERSION_MAJOR 5)
-set(VERSION_MINOR 12)
+set(VERSION_MAJOR 1)
+set(VERSION_MINOR 0)
 set(VERSION_PATCH 0)
 set(VERSION_EXTRA "" CACHE STRING "Stuff to append to version string")
 
@@ -99,18 +99,34 @@ if(ANDROID)
 endif()
 
 
-if(TRUE)
-	message(STATUS "Using imported IrrlichtMt at subdirectory 'irr'")
-	if(BUILD_CLIENT)
-		add_subdirectory(irr EXCLUDE_FROM_ALL)
+# Irrlicht Redo loading
 
-		if(NOT TARGET IrrlichtMt)
-			message(FATAL_ERROR "IrrlichtMt project is missing a CMake target?!")
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/lib/irrlicht_redo")
+	message(STATUS "Using IrrlichtRedo submodule at subdirectory 'lib/irrlicht_redo'")
+	if(BUILD_CLIENT)
+		add_subdirectory(lib/irrlicht_redo EXCLUDE_FROM_ALL)
+
+		if(NOT TARGET IrrlichtRedo)
+			message(FATAL_ERROR "Failed to add IrrlichtRedo as the subdirectory ('IrrlichtRedo' target is missing)")
 		endif()
 	else()
-		add_library(IrrlichtMt::IrrlichtMt INTERFACE IMPORTED)
-		set_target_properties(IrrlichtMt::IrrlichtMt PROPERTIES
-			INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/irr/include")
+		add_library(IrrlichtRedo::IrrlichtRedo INTERFACE IMPORTED)
+		if (NOT TARGET IrrlichtRedo::IrrlichtRedo)
+			message(FATAL_ERROR "Failed to add IrrlichtRedo as the imported library ('IrrlichtRedo::IrrlichtRedo' target is missing)")
+		endif()
+		set_target_properties(IrrlichtRedo::IrrlichtRedo PROPERTIES
+			INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/lib/irrlicht_redo/include")
+	endif()
+
+	# retrieve version somehow
+	get_target_property(IrrlichtRedo_VERSION IrrlichtRedo VERSION)
+	message(STATUS "Found IrrlichtRedo ${IrrlichtRedo_VERSION}")
+
+	set(REQUIRED_VERSION 1.0.0)
+	if(IrrlichtRedo_VERSION VERSION_LESS ${REQUIRED_VERSION})
+		message(FATAL_ERROR "At least IrrlichtRedo ${REQUIRED_VERSION} is required to build")
+	elseif(NOT DEVELOPMENT_BUILD AND IrrlichtRedo_VERSION VERSION_GREATER ${REQUIRED_VERSION})
+		message(FATAL_ERROR "IrrlichtMt ${REQUIRED_VERSION} is required to build")
 	endif()
 endif()
 
@@ -296,6 +312,8 @@ if(BUILD_UNITTESTS OR BUILD_BENCHMARKS)
 endif()
 
 add_subdirectory(lib/tiniergltf)
+
+add_subdirectory(lib/rectpack2D)
 
 # Subdirectories
 # Be sure to add all relevant definitions above this
