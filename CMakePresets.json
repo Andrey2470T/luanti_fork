@@ -37,5 +37,35 @@
         "CMAKE_BUILD_TYPE": "MinSizeRel"
       }
     }
+  ],
+  "buildPresets": [
+    {
+      "name": "Debug",
+      "configurePreset": "Debug",
+      "jobs": 8,
+      "displayName": "Build Debug",
+      "description": "Build Debug configuration"
+    },
+    {
+      "name": "Release",
+      "configurePreset": "Release",
+      "jobs": 8,
+      "displayName": "Build Release",
+      "description": "Build Release configuration"
+    },
+    {
+      "name": "RelWithDebInfo",
+      "configurePreset": "RelWithDebInfo",
+      "jobs": 8,
+      "displayName": "Build RelWithDebInfo",
+      "description": "Build RelWithDebInfo configuration"
+    },
+    {
+      "name": "MinSizeRel",
+      "configurePreset": "MinSizeRel",
+      "jobs": 8,
+      "displayName": "Build MinSizeRel",
+      "description": "Build MinSizeRel configuration"
+    }
   ]
 }

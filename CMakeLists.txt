@@ -64,10 +64,7 @@ set(BUILD_WITH_TRACY FALSE CACHE BOOL
 set(FETCH_TRACY_GIT_TAG "master" CACHE STRING
 	"Git tag for fetching Tracy client. Match with your server (gui) version")
 
-set(DEFAULT_RUN_IN_PLACE FALSE)
-if(WIN32)
-	set(DEFAULT_RUN_IN_PLACE TRUE)
-endif()
+set(DEFAULT_RUN_IN_PLACE TRUE)
 set(RUN_IN_PLACE ${DEFAULT_RUN_IN_PLACE} CACHE BOOL
 	"Run directly in source directory structure")
 
@@ -310,8 +307,6 @@ add_subdirectory(lib/sha256)
 if(BUILD_UNITTESTS OR BUILD_BENCHMARKS)
 	add_subdirectory(lib/catch2)
 endif()
-
-add_subdirectory(lib/tiniergltf)
 
 add_subdirectory(lib/rectpack2D)
 

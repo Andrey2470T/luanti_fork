@@ -48,6 +48,8 @@ AppDir
 .direnv/
 # Nix
 /result
+# Qt Creator
+CMakeLists.txt.user
 
 ## Files related to Luanti development cycle
 /*.patch
