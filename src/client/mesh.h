@@ -16,7 +16,7 @@ namespace irr {
 	}
 }
 
-using namespace irr;
+
 
 /*!
  * Applies shading to a color based on the surface's
