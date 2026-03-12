@@ -594,7 +594,7 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 				return true;
 			std::wstring wselected = prompt.getSelection();
 			std::string selected = wide_to_utf8(wselected);
-			Environment->getOSOperator()->copyToClipboard(selected.c_str());
+			Environment->getClipboard()->copyToClipboard(selected.c_str());
 			return true;
 		}
 		else if(event.KeyInput.Key == KEY_KEY_V && event.KeyInput.Control)
@@ -608,8 +608,8 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 					ChatPrompt::CURSOROP_DIR_LEFT, // Ignored
 					ChatPrompt::CURSOROP_SCOPE_SELECTION);
 			}
-			IOSOperator *os_operator = Environment->getOSOperator();
-			const c8 *text = os_operator->getTextFromClipboard();
+			os::Clipboard *clipboard = Environment->getClipboard();
+			const c8 *text = clipboard->getTextFromClipboard();
 			if (!text)
 				return true;
 			prompt.input(utf8_to_wide(text));
@@ -623,7 +623,7 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 				return true;
 			std::wstring wselected = prompt.getSelection();
 			std::string selected = wide_to_utf8(wselected);
-			Environment->getOSOperator()->copyToClipboard(selected.c_str());
+			Environment->getClipboard()->copyToClipboard(selected.c_str());
 			prompt.cursorOperation(
 				ChatPrompt::CURSOROP_DELETE,
 				ChatPrompt::CURSOROP_DIR_LEFT, // Ignored
@@ -688,7 +688,7 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 				if (!was_url_pressed
 						&& event.MouseInput.Event == EMIE_MMOUSE_PRESSED_DOWN) {
 					// Paste primary selection at cursor pos
-					const c8 *text = Environment->getOSOperator()
+					const c8 *text = Environment->getClipboard()
 							->getTextFromPrimarySelection();
 					if (text)
 						prompt.input(utf8_to_wide(text));
@@ -788,7 +788,7 @@ void GUIChatConsole::updatePrimarySelection()
 {
 	std::wstring wselected = m_chat_backend->getPrompt().getSelection();
 	std::string selected = wide_to_utf8(wselected);
-	Environment->getOSOperator()->copyToPrimarySelection(selected.c_str());
+	Environment->getClipboard()->copyToPrimarySelection(selected.c_str());
 }
 
 void GUIChatConsole::updateScrollbar(bool update_size)

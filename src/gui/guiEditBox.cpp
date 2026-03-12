@@ -16,8 +16,8 @@ GUIEditBox::~GUIEditBox()
 	if (m_override_font)
 		m_override_font->drop();
 
-	if (m_operator)
-		m_operator->drop();
+	if (m_clipboard)
+		m_clipboard->drop();
 
 	if (m_vscrollbar)
 		m_vscrollbar->drop();
@@ -163,13 +163,13 @@ void GUIEditBox::setTextMarkers(s32 begin, s32 end)
 		m_mark_begin = begin;
 		m_mark_end = end;
 
-		if (!m_passwordbox && m_operator && m_mark_begin != m_mark_end) {
+		if (!m_passwordbox && m_clipboard && m_mark_begin != m_mark_end) {
 			// copy to primary selection
 			const s32 realmbgn = m_mark_begin < m_mark_end ? m_mark_begin : m_mark_end;
 			const s32 realmend = m_mark_begin < m_mark_end ? m_mark_end : m_mark_begin;
 
 			std::string s = stringw_to_utf8(Text.subString(realmbgn, realmend - realmbgn));
-			m_operator->copyToPrimarySelection(s.c_str());
+			m_clipboard->copyToPrimarySelection(s.c_str());
 		}
 
 		sendGuiEvent(EGET_EDITBOX_MARKING_CHANGED);
@@ -499,14 +499,14 @@ bool GUIEditBox::onKeyDown(const SEvent &event, s32 &mark_begin, s32 &mark_end)
 void GUIEditBox::onKeyControlC(const SEvent &event)
 {
 	// copy to clipboard
-	if (m_passwordbox || !m_operator || m_mark_begin == m_mark_end)
+	if (m_passwordbox || !m_clipboard || m_mark_begin == m_mark_end)
 		return;
 
 	const s32 realmbgn = m_mark_begin < m_mark_end ? m_mark_begin : m_mark_end;
 	const s32 realmend = m_mark_begin < m_mark_end ? m_mark_end : m_mark_begin;
 
 	std::string s = stringw_to_utf8(Text.subString(realmbgn, realmend - realmbgn));
-	m_operator->copyToClipboard(s.c_str());
+	m_clipboard->copyToClipboard(s.c_str());
 }
 
 bool GUIEditBox::onKeyControlX(const SEvent &event, s32 &mark_begin, s32 &mark_end)
@@ -517,7 +517,7 @@ bool GUIEditBox::onKeyControlX(const SEvent &event, s32 &mark_begin, s32 &mark_e
 	if (!m_writable)
 		return false;
 
-	if (m_passwordbox || !m_operator || m_mark_begin == m_mark_end)
+	if (m_passwordbox || !m_clipboard || m_mark_begin == m_mark_end)
 		return false;
 
 	const s32 realmbgn = m_mark_begin < m_mark_end ? m_mark_begin : m_mark_end;
@@ -546,14 +546,14 @@ bool GUIEditBox::onKeyControlV(const SEvent &event, s32 &mark_begin, s32 &mark_e
 		return false;
 
 	// paste from the clipboard
-	if (!m_operator)
+	if (!m_clipboard)
 		return false;
 
 	const s32 realmbgn = m_mark_begin < m_mark_end ? m_mark_begin : m_mark_end;
 	const s32 realmend = m_mark_begin < m_mark_end ? m_mark_end : m_mark_begin;
 
 	// add new character
-	if (const c8 *p = m_operator->getTextFromClipboard()) {
+	if (const c8 *p = m_clipboard->getTextFromClipboard()) {
 		core::stringw inserted_text = utf8_to_stringw(p);
 		if (m_mark_begin == m_mark_end) {
 			// insert text
@@ -781,9 +781,9 @@ bool GUIEditBox::processMouse(const SEvent &event)
 
 		// paste from the primary selection
 		inputString([&] {
-			if (!m_operator)
+			if (!m_clipboard)
 				return core::stringw();
-			const c8 *inserted_text_utf8 = m_operator->getTextFromPrimarySelection();
+			const c8 *inserted_text_utf8 = m_clipboard->getTextFromPrimarySelection();
 			if (!inserted_text_utf8)
 				return core::stringw();
 			return utf8_to_stringw(inserted_text_utf8);

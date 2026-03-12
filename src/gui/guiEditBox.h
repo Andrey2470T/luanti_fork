@@ -6,7 +6,7 @@
 
 #include "irrlichttypes.h"
 #include "IGUIEditBox.h"
-#include "IOSOperator.h"
+#include "Clipboard.h"
 #include "guiScrollBar.h"
 #include <vector>
 
@@ -180,7 +180,7 @@ protected:
 	s32 m_mark_end = 0;
 
 	gui::IGUIFont *m_last_break_font = nullptr;
-	IOSOperator *m_operator = nullptr;
+	os::Clipboard *m_clipboard = nullptr;
 
 	core::rect<s32> m_frame_rect; // temporary values
 

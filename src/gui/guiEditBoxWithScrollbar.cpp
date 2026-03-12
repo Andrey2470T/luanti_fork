@@ -34,10 +34,10 @@ GUIEditBoxWithScrollBar::GUIEditBoxWithScrollBar(const wchar_t* text, bool borde
 	Text = text;
 
 	if (Environment)
-		m_operator = Environment->getOSOperator();
+		m_clipboard = Environment->getClipboard();
 
-	if (m_operator)
-		m_operator->grab();
+	if (m_clipboard)
+		m_clipboard->grab();
 
 	// this element can be tabbed to
 	setTabStop(true);
