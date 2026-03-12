@@ -366,7 +366,7 @@ local function check_requirements(name, requires, context)
 		-- be used, so we show settings for both.
 		touchscreen = touch_support and (touch_controls == "auto" or core.is_yes(touch_controls)),
 		keyboard_mouse = not touch_support or (touch_controls == "auto" or not core.is_yes(touch_controls)),
-		opengl = (video_driver == "opengl" or video_driver == "opengl3"),
+		opengl = video_driver == "opengl3",
 		gles = video_driver:sub(1, 5) == "ogles",
 		touch_interaction_style_tap = touch_interaction_style ~= "buttons_crosshair",
 	}
