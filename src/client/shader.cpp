@@ -24,8 +24,6 @@
 #include "client/tile.h"
 #include "config.h"
 
-#include <mt_opengl.h>
-
 /*
 	A cache from shader name to shader path
 */
@@ -707,7 +705,7 @@ ShaderInfo ShaderSource::generateShader(const std::string &name,
 	bool use_discard = fully_programmable;
 	if (!use_discard) {
 		// workaround for a certain OpenGL implementation lacking GL_ALPHA_TEST
-		const char *renderer = reinterpret_cast<const char*>(GL.GetString(GL.RENDERER));
+		const char *renderer = driver->getVendorInfo().c_str();
 		if (strstr(renderer, "GC7000"))
 			use_discard = true;
 	}
