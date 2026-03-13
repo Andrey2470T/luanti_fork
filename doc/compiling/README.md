@@ -22,8 +22,9 @@ General options and their default values:
         MinSizeRel             - Release build with -Os passed to compiler to make executable as small as possible
     PRECOMPILE_HEADERS=FALSE   - Precompile some headers (experimental; requires CMake 3.16 or later)
     PRECOMPILED_HEADERS_PATH=  - Path to a file listing all headers to precompile (default points to src/precompiled_headers.txt)
-    USE_SDL2=TRUE              - Build with SDL2; Enables IrrlichtMt device SDL2
     USE_SDL2_STATIC=TRUE       - Links with SDL2::SDL2-static instead of SDL2::SDL2
+    USE_SDL3=FALSE             - Build with SDL3; Enables IrrlichtMt device SDL3 (experimental)
+    USE_SDL3_STATIC=TRUE       - Links with SDL3::SDL3-static instead of SDL3::SDL3-shared
     ENABLE_CURL=ON             - Build with cURL; Enables use of online mod repo, public serverlist and remote media fetching via http
     ENABLE_CURSES=ON           - Build with (n)curses; Enables a server side terminal (command line option: --terminal)
     ENABLE_GETTEXT=ON          - Build with Gettext; Allows using translations
@@ -38,7 +39,7 @@ General options and their default values:
     ENABLE_PROMETHEUS=OFF      - Build with Prometheus metrics exporter (listens on tcp/30000 by default)
     ENABLE_SYSTEM_GMP=ON       - Use GMP from system (much faster than bundled mini-gmp)
     ENABLE_SYSTEM_JSONCPP=ON   - Use JsonCPP from system
-    RUN_IN_PLACE=FALSE         - Create a portable install (worlds, settings etc. in current directory)
+    RUN_IN_PLACE=TRUE         - Create a portable install (worlds, settings etc. in current directory)
     ENABLE_UPDATE_CHECKER=TRUE - Whether to enable update checks by default
     INSTALL_DEVTEST=FALSE      - Whether the Development Test game should be installed alongside Luanti
     USE_GPROF=FALSE            - Enable profiling using GProf
