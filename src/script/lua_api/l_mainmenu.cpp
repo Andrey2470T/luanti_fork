@@ -929,16 +929,7 @@ int ModApiMainMenu::l_get_active_renderer(lua_State *L)
 int ModApiMainMenu::l_get_active_irrlicht_device(lua_State *L)
 {
 	auto device = RenderingEngine::get_raw_device();
-	std::string device_name = [device] {
-		switch (device->getType()) {
-		case EIDT_WIN32: return "WIN32";
-		case EIDT_X11: return "X11";
-		case EIDT_OSX: return "OSX";
-		case EIDT_SDL: return "SDL";
-		case EIDT_ANDROID: return "ANDROID";
-		default: return "Unknown";
-		}
-	}();
+	std::string device_name = "SDL";
 	if (auto version = device->getVersionString(); !version.empty())
 		device_name.append(" " + version);
 	lua_pushstring(L, device_name.c_str());
