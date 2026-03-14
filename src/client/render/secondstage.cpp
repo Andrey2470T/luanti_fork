@@ -124,7 +124,7 @@ RenderStep *addPostProcessing(RenderPipeline *pipeline, RenderStep *previousStep
 	// Note: This is not about renderbuffer objects, but about textures,
 	// since that's what we use and what Irrlicht allows us to use.
 
-	const bool msaa_available = driver->queryFeature(video::EVDF_TEXTURE_MULTISAMPLE);
+	const bool msaa_available = driver->getFeatures().TextureMultisampleSupported;
 	const bool enable_msaa = antialiasing == "fsaa" && msaa_available;
 	if (antialiasing == "fsaa" && !msaa_available)
 		warningstream << "Ignoring configured FSAA. FSAA is not supported in "

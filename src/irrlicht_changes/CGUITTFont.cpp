@@ -175,7 +175,7 @@ video::IImage* SGUITTGlyph::createGlyphImage(const FT_Bitmap& bits, video::IVide
 		case FT_PIXEL_MODE_GRAY:
 		{
 			// Create our blank image.
-			texture_size = d.getOptimalSize(!driver->queryFeature(video::EVDF_TEXTURE_NPOT), !driver->queryFeature(video::EVDF_TEXTURE_NSQUARE), true, 0);
+			texture_size = d.getOptimalSize(false, false, true, 0);
 			image = driver->createImage(video::ECF_A8R8G8B8, texture_size);
 			image->fill(video::SColor(0, 255, 255, 255));
 

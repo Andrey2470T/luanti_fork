@@ -116,18 +116,6 @@ video::ITexture *guiScalingResizeCached(video::IVideoDriver *driver,
 			(u32)destrect.getHeight()));
 	imageScaleNNAA(srcimg, srcrect, destimg);
 
-	// Some platforms are picky about textures being powers of 2, so expand
-	// the image dimensions to the next power of 2, if necessary.
-	if (!driver->queryFeature(video::EVDF_TEXTURE_NPOT)) {
-		video::IImage *po2img = driver->createImage(src->getColorFormat(),
-				core::dimension2d<u32>(npot2((u32)destrect.getWidth()),
-				npot2((u32)destrect.getHeight())));
-		po2img->fill(video::SColor(0, 0, 0, 0));
-		destimg->copyTo(po2img);
-		destimg->drop();
-		destimg = po2img;
-	}
-
 	// Convert the scaled image back into a texture.
 	scaled = driver->addTexture(scalename, destimg);
 	destimg->drop();

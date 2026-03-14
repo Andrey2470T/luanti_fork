@@ -620,9 +620,6 @@ ShaderInfo ShaderSource::generateShader(const std::string &name,
 		return shaderinfo;
 
 	auto *gpu = driver->getGPUProgrammingServices();
-	if (!driver->queryFeature(video::EVDF_ARB_GLSL) || !gpu) {
-		throw ShaderException(gettext("GLSL is not supported by the driver"));
-	}
 
 	// Create shaders header
 	bool fully_programmable = driver->getDriverType() == video::EDT_OGLES2 || driver->getDriverType() == video::EDT_OPENGL3;
