@@ -8,12 +8,10 @@ on:
       - 'lib/**.cpp'
       - 'src/**.[ch]'
       - 'src/**.cpp'
-      - 'irr/**.[ch]'
-      - 'irr/**.cpp'
-      - 'irr/**.mm' # Objective-C(++)
       - '**/CMakeLists.txt'
       - 'cmake/Modules/**'
       - 'po/**.po'
+      - 'util/ci/**'
       - '.github/workflows/macos.yml'
   pull_request:
     paths:
@@ -21,13 +19,12 @@ on:
       - 'lib/**.cpp'
       - 'src/**.[ch]'
       - 'src/**.cpp'
-      - 'irr/**.[ch]'
-      - 'irr/**.cpp'
-      - 'irr/**.mm' # Objective-C(++)
       - '**/CMakeLists.txt'
       - 'cmake/Modules/**'
       - 'po/**.po'
+      - 'util/ci/**'
       - '.github/workflows/macos.yml'
+  workflow_dispatch:
 
 jobs:
   build-intel-macos:

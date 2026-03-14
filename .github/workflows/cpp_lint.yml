@@ -8,24 +8,21 @@ on:
       - 'lib/**.cpp'
       - 'src/**.[ch]'
       - 'src/**.cpp'
-      - 'irr/**.[ch]'
-      - 'irr/**.cpp'
       - '**/CMakeLists.txt'
       - 'cmake/Modules/**'
       - 'util/ci/**'
-      - '.github/workflows/**.yml'
+      - '.github/workflows/cpp_lint.yml'
   pull_request:
     paths:
       - 'lib/**.[ch]'
       - 'lib/**.cpp'
       - 'src/**.[ch]'
       - 'src/**.cpp'
-      - 'irr/**.[ch]'
-      - 'irr/**.cpp'
       - '**/CMakeLists.txt'
       - 'cmake/Modules/**'
       - 'util/ci/**'
-      - '.github/workflows/**.yml'
+      - '.github/workflows/cpp_lint.yml'
+  workflow_dispatch:
 
 env:
   CLANG_TIDY: clang-tidy-15
@@ -34,7 +31,9 @@ jobs:
   clang_tidy:
     runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
+      with:
+          submodules: 'recursive'
     - name: Install deps
       run: |
         source ./util/ci/common.sh

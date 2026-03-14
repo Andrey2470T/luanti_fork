@@ -6,28 +6,31 @@ on:
     paths:
       - 'builtin/**.lua'
       - 'games/devtest/**.lua'
-      - '.github/workflows/**.yml'
+      - 'util/ci/**'
+      - '.github/workflows/lua.yml'
   pull_request:
     paths:
       - 'builtin/**.lua'
       - 'games/devtest/**.lua'
-      - '.github/workflows/**.yml'
+      - 'util/ci/**'
+      - '.github/workflows/lua.yml'
+  workflow_dispatch:
 
 jobs:
-  # Note that the integration tests are also run in build.yml, but only when C++ code is changed.
+  # Note that the integration tests are also run build.yml, but only when C++ code is changed.
   integration_tests:
     name: "Compile and run multiplayer tests"
     runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: Install deps
       run: |
         source ./util/ci/common.sh
-        install_linux_deps clang gdb libluajit-5.1-dev
+        install_linux_deps clang gdb libluajit-5.1-dev xvfb
 
     - name: Build
       run: |
-        ./util/ci/build.sh
+        ./util/ci/build_linux.sh
       env:
         CC: clang
         CXX: clang++
@@ -35,7 +38,7 @@ jobs:
 
     - name: Integration test + devtest
       run: |
-        serverconf="profiler.load=true" ./util/test_multiplayer.sh
+        ./util/test_multiplayer.sh
 
   luacheck:
     name: "Builtin Luacheck and Unit Tests"
@@ -43,14 +46,18 @@ jobs:
 
     steps:
 
-    - uses: actions/checkout@v4
-    - uses: leafo/gh-actions-lua@v10
+    - uses: actions/checkout@v6
+    - uses: leafo/gh-actions-lua@v12
       with:
         luaVersion: "5.1.5"
-    - uses: leafo/gh-actions-luarocks@v4.3.0
+    - uses: leafo/gh-actions-luarocks@v6
 
     - name: Install LuaJIT
-      run: ./util/ci/build_luajit.sh
+      run: |
+        cd $HOME
+        git clone https://github.com/LuaJIT/LuaJIT/
+        cd LuaJIT
+        make -j$(nproc)
 
     - name: Install luarocks tools
       run: |
