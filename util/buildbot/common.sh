@@ -9,6 +9,7 @@ curl_version=8.12.1
 gettext_version=0.20.2
 freetype_version=2.13.3
 sqlite3_version=3.46.1
+glew_version=2.2.0
 luajit_version=20250113
 leveldb_version=1.23
 zlib_version=1.3.1
@@ -90,6 +91,7 @@ add_cmake_libs () {
 
 		-DSDL2_DIR=$libdir/sdl2/lib/cmake/SDL2
 		-DSDL2_DLL="$(_dlls $libdir/sdl2/bin/*)"
+		-DDISABLE_CHECK_SDL_VERSION=TRUE
 
 		-DZLIB_INCLUDE_DIR=$libdir/zlib/include
 		-DZLIB_LIBRARY=$libdir/zlib/lib/libz.dll.a
@@ -136,5 +138,11 @@ add_cmake_libs () {
 		-DLEVELDB_INCLUDE_DIR=$libdir/libleveldb/include
 		-DLEVELDB_LIBRARY=$libdir/libleveldb/lib/libleveldb.dll.a
 		-DLEVELDB_DLL=$libdir/libleveldb/bin/libleveldb.dll
+
+		-DGLEW_ROOT_DIR=$libdir/glew
+		-DGLEW_INCLUDE_DIR=$libdir/glew/include
+		-DGLEW_LIBRARY=$libdir/glew/lib/glew32.lib
+		-DGLEW_LIBRARIES=$libdir/glew/lib/glew32.lib
+		-DGLEW_DLL=$libdir/glew/bin/glew32.dll
 	)
 }

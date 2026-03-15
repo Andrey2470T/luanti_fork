@@ -3,6 +3,7 @@
   "dependencies": [
     "zlib",
     "zstd",
+    "glew",
     {
       "name": "curl",
       "features": [

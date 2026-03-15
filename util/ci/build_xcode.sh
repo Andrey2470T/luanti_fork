@@ -3,7 +3,6 @@
 cmake .. \
 	-DCMAKE_FIND_FRAMEWORK=LAST \
 	-DRUN_IN_PLACE=FALSE -DENABLE_GETTEXT=TRUE \
-	-DUSE_SDL2_STATIC=TRUE \
 	-DSDL2_INCLUDE_DIRS=/opt/homebrew/include/SDL2 \
 	-DFREETYPE_LIBRARY=/opt/homebrew/lib/libfreetype.a \
 	-DGETTEXT_INCLUDE_DIR=/opt/homebrew/include \
@@ -20,6 +19,7 @@ cmake .. \
 	-DENABLE_REDIS=OFF \
 	-DJPEG_LIBRARY=/opt/homebrew/lib/libjpeg.a \
 	-DPNG_LIBRARY=/opt/homebrew/lib/libpng.a \
+	-DGLEW_LIBRARY=/opt/homebrew/lib/libglew.a \
 	-DCMAKE_EXE_LINKER_FLAGS=-lbz2\
 	-GXcode
 xcodebuild -project luanti.xcodeproj -scheme luanti -configuration Release build

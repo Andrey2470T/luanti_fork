@@ -5,7 +5,8 @@ ENV LUAJIT_VERSION v2.1
 
 RUN apk add --no-cache git build-base cmake curl-dev zlib-dev zstd-dev \
 		sqlite-dev postgresql-dev hiredis-dev leveldb-dev \
-		gmp-dev jsoncpp-dev ninja ca-certificates
+		gmp-dev jsoncpp-dev ninja ca-certificates glew-dev \
+		libjpeg-turbo-dev libpng-dev sdl2-dev
 
 WORKDIR /usr/src/
 RUN git clone --recursive https://github.com/jupp0r/prometheus-cpp && \
@@ -44,7 +45,6 @@ COPY lib /usr/src/luanti/lib
 COPY misc /usr/src/luanti/misc
 COPY po /usr/src/luanti/po
 COPY src /usr/src/luanti/src
-COPY irr /usr/src/luanti/irr
 COPY textures /usr/src/luanti/textures
 
 WORKDIR /usr/src/luanti

@@ -9,10 +9,12 @@ android {
 		targetSdkVersion 34
 		externalNativeBuild {
 			cmake {
-				arguments "-DANDROID_STL=c++_shared",
-					"-DENABLE_CURL=1", "-DENABLE_SOUND=1",
+				cppFlags "-DANDROID_STL=c++_shared"
+				arguments "-DENABLE_CURL=1", "-DENABLE_SOUND=1",
 					"-DENABLE_GETTEXT=1",
-					"-DBUILD_UNITTESTS=0", "-DENABLE_UPDATE_CHECKER=0"
+					"-DBUILD_UNITTESTS=0", "-DENABLE_UPDATE_CHECKER=0",
+					"-DCMAKE_MODULE_PATH:PATH=${project.rootDir}/deps/cmake/Modules",
+					"-DCUSTOM_GLEW_DIR:PATH=${project.rootDir}/deps"
 			}
 		}
 	}

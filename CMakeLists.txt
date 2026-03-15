@@ -100,19 +100,11 @@ endif()
 
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/lib/irrlicht_redo")
 	message(STATUS "Using IrrlichtRedo submodule at subdirectory 'lib/irrlicht_redo'")
-	if(BUILD_CLIENT)
-		add_subdirectory(lib/irrlicht_redo EXCLUDE_FROM_ALL)
 
-		if(NOT TARGET IrrlichtRedo)
-			message(FATAL_ERROR "Failed to add IrrlichtRedo as the subdirectory ('IrrlichtRedo' target is missing)")
-		endif()
-	else()
-		add_library(IrrlichtRedo::IrrlichtRedo INTERFACE IMPORTED)
-		if (NOT TARGET IrrlichtRedo::IrrlichtRedo)
-			message(FATAL_ERROR "Failed to add IrrlichtRedo as the imported library ('IrrlichtRedo::IrrlichtRedo' target is missing)")
-		endif()
-		set_target_properties(IrrlichtRedo::IrrlichtRedo PROPERTIES
-			INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/lib/irrlicht_redo/include")
+	add_subdirectory(lib/irrlicht_redo EXCLUDE_FROM_ALL)
+
+	if(NOT TARGET IrrlichtRedo)
+		message(FATAL_ERROR "Failed to add IrrlichtRedo as the subdirectory ('IrrlichtRedo' target is missing)")
 	endif()
 
 	# retrieve version somehow

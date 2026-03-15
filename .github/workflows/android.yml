@@ -42,12 +42,18 @@ jobs:
       with:
           distribution: 'temurin'
           java-version: '17'
+    - name: Setup Android NDK
+      uses: android-actions/setup-android@v2
+    - name: Build GLEW for Android
+      run: |
+        cd android
+        ./build-glew.sh
     - name: Build AAB with Gradle
       # We build an AAB as well for uploading to the the Play Store.
-      run: cd android; ./gradlew bundlerelease
+      run: cd android; ./gradlew bundlerelease --stacktrace --info
     - name: Build APKs with Gradle
       # "assemblerelease" is very fast after "bundlerelease".
-      run: cd android; ./gradlew assemblerelease
+      run: cd android; ./gradlew assemblerelease --stacktrace --info
     - name: Save AAB artifact
       uses: actions/upload-artifact@v4
       with:

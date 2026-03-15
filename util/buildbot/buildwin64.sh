@@ -44,6 +44,23 @@ download "$libhost/llvm/libjpeg-$libjpeg_version-win64.zip"
 download "$libhost/llvm/libpng-$libpng_version-win64.zip"
 download "$libhost/llvm/sdl2-$sdl2_version-win64.zip"
 
+cd $libdir
+glew_url="https://sourceforge.net/projects/glew/files/glew/${glew_version}/glew-${glew_version}-win32.zip/download"
+glew_zip="glew-${glew_version}-win64.zip"
+if [ ! -f "$glew_zip" ]; then
+	wget "$glew_url" -O "$glew_zip"
+fi
+rm -rf glew-temp glew
+unzip -q "$glew_zip" -d glew-temp
+mkdir -p glew/{lib,include/GL,bin}
+cp -r glew-temp/glew-${glew_version}/include/GL/* glew/include/GL/
+cp glew-temp/glew-${glew_version}/lib/Release/x64/* glew/lib/
+cp glew-temp/glew-${glew_version}/bin/Release/x64/* glew/bin/
+ls -la glew/lib/
+ls -la glew/bin/
+rm -rf glew-temp
+cd -
+
 # Set source dir, downloading Minetest as needed
 get_sources
 
