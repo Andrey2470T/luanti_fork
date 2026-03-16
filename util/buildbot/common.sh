@@ -17,6 +17,7 @@ zstd_version=1.5.7
 libjpeg_version=3.0.1
 libpng_version=1.6.47
 sdl2_version=2.32.2
+glew_version=2.2.0
 
 download () {
 	local url=$1
@@ -35,6 +36,44 @@ download () {
 	else
 		return 1
 	fi
+}
+
+# As the sfan5's win64 libraries builds don`t have GLEW, we build it manually
+download_glew () {
+	echo "Downloading GLEW $glew_version for $variant..."
+
+	glew_url="https://sourceforge.net/projects/glew/files/glew/${glew_version}/glew-${glew_version}-win32.zip/download"
+	glew_zip="glew-${glew_version}-win32.zip"
+
+	if [ ! -f "$glew_zip" ]; then
+		wget "$glew_url" -O "$glew_zip"
+	fi
+
+	if grep -q "$glew_zip" "$topdir/sha256sums.txt" 2>/dev/null; then
+		sha256sum -w -c <(grep -F "$glew_zip" "$topdir/sha256sums.txt")
+	fi
+
+	rm -rf glew-temp
+	unzip -q "$glew_zip" -d glew-temp
+
+	mkdir -p glew/{lib,include/GL,bin}
+
+	cp -r glew-temp/glew-${glew_version}/include/GL/* glew/include/GL/
+
+	if [ "$variant" = "win64" ]; then
+		# For 64-bit
+		cp glew-temp/glew-${glew_version}/lib/Release/x64/* glew/lib/ 2>/dev/null || true
+		cp glew-temp/glew-${glew_version}/bin/Release/x64/* glew/bin/ 2>/dev/null || true
+	else
+		# For 32-bit
+		cp glew-temp/glew-${glew_version}/lib/Release/Win32/* glew/lib/ 2>/dev/null || true
+		cp glew-temp/glew-${glew_version}/bin/Release/Win32/* glew/bin/ 2>/dev/null || true
+	fi
+	# ====================================================
+
+	rm -rf glew-temp
+
+	echo "GLEW download completed"
 }
 
 # sets $sourcedir
@@ -80,6 +119,51 @@ _dlls () {
 }
 
 add_cmake_libs () {
+	mkdir -p $PWD/cmake/Modules
+
+	# Создаем FindGLEW.cmake, который всегда будет находить нашу GLEW
+	cat > $PWD/cmake/Modules/FindGLEW.cmake << 'EOF'
+	# Кастомный FindGLEW.cmake для MinGW
+	# Всегда использует заранее определенные пути
+
+	if(GLEW_INCLUDE_DIR AND GLEW_LIBRARY)
+		set(GLEW_INCLUDE_DIRS ${GLEW_INCLUDE_DIR})
+		set(GLEW_LIBRARIES ${GLEW_LIBRARY})
+		set(GLEW_FOUND TRUE)
+
+		if(NOT TARGET GLEW::GLEW)
+			add_library(GLEW::GLEW UNKNOWN IMPORTED)
+			set_target_properties(GLEW::GLEW PROPERTIES
+				IMPORTED_LOCATION "${GLEW_LIBRARY}"
+				INTERFACE_INCLUDE_DIRECTORIES "${GLEW_INCLUDE_DIR}"
+			)
+		endif()
+
+		message(STATUS "Found GLEW (custom): ${GLEW_LIBRARY}")
+		return()
+	endif()
+
+	# Если переменные не заданы, ищем стандартным способом
+	find_path(GLEW_INCLUDE_DIR GL/glew.h)
+	find_library(GLEW_LIBRARY NAMES GLEW glew32 libGLEW)
+
+	if(GLEW_INCLUDE_DIR AND GLEW_LIBRARY)
+		set(GLEW_INCLUDE_DIRS ${GLEW_INCLUDE_DIR})
+		set(GLEW_LIBRARIES ${GLEW_LIBRARY})
+		set(GLEW_FOUND TRUE)
+
+		if(NOT TARGET GLEW::GLEW)
+			add_library(GLEW::GLEW UNKNOWN IMPORTED)
+			set_target_properties(GLEW::GLEW PROPERTIES
+				IMPORTED_LOCATION "${GLEW_LIBRARY}"
+				INTERFACE_INCLUDE_DIRECTORIES "${GLEW_INCLUDE_DIR}"
+			)
+		endif()
+	endif()
+EOF
+
+	# Добавляем нашу директорию с модулями в путь поиска CMake
+	cmake_args+=(-DCMAKE_MODULE_PATH="$PWD/cmake/Modules")
 	cmake_args+=(
 		-DPNG_LIBRARY=$libdir/libpng/lib/libpng16.dll.a
 		-DPNG_PNG_INCLUDE_DIR=$libdir/libpng/include
@@ -89,8 +173,9 @@ add_cmake_libs () {
 		-DJPEG_INCLUDE_DIR=$libdir/libjpeg/include
 		-DJPEG_DLL="$(_dlls $libdir/libjpeg/bin/libjpeg*)"
 
-		-DSDL2_DIR=$libdir/sdl2/lib/cmake/SDL2
-		-DSDL2_DLL="$(_dlls $libdir/sdl2/bin/*)"
+		-DSDL2_LIBRARY=$libdir/sdl2/lib/libSDL2.dll.a
+		-DSDL2_INCLUDE_DIR=$libdir/sdl2/include/SDL2
+		-DSDL2_DLL=$libdir/sdl2/bin/SDL2.dll
 		-DDISABLE_CHECK_SDL_VERSION=TRUE
 
 		-DZLIB_INCLUDE_DIR=$libdir/zlib/include
@@ -139,10 +224,8 @@ add_cmake_libs () {
 		-DLEVELDB_LIBRARY=$libdir/libleveldb/lib/libleveldb.dll.a
 		-DLEVELDB_DLL=$libdir/libleveldb/bin/libleveldb.dll
 
-		-DGLEW_ROOT_DIR=$libdir/glew
-		-DGLEW_INCLUDE_DIR=$libdir/glew/include
 		-DGLEW_LIBRARY=$libdir/glew/lib/glew32.lib
-		-DGLEW_LIBRARIES=$libdir/glew/lib/glew32.lib
+		-DGLEW_INCLUDE_DIR=$libdir/glew/include
 		-DGLEW_DLL=$libdir/glew/bin/glew32.dll
 	)
 }
