@@ -5,7 +5,7 @@
 #include "pipeline.h"
 #include "client/client.h"
 #include "client/hud.h"
-#include "IRenderTarget.h"
+#include "RenderTarget.h"
 #include "SColor.h"
 
 #include <vector>
@@ -189,7 +189,7 @@ void TextureBufferOutput::activate(PipelineContext &context)
 	if (!render_target)
 		render_target = driver->addRenderTarget();
 
-	core::array<video::ITexture *> textures;
+	std::vector<video::ITexture *> textures;
 	core::dimension2du size(0, 0);
 	for (size_t i = 0; i < texture_map.size(); i++) {
 		video::ITexture *texture = buffer->getTexture(texture_map[i]);
@@ -202,7 +202,7 @@ void TextureBufferOutput::activate(PipelineContext &context)
 	if (depth_stencil != NO_DEPTH_TEXTURE)
 		depth_texture = buffer->getTexture(depth_stencil);
 
-	render_target->setTexture(textures, depth_texture);
+	render_target->setTextures(textures, depth_texture);
 
 	driver->setRenderTargetEx(render_target, m_clear ? video::ECBF_ALL : video::ECBF_NONE, context.clear_color);
 	driver->OnResize(size);
@@ -210,7 +210,7 @@ void TextureBufferOutput::activate(PipelineContext &context)
 	RenderTarget::activate(context);
 }
 
-video::IRenderTarget *TextureBufferOutput::getIrrRenderTarget(PipelineContext &context)
+video::RenderTarget *TextureBufferOutput::getIrrRenderTarget(PipelineContext &context)
 {
 	activate(context); // Needed to make sure that render_target is set up.
 	return render_target;

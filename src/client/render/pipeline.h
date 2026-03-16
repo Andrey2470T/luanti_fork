@@ -20,7 +20,7 @@ class ShadowRenderer;
 
 namespace video
 {
-	class IRenderTarget;
+	class RenderTarget;
 }
 
 struct PipelineContext
@@ -176,7 +176,7 @@ public:
 	virtual ~TextureBufferOutput() override;
 	void activate(PipelineContext &context) override;
 
-	video::IRenderTarget *getIrrRenderTarget(PipelineContext &context);
+	video::RenderTarget *getIrrRenderTarget(PipelineContext &context);
 
 private:
 	static const u8 NO_DEPTH_TEXTURE = 255;
@@ -184,7 +184,7 @@ private:
 	TextureBuffer *buffer;
 	std::vector<u8> texture_map;
 	u8 depth_stencil { NO_DEPTH_TEXTURE };
-	video::IRenderTarget* render_target { nullptr };
+	video::RenderTarget* render_target { nullptr };
 	video::IVideoDriver* driver { nullptr };
 };
 
