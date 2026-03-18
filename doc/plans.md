@@ -76,7 +76,24 @@
          ```
       - Коллбэк таблицы (`on_render = function(self)`), позволяющий менять ее параметры в каждом шаге рендера
    - Поддержка кастомных шейдеров (через materials и postprocess)
-   - Поддержка постэффектов.
+   - Поддержка постэффектов (postprocess таблица):
+        * `postprocess.get_steps()`
+          * Returns the table of all current render postprocess steps (bloom, godrays, upscaling, shadows and etc)
+        * `postprocess.set_steps(new_steps)`
+          * Sets the new render steps table
+        * render steps table:
+          ```lua
+          {
+             name = <string>,
+             order = <number>,
+             shader = <file>/<code>, -- fragment
+             uniforms = {<list>},
+             textures_input = {<list>},
+             textures_output = {<list>},
+             viewport = {x1=..., y1=..., x2=..., y2=...},
+             cliprect = {x1=..., y1=..., x2=..., y2=...},
+             blend = {<Blend table>}
+          ```
 
 - Добавить в методах ObjectRef возможность изменения позиции/скорости/поворота/масштаба с интерполяциями.
 
