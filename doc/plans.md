@@ -13,9 +13,9 @@
 
 - Адаптировать SSCSM выполнение от luk3yx: https://gitlab.com/luk3yx/minetest-sscsm
 
-- Добавить графический CSM API. Будет включать:
+- Добавить графический CSM API:
    - Поддержка материалов через таблицы.
-      - Возможно задавать базовые параметры (глубина, смешивание, трафарет, шейдеры, настройки текстур тайлов и тд) и PBR (roughness, metallic, specular, AO, emission и тд):
+      - Возможность задавать базовые параметры (глубина, смешивание, трафарет, шейдеры и тд) и PBR (roughness, metallic, specular, AO, emission и тд):
          ```lua
          materials = {
             {  -- первый слот
@@ -38,32 +38,34 @@
                     enable = true/false,
                     func = = <Compare functions>,
                     ref = 1.0,
-                    mode = "keep", "zero", "replace"...
+                    mode = "keep"/"zero"/"replace"...
                 },
                 cull = {
                     enable = true/false,
-                    mode = "back", "front", "front_and_back"
+                    mode = "back"/"front"/"front_and_back"
                 },
-                viewport = {x1= 0, y1= 0, x2 = 1, y2 = 1},
+                shader = <Shader table>,
+                viewport = {x1 = 0, y1 = 0, x2 = 1, y2 = 1},
+                cliprect = {x1 = 0, y1 = 0, x2 = 1, y2 = 1},
                 line_width = 2.0,
                 pbr = {
-                    color = ColorSpec,
-                    metallic = number/mapname,
-                    roughness = number/mapname,
-                    ambient_occlusion = number/mapname,
-                    normal = mapname,
-                    emission = number/mapname,
-                    transmission = number,
-                    ior = NUMBER
+                    color = <ColorSpec>,
+                    metallic = <number>/<mapname>,
+                    roughness = <number>/<mapname>,
+                    ambient_occlusion = <number>/<mapname>,
+                    normal = <mapname>,
+                    emission = <number>/<mapname>,
+                    transmission = <number>,
+                    ior = <number>
                 }
             }
             ...
          }
          ```
       - Таблица `materials` будет доступна в NodeDef, ItemDef, EntityDef, HudDef
-      - Подтаблица shaders, задающая вершинный и фрагментый шейдеры:
+      - Подтаблица shader, задающая вершинный и фрагментый шейдеры:
          ```lua
-         shaders = {
+         shader = {
             vertex = "block_vertex.glsl"/"block.vsh"/"<код>",
             geometry = "block_geometry.glsl"/"block.gsh"/"<код>",
             fragment = "block_fragment.glsl"/"block.fsh"/"<код>",
@@ -75,25 +77,75 @@
          }
          ```
       - Коллбэк таблицы (`on_render = function(self)`), позволяющий менять ее параметры в каждом шаге рендера
-   - Поддержка кастомных шейдеров (через materials и postprocess)
-   - Поддержка постэффектов (postprocess таблица):
-        * `postprocess.get_steps()`
-          * Returns the table of all current render postprocess steps (bloom, godrays, upscaling, shadows and etc)
-        * `postprocess.set_steps(new_steps)`
+   - Поддержка кастомных шейдеров (через materials и pipeline)
+   - Поддержка кастомных рендер проходов и постэффектов (pipeline таблица):
+        * `pipeline.get_render_passes()`
+          * Returns the table of all current render passes of the pipeline
+        * `pipeline.set_steps(new_steps)`
           * Sets the new render steps table
         * render steps table:
           ```lua
           {
              name = <string>,
              order = <number>,
+             type = "3d"/"postprocess"/"builtin",
+             -- fields for type="3d":
+             materials = <Materials table>,
+             -- fields both for all three types:
+             texture_buffer = <textures list>,
+             textures_input = <textures_buffer indices list>,
+             textures_output = <textures_buffer indices list>,
+             --fields for type="postprocess":
              shader = <file>/<code>, -- fragment
              uniforms = {<list>},
-             textures_input = {<list>},
-             textures_output = {<list>},
              viewport = {x1=..., y1=..., x2=..., y2=...},
              cliprect = {x1=..., y1=..., x2=..., y2=...},
-             blend = {<Blend table>}
+             blend = {<Blend table>},
+             line_width = <number>,
+             on_render = function(self) { ... }
+          }
           ```
+    - Рендеринг примитивов (таблица drawer):
+         * `drawer.set_material(<Material table>)`
+           * Sets the current material used by the following drawer calls
+         * `drawer.set_transform(<Transform matrices>)`
+           * Sets the current `world`, `view` and `projection` matrices
+             used by the following drawer calls
+         * `drawer.draw_list(<Params table>)`
+           * Params table:
+             ```lua
+             {
+                primitive_type = "points"/"lines"/"line_strips"/"triangles"/"triangle_fans",
+                vertices = {
+                   {
+                      pos = <float>,
+                      color = <ColorSpec>,
+                      normal = <vector3d>,
+                      uv = <vector2d>
+                   },
+                   ...
+                },
+                indices = {<vertices indices list>}
+             }
+             ```
+         * `drawer.draw_rect(<Params table>)`
+           * Params table:
+             ```lua
+             {
+                rect = {x1 = ..., y1 = ..., x2 = ..., y2 = ...},
+                color = <ColorSpec or list of ColorSpec>,
+             }
+             ```
+         * `drawer.draw_image(<Params table>)` -- requires the Image API
+           * Params table:
+             ```lua
+             {
+                image = <Image object>,
+                rect = {x1 = ..., y1 = ..., x2 = ..., y2 = ...},
+                color = <ColorSpec or list of ColorSpec>,
+                uvs = {x1 = ..., y1 = ..., x2 = ..., y2 = ...}
+             }
+             ```
 
 - Добавить в методах ObjectRef возможность изменения позиции/скорости/поворота/масштаба с интерполяциями.
 
