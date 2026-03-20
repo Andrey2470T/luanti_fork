@@ -1,21 +1,22 @@
 `Планы в IrrlichtRedo`
 ----------------------
 
-- Рефакторить Video классы (добавить на замену новые классы из old ветки: DrawContext, ITexture, Texture2D, TextureCubeMap, VAO...)
-- Перенести /src/GUI в luanti_fork/src/gui, объединить классы-дупликаты
-- Удалить /src/IO, использовать cpp filesystem
-- Заменить меш загрузчики на Assimp
-- Удалить абстрактные классы из /include, объединив их с классами реализаций
-- Распределить /include файлы по папкам
+* Рефакторить Video классы (добавить на замену новые классы из old ветки: DrawContext, ITexture, Texture2D, TextureCubeMap, VAO...)
+* Перенести /src/GUI в luanti_fork/src/gui, объединить классы-дупликаты
+* Удалить /src/IO, использовать cpp filesystem
+* Заменить меш загрузчики на Assimp
+* Удалить абстрактные классы из /include, объединив их с классами реализаций
+* Распределить /include файлы по папкам
 
 `Планы в Luanti Fork`
 ---------------------
 
-- Адаптировать SSCSM выполнение от luk3yx: https://gitlab.com/luk3yx/minetest-sscsm
+ Адаптировать SSCSM выполнение от luk3yx: https://gitlab.com/luk3yx/minetest-sscsm
 
-- Добавить графический CSM API:
-   - Поддержка материалов через таблицы.
-      - Возможность задавать базовые параметры (глубина, смешивание, трафарет, шейдеры и тд) и PBR (roughness, metallic, specular, AO, emission и тд):
+* Добавить графический CSM API:
+   * Поддержка материалов через таблицы.
+      * Возможность задавать базовые параметры (глубина, смешивание, трафарет, шейдеры и тд) и PBR (roughness, metallic, specular, AO, emission и тд):
+
          ```lua
          materials = {
             {  -- первый слот
@@ -27,7 +28,7 @@
                     srca_func = <Blend functions>,
                     dstrgb_func = <Blend functions>,
                     desta_func = <Blend functions>,
-                    color = ColorSpec
+                    color = <ColorSpec>
                 },
                 depth = {
                     enable = true/false,
@@ -45,6 +46,12 @@
                     mode = "back"/"front"/"front_and_back"
                 },
                 shader = <Shader table>,
+                texture_outputs = { -- map the texture buffer indices to the correponding target
+                    texture_buffer = <name>, -- name of used texture buffer
+                    index = <integer>,
+                    cubemap_face = "posx"/"posy"/"posz"/"negx"/"negy"/"negz", -- for type="cubemap"
+                    array_layer = <integer> -- for type="array"
+                },
                 viewport = {x1 = 0, y1 = 0, x2 = 1, y2 = 1},
                 cliprect = {x1 = 0, y1 = 0, x2 = 1, y2 = 1},
                 line_width = 2.0,
@@ -57,13 +64,16 @@
                     emission = <number>/<mapname>,
                     transmission = <number>,
                     ior = <number>
-                }
-            }
+                },
+                on_render = function() { ... }
+            },
             ...
          }
          ```
-      - Таблица `materials` будет доступна в NodeDef, ItemDef, EntityDef, HudDef
-      - Подтаблица shader, задающая вершинный и фрагментый шейдеры:
+
+      * Таблица `materials` будет доступна в NodeDef, ItemDef, EntityDef, ParticleSpawnerDef, HudDef
+      * Подтаблица `shader`, задающая вершинный и фрагментный шейдеры:
+
          ```lua
          shader = {
             vertex = "block_vertex.glsl"/"block.vsh"/"<код>",
@@ -76,36 +86,81 @@
             }
          }
          ```
-      - Коллбэк таблицы (`on_render = function(self)`), позволяющий менять ее параметры в каждом шаге рендера
-   - Поддержка кастомных шейдеров (через materials и pipeline)
-   - Поддержка кастомных рендер проходов и постэффектов (pipeline таблица):
-        * `pipeline.get_render_passes()`
-          * Returns the table of all current render passes of the pipeline
-        * `pipeline.set_steps(new_steps)`
-          * Sets the new render steps table
-        * render steps table:
+
+      * Коллбэк таблицы (`on_render = function(self)`), позволяющий менять ее параметры в каждом шаге рендера
+   * Поддержка кастомных шейдеров (через `materials` и `pipeline`)
+   * Поддержка кастомных рендер проходов и постэффектов (`pipeline` таблица)
+        * Три типа:
+          * `3d`: кастомный проход для рендера 3d объектов с таблицей `materials`
+          * `postprocess`: проход рендера в пространстве экрана, принимает только фрагментный шейдер
+          * `builtin`: один из встроенных проходов в движке (draw3D, drawHud, postprocess, ...)
+        * `pipeline.get_render_pass_chain()`
+          * Returns the table of all current render passes chain of the pipeline in the format:
+
+            ```lua
+            {
+                {
+                    type = "3d"/"postprocess"/"builtin",
+                    name = <string>, -- <modname:name> for "3d" and "postprocess"
+                    order = <integer>, -- order number of the given pass
+                    enable = true/false, -- enable or disable the given pass?
+                },
+                ...
+            }
+            ```
+
+        * `pipeline.set_render_pass_chain(table)`
+        * `pipeline.enable_render_pass(name, bool)` -- enable or disable the given render pass
+        * `pipeline.add_texture_buffer(name, list)`
+          * Creates new textures definitions and GPU textures themselves
+          * Each texture def looks like:
+
+            ```lua
+            {
+                type = "2d"/"cubemap"/"array",
+                name = <string>, -- texture name
+                -- Resolution in pixels, third coord is the texture array layers count if type="array"
+                resolution = {x=<number>, y=<number>, [z=<integer>]},
+                format = "argb8"/"rgb8"/"d16"/"d32"/"d24s8", -- texture pixel format
+                settings = {
+                    -- Wrapping: "repeat", "clamp_to_edge", "clamp_to_border", "mirrored_repeat", "mirror_clamp_to_edge"
+                    wrap_u = <Wrapping>,
+                    wrap_v = <Wrapping>,
+                    wrap_w = <Wrapping>,
+                    -- Minimal filters: "nearest", "linear", "nearest_mipmap_nearest", "linear_mipmap_nearest", "nearest_mipmap_linear", "linear_mipmap_linear"
+                    min_filter = <Minimal filters>,
+                    -- Magnification filters: "nearest", "linear"
+                    mag_filter = <Magnification filters>,
+                    generate_mipmaps = true/false,
+                    max_mip_level = <integer>
+                },
+                msaa = <number>
+            }
+            ```
+
+        * `pipeline.add_3d_step(<Material table>)`
+        * `pipeline.get_posteffects()`
+          * Returns the consequent list of all screen effects (bloom, distance-of-field, reflections and etc):
+
           ```lua
           {
-             name = <string>,
-             order = <number>,
-             type = "3d"/"postprocess"/"builtin",
-             -- fields for type="3d":
-             materials = <Materials table>,
-             -- fields both for all three types:
-             texture_buffer = <textures list>,
-             textures_input = <textures_buffer indices list>,
-             textures_output = <textures_buffer indices list>,
-             --fields for type="postprocess":
-             shader = <file>/<code>, -- fragment
-             uniforms = {<list>},
-             viewport = {x1=..., y1=..., x2=..., y2=...},
-             cliprect = {x1=..., y1=..., x2=..., y2=...},
-             blend = {<Blend table>},
-             line_width = <number>,
-             on_render = function(self) { ... }
+        	  {
+        	  	  name = <string>,
+        	  	  shader = <file>/<code>, -- fragment
+        	  	  uniforms = <list>,
+        	  	  texture_outputs = <Texture outputs>,
+        	  	  viewport = {x1=..., y1=..., x2=..., y2=...},
+        	  	  cliprect = {x1=..., y1=..., x2=..., y2=...},
+                  blend = {<Blend table>},
+                  line_width = <number>
+        	  }
           }
           ```
-    - Рендеринг примитивов (таблица drawer):
+
+        * `pipeline.add_posteffect(<Posteffect table>)` -- adds a new post effect
+        * `pipeline.override_builtin_posteffect(<Posteffect table>)` -- overrides the builtin effects like bloom, godrays, fsaa and etc
+
+    * Рендеринг примитивов (таблица drawer):
          * `drawer.set_material(<Material table>)`
            * Sets the current material used by the following drawer calls
          * `drawer.set_transform(<Transform matrices>)`
@@ -113,6 +168,7 @@
              used by the following drawer calls
          * `drawer.draw_list(<Params table>)`
            * Params table:
+
              ```lua
              {
                 primitive_type = "points"/"lines"/"line_strips"/"triangles"/"triangle_fans",
@@ -128,22 +184,44 @@
                 indices = {<vertices indices list>}
              }
              ```
+
          * `drawer.draw_rect(<Params table>)`
            * Params table:
+
              ```lua
              {
                 rect = {x1 = ..., y1 = ..., x2 = ..., y2 = ...},
                 color = <ColorSpec or list of ColorSpec>,
              }
              ```
+
          * `drawer.draw_image(<Params table>)` -- requires the Image API
            * Params table:
+
              ```lua
              {
                 image = <Image object>,
                 rect = {x1 = ..., y1 = ..., x2 = ..., y2 = ...},
                 color = <ColorSpec or list of ColorSpec>,
                 uvs = {x1 = ..., y1 = ..., x2 = ..., y2 = ...}
+             }
+             ```
+
+         * `drawer.draw_mesh(<Mesh table>)`:
+           * Mesh table:
+
+             ```lua
+             {
+             	name = "*.obj"/"*.b3d"/"*.gltf"/"*.x",
+             	vertex_type = "standard3d"/"standard2d",
+             	use_aux1_attrib = <bool>,
+             	use_aux2_attrib = <bool>,
+             	triangulate = <bool>,
+             	merge_vertices = <bool>,
+             	generate_normals = <bool>,
+             	flip_normals = <bool>,
+             	limit_bone_weights = <bool>,
+             	flip_winding_order = <bool>
              }
              ```
 
