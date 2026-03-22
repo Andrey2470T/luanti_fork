@@ -7,6 +7,7 @@
 #include "client/camera.h"
 #include <IrrlichtDevice.h>
 #include <ISceneManager.h>
+#include <DrawContext.h>
 
 /// SetColorMaskStep step
 
@@ -33,7 +34,7 @@ ClearDepthBufferTarget::ClearDepthBufferTarget(RenderTarget *_target) :
 void ClearDepthBufferTarget::activate(PipelineContext &context)
 {
 	target->activate(context);
-	context.device->getVideoDriver()->clearBuffers(video::ECBF_DEPTH);
+	context.device->getVideoDriver()->getContext()->clearBuffers(video::ECBF_DEPTH);
 }
 
 ConfigureOverrideMaterialTarget::ConfigureOverrideMaterialTarget(RenderTarget *_upstream, bool _enable) :

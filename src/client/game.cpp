@@ -2432,8 +2432,8 @@ void Game::updateCameraDirection(CameraOrientation *cam, float dtime)
 	Since Minetest has its own code to synthesize mouse events from touch events,
 	this results in duplicated input. To avoid that, we don't enable relative
 	mouse mode if we're in touchscreen mode. */
-	if (cur_control)
-		cur_control->setRelativeMode(!g_touchcontrols && !isMenuActive());
+	//if (cur_control)
+	//	cur_control->setRelativeMode(!g_touchcontrols && !isMenuActive());
 
 	if ((device->isWindowActive() && device->isWindowFocused()
 			&& !isMenuActive()) || input->isRandom()) {

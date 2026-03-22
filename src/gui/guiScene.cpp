@@ -10,6 +10,7 @@
 #include <ISceneManager.h>
 #include "porting.h"
 #include "client/mesh.h"
+#include <DrawContext.h>
 
 GUIScene::GUIScene(gui::IGUIEnvironment *env, scene::ISceneManager *smgr,
 		   gui::IGUIElement *parent, core::recti rect, s32 id)
@@ -61,7 +62,7 @@ void GUIScene::setTexture(u32 idx, video::ITexture *texture)
 
 void GUIScene::draw()
 {
-	m_driver->clearBuffers(video::ECBF_DEPTH);
+	m_driver->getContext()->clearBuffers(video::ECBF_DEPTH);
 
 	// Control rotation speed based on time
 	u64 new_time = porting::getTimeMs();

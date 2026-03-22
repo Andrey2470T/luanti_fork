@@ -14,6 +14,7 @@
 #include "client/texturesource.h"
 #include "client/guiscalingfilter.h"
 #include "client/item_visuals_manager.h"
+#include <DrawContext.h>
 
 struct MeshTimeInfo {
 	u64 time;
@@ -65,7 +66,7 @@ void drawItemStack(
 	}
 	if (has_mesh) {
 		scene::IMesh *mesh = imesh->mesh;
-		driver->clearBuffers(video::ECBF_DEPTH);
+		driver->getContext()->clearBuffers(video::ECBF_DEPTH);
 		s32 delta = 0;
 		if (rotation_kind < IT_ROT_NONE) {
 			MeshTimeInfo &ti = rotation_time_infos[rotation_kind];
