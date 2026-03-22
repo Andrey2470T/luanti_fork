@@ -1,3 +1,3 @@
-Split into sections and moved to lua_api subfolder
+Split into sections and moved to server_lua_api subfolder
 
-URL: https://github.com/Andrey2470T/luanti_fork/blob/master/doc/lua_api
+URL: https://github.com/Andrey2470T/luanti_fork/blob/master/doc/server_lua_api/main.md
