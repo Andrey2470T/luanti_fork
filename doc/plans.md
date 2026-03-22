@@ -232,6 +232,7 @@
 * Использовать aux1 аттрибут для хранения hardware цвета для блоков colorwallmounted, colorfacedir, color и тд.
 
 * Адаптировать поддержку атласов из old ветки
+	* Добавить предзагрузку тайлов, которые будут упакованы в атлас, через atlas.json файл в модах
 
 * Рендерить отдельную копию блока с крэками через режим overlay (#15287)
 
@@ -241,7 +242,81 @@
 
 * Добавить поддержку цветного воксельного освещения с добавлением u16 param3 (R, G, B по 4 бита)
 
-* Новая процедурная генерация текстур (замена текстурных модификаторов). Поддержка различных режимов смешивания (Normal, Alpha, Add, Multiply, Overlay, Screen и тд)
+* Прямая работа с изображениями в модах (замена текстурных модификаторов)
+	* Прямой доступ к пикселям и их модификация
+	* Различные режимы смешивания (Normal, Alpha, Add, Multiply, Overlay, Screen и тд)
+	* Различные операции (копирование, обрезка, поворот, масштабирование с фильтрами)
+	* Image userdata:
+
+	  ```lua
+	  local stone_img = core.image("default_stone.png")
+
+	  -- Gets the average stone_img brightness
+	  local brightness = stone_img:get_brightness()
+	  core.log("info", "Average image brightness: " .. tonumber(brightness))
+
+	  -- Creates the horizontal gradient from fully red to fully image color
+	  stone_img:set_mode("alpha")
+
+	  local color = {r=255, g=0, b=0, a=255}
+	  local w, h = stone_img:width(), stone_img:height()
+	  for y = 1, h do
+		for x = 1, w do
+			stone_img:set_pixel(x, y, color)
+			color.a = 255 - x
+		end
+		color.a = 255
+	  end
+
+	  ...
+
+	  -- Inside `core.register_node` table:
+	  tiles = {stone_img, stone_img, stone_img, stone_img, stone_img, stone_img}
+	  ```
+
+* Расширить звуковой API
+	* Добавить больше параметров в Sound parameters table:
+
+	  ```lua
+	  {
+		end_time = <number>,
+		-- Ends playing the sound on `number` time point
+		-- Cam be negative like `start_time`
+		type = "sound"/"stream",
+		-- Defines that how the sound data will be loaded in memory
+		-- type=`sound`:
+		-- fully loads the data from the source
+		-- fits for short soundtracks like sound effects (door opening, walking, cracking and etc)
+		-- this type is default
+		-- type=`stream`:
+		-- not fully loads the data from the source, the sound is loading on-the-fly and not caching anywhere
+		-- fits for large audio files like music
+		rollof_factor = <number>, -- fade speed
+		doppler_factor = <number> -- Doppler's effect
+	  }
+	  ```
+
+	* Использовать методы в sound handle:
+		* `handle:stop()`: stops the sound, equivalent to `core.sound_stop(handle)`
+		* `handle:pause()`: pauses the sound, it saves the current time position
+		* `handle:resume()`: resumes the sound, should be called after `handle:pause()`
+		* `handle:get_sound_info()`: returns the table with following fields:
+		  ```lua
+		  {
+		  	gain = <number>,
+		  	pitch = <number>,
+		  	fade = <number>,
+		  	position = <vector3d>, -- where the source is currently locating
+		  	is_playing = true/false, -- this sound is currently playing?
+		  	time = <number>, -- the current time point in the playing sound in seconds
+		  	duration = <number>, -- the sound duration in seconds
+		  }
+		  ```
+
+		* `handle:is_playing()`: returns if the sound is currently playing
+		* `handle:set_gain(<number>)`
+		* `handle:set_pitch(<number>)`
+		* `handle:set_fade(<number>)`
 
 * Добавить в методах ObjectRef возможность изменения позиции/скорости/поворота/масштаба с интерполяциями
 
@@ -249,7 +324,28 @@
 
 * Dual wielding (#14427)
 
+* Перенести вещи, которые можно реализовать на Lua, из C++ части в builtin (hud, хотбар, полосы здоровья/дыхания, wiledmesh, система крафта и тд)
+
 * Более расширенный API контроля над камерой игрока и возможность создавать вторичные камеры (Camera API #14325)
+
+* Улучшенный контроль освещения блоков:
+
+  ```lua
+  { -- inside Node Definition table
+    sunlight_propagates = false,
+    -- If true, sunlight will go infinitely through this node
+    sunlight_propagation = {
+        axles = {"x", "-y", ...}, -- along which axles the light can propagate through the node?
+        fade = 2 -- how many light points the light gets faded through the node?
+        has_ao = true/false -- the node has the ambient occlusion?
+	}
+  }
+  ```
+
+* Улучшить рендеринг некоторых drawtype в жидкостях
+	* Не рендерить грани жидкости вокруг погруженной в нее ноды, если нода на глубине больше 1 ноды
+
+* Сделать интерполированное освещение сущностей вместо одного цвета света на модель
 
 * Мержить Formspec/HUD Replacement (#14263)
 
