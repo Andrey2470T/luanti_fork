@@ -33,7 +33,7 @@ namespace scene
 
 namespace video
 {
-	class IVideoDriver;
+	class VideoDriver;
 }
 
 struct CachedMeshBuffer {
@@ -95,9 +95,9 @@ public:
 	void updateDrawListShadow(v3f shadow_light_pos, v3f shadow_light_dir, float radius, float length);
 	// Returns true if draw list needs updating before drawing the next frame.
 	bool needsUpdateDrawList() { return m_needs_update_drawlist; }
-	void renderMap(video::IVideoDriver* driver, s32 pass);
+	void renderMap(video::VideoDriver* driver, s32 pass);
 
-	void renderMapShadows(video::IVideoDriver *driver,
+	void renderMapShadows(video::VideoDriver *driver,
 			const video::SMaterial &material, s32 pass, int frame, int total_frames);
 
 	int getBackgroundBrightness(float max_d, u32 daylight_factor,

@@ -4,7 +4,7 @@
 
 #include "texturesource.h"
 
-#include <IVideoDriver.h>
+#include <VideoDriver.h>
 #include "guiscalingfilter.h"
 #include "imagefilters.h"
 #include "imagesource.h"
@@ -154,7 +154,7 @@ private:
 	// Rebuild images and textures from the current set of source images
 	// Shall be called from the main thread.
 	// You ARE expected to be holding m_textureinfo_cache_mutex
-	void rebuildTexture(video::IVideoDriver *driver, TextureInfo &ti);
+	void rebuildTexture(video::VideoDriver *driver, TextureInfo &ti);
 
 	// Generate a texture
 	u32 generateTexture(const std::string &name);
@@ -209,7 +209,7 @@ TextureSource::TextureSource()
 
 TextureSource::~TextureSource()
 {
-	video::IVideoDriver *driver = RenderingEngine::get_video_driver();
+	video::VideoDriver *driver = RenderingEngine::get_video_driver();
 	u32 textures_before = driver->getTextureCount();
 
 	for (const auto &it : m_image_cache) {
@@ -317,7 +317,7 @@ u32 TextureSource::generateTexture(const std::string &name)
 		return 0;
 	}
 
-	video::IVideoDriver *driver = RenderingEngine::get_video_driver();
+	video::VideoDriver *driver = RenderingEngine::get_video_driver();
 	sanity_check(driver);
 
 	// passed into texture info for dynamic media tracking
@@ -464,7 +464,7 @@ void TextureSource::insertSourceImage(const std::string &name, video::IImage *im
 	// now we need to check for any textures that need updating
 	MutexAutoLock lock(m_textureinfo_cache_mutex);
 
-	video::IVideoDriver *driver = RenderingEngine::get_video_driver();
+	video::VideoDriver *driver = RenderingEngine::get_video_driver();
 	sanity_check(driver);
 
 	// Recreate affected textures
@@ -494,7 +494,7 @@ void TextureSource::rebuildImagesAndTextures()
 	 * rebuilt are 'progress_bar.png' and 'progress_bar_bg.png'.
 	 */
 
-	video::IVideoDriver *driver = RenderingEngine::get_video_driver();
+	video::VideoDriver *driver = RenderingEngine::get_video_driver();
 	sanity_check(driver);
 
 	infostream << "TextureSource: recreating " << m_textureinfo_cache.size()
@@ -512,7 +512,7 @@ void TextureSource::rebuildImagesAndTextures()
 	// FIXME: we should rebuild palettes too
 }
 
-void TextureSource::rebuildTexture(video::IVideoDriver *driver, TextureInfo &ti)
+void TextureSource::rebuildTexture(video::VideoDriver *driver, TextureInfo &ti)
 {
 	assert(!ti.name.empty());
 	sanity_check(std::this_thread::get_id() == m_main_thread);

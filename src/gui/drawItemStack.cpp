@@ -22,7 +22,7 @@ struct MeshTimeInfo {
 };
 
 void drawItemStack(
-		video::IVideoDriver *driver,
+		video::VideoDriver *driver,
 		gui::IGUIFont *font,
 		const ItemStack &item,
 		const core::rect<s32> &rect,
@@ -302,7 +302,7 @@ void drawItemStack(
 }
 
 void drawItemStack(
-		video::IVideoDriver *driver,
+		video::VideoDriver *driver,
 		gui::IGUIFont *font,
 		const ItemStack &item,
 		const core::rect<s32> &rect,

@@ -6,7 +6,7 @@
 
 #include <SViewFrustum.h>
 #include <IAnimatedMeshSceneNode.h>
-#include <IVideoDriver.h>
+#include <VideoDriver.h>
 #include <ISceneManager.h>
 #include "porting.h"
 #include "client/mesh.h"

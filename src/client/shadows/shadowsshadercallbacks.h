@@ -3,7 +3,6 @@
 // Copyright (C) 2021 Liso <anlismon@gmail.com>
 
 #pragma once
-#include <IMaterialRendererServices.h>
 #include <IShaderConstantSetCallBack.h>
 #include "client/shader.h"
 
@@ -36,7 +35,7 @@ public:
 	ShadowUniformSetter() = default;
 	~ShadowUniformSetter() = default;
 
-	virtual void onSetUniforms(video::IMaterialRendererServices *services) override;
+	virtual void onSetUniforms(video::IMaterialRenderer *renderer) override;
 };
 
 class ShadowUniformSetterFactory : public IShaderUniformSetterFactory
@@ -54,7 +53,7 @@ class ShadowDepthShaderCB : public video::IShaderConstantSetCallBack
 public:
 	void OnSetMaterial(const video::SMaterial &material) override {}
 
-	void OnSetConstants(video::IMaterialRendererServices *services,
+	void OnSetConstants(video::IMaterialRenderer *renderer,
 			s32 userData) override;
 
 	f32 MaxFar{2048.0f}, MapRes{1024.0f};

@@ -7,7 +7,7 @@
 #include "client/mesh.h"
 #include "mapblock_mesh.h"
 #include <IMaterialRenderer.h>
-#include <IVideoDriver.h>
+#include <VideoDriver.h>
 #include <matrix4.h>
 #include "mapsector.h"
 #include "mapblock.h"
@@ -61,7 +61,7 @@ namespace {
 		}
 
 		void addFromBlock(v3s16 block_pos, MapBlockMesh *block_mesh,
-			video::IVideoDriver *driver);
+			video::VideoDriver *driver);
 	};
 
 	// reference to a mesh buffer used when rendering the map.
@@ -86,7 +86,7 @@ namespace {
 
 		video::SMaterial &getMaterial();
 		/// @return number of vertices drawn
-		u32 draw(video::IVideoDriver* driver);
+		u32 draw(video::VideoDriver* driver);
 	};
 
 	using DrawDescriptorList = std::vector<DrawDescriptor>;
@@ -268,7 +268,7 @@ void ClientMap::OnRegisterSceneNode()
 
 void ClientMap::render()
 {
-	video::IVideoDriver* driver = SceneManager->getVideoDriver();
+	video::VideoDriver* driver = SceneManager->getVideoDriver();
 	driver->setTransform(video::ETS_WORLD, AbsoluteTransformation);
 	renderMap(driver, SceneManager->getSceneNodeRenderPass());
 }
@@ -786,7 +786,7 @@ void ClientMap::touchMapBlocks()
 }
 
 void MeshBufListMaps::addFromBlock(v3s16 block_pos, MapBlockMesh *block_mesh,
-	video::IVideoDriver *driver)
+	video::VideoDriver *driver)
 {
 	for (int layer = 0; layer < MAX_TILE_LAYERS; layer++) {
 		scene::IMesh *mesh = block_mesh->getMesh(layer);
@@ -961,7 +961,7 @@ static u32 transformBuffersToDrawOrder(
 	return can_merge < 2 ? 0 : can_merge;
 }
 
-void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
+void ClientMap::renderMap(video::VideoDriver* driver, s32 pass)
 {
 	ZoneScoped;
 
@@ -1377,7 +1377,7 @@ void ClientMap::renderPostFx(CameraMode cam_mode)
 
 	if (post_color.getAlpha() != 0) {
 		// Draw a full-screen rectangle
-		video::IVideoDriver* driver = SceneManager->getVideoDriver();
+		video::VideoDriver* driver = SceneManager->getVideoDriver();
 		v2u32 ss = driver->getScreenSize();
 		core::rect<s32> rect(0,0, ss.X, ss.Y);
 		driver->draw2DRectangle(post_color, rect);
@@ -1389,7 +1389,7 @@ void ClientMap::PrintInfo(std::ostream &out)
 	out<<"ClientMap: ";
 }
 
-void ClientMap::renderMapShadows(video::IVideoDriver *driver,
+void ClientMap::renderMapShadows(video::VideoDriver *driver,
 		const video::SMaterial &material, s32 pass, int frame, int total_frames)
 {
 	bool is_transparent_pass = pass != scene::ESNRP_SOLID;
@@ -1631,7 +1631,7 @@ video::SMaterial &DrawDescriptor::getMaterial()
 	return (m_use_partial_buffer ? m_partial_buffer->getBuffer() : m_buffer)->getMaterial();
 }
 
-u32 DrawDescriptor::draw(video::IVideoDriver* driver)
+u32 DrawDescriptor::draw(video::VideoDriver* driver)
 {
 	if (m_use_partial_buffer) {
 		m_partial_buffer->draw(driver);

@@ -16,7 +16,7 @@
 #include "profiler.h"
 #include "IGPUProgrammingServices.h"
 #include "IMaterialRenderer.h"
-#include "IVideoDriver.h"
+#include "VideoDriver.h"
 
 ShadowRenderer::ShadowRenderer(IrrlichtDevice *device, Client *client) :
 		m_smgr(device->getSceneManager()), m_driver(device->getVideoDriver()),
@@ -521,8 +521,6 @@ void ShadowRenderer::mixShadowsQuad()
 
 void ShadowRenderer::createShaders()
 {
-	auto *gpu = m_driver->getGPUProgrammingServices();
-
 	if (depth_shader == -1) {
 		std::string depth_shader_vs = getShaderPath("shadow_shaders", "pass1_vertex.glsl");
 		if (depth_shader_vs.empty()) {
@@ -538,7 +536,7 @@ void ShadowRenderer::createShaders()
 		}
 		m_shadow_depth_cb = new ShadowDepthShaderCB();
 
-		depth_shader = gpu->addHighLevelShaderMaterial(
+		depth_shader = m_driver->addHighLevelShaderMaterial(
 				readShaderFile(depth_shader_vs).c_str(),
 				readShaderFile(depth_shader_fs).c_str(), nullptr,
 				m_shadow_depth_cb, video::EMT_ONETEXTURE_BLEND);
@@ -576,7 +574,7 @@ void ShadowRenderer::createShaders()
 		}
 		m_shadow_depth_entity_cb = new ShadowDepthShaderCB();
 
-		depth_shader_entities = gpu->addHighLevelShaderMaterial(
+		depth_shader_entities = m_driver->addHighLevelShaderMaterial(
 				readShaderFile(depth_shader_vs).c_str(),
 				readShaderFile(depth_shader_fs).c_str(), nullptr,
 				m_shadow_depth_entity_cb);
@@ -613,7 +611,7 @@ void ShadowRenderer::createShaders()
 		}
 		m_shadow_mix_cb = new shadowScreenQuadCB();
 		m_screen_quad = new shadowScreenQuad();
-		mixcsm_shader = gpu->addHighLevelShaderMaterial(
+		mixcsm_shader = m_driver->addHighLevelShaderMaterial(
 				readShaderFile(depth_shader_vs).c_str(),
 				readShaderFile(depth_shader_fs).c_str(), nullptr,
 				m_shadow_mix_cb);
@@ -651,7 +649,7 @@ void ShadowRenderer::createShaders()
 		}
 		m_shadow_depth_trans_cb = new ShadowDepthShaderCB();
 
-		depth_shader_trans = gpu->addHighLevelShaderMaterial(
+		depth_shader_trans = m_driver->addHighLevelShaderMaterial(
 				readShaderFile(depth_shader_vs).c_str(),
 				readShaderFile(depth_shader_fs).c_str(), nullptr,
 				m_shadow_depth_trans_cb);

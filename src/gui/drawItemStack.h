@@ -5,7 +5,7 @@
 #pragma once
 
 #include <IGUIFont.h>
-#include <IVideoDriver.h>
+#include <VideoDriver.h>
 #include "irrlichttypes.h"
 #include "irr_v3d.h"
 
@@ -21,7 +21,7 @@ enum ItemRotationKind
 	IT_ROT_NONE, // Must be last, also serves as number
 };
 
-void drawItemStack(video::IVideoDriver *driver,
+void drawItemStack(video::VideoDriver *driver,
 		gui::IGUIFont *font,
 		const ItemStack &item,
 		const core::rect<s32> &rect,
@@ -30,7 +30,7 @@ void drawItemStack(video::IVideoDriver *driver,
 		ItemRotationKind rotation_kind);
 
 void drawItemStack(
-		video::IVideoDriver *driver,
+		video::VideoDriver *driver,
 		gui::IGUIFont *font,
 		const ItemStack &item,
 		const core::rect<s32> &rect,

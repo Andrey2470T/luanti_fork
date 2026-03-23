@@ -7,7 +7,7 @@
 #include "drawItemStack.h"
 #include "client/client.h"
 #include "client/renderingengine.h"
-#include <IVideoDriver.h>
+#include <VideoDriver.h>
 
 GUIInventoryList::GUIInventoryList(gui::IGUIEnvironment *env,
 	gui::IGUIElement *parent,
@@ -68,7 +68,7 @@ void GUIInventoryList::draw()
 	}
 	m_already_warned = false;
 
-	video::IVideoDriver *driver = Environment->getVideoDriver();
+	video::VideoDriver *driver = Environment->getVideoDriver();
 	Client *client = m_fs_menu->getClient();
 	const ItemSpec *selected_item = m_fs_menu->getSelectedItem();
 

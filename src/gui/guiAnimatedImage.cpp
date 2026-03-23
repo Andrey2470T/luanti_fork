@@ -19,7 +19,7 @@ void GUIAnimatedImage::draw()
 	if (m_texture == nullptr)
 		return;
 
-	video::IVideoDriver *driver = Environment->getVideoDriver();
+	video::VideoDriver *driver = Environment->getVideoDriver();
 
 	core::dimension2d<u32> size = m_texture->getOriginalSize();
 

@@ -11,7 +11,7 @@
 #include "client/renderingengine.h"
 #include <IImage.h>
 #include <ITexture.h>
-#include <IVideoDriver.h>
+#include <VideoDriver.h>
 
 /* Maintain a static cache to store the images that correspond to textures
  * in a format that's manipulable by code.  Some platforms exhibit issues
@@ -28,7 +28,7 @@ static std::map<io::path, video::ITexture *> g_txrCache;
 /* Manually insert an image into the cache, useful to avoid texture-to-image
  * conversion whenever we can intercept it.
  */
-void guiScalingCache(const io::path &key, video::IVideoDriver *driver, video::IImage *value)
+void guiScalingCache(const io::path &key, video::VideoDriver *driver, video::IImage *value)
 {
 	if (!g_settings->getBool("gui_scaling_filter"))
 		return;
@@ -61,7 +61,7 @@ void guiScalingCacheClear()
  * texture is not already cached, attempt to create it.  Returns a pre-scaled texture,
  * or the original texture if unable to pre-scale it.
  */
-video::ITexture *guiScalingResizeCached(video::IVideoDriver *driver,
+video::ITexture *guiScalingResizeCached(video::VideoDriver *driver,
 		video::ITexture *src, const core::rect<s32> &srcrect,
 		const core::rect<s32> &destrect)
 {
@@ -127,7 +127,7 @@ video::ITexture *guiScalingResizeCached(video::IVideoDriver *driver,
 /* Convenience wrapper for guiScalingResizeCached that accepts parameters that
  * are available at GUI imagebutton creation time.
  */
-video::ITexture *guiScalingImageButton(video::IVideoDriver *driver,
+video::ITexture *guiScalingImageButton(video::VideoDriver *driver,
 		video::ITexture *src, s32 width, s32 height)
 {
 	if (src == NULL)
@@ -140,7 +140,7 @@ video::ITexture *guiScalingImageButton(video::IVideoDriver *driver,
 /* Replacement for driver->draw2DImage() that uses the high-quality pre-scaled
  * texture, if configured.
  */
-void draw2DImageFilterScaled(video::IVideoDriver *driver, video::ITexture *txr,
+void draw2DImageFilterScaled(video::VideoDriver *driver, video::ITexture *txr,
 		const core::rect<s32> &destrect, const core::rect<s32> &srcrect,
 		const core::rect<s32> *cliprect, const video::SColor *const colors,
 		bool usealpha)
@@ -162,7 +162,7 @@ void draw2DImageFilterScaled(video::IVideoDriver *driver, video::ITexture *txr,
 	driver->draw2DImage(scaled, destrect, mysrcrect, cliprect, colors, usealpha);
 }
 
-void draw2DImage9Slice(video::IVideoDriver *driver, video::ITexture *texture,
+void draw2DImage9Slice(video::VideoDriver *driver, video::ITexture *texture,
 		const core::rect<s32> &destrect, const core::rect<s32> &srcrect,
 		const core::rect<s32> &middlerect, const core::rect<s32> *cliprect,
 		const video::SColor *const colors)

@@ -74,9 +74,9 @@ class FogShaderUniformSetter : public IShaderUniformSetter
 	CachedPixelShaderSetting<float> m_fog_shading_parameter{"fogShadingParameter"};
 
 public:
-	void onSetUniforms(video::IMaterialRendererServices *services) override
+	void onSetUniforms(video::IMaterialRenderer *renderer) override
 	{
-		auto *driver = services->getVideoDriver();
+		auto *driver = renderer->getVideoDriver();
 		assert(driver);
 
 		video::SColor fog_color(0);
@@ -90,14 +90,14 @@ public:
 				fog_pixelfog, fog_rangefog);
 
 		video::SColorf fog_colorf(fog_color);
-		m_fog_color.set(fog_colorf, services);
+		m_fog_color.set(fog_colorf, renderer);
 
-		m_fog_distance.set(&fog_end, services);
+		m_fog_distance.set(&fog_end, renderer);
 
 		float parameter = 0;
 		if (fog_end > 0)
 			parameter = 1.0f / (1.0f - fog_start / fog_end);
-		m_fog_shading_parameter.set(&parameter, services);
+		m_fog_shading_parameter.set(&parameter, renderer);
 	}
 };
 
@@ -139,11 +139,10 @@ static IrrlichtDevice *createDevice(SIrrlichtCreationParameters params, std::opt
 			return device;
 		errorstream << "Failed to initialize the " << getVideoDriverName(params.DriverType) << " video driver" << std::endl;
 	}
-	sanity_check(requested_driver != video::EDT_NULL);
 
 	// try to find any working video driver
 	for (auto fallback_driver: RenderingEngine::getSupportedVideoDrivers()) {
-		if (fallback_driver == video::EDT_NULL || fallback_driver == requested_driver)
+		if (fallback_driver == requested_driver)
 			continue;
 		params.DriverType = fallback_driver;
 		infostream << "Trying video driver " << getVideoDriverName(params.DriverType) << std::endl;
@@ -376,8 +375,7 @@ std::vector<video::E_DRIVER_TYPE> RenderingEngine::getSupportedVideoDrivers()
 	// ordered by preference (best first)
 	static const video::E_DRIVER_TYPE glDrivers[] = {
 		video::EDT_OPENGL3,
-		video::EDT_OGLES2,
-		video::EDT_NULL,
+		video::EDT_OGLES2
 	};
 	std::vector<video::E_DRIVER_TYPE> drivers;
 
@@ -409,7 +407,6 @@ void RenderingEngine::draw_scene(video::SColor skycolor, bool show_hud,
 const VideoDriverInfo &RenderingEngine::getVideoDriverInfo(video::E_DRIVER_TYPE type)
 {
 	static const std::unordered_map<int, VideoDriverInfo> driver_info_map = {
-		{(int)video::EDT_NULL,   {"null",   "NULL Driver"}},
 		{(int)video::EDT_OPENGL3, {"opengl3", "OpenGL 3+"}},
 		{(int)video::EDT_OGLES2, {"ogles2", "OpenGL ES2"}},
 	};

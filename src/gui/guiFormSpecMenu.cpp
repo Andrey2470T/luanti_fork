@@ -3441,7 +3441,7 @@ GUIInventoryList::ItemSpec GUIFormSpecMenu::getItemAtPos(v2s32 p) const
 
 void GUIFormSpecMenu::drawSelectedItem()
 {
-	video::IVideoDriver* driver = Environment->getVideoDriver();
+	video::VideoDriver* driver = Environment->getVideoDriver();
 
 	if (!m_selected_item) {
 		// reset rotation time
@@ -3485,7 +3485,7 @@ void GUIFormSpecMenu::drawMenu()
 
 	updateSelectedItem();
 
-	video::IVideoDriver* driver = Environment->getVideoDriver();
+	video::VideoDriver* driver = Environment->getVideoDriver();
 
 	/*
 		Draw background color

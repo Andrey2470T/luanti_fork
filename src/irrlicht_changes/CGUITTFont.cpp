@@ -129,7 +129,7 @@ void SGUITTFace::dropFilename()
 		faces.erase(*filename);
 }
 
-video::IImage* SGUITTGlyph::createGlyphImage(const FT_Bitmap& bits, video::IVideoDriver* driver) const
+video::IImage* SGUITTGlyph::createGlyphImage(const FT_Bitmap& bits, video::VideoDriver* driver) const
 {
 	// Make sure our casts to s32 in the loops below will not cause problems
 	if ((s32)bits.rows < 0 || (s32)bits.width < 0)

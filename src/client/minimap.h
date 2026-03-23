@@ -17,7 +17,7 @@
 #include <vector>
 
 namespace video {
-	class IVideoDriver;
+	class VideoDriver;
 	class IImage;
 	class ITexture;
 }
@@ -157,7 +157,7 @@ public:
 	void updateActiveMarkers();
 	void drawMinimap(core::rect<s32> rect);
 
-	video::IVideoDriver *driver;
+	video::VideoDriver *driver;
 	Client* client;
 	std::unique_ptr<MinimapData> data;
 

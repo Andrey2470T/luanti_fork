@@ -6,7 +6,7 @@
 #pragma once
 
 #include "irrlichttypes_bloated.h"
-#include <IMaterialRendererServices.h>
+#include <IMaterialRenderer.h>
 #include <string>
 #include <map>
 #include <variant>
@@ -59,7 +59,7 @@ namespace video {
 class IShaderUniformSetter {
 public:
 	virtual ~IShaderUniformSetter() = default;
-	virtual void onSetUniforms(video::IMaterialRendererServices *services) = 0;
+	virtual void onSetUniforms(video::IMaterialRenderer *renderer) = 0;
 	virtual void onSetMaterial(const video::SMaterial& material)
 	{ }
 };
@@ -83,14 +83,14 @@ protected:
 		m_name(name), is_pixel(is_pixel)
 	{}
 public:
-	void set(const T value[count], video::IMaterialRendererServices *services)
+	void set(const T value[count], video::IMaterialRenderer *renderer)
 	{
 		if (cache && has_been_set && std::equal(m_sent, m_sent + count, value))
 			return;
 		if (is_pixel)
-			services->setPixelShaderConstant(services->getPixelShaderConstantID(m_name), value, count);
+			renderer->setPixelShaderConstant(renderer->getPixelShaderConstantID(m_name), value, count);
 		else
-			services->setVertexShaderConstant(services->getVertexShaderConstantID(m_name), value, count);
+			renderer->setVertexShaderConstant(renderer->getVertexShaderConstantID(m_name), value, count);
 
 		if (cache) {
 			std::copy(value, value + count, m_sent);
@@ -116,35 +116,35 @@ public:
 	std::enable_if_t<std::is_same_v<T, T2> && std::is_same_v<T2, _type> && (_count_expr)>
 
 	SPECIALIZE(float, count == 2)
-	set(const v2f value, video::IMaterialRendererServices *services)
+	set(const v2f value, video::IMaterialRenderer *renderer)
 	{
 		float array[2] = { value.X, value.Y };
-		set(array, services);
+		set(array, renderer);
 	}
 
 	SPECIALIZE(float, count == 3)
-	set(const v3f value, video::IMaterialRendererServices *services)
+	set(const v3f value, video::IMaterialRenderer *renderer)
 	{
 		float array[3] = { value.X, value.Y, value.Z };
-		set(array, services);
+		set(array, renderer);
 	}
 
 	SPECIALIZE(float, count == 3 || count == 4)
-	set(const video::SColorf value, video::IMaterialRendererServices *services)
+	set(const video::SColorf value, video::IMaterialRenderer *renderer)
 	{
 		if constexpr (count == 3) {
 			float array[3] = { value.r, value.g, value.b };
-			set(array, services);
+			set(array, renderer);
 		} else {
 			float array[4] = { value.r, value.g, value.b, value.a };
-			set(array, services);
+			set(array, renderer);
 		}
 	}
 
 	SPECIALIZE(float, count == 16)
-	set(const core::matrix4 &value, video::IMaterialRendererServices *services)
+	set(const core::matrix4 &value, video::IMaterialRenderer *renderer)
 	{
-		set(value.pointer(), services);
+		set(value.pointer(), renderer);
 	}
 
 #undef SPECIALIZE
@@ -175,7 +175,7 @@ public:
 		m_name(name), m_fields(std::move(fields))
 	{}
 
-	void set(const T value[count], video::IMaterialRendererServices *services)
+	void set(const T value[count], video::IMaterialRenderer *renderer)
 	{
 		if (cache && has_been_set && std::equal(m_sent, m_sent + count, value))
 			return;
@@ -184,9 +184,9 @@ public:
 			std::string uniform_name = std::string(m_name) + "." + m_fields[i];
 
 			if (is_pixel)
-				services->setPixelShaderConstant(services->getPixelShaderConstantID(uniform_name.c_str()), value + i, 1);
+				renderer->setPixelShaderConstant(renderer->getPixelShaderConstantID(uniform_name.c_str()), value + i, 1);
 			else
-				services->setVertexShaderConstant(services->getVertexShaderConstantID(uniform_name.c_str()), value + i, 1);
+				renderer->setVertexShaderConstant(renderer->getVertexShaderConstantID(uniform_name.c_str()), value + i, 1);
 		}
 
 		if (cache) {

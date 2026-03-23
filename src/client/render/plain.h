@@ -86,5 +86,5 @@ RenderStep* addUpscaling(RenderPipeline *pipeline, RenderStep *previousStep, v2f
 
 void populatePlainPipeline(RenderPipeline *pipeline, Client *client);
 
-video::ECOLOR_FORMAT selectColorFormat(video::IVideoDriver *driver);
-video::ECOLOR_FORMAT selectDepthFormat(video::IVideoDriver *driver);
+video::ECOLOR_FORMAT selectColorFormat(video::VideoDriver *driver);
+video::ECOLOR_FORMAT selectDepthFormat(video::VideoDriver *driver);

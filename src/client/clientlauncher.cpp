@@ -365,7 +365,7 @@ void ClientLauncher::config_guienv()
 			skin->setIcon(gui::EGDI_CHECK_BOX_CHECKED, cached_id->second);
 		} else {
 			gui::IGUISpriteBank *sprites = skin->getSpriteBank();
-			video::IVideoDriver *driver = m_rendering_engine->get_video_driver();
+			video::VideoDriver *driver = m_rendering_engine->get_video_driver();
 			video::ITexture *texture = driver->getTexture(path.c_str());
 			s32 id = sprites->addTextureAsSprite(texture);
 			if (id != -1) {
@@ -530,7 +530,7 @@ bool ClientLauncher::launch_game(std::string &error_message,
 void ClientLauncher::main_menu(MainMenuData *menudata)
 {
 	bool *kill = porting::signal_handler_killstatus();
-	video::IVideoDriver *driver = m_rendering_engine->get_video_driver();
+	video::VideoDriver *driver = m_rendering_engine->get_video_driver();
 	auto *device = m_rendering_engine->get_raw_device();
 
 	// Wait until app is in foreground because of #15883

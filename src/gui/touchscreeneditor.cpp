@@ -233,7 +233,7 @@ void GUITouchscreenLayout::regenerateMenu(v2u32 screensize)
 
 void GUITouchscreenLayout::drawMenu()
 {
-	video::IVideoDriver *driver = Environment->getVideoDriver();
+	video::VideoDriver *driver = Environment->getVideoDriver();
 
 	video::SColor bgcolor(140, 0, 0, 0);
 	video::SColor selection_color(255, 128, 128, 128);

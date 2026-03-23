@@ -24,7 +24,7 @@
 #include "gettext.h"
 #include <SViewFrustum.h>
 #include <IGUIFont.h>
-#include <IVideoDriver.h>
+#include <VideoDriver.h>
 #include <DrawContext.h>
 
 static constexpr f32 CAMERA_OFFSET_STEP = 200;
@@ -633,7 +633,7 @@ void Camera::drawNametags()
 	trans *= m_cameranode->getViewMatrix();
 
 	gui::IGUIFont *font = g_fontengine->getFont();
-	video::IVideoDriver *driver = RenderingEngine::get_video_driver();
+	video::VideoDriver *driver = RenderingEngine::get_video_driver();
 	v2u32 screensize = driver->getScreenSize();
 
 	for (const Nametag *nametag : m_nametags) {

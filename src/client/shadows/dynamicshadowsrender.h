@@ -109,7 +109,7 @@ private:
 
 	// a bunch of variables
 	scene::ISceneManager *m_smgr{nullptr};
-	video::IVideoDriver *m_driver{nullptr};
+	video::VideoDriver *m_driver{nullptr};
 	Client *m_client{nullptr};
 	video::ITexture *shadowMapClientMap{nullptr};
 	video::ITexture *shadowMapClientMapFuture{nullptr};

@@ -28,7 +28,7 @@ namespace scene
 namespace video
 {
 	class ITexture;
-	class IVideoDriver;
+	class VideoDriver;
 }
 
 class Hud
@@ -117,7 +117,7 @@ private:
 			const core::rect<s32> &rect, int way);
 
 	Client *client = nullptr;
-	video::IVideoDriver *driver = nullptr;
+	video::VideoDriver *driver = nullptr;
 	LocalPlayer *player = nullptr;
 	Inventory *inventory = nullptr;
 	ITextureSource *tsrc = nullptr;

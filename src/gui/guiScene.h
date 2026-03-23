@@ -47,7 +47,7 @@ private:
 	void rotateCamera(const v3f &delta) { setCameraRotation(getCameraRotation() + delta); };
 
 	scene::ISceneManager *m_smgr;
-	video::IVideoDriver *m_driver;
+	video::VideoDriver *m_driver;
 	scene::ICameraSceneNode *m_cam;
 	scene::ISceneNode *m_target = nullptr;
 	scene::IAnimatedMeshSceneNode *m_mesh = nullptr;

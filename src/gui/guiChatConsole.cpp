@@ -172,7 +172,7 @@ void GUIChatConsole::draw()
 	if(!IsVisible)
 		return;
 
-	video::IVideoDriver* driver = Environment->getVideoDriver();
+	video::VideoDriver* driver = Environment->getVideoDriver();
 
 	// Check screen size
 	v2u32 screensize = driver->getScreenSize();
@@ -282,7 +282,7 @@ void GUIChatConsole::animate(u32 msec)
 
 void GUIChatConsole::drawBackground()
 {
-	video::IVideoDriver* driver = Environment->getVideoDriver();
+	video::VideoDriver* driver = Environment->getVideoDriver();
 	if (m_background != NULL)
 	{
 		core::rect<s32> sourcerect(0, -m_height, m_screensize.X, 0);
@@ -397,7 +397,7 @@ void GUIChatConsole::drawPrompt()
 			u32 text_to_cursor_pos_width = m_font->getDimension(prompt_text.substr(0, cursor_pos).c_str()).Width;
 
 			s32 cursor_len = prompt.getCursorLength();
-			video::IVideoDriver* driver = Environment->getVideoDriver();
+			video::VideoDriver* driver = Environment->getVideoDriver();
 			s32 x = font_width + text_to_cursor_pos_width;
 			core::rect<s32> destrect(
 				x,

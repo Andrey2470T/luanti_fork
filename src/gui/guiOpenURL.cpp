@@ -20,7 +20,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "guiEditBoxWithScrollbar.h"
 #include <IGUIEditBox.h>
 #include <IGUIFont.h>
-#include <IVideoDriver.h>
+#include <VideoDriver.h>
 #include "client/renderingengine.h"
 #include "porting.h"
 #include "gettext.h"
@@ -159,7 +159,7 @@ void GUIOpenURLMenu::drawMenu()
 	gui::IGUISkin *skin = Environment->getSkin();
 	if (!skin)
 		return;
-	video::IVideoDriver *driver = Environment->getVideoDriver();
+	video::VideoDriver *driver = Environment->getVideoDriver();
 
 	video::SColor bgcolor(140, 0, 0, 0);
 	driver->draw2DRectangle(bgcolor, AbsoluteRect, &AbsoluteClippingRect);

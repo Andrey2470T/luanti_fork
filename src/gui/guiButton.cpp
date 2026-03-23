@@ -8,7 +8,7 @@
 #include "client/guiscalingfilter.h"
 #include "IGUISkin.h"
 #include "IGUIEnvironment.h"
-#include "IVideoDriver.h"
+#include "VideoDriver.h"
 #include "IGUIFont.h"
 #include "irrlicht_changes/static_text.h"
 #include "porting.h"
@@ -253,7 +253,7 @@ void GUIButton::draw()
 		setFromState();
 	}
 
-	video::IVideoDriver* driver = Environment->getVideoDriver();
+	video::VideoDriver* driver = Environment->getVideoDriver();
 	IGUISkin *skin = Environment->getSkin();
 	// END PATCH
 

@@ -8,7 +8,7 @@
 #include "debug.h"
 #include "IGUIEnvironment.h"
 #include "IGUIImage.h"
-#include "IVideoDriver.h"
+#include "VideoDriver.h"
 #include "StyleSpec.h"
 
 
@@ -40,7 +40,7 @@ void GUIButtonImage::setFromStyle(const StyleSpec &style)
 {
 	GUIButton::setFromStyle(style);
 
-	video::IVideoDriver *driver = Environment->getVideoDriver();
+	video::VideoDriver *driver = Environment->getVideoDriver();
 
 	if (style.isNotDefault(StyleSpec::FGIMG)) {
 		video::ITexture *texture = style.getTexture(StyleSpec::FGIMG,

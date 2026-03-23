@@ -3,7 +3,6 @@
 // Copyright (C) 2021 Liso <anlismon@gmail.com>
 
 #pragma once
-#include <IMaterialRendererServices.h>
 #include <IShaderConstantSetCallBack.h>
 #include "client/shader.h"
 
@@ -12,7 +11,7 @@ class shadowScreenQuad
 public:
 	shadowScreenQuad();
 
-	void render(video::IVideoDriver *driver);
+	void render(video::VideoDriver *driver);
 	video::SMaterial &getMaterial() { return Material; }
 
 private:
@@ -23,7 +22,7 @@ private:
 class shadowScreenQuadCB : public video::IShaderConstantSetCallBack
 {
 public:
-	virtual void OnSetConstants(video::IMaterialRendererServices *services,
+	virtual void OnSetConstants(video::IMaterialRenderer *renderer,
 			s32 userData);
 private:
 	CachedPixelShaderSetting<s32> m_sm_client_map_setting{"ShadowMapClientMap"};

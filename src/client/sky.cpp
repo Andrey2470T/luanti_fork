@@ -6,7 +6,7 @@
 #include <cmath>
 #include "sky.h"
 #include <ITexture.h>
-#include <IVideoDriver.h>
+#include <VideoDriver.h>
 #include <ISceneManager.h>
 #include <ICameraSceneNode.h>
 #include <S3DVertex.h>
@@ -95,7 +95,7 @@ void Sky::OnRegisterSceneNode()
 
 void Sky::render()
 {
-	video::IVideoDriver *driver = SceneManager->getVideoDriver();
+	video::VideoDriver *driver = SceneManager->getVideoDriver();
 	scene::ICameraSceneNode *camera = SceneManager->getActiveCamera();
 
 	if (!camera || !driver)
@@ -541,7 +541,7 @@ v3f Sky::getMoonDirection()
 	return getSkyBodyPosition(270, getWickedTimeOfDay(m_time_of_day) * 360 - 90, m_sky_params.body_orbit_tilt);
 }
 
-void Sky::draw_sun(video::IVideoDriver *driver, const video::SColor &suncolor,
+void Sky::draw_sun(video::VideoDriver *driver, const video::SColor &suncolor,
 	const video::SColor &suncolor2, float wicked_time_of_day)
 	/* Draw sun in the sky.
 	 * driver: Video driver object used to draw
@@ -587,7 +587,7 @@ void Sky::draw_sun(video::IVideoDriver *driver, const video::SColor &suncolor,
 }
 
 
-void Sky::draw_moon(video::IVideoDriver *driver, const video::SColor &mooncolor,
+void Sky::draw_moon(video::VideoDriver *driver, const video::SColor &mooncolor,
 	const video::SColor &mooncolor2, float wicked_time_of_day)
 /*
 	* Draw moon in the sky.
@@ -640,7 +640,7 @@ void Sky::draw_moon(video::IVideoDriver *driver, const video::SColor &mooncolor,
 	}
 }
 
-void Sky::draw_stars(video::IVideoDriver * driver, float wicked_time_of_day)
+void Sky::draw_stars(video::VideoDriver * driver, float wicked_time_of_day)
 {
 	// Tune values so that stars first appear just after the sun
 	// disappears over the horizon, and disappear just before the sun

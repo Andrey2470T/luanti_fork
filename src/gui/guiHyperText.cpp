@@ -6,7 +6,7 @@
 #include "guiScrollBar.h"
 #include "client/fontengine.h"
 #include "drawItemStack.h"
-#include "IVideoDriver.h"
+#include "VideoDriver.h"
 #include "client/client.h"
 #include "client/renderingengine.h"
 #include "client/texturesource.h"
@@ -932,7 +932,7 @@ void TextDrawer::place(const core::rect<s32> &dest_rect)
 void TextDrawer::draw(const core::rect<s32> &clip_rect,
 		const core::position2d<s32> &dest_offset)
 {
-	video::IVideoDriver *driver = m_guienv->getVideoDriver();
+	video::VideoDriver *driver = m_guienv->getVideoDriver();
 	core::position2d<s32> offset = dest_offset;
 	offset.Y += m_voffset;
 

@@ -801,7 +801,7 @@ bool Client::loadMedia(const std::string &data, const std::string &filename,
 			<< "file \"" << filename << "\"" << std::endl);
 
 		io::IFileSystem *irrfs = m_rendering_engine->get_filesystem();
-		video::IVideoDriver *vdrv = m_rendering_engine->get_video_driver();
+		video::VideoDriver *vdrv = m_rendering_engine->get_video_driver();
 
 		io::IReadFile *rfile = irrfs->createMemoryReadFile(
 				data.c_str(), data.size(), filename.c_str());
@@ -1897,7 +1897,7 @@ float Client::getCurRate()
 
 void Client::makeScreenshot()
 {
-	video::IVideoDriver *driver = m_rendering_engine->get_video_driver();
+	video::VideoDriver *driver = m_rendering_engine->get_video_driver();
 	video::IImage* const raw_image = driver->createScreenShot();
 
 	if (!raw_image)

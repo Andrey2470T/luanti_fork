@@ -7,7 +7,7 @@
 #include "static_text.h"
 
 #include <IGUIFont.h>
-#include <IVideoDriver.h>
+#include <VideoDriver.h>
 #include <rect.h>
 #include <SColor.h>
 
@@ -47,7 +47,7 @@ void StaticText::draw()
 	IGUISkin* skin = Environment->getSkin();
 	if (!skin)
 		return;
-	video::IVideoDriver* driver = Environment->getVideoDriver();
+	video::VideoDriver* driver = Environment->getVideoDriver();
 
 	core::rect<s32> frameRect(AbsoluteRect);
 

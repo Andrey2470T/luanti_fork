@@ -54,7 +54,7 @@ void GUIBackgroundImage::draw()
 		rect = AbsoluteRect;
 	}
 
-	video::IVideoDriver *driver = Environment->getVideoDriver();
+	video::VideoDriver *driver = Environment->getVideoDriver();
 
 	core::rect<s32> srcrect(core::position2d<s32>(0, 0),
 			core::dimension2di(texture->getOriginalSize()));

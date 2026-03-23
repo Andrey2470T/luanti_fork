@@ -8,7 +8,7 @@
 #include "IGUISkin.h"
 #include "IGUIEnvironment.h"
 #include "IGUIFont.h"
-#include "IVideoDriver.h"
+#include "VideoDriver.h"
 #include "rect.h"
 #include "porting.h"
 #include "Keycodes.h"

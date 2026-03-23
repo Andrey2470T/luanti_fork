@@ -740,7 +740,7 @@ void GUITable::drawCell(const Cell *cell, video::SColor color,
 		if (cell->content_index < 0)
 			return;
 
-		video::IVideoDriver *driver = Environment->getVideoDriver();
+		video::VideoDriver *driver = Environment->getVideoDriver();
 		video::ITexture *image = m_images[cell->content_index];
 
 		if (image) {

@@ -71,7 +71,7 @@ void GUIModalMenu::draw()
 	if (!IsVisible)
 		return;
 
-	video::IVideoDriver *driver = Environment->getVideoDriver();
+	video::VideoDriver *driver = Environment->getVideoDriver();
 	v2u32 screensize = driver->getScreenSize();
 	if (screensize != m_screensize_old) {
 		m_screensize_old = screensize;

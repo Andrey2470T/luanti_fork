@@ -10,6 +10,7 @@
 #include "client/tile.h"
 #include "settings.h"
 #include <ISceneManager.h>
+#include <RenderTarget.h>
 
 PostProcessingStep::PostProcessingStep(u32 _shader_id, const std::vector<u8> &_texture_map) :
 	shader_id(_shader_id), texture_map(_texture_map)
@@ -272,6 +273,5 @@ RenderStep *addPostProcessing(RenderPipeline *pipeline, RenderStep *previousStep
 
 void ResolveMSAAStep::run(PipelineContext &context)
 {
-	context.device->getVideoDriver()->blitRenderTarget(msaa_fbo->getIrrRenderTarget(context),
-			target_fbo->getIrrRenderTarget(context));
+	msaa_fbo->getIrrRenderTarget(context)->blitTo(target_fbo->getIrrRenderTarget(context));
 }

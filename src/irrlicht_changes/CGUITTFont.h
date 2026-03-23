@@ -38,7 +38,7 @@
 
 #include "IGUIEnvironment.h"
 #include "IGUIFont.h"
-#include "IVideoDriver.h"
+#include "VideoDriver.h"
 #include "IrrlichtDevice.h"
 #include "util/enriched_string.h"
 #include "util/basic_macros.h"
@@ -123,7 +123,7 @@ namespace gui
 		void unload();
 
 		//! Creates the IImage object from the FT_Bitmap.
-		video::IImage* createGlyphImage(const FT_Bitmap& bits, video::IVideoDriver* driver) const;
+		video::IImage* createGlyphImage(const FT_Bitmap& bits, video::VideoDriver* driver) const;
 
 		//! The page the glyph is on.
 		u32 glyph_page;
@@ -146,7 +146,7 @@ namespace gui
 	class CGUITTGlyphPage
 	{
 		public:
-			CGUITTGlyphPage(video::IVideoDriver* Driver, const io::path& texture_name) :texture(0), available_slots(0), used_slots(0), dirty(false), driver(Driver), name(texture_name) {}
+			CGUITTGlyphPage(video::VideoDriver* Driver, const io::path& texture_name) :texture(0), available_slots(0), used_slots(0), dirty(false), driver(Driver), name(texture_name) {}
 			~CGUITTGlyphPage()
 			{
 				if (texture)
@@ -237,7 +237,7 @@ namespace gui
 
 		private:
 			core::array<const SGUITTGlyph*> glyph_to_be_paged;
-			video::IVideoDriver* driver;
+			video::VideoDriver* driver;
 			io::path name;
 	};
 
@@ -348,7 +348,7 @@ namespace gui
 			//! \param page_index Simply return the texture handle of a given page index.
 			video::ITexture* getPageTextureByIndex(const u32& page_index) const;
 
-			inline video::IVideoDriver *getDriver() const { return Driver; }
+			inline video::VideoDriver *getDriver() const { return Driver; }
 
 			inline s32 getAscender() const { return font_metrics.ascender; }
 
@@ -388,7 +388,7 @@ namespace gui
 			u32 getGlyphIndexByChar(char32_t c) const;
 			core::vector2di getKerning(const char32_t thisLetter, const char32_t previousLetter) const;
 
-			video::IVideoDriver* Driver;
+			video::VideoDriver* Driver;
 			std::optional<io::path> filename;
 			FT_Face tt_face;
 			FT_Size_Metrics font_metrics;

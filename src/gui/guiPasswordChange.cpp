@@ -24,7 +24,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <IGUIButton.h>
 #include <IGUIStaticText.h>
 #include <IGUIFont.h>
-#include <IVideoDriver.h>
+#include <VideoDriver.h>
 
 #include "porting.h"
 #include "gettext.h"
@@ -148,7 +148,7 @@ void GUIPasswordChange::drawMenu()
 	gui::IGUISkin *skin = Environment->getSkin();
 	if (!skin)
 		return;
-	video::IVideoDriver *driver = Environment->getVideoDriver();
+	video::VideoDriver *driver = Environment->getVideoDriver();
 
 	video::SColor bgcolor(140, 0, 0, 0);
 	driver->draw2DRectangle(bgcolor, AbsoluteRect, &AbsoluteClippingRect);

@@ -300,7 +300,7 @@ bool GUIEngine::loadMainMenuScript()
 void GUIEngine::run()
 {
 	IrrlichtDevice *device = m_rendering_engine->get_raw_device();
-	video::IVideoDriver *driver = device->getVideoDriver();
+	video::VideoDriver *driver = device->getVideoDriver();
 
 	unsigned int text_height = g_fontengine->getTextHeight();
 
@@ -429,7 +429,7 @@ void GUIEngine::setFormspecPrepend(const std::string &fs)
 
 
 /******************************************************************************/
-void GUIEngine::drawBackground(video::IVideoDriver *driver)
+void GUIEngine::drawBackground(video::VideoDriver *driver)
 {
 	v2u32 screensize = driver->getScreenSize();
 
@@ -484,7 +484,7 @@ void GUIEngine::drawBackground(video::IVideoDriver *driver)
 }
 
 /******************************************************************************/
-void GUIEngine::drawOverlay(video::IVideoDriver *driver)
+void GUIEngine::drawOverlay(video::VideoDriver *driver)
 {
 	v2u32 screensize = driver->getScreenSize();
 
@@ -503,7 +503,7 @@ void GUIEngine::drawOverlay(video::IVideoDriver *driver)
 }
 
 /******************************************************************************/
-void GUIEngine::drawHeader(video::IVideoDriver *driver)
+void GUIEngine::drawHeader(video::VideoDriver *driver)
 {
 	core::dimension2d<u32> screensize = driver->getScreenSize();
 
@@ -562,7 +562,7 @@ void GUIEngine::drawHeader(video::IVideoDriver *driver)
 }
 
 /******************************************************************************/
-void GUIEngine::drawFooter(video::IVideoDriver *driver)
+void GUIEngine::drawFooter(video::VideoDriver *driver)
 {
 	core::dimension2d<u32> screensize = driver->getScreenSize();
 
@@ -597,7 +597,7 @@ void GUIEngine::drawFooter(video::IVideoDriver *driver)
 bool GUIEngine::setTexture(texture_layer layer, const std::string &texturepath,
 		bool tile_image, unsigned int minsize)
 {
-	video::IVideoDriver *driver = m_rendering_engine->get_video_driver();
+	video::VideoDriver *driver = m_rendering_engine->get_video_driver();
 
 	if (m_textures[layer].texture) {
 		driver->removeTexture(m_textures[layer].texture);

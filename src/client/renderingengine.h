@@ -15,7 +15,7 @@
 #include "client/render/core.h"
 // include the shadow mapper classes too
 #include "client/shadows/dynamicshadowsrender.h"
-#include <IVideoDriver.h>
+#include <VideoDriver.h>
 
 #if !IS_CLIENT_BUILD
 #error Do not include in server builds
@@ -73,7 +73,7 @@ public:
 
 	void setResizable(bool resize);
 
-	video::IVideoDriver *getVideoDriver() { return driver; }
+	video::VideoDriver *getVideoDriver() { return driver; }
 
 	static const VideoDriverInfo &getVideoDriverInfo(video::E_DRIVER_TYPE type);
 	static float getDisplayDensity();
@@ -101,7 +101,7 @@ public:
 		return m_device->getFileSystem();
 	}
 
-	static video::IVideoDriver *get_video_driver()
+	static video::VideoDriver *get_video_driver()
 	{
 		sanity_check(s_singleton && s_singleton->m_device);
 		return s_singleton->m_device->getVideoDriver();
@@ -165,7 +165,7 @@ private:
 
 	std::unique_ptr<RenderingCore> core;
 	IrrlichtDevice *m_device = nullptr;
-	video::IVideoDriver *driver;
+	video::VideoDriver *driver;
 	MyEventReceiver *m_receiver = nullptr;
 	static RenderingEngine *s_singleton;
 };

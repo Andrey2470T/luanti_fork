@@ -264,37 +264,37 @@ public:
 		g_settings->deregisterAllChangedCallbacks(this);
 	}
 
-	void onSetUniforms(video::IMaterialRendererServices *services) override
+	void onSetUniforms(video::IMaterialRenderer *renderer) override
 	{
 		u32 daynight_ratio = (float)m_client->getEnv().getDayNightRatio();
 		video::SColorf sunlight;
 		get_sunlight_color(&sunlight, daynight_ratio);
-		m_day_light.set(sunlight, services);
+		m_day_light.set(sunlight, renderer);
 
 		u32 animation_timer = m_client->getEnv().getFrameTime() % 1000000;
 		float animation_timer_f = (float)animation_timer / 100000.f;
-		m_animation_timer_vertex.set(&animation_timer_f, services);
-		m_animation_timer_pixel.set(&animation_timer_f, services);
+		m_animation_timer_vertex.set(&animation_timer_f, renderer);
+		m_animation_timer_pixel.set(&animation_timer_f, renderer);
 
 		float animation_timer_delta_f = (float)m_client->getEnv().getFrameTimeDelta() / 100000.f;
-		m_animation_timer_delta_vertex.set(&animation_timer_delta_f, services);
-		m_animation_timer_delta_pixel.set(&animation_timer_delta_f, services);
+		m_animation_timer_delta_vertex.set(&animation_timer_delta_f, renderer);
+		m_animation_timer_delta_pixel.set(&animation_timer_delta_f, renderer);
 
 		if (m_client->getMinimap()) {
 			v3f minimap_yaw = m_client->getMinimap()->getYawVec();
-			m_minimap_yaw.set(minimap_yaw, services);
+			m_minimap_yaw.set(minimap_yaw, renderer);
 		}
 
 		v3f offset = intToFloat(m_client->getCamera()->getOffset(), BS);
-		m_camera_offset_pixel.set(offset, services);
-		m_camera_offset_vertex.set(offset, services);
+		m_camera_offset_pixel.set(offset, renderer);
+		m_camera_offset_vertex.set(offset, renderer);
 
 		v3f camera_position = m_client->getCamera()->getPosition();
-		m_camera_position_pixel.set(camera_position, services);
-		m_camera_position_pixel.set(camera_position, services);
+		m_camera_position_pixel.set(camera_position, renderer);
+		m_camera_position_pixel.set(camera_position, renderer);
 
-		m_texel_size0_vertex.set(m_texel_size0, services);
-		m_texel_size0_pixel.set(m_texel_size0, services);
+		m_texel_size0_vertex.set(m_texel_size0, renderer);
+		m_texel_size0_pixel.set(m_texel_size0, renderer);
 
 		const auto &lighting = m_client->getEnv().getLocalPlayer()->getLighting();
 
@@ -308,19 +308,19 @@ public:
 			exposure_params.center_weight_power,
 			powf(2.f, m_user_exposure_compensation)
 		};
-		m_exposure_params_pixel.set(exposure_buffer.data(), services);
+		m_exposure_params_pixel.set(exposure_buffer.data(), renderer);
 
 		if (m_bloom_enabled) {
 			float intensity = std::max(lighting.bloom_intensity, 0.0f);
-			m_bloom_intensity_pixel.set(&intensity, services);
+			m_bloom_intensity_pixel.set(&intensity, renderer);
 			float strength_factor = std::max(lighting.bloom_strength_factor, 0.0f);
-			m_bloom_strength_pixel.set(&strength_factor, services);
+			m_bloom_strength_pixel.set(&strength_factor, renderer);
 			float radius = std::max(lighting.bloom_radius, 0.0f);
-			m_bloom_radius_pixel.set(&radius, services);
+			m_bloom_radius_pixel.set(&radius, renderer);
 		}
 
 		float saturation = lighting.saturation;
-		m_saturation_pixel.set(&saturation, services);
+		m_saturation_pixel.set(&saturation, renderer);
 
 		if (m_volumetric_light_enabled) {
 			// Map directional light to screen space
@@ -334,15 +334,15 @@ public:
 				transform.transformVect(sun_position);
 				sun_position.normalize();
 
-				m_sun_position_pixel.set(sun_position, services);
+				m_sun_position_pixel.set(sun_position, renderer);
 
 				float sun_brightness = core::clamp(107.143f * m_sky->getSunDirection().Y, 0.f, 1.f);
-				m_sun_brightness_pixel.set(&sun_brightness, services);
+				m_sun_brightness_pixel.set(&sun_brightness, renderer);
 			} else {
-				m_sun_position_pixel.set(v3f(0.f, 0.f, -1.f), services);
+				m_sun_position_pixel.set(v3f(0.f, 0.f, -1.f), renderer);
 
 				float sun_brightness = 0.f;
-				m_sun_brightness_pixel.set(&sun_brightness, services);
+				m_sun_brightness_pixel.set(&sun_brightness, renderer);
 			}
 
 			if (m_sky->getMoonVisible()) {
@@ -351,19 +351,19 @@ public:
 				transform.transformVect(moon_position);
 				moon_position.normalize();
 
-				m_moon_position_pixel.set(moon_position, services);
+				m_moon_position_pixel.set(moon_position, renderer);
 
 				float moon_brightness = core::clamp(107.143f * m_sky->getMoonDirection().Y, 0.f, 1.f);
-				m_moon_brightness_pixel.set(&moon_brightness, services);
+				m_moon_brightness_pixel.set(&moon_brightness, renderer);
 			} else {
-				m_moon_position_pixel.set(v3f(0.f, 0.f, -1.f), services);
+				m_moon_position_pixel.set(v3f(0.f, 0.f, -1.f), renderer);
 
 				float moon_brightness = 0.f;
-				m_moon_brightness_pixel.set(&moon_brightness, services);
+				m_moon_brightness_pixel.set(&moon_brightness, renderer);
 			}
 
 			float volumetric_light_strength = lighting.volumetric_light_strength;
-			m_volumetric_light_strength_pixel.set(&volumetric_light_strength, services);
+			m_volumetric_light_strength_pixel.set(&volumetric_light_strength, renderer);
 		}
 	}
 
@@ -795,7 +795,7 @@ private:
 	*/
 	IrrlichtDevice *device;
 	RenderingEngine *m_rendering_engine;
-	video::IVideoDriver *driver;
+	video::VideoDriver *driver;
 	scene::ISceneManager *smgr;
 	bool *kill;
 	std::string *error_message;

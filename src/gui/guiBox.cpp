@@ -3,7 +3,7 @@
 // Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "guiBox.h"
-#include <IVideoDriver.h>
+#include <VideoDriver.h>
 #include "irr_v2d.h"
 
 GUIBox::GUIBox(gui::IGUIEnvironment *env, gui::IGUIElement *parent, s32 id,
@@ -91,7 +91,7 @@ void GUIBox::draw()
 		lowerright_rect.Y
 	);
 
-	video::IVideoDriver *driver = Environment->getVideoDriver();
+	video::VideoDriver *driver = Environment->getVideoDriver();
 
 	driver->draw2DRectangle(main_rect, m_colors[0], m_colors[1], m_colors[3],
 		m_colors[2], &AbsoluteClippingRect);

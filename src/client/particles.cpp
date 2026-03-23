@@ -646,7 +646,7 @@ const core::aabbox3df &ParticleBuffer::getBoundingBox() const
 
 void ParticleBuffer::render()
 {
-	video::IVideoDriver *driver = SceneManager->getVideoDriver();
+	video::VideoDriver *driver = SceneManager->getVideoDriver();
 
 	if (isEmpty())
 		return;

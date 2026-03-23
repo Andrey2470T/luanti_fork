@@ -11,7 +11,7 @@
 #include "profiler.h"
 
 namespace video {
-	class IVideoDriver;
+	class VideoDriver;
 }
 
 /* Profiler display */
@@ -44,6 +44,6 @@ public:
 
 	void put(const Profiler::GraphValues &values);
 
-	void draw(s32 x_left, s32 y_bottom, video::IVideoDriver *driver,
+	void draw(s32 x_left, s32 y_bottom, video::VideoDriver *driver,
 			gui::IGUIFont *font) const;
 };

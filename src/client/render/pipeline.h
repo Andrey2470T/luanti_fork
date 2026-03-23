@@ -5,7 +5,7 @@
 
 #include "irrlichttypes_bloated.h"
 #include <IrrlichtDevice.h> // used in all render/*.cpp
-#include <IVideoDriver.h> // used in all render/*.cpp
+#include <VideoDriver.h> // used in all render/*.cpp
 
 #include <vector>
 #include <memory>
@@ -159,7 +159,7 @@ private:
 	 */
 	bool ensureTexture(video::ITexture **textureSlot, const TextureDefinition& definition, PipelineContext &context);
 
-	video::IVideoDriver *m_driver { nullptr };
+	video::VideoDriver *m_driver { nullptr };
 	std::vector<TextureDefinition> m_definitions;
 	core::array<video::ITexture *> m_textures;
 };
@@ -185,7 +185,7 @@ private:
 	std::vector<u8> texture_map;
 	u8 depth_stencil { NO_DEPTH_TEXTURE };
 	video::RenderTarget* render_target { nullptr };
-	video::IVideoDriver* driver { nullptr };
+	video::VideoDriver* driver { nullptr };
 };
 
 /**

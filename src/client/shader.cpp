@@ -15,7 +15,6 @@
 #include <ICameraSceneNode.h>
 #include <IGPUProgrammingServices.h>
 #include <IMaterialRenderer.h>
-#include <IMaterialRendererServices.h>
 #include <IShaderConstantSetCallBack.h>
 #include "client/renderingengine.h"
 #include "gettext.h"
@@ -170,10 +169,10 @@ public:
 		}
 	}
 
-	virtual void OnSetConstants(video::IMaterialRendererServices *services, s32 userData) override
+	virtual void OnSetConstants(video::IMaterialRenderer *renderer, s32 userData) override
 	{
 		for (auto &&setter : m_setters)
-			setter->onSetUniforms(services);
+			setter->onSetUniforms(renderer);
 	}
 
 	virtual void OnSetMaterial(const video::SMaterial& material) override
@@ -282,14 +281,14 @@ public:
 		m_material_color = material.ColorParam;
 	}
 
-	virtual void onSetUniforms(video::IMaterialRendererServices *services) override
+	virtual void onSetUniforms(video::IMaterialRenderer *renderer) override
 	{
-		video::IVideoDriver *driver = services->getVideoDriver();
+		video::VideoDriver *driver = renderer->getVideoDriver();
 		assert(driver);
 
 		// Set world matrix
 		core::matrix4 world = driver->getTransform(video::ETS_WORLD);
-		m_world.set(world, services);
+		m_world.set(world, renderer);
 
 		// Set clip matrix
 		core::matrix4 worldView;
@@ -299,26 +298,26 @@ public:
 		core::matrix4 worldViewProj;
 		worldViewProj = driver->getTransform(video::ETS_PROJECTION);
 		worldViewProj *= worldView;
-		m_world_view_proj.set(worldViewProj, services);
+		m_world_view_proj.set(worldViewProj, renderer);
 
 		if (driver->getDriverType() == video::EDT_OGLES2 || driver->getDriverType() == video::EDT_OPENGL3) {
 			auto &texture = driver->getTransform(video::ETS_TEXTURE_0);
-			m_world_view.set(worldView, services);
-			m_texture.set(texture, services);
+			m_world_view.set(worldView, renderer);
+			m_texture.set(texture, renderer);
 		}
 
 		SamplerLayer_t tex_id;
 		tex_id = 0;
-		m_texture0.set(&tex_id, services);
+		m_texture0.set(&tex_id, renderer);
 		tex_id = 1;
-		m_texture1.set(&tex_id, services);
+		m_texture1.set(&tex_id, renderer);
 		tex_id = 2;
-		m_texture2.set(&tex_id, services);
+		m_texture2.set(&tex_id, renderer);
 		tex_id = 3;
-		m_texture3.set(&tex_id, services);
+		m_texture3.set(&tex_id, renderer);
 
 		video::SColorf colorf(m_material_color);
-		m_material_color_setting.set(colorf, services);
+		m_material_color_setting.set(colorf, renderer);
 	}
 };
 
@@ -448,12 +447,10 @@ ShaderSource::~ShaderSource()
 	MutexAutoLock lock(m_shaderinfo_cache_mutex);
 
 	// Delete materials
-	auto *gpu = RenderingEngine::get_video_driver()->getGPUProgrammingServices();
-	assert(gpu);
 	u32 n = 0;
 	for (ShaderInfo &i : m_shaderinfo_cache) {
 		if (!i.name.empty()) {
-			gpu->deleteShaderMaterial(i.material);
+			RenderingEngine::get_video_driver()->deleteShaderMaterial(i.material);
 			n++;
 		}
 	}
@@ -581,11 +578,9 @@ void ShaderSource::rebuildShaders()
 	MutexAutoLock lock(m_shaderinfo_cache_mutex);
 
 	// Delete materials
-	auto *gpu = RenderingEngine::get_video_driver()->getGPUProgrammingServices();
-	assert(gpu);
 	for (ShaderInfo &i : m_shaderinfo_cache) {
 		if (!i.name.empty()) {
-			gpu->deleteShaderMaterial(i.material);
+			RenderingEngine::get_video_driver()->deleteShaderMaterial(i.material);
 			i.material = video::EMT_SOLID; // invalidate
 		}
 	}
@@ -615,11 +610,6 @@ ShaderInfo ShaderSource::generateShader(const std::string &name,
 	shaderinfo.material = shaderinfo.base_material;
 
 	auto *driver = RenderingEngine::get_video_driver();
-	// The null driver doesn't support shaders (duh), but we can pretend it does.
-	if (driver->getDriverType() == video::EDT_NULL)
-		return shaderinfo;
-
-	auto *gpu = driver->getGPUProgrammingServices();
 
 	// Create shaders header
 	bool fully_programmable = driver->getDriverType() == video::EDT_OGLES2 || driver->getDriverType() == video::EDT_OPENGL3;
@@ -743,7 +733,7 @@ ShaderInfo ShaderSource::generateShader(const std::string &name,
 
 	auto cb = make_irr<ShaderCallback>(m_uniform_factories);
 	infostream << "Compiling high level shaders for " << log_name << std::endl;
-	s32 shadermat = gpu->addHighLevelShaderMaterial(
+	s32 shadermat = driver->addHighLevelShaderMaterial(
 		vertex_shader.c_str(), fragment_shader.c_str(), geometry_shader_ptr,
 		log_name.c_str(), scene::EPT_TRIANGLES, scene::EPT_TRIANGLES, 0,
 		cb.get(), shaderinfo.base_material);

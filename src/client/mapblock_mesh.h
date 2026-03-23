@@ -17,7 +17,7 @@
 #include <unordered_map>
 
 namespace video {
-	class IVideoDriver;
+	class VideoDriver;
 }
 
 class Client;
@@ -160,7 +160,7 @@ public:
 
 	auto *getBuffer() const { return m_buffer; }
 
-	void draw(video::IVideoDriver *driver) const;
+	void draw(video::VideoDriver *driver) const;
 
 private:
 	scene::SMeshBuffer *m_buffer;

@@ -9,7 +9,7 @@
 #include "client/clientenvironment.h"
 #include "client/clientmap.h"
 #include "client/camera.h"
-#include <IVideoDriver.h>
+#include <VideoDriver.h>
 
 using m4f = core::matrix4;
 

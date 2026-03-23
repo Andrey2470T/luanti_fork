@@ -80,7 +80,7 @@ public:
 	 * default constructor
 	 * @param driver the video driver to load textures from
 	 */
-	MenuTextureSource(video::IVideoDriver *driver) : m_driver(driver) {};
+	MenuTextureSource(video::VideoDriver *driver) : m_driver(driver) {};
 
 	/**
 	 * destructor, removes all loaded textures
@@ -96,7 +96,7 @@ public:
 
 private:
 	/** driver to get textures from */
-	video::IVideoDriver *m_driver = nullptr;
+	video::VideoDriver *m_driver = nullptr;
 	/** set of textures to delete */
 	std::vector<video::ITexture*> m_to_delete;
 };
@@ -216,22 +216,22 @@ private:
 	 * draw background layer
 	 * @param driver to use for drawing
 	 */
-	void drawBackground(video::IVideoDriver *driver);
+	void drawBackground(video::VideoDriver *driver);
 	/**
 	 * draw overlay layer
 	 * @param driver to use for drawing
 	 */
-	void drawOverlay(video::IVideoDriver *driver);
+	void drawOverlay(video::VideoDriver *driver);
 	/**
 	 * draw header layer
 	 * @param driver to use for drawing
 	 */
-	void drawHeader(video::IVideoDriver *driver);
+	void drawHeader(video::VideoDriver *driver);
 	/**
 	 * draw footer layer
 	 * @param driver to use for drawing
 	 */
-	void drawFooter(video::IVideoDriver *driver);
+	void drawFooter(video::VideoDriver *driver);
 
 	/**
 	 * load a texture for a specified layer

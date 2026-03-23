@@ -76,7 +76,7 @@ video::IImage* SourceImageCache::getOrLoad(const std::string &name)
 		n->second->grab(); // Grab for caller
 		return n->second;
 	}
-	video::IVideoDriver *driver = RenderingEngine::get_video_driver();
+	video::VideoDriver *driver = RenderingEngine::get_video_driver();
 	std::string path = getTexturePath(name);
 	if (path.empty()) {
 		infostream << "SourceImageCache::getOrLoad(): No path found for \""
@@ -160,7 +160,7 @@ static void apply_mask(video::IImage *mask, video::IImage *dst,
 // Draw or overlay a crack
 static void draw_crack(video::IImage *crack, video::IImage *dst,
 		bool use_overlay, s32 frame_count, s32 progression,
-		video::IVideoDriver *driver, u8 tiles = 1);
+		video::VideoDriver *driver, u8 tiles = 1);
 
 // Brighten image
 static void brighten(video::IImage *image);
@@ -202,7 +202,7 @@ static video::IImage *createInventoryCubeImage(
 	u32 cube_size = 9 * size;
 	u32 offset = size / 2;
 
-	video::IVideoDriver *driver = RenderingEngine::get_video_driver();
+	video::VideoDriver *driver = RenderingEngine::get_video_driver();
 
 	auto lock_image = [size, driver] (video::IImage *&image) -> const u32 * {
 		image->grab();
@@ -423,7 +423,7 @@ static void blit_with_alpha(video::IImage *src, video::IImage *dst, v2s32 dst_po
 	core::dimension2d<u32> dst_dim = dst->getDimension();
 	bool drop_src = false;
 	if (src->getColorFormat() != video::ECF_A8R8G8B8) {
-		video::IVideoDriver *driver = RenderingEngine::get_video_driver();
+		video::VideoDriver *driver = RenderingEngine::get_video_driver();
 		video::IImage *src_converted = driver->createImage(video::ECF_A8R8G8B8,
 			src_dim);
 		sanity_check(src_converted != nullptr);
@@ -726,7 +726,7 @@ static void apply_mask(video::IImage *mask, video::IImage *dst,
 }
 
 static video::IImage *create_crack_image(video::IImage *crack, s32 frame_index,
-		core::dimension2d<u32> size, u8 tiles, video::IVideoDriver *driver)
+		core::dimension2d<u32> size, u8 tiles, video::VideoDriver *driver)
 {
 	core::dimension2d<u32> strip_size = crack->getDimension();
 
@@ -774,7 +774,7 @@ exit__has_tile:
 
 static void draw_crack(video::IImage *crack, video::IImage *dst,
 		bool use_overlay, s32 frame_count, s32 progression,
-		video::IVideoDriver *driver, u8 tiles)
+		video::VideoDriver *driver, u8 tiles)
 {
 	// Dimension of destination image
 	core::dimension2d<u32> dim_dst = dst->getDimension();
@@ -959,7 +959,7 @@ bool ImageSource::generateImagePart(std::string_view part_of_name,
 		video::IImage *& baseimg, std::set<std::string> &source_image_names)
 {
 	const char escape = '\\'; // same as in generateImage()
-	video::IVideoDriver *driver = RenderingEngine::get_video_driver();
+	video::VideoDriver *driver = RenderingEngine::get_video_driver();
 	sanity_check(driver);
 
 	if (baseimg && (baseimg->getDimension().Width == 0 ||

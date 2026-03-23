@@ -8,7 +8,7 @@
 #include <cassert>
 #include <vector>
 #include <algorithm>
-#include <IVideoDriver.h>
+#include <VideoDriver.h>
 
 // Simple 2D bitmap class with just the functionality needed here
 class Bitmap {

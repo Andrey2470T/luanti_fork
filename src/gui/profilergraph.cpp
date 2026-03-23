@@ -5,7 +5,7 @@
 
 #include "porting.h"
 #include "profilergraph.h"
-#include "IVideoDriver.h"
+#include "VideoDriver.h"
 #include "util/string.h"
 
 void ProfilerGraph::put(const Profiler::GraphValues &values)
@@ -16,7 +16,7 @@ void ProfilerGraph::put(const Profiler::GraphValues &values)
 		m_log.erase(m_log.begin());
 }
 
-void ProfilerGraph::draw(s32 x_left, s32 y_bottom, video::IVideoDriver *driver,
+void ProfilerGraph::draw(s32 x_left, s32 y_bottom, video::VideoDriver *driver,
 		gui::IGUIFont *font) const
 {
 	// Do *not* use UNORDERED_MAP here as the order needs

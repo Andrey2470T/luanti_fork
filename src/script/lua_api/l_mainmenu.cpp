@@ -921,7 +921,7 @@ int ModApiMainMenu::l_get_window_info(lua_State *L)
 /******************************************************************************/
 int ModApiMainMenu::l_get_active_renderer(lua_State *L)
 {
-	lua_pushstring(L, RenderingEngine::get_video_driver()->getName());
+	lua_pushstring(L, RenderingEngine::get_video_driver()->getName().c_str());
 	return 1;
 }
 
