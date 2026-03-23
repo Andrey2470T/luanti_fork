@@ -13,7 +13,6 @@
 #include "util/thread.h"
 #include "settings.h"
 #include <ICameraSceneNode.h>
-#include <IGPUProgrammingServices.h>
 #include <IMaterialRenderer.h>
 #include <IShaderConstantSetCallBack.h>
 #include "client/renderingengine.h"

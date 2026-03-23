@@ -14,7 +14,6 @@
 #include "client/client.h"
 #include "client/clientmap.h"
 #include "profiler.h"
-#include "IGPUProgrammingServices.h"
 #include "IMaterialRenderer.h"
 #include "VideoDriver.h"
 
