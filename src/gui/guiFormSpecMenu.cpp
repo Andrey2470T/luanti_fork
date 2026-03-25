@@ -3549,7 +3549,7 @@ void GUIFormSpecMenu::drawMenu()
 	gui::IGUIElement *hovered =
 			Environment->getRootGUIElement()->getElementFromPoint(m_pointer);
 
-	gui::ICursorControl *cursor_control = RenderingEngine::get_raw_device()->
+	gui::CursorControl *cursor_control = RenderingEngine::get_raw_device()->
 			getCursorControl();
 	gui::ECURSOR_ICON current_cursor_icon = gui::ECI_NORMAL;
 	if (cursor_control)

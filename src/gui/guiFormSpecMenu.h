@@ -20,7 +20,7 @@
 #include "util/string.h"
 #include "util/enriched_string.h"
 #include "StyleSpec.h"
-#include <ICursorControl.h> // gui::ECURSOR_ICON
+#include <CursorControl.h> // gui::ECURSOR_ICON
 #include <IGUIStaticText.h>
 
 class InventoryManager;
