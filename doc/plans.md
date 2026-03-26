@@ -318,6 +318,50 @@
 		* `handle:set_pitch(<number>)`
 		* `handle:set_fade(<number>)`
 
+* Поддержка кастомизации набора состояний нод (paramtype2="custom")
+     * Количество состояний нод будет определяться битовыми полями
+     * Возможность менять в состояниях поля "drawtype", "textures", "use_texture_alpha", ...
+     * Пример регистрации дверной ноды с 32 "facedir", 4 "color" и 2 значениями ("door_open", "door_closed") в NodeDef таблице:
+        
+        ```lua
+        {
+           -- @bits: count of bits, must be not greater 8 (the param2 size is one-byte)
+           -- @variants: descriptions of variants, it is possible to code 2^bits within the given bitfield
+           paramtype2 = "custom",
+           param2_states = {
+              {
+                 bits = 5,
+                 variants = "facedir"             -- 32 variants
+              },
+              {
+                 bits = 2,
+                 variants = "color"                -- 4 variants
+              },
+              { 
+                 bits = 1,
+                 variants = {
+                    ["door_open"] = {              -- variant 0
+                       drawtype = "nodebox",
+                       tiles = {"mydoors:door_open.png"},
+                       nodebox = {
+                          type = "fixed",
+                          fixed = {-0.5, -0.5, -0.5, 0.5, 1.5, -0.3}
+                       }
+                    },
+                    ["door_closed"] = {           -- variant 1
+                       drawtype = "nodebox",
+                       tiles = {"mydoors:door_closed.png"},
+                       nodebox = {
+                          type = "fixed",
+                          fixed = {-0.5, -0.5, -0.5, -0.3, 1.5, 0.5}
+                       }
+                    }
+                 }
+              }
+           }
+        }
+        ```
+
 * Добавить в методах ObjectRef возможность изменения позиции/скорости/поворота/масштаба с интерполяциями
 
 * Поддержка отображения HUD мешей и их кастомизация
