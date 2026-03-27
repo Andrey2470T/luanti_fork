@@ -39,7 +39,7 @@
 #include "IGUIEnvironment.h"
 #include "IGUIFont.h"
 #include "VideoDriver.h"
-#include "IrrlichtDevice.h"
+#include "SDLDevice.h"
 #include "util/enriched_string.h"
 #include "util/basic_macros.h"
 

@@ -299,7 +299,7 @@ bool GUIEngine::loadMainMenuScript()
 /******************************************************************************/
 void GUIEngine::run()
 {
-	IrrlichtDevice *device = m_rendering_engine->get_raw_device();
+	SDLDevice *device = m_rendering_engine->get_raw_device();
 	video::VideoDriver *driver = device->getVideoDriver();
 
 	unsigned int text_height = g_fontengine->getTextHeight();

@@ -4,7 +4,7 @@
 #pragma once
 
 #include "irrlichttypes_bloated.h"
-#include <IrrlichtDevice.h> // used in all render/*.cpp
+#include <SDLDevice.h> // used in all render/*.cpp
 #include <VideoDriver.h> // used in all render/*.cpp
 
 #include <vector>
@@ -25,12 +25,12 @@ namespace video
 
 struct PipelineContext
 {
-	PipelineContext(IrrlichtDevice *_device, Client *_client, Hud *_hud, ShadowRenderer *_shadow_renderer, video::SColor _color, v2u32 _target_size)
+	PipelineContext(SDLDevice *_device, Client *_client, Hud *_hud, ShadowRenderer *_shadow_renderer, video::SColor _color, v2u32 _target_size)
 		: device(_device), client(_client), hud(_hud), shadow_renderer(_shadow_renderer), clear_color(_color), target_size(_target_size)
 	{
 	}
 
-	IrrlichtDevice *device;
+	SDLDevice *device;
 	Client *client;
 	Hud *hud;
 	ShadowRenderer *shadow_renderer;

@@ -19,9 +19,9 @@ struct CreatePipelineResult
 	RenderPipeline *pipeline { nullptr };
 };
 
-void createPipeline(const std::string &stereo_mode, IrrlichtDevice *device, Client *client, Hud *hud, CreatePipelineResult &result);
+void createPipeline(const std::string &stereo_mode, SDLDevice *device, Client *client, Hud *hud, CreatePipelineResult &result);
 
-RenderingCore *createRenderingCore(const std::string &stereo_mode, IrrlichtDevice *device,
+RenderingCore *createRenderingCore(const std::string &stereo_mode, SDLDevice *device,
 		Client *client, Hud *hud)
 {
 	CreatePipelineResult created_pipeline;
@@ -30,7 +30,7 @@ RenderingCore *createRenderingCore(const std::string &stereo_mode, IrrlichtDevic
 			created_pipeline.shadow_renderer, created_pipeline.pipeline, created_pipeline.virtual_size_scale);
 }
 
-void createPipeline(const std::string &stereo_mode, IrrlichtDevice *device, Client *client, Hud *hud, CreatePipelineResult &result)
+void createPipeline(const std::string &stereo_mode, SDLDevice *device, Client *client, Hud *hud, CreatePipelineResult &result)
 {
 	result.shadow_renderer = createShadowRenderer(device, client);
 	result.virtual_size_scale = v2f(1.0f);

@@ -45,7 +45,7 @@ struct FpsControl {
 
 	void reset();
 
-	void limit(IrrlichtDevice *device, f32 *dtime);
+	void limit(SDLDevice *device, f32 *dtime);
 
 	u32 getBusyMs() const { return busy_time / 1000; }
 
@@ -112,7 +112,7 @@ public:
 		return m_device->getSceneManager();
 	}
 
-	static IrrlichtDevice *get_raw_device()
+	static SDLDevice *get_raw_device()
 	{
 		sanity_check(s_singleton && s_singleton->m_device);
 		return s_singleton->m_device;
@@ -164,7 +164,7 @@ private:
 	v2u32 _getWindowSize() const;
 
 	std::unique_ptr<RenderingCore> core;
-	IrrlichtDevice *m_device = nullptr;
+	SDLDevice *m_device = nullptr;
 	video::VideoDriver *driver;
 	MyEventReceiver *m_receiver = nullptr;
 	static RenderingEngine *s_singleton;

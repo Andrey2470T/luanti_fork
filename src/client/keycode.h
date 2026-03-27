@@ -85,7 +85,7 @@ struct std::hash<KeyPress>
 
 // Global defines for convenience
 // This implementation defers creation of the objects to make sure that the
-// IrrlichtDevice is initialized.
+// SDLDevice is initialized.
 #define EscapeKey KeyPress::getSpecialKey("KEY_ESCAPE")
 #define LMBKey KeyPress::getSpecialKey("KEY_LBUTTON")
 #define MMBKey KeyPress::getSpecialKey("KEY_MBUTTON") // Middle Mouse Button

@@ -793,7 +793,7 @@ private:
 	   This class does take ownership/responsibily for cleaning up etc of any of
 	   these items (e.g. device)
 	*/
-	IrrlichtDevice *device;
+	SDLDevice *device;
 	RenderingEngine *m_rendering_engine;
 	video::VideoDriver *driver;
 	scene::ISceneManager *smgr;

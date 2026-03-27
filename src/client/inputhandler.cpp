@@ -139,7 +139,7 @@ bool MyEventReceiver::OnEvent(const SEvent &event)
 		KeyPress keyCode(event.KeyInput);
 		if (keyCode == getKeySetting("keymap_fullscreen")) {
 			if (event.KeyInput.PressedDown && !fullscreen_is_down) {
-				IrrlichtDevice *device = RenderingEngine::get_raw_device();
+				SDLDevice *device = RenderingEngine::get_raw_device();
 
 				bool new_fullscreen = !device->isFullscreen();
 				// Only update the setting if toggling succeeds - it always fails

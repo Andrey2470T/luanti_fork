@@ -4,7 +4,7 @@
 // Copyright (C) 2017 nerzhul, Loic Blot <loic.blot@unix-experience.fr>
 
 #include <optional>
-#include <irrlicht.h>
+#include <SDLDevice.h>
 #include "IMeshCache.h"
 #include "fontengine.h"
 #include "client.h"
@@ -34,7 +34,7 @@ void FpsControl::reset()
 	last_time = porting::getTimeUs();
 }
 
-void FpsControl::limit(IrrlichtDevice *device, f32 *dtime)
+void FpsControl::limit(SDLDevice *device, f32 *dtime)
 {
 	const float fps_limit = device->isWindowFocused()
 			? g_settings->getFloat("fps_max")
@@ -130,12 +130,12 @@ static inline auto getVideoDriverName(video::E_DRIVER_TYPE driver)
 	return RenderingEngine::getVideoDriverInfo(driver).friendly_name;
 }
 
-static IrrlichtDevice *createDevice(SIrrlichtCreationParameters params, std::optional<video::E_DRIVER_TYPE> requested_driver)
+static SDLDevice *createDevice(SIrrlichtCreationParameters params, std::optional<video::E_DRIVER_TYPE> requested_driver)
 {
 	if (requested_driver) {
 		params.DriverType = *requested_driver;
 		infostream << "Trying video driver " << getVideoDriverName(params.DriverType) << std::endl;
-		if (auto *device = createDeviceEx(params))
+		if (auto *device = SDLDevice::createDeviceEx(params))
 			return device;
 		errorstream << "Failed to initialize the " << getVideoDriverName(params.DriverType) << " video driver" << std::endl;
 	}
@@ -146,7 +146,7 @@ static IrrlichtDevice *createDevice(SIrrlichtCreationParameters params, std::opt
 			continue;
 		params.DriverType = fallback_driver;
 		infostream << "Trying video driver " << getVideoDriverName(params.DriverType) << std::endl;
-		if (auto *device = createDeviceEx(params))
+		if (auto *device = SDLDevice::createDeviceEx(params))
 			return device;
 	}
 
@@ -233,7 +233,7 @@ RenderingEngine::~RenderingEngine()
 
 void RenderingEngine::settingChangedCallback(const std::string &name, void *data)
 {
-	IrrlichtDevice *device = static_cast<RenderingEngine*>(data)->m_device;
+	SDLDevice *device = static_cast<RenderingEngine*>(data)->m_device;
 	if (name == "fullscreen") {
 		device->setFullscreen(g_settings->getBool("fullscreen"));
 
@@ -371,20 +371,7 @@ void RenderingEngine::draw_load_screen(const std::wstring &text,
 
 std::vector<video::E_DRIVER_TYPE> RenderingEngine::getSupportedVideoDrivers()
 {
-	// Only check these drivers. We do not support software and D3D in any capacity.
-	// ordered by preference (best first)
-	static const video::E_DRIVER_TYPE glDrivers[] = {
-		video::EDT_OPENGL3,
-		video::EDT_OGLES2
-	};
-	std::vector<video::E_DRIVER_TYPE> drivers;
-
-	for (auto driver : glDrivers) {
-		if (IrrlichtDevice::isDriverSupported(driver))
-			drivers.push_back(driver);
-	}
-
-	return drivers;
+	return {video::EDT_OPENGL3, video::EDT_OGLES2};
 }
 
 void RenderingEngine::initialize(Client *client, Hud *hud)

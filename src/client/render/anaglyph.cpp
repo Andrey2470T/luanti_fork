@@ -5,7 +5,7 @@
 
 #include "anaglyph.h"
 #include "client/camera.h"
-#include <IrrlichtDevice.h>
+#include <SDLDevice.h>
 #include <ISceneManager.h>
 #include <DrawContext.h>
 

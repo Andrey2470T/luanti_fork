@@ -8,7 +8,7 @@
 #include "client/shadows/dynamicshadowsrender.h"
 #include "settings.h"
 
-RenderingCore::RenderingCore(IrrlichtDevice *_device, Client *_client, Hud *_hud,
+RenderingCore::RenderingCore(SDLDevice *_device, Client *_client, Hud *_hud,
 		ShadowRenderer *_shadow_renderer, RenderPipeline *_pipeline, v2f _virtual_size_scale)
 	: device(_device), client(_client), hud(_hud), shadow_renderer(_shadow_renderer),
 	pipeline(_pipeline), virtual_size_scale(_virtual_size_scale)

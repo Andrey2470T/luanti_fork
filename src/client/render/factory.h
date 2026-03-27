@@ -8,5 +8,5 @@
 #include <string>
 #include "core.h"
 
-RenderingCore *createRenderingCore(const std::string &stereo_mode, IrrlichtDevice *device,
+RenderingCore *createRenderingCore(const std::string &stereo_mode, SDLDevice *device,
 		Client *client, Hud *hud);
