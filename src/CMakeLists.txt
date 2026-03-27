@@ -984,6 +984,7 @@ else()
 	endif()
 
 	if(MINGW)
+		message(STATUS "Setting CMAKE_EXE_LINKER_FLAGS_RELEASE=-mwindows")
 		set(CMAKE_EXE_LINKER_FLAGS_RELEASE "-mwindows")
 	endif()
 endif()

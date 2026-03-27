@@ -165,7 +165,7 @@ build_all() {
 
     create_find_glew_cmake
     echo "GLEW build completed: $OUTPUT_DIR"
-    find "$OUTPUT_DIR" -name "*.a" -type f
+    ls "$OUTPUT_DIR" -lR
 }
 
 case "${1:-all}" in

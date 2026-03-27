@@ -322,7 +322,7 @@
      * Количество состояний нод будет определяться битовыми полями
      * Возможность менять в состояниях поля "drawtype", "textures", "use_texture_alpha", ...
      * Пример регистрации дверной ноды с 32 "facedir", 4 "color" и 2 значениями ("door_open", "door_closed") в NodeDef таблице:
-        
+
         ```lua
         {
            -- @bits: count of bits, must be not greater 8 (the param2 size is one-byte)
@@ -337,7 +337,7 @@
                  bits = 2,
                  variants = "color"                -- 4 variants
               },
-              { 
+              {
                  bits = 1,
                  variants = {
                     ["door_open"] = {              -- variant 0

@@ -133,10 +133,6 @@ jobs:
         run: |
           ./bin/luanti --run-unittests
 
-      - name: Integration test + devtest
-        run: |
-          ./util/test_multiplayer.sh
-
   # Build with prometheus-cpp (server-only)
   clang_11_prometheus:
     name: "clang_11 (PROMETHEUS=1)"

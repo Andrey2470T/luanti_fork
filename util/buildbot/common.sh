@@ -227,5 +227,7 @@ EOF
 		-DGLEW_LIBRARY=$libdir/glew/lib/glew32.lib
 		-DGLEW_INCLUDE_DIR=$libdir/glew/include
 		-DGLEW_DLL=$libdir/glew/bin/glew32.dll
+		-DCMAKE_CXX_FLAGS="-I${libdir}/glew/include"
+		-DCMAKE_C_FLAGS="-I${libdir}/glew/include"
 	)
 }
