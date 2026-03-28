@@ -43,7 +43,6 @@ execute_process(
 set(RESOURCE_LUANTI_FILES
 	"$ENV{SOURCE_ROOT}/README.md"
 	"$ENV{SOURCE_ROOT}/doc/client_lua_api.md"
-	"$ENV{SOURCE_ROOT}/doc/lua_api.md"
 	"$ENV{SOURCE_ROOT}/doc/menu_lua_api.md"
 	"$ENV{SOURCE_ROOT}/minetest.conf.example"
 	"$ENV{SOURCE_ROOT}/doc/texture_packs.md"
@@ -54,6 +53,17 @@ foreach (file ${RESOURCE_LUANTI_FILES})
 		COMMAND ${CMAKE_COMMAND} -E copy
 		"${file}"
 		"${RESOURCES_DIR}/$ENV{PRODUCT_NAME}/"
+	)
+endforeach()
+set(LUANTI_API_DOCS_FOLDERS
+	"client_lua_api"
+	"server_lua_api"
+)
+foreach (folder ${LUANTI_API_DOCS_FOLDERS})
+	execute_process(
+		COMMAND ${CMAKE_COMMAND} -E copy_directory
+		"$ENV{SOURCE_ROOT}/doc/${folder}"
+		"${RESOURCES_DIR}/$ENV{PRODUCT_NAME}/${folder}"
 	)
 endforeach()
 execute_process(

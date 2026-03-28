@@ -47,7 +47,13 @@ jobs:
     - name: Build GLEW for Android
       run: |
         cd android
-        ./build-glew.sh
+        ./build_glew.sh
+        # Verify GLEW was built successfully
+        if [ ! -f "deps/arm64-v8a/glew/lib/libGLEW.a" ]; then
+            echo "ERROR: GLEW build failed - libGLEW.a not found"
+            exit 1
+        fi
+        echo "✓ GLEW build verified"
     - name: Build AAB with Gradle
       # We build an AAB as well for uploading to the the Play Store.
       run: cd android; ./gradlew bundlerelease --stacktrace --info

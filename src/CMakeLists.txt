@@ -945,6 +945,8 @@ else()
 		if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 			set(OTHER_FLAGS "${OTHER_FLAGS} -mthreads")
 		endif()
+		# Link against mingw32 to get WinMain entry point for GUI applications
+		list(APPEND PLATFORM_LIBS mingw32)
 		add_compile_definitions(_WIN32_WINNT=0x0601 WIN32_LEAN_AND_MEAN)
 	endif()
 
@@ -984,7 +986,7 @@ else()
 	endif()
 
 	if(MINGW)
-		message(STATUS "Setting CMAKE_EXE_LINKER_FLAGS_RELEASE=-mwindows")
+		#set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mwindows -Wl,--subsystem,windows -Wl,--entry,_WinMain@16")
 		set(CMAKE_EXE_LINKER_FLAGS_RELEASE "-mwindows")
 	endif()
 endif()

@@ -43,6 +43,7 @@ COPY doc /usr/src/luanti/doc
 COPY fonts /usr/src/luanti/fonts
 COPY lib /usr/src/luanti/lib
 COPY misc /usr/src/luanti/misc
+COPY mods /usr/src/luanti/mods
 COPY po /usr/src/luanti/po
 COPY src /usr/src/luanti/src
 COPY textures /usr/src/luanti/textures
