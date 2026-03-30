@@ -573,9 +573,9 @@ include_directories(SYSTEM
 	${GMP_INCLUDE_DIR}
 	${JSON_INCLUDE_DIR}
 	${LUA_BIT_INCLUDE_DIR}
-	# on Android, Luanti depends on SDL2 directly
+	# on Android and Windows, Luanti depends on SDL2 directly
 	# on other platforms, only IrrlichtMt depends on SDL2
-	"$<$<PLATFORM_ID:Android>:${SDL2_INCLUDE_DIRS}>"
+	"$<$<OR:$<PLATFORM_ID:Android>,$<PLATFORM_ID:Windows>>:${SDL2_INCLUDE_DIRS}>"
 )
 
 if(USE_GETTEXT)
@@ -699,9 +699,9 @@ if(BUILD_CLIENT)
 		sha256
 		${FREETYPE_LIBRARY}
 		${PLATFORM_LIBS}
-		# on Android, Luanti depends on SDL2 directly
+		# on Android and Windows, Luanti depends on SDL2 directly
 		# on other platforms, only IrrlichtMt depends on SDL2
-		"$<$<PLATFORM_ID:Android>:${SDL2_LIBRARIES}>"
+		"$<$<OR:$<PLATFORM_ID:Android>,$<PLATFORM_ID:Windows>>:${SDL2_LIBRARIES}>"
 	)
 	target_compile_definitions(${PROJECT_NAME} PRIVATE "MT_BUILDTARGET=1")
 	if(NOT USE_LUAJIT)
@@ -945,8 +945,6 @@ else()
 		if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 			set(OTHER_FLAGS "${OTHER_FLAGS} -mthreads")
 		endif()
-		# Link against mingw32 to get WinMain entry point for GUI applications
-		list(APPEND PLATFORM_LIBS mingw32)
 		add_compile_definitions(_WIN32_WINNT=0x0601 WIN32_LEAN_AND_MEAN)
 	endif()
 
@@ -986,8 +984,8 @@ else()
 	endif()
 
 	if(MINGW)
-		#set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mwindows -Wl,--subsystem,windows -Wl,--entry,_WinMain@16")
-		set(CMAKE_EXE_LINKER_FLAGS_RELEASE "-mwindows")
+		# Use the standard main entry point with Windows subsystem
+		set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mwindows")
 	endif()
 endif()
 

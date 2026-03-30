@@ -37,178 +37,17 @@ download () {
 	fi
 }
 
-# Manual compilation of GLEW from source for MinGW
 download_glew () {
-	local target_arch=$1  # Should be "win32" or "win64"
-	echo "Downloading and compiling GLEW $glew_version for $target_arch..."
+	local url="https://sourceforge.net/projects/glew/files/glew/${glew_version}/glew-${glew_version}-win32.zip/download"
 
-	# Download GLEW source
-	glew_source="glew-${glew_version}.tgz"
-	glew_url="https://sourceforge.net/projects/glew/files/glew/${glew_version}/glew-${glew_version}.tgz/download"
+	local filename="glew-${glew_version}-win32.zip"
+	local foldername="glew"
 
-	if [ ! -f "$glew_source" ]; then
-		wget "$glew_url" -O "$glew_source"
-	fi
+	[ -d "./$foldername" ] && return 0
+	wget "$url" -c -O "./$filename"
 
-	# Verify checksum if available
-	if grep -q "$glew_source" "$topdir/sha256sums.txt" 2>/dev/null; then
-		sha256sum -w -c <(grep -F "$glew_source" "$topdir/sha256sums.txt")
-	fi
-
-	# Extract source
-	rm -rf glew-source
-	mkdir -p glew-source
-	tar -xzf "$glew_source" -C glew-source --strip-components=1
-
-	# Determine compiler and architecture flags
-	if [ "$target_arch" = "win64" ]; then
-		compiler_target="x86_64-w64-mingw32-clang"
-		arch_flags="-m64"
-		glew_target="glew64.dll"
-		glew_lib="libglew64.dll.a"
-	else
-		compiler_target="i686-w64-mingw32-clang"
-		arch_flags="-m32"
-		glew_target="glew32.dll"
-		glew_lib="libglew32.dll.a"
-	fi
-
-	if ! command -v "$compiler_target" >/dev/null; then
-		echo "ERROR: $compiler_target not found, cannot compile GLEW for $target_arch"
-		exit 1
-	fi
-
-	# Compile GLEW
-	echo "Compiling GLEW for $target_arch..."
-	cd glew-source
-
-	# Clean previous builds
-	make clean 2>/dev/null || true
-
-	# Set environment variables for cross-compilation
-	export CC="$compiler_target"
-	export CXX="${compiler_target/clang/clang++}"
-	export AR="llvm-ar"
-	export RANLIB="llvm-ranlib"
-	export STRIP="llvm-strip"
-	export WINDRES="${compiler_target%-*}-windres"
-
-	# Build using the proper make targets
-	echo "Building GLEW shared library..."
-
-	# Use the 'all' target first to build everything
-	make -j$(nproc) \
-		SYSTEM=mingw \
-		CC="$CC" \
-		CCX="$CXX" \
-		AR="$AR" \
-		RANLIB="$RANLIB" \
-		STRIP="$STRIP" \
-		WINDRES="$WINDRES" \
-		CFLAGS="-O2 $arch_flags -DGLEW_BUILD -DGLEW_NO_GLU -DGLEW_DLL" \
-		LDFLAGS="-shared" \
-		glew.dll
-
-	if [ $? -ne 0 ]; then
-		# Alternative: try building with specific target
-		echo "Trying alternative build method..."
-		make -j$(nproc) \
-			SYSTEM=mingw \
-			CC="$CC" \
-			AR="$AR" \
-			RANLIB="$RANLIB" \
-			WINDRES="$WINDRES" \
-			CFLAGS="-O2 $arch_flags -DGLEW_BUILD -DGLEW_NO_GLU -DGLEW_DLL" \
-			LDFLAGS="-shared -Wl,--out-implib,libglew32.dll.a" \
-			lib
-
-		if [ $? -ne 0 ]; then
-			echo "ERROR: Failed to compile GLEW for $target_arch"
-			cd ..
-			exit 1
-		fi
-	fi
-
-	# Create target directories
-	mkdir -p "$PWD/../glew/include/GL"
-	mkdir -p "$PWD/../glew/lib"
-	mkdir -p "$PWD/../glew/bin"
-
-	# Copy headers
-	if [ -d "include/GL" ]; then
-		cp -r include/GL/* "$PWD/../glew/include/GL/"
-	else
-		echo "ERROR: Headers not found"
-		cd ..
-		exit 1
-	fi
-
-	# Copy the DLL and import library
-	if [ -f "lib/$glew_target" ]; then
-		cp "lib/$glew_target" "$PWD/../glew/bin/glew32.dll"
-		echo "Copied DLL from lib/$glew_target"
-	elif [ -f "bin/$glew_target" ]; then
-		cp "bin/$glew_target" "$PWD/../glew/bin/glew32.dll"
-		echo "Copied DLL from bin/$glew_target"
-	elif [ -f "$glew_target" ]; then
-		cp "$glew_target" "$PWD/../glew/bin/glew32.dll"
-		echo "Copied DLL from root"
-	else
-		# Try to find any .dll file
-		dll_file=$(find . -name "*.dll" -type f | head -1)
-		if [ -n "$dll_file" ]; then
-			cp "$dll_file" "$PWD/../glew/bin/glew32.dll"
-			echo "Found DLL at: $dll_file"
-		else
-			echo "ERROR: DLL not found"
-			cd ..
-			exit 1
-		fi
-	fi
-
-	# Copy import library
-	if [ -f "lib/$glew_lib" ]; then
-		cp "lib/$glew_lib" "$PWD/../glew/lib/libglew.dll.a"
-		echo "Copied import library from lib/$glew_lib"
-	elif [ -f "lib/libglew32.dll.a" ]; then
-		cp "lib/libglew32.dll.a" "$PWD/../glew/lib/libglew.dll.a"
-		echo "Copied libglew32.dll.a"
-	elif [ -f "lib/libglew64.dll.a" ]; then
-		cp "lib/libglew64.dll.a" "$PWD/../glew/lib/libglew.dll.a"
-		echo "Copied libglew64.dll.a"
-	else
-		# Try to find any .dll.a file
-		lib_file=$(find . -name "*.dll.a" -type f | head -1)
-		if [ -n "$lib_file" ]; then
-			cp "$lib_file" "$PWD/../glew/lib/libglew.dll.a"
-			echo "Found import library at: $lib_file"
-		else
-			echo "ERROR: Import library not found"
-			cd ..
-			exit 1
-		fi
-	fi
-
-	cd ..
-
-	# Cleanup source
-	rm -rf glew-source
-
-	# Verify build succeeded
-	if [ ! -f "glew/bin/glew32.dll" ]; then
-		echo "ERROR: GLEW build failed for $target_arch - missing DLL"
-		exit 1
-	fi
-
-	if [ ! -f "glew/lib/libglew.dll.a" ]; then
-		echo "WARNING: Import library not found, but continuing..."
-		# Create an empty one to satisfy CMake
-		touch glew/lib/libglew.dll.a
-	fi
-
-	echo "GLEW $target_arch compilation completed successfully"
-	ls -la glew/bin/
-	ls -la glew/lib/
+	unzip -o "$filename"
+	mv glew-${glew_version} $foldername
 }
 
 # sets $sourcedir
@@ -254,51 +93,22 @@ _dlls () {
 }
 
 add_cmake_libs () {
-	mkdir -p $PWD/cmake/Modules
+	local target_arch=$1
 
-	# Создаем FindGLEW.cmake, который всегда будет находить нашу GLEW
-	cat > $PWD/cmake/Modules/FindGLEW.cmake << 'EOF'
-	# Кастомный FindGLEW.cmake для MinGW
-	# Всегда использует заранее определенные пути
+	ls -lR $libdir/glew
 
-	if(GLEW_INCLUDE_DIR AND GLEW_LIBRARY)
-		set(GLEW_INCLUDE_DIRS ${GLEW_INCLUDE_DIR})
-		set(GLEW_LIBRARIES ${GLEW_LIBRARY})
-		set(GLEW_FOUND TRUE)
+	glew_include_dir=$libdir/glew/include
 
-		if(NOT TARGET GLEW::GLEW)
-			add_library(GLEW::GLEW UNKNOWN IMPORTED)
-			set_target_properties(GLEW::GLEW PROPERTIES
-				IMPORTED_LOCATION "${GLEW_LIBRARY}"
-				INTERFACE_INCLUDE_DIRECTORIES "${GLEW_INCLUDE_DIR}"
-			)
-		endif()
+	if [ "$target_arch" = "win64" ]; then
+		cp $libdir/glew/lib/Release/x64/glew32.lib $libdir/glew/lib/Release/x64/libGLEW.a
+		glew_lib=$libdir/glew/lib/Release/x64/libGLEW.a
+		glew_dll=$libdir/glew/bin/Release/x64/glew32.dll
+	else
+		cp $libdir/glew/lib/Release/Win32/glew32.lib $libdir/glew/lib/Release/Win32/libGLEW.a
+		glew_lib=$libdir/glew/lib/Release/Win32/libGLEW.a
+		glew_dll=$libdir/glew/bin/Release/Win32/glew32.dll
+	fi
 
-		message(STATUS "Found GLEW (custom): ${GLEW_LIBRARY}")
-		return()
-	endif()
-
-	# Если переменные не заданы, ищем стандартным способом
-	find_path(GLEW_INCLUDE_DIR GL/glew.h)
-	find_library(GLEW_LIBRARY NAMES GLEW glew32 libGLEW)
-
-	if(GLEW_INCLUDE_DIR AND GLEW_LIBRARY)
-		set(GLEW_INCLUDE_DIRS ${GLEW_INCLUDE_DIR})
-		set(GLEW_LIBRARIES ${GLEW_LIBRARY})
-		set(GLEW_FOUND TRUE)
-
-		if(NOT TARGET GLEW::GLEW)
-			add_library(GLEW::GLEW UNKNOWN IMPORTED)
-			set_target_properties(GLEW::GLEW PROPERTIES
-				IMPORTED_LOCATION "${GLEW_LIBRARY}"
-				INTERFACE_INCLUDE_DIRECTORIES "${GLEW_INCLUDE_DIR}"
-			)
-		endif()
-	endif()
-EOF
-
-	# Добавляем нашу директорию с модулями в путь поиска CMake
-	cmake_args+=(-DCMAKE_MODULE_PATH="$PWD/cmake/Modules")
 	cmake_args+=(
 		-DPNG_LIBRARY=$libdir/libpng/lib/libpng16.dll.a
 		-DPNG_PNG_INCLUDE_DIR=$libdir/libpng/include
@@ -359,10 +169,10 @@ EOF
 		-DLEVELDB_LIBRARY=$libdir/libleveldb/lib/libleveldb.dll.a
 		-DLEVELDB_DLL=$libdir/libleveldb/bin/libleveldb.dll
 
-		-DGLEW_LIBRARY=$libdir/glew/lib/libglew.dll.a
-		-DGLEW_INCLUDE_DIR=$libdir/glew/include
-		-DGLEW_DLL=$libdir/glew/bin/glew32.dll
-		-DCMAKE_CXX_FLAGS="-I${libdir}/glew/include"
-		-DCMAKE_C_FLAGS="-I${libdir}/glew/include"
+		-DGLEW_LIBRARY=$glew_lib
+		-DGLEW_INCLUDE_DIR=$glew_include_dir
+		-DGLEW_DLL=$glew_dll
+		-DCMAKE_CXX_FLAGS="-I$glew_include_dir"
+		-DCMAKE_C_FLAGS="-I$glew_include_dir"
 	)
 }
