@@ -573,9 +573,9 @@ include_directories(SYSTEM
 	${GMP_INCLUDE_DIR}
 	${JSON_INCLUDE_DIR}
 	${LUA_BIT_INCLUDE_DIR}
-	# on Android and Windows, Luanti depends on SDL2 directly
+	# on Android, Luanti depends on SDL2 directly
 	# on other platforms, only IrrlichtMt depends on SDL2
-	"$<$<OR:$<PLATFORM_ID:Android>,$<PLATFORM_ID:Windows>>:${SDL2_INCLUDE_DIRS}>"
+	"$<$<PLATFORM_ID:Android>:${SDL2_INCLUDE_DIRS}>"
 )
 
 if(USE_GETTEXT)
@@ -699,9 +699,9 @@ if(BUILD_CLIENT)
 		sha256
 		${FREETYPE_LIBRARY}
 		${PLATFORM_LIBS}
-		# on Android and Windows, Luanti depends on SDL2 directly
+		# on Android, Luanti depends on SDL2 directly
 		# on other platforms, only IrrlichtMt depends on SDL2
-		"$<$<OR:$<PLATFORM_ID:Android>,$<PLATFORM_ID:Windows>>:${SDL2_LIBRARIES}>"
+		"$<$<PLATFORM_ID:Android>:${SDL2_LIBRARIES}>"
 	)
 	target_compile_definitions(${PROJECT_NAME} PRIVATE "MT_BUILDTARGET=1")
 	if(NOT USE_LUAJIT)

@@ -1,7 +1,7 @@
 ARG DOCKER_IMAGE=alpine:3.19
 FROM $DOCKER_IMAGE AS dev
 
-ENV LUAJIT_VERSION v2.1
+ENV LUAJIT_VERSION=v2.1
 
 RUN apk add --no-cache git build-base cmake curl-dev zlib-dev zstd-dev \
 		sqlite-dev postgresql-dev hiredis-dev leveldb-dev \
@@ -31,8 +31,9 @@ RUN git clone --recursive https://github.com/jupp0r/prometheus-cpp && \
 		make amalg && make install && \
 	cd /usr/src/
 
-FROM dev as builder
+FROM dev AS builder
 
+# Copy source files
 COPY .git /usr/src/luanti/.git
 COPY CMakeLists.txt /usr/src/luanti/CMakeLists.txt
 COPY README.md /usr/src/luanti/README.md
@@ -49,16 +50,29 @@ COPY src /usr/src/luanti/src
 COPY textures /usr/src/luanti/textures
 
 WORKDIR /usr/src/luanti
+
+# Build the server
 RUN cmake -B build \
 		-DCMAKE_INSTALL_PREFIX=/usr/local \
 		-DCMAKE_BUILD_TYPE=Release \
 		-DBUILD_SERVER=TRUE \
 		-DENABLE_PROMETHEUS=TRUE \
-		-DBUILD_UNITTESTS=FALSE -DBUILD_BENCHMARKS=FALSE \
+		-DBUILD_UNITTESTS=FALSE \
+		-DBUILD_BENCHMARKS=FALSE \
 		-DBUILD_CLIENT=FALSE \
 		-GNinja && \
 	cmake --build build && \
 	cmake --install build
+
+# Manually install the share files
+RUN mkdir -p /usr/local/share/luanti && \
+    cp -r builtin /usr/local/share/luanti/ && \
+    cp -r textures /usr/local/share/luanti/ && \
+    cp -r fonts /usr/local/share/luanti/ && \
+    cp -r misc /usr/local/share/luanti/ && \
+    mkdir -p /usr/local/share/doc/luanti && \
+    cp minetest.conf.example /usr/local/share/doc/luanti/ && \
+    cp README.md /usr/local/share/doc/luanti/
 
 FROM $DOCKER_IMAGE AS runtime
 
@@ -69,15 +83,18 @@ RUN apk add --no-cache curl gmp libstdc++ libgcc libpq jsoncpp zstd-libs \
 
 WORKDIR /var/lib/minetest
 
+# Copy from builder
 COPY --from=builder /usr/local/share/luanti /usr/local/share/luanti
 COPY --from=builder /usr/local/bin/luantiserver /usr/local/bin/luantiserver
+COPY --from=builder /usr/local/bin/minetestserver /usr/local/bin/minetestserver
 COPY --from=builder /usr/local/share/doc/luanti/minetest.conf.example /etc/minetest/minetest.conf
 COPY --from=builder /usr/local/lib/libspatialindex* /usr/local/lib/
 COPY --from=builder /usr/local/lib/libluajit* /usr/local/lib/
+
 USER minetest:minetest
 
 EXPOSE 30000/udp 30000/tcp
-VOLUME /var/lib/minetest/ /etc/minetest/
+VOLUME ["/var/lib/minetest", "/etc/minetest"]
 
 ENTRYPOINT ["/usr/local/bin/luantiserver"]
 CMD ["--config", "/etc/minetest/minetest.conf"]
