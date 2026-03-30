@@ -27,8 +27,6 @@
 #include "prof.h"
 #endif
 
-extern int main(int argc, char *argv[]);
-
 extern "C" JNIEXPORT void JNICALL
 Java_net_minetest_minetest_GameActivity_saveSettings(JNIEnv* env, jobject /* this */) {
 	if (!g_settings_path.empty())
@@ -40,20 +38,6 @@ namespace porting {
 	void cleanupAndroid();
 	std::string getLanguageAndroid();
 	bool setSystemPaths(); // used in porting.cpp
-}
-
-extern "C" int SDL_Main(int _argc, char *_argv[])
-{
-	Thread::setName("Main");
-
-	char *argv[] = {strdup(PROJECT_NAME), strdup("--verbose"), nullptr};
-	int retval = main(ARRLEN(argv) - 1, argv);
-	free(argv[0]);
-	free(argv[1]);
-
-	porting::cleanupAndroid();
-	infostream << "Shutting down." << std::endl;
-	exit(retval);
 }
 
 namespace porting {
