@@ -130,7 +130,7 @@ static inline auto getVideoDriverName(video::E_DRIVER_TYPE driver)
 	return RenderingEngine::getVideoDriverInfo(driver).friendly_name;
 }
 
-static SDLDevice *createDevice(SIrrlichtCreationParameters params, std::optional<video::E_DRIVER_TYPE> requested_driver)
+static SDLDevice *createDevice(SDLDeviceParameters params, std::optional<video::E_DRIVER_TYPE> requested_driver)
 {
 	if (requested_driver) {
 		params.DriverType = *requested_driver;
@@ -186,7 +186,7 @@ RenderingEngine::RenderingEngine(MyEventReceiver *receiver)
 	// Determine driver
 	auto driverType = chooseVideoDriver();
 
-	SIrrlichtCreationParameters params = SIrrlichtCreationParameters();
+	SDLDeviceParameters params;
 	if (tracestream)
 		params.LoggingLevel = ELL_DEBUG;
 	params.WindowSize = core::dimension2d<u32>(screen_w, screen_h);
