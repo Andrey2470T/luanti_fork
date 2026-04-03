@@ -131,7 +131,7 @@ bool TextureBuffer::ensureTexture(video::ITexture **texture, const TextureDefini
 	if (definition.valid) {
 		if (!m_driver->queryTextureFormat(definition.format)) {
 			errorstream << "Failed to create texture \"" << definition.name
-				<< "\": unsupported format " << video::ColorFormatNames[definition.format]
+				<< "\": unsupported format " << video::pixelFormatsInfo[definition.format].name
 				<< std::endl;
 			return false;
 		}
@@ -144,7 +144,7 @@ bool TextureBuffer::ensureTexture(video::ITexture **texture, const TextureDefini
 
 			video::IImage *image = m_driver->createImage(definition.format, size);
 			// Cannot use image->fill because it's not implemented for all formats.
-			std::memset(image->getData(), 0, image->getDataSizeFromFormat(definition.format, size.Width, size.Height));
+			std::memset(image->getData(), 0, video::getDataSizeFromFormat(definition.format, size.Width, size.Height));
 			*texture = m_driver->addTexture(definition.name.c_str(), image);
 			image->drop();
 		} else if (definition.msaa > 0) {

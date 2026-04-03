@@ -93,8 +93,8 @@ RenderStep *addPostProcessing(RenderPipeline *pipeline, RenderStep *previousStep
 	video::ECOLOR_FORMAT depth_format = selectDepthFormat(driver);
 
 	verbosestream << "addPostProcessing(): color = "
-		<< video::ColorFormatNames[color_format] << " depth = "
-		<< video::ColorFormatNames[depth_format] << std::endl;
+		<< video::pixelFormatsInfo[color_format].name << " depth = "
+		<< video::pixelFormatsInfo[depth_format].name << std::endl;
 
 	// init post-processing buffer
 	static const u8 TEXTURE_COLOR = 0;
