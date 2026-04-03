@@ -6,7 +6,7 @@
 #include "util/string.h"
 #include <string>
 #include <vector>
-#include <ITexture.h>
+#include <Texture.h>
 
 GUIAnimatedImage::GUIAnimatedImage(gui::IGUIEnvironment *env, gui::IGUIElement *parent,
 	s32 id, const core::rect<s32> &rectangle) :

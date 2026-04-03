@@ -24,7 +24,7 @@ GUIButtonImage::GUIButtonImage(gui::IGUIEnvironment *environment,
 	sendToBack(m_image.get());
 }
 
-void GUIButtonImage::setForegroundImage(irr_ptr<video::ITexture> image,
+void GUIButtonImage::setForegroundImage(irr_ptr<video::GLTexture> image,
 		const core::rect<s32> &middle)
 {
 	if (image == m_foreground_image)
@@ -43,7 +43,7 @@ void GUIButtonImage::setFromStyle(const StyleSpec &style)
 	video::VideoDriver *driver = Environment->getVideoDriver();
 
 	if (style.isNotDefault(StyleSpec::FGIMG)) {
-		video::ITexture *texture = style.getTexture(StyleSpec::FGIMG,
+		video::GLTexture *texture = style.getTexture(StyleSpec::FGIMG,
 				getTextureSource());
 
 		setForegroundImage(::grab(guiScalingImageButton(driver, texture,

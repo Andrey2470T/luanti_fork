@@ -5,7 +5,7 @@
 
 #include <cmath>
 #include "sky.h"
-#include <ITexture.h>
+#include <Texture.h>
 #include <VideoDriver.h>
 #include <ISceneManager.h>
 #include <ICameraSceneNode.h>
@@ -716,8 +716,7 @@ static void getTextureAsImage(video::IImage *&dst, const std::string &name, ITex
 		auto *driver = RenderingEngine::get_video_driver();
 		dst = driver->createImageFromData(
 			texture->getColorFormat(), texture->getSize(),
-			texture->lock(video::ETLM_READ_ONLY));
-		texture->unlock();
+			texture->downloadData());
 	}
 }
 
@@ -753,7 +752,7 @@ void Sky::setSunTexture(const std::string &sun_texture,
 }
 
 void Sky::setSunriseTexture(const std::string &sunglow_texture,
-		ITextureSource* tsrc)
+		ITextureSource *tsrc)
 {
 	// Ignore matching textures (with modifiers) entirely.
 	if (m_sun_params.sunrise == sunglow_texture)
@@ -878,7 +877,7 @@ void Sky::addTextureToSkybox(const std::string &texture, int material_id,
 		return;
 	// Keep a list of texture names handy.
 	m_sky_params.textures.emplace_back(texture);
-	video::ITexture *result = tsrc->getTextureForMesh(texture);
+	video::GLTexture *result = tsrc->getTextureForMesh(texture);
 	m_materials[material_id+5] = baseMaterial();
 	m_materials[material_id+5].setTexture(0, result);
 	m_materials[material_id+5].MaterialType = video::EMT_SOLID;

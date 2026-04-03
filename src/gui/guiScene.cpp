@@ -47,7 +47,7 @@ scene::IAnimatedMeshSceneNode *GUIScene::setMesh(scene::IAnimatedMesh *mesh)
 	return m_mesh;
 }
 
-void GUIScene::setTexture(u32 idx, video::ITexture *texture)
+void GUIScene::setTexture(u32 idx, video::GLTexture *texture)
 {
 	video::SMaterial &material = m_mesh->getMaterial(idx);
 	material.MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL;

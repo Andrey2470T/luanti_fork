@@ -15,8 +15,8 @@ public:
 
 	virtual void draw() override;
 
-	void setTexture(video::ITexture *texture) { m_texture = texture; };
-	video::ITexture *getTexture() const { return m_texture; };
+	void setTexture(video::GLTexture *texture) { m_texture = texture; };
+	video::GLTexture *getTexture() const { return m_texture; };
 
 	void setMiddleRect(const core::rect<s32> &middle) { m_middle = middle; };
 	core::rect<s32> getMiddleRect() const { return m_middle; };
@@ -31,7 +31,7 @@ public:
 	s32 getFrameIndex() const { return m_frame_idx; };
 
 private:
-	video::ITexture *m_texture = nullptr;
+	video::GLTexture *m_texture = nullptr;
 
 	u64 m_global_time = 0;
 	s32 m_frame_idx = 0;

@@ -68,7 +68,7 @@ public:
 	 * Get a texture by index.
 	 * Returns nullptr is the texture does not exist.
 	 */
-	virtual video::ITexture *getTexture(u8 index) = 0;
+	virtual video::GLTexture *getTexture(u8 index) = 0;
 };
 
 /**
@@ -130,7 +130,7 @@ public:
 	void setTexture(u8 index, v2f scale_factor, const std::string& name, video::ECOLOR_FORMAT format, bool clear = false, u8 msaa = 0);
 
 	virtual u8 getTextureCount() override { return m_textures.size(); }
-	virtual video::ITexture *getTexture(u8 index) override;
+	virtual video::GLTexture *getTexture(u8 index) override;
 	virtual void reset(PipelineContext &context) override;
 	void swapTextures(u8 texture_a, u8 texture_b);
 private:
@@ -157,11 +157,11 @@ private:
 	 * @return true if a new texture was created and put into the slot
 	 * @return false if the slot was not modified
 	 */
-	bool ensureTexture(video::ITexture **textureSlot, const TextureDefinition& definition, PipelineContext &context);
+	bool ensureTexture(video::GLTexture **textureSlot, const TextureDefinition& definition, PipelineContext &context);
 
 	video::VideoDriver *m_driver { nullptr };
 	std::vector<TextureDefinition> m_definitions;
-	core::array<video::ITexture *> m_textures;
+	core::array<video::GLTexture *> m_textures;
 };
 
 /**
@@ -223,7 +223,7 @@ public:
 		return m_mappings.size();
 	}
 
-	virtual video::ITexture *getTexture(u8 index) override
+	virtual video::GLTexture *getTexture(u8 index) override
 	{
 		if (index < m_mappings.size())
 			index = m_mappings[index];
@@ -250,7 +250,7 @@ public:
 	 * Get a texture by index.
 	 * Returns nullptr is the texture does not exist.
 	 */
-	virtual video::ITexture *getTexture(u8 index) override;
+	virtual video::GLTexture *getTexture(u8 index) override;
 private:
 	RenderSource *upstream { nullptr };
 };

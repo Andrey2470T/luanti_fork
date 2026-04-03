@@ -68,12 +68,12 @@ public:
 			E_SHADOW_MODE shadowMode = ESM_BOTH);
 	void removeNodeFromShadowList(scene::ISceneNode *node);
 
-	void update(video::ITexture *outputTarget = nullptr);
+	void update(video::GLTexture *outputTarget = nullptr);
 	/// Force shadow map to be re-drawn in one go next frame
 	void setForceUpdateShadowMap() { m_force_update_shadow_map = true; }
 	void drawDebug();
 
-	video::ITexture *get_texture()
+	video::GLTexture *get_texture()
 	{
 		return shadowMapTextureFinal;
 	}
@@ -93,14 +93,14 @@ public:
 	f32 getPerspectiveBiasZ() { return m_perspective_bias_z; }
 
 private:
-	video::ITexture *getSMTexture(const std::string &shadow_map_name,
+	video::GLTexture *getSMTexture(const std::string &shadow_map_name,
 			video::ECOLOR_FORMAT texture_format,
 			bool force_creation = false);
 
-	void renderShadowMap(video::ITexture *target, DirectionalLight &light,
+	void renderShadowMap(video::GLTexture *target, DirectionalLight &light,
 			scene::E_SCENE_NODE_RENDER_PASS pass =
 					scene::ESNRP_SOLID);
-	void renderShadowObjects(video::ITexture *target, DirectionalLight &light);
+	void renderShadowObjects(video::GLTexture *target, DirectionalLight &light);
 	void mixShadowsQuad();
 	void updateSMTextures();
 
@@ -111,11 +111,11 @@ private:
 	scene::ISceneManager *m_smgr{nullptr};
 	video::VideoDriver *m_driver{nullptr};
 	Client *m_client{nullptr};
-	video::ITexture *shadowMapClientMap{nullptr};
-	video::ITexture *shadowMapClientMapFuture{nullptr};
-	video::ITexture *shadowMapTextureFinal{nullptr};
-	video::ITexture *shadowMapTextureDynamicObjects{nullptr};
-	video::ITexture *shadowMapTextureColors{nullptr};
+	video::GLTexture *shadowMapClientMap{nullptr};
+	video::GLTexture *shadowMapClientMapFuture{nullptr};
+	video::GLTexture *shadowMapTextureFinal{nullptr};
+	video::GLTexture *shadowMapTextureDynamicObjects{nullptr};
+	video::GLTexture *shadowMapTextureColors{nullptr};
 
 	std::vector<DirectionalLight> m_light_list;
 	std::vector<NodeToApply> m_shadow_node_array;

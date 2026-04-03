@@ -151,7 +151,7 @@ static bool setMaterialTextureAndFilters(video::SMaterial &material,
 	bool use_bilinear_filter = g_settings->getBool("bilinear_filter");
 	bool use_anisotropic_filter = g_settings->getBool("anisotropic_filter");
 
-	video::ITexture *texture = tsrc->getTextureForMesh(texturestring);
+	video::GLTexture *texture = tsrc->getTextureForMesh(texturestring);
 	if (!texture)
 		return false;
 
@@ -805,7 +805,7 @@ void GenericCAO::addToScene(ITextureSource *tsrc, scene::ISceneManager *smgr)
 				<< " more texture(s), this is deprecated.";
 			logOnce(oss, warningstream);
 
-			video::ITexture *last = m_animated_meshnode->getMaterial(0).TextureLayers[0].Texture;
+			video::GLTexture *last = m_animated_meshnode->getMaterial(0).TextureLayers[0].Texture;
 			for (u32 i = 1; i < mat_count; i++) {
 				auto &layer = m_animated_meshnode->getMaterial(i).TextureLayers[0];
 				if (!layer.Texture)

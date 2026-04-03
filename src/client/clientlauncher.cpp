@@ -366,7 +366,7 @@ void ClientLauncher::config_guienv()
 		} else {
 			gui::IGUISpriteBank *sprites = skin->getSpriteBank();
 			video::VideoDriver *driver = m_rendering_engine->get_video_driver();
-			video::ITexture *texture = driver->getTexture(path.c_str());
+			video::GLTexture *texture = driver->getTexture(path.c_str());
 			s32 id = sprites->addTextureAsSprite(texture);
 			if (id != -1) {
 				skin->setIcon(gui::EGDI_CHECK_BOX_CHECKED, id);

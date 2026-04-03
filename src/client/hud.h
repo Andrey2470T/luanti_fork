@@ -27,7 +27,7 @@ namespace scene
 
 namespace video
 {
-	class ITexture;
+	class GLTexture;
 	class VideoDriver;
 }
 
@@ -110,10 +110,10 @@ private:
 
 	void drawItem(const ItemStack &item, const core::rect<s32> &rect, bool selected);
 
-	void drawCompassTranslate(HudElement *e, video::ITexture *texture,
+	void drawCompassTranslate(HudElement *e, video::GLTexture *texture,
 			const core::rect<s32> &rect, int way);
 
-	void drawCompassRotate(HudElement *e, video::ITexture *texture,
+	void drawCompassRotate(HudElement *e, video::GLTexture *texture,
 			const core::rect<s32> &rect, int way);
 
 	Client *client = nullptr;

@@ -19,7 +19,7 @@ TextureBuffer::~TextureBuffer()
 	m_textures.clear();
 }
 
-video::ITexture *TextureBuffer::getTexture(u8 index)
+video::GLTexture *TextureBuffer::getTexture(u8 index)
 {
 	if (index >= m_textures.size())
 		return nullptr;
@@ -83,7 +83,7 @@ void TextureBuffer::reset(PipelineContext &context)
 
 	// change textures to match definitions
 	for (u32 i = 0; i < m_definitions.size(); i++) {
-		video::ITexture **ptr = &m_textures[i];
+		video::GLTexture **ptr = &m_textures[i];
 
 		ensureTexture(ptr, m_definitions[i], context);
 		m_definitions[i].dirty = false;
@@ -96,13 +96,13 @@ void TextureBuffer::swapTextures(u8 texture_a, u8 texture_b)
 {
 	assert(m_definitions[texture_a].valid && m_definitions[texture_b].valid);
 
-	video::ITexture *temp = m_textures[texture_a];
+	video::GLTexture *temp = m_textures[texture_a];
 	m_textures[texture_a] = m_textures[texture_b];
 	m_textures[texture_b] = temp;
 }
 
 
-bool TextureBuffer::ensureTexture(video::ITexture **texture, const TextureDefinition& definition, PipelineContext &context)
+bool TextureBuffer::ensureTexture(video::GLTexture **texture, const TextureDefinition& definition, PipelineContext &context)
 {
 	bool modify;
 	core::dimension2du size;
@@ -189,16 +189,16 @@ void TextureBufferOutput::activate(PipelineContext &context)
 	if (!render_target)
 		render_target = driver->addRenderTarget();
 
-	std::vector<video::ITexture *> textures;
+	std::vector<video::GLTexture *> textures;
 	core::dimension2du size(0, 0);
 	for (size_t i = 0; i < texture_map.size(); i++) {
-		video::ITexture *texture = buffer->getTexture(texture_map[i]);
+		video::GLTexture *texture = buffer->getTexture(texture_map[i]);
 		textures.push_back(texture);
 		if (texture && size.Width == 0)
 			size = texture->getSize();
 	}
 
-	video::ITexture *depth_texture = nullptr;
+	video::GLTexture *depth_texture = nullptr;
 	if (depth_stencil != NO_DEPTH_TEXTURE)
 		depth_texture = buffer->getTexture(depth_stencil);
 
@@ -222,7 +222,7 @@ u8 DynamicSource::getTextureCount()
 	return upstream->getTextureCount();
 }
 
-video::ITexture *DynamicSource::getTexture(u8 index)
+video::GLTexture *DynamicSource::getTexture(u8 index)
 {
 	assert(isConfigured());
 	return upstream->getTexture(index);

@@ -19,7 +19,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "client/guiscalingfilter.h"
 #include "log.h"
 #include "client/texturesource.h"
-#include <ITexture.h>
+#include <Texture.h>
 
 GUIBackgroundImage::GUIBackgroundImage(gui::IGUIEnvironment *env,
 	gui::IGUIElement *parent, s32 id, const core::rect<s32> &rectangle,
@@ -36,7 +36,7 @@ void GUIBackgroundImage::draw()
 	if (!IsVisible)
 		return;
 
-	video::ITexture *texture = m_tsrc->getTexture(m_name);
+	video::GLTexture *texture = m_tsrc->getTexture(m_name);
 
 	if (!texture) {
 		errorstream << "GUIBackgroundImage::draw() Unable to load texture:"

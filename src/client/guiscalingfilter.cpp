@@ -10,7 +10,7 @@
 #include <cstdio>
 #include "client/renderingengine.h"
 #include <IImage.h>
-#include <ITexture.h>
+#include <Texture.h>
 #include <VideoDriver.h>
 
 /* Maintain a static cache to store the images that correspond to textures
@@ -23,7 +23,7 @@ static std::map<io::path, video::IImage *> g_imgCache;
 /* Maintain a static cache of all pre-scaled textures.  These need to be
  * cleared as well when the cached images.
  */
-static std::map<io::path, video::ITexture *> g_txrCache;
+static std::map<io::path, video::GLTexture *> g_txrCache;
 
 /* Manually insert an image into the cache, useful to avoid texture-to-image
  * conversion whenever we can intercept it.
@@ -61,8 +61,8 @@ void guiScalingCacheClear()
  * texture is not already cached, attempt to create it.  Returns a pre-scaled texture,
  * or the original texture if unable to pre-scale it.
  */
-video::ITexture *guiScalingResizeCached(video::VideoDriver *driver,
-		video::ITexture *src, const core::rect<s32> &srcrect,
+video::GLTexture *guiScalingResizeCached(video::VideoDriver *driver,
+		video::GLTexture *src, const core::rect<s32> &srcrect,
 		const core::rect<s32> &destrect)
 {
 	if (src == NULL)
@@ -85,7 +85,7 @@ video::ITexture *guiScalingResizeCached(video::VideoDriver *driver,
 
 	// Search for existing scaled texture.
 	auto it_txr = g_txrCache.find(scalename);
-	video::ITexture *scaled = (it_txr != g_txrCache.end()) ? it_txr->second : nullptr;
+	video::GLTexture *scaled = (it_txr != g_txrCache.end()) ? it_txr->second : nullptr;
 	if (scaled)
 		return scaled;
 
@@ -96,8 +96,7 @@ video::ITexture *guiScalingResizeCached(video::VideoDriver *driver,
 	if (!srcimg) {
 		// Download image from GPU
 		srcimg = driver->createImageFromData(src->getColorFormat(),
-			src->getSize(), src->lock(video::ETLM_READ_ONLY), false);
-		src->unlock();
+			src->getSize(), src->downloadData(), false);
 		g_imgCache[origname] = srcimg;
 	}
 
@@ -127,8 +126,8 @@ video::ITexture *guiScalingResizeCached(video::VideoDriver *driver,
 /* Convenience wrapper for guiScalingResizeCached that accepts parameters that
  * are available at GUI imagebutton creation time.
  */
-video::ITexture *guiScalingImageButton(video::VideoDriver *driver,
-		video::ITexture *src, s32 width, s32 height)
+video::GLTexture *guiScalingImageButton(video::VideoDriver *driver,
+		video::GLTexture *src, s32 width, s32 height)
 {
 	if (src == NULL)
 		return src;
@@ -140,7 +139,7 @@ video::ITexture *guiScalingImageButton(video::VideoDriver *driver,
 /* Replacement for driver->draw2DImage() that uses the high-quality pre-scaled
  * texture, if configured.
  */
-void draw2DImageFilterScaled(video::VideoDriver *driver, video::ITexture *txr,
+void draw2DImageFilterScaled(video::VideoDriver *driver, video::GLTexture *txr,
 		const core::rect<s32> &destrect, const core::rect<s32> &srcrect,
 		const core::rect<s32> *cliprect, const video::SColor *const colors,
 		bool usealpha)
@@ -150,7 +149,7 @@ void draw2DImageFilterScaled(video::VideoDriver *driver, video::ITexture *txr,
 		return;
 
 	// Attempt to pre-scale image in software in high quality.
-	video::ITexture *scaled = guiScalingResizeCached(driver, txr, srcrect, destrect);
+	video::GLTexture *scaled = guiScalingResizeCached(driver, txr, srcrect, destrect);
 	if (scaled == NULL)
 		return;
 
@@ -162,7 +161,7 @@ void draw2DImageFilterScaled(video::VideoDriver *driver, video::ITexture *txr,
 	driver->draw2DImage(scaled, destrect, mysrcrect, cliprect, colors, usealpha);
 }
 
-void draw2DImage9Slice(video::VideoDriver *driver, video::ITexture *texture,
+void draw2DImage9Slice(video::VideoDriver *driver, video::GLTexture *texture,
 		const core::rect<s32> &destrect, const core::rect<s32> &srcrect,
 		const core::rect<s32> &middlerect, const core::rect<s32> *cliprect,
 		const video::SColor *const colors)

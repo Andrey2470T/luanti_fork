@@ -13,7 +13,7 @@ public:
 	void run(PipelineContext &context);
 private:
 	TextureBuffer *buffer;
-	video::ITexture *last_mask { nullptr };
+	video::GLTexture *last_mask { nullptr };
 	u8 index;
 };
 

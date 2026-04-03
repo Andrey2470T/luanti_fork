@@ -324,8 +324,8 @@ void RenderingEngine::draw_load_screen(const std::wstring &text,
 	}
 	// draw progress bar
 	if ((percent_min >= 0) && (percent_max <= 100)) {
-		video::ITexture *progress_img = tsrc->getTexture("progress_bar.png");
-		video::ITexture *progress_img_bg =
+		video::GLTexture *progress_img = tsrc->getTexture("progress_bar.png");
+		video::GLTexture *progress_img_bg =
 				tsrc->getTexture("progress_bar_bg.png");
 
 		if (progress_img && progress_img_bg) {

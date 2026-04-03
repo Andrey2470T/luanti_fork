@@ -367,7 +367,7 @@ void GUITable::setTable(const TableOptions &options,
 					row->content_index = image_iter->second;
 
 				// Get texture object (might be NULL)
-				video::ITexture *image = NULL;
+				video::GLTexture *image = NULL;
 				if (row->content_index >= 0)
 					image = m_images[row->content_index];
 
@@ -741,7 +741,7 @@ void GUITable::drawCell(const Cell *cell, video::SColor color,
 			return;
 
 		video::VideoDriver *driver = Environment->getVideoDriver();
-		video::ITexture *image = m_images[cell->content_index];
+		video::GLTexture *image = m_images[cell->content_index];
 
 		if (image) {
 			core::rect<s32> source_rect(

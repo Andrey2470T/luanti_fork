@@ -18,7 +18,7 @@ namespace gui
 }
 namespace video
 {
-	class ITexture;
+	class GLTexture;
 }
 
 enum TouchInteractionStyle : u8
@@ -98,7 +98,7 @@ struct ButtonLayout {
 	// Note: Indirectly depends on additional settings.
 	static ButtonLayout loadFromSettings();
 
-	static video::ITexture *getTexture(touch_gui_button_id btn, ISimpleTextureSource *tsrc);
+	static video::GLTexture *getTexture(touch_gui_button_id btn, ISimpleTextureSource *tsrc);
 	static void clearTextureCache();
 
 	ButtonMap layout;
@@ -124,7 +124,7 @@ private:
 	static ButtonMap deserializeJson(std::istream &is);
 	static ButtonLayout postProcessLoaded(const ButtonMap &map);
 
-	static std::unordered_map<touch_gui_button_id, irr_ptr<video::ITexture>> texture_cache;
+	static std::unordered_map<touch_gui_button_id, irr_ptr<video::GLTexture>> texture_cache;
 };
 
 void layout_button_grid(v2u32 screensize, ISimpleTextureSource *tsrc,

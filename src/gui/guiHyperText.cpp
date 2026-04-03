@@ -649,7 +649,7 @@ TextDrawer::TextDrawer(const wchar_t *text, Client *client,
 				core::dimension2d<u32> dim(80, 80);
 
 				if (e.type == ParsedText::ELEMENT_IMAGE) {
-					video::ITexture *texture =
+					video::GLTexture *texture =
 						m_tsrc->
 							getTexture(stringw_to_utf8(e.text));
 					if (texture)
@@ -975,7 +975,7 @@ void TextDrawer::draw(const core::rect<s32> &clip_rect,
 			} break;
 
 			case ParsedText::ELEMENT_IMAGE: {
-				video::ITexture *texture =
+				video::GLTexture *texture =
 						m_tsrc->getTexture(
 								stringw_to_utf8(el.text));
 				if (texture != 0)

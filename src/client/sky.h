@@ -201,8 +201,8 @@ private:
 	u64 m_seed = 0;
 	irr_ptr<scene::SMeshBuffer> m_stars;
 
-	video::ITexture *m_sun_texture = nullptr;
-	video::ITexture *m_moon_texture = nullptr;
+	video::GLTexture *m_sun_texture = nullptr;
+	video::GLTexture *m_moon_texture = nullptr;
 	video::IImage *m_sun_tonemap = nullptr;
 	video::IImage *m_moon_tonemap = nullptr;
 

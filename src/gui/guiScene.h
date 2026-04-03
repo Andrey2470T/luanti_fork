@@ -21,7 +21,7 @@ public:
 	~GUIScene();
 
 	scene::IAnimatedMeshSceneNode *setMesh(scene::IAnimatedMesh *mesh = nullptr);
-	void setTexture(u32 idx, video::ITexture *texture);
+	void setTexture(u32 idx, video::GLTexture *texture);
 	void setBackgroundColor(const video::SColor &color) noexcept { m_bgcolor = color; };
 	void setFrameLoop(f32 begin, f32 end);
 	void setAnimationSpeed(f32 speed);

@@ -891,10 +891,10 @@ video::IImage* CGUITTFont::createTextureFromChar(const char32_t& ch)
 	if (page->dirty)
 		page->updateTexture();
 
-	video::ITexture* tex = page->texture;
+	video::GLTexture* tex = page->texture;
 
 	// Acquire a read-only lock of the corresponding page texture.
-	void* ptr = tex->lock(video::ETLM_READ_ONLY);
+	auto ptr = tex->downloadData();
 	if (!ptr)
 		return nullptr;
 
@@ -907,12 +907,11 @@ video::IImage* CGUITTFont::createTextureFromChar(const char32_t& ch)
 	video::IImage* image = Driver->createImage(format, glyph_size);
 	pageholder->copyTo(image, core::position2di(0, 0), glyph.source_rect);
 
-	tex->unlock();
 	pageholder->drop();
 	return image;
 }
 
-video::ITexture* CGUITTFont::getPageTextureByIndex(const u32& page_index) const
+video::GLTexture* CGUITTFont::getPageTextureByIndex(const u32& page_index) const
 {
 	if (page_index < Glyph_Pages.size())
 		return Glyph_Pages[page_index]->texture;

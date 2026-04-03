@@ -58,7 +58,7 @@ ItemVisualsManager::ItemVisuals *ItemVisualsManager::createItemVisuals( const It
 	return ptr;
 }
 
-video::ITexture* ItemVisualsManager::getInventoryTexture(const ItemStack &item,
+video::GLTexture* ItemVisualsManager::getInventoryTexture(const ItemStack &item,
 		Client *client) const
 {
 	ItemVisuals *iv = createItemVisuals(item, client);

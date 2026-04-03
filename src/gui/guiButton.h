@@ -8,7 +8,7 @@
 #include "irrlicht_changes/static_text.h"
 #include "IGUIButton.h"
 #include "IGUISpriteBank.h"
-#include "ITexture.h"
+#include "Texture.h"
 #include "SColor.h"
 #include "StyleSpec.h"
 
@@ -61,20 +61,20 @@ public:
 	// PATCH
 	//! Sets an image which should be displayed on the button when it is in the given state.
 	virtual void setImage(gui::EGUI_BUTTON_IMAGE_STATE state,
-			video::ITexture* image=nullptr,
+			video::GLTexture* image=nullptr,
 			const core::rect<s32>& sourceRect=core::rect<s32>(0,0,0,0)) override;
 
 	//! Sets an image which should be displayed on the button when it is in normal state.
-	virtual void setImage(video::ITexture* image=nullptr) override;
+	virtual void setImage(video::GLTexture* image=nullptr) override;
 
 	//! Sets an image which should be displayed on the button when it is in normal state.
-	virtual void setImage(video::ITexture* image, const core::rect<s32>& pos) override;
+	virtual void setImage(video::GLTexture* image, const core::rect<s32>& pos) override;
 
 	//! Sets an image which should be displayed on the button when it is in pressed state.
-	virtual void setPressedImage(video::ITexture* image=nullptr) override;
+	virtual void setPressedImage(video::GLTexture* image=nullptr) override;
 
 	//! Sets an image which should be displayed on the button when it is in pressed state.
-	virtual void setPressedImage(video::ITexture* image, const core::rect<s32>& pos) override;
+	virtual void setPressedImage(video::GLTexture* image, const core::rect<s32>& pos) override;
 
 	//! Sets the text displayed by the button
 	virtual void setText(const wchar_t* text) override;
@@ -214,7 +214,7 @@ protected:
 		}
 
 
-		video::ITexture* Texture = nullptr;
+		video::GLTexture* Texture = nullptr;
 		core::rect<s32> SourceRect = core::rect<s32>(0,0,0,0);
 	};
 

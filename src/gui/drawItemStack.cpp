@@ -156,7 +156,7 @@ void drawItemStack(
 
 		draw_overlay = def.type == ITEM_NODE && inventory_image.empty();
 	} else { // Otherwise just draw as 2D
-		video::ITexture *texture = item_visuals->getInventoryTexture(item, client);
+		video::GLTexture *texture = item_visuals->getInventoryTexture(item, client);
 		video::SColor color;
 		if (texture) {
 			color = item_visuals->getItemstackColor(item, client);
@@ -180,7 +180,7 @@ void drawItemStack(
 	// draw the inventory_overlay
 	if (!inventory_overlay.empty() && draw_overlay) {
 		ITextureSource *tsrc = client->getTextureSource();
-		video::ITexture *overlay_texture = tsrc->getTexture(inventory_overlay);
+		video::GLTexture *overlay_texture = tsrc->getTexture(inventory_overlay);
 		core::dimension2d<u32> dimens = overlay_texture->getOriginalSize();
 		core::rect<s32> srcrect(0, 0, dimens.Width, dimens.Height);
 		draw2DImageFilterScaled(driver, overlay_texture, rect, srcrect, clip, 0, true);

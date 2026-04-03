@@ -190,7 +190,7 @@ protected:
 
 	// Allocated strings and images
 	std::vector<core::stringw> m_strings;
-	std::vector<video::ITexture*> m_images;
+	std::vector<video::GLTexture*> m_images;
 	std::map<std::string, s32> m_alloc_strings;
 	std::map<std::string, s32> m_alloc_images;
 

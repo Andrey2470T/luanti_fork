@@ -18,7 +18,7 @@
 struct TextureInfo
 {
 	std::string name;
-	video::ITexture *texture = nullptr;
+	video::GLTexture *texture = nullptr;
 
 	// Stores source image names which ImageSource::generateImage used.
 	std::set<std::string> sourceImages{};
@@ -90,9 +90,9 @@ public:
 		and not found in cache, the call is queued to the main thread
 		for processing.
 	*/
-	video::ITexture* getTexture(u32 id);
+	video::GLTexture* getTexture(u32 id);
 
-	video::ITexture* getTexture(const std::string &name, u32 *id = NULL);
+	video::GLTexture* getTexture(const std::string &name, u32 *id = NULL);
 
 	/*
 		Get a texture specifically intended for mesh
@@ -100,7 +100,7 @@ public:
 		use.  This texture may be a different size and may
 		have had additional filters applied.
 	*/
-	video::ITexture* getTextureForMesh(const std::string &name, u32 *id);
+	video::GLTexture* getTextureForMesh(const std::string &name, u32 *id);
 
 	virtual Palette* getPalette(const std::string &name);
 
@@ -174,8 +174,8 @@ private:
 	RequestQueue<std::string, u32, std::thread::id, u8> m_get_texture_queue;
 
 	// Textures that have been overwritten with other ones
-	// but can't be deleted because the ITexture* might still be used
-	std::vector<video::ITexture*> m_texture_trash;
+	// but can't be deleted because the Texture* might still be used
+	std::vector<video::GLTexture*> m_texture_trash;
 
 	// Maps image file names to loaded palettes.
 	std::unordered_map<std::string, Palette> m_palettes;
@@ -324,7 +324,7 @@ u32 TextureSource::generateTexture(const std::string &name)
 	std::set<std::string> source_image_names;
 	video::IImage *img = getOrGenerateImage(name, source_image_names);
 
-	video::ITexture *tex = nullptr;
+	video::GLTexture *tex = nullptr;
 
 	if (img) {
 		// Create texture from resulting image
@@ -359,7 +359,7 @@ std::string TextureSource::getTextureName(u32 id)
 	return m_textureinfo_cache[id].name;
 }
 
-video::ITexture* TextureSource::getTexture(u32 id)
+video::GLTexture* TextureSource::getTexture(u32 id)
 {
 	MutexAutoLock lock(m_textureinfo_cache_mutex);
 
@@ -369,7 +369,7 @@ video::ITexture* TextureSource::getTexture(u32 id)
 	return m_textureinfo_cache[id].texture;
 }
 
-video::ITexture* TextureSource::getTexture(const std::string &name, u32 *id)
+video::GLTexture* TextureSource::getTexture(const std::string &name, u32 *id)
 {
 	u32 actual_id = getTextureId(name);
 	if (id)
@@ -378,7 +378,7 @@ video::ITexture* TextureSource::getTexture(const std::string &name, u32 *id)
 	return getTexture(actual_id);
 }
 
-video::ITexture* TextureSource::getTextureForMesh(const std::string &name, u32 *id)
+video::GLTexture* TextureSource::getTextureForMesh(const std::string &name, u32 *id)
 {
 	// Avoid duplicating texture if it won't actually change
 	if (mesh_filter_needed && !name.empty())
@@ -521,17 +521,17 @@ void TextureSource::rebuildTexture(video::VideoDriver *driver, TextureInfo &ti)
 	video::IImage *img = getOrGenerateImage(ti.name, source_image_names);
 
 	// Create texture from resulting image
-	video::ITexture *t = nullptr, *t_old = ti.texture;
+	video::GLTexture *t = nullptr, *t_old = ti.texture;
 	if (!img) {
 		// new texture becomes null
 	} else if (t_old && t_old->getColorFormat() == img->getColorFormat() && t_old->getSize() == img->getDimension()) {
 		// can replace texture in-place
 		std::swap(t, t_old);
-		void *ptr = t->lock(video::ETLM_WRITE_ONLY);
+		auto ptr = t->downloadData();
 		if (ptr) {
 			memcpy(ptr, img->getData(), img->getImageDataSizeInBytes());
-			t->unlock();
-			t->regenerateMipMapLevels();
+			t->uploadData(ptr);
+			t->regenerateMipMaps();
 		} else {
 			warningstream << "TextureSource::rebuildTexture(): lock failed for \""
 				<< ti.name << "\"" << std::endl;

@@ -302,7 +302,7 @@ void GUIButton::draw()
 		}
 
 		// PATCH
-		video::ITexture* texture = ButtonImages[(u32)imageState].Texture;
+		video::GLTexture* texture = ButtonImages[(u32)imageState].Texture;
 		video::SColor image_colors[] = { BgColor, BgColor, BgColor, BgColor };
 		if (BgMiddle.getArea() == 0) {
 			driver->draw2DImage(texture,
@@ -507,7 +507,7 @@ bool GUIButton::isOverrideColorEnabled() const
 	return OverrideColorEnabled;
 }
 
-void GUIButton::setImage(EGUI_BUTTON_IMAGE_STATE state, video::ITexture* image, const core::rect<s32>& sourceRect)
+void GUIButton::setImage(EGUI_BUTTON_IMAGE_STATE state, video::GLTexture* image, const core::rect<s32>& sourceRect)
 {
 	if ( state >= EGBIS_COUNT )
 		return;
@@ -524,22 +524,22 @@ void GUIButton::setImage(EGUI_BUTTON_IMAGE_STATE state, video::ITexture* image, 
 }
 
 // PATCH
-void GUIButton::setImage(video::ITexture* image)
+void GUIButton::setImage(video::GLTexture* image)
 {
 	setImage(gui::EGBIS_IMAGE_UP, image);
 }
 
-void GUIButton::setImage(video::ITexture* image, const core::rect<s32>& pos)
+void GUIButton::setImage(video::GLTexture* image, const core::rect<s32>& pos)
 {
 	setImage(gui::EGBIS_IMAGE_UP, image, pos);
 }
 
-void GUIButton::setPressedImage(video::ITexture* image)
+void GUIButton::setPressedImage(video::GLTexture* image)
 {
 	setImage(gui::EGBIS_IMAGE_DOWN, image);
 }
 
-void GUIButton::setPressedImage(video::ITexture* image, const core::rect<s32>& pos)
+void GUIButton::setPressedImage(video::GLTexture* image, const core::rect<s32>& pos)
 {
 	setImage(gui::EGBIS_IMAGE_DOWN, image, pos);
 }
@@ -719,7 +719,7 @@ void GUIButton::setFromStyle(const StyleSpec& style)
 	setOverrideFont(style.getFont());
 
 	if (style.isNotDefault(StyleSpec::BGIMG)) {
-		video::ITexture *texture = style.getTexture(StyleSpec::BGIMG,
+		video::GLTexture *texture = style.getTexture(StyleSpec::BGIMG,
 				getTextureSource());
 		setImage(guiScalingImageButton(
 				Environment->getVideoDriver(), texture,

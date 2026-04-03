@@ -16,7 +16,7 @@ InitInterlacedMaskStep::InitInterlacedMaskStep(TextureBuffer *_buffer, u8 _index
 
 void InitInterlacedMaskStep::run(PipelineContext &context)
 {
-	video::ITexture *mask = buffer->getTexture(index);
+	video::GLTexture *mask = buffer->getTexture(index);
 	if (!mask)
 		return;
 	if (mask == last_mask)
@@ -24,13 +24,13 @@ void InitInterlacedMaskStep::run(PipelineContext &context)
 	last_mask = mask;
 
 	auto size = mask->getSize();
-	u8 *data = reinterpret_cast<u8 *>(mask->lock(video::ETLM_WRITE_ONLY));
+	u8 *data = mask->downloadData();
 	for (u32 j = 0; j < size.Height; j++) {
 		u8 val = j % 2 ? 0xff : 0x00;
 		memset(data, val, 4 * size.Width);
 		data += 4 * size.Width;
 	}
-	mask->unlock();
+	mask->uploadData(data);
 }
 
 void populateInterlacedPipeline(RenderPipeline *pipeline, Client *client)
