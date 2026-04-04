@@ -219,6 +219,7 @@ namespace gui
 				}
 
 				pageholder->drop();
+				texture->uploadData(ptr);
 				glyph_to_be_paged.clear();
 				dirty = false;
 			}
