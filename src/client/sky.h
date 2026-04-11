@@ -17,7 +17,7 @@
 namespace video
 {
 	class VideoDriver;
-	class IImage;
+	class Image;
 }
 
 class IShaderSource;
@@ -203,8 +203,8 @@ private:
 
 	video::GLTexture *m_sun_texture = nullptr;
 	video::GLTexture *m_moon_texture = nullptr;
-	video::IImage *m_sun_tonemap = nullptr;
-	video::IImage *m_moon_tonemap = nullptr;
+	video::Image *m_sun_tonemap = nullptr;
+	video::Image *m_moon_tonemap = nullptr;
 
 	void updateStars();
 

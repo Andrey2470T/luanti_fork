@@ -9,7 +9,7 @@
 #include "util/numeric.h"
 #include <cstdio>
 #include "client/renderingengine.h"
-#include <IImage.h>
+#include <Image.h>
 #include <Texture.h>
 #include <VideoDriver.h>
 
@@ -18,7 +18,7 @@
  * converting textures back into images repeatedly, and some don't even
  * allow it at all.
  */
-static std::map<io::path, video::IImage *> g_imgCache;
+static std::map<io::path, video::Image *> g_imgCache;
 
 /* Maintain a static cache of all pre-scaled textures.  These need to be
  * cleared as well when the cached images.
@@ -28,7 +28,7 @@ static std::map<io::path, video::GLTexture *> g_txrCache;
 /* Manually insert an image into the cache, useful to avoid texture-to-image
  * conversion whenever we can intercept it.
  */
-void guiScalingCache(const io::path &key, video::VideoDriver *driver, video::IImage *value)
+void guiScalingCache(const io::path &key, video::VideoDriver *driver, video::Image *value)
 {
 	if (!g_settings->getBool("gui_scaling_filter"))
 		return;
@@ -36,7 +36,7 @@ void guiScalingCache(const io::path &key, video::VideoDriver *driver, video::IIm
 	if (g_imgCache.find(key) != g_imgCache.end())
 		return; // Already cached.
 
-	video::IImage *copied = driver->createImage(value->getColorFormat(),
+	video::Image *copied = driver->createImage(value->getColorFormat(),
 			value->getDimension());
 	value->copyTo(copied);
 	g_imgCache[key] = copied;
@@ -92,7 +92,7 @@ video::GLTexture *guiScalingResizeCached(video::VideoDriver *driver,
 	// Try to find the texture converted to an image in the cache.
 	// If the image was not found, try to extract it from the texture.
 	auto it_img = g_imgCache.find(origname);
-	video::IImage *srcimg = (it_img != g_imgCache.end()) ? it_img->second : nullptr;
+	video::Image *srcimg = (it_img != g_imgCache.end()) ? it_img->second : nullptr;
 	if (!srcimg) {
 		// Download image from GPU
 		srcimg = driver->createImageFromData(src->getColorFormat(),
@@ -111,7 +111,7 @@ video::GLTexture *guiScalingResizeCached(video::VideoDriver *driver,
 		g_txrCache[scalename] = src;
 		return src;
 	}
-	video::IImage *destimg = driver->createImage(src->getColorFormat(),
+	video::Image *destimg = driver->createImage(src->getColorFormat(),
 			core::dimension2d<u32>((u32)destrect.getWidth(),
 			(u32)destrect.getHeight()));
 	imageScaleNNAA(srcimg, srcrect, destimg);

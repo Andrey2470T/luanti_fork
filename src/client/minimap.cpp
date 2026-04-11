@@ -377,7 +377,7 @@ void Minimap::setAngle(f32 angle)
 	m_angle = angle;
 }
 
-void Minimap::blitMinimapPixelsToImageRadar(video::IImage *map_image)
+void Minimap::blitMinimapPixelsToImageRadar(video::Image *map_image)
 {
 	video::SColor c(240, 0, 0, 0);
 	for (s16 x = 0; x < data->mode.map_size; x++)
@@ -394,7 +394,7 @@ void Minimap::blitMinimapPixelsToImageRadar(video::IImage *map_image)
 }
 
 void Minimap::blitMinimapPixelsToImageSurface(
-	video::IImage *map_image, video::IImage *heightmap_image)
+	video::Image *map_image, video::Image *heightmap_image)
 {
 	// This variable creation/destruction has a 1% cost on rendering minimap
 	video::SColor tilecolor;
@@ -424,7 +424,7 @@ void Minimap::blitMinimapPixelsToImageSurface(
 	}
 }
 
-video::IImage *Minimap::getMinimapMask()
+video::Image *Minimap::getMinimapMask()
 {
 	if (data->minimap_shape_round) {
 		if (!data->minimap_mask_round) {
@@ -455,9 +455,9 @@ video::GLTexture *Minimap::getMinimapTexture()
 
 	// create minimap and heightmap images in memory
 	core::dimension2d<u32> dim(data->mode.map_size, data->mode.map_size);
-	video::IImage *map_image       = driver->createImage(video::ECF_A8R8G8B8, dim);
-	video::IImage *heightmap_image = driver->createImage(video::ECF_A8R8G8B8, dim);
-	video::IImage *minimap_image   = driver->createImage(video::ECF_A8R8G8B8,
+	video::Image *map_image       = driver->createImage(video::ECF_A8R8G8B8, dim);
+	video::Image *heightmap_image = driver->createImage(video::ECF_A8R8G8B8, dim);
+	video::Image *minimap_image   = driver->createImage(video::ECF_A8R8G8B8,
 		core::dimension2d<u32>(MINIMAP_MAX_SX, MINIMAP_MAX_SY));
 
 	// Blit MinimapPixels to images
@@ -473,7 +473,7 @@ video::GLTexture *Minimap::getMinimapTexture()
 	case MINIMAP_TYPE_TEXTURE:
 		// FIXME: this is a pointless roundtrip through the gpu
 		video::GLTexture* texture = m_tsrc->getTexture(data->mode.texture);
-		video::IImage* image = driver->createImageFromData(
+		video::Image* image = driver->createImageFromData(
 			texture->getColorFormat(), texture->getSize(),
 			texture->lock(video::ETLM_READ_ONLY), true, false);
 
@@ -495,7 +495,7 @@ video::GLTexture *Minimap::getMinimapTexture()
 	map_image->copyToScaling(minimap_image);
 	map_image->drop();
 
-	video::IImage *minimap_mask = getMinimapMask();
+	video::Image *minimap_mask = getMinimapMask();
 
 	for (s16 y = 0; y < MINIMAP_MAX_SY; y++)
 	for (s16 x = 0; x < MINIMAP_MAX_SX; x++) {
@@ -681,7 +681,7 @@ void Minimap::removeMarker(MinimapMarker **m)
 
 void Minimap::updateActiveMarkers()
 {
-	video::IImage *minimap_mask = getMinimapMask();
+	video::Image *minimap_mask = getMinimapMask();
 
 	m_active_markers.clear();
 	v3f cam_offset = intToFloat(client->getCamera()->getOffset(), BS);

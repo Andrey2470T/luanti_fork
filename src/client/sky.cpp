@@ -704,7 +704,7 @@ void Sky::place_sky_body(
 }
 
 // FIXME: stupid helper that does a pointless texture upload/download
-static void getTextureAsImage(video::IImage *&dst, const std::string &name, ITextureSource *tsrc)
+static void getTextureAsImage(video::Image *&dst, const std::string &name, ITextureSource *tsrc)
 {
 	if (dst) {
 		dst->drop();

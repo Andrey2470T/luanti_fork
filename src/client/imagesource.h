@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <IImage.h>
+#include <Image.h>
 #include <unordered_map>
 #include <set>
 #include <string>
@@ -21,14 +21,14 @@ class SourceImageCache {
 public:
 	~SourceImageCache();
 
-	void insert(const std::string &name, video::IImage *img, bool prefer_local);
+	void insert(const std::string &name, video::Image *img, bool prefer_local);
 
-	video::IImage* get(const std::string &name);
+	video::Image* get(const std::string &name);
 
 	// Primarily fetches from cache, secondarily tries to read from filesystem.
-	video::IImage *getOrLoad(const std::string &name);
+	video::Image *getOrLoad(const std::string &name);
 private:
-	std::unordered_map<std::string, video::IImage*> m_images;
+	std::unordered_map<std::string, video::Image*> m_images;
 };
 
 // Generates images using texture modifiers, and caches source images.
@@ -40,10 +40,10 @@ struct ImageSource {
 	 * The returned Image should be dropped.
 	 * source_image_names is important to determine when to flush the image from a cache (dynamic media)
 	 */
-	video::IImage* generateImage(std::string_view name, std::set<std::string> &source_image_names);
+	video::Image* generateImage(std::string_view name, std::set<std::string> &source_image_names);
 
 	// Insert a source image into the cache without touching the filesystem.
-	void insertSourceImage(const std::string &name, video::IImage *img, bool prefer_local);
+	void insertSourceImage(const std::string &name, video::Image *img, bool prefer_local);
 
 	// This was picked so that the image buffer size fits in an s32 (assuming 32bpp).
 	// The exact value is 23170 but this provides some leeway.
@@ -56,7 +56,7 @@ private:
 	// Generate image based on a string like "stone.png" or "[crack:1:0".
 	// If baseimg is NULL, it is created. Otherwise stuff is made on it.
 	// source_image_names is important to determine when to flush the image from a cache (dynamic media).
-	bool generateImagePart(std::string_view part_of_name, video::IImage *& baseimg,
+	bool generateImagePart(std::string_view part_of_name, video::Image *& baseimg,
 			std::set<std::string> &source_image_names);
 
 	// Cached settings needed for making textures from meshes

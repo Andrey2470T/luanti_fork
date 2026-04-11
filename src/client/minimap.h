@@ -18,7 +18,7 @@
 
 namespace video {
 	class VideoDriver;
-	class IImage;
+	class Image;
 	class GLTexture;
 }
 
@@ -76,8 +76,8 @@ struct MinimapData {
 	MinimapPixel minimap_scan[MINIMAP_MAX_SX * MINIMAP_MAX_SY];
 	bool map_invalidated;
 	bool minimap_shape_round;
-	video::IImage *minimap_mask_round = nullptr;
-	video::IImage *minimap_mask_square = nullptr;
+	video::Image *minimap_mask_round = nullptr;
+	video::Image *minimap_mask_square = nullptr;
 	video::GLTexture *texture = nullptr;
 	video::GLTexture *heightmap_texture = nullptr;
 	bool textures_initialised = false; // True if the following textures are not nullptrs.
@@ -142,12 +142,12 @@ public:
 
 	MinimapModeDef getModeDef() const { return data->mode; }
 
-	video::IImage *getMinimapMask();
+	video::Image *getMinimapMask();
 	video::GLTexture *getMinimapTexture();
 
-	void blitMinimapPixelsToImageRadar(video::IImage *map_image);
-	void blitMinimapPixelsToImageSurface(video::IImage *map_image,
-		video::IImage *heightmap_image);
+	void blitMinimapPixelsToImageRadar(video::Image *map_image);
+	void blitMinimapPixelsToImageSurface(video::Image *map_image,
+		video::Image *heightmap_image);
 
 	irr_ptr<scene::SMeshBuffer> createMinimapMeshBuffer();
 

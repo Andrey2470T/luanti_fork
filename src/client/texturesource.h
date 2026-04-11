@@ -11,7 +11,7 @@
 
 namespace video
 {
-	class IImage;
+	class Image;
 	class GLTexture;
 }
 
@@ -95,7 +95,7 @@ public:
 	 * @brief Inserts a source image. Must be called from the main thread.
 	 * Takes ownership of @p img
 	 */
-	virtual void insertSourceImage(const std::string &name, video::IImage *img)=0;
+	virtual void insertSourceImage(const std::string &name, video::Image *img)=0;
 
 	/**
 	 * Rebuilds all textures (in case-source images have changed)

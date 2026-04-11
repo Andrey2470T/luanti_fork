@@ -11,7 +11,7 @@
 namespace video
 {
 	class VideoDriver;
-	class IImage;
+	class Image;
 }
 
 /* Fill in RGB values for transparent pixels, to correct for odd colors
@@ -25,11 +25,11 @@ namespace video
  * transparent. Should be 127 when the texture is used with ALPHA_CHANNEL_REF,
  * 0 when alpha blending is used.
  */
-void imageCleanTransparent(video::IImage *src, u32 threshold);
+void imageCleanTransparent(video::Image *src, u32 threshold);
 
 /* Returns the gamma-correct average color of the image, with transparent pixels
  * ignored. */
-video::SColor imageAverageColor(const video::IImage *img);
+video::SColor imageAverageColor(const video::Image *img);
 
 /* Scale a region of an image into another image, using nearest-neighbor with
  * anti-aliasing; treat pixels as crisp rectangles, but blend them at boundaries
@@ -38,4 +38,4 @@ video::SColor imageAverageColor(const video::IImage *img);
  * filter is designed to produce the most accurate results for both upscaling
  * and downscaling.
  */
-void imageScaleNNAA(video::IImage *src, const core::rect<s32> &srcrect, video::IImage *dest);
+void imageScaleNNAA(video::Image *src, const core::rect<s32> &srcrect, video::Image *dest);

@@ -27,7 +27,7 @@ struct TextureInfo
 // Stores internal information about a texture image.
 struct ImageInfo
 {
-	video::IImage *image = nullptr;
+	video::Image *image = nullptr;
 	std::set<std::string> sourceImages;
 };
 
@@ -122,7 +122,7 @@ public:
 
 	// Insert a source image into the cache without touching the filesystem.
 	// Shall be called from the main thread.
-	void insertSourceImage(const std::string &name, video::IImage *img);
+	void insertSourceImage(const std::string &name, video::Image *img);
 
 	// Rebuild images and textures from the current set of source images
 	// Shall be called from the main thread.
@@ -135,7 +135,7 @@ public:
 private:
 	// Gets or generates an image for a texture string
 	// Caller needs to drop the returned image
-	video::IImage *getOrGenerateImage(const std::string &name,
+	video::Image *getOrGenerateImage(const std::string &name,
 		std::set<std::string> &source_image_names);
 
 	// The id of the thread that is allowed to use irrlicht directly
@@ -231,7 +231,7 @@ TextureSource::~TextureSource()
 			<< " after: " << driver->getTextureCount() << std::endl;
 }
 
-video::IImage *TextureSource::getOrGenerateImage(const std::string &name,
+video::Image *TextureSource::getOrGenerateImage(const std::string &name,
 		std::set<std::string> &source_image_names)
 {
 	auto it = m_image_cache.find(name);
@@ -322,7 +322,7 @@ u32 TextureSource::generateTexture(const std::string &name)
 
 	// passed into texture info for dynamic media tracking
 	std::set<std::string> source_image_names;
-	video::IImage *img = getOrGenerateImage(name, source_image_names);
+	video::Image *img = getOrGenerateImage(name, source_image_names);
 
 	video::GLTexture *tex = nullptr;
 
@@ -398,7 +398,7 @@ Palette* TextureSource::getPalette(const std::string &name)
 	if (it == m_palettes.end()) {
 		// Create palette
 		std::set<std::string> source_image_names; // unused, sadly.
-		video::IImage *img = getOrGenerateImage(name, source_image_names);
+		video::Image *img = getOrGenerateImage(name, source_image_names);
 		if (!img) {
 			warningstream << "TextureSource::getPalette(): palette \"" << name
 				<< "\" could not be loaded." << std::endl;
@@ -454,7 +454,7 @@ void TextureSource::processQueue()
 	}
 }
 
-void TextureSource::insertSourceImage(const std::string &name, video::IImage *img)
+void TextureSource::insertSourceImage(const std::string &name, video::Image *img)
 {
 	sanity_check(std::this_thread::get_id() == m_main_thread);
 
@@ -518,7 +518,7 @@ void TextureSource::rebuildTexture(video::VideoDriver *driver, TextureInfo &ti)
 	sanity_check(std::this_thread::get_id() == m_main_thread);
 
 	std::set<std::string> source_image_names;
-	video::IImage *img = getOrGenerateImage(ti.name, source_image_names);
+	video::Image *img = getOrGenerateImage(ti.name, source_image_names);
 
 	// Create texture from resulting image
 	video::GLTexture *t = nullptr, *t_old = ti.texture;

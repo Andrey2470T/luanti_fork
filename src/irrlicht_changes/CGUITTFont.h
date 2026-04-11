@@ -123,7 +123,7 @@ namespace gui
 		void unload();
 
 		//! Creates the IImage object from the FT_Bitmap.
-		video::IImage* createGlyphImage(const FT_Bitmap& bits, video::VideoDriver* driver) const;
+		video::Image* createGlyphImage(const FT_Bitmap& bits, video::VideoDriver* driver) const;
 
 		//! The page the glyph is on.
 		u32 glyph_page;
@@ -139,7 +139,7 @@ namespace gui
 
 		//! This is just the temporary image holder.  After this glyph is paged,
 		//! it will be dropped.
-		mutable video::IImage* surface;
+		mutable video::Image* surface;
 	};
 
 	//! Holds a sheet of glyphs.
@@ -207,7 +207,7 @@ namespace gui
 
 				video::ECOLOR_FORMAT format = texture->getColorFormat();
 				core::dimension2du size = texture->getOriginalSize();
-				video::IImage* pageholder = driver->createImageFromData(format, size, ptr, true, false);
+				video::Image* pageholder = driver->createImageFromData(format, size, ptr, true, false);
 
 				for (u32 i = 0; i < glyph_to_be_paged.size(); ++i)
 				{
@@ -340,9 +340,9 @@ namespace gui
 			void setFallback(gui::IGUIFont* font) { fallback = font; }
 
 			//! Create corresponding character's software image copy from the font,
-			//! so you can use this data just like any ordinary video::IImage.
+			//! so you can use this data just like any ordinary video::Image.
 			//! \param ch The character you need
-			video::IImage* createTextureFromChar(const char32_t& ch);
+			video::Image* createTextureFromChar(const char32_t& ch);
 
 			//! This function is for debugging mostly. If the page doesn't exist it returns zero.
 			//! \param page_index Simply return the texture handle of a given page index.

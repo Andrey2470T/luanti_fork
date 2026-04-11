@@ -809,7 +809,7 @@ bool Client::loadMedia(const std::string &data, const std::string &filename,
 		FATAL_ERROR_IF(!rfile, "Could not create irrlicht memory file.");
 
 		// Read image
-		video::IImage *img = vdrv->createImageFromFile(rfile);
+		video::Image *img = vdrv->createImageFromFile(rfile);
 		if (!img) {
 			errorstream<<"Client: Cannot create image from data of "
 					<<"file \""<<filename<<"\""<<std::endl;
@@ -1898,7 +1898,7 @@ float Client::getCurRate()
 void Client::makeScreenshot()
 {
 	video::VideoDriver *driver = m_rendering_engine->get_video_driver();
-	video::IImage* const raw_image = driver->createScreenShot();
+	video::Image* const raw_image = driver->createScreenShot();
 
 	if (!raw_image)
 		return;
@@ -1942,7 +1942,7 @@ void Client::makeScreenshot()
 	if (serial == SCREENSHOT_MAX_SERIAL_TRIES) {
 		infostream << "Could not find suitable filename for screenshot" << std::endl;
 	} else {
-		video::IImage* const image =
+		video::Image* const image =
 				driver->createImage(video::ECF_R8G8B8, raw_image->getDimension());
 
 		if (image) {

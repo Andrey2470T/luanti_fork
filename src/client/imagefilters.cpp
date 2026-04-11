@@ -53,7 +53,7 @@ public:
 };
 
 template <bool IS_A8R8G8B8>
-static void imageCleanTransparentWithInlining(video::IImage *src, u32 threshold)
+static void imageCleanTransparentWithInlining(video::Image *src, u32 threshold)
 {
 	void *const src_data = src->getData();
 	const core::dimension2d<u32> dim = src->getDimension();
@@ -148,7 +148,7 @@ static void imageCleanTransparentWithInlining(video::IImage *src, u32 threshold)
 	}
 }
 
-void imageCleanTransparent(video::IImage *src, u32 threshold)
+void imageCleanTransparent(video::Image *src, u32 threshold)
 {
 	if (src->getColorFormat() == video::ECF_A8R8G8B8)
 		imageCleanTransparentWithInlining<true>(src, threshold);
@@ -211,7 +211,7 @@ namespace {
 }
 
 template <bool IS_A8R8G8B8>
-static video::SColor imageAverageColorInline(const video::IImage *src)
+static video::SColor imageAverageColorInline(const video::Image *src)
 {
 	void *const src_data = src->getData();
 	const core::dimension2du dim = src->getDimension();
@@ -248,7 +248,7 @@ static video::SColor imageAverageColorInline(const video::IImage *src)
 	return ret;
 }
 
-video::SColor imageAverageColor(const video::IImage *img)
+video::SColor imageAverageColor(const video::Image *img)
 {
 	if (img->getColorFormat() == video::ECF_A8R8G8B8)
 		return imageAverageColorInline<true>(img);
@@ -259,7 +259,7 @@ video::SColor imageAverageColor(const video::IImage *img)
 
 /**********************************/
 
-void imageScaleNNAA(video::IImage *src, const core::rect<s32> &srcrect, video::IImage *dest)
+void imageScaleNNAA(video::Image *src, const core::rect<s32> &srcrect, video::Image *dest)
 {
 	f32 sx, sy, minsx, maxsx, minsy, maxsy, area, ra, ga, ba, aa, pw, ph, pa;
 	u32 dy, dx;

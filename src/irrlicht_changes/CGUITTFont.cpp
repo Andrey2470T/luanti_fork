@@ -129,7 +129,7 @@ void SGUITTFace::dropFilename()
 		faces.erase(*filename);
 }
 
-video::IImage* SGUITTGlyph::createGlyphImage(const FT_Bitmap& bits, video::VideoDriver* driver) const
+video::Image* SGUITTGlyph::createGlyphImage(const FT_Bitmap& bits, video::VideoDriver* driver) const
 {
 	// Make sure our casts to s32 in the loops below will not cause problems
 	if ((s32)bits.rows < 0 || (s32)bits.width < 0)
@@ -141,7 +141,7 @@ video::IImage* SGUITTGlyph::createGlyphImage(const FT_Bitmap& bits, video::Video
 	core::dimension2du texture_size;
 
 	// Create and load our image now.
-	video::IImage* image = 0;
+	video::Image* image = 0;
 	switch (bits.pixel_mode)
 	{
 		case FT_PIXEL_MODE_MONO:
@@ -875,7 +875,7 @@ void CGUITTFont::setInvisibleCharacters(const wchar_t *s)
 	Invisible = convertWCharToU32String(s);
 }
 
-video::IImage* CGUITTFont::createTextureFromChar(const char32_t& ch)
+video::Image* CGUITTFont::createTextureFromChar(const char32_t& ch)
 {
 	// This character allows us to print something to the screen for unknown, unrecognizable, or
 	// unrepresentable characters. See Unicode spec.
@@ -900,11 +900,11 @@ video::IImage* CGUITTFont::createTextureFromChar(const char32_t& ch)
 
 	video::ECOLOR_FORMAT format = tex->getColorFormat();
 	core::dimension2du tex_size = tex->getOriginalSize();
-	video::IImage* pageholder = Driver->createImageFromData(format, tex_size, ptr, true, false);
+	video::Image* pageholder = Driver->createImageFromData(format, tex_size, ptr, true, false);
 
 	// Copy the image data out of the page texture.
 	core::dimension2du glyph_size(glyph.source_rect.getSize());
-	video::IImage* image = Driver->createImage(format, glyph_size);
+	video::Image* image = Driver->createImage(format, glyph_size);
 	pageholder->copyTo(image, core::position2di(0, 0), glyph.source_rect);
 
 	tex->unlock();

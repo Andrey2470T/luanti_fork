@@ -27,7 +27,7 @@ SourceImageCache::~SourceImageCache() {
 	m_images.clear();
 }
 
-void SourceImageCache::insert(const std::string &name, video::IImage *img, bool prefer_local)
+void SourceImageCache::insert(const std::string &name, video::Image *img, bool prefer_local)
 {
 	assert(img); // Pre-condition
 	// Remove old image
@@ -37,7 +37,7 @@ void SourceImageCache::insert(const std::string &name, video::IImage *img, bool 
 			n->second->drop();
 	}
 
-	video::IImage* toadd = img;
+	video::Image* toadd = img;
 	bool need_to_grab = true;
 
 	// Try to use local texture instead if asked to
@@ -46,7 +46,7 @@ void SourceImageCache::insert(const std::string &name, video::IImage *img, bool 
 		std::string path = getTexturePath(name, &is_base_pack);
 		// Ignore base pack
 		if (!path.empty() && !is_base_pack) {
-			video::IImage *img2 = RenderingEngine::get_video_driver()->
+			video::Image *img2 = RenderingEngine::get_video_driver()->
 				createImageFromFile(path.c_str());
 			if (img2){
 				toadd = img2;
@@ -60,7 +60,7 @@ void SourceImageCache::insert(const std::string &name, video::IImage *img, bool 
 	m_images[name] = toadd;
 }
 
-video::IImage* SourceImageCache::get(const std::string &name)
+video::Image* SourceImageCache::get(const std::string &name)
 {
 	auto n = m_images.find(name);
 	if (n != m_images.end())
@@ -69,7 +69,7 @@ video::IImage* SourceImageCache::get(const std::string &name)
 }
 
 // Primarily fetches from cache, secondarily tries to read from filesystem
-video::IImage* SourceImageCache::getOrLoad(const std::string &name)
+video::Image* SourceImageCache::getOrLoad(const std::string &name)
 {
 	auto n = m_images.find(name);
 	if (n != m_images.end()){
@@ -85,7 +85,7 @@ video::IImage* SourceImageCache::getOrLoad(const std::string &name)
 	}
 	infostream << "SourceImageCache::getOrLoad(): Loading path \"" << path
 			<< "\"" << std::endl;
-	video::IImage *img = driver->createImageFromFile(path.c_str());
+	video::Image *img = driver->createImageFromFile(path.c_str());
 
 	if (img){
 		m_images[name] = img;
@@ -113,30 +113,30 @@ video::IImage* SourceImageCache::getOrLoad(const std::string &name)
  * \param size Size limit of the copied area
 */
 template<bool overlay = false>
-static void blit_with_alpha(video::IImage *src, video::IImage *dst,
+static void blit_with_alpha(video::Image *src, video::Image *dst,
 	v2s32 dst_pos, v2u32 size);
 
 // Apply a color to an image.  Uses an int (0-255) to calculate the ratio.
 // If the ratio is 255 or -1 and keep_alpha is true, then it multiples the
 // color alpha with the destination alpha.
 // Otherwise, any pixels that are not fully transparent get the color alpha.
-static void apply_colorize(video::IImage *dst, v2u32 dst_pos, v2u32 size,
+static void apply_colorize(video::Image *dst, v2u32 dst_pos, v2u32 size,
 		const video::SColor color, int ratio, bool keep_alpha);
 
 // paint a texture using the given color
-static void apply_multiplication(video::IImage *dst, v2u32 dst_pos, v2u32 size,
+static void apply_multiplication(video::Image *dst, v2u32 dst_pos, v2u32 size,
 		const video::SColor color);
 
 // Perform a Screen blend with the given color. The opposite effect of a
 // Multiply blend.
-static void apply_screen(video::IImage *dst, v2u32 dst_pos, v2u32 size,
+static void apply_screen(video::Image *dst, v2u32 dst_pos, v2u32 size,
 		const video::SColor color);
 
 // Adjust the hue, saturation, and lightness of destination. Like
 // "Hue-Saturation" in GIMP.
 // If colorize is true then the image will be converted to a grayscale
 // image as though seen through a colored glass, like "Colorize" in GIMP.
-static void apply_hue_saturation(video::IImage *dst, v2u32 dst_pos, v2u32 size,
+static void apply_hue_saturation(video::Image *dst, v2u32 dst_pos, v2u32 size,
 		s32 hue, s32 saturation, s32 lightness, bool colorize);
 
 // Apply an overlay blend to an images.
@@ -144,32 +144,32 @@ static void apply_hue_saturation(video::IImage *dst, v2u32 dst_pos, v2u32 size,
 // layer where the base layer is light become lighter, the parts where the base
 // layer is dark become darker.Areas where the base layer are mid grey are
 // unaffected.An overlay with the same picture looks like an S - curve.
-static void apply_overlay(video::IImage *overlay, video::IImage *dst,
+static void apply_overlay(video::Image *overlay, video::Image *dst,
 		v2s32 overlay_pos, v2s32 dst_pos, v2u32 size, bool hardlight);
 
 // Adjust the brightness and contrast of the base image. Conceptually like
 // "Brightness-Contrast" in GIMP but allowing brightness to be wound all the
 // way up to white or down to black.
-static void apply_brightness_contrast(video::IImage *dst, v2u32 dst_pos, v2u32 size,
+static void apply_brightness_contrast(video::Image *dst, v2u32 dst_pos, v2u32 size,
 		s32 brightness, s32 contrast);
 
 // Apply a mask to an image
-static void apply_mask(video::IImage *mask, video::IImage *dst,
+static void apply_mask(video::Image *mask, video::Image *dst,
 		v2s32 mask_pos, v2s32 dst_pos, v2u32 size);
 
 // Draw or overlay a crack
-static void draw_crack(video::IImage *crack, video::IImage *dst,
+static void draw_crack(video::Image *crack, video::Image *dst,
 		bool use_overlay, s32 frame_count, s32 progression,
 		video::VideoDriver *driver, u8 tiles = 1);
 
 // Brighten image
-static void brighten(video::IImage *image);
+static void brighten(video::Image *image);
 // Parse a transform name
 static u32 parseImageTransform(std::string_view s);
 // Apply transform to image dimension
 static core::dimension2du imageTransformDimension(u32 transform, core::dimension2du dim);
 // Apply transform to image data
-static void imageTransform(u32 transform, video::IImage *src, video::IImage *dst);
+static void imageTransform(u32 transform, video::Image *src, video::Image *dst);
 
 inline static void applyShadeFactor(video::SColor &color, u32 factor)
 {
@@ -179,8 +179,8 @@ inline static void applyShadeFactor(video::SColor &color, u32 factor)
 	color.setBlue(color.getBlue() * f / 256);
 }
 
-static video::IImage *createInventoryCubeImage(
-	video::IImage *top, video::IImage *left, video::IImage *right)
+static video::Image *createInventoryCubeImage(
+	video::Image *top, video::Image *left, video::Image *right)
 {
 	core::dimension2du size_top = top->getDimension();
 	core::dimension2du size_left = left->getDimension();
@@ -204,12 +204,12 @@ static video::IImage *createInventoryCubeImage(
 
 	video::VideoDriver *driver = RenderingEngine::get_video_driver();
 
-	auto lock_image = [size, driver] (video::IImage *&image) -> const u32 * {
+	auto lock_image = [size, driver] (video::Image *&image) -> const u32 * {
 		image->grab();
 		core::dimension2du dim = image->getDimension();
 		video::ECOLOR_FORMAT format = image->getColorFormat();
 		if (dim.Width != size || dim.Height != size || format != video::ECF_A8R8G8B8) {
-			video::IImage *scaled = driver->createImage(video::ECF_A8R8G8B8, {size, size});
+			video::Image *scaled = driver->createImage(video::ECF_A8R8G8B8, {size, size});
 			image->copyToScaling(scaled);
 			image->drop();
 			image = scaled;
@@ -217,11 +217,11 @@ static video::IImage *createInventoryCubeImage(
 		sanity_check(image->getPitch() == 4 * size);
 		return reinterpret_cast<u32 *>(image->getData());
 	};
-	auto free_image = [] (video::IImage *image) -> void {
+	auto free_image = [] (video::Image *image) -> void {
 		image->drop();
 	};
 
-	video::IImage *result = driver->createImage(video::ECF_A8R8G8B8, {cube_size, cube_size});
+	video::Image *result = driver->createImage(video::ECF_A8R8G8B8, {cube_size, cube_size});
 	sanity_check(result->getPitch() == 4 * cube_size);
 	result->fill(video::SColor(0x00000000u));
 	u32 *target = reinterpret_cast<u32 *>(result->getData());
@@ -230,7 +230,7 @@ static video::IImage *createInventoryCubeImage(
 	// `shade_factor` is face brightness, in range [0.0, 1.0]
 	// (xu, xv, x1; yu, yv, y1) form coordinate transformation matrix
 	// `offsets` list pixels to be drawn for single source pixel
-	auto draw_image = [=] (video::IImage *image, float shade_factor,
+	auto draw_image = [=] (video::Image *image, float shade_factor,
 			s16 xu, s16 xv, s16 x1,
 			s16 yu, s16 yv, s16 y1,
 			std::initializer_list<v2s16> offsets) -> void {
@@ -310,8 +310,8 @@ static std::string unescape_string(std::string_view str, const char esc = '\\')
 	Ensure no other references to these images are being held, as one may
 	get dropped and switched with a new image.
 */
-static void upscaleImagesToMatchLargest(video::IImage *& img1,
-	video::IImage *& img2)
+static void upscaleImagesToMatchLargest(video::Image *& img1,
+	video::Image *& img2)
 {
 	core::dimension2d<u32> dim1 = img1->getDimension();
 	core::dimension2d<u32> dim2 = img2->getDimension();
@@ -322,7 +322,7 @@ static void upscaleImagesToMatchLargest(video::IImage *& img1,
 	}
 	else if (dim1.Width * dim1.Height < dim2.Width * dim2.Height) {
 		// Upscale img1
-		video::IImage *scaled_image = RenderingEngine::get_video_driver()->
+		video::Image *scaled_image = RenderingEngine::get_video_driver()->
 			createImage(video::ECF_A8R8G8B8, dim2);
 		img1->copyToScaling(scaled_image);
 		img1->drop();
@@ -330,7 +330,7 @@ static void upscaleImagesToMatchLargest(video::IImage *& img1,
 
 	} else {
 		// Upscale img2
-		video::IImage *scaled_image = RenderingEngine::get_video_driver()->
+		video::Image *scaled_image = RenderingEngine::get_video_driver()->
 			createImage(video::ECF_A8R8G8B8, dim1);
 		img2->copyToScaling(scaled_image);
 		img2->drop();
@@ -338,7 +338,7 @@ static void upscaleImagesToMatchLargest(video::IImage *& img1,
 	}
 }
 
-static void blitBaseImage(video::IImage* &src, video::IImage* &dst)
+static void blitBaseImage(video::Image* &src, video::Image* &dst)
 {
 	//infostream<<"Blitting "<<part_of_name<<" on base"<<std::endl;
 	upscaleImagesToMatchLargest(dst, src);
@@ -412,7 +412,7 @@ void blit_pixel(video::SColor src_col, video::SColor &dst_col)
 }  // namespace (anonymous)
 
 template<bool overlay>
-static void blit_with_alpha(video::IImage *src, video::IImage *dst, v2s32 dst_pos,
+static void blit_with_alpha(video::Image *src, video::Image *dst, v2s32 dst_pos,
 	v2u32 size)
 {
 	if (dst->getColorFormat() != video::ECF_A8R8G8B8)
@@ -424,7 +424,7 @@ static void blit_with_alpha(video::IImage *src, video::IImage *dst, v2s32 dst_po
 	bool drop_src = false;
 	if (src->getColorFormat() != video::ECF_A8R8G8B8) {
 		video::VideoDriver *driver = RenderingEngine::get_video_driver();
-		video::IImage *src_converted = driver->createImage(video::ECF_A8R8G8B8,
+		video::Image *src_converted = driver->createImage(video::ECF_A8R8G8B8,
 			src_dim);
 		sanity_check(src_converted != nullptr);
 		src->copyTo(src_converted);
@@ -459,7 +459,7 @@ static void blit_with_alpha(video::IImage *src, video::IImage *dst, v2s32 dst_po
 /*
 	Apply color to destination, using a weighted interpolation blend
 */
-static void apply_colorize(video::IImage *dst, v2u32 dst_pos, v2u32 size,
+static void apply_colorize(video::Image *dst, v2u32 dst_pos, v2u32 size,
 		const video::SColor color, int ratio, bool keep_alpha)
 {
 	u32 alpha = color.getAlpha();
@@ -497,7 +497,7 @@ static void apply_colorize(video::IImage *dst, v2u32 dst_pos, v2u32 size,
 /*
 	Apply color to destination, using a Multiply blend mode
 */
-static void apply_multiplication(video::IImage *dst, v2u32 dst_pos, v2u32 size,
+static void apply_multiplication(video::Image *dst, v2u32 dst_pos, v2u32 size,
 		const video::SColor color)
 {
 	video::SColor dst_c;
@@ -518,7 +518,7 @@ static void apply_multiplication(video::IImage *dst, v2u32 dst_pos, v2u32 size,
 /*
 	Apply color to destination, using a Screen blend mode
 */
-static void apply_screen(video::IImage *dst, v2u32 dst_pos, v2u32 size,
+static void apply_screen(video::Image *dst, v2u32 dst_pos, v2u32 size,
 		const video::SColor color)
 {
 	video::SColor dst_c;
@@ -549,7 +549,7 @@ static void apply_screen(video::IImage *dst, v2u32 dst_pos, v2u32 size,
 	be converted to a grayscale image as seen through a colored glass, like
 	"Colorize" in GIMP.
 */
-static void apply_hue_saturation(video::IImage *dst, v2u32 dst_pos, v2u32 size,
+static void apply_hue_saturation(video::Image *dst, v2u32 dst_pos, v2u32 size,
 	s32 hue, s32 saturation, s32 lightness, bool colorize)
 {
 	video::SColorf colorf;
@@ -616,11 +616,11 @@ static void apply_hue_saturation(video::IImage *dst, v2u32 dst_pos, v2u32 size,
 	Apply an Overlay blend to destination
 	If hardlight is true then swap the dst & blend images (a hardlight blend)
 */
-static void apply_overlay(video::IImage *blend, video::IImage *dst,
+static void apply_overlay(video::Image *blend, video::Image *dst,
 	v2s32 blend_pos, v2s32 dst_pos, v2u32 size, bool hardlight)
 {
-	video::IImage *blend_layer = hardlight ? dst : blend;
-	video::IImage *base_layer  = hardlight ? blend : dst;
+	video::Image *blend_layer = hardlight ? dst : blend;
+	video::Image *base_layer  = hardlight ? blend : dst;
 	v2s32 blend_layer_pos = hardlight ? dst_pos : blend_pos;
 	v2s32 base_layer_pos  = hardlight ? blend_pos : dst_pos;
 
@@ -656,7 +656,7 @@ static void apply_overlay(video::IImage *blend, video::IImage *dst,
 	Conceptually like GIMP's "Brightness-Contrast" feature but allows brightness to be
 	wound all the way up to white or down to black.
 */
-static void apply_brightness_contrast(video::IImage *dst, v2u32 dst_pos, v2u32 size,
+static void apply_brightness_contrast(video::Image *dst, v2u32 dst_pos, v2u32 size,
 	s32 brightness, s32 contrast)
 {
 	// Only allow normalized contrast to get as high as 127/128 to avoid infinite slope.
@@ -708,7 +708,7 @@ static void apply_brightness_contrast(video::IImage *dst, v2u32 dst_pos, v2u32 s
 /*
 	Apply mask to destination
 */
-static void apply_mask(video::IImage *mask, video::IImage *dst,
+static void apply_mask(video::Image *mask, video::Image *dst,
 		v2s32 mask_pos, v2s32 dst_pos, v2u32 size)
 {
 	for (u32 y0 = 0; y0 < size.Y; y0++) {
@@ -725,7 +725,7 @@ static void apply_mask(video::IImage *mask, video::IImage *dst,
 	}
 }
 
-static video::IImage *create_crack_image(video::IImage *crack, s32 frame_index,
+static video::Image *create_crack_image(video::Image *crack, s32 frame_index,
 		core::dimension2d<u32> size, u8 tiles, video::VideoDriver *driver)
 {
 	core::dimension2d<u32> strip_size = crack->getDimension();
@@ -739,16 +739,16 @@ static video::IImage *create_crack_image(video::IImage *crack, s32 frame_index,
 	if (frame_index >= frame_count)
 		frame_index = frame_count - 1;
 	core::rect<s32> frame(v2s32(0, frame_index * frame_size.Height), frame_size);
-	video::IImage *result = nullptr;
+	video::Image *result = nullptr;
 
 	// extract crack frame
-	video::IImage *crack_tile = driver->createImage(video::ECF_A8R8G8B8, tile_size);
+	video::Image *crack_tile = driver->createImage(video::ECF_A8R8G8B8, tile_size);
 	if (!crack_tile)
 		return nullptr;
 	if (tile_size == frame_size) {
 		crack->copyTo(crack_tile, v2s32(0, 0), frame);
 	} else {
-		video::IImage *crack_frame = driver->createImage(video::ECF_A8R8G8B8, frame_size);
+		video::Image *crack_frame = driver->createImage(video::ECF_A8R8G8B8, frame_size);
 		if (!crack_frame)
 			goto exit__has_tile;
 		crack->copyTo(crack_frame, v2s32(0, 0), frame);
@@ -772,7 +772,7 @@ exit__has_tile:
 	return result;
 }
 
-static void draw_crack(video::IImage *crack, video::IImage *dst,
+static void draw_crack(video::Image *crack, video::Image *dst,
 		bool use_overlay, s32 frame_count, s32 progression,
 		video::VideoDriver *driver, u8 tiles)
 {
@@ -789,7 +789,7 @@ static void draw_crack(video::IImage *crack, video::IImage *dst,
 		dim_dst.Width,
 		dim_dst.Height / frame_count
 	);
-	video::IImage *crack_scaled = create_crack_image(crack, progression,
+	video::Image *crack_scaled = create_crack_image(crack, progression,
 			frame_size, tiles, driver);
 	if (!crack_scaled)
 		return;
@@ -803,7 +803,7 @@ static void draw_crack(video::IImage *crack, video::IImage *dst,
 	crack_scaled->drop();
 }
 
-static void brighten(video::IImage *image)
+static void brighten(video::Image *image)
 {
 	if (!image)
 		return;
@@ -879,7 +879,7 @@ static core::dimension2du imageTransformDimension(u32 transform, core::dimension
 	return core::dimension2du(dim.Height, dim.Width);
 }
 
-static void imageTransform(u32 transform, video::IImage *src, video::IImage *dst)
+static void imageTransform(u32 transform, video::Image *src, video::Image *dst)
 {
 	if (!src || !dst)
 		return;
@@ -956,7 +956,7 @@ static void imageTransform(u32 transform, video::IImage *src, video::IImage *dst
 	} while(0)
 
 bool ImageSource::generateImagePart(std::string_view part_of_name,
-		video::IImage *& baseimg, std::set<std::string> &source_image_names)
+		video::Image *& baseimg, std::set<std::string> &source_image_names)
 {
 	const char escape = '\\'; // same as in generateImage()
 	video::VideoDriver *driver = RenderingEngine::get_video_driver();
@@ -974,7 +974,7 @@ bool ImageSource::generateImagePart(std::string_view part_of_name,
 	if (part_of_name.empty() || part_of_name[0] != '[') {
 		std::string part_s(part_of_name);
 		source_image_names.insert(part_s);
-		video::IImage *image = m_sourcecache.getOrLoad(part_s);
+		video::Image *image = m_sourcecache.getOrLoad(part_s);
 
 		if (!image) {
 			// Do not create the dummy texture
@@ -1050,7 +1050,7 @@ bool ImageSource::generateImagePart(std::string_view part_of_name,
 					It is an image with a number of cracking stages
 					horizontally tiled.
 				*/
-				video::IImage *img_crack = m_sourcecache.getOrLoad(
+				video::Image *img_crack = m_sourcecache.getOrLoad(
 					"crack_anylength.png");
 
 				if (img_crack) {
@@ -1093,7 +1093,7 @@ bool ImageSource::generateImagePart(std::string_view part_of_name,
 				infostream << "Adding \"" << filename<< "\" to combined "
 					<< pos_base << std::endl;
 
-				video::IImage *img = generateImage(filename, source_image_names);
+				video::Image *img = generateImage(filename, source_image_names);
 				if (!img) {
 					errorstream << "generateImagePart(): Failed to load image \""
 						<< filename << "\" for [combine" << std::endl;
@@ -1147,7 +1147,7 @@ bool ImageSource::generateImagePart(std::string_view part_of_name,
 					COMPLAIN_INVALID("X or Y offset");
 			}
 
-			video::IImage *img = driver->createImage(video::ECF_A8R8G8B8, dim);
+			video::Image *img = driver->createImage(video::ECF_A8R8G8B8, dim);
 			img->fill(color);
 
 			if (baseimg == nullptr) {
@@ -1242,7 +1242,7 @@ bool ImageSource::generateImagePart(std::string_view part_of_name,
 			u32 transform = parseImageTransform(part_of_name.substr(10));
 			core::dimension2d<u32> dim = imageTransformDimension(
 					transform, baseimg->getDimension());
-			video::IImage *image = driver->createImage(
+			video::Image *image = driver->createImage(
 					baseimg->getColorFormat(), dim);
 			sanity_check(image != NULL);
 			imageTransform(transform, baseimg, image);
@@ -1276,9 +1276,9 @@ bool ImageSource::generateImagePart(std::string_view part_of_name,
 			std::string imagename_right = sf.next("{");
 
 			// Generate images for the faces of the cube
-			video::IImage *img_top = generateImage(imagename_top, source_image_names);
-			video::IImage *img_left = generateImage(imagename_left, source_image_names);
-			video::IImage *img_right = generateImage(imagename_right, source_image_names);
+			video::Image *img_top = generateImage(imagename_top, source_image_names);
+			video::Image *img_left = generateImage(imagename_left, source_image_names);
+			video::Image *img_right = generateImage(imagename_right, source_image_names);
 
 			if (!img_top || !img_left || !img_right) {
 				errorstream << "generateImagePart(): Failed to create textures"
@@ -1307,7 +1307,7 @@ bool ImageSource::generateImagePart(std::string_view part_of_name,
 			u32 percent = stoi(sf.next(":"), 0, 100);
 			std::string filename = unescape_string(sf.next_esc(":", escape), escape);
 
-			video::IImage *img = generateImage(filename, source_image_names);
+			video::Image *img = generateImage(filename, source_image_names);
 			if (img) {
 				core::dimension2d<u32> dim = img->getDimension();
 				if (!baseimg)
@@ -1354,7 +1354,7 @@ bool ImageSource::generateImagePart(std::string_view part_of_name,
 			if (frame_size.Y == 0)
 				frame_size.Y = 1;
 
-			video::IImage *img = driver->createImage(video::ECF_A8R8G8B8,
+			video::Image *img = driver->createImage(video::ECF_A8R8G8B8,
 					frame_size);
 
 			// Fill target image with transparency
@@ -1383,7 +1383,7 @@ bool ImageSource::generateImagePart(std::string_view part_of_name,
 			sf.next(":");
 			std::string filename = unescape_string(sf.next_esc(":", escape), escape);
 
-			video::IImage *img = generateImage(filename, source_image_names);
+			video::Image *img = generateImage(filename, source_image_names);
 			if (img) {
 				upscaleImagesToMatchLargest(baseimg, img);
 
@@ -1509,7 +1509,7 @@ bool ImageSource::generateImagePart(std::string_view part_of_name,
 					u32 h = scale * dim.Height;
 					const core::dimension2d<u32> newdim(w, h);
 					if (w <= MAX_IMAGE_DIMENSION && h <= MAX_IMAGE_DIMENSION) {
-						video::IImage *newimg = driver->createImage(
+						video::Image *newimg = driver->createImage(
 								baseimg->getColorFormat(), newdim);
 						baseimg->copyToScaling(newimg);
 						baseimg->drop();
@@ -1532,7 +1532,7 @@ bool ImageSource::generateImagePart(std::string_view part_of_name,
 			u32 height = stoi(sf.next(""));
 			CHECK_DIM(width, height);
 
-			video::IImage *image = driver->
+			video::Image *image = driver->
 				createImage(video::ECF_A8R8G8B8, {width, height});
 			baseimg->copyToScaling(image);
 			baseimg->drop();
@@ -1624,7 +1624,7 @@ bool ImageSource::generateImagePart(std::string_view part_of_name,
 			if (tile_dim.Height == 0)
 				tile_dim.Height = 1;
 
-			video::IImage *img = driver->createImage(
+			video::Image *img = driver->createImage(
 					video::ECF_A8R8G8B8, tile_dim);
 			img->fill(video::SColor(0,0,0,0));
 
@@ -1659,7 +1659,7 @@ bool ImageSource::generateImagePart(std::string_view part_of_name,
 			auto *fs = device->getFileSystem();
 			auto *vd = device->getVideoDriver();
 			auto *memfile = fs->createMemoryReadFile(png.data(), png.size(), "[png_tmpfile");
-			video::IImage* pngimg = vd->createImageFromFile(memfile);
+			video::Image* pngimg = vd->createImageFromFile(memfile);
 			memfile->drop();
 
 			if (!pngimg) {
@@ -1740,7 +1740,7 @@ bool ImageSource::generateImagePart(std::string_view part_of_name,
 			sf.next(":");
 			std::string filename = unescape_string(sf.next_esc(":", escape), escape);
 
-			video::IImage *img = generateImage(filename, source_image_names);
+			video::Image *img = generateImage(filename, source_image_names);
 			if (img) {
 				upscaleImagesToMatchLargest(baseimg, img);
 
@@ -1797,7 +1797,7 @@ ImageSource::ImageSource() :
 		m_setting_anisotropic_filter{g_settings->getBool("anisotropic_filter")}
 {}
 
-video::IImage* ImageSource::generateImage(std::string_view name,
+video::Image* ImageSource::generateImage(std::string_view name,
 		std::set<std::string> &source_image_names)
 {
 	// Get the base image
@@ -1844,7 +1844,7 @@ video::IImage* ImageSource::generateImage(std::string_view name,
 	}
 
 
-	video::IImage *baseimg = NULL;
+	video::Image *baseimg = NULL;
 
 	/*
 		If separator was found, make the base image
@@ -1871,7 +1871,7 @@ video::IImage* ImageSource::generateImage(std::string_view name,
 			&& last_part_of_name.back() == paren_close) {
 		auto name2 = last_part_of_name.substr(1,
 				last_part_of_name.size() - 2);
-		video::IImage *tmp = generateImage(name2, source_image_names);
+		video::Image *tmp = generateImage(name2, source_image_names);
 		if (!tmp) {
 			errorstream << "generateImage(): "
 				"Failed to generate \"" << name2 << "\"\n"
@@ -1910,7 +1910,7 @@ video::IImage* ImageSource::generateImage(std::string_view name,
 	return baseimg;
 }
 
-void ImageSource::insertSourceImage(const std::string &name, video::IImage *img, bool prefer_local)
+void ImageSource::insertSourceImage(const std::string &name, video::Image *img, bool prefer_local)
 {
 	m_sourcecache.insert(name, img, prefer_local);
 }
