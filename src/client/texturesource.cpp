@@ -531,7 +531,7 @@ void TextureSource::rebuildTexture(video::VideoDriver *driver, TextureInfo &ti)
 		if (ptr) {
 			memcpy(ptr, img->getData(), img->getImageDataSizeInBytes());
 			t->unlock();
-			t->regenerateMipMapLevels();
+            t->regenerateMipMaps();
 		} else {
 			warningstream << "TextureSource::rebuildTexture(): lock failed for \""
 				<< ti.name << "\"" << std::endl;
