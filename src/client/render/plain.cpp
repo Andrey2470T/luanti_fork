@@ -78,7 +78,7 @@ void RenderShadowMapStep::run(PipelineContext &context)
 
 void UpscaleStep::run(PipelineContext &context)
 {
-	video::ITexture *lowres = m_source->getTexture(0);
+	video::GLTexture *lowres = m_source->getTexture(0);
 	m_target->activate(context);
 	context.device->getVideoDriver()->draw2DImage(lowres,
 			core::rect<s32>(0, 0, context.target_size.X, context.target_size.Y),

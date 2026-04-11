@@ -12,7 +12,7 @@
 namespace video
 {
 	class IImage;
-	class ITexture;
+	class GLTexture;
 }
 
 typedef std::vector<video::SColor> Palette;
@@ -28,15 +28,15 @@ public:
 	virtual ~ISimpleTextureSource() = default;
 
 	/// @brief Generates and gets a texture
-	virtual video::ITexture *getTexture(
+	virtual video::GLTexture *getTexture(
 			const std::string &name, u32 *id = nullptr) = 0;
 };
 
 class ITextureSource : public ISimpleTextureSource
 {
 public:
-	ITextureSource() = default;
-	virtual ~ITextureSource() = default;
+    ITextureSource() = default;
+    virtual ~ITextureSource() = default;
 
 	using ISimpleTextureSource::getTexture;
 
@@ -47,14 +47,14 @@ public:
 	virtual std::string getTextureName(u32 id)=0;
 
 	/// @brief Returns existing texture by ID
-	virtual video::ITexture *getTexture(u32 id)=0;
+	virtual video::GLTexture *getTexture(u32 id)=0;
 
 	/**
 	 * @brief Generates and gets a texture
 	 * Filters will be applied to make the texture suitable for mipmapping and
 	 * linear filtering during rendering.
 	 */
-	virtual video::ITexture *getTextureForMesh(
+	virtual video::GLTexture *getTextureForMesh(
 			const std::string &name, u32 *id = nullptr) = 0;
 	/**
 	 * Returns a palette from the given texture name.
@@ -99,7 +99,7 @@ public:
 
 	/**
 	 * Rebuilds all textures (in case-source images have changed)
-	 * @note This won't invalidate old ITexture's, but may or may not reuse them.
+	 * @note This won't invalidate old Texture's, but may or may not reuse them.
 	 * So you have to re-get all textures anyway.
 	 */
 	virtual void rebuildImagesAndTextures()=0;

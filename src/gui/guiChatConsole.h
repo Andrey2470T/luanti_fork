@@ -114,7 +114,7 @@ private:
 	f32 m_cursor_height = 0.0f;
 
 	// background texture
-	video::ITexture *m_background = nullptr;
+	video::GLTexture *m_background = nullptr;
 	// background color (including alpha)
 	video::SColor m_background_color = video::SColor(255, 0, 0, 0);
 

@@ -338,25 +338,25 @@ public:
 		return g_fontengine->getFont(spec);
 	}
 
-	video::ITexture *getTexture(Property prop, ISimpleTextureSource *tsrc,
-			video::ITexture *def) const
+	video::GLTexture *getTexture(Property prop, ISimpleTextureSource *tsrc,
+			video::GLTexture *def) const
 	{
 		const auto &val = properties[prop];
 		if (val.empty()) {
 			return def;
 		}
 
-		video::ITexture *texture = tsrc->getTexture(val);
+		video::GLTexture *texture = tsrc->getTexture(val);
 
 		return texture;
 	}
 
-	video::ITexture *getTexture(Property prop, ISimpleTextureSource *tsrc) const
+	video::GLTexture *getTexture(Property prop, ISimpleTextureSource *tsrc) const
 	{
 		const auto &val = properties[prop];
 		FATAL_ERROR_IF(val.empty(), "Unexpected missing property");
 
-		video::ITexture *texture = tsrc->getTexture(val);
+		video::GLTexture *texture = tsrc->getTexture(val);
 
 		return texture;
 	}

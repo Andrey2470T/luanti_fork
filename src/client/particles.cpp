@@ -854,7 +854,7 @@ void ParticleManager::handleParticleEvent(ClientEvent *event, Client *client,
 }
 
 bool ParticleManager::getNodeParticleParams(const MapNode &n,
-	const ContentFeatures &f, ParticleParameters &p, video::ITexture **texture,
+	const ContentFeatures &f, ParticleParameters &p, video::GLTexture **texture,
 	v2f &texpos, v2f &texsize, video::SColor *color, u8 tilenum)
 {
 	// No particles for "airlike" nodes
@@ -914,7 +914,7 @@ void ParticleManager::addNodeParticle(IGameDef *gamedef,
 	LocalPlayer *player, v3s16 pos, const MapNode &n, const ContentFeatures &f)
 {
 	ParticleParameters p;
-	video::ITexture *ref = nullptr;
+	video::GLTexture *ref = nullptr;
 	v2f texpos, texsize;
 	video::SColor color;
 

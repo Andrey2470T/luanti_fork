@@ -61,7 +61,7 @@ MenuTextureSource::~MenuTextureSource()
 }
 
 /******************************************************************************/
-video::ITexture *MenuTextureSource::getTexture(const std::string &name, u32 *id)
+video::GLTexture *MenuTextureSource::getTexture(const std::string &name, u32 *id)
 {
 	if (id)
 		*id = 1;
@@ -70,7 +70,7 @@ video::ITexture *MenuTextureSource::getTexture(const std::string &name, u32 *id)
 		return NULL;
 
 	// return if already loaded
-	video::ITexture *retval = m_driver->findTexture(name.c_str());
+	video::GLTexture *retval = m_driver->findTexture(name.c_str());
 	if (retval)
 		return retval;
 
@@ -433,7 +433,7 @@ void GUIEngine::drawBackground(video::VideoDriver *driver)
 {
 	v2u32 screensize = driver->getScreenSize();
 
-	video::ITexture* texture = m_textures[TEX_LAYER_BACKGROUND].texture;
+	video::GLTexture* texture = m_textures[TEX_LAYER_BACKGROUND].texture;
 
 	/* If no texture, draw background of solid color */
 	if(!texture){
@@ -488,7 +488,7 @@ void GUIEngine::drawOverlay(video::VideoDriver *driver)
 {
 	v2u32 screensize = driver->getScreenSize();
 
-	video::ITexture* texture = m_textures[TEX_LAYER_OVERLAY].texture;
+	video::GLTexture* texture = m_textures[TEX_LAYER_OVERLAY].texture;
 
 	/* If no texture, draw nothing */
 	if(!texture)
@@ -507,7 +507,7 @@ void GUIEngine::drawHeader(video::VideoDriver *driver)
 {
 	core::dimension2d<u32> screensize = driver->getScreenSize();
 
-	video::ITexture* texture = m_textures[TEX_LAYER_HEADER].texture;
+	video::GLTexture* texture = m_textures[TEX_LAYER_HEADER].texture;
 
 	// If no texture, draw nothing
 	if (!texture)
@@ -566,7 +566,7 @@ void GUIEngine::drawFooter(video::VideoDriver *driver)
 {
 	core::dimension2d<u32> screensize = driver->getScreenSize();
 
-	video::ITexture* texture = m_textures[TEX_LAYER_FOOTER].texture;
+	video::GLTexture* texture = m_textures[TEX_LAYER_FOOTER].texture;
 
 	/* If no texture, draw nothing */
 	if(!texture)

@@ -447,7 +447,7 @@ video::IImage *Minimap::getMinimapMask()
 	return data->minimap_mask_square;
 }
 
-video::ITexture *Minimap::getMinimapTexture()
+video::GLTexture *Minimap::getMinimapTexture()
 {
 	// update minimap textures when new scan is ready
 	if (data->map_invalidated && data->mode.type != MINIMAP_TYPE_TEXTURE)
@@ -472,7 +472,7 @@ video::ITexture *Minimap::getMinimapTexture()
 		break;
 	case MINIMAP_TYPE_TEXTURE:
 		// FIXME: this is a pointless roundtrip through the gpu
-		video::ITexture* texture = m_tsrc->getTexture(data->mode.texture);
+		video::GLTexture* texture = m_tsrc->getTexture(data->mode.texture);
 		video::IImage* image = driver->createImageFromData(
 			texture->getColorFormat(), texture->getSize(),
 			texture->lock(video::ETLM_READ_ONLY), true, false);
@@ -563,7 +563,7 @@ void Minimap::drawMinimap(core::rect<s32> rect)
 		return;
 
 	// Get textures
-	video::ITexture *minimap_texture = getMinimapTexture();
+	video::GLTexture *minimap_texture = getMinimapTexture();
 	if (!minimap_texture)
 		return;
 	if (!data->textures_initialised) {
@@ -611,7 +611,7 @@ void Minimap::drawMinimap(core::rect<s32> rect)
 	driver->drawMeshBuffer(m_meshbuffer.get());
 
 	// Draw overlay
-	video::ITexture *minimap_overlay = data->minimap_shape_round ?
+	video::GLTexture *minimap_overlay = data->minimap_shape_round ?
 		data->minimap_overlay_round : data->minimap_overlay_square;
 	material.TextureLayers[0].Texture = minimap_overlay;
 	material.MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL;

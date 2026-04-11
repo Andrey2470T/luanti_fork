@@ -787,7 +787,7 @@ void GUIFormSpecMenu::parseImage(parserData* data, const std::string &element)
 	}
 
 	std::string name = unescape_string(parts[1 + offset]);
-	video::ITexture *texture = m_tsrc->getTexture(name);
+	video::GLTexture *texture = m_tsrc->getTexture(name);
 
 	v2s32 pos;
 	v2s32 geom;

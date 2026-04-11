@@ -163,7 +163,7 @@ void Hud::drawItem(const ItemStack &item, const core::rect<s32>& rect,
 			imgrect2.UpperLeftCorner.Y  -= (m_padding*2);
 			imgrect2.LowerRightCorner.X += (m_padding*2);
 			imgrect2.LowerRightCorner.Y += (m_padding*2);
-				video::ITexture *texture = tsrc->getTexture(hotbar_selected_image);
+				video::GLTexture *texture = tsrc->getTexture(hotbar_selected_image);
 				core::dimension2di imgsize(texture->getOriginalSize());
 			draw2DImageFilterScaled(driver, texture, imgrect2,
 					core::rect<s32>(core::position2d<s32>(0,0), imgsize),
@@ -267,7 +267,7 @@ void Hud::drawItems(v2s32 screen_pos, v2s32 screen_offset, s32 itemcount, v2f al
 		core::rect<s32> imgrect2(-m_padding/2, -m_padding/2,
 			width+m_padding/2, height+m_padding/2);
 		core::rect<s32> rect2 = imgrect2 + pos;
-		video::ITexture *texture = tsrc->getTexture(hotbar_image);
+		video::GLTexture *texture = tsrc->getTexture(hotbar_image);
 		core::dimension2di imgsize(texture->getOriginalSize());
 		draw2DImageFilterScaled(driver, texture, rect2,
 			core::rect<s32>(core::position2d<s32>(0,0), imgsize),
@@ -474,7 +474,7 @@ void Hud::drawLuaElements(const v3s16 &camera_offset)
 				[[fallthrough]];
 			}
 			case HUD_ELEM_IMAGE: {
-				video::ITexture *texture = tsrc->getTexture(e->text);
+				video::GLTexture *texture = tsrc->getTexture(e->text);
 				if (!texture)
 					continue;
 
@@ -497,7 +497,7 @@ void Hud::drawLuaElements(const v3s16 &camera_offset)
 					NULL, colors, true);
 				break; }
 			case HUD_ELEM_COMPASS: {
-				video::ITexture *texture = tsrc->getTexture(e->text);
+				video::GLTexture *texture = tsrc->getTexture(e->text);
 				if (!texture)
 					continue;
 
@@ -576,7 +576,7 @@ void Hud::drawLuaElements(const v3s16 &camera_offset)
 	}
 }
 
-void Hud::drawCompassTranslate(HudElement *e, video::ITexture *texture,
+void Hud::drawCompassTranslate(HudElement *e, video::GLTexture *texture,
 		const core::rect<s32> &rect, int angle)
 {
 	const video::SColor color(255, 255, 255, 255);
@@ -616,7 +616,7 @@ void Hud::drawCompassTranslate(HudElement *e, video::ITexture *texture,
 	}
 }
 
-void Hud::drawCompassRotate(HudElement *e, video::ITexture *texture,
+void Hud::drawCompassRotate(HudElement *e, video::GLTexture *texture,
 		const core::rect<s32> &rect, int angle)
 {
 	core::rect<s32> oldViewPort = driver->getViewPort();
@@ -652,11 +652,11 @@ void Hud::drawStatbar(v2s32 pos, u16 corner, u16 drawdir,
 	const video::SColor color(255, 255, 255, 255);
 	const video::SColor colors[] = {color, color, color, color};
 
-	video::ITexture *stat_texture = tsrc->getTexture(texture);
+	video::GLTexture *stat_texture = tsrc->getTexture(texture);
 	if (!stat_texture)
 		return;
 
-	video::ITexture *stat_texture_bg = nullptr;
+	video::GLTexture *stat_texture_bg = nullptr;
 	if (!bgtexture.empty()) {
 		stat_texture_bg = tsrc->getTexture(bgtexture);
 	}
@@ -813,7 +813,7 @@ void Hud::drawHotbar(const v2s32 &pos, const v2f &offset, u16 dir, const v2f &al
 
 void Hud::drawCrosshair()
 {
-	auto draw_image_crosshair = [this] (video::ITexture *tex) {
+	auto draw_image_crosshair = [this] (video::GLTexture *tex) {
 		core::dimension2di orig_size(tex->getOriginalSize());
 		// Integer scaling to avoid artifacts, floor instead of round since too
 		// small looks better than too large in this case.

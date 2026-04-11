@@ -369,7 +369,7 @@ public:
 
 	void onSetMaterial(const video::SMaterial &material) override
 	{
-		video::ITexture *texture = material.getTexture(0);
+		video::GLTexture *texture = material.getTexture(0);
 		if (texture) {
 			core::dimension2du size = texture->getSize();
 			m_texel_size0 = v2f(1.f / size.Width, 1.f / size.Height);
@@ -1389,7 +1389,7 @@ bool Game::createClient(const GameStartData &start_data)
 
 	/* Pre-calculated values
 	 */
-	video::ITexture *t = texture_src->getTexture("crack_anylength.png");
+	video::GLTexture *t = texture_src->getTexture("crack_anylength.png");
 	if (t) {
 		v2u32 size = t->getOriginalSize();
 		crack_animation_length = size.Y / size.X;

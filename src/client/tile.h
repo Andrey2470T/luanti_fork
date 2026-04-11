@@ -5,7 +5,7 @@
 #pragma once
 
 #include "irrlichttypes.h"
-#include <ITexture.h>
+#include <Texture.h>
 #include <vector>
 #include <SMaterial.h>
 
@@ -47,7 +47,7 @@ struct FrameSpec
 	FrameSpec() = default;
 
 	u32 texture_id = 0;
-	video::ITexture *texture = nullptr;
+	video::GLTexture *texture = nullptr;
 };
 
 /**
@@ -116,7 +116,7 @@ struct TileLayer
 
 	// Ordered for size, please do not reorder
 
-	video::ITexture *texture = nullptr;
+	video::GLTexture *texture = nullptr;
 
 	u32 shader_id = 0;
 

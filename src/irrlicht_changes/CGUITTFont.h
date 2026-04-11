@@ -226,7 +226,7 @@ namespace gui
 				dirty = false;
 			}
 
-			video::ITexture* texture;
+			video::GLTexture* texture;
 			u32 available_slots;
 			u32 used_slots;
 			bool dirty;
@@ -346,7 +346,7 @@ namespace gui
 
 			//! This function is for debugging mostly. If the page doesn't exist it returns zero.
 			//! \param page_index Simply return the texture handle of a given page index.
-			video::ITexture* getPageTextureByIndex(const u32& page_index) const;
+			video::GLTexture* getPageTextureByIndex(const u32& page_index) const;
 
 			inline video::VideoDriver *getDriver() const { return Driver; }
 

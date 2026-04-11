@@ -22,7 +22,7 @@ public:
 		infostream<<"SmokePuffCSO: constructing"<<std::endl;
 		m_spritenode = smgr->addBillboardSceneNode(
 				NULL, v2f(1,1), pos, -1);
-		video::ITexture *tex = env->getGameDef()->tsrc()->getTextureForMesh("smoke_puff.png");
+		video::GLTexture *tex = env->getGameDef()->tsrc()->getTextureForMesh("smoke_puff.png");
 		m_spritenode->forEachMaterial([tex] (auto &mat) {
 			mat.TextureLayers[0].Texture = tex;
 			mat.TextureLayers[0].MinFilter = video::ETMINF_NEAREST_MIPMAP_NEAREST;

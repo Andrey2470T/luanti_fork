@@ -263,7 +263,7 @@ void ShadowRenderer::updateSMTextures()
 		if (reset_sm_texture || m_force_update_shadow_map)
 			m_current_frame = 0;
 
-		video::ITexture* shadowMapTargetTexture = shadowMapClientMapFuture;
+		video::GLTexture* shadowMapTargetTexture = shadowMapClientMapFuture;
 		if (shadowMapTargetTexture == nullptr)
 			shadowMapTargetTexture = shadowMapClientMap;
 
@@ -321,7 +321,7 @@ void ShadowRenderer::updateSMTextures()
 	}
 }
 
-void ShadowRenderer::update(video::ITexture *outputTarget)
+void ShadowRenderer::update(video::GLTexture *outputTarget)
 {
 	if (!m_shadows_enabled || m_smgr->getActiveCamera() == nullptr) {
 		return;
@@ -399,7 +399,7 @@ void ShadowRenderer::drawDebug()
 }
 
 
-video::ITexture *ShadowRenderer::getSMTexture(const std::string &shadow_map_name,
+video::GLTexture *ShadowRenderer::getSMTexture(const std::string &shadow_map_name,
 		video::ECOLOR_FORMAT texture_format, bool force_creation)
 {
 	if (force_creation) {
@@ -412,7 +412,7 @@ video::ITexture *ShadowRenderer::getSMTexture(const std::string &shadow_map_name
 	return m_driver->getTexture(shadow_map_name.c_str());
 }
 
-void ShadowRenderer::renderShadowMap(video::ITexture *target,
+void ShadowRenderer::renderShadowMap(video::GLTexture *target,
 		DirectionalLight &light, scene::E_SCENE_NODE_RENDER_PASS pass)
 {
 	m_driver->setTransform(video::ETS_VIEW, light.getFutureViewMatrix());
@@ -447,7 +447,7 @@ void ShadowRenderer::renderShadowMap(video::ITexture *target,
 }
 
 void ShadowRenderer::renderShadowObjects(
-		video::ITexture *target, DirectionalLight &light)
+		video::GLTexture *target, DirectionalLight &light)
 {
 	m_driver->setTransform(video::ETS_VIEW, light.getViewMatrix());
 	m_driver->setTransform(video::ETS_PROJECTION, light.getProjectionMatrix());

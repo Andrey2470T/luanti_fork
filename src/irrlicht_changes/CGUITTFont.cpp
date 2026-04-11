@@ -891,7 +891,7 @@ video::IImage* CGUITTFont::createTextureFromChar(const char32_t& ch)
 	if (page->dirty)
 		page->updateTexture();
 
-	video::ITexture* tex = page->texture;
+	video::GLTexture* tex = page->texture;
 
 	// Acquire a read-only lock of the corresponding page texture.
 	void* ptr = tex->lock(video::ETLM_READ_ONLY);
@@ -912,7 +912,7 @@ video::IImage* CGUITTFont::createTextureFromChar(const char32_t& ch)
 	return image;
 }
 
-video::ITexture* CGUITTFont::getPageTextureByIndex(const u32& page_index) const
+video::GLTexture* CGUITTFont::getPageTextureByIndex(const u32& page_index) const
 {
 	if (page_index < Glyph_Pages.size())
 		return Glyph_Pages[page_index]->texture;

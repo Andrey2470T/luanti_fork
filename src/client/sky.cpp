@@ -5,7 +5,7 @@
 
 #include <cmath>
 #include "sky.h"
-#include <ITexture.h>
+#include <Texture.h>
 #include <VideoDriver.h>
 #include <ISceneManager.h>
 #include <ICameraSceneNode.h>
@@ -878,7 +878,7 @@ void Sky::addTextureToSkybox(const std::string &texture, int material_id,
 		return;
 	// Keep a list of texture names handy.
 	m_sky_params.textures.emplace_back(texture);
-	video::ITexture *result = tsrc->getTextureForMesh(texture);
+    video::GLTexture *result = tsrc->getTextureForMesh(texture);
 	m_materials[material_id+5] = baseMaterial();
 	m_materials[material_id+5].setTexture(0, result);
 	m_materials[material_id+5].MaterialType = video::EMT_SOLID;

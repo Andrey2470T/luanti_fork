@@ -17,7 +17,7 @@
 #include "../particles.h"
 
 namespace video {
-	class ITexture;
+	class GLTexture;
 }
 
 struct ClientEvent;
@@ -35,7 +35,7 @@ struct ClientParticleTexture
 	/* per-spawner structure used to store the ParticleTexture structs
 	 * that spawned particles will refer to through ClientParticleTexRef */
 	ParticleTexture tex;
-	video::ITexture *ref = nullptr;
+    video::GLTexture *ref = nullptr;
 
 	ClientParticleTexture() = default;
 	ClientParticleTexture(const ServerParticleTexture& p, ITextureSource *tsrc);
@@ -46,7 +46,7 @@ struct ClientParticleTexRef
 	/* per-particle structure used to avoid massively duplicating the
 	 * fairly large ParticleTexture struct */
 	ParticleTexture *tex = nullptr;
-	video::ITexture *ref = nullptr;
+	video::GLTexture *ref = nullptr;
 
 	ClientParticleTexRef() = default;
 
@@ -55,7 +55,7 @@ struct ClientParticleTexRef
 			tex(&t.tex), ref(t.ref) {};
 
 	/* constructor used for node particles */
-	explicit ClientParticleTexRef(video::ITexture *tp): ref(tp) {};
+	explicit ClientParticleTexRef(video::GLTexture *tp): ref(tp) {};
 };
 
 class ParticleSpawner;
@@ -241,7 +241,7 @@ public:
 
 protected:
 	static bool getNodeParticleParams(const MapNode &n, const ContentFeatures &f,
-		ParticleParameters &p, video::ITexture **texture, v2f &texpos,
+		ParticleParameters &p, video::GLTexture **texture, v2f &texpos,
 		v2f &texsize, video::SColor *color, u8 tilenum = 0);
 
 	static video::SMaterial getMaterialForParticle(const Particle *texture);

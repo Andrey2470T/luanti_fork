@@ -47,7 +47,7 @@ void TouchControls::emitKeyboardEvent(KeyPress key, bool pressed)
 void TouchControls::loadButtonTexture(IGUIImage *gui_button, const std::string &path)
 {
 	auto rect = gui_button->getRelativePosition();
-	video::ITexture *texture = guiScalingImageButton(m_device->getVideoDriver(),
+	video::GLTexture *texture = guiScalingImageButton(m_device->getVideoDriver(),
 			m_texturesource->getTexture(path), rect.getWidth(), rect.getHeight());
 	gui_button->setImage(texture);
 	gui_button->setScaleImage(true);

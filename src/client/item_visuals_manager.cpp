@@ -40,7 +40,7 @@ ItemVisualsManager::ItemVisuals *ItemVisualsManager::createItemVisuals( const It
 	infostream << "Lazily creating item texture and mesh for \""
 			<< cache_key << "\"" << std::endl;
 
-	ITextureSource *tsrc = client->getTextureSource();
+    ITextureSource *tsrc = client->getTextureSource();
 
 	// Create new ItemVisuals
 	auto cc = std::make_unique<ItemVisuals>();
@@ -58,7 +58,7 @@ ItemVisualsManager::ItemVisuals *ItemVisualsManager::createItemVisuals( const It
 	return ptr;
 }
 
-video::ITexture* ItemVisualsManager::getInventoryTexture(const ItemStack &item,
+video::GLTexture* ItemVisualsManager::getInventoryTexture(const ItemStack &item,
 		Client *client) const
 {
 	ItemVisuals *iv = createItemVisuals(item, client);

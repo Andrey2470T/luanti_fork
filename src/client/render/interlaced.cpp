@@ -16,7 +16,7 @@ InitInterlacedMaskStep::InitInterlacedMaskStep(TextureBuffer *_buffer, u8 _index
 
 void InitInterlacedMaskStep::run(PipelineContext &context)
 {
-	video::ITexture *mask = buffer->getTexture(index);
+	video::GLTexture *mask = buffer->getTexture(index);
 	if (!mask)
 		return;
 	if (mask == last_mask)

@@ -14,7 +14,7 @@
 class Client;
 struct ItemStack;
 typedef std::vector<video::SColor> Palette; // copied from src/client/texturesource.h
-namespace video { class ITexture; }
+namespace video { class GLTexture; }
 
 // Caches data needed to draw an itemstack
 
@@ -30,7 +30,7 @@ struct ItemVisualsManager
 	}
 
 	// Get item inventory texture
-	video::ITexture* getInventoryTexture(const ItemStack &item, Client *client) const;
+	video::GLTexture* getInventoryTexture(const ItemStack &item, Client *client) const;
 
 	// Get item wield mesh
 	// Once said to return nullptr if there is an inventory image, but this is wrong
@@ -46,7 +46,7 @@ struct ItemVisualsManager
 private:
 	struct ItemVisuals
 	{
-		video::ITexture *inventory_texture;
+		video::GLTexture *inventory_texture;
 		ItemMesh wield_mesh;
 		Palette *palette;
 

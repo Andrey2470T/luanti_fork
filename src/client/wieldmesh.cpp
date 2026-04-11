@@ -239,12 +239,12 @@ void WieldMeshSceneNode::setExtruded(const std::string &imagename,
 	const std::string &overlay_name, v3f wield_scale, ITextureSource *tsrc,
 	u8 num_frames)
 {
-	video::ITexture *texture = tsrc->getTexture(imagename);
+	video::GLTexture *texture = tsrc->getTexture(imagename);
 	if (!texture) {
 		changeToMesh(nullptr);
 		return;
 	}
-	video::ITexture *overlay_texture =
+	video::GLTexture *overlay_texture =
 		overlay_name.empty() ? NULL : tsrc->getTexture(overlay_name);
 
 	core::dimension2d<u32> dim = texture->getSize();
@@ -629,11 +629,11 @@ scene::SMesh *getExtrudedMesh(ITextureSource *tsrc,
 	const std::string &imagename, const std::string &overlay_name)
 {
 	// check textures
-	video::ITexture *texture = tsrc->getTexture(imagename);
+	video::GLTexture *texture = tsrc->getTexture(imagename);
 	if (!texture) {
 		return NULL;
 	}
-	video::ITexture *overlay_texture =
+	video::GLTexture *overlay_texture =
 		(overlay_name.empty()) ? NULL : tsrc->getTexture(overlay_name);
 
 	// get mesh

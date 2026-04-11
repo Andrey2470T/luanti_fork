@@ -773,7 +773,7 @@ bool MapBlockMesh::animate(bool faraway, float time, int crack,
 			// Create new texture name from original
 			std::string s = crack_material.second + itos(crack);
 			u32 new_texture_id = 0;
-			video::ITexture *new_texture =
+			video::GLTexture *new_texture =
 					m_tsrc->getTextureForMesh(s, &new_texture_id);
 			buf->getMaterial().setTexture(0, new_texture);
 		}

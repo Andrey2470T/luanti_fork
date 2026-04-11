@@ -27,7 +27,7 @@ enum texture_layer {
 };
 
 struct image_definition {
-	video::ITexture *texture = nullptr;
+	video::GLTexture *texture = nullptr;
 	bool             tile;
 	unsigned int     minsize;
 };
@@ -92,13 +92,13 @@ public:
 	 * @param name path to the texture
 	 * @param id receives the texture ID, always 0 in this implementation
 	 */
-	video::ITexture *getTexture(const std::string &name, u32 *id = NULL);
+	video::GLTexture *getTexture(const std::string &name, u32 *id = NULL);
 
 private:
 	/** driver to get textures from */
 	video::VideoDriver *m_driver = nullptr;
 	/** set of textures to delete */
-	std::vector<video::ITexture*> m_to_delete;
+	std::vector<video::GLTexture*> m_to_delete;
 };
 
 /** GUIEngine specific implementation of SoundFallbackPathProvider */
