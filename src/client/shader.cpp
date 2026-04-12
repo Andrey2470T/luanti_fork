@@ -13,7 +13,7 @@
 #include "util/thread.h"
 #include "settings.h"
 #include <ICameraSceneNode.h>
-#include <IMaterialRenderer.h>
+#include <MaterialRenderer.h>
 #include <IShaderConstantSetCallBack.h>
 #include "client/renderingengine.h"
 #include "gettext.h"
@@ -168,7 +168,7 @@ public:
 		}
 	}
 
-	virtual void OnSetConstants(video::IMaterialRenderer *renderer, s32 userData) override
+	virtual void OnSetConstants(video::MaterialRenderer *renderer, s32 userData) override
 	{
 		for (auto &&setter : m_setters)
 			setter->onSetUniforms(renderer);
@@ -255,22 +255,22 @@ class MainShaderUniformSetter : public IShaderUniformSetter
 {
 	using SamplerLayer_t = s32;
 
-	CachedVertexShaderSetting<f32, 16> m_world_view_proj{"mWorldViewProj"};
-	CachedVertexShaderSetting<f32, 16> m_world{"mWorld"};
+    CachedShaderSetting<f32, 16> m_world_view_proj{"mWorldViewProj"};
+    CachedShaderSetting<f32, 16> m_world{"mWorld"};
 
 	// Modelview matrix
-	CachedVertexShaderSetting<float, 16> m_world_view{"mWorldView"};
+    CachedShaderSetting<float, 16> m_world_view{"mWorldView"};
 	// Texture matrix
-	CachedVertexShaderSetting<float, 16> m_texture{"mTexture"};
+    CachedShaderSetting<float, 16> m_texture{"mTexture"};
 
-	CachedPixelShaderSetting<SamplerLayer_t> m_texture0{"texture0"};
-	CachedPixelShaderSetting<SamplerLayer_t> m_texture1{"texture1"};
-	CachedPixelShaderSetting<SamplerLayer_t> m_texture2{"texture2"};
-	CachedPixelShaderSetting<SamplerLayer_t> m_texture3{"texture3"};
+    CachedShaderSetting<SamplerLayer_t> m_texture0{"texture0"};
+    CachedShaderSetting<SamplerLayer_t> m_texture1{"texture1"};
+    CachedShaderSetting<SamplerLayer_t> m_texture2{"texture2"};
+    CachedShaderSetting<SamplerLayer_t> m_texture3{"texture3"};
 
 	// commonly used way to pass material color to shader
 	video::SColor m_material_color;
-	CachedPixelShaderSetting<float, 4> m_material_color_setting{"materialColor"};
+    CachedShaderSetting<float, 4> m_material_color_setting{"materialColor"};
 
 public:
 	~MainShaderUniformSetter() = default;
@@ -280,7 +280,7 @@ public:
 		m_material_color = material.ColorParam;
 	}
 
-	virtual void onSetUniforms(video::IMaterialRenderer *renderer) override
+	virtual void onSetUniforms(video::MaterialRenderer *renderer) override
 	{
 		video::VideoDriver *driver = renderer->getVideoDriver();
 		assert(driver);
@@ -307,13 +307,13 @@ public:
 
 		SamplerLayer_t tex_id;
 		tex_id = 0;
-		m_texture0.set(&tex_id, renderer);
+        m_texture0.set(tex_id, renderer);
 		tex_id = 1;
-		m_texture1.set(&tex_id, renderer);
+        m_texture1.set(tex_id, renderer);
 		tex_id = 2;
-		m_texture2.set(&tex_id, renderer);
+        m_texture2.set(tex_id, renderer);
 		tex_id = 3;
-		m_texture3.set(&tex_id, renderer);
+        m_texture3.set(tex_id, renderer);
 
 		video::SColorf colorf(m_material_color);
 		m_material_color_setting.set(colorf, renderer);
@@ -724,17 +724,16 @@ ShaderInfo ShaderSource::generateShader(const std::string &name,
 
 	vertex_shader = common_header + vertex_header + final_header + vertex_shader;
 	fragment_shader = common_header + fragment_header + final_header + fragment_shader;
-	const char *geometry_shader_ptr = nullptr; // optional
+
 	if (!geometry_shader.empty()) {
 		geometry_shader = common_header + geometry_header + final_header + geometry_shader;
-		geometry_shader_ptr = geometry_shader.c_str();
 	}
 
 	auto cb = make_irr<ShaderCallback>(m_uniform_factories);
 	infostream << "Compiling high level shaders for " << log_name << std::endl;
 	s32 shadermat = driver->addHighLevelShaderMaterial(
-		vertex_shader.c_str(), fragment_shader.c_str(), geometry_shader_ptr,
-		log_name.c_str(), scene::EPT_TRIANGLES, scene::EPT_TRIANGLES, 0,
+        vertex_shader, fragment_shader, geometry_shader,
+        log_name, scene::EPT_TRIANGLES, scene::EPT_TRIANGLES, 0,
 		cb.get(), shaderinfo.base_material);
 	if (shadermat == -1) {
 		errorstream << "generateShader(): failed to generate shaders for "

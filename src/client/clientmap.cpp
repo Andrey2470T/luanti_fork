@@ -6,7 +6,7 @@
 #include "client.h"
 #include "client/mesh.h"
 #include "mapblock_mesh.h"
-#include <IMaterialRenderer.h>
+#include <MaterialRenderer.h>
 #include <VideoDriver.h>
 #include <matrix4.h>
 #include "mapsector.h"

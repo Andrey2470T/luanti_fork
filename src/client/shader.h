@@ -5,8 +5,8 @@
 
 #pragma once
 
+#include <MaterialRenderer.h>
 #include "irrlichttypes_bloated.h"
-#include <IMaterialRenderer.h>
 #include <string>
 #include <map>
 #include <variant>
@@ -51,15 +51,10 @@ public:
 	Abstraction for updating uniforms used by shaders
 */
 
-namespace video {
-	class IMaterialRendererServices;
-}
-
-
 class IShaderUniformSetter {
 public:
 	virtual ~IShaderUniformSetter() = default;
-	virtual void onSetUniforms(video::IMaterialRenderer *renderer) = 0;
+	virtual void onSetUniforms(video::MaterialRenderer *renderer) = 0;
 	virtual void onSetMaterial(const video::SMaterial& material)
 	{ }
 };
@@ -72,31 +67,15 @@ public:
 };
 
 
-template <typename T, std::size_t count, bool cache>
+template <typename T, std::size_t count = 1>
 class CachedShaderSetting {
-	const char *m_name;
+    std::string m_name;
 	T m_sent[count];
 	bool has_been_set = false;
-	bool is_pixel;
-protected:
-	CachedShaderSetting(const char *name, bool is_pixel) :
-		m_name(name), is_pixel(is_pixel)
-	{}
 public:
-	void set(const T value[count], video::IMaterialRenderer *renderer)
-	{
-		if (cache && has_been_set && std::equal(m_sent, m_sent + count, value))
-			return;
-		if (is_pixel)
-			renderer->setPixelShaderConstant(renderer->getPixelShaderConstantID(m_name), value, count);
-		else
-			renderer->setVertexShaderConstant(renderer->getVertexShaderConstantID(m_name), value, count);
-
-		if (cache) {
-			std::copy(value, value + count, m_sent);
-			has_been_set = true;
-		}
-	}
+    CachedShaderSetting(const std::string &name) :
+        m_name(name)
+	{}
 
 	/* Type specializations */
 
@@ -115,92 +94,119 @@ public:
 	template<typename T2 = T> \
 	std::enable_if_t<std::is_same_v<T, T2> && std::is_same_v<T2, _type> && (_count_expr)>
 
-	SPECIALIZE(float, count == 2)
-	set(const v2f value, video::IMaterialRenderer *renderer)
+    SPECIALIZE(f32, count == 1)
+    set(const f32 value, video::MaterialRenderer *renderer)
+    {
+        f32 value_v[count] = {value};
+        if (has_been_set && std::equal(m_sent, m_sent + count, value_v))
+            return;
+        renderer->setUniformFloat(m_name, value);
+
+        std::copy(value_v, value_v + count, m_sent);
+        has_been_set = true;
+    }
+    SPECIALIZE(s32, count == 1)
+    set(const s32 value, video::MaterialRenderer *renderer)
+    {
+        s32 value_v[count] = {value};
+        if (has_been_set && std::equal(m_sent, m_sent + count, value_v))
+            return;
+        renderer->setUniformInt(m_name, value);
+
+        std::copy(value_v, value_v + count, m_sent);
+        has_been_set = true;
+    }
+
+    SPECIALIZE(f32, count == 2)
+	set(const v2f value, video::MaterialRenderer *renderer)
 	{
-		float array[2] = { value.X, value.Y };
-		set(array, renderer);
+        f32 value_v[count] = {value.X, value.Y};
+        if (has_been_set && std::equal(m_sent, m_sent + count, value_v))
+            return;
+        renderer->setUniform2Float(m_name, value);
+
+        std::copy(value_v, value_v + count, m_sent);
+        has_been_set = true;
 	}
 
-	SPECIALIZE(float, count == 3)
-	set(const v3f value, video::IMaterialRenderer *renderer)
+    SPECIALIZE(f32, count == 3)
+	set(const v3f value, video::MaterialRenderer *renderer)
 	{
-		float array[3] = { value.X, value.Y, value.Z };
-		set(array, renderer);
+        f32 value_v[count] = {value.X, value.Y, value.Z};
+        if (has_been_set && std::equal(m_sent, m_sent + count, value_v))
+            return;
+        renderer->setUniform3Float(m_name, value);
+
+        std::copy(value_v, value_v + count, m_sent);
+        has_been_set = true;
+	}
+    SPECIALIZE(f32, count == 4)
+    set(const f32 value[count], video::MaterialRenderer *renderer)
+    {
+        if (has_been_set && std::equal(m_sent, m_sent + count, value))
+            return;
+        renderer->setUniformFloatArray(m_name, {value[0], value[1], value[2], value[3]});
+
+        std::copy(value, value + count, m_sent);
+        has_been_set = true;
+    }
+
+    SPECIALIZE(f32, count == 3 || count == 4)
+	set(const video::SColorf value, video::MaterialRenderer *renderer)
+	{
+        f32 value_v[4] = {value.r, value.g, value.b, value.a};
+
+        if (has_been_set && std::equal(m_sent, m_sent + count, value_v))
+            return;
+        if constexpr (count == 3)
+            renderer->setUniformColorfRGB(m_name, value);
+        else
+            renderer->setUniformColorfRGBA(m_name, value);
+
+        std::copy(value_v, value_v + count, m_sent);
+        has_been_set = true;
 	}
 
-	SPECIALIZE(float, count == 3 || count == 4)
-	set(const video::SColorf value, video::IMaterialRenderer *renderer)
+    SPECIALIZE(f32, count == 16)
+	set(const core::matrix4 &value, video::MaterialRenderer *renderer)
 	{
-		if constexpr (count == 3) {
-			float array[3] = { value.r, value.g, value.b };
-			set(array, renderer);
-		} else {
-			float array[4] = { value.r, value.g, value.b, value.a };
-			set(array, renderer);
-		}
-	}
+        if (has_been_set && std::equal(m_sent, m_sent + count, value.pointer()))
+            return;
+        renderer->setUniform4x4Matrix(m_name, value);
 
-	SPECIALIZE(float, count == 16)
-	set(const core::matrix4 &value, video::IMaterialRenderer *renderer)
-	{
-		set(value.pointer(), renderer);
+        std::copy(value.pointer(), value.pointer() + count, m_sent);
+        has_been_set = true;
 	}
 
 #undef SPECIALIZE
 };
 
-template <typename T, std::size_t count = 1, bool cache=true>
-class CachedPixelShaderSetting : public CachedShaderSetting<T, count, cache> {
-public:
-	CachedPixelShaderSetting(const char *name) :
-		CachedShaderSetting<T, count, cache>(name, true){}
-};
-
-template <typename T, std::size_t count = 1, bool cache=true>
-class CachedVertexShaderSetting : public CachedShaderSetting<T, count, cache> {
-public:
-	CachedVertexShaderSetting(const char *name) :
-		CachedShaderSetting<T, count, cache>(name, false){}
-};
-
-template <typename T, std::size_t count, bool cache, bool is_pixel>
+template <typename T, std::size_t count>
 class CachedStructShaderSetting {
-	const char *m_name;
+    std::string m_name;
 	T m_sent[count];
 	bool has_been_set = false;
-	std::array<const char*, count> m_fields;
+    std::array<const std::string, count> m_fields;
 public:
-	CachedStructShaderSetting(const char *name, std::array<const char*, count> &&fields) :
+    CachedStructShaderSetting(const std::string &name, std::array<const std::string, count> &&fields) :
 		m_name(name), m_fields(std::move(fields))
 	{}
 
-	void set(const T value[count], video::IMaterialRenderer *renderer)
+	void set(const T value[count], video::MaterialRenderer *renderer)
 	{
-		if (cache && has_been_set && std::equal(m_sent, m_sent + count, value))
+        if (has_been_set && std::equal(m_sent, m_sent + count, value))
 			return;
 
 		for (std::size_t i = 0; i < count; i++) {
 			std::string uniform_name = std::string(m_name) + "." + m_fields[i];
 
-			if (is_pixel)
-				renderer->setPixelShaderConstant(renderer->getPixelShaderConstantID(uniform_name.c_str()), value + i, 1);
-			else
-				renderer->setVertexShaderConstant(renderer->getVertexShaderConstantID(uniform_name.c_str()), value + i, 1);
+            renderer->setUniformFloat(uniform_name, value[i]);
 		}
 
-		if (cache) {
-			std::copy(value, value + count, m_sent);
-			has_been_set = true;
-		}
+        std::copy(value, value + count, m_sent);
+        has_been_set = true;
 	}
 };
-
-template<typename T, std::size_t count, bool cache = true>
-using CachedStructVertexShaderSetting = CachedStructShaderSetting<T, count, cache, false>;
-
-template<typename T, std::size_t count, bool cache = true>
-using CachedStructPixelShaderSetting = CachedStructShaderSetting<T, count, cache, true>;
 
 /*
 	ShaderSource creates and caches shaders.

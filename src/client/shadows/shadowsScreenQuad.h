@@ -22,12 +22,12 @@ private:
 class shadowScreenQuadCB : public video::IShaderConstantSetCallBack
 {
 public:
-	virtual void OnSetConstants(video::IMaterialRenderer *renderer,
+	virtual void OnSetConstants(video::MaterialRenderer *renderer,
 			s32 userData);
 private:
-	CachedPixelShaderSetting<s32> m_sm_client_map_setting{"ShadowMapClientMap"};
-	CachedPixelShaderSetting<s32>
+    CachedShaderSetting<s32> m_sm_client_map_setting{"ShadowMapClientMap"};
+    CachedShaderSetting<s32>
 		m_sm_client_map_trans_setting{"ShadowMapClientMapTraslucent"};
-	CachedPixelShaderSetting<s32>
+    CachedShaderSetting<s32>
 		m_sm_dynamic_sampler_setting{"ShadowMapSamplerdynamic"};
 };

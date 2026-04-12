@@ -69,12 +69,12 @@ void FpsControl::limit(SDLDevice *device, f32 *dtime)
 
 class FogShaderUniformSetter : public IShaderUniformSetter
 {
-	CachedPixelShaderSetting<float, 4> m_fog_color{"fogColor"};
-	CachedPixelShaderSetting<float> m_fog_distance{"fogDistance"};
-	CachedPixelShaderSetting<float> m_fog_shading_parameter{"fogShadingParameter"};
+    CachedShaderSetting<float, 4> m_fog_color{"fogColor"};
+    CachedShaderSetting<float> m_fog_distance{"fogDistance"};
+    CachedShaderSetting<float> m_fog_shading_parameter{"fogShadingParameter"};
 
 public:
-	void onSetUniforms(video::IMaterialRenderer *renderer) override
+	void onSetUniforms(video::MaterialRenderer *renderer) override
 	{
 		auto *driver = renderer->getVideoDriver();
 		assert(driver);
@@ -92,12 +92,12 @@ public:
 		video::SColorf fog_colorf(fog_color);
 		m_fog_color.set(fog_colorf, renderer);
 
-		m_fog_distance.set(&fog_end, renderer);
+        m_fog_distance.set(fog_end, renderer);
 
 		float parameter = 0;
 		if (fog_end > 0)
 			parameter = 1.0f / (1.0f - fog_start / fog_end);
-		m_fog_shading_parameter.set(&parameter, renderer);
+        m_fog_shading_parameter.set(parameter, renderer);
 	}
 };
 

@@ -191,42 +191,42 @@ class GameGlobalShaderUniformSetter : public IShaderUniformSetter
 {
 	Sky *m_sky;
 	Client *m_client;
-	CachedVertexShaderSetting<float> m_animation_timer_vertex{"animationTimer"};
-	CachedPixelShaderSetting<float> m_animation_timer_pixel{"animationTimer"};
-	CachedVertexShaderSetting<float>
+    CachedShaderSetting<float> m_animation_timer_vertex{"animationTimer"};
+    CachedShaderSetting<float> m_animation_timer_pixel{"animationTimer"};
+    CachedShaderSetting<float>
 		m_animation_timer_delta_vertex{"animationTimerDelta"};
-	CachedPixelShaderSetting<float>
+    CachedShaderSetting<float>
 		m_animation_timer_delta_pixel{"animationTimerDelta"};
-	CachedPixelShaderSetting<float, 3> m_day_light{"dayLight"};
-	CachedPixelShaderSetting<float, 3> m_minimap_yaw{"yawVec"};
-	CachedPixelShaderSetting<float, 3> m_camera_offset_pixel{"cameraOffset"};
-	CachedVertexShaderSetting<float, 3> m_camera_offset_vertex{"cameraOffset"};
-	CachedPixelShaderSetting<float, 3> m_camera_position_pixel{ "cameraPosition" };
-	CachedVertexShaderSetting<float, 3> m_camera_position_vertex{ "cameraPosition" };
-	CachedVertexShaderSetting<float, 2> m_texel_size0_vertex{"texelSize0"};
-	CachedPixelShaderSetting<float, 2> m_texel_size0_pixel{"texelSize0"};
+    CachedShaderSetting<float, 3> m_day_light{"dayLight"};
+    CachedShaderSetting<float, 3> m_minimap_yaw{"yawVec"};
+    CachedShaderSetting<float, 3> m_camera_offset_pixel{"cameraOffset"};
+    CachedShaderSetting<float, 3> m_camera_offset_vertex{"cameraOffset"};
+    CachedShaderSetting<float, 3> m_camera_position_pixel{ "cameraPosition" };
+    CachedShaderSetting<float, 3> m_camera_position_vertex{ "cameraPosition" };
+    CachedShaderSetting<float, 2> m_texel_size0_vertex{"texelSize0"};
+    CachedShaderSetting<float, 2> m_texel_size0_pixel{"texelSize0"};
 	v2f m_texel_size0;
-	CachedStructPixelShaderSetting<float, 7> m_exposure_params_pixel{
+    CachedStructShaderSetting<float, 7> m_exposure_params_pixel{
 		"exposureParams",
-		std::array<const char*, 7> {
+        std::array<const std::string, 7> {
 			"luminanceMin", "luminanceMax", "exposureCorrection",
 			"speedDarkBright", "speedBrightDark", "centerWeightPower",
 			"compensationFactor"
 		}};
 	float m_user_exposure_compensation;
 	bool m_bloom_enabled;
-	CachedPixelShaderSetting<float> m_bloom_intensity_pixel{"bloomIntensity"};
-	CachedPixelShaderSetting<float> m_bloom_strength_pixel{"bloomStrength"};
-	CachedPixelShaderSetting<float> m_bloom_radius_pixel{"bloomRadius"};
-	CachedPixelShaderSetting<float> m_saturation_pixel{"saturation"};
+    CachedShaderSetting<float> m_bloom_intensity_pixel{"bloomIntensity"};
+    CachedShaderSetting<float> m_bloom_strength_pixel{"bloomStrength"};
+    CachedShaderSetting<float> m_bloom_radius_pixel{"bloomRadius"};
+    CachedShaderSetting<float> m_saturation_pixel{"saturation"};
 	bool m_volumetric_light_enabled;
-	CachedPixelShaderSetting<float, 3>
+    CachedShaderSetting<float, 3>
 		m_sun_position_pixel{"sunPositionScreen"};
-	CachedPixelShaderSetting<float> m_sun_brightness_pixel{"sunBrightness"};
-	CachedPixelShaderSetting<float, 3>
+    CachedShaderSetting<float> m_sun_brightness_pixel{"sunBrightness"};
+    CachedShaderSetting<float, 3>
 		m_moon_position_pixel{"moonPositionScreen"};
-	CachedPixelShaderSetting<float> m_moon_brightness_pixel{"moonBrightness"};
-	CachedPixelShaderSetting<float>
+    CachedShaderSetting<float> m_moon_brightness_pixel{"moonBrightness"};
+    CachedShaderSetting<float>
 		m_volumetric_light_strength_pixel{"volumetricLightStrength"};
 
 	static constexpr std::array<const char*, 1> SETTING_CALLBACKS = {
@@ -264,7 +264,7 @@ public:
 		g_settings->deregisterAllChangedCallbacks(this);
 	}
 
-	void onSetUniforms(video::IMaterialRenderer *renderer) override
+	void onSetUniforms(video::MaterialRenderer *renderer) override
 	{
 		u32 daynight_ratio = (float)m_client->getEnv().getDayNightRatio();
 		video::SColorf sunlight;
@@ -273,12 +273,12 @@ public:
 
 		u32 animation_timer = m_client->getEnv().getFrameTime() % 1000000;
 		float animation_timer_f = (float)animation_timer / 100000.f;
-		m_animation_timer_vertex.set(&animation_timer_f, renderer);
-		m_animation_timer_pixel.set(&animation_timer_f, renderer);
+        m_animation_timer_vertex.set(animation_timer_f, renderer);
+        m_animation_timer_pixel.set(animation_timer_f, renderer);
 
 		float animation_timer_delta_f = (float)m_client->getEnv().getFrameTimeDelta() / 100000.f;
-		m_animation_timer_delta_vertex.set(&animation_timer_delta_f, renderer);
-		m_animation_timer_delta_pixel.set(&animation_timer_delta_f, renderer);
+        m_animation_timer_delta_vertex.set(animation_timer_delta_f, renderer);
+        m_animation_timer_delta_pixel.set(animation_timer_delta_f, renderer);
 
 		if (m_client->getMinimap()) {
 			v3f minimap_yaw = m_client->getMinimap()->getYawVec();
@@ -312,15 +312,15 @@ public:
 
 		if (m_bloom_enabled) {
 			float intensity = std::max(lighting.bloom_intensity, 0.0f);
-			m_bloom_intensity_pixel.set(&intensity, renderer);
+            m_bloom_intensity_pixel.set(intensity, renderer);
 			float strength_factor = std::max(lighting.bloom_strength_factor, 0.0f);
-			m_bloom_strength_pixel.set(&strength_factor, renderer);
+            m_bloom_strength_pixel.set(strength_factor, renderer);
 			float radius = std::max(lighting.bloom_radius, 0.0f);
-			m_bloom_radius_pixel.set(&radius, renderer);
+            m_bloom_radius_pixel.set(radius, renderer);
 		}
 
 		float saturation = lighting.saturation;
-		m_saturation_pixel.set(&saturation, renderer);
+        m_saturation_pixel.set(saturation, renderer);
 
 		if (m_volumetric_light_enabled) {
 			// Map directional light to screen space
@@ -337,12 +337,12 @@ public:
 				m_sun_position_pixel.set(sun_position, renderer);
 
 				float sun_brightness = core::clamp(107.143f * m_sky->getSunDirection().Y, 0.f, 1.f);
-				m_sun_brightness_pixel.set(&sun_brightness, renderer);
+                m_sun_brightness_pixel.set(sun_brightness, renderer);
 			} else {
 				m_sun_position_pixel.set(v3f(0.f, 0.f, -1.f), renderer);
 
 				float sun_brightness = 0.f;
-				m_sun_brightness_pixel.set(&sun_brightness, renderer);
+                m_sun_brightness_pixel.set(sun_brightness, renderer);
 			}
 
 			if (m_sky->getMoonVisible()) {
@@ -354,16 +354,16 @@ public:
 				m_moon_position_pixel.set(moon_position, renderer);
 
 				float moon_brightness = core::clamp(107.143f * m_sky->getMoonDirection().Y, 0.f, 1.f);
-				m_moon_brightness_pixel.set(&moon_brightness, renderer);
+                m_moon_brightness_pixel.set(moon_brightness, renderer);
 			} else {
 				m_moon_position_pixel.set(v3f(0.f, 0.f, -1.f), renderer);
 
 				float moon_brightness = 0.f;
-				m_moon_brightness_pixel.set(&moon_brightness, renderer);
+                m_moon_brightness_pixel.set(moon_brightness, renderer);
 			}
 
 			float volumetric_light_strength = lighting.volumetric_light_strength;
-			m_volumetric_light_strength_pixel.set(&volumetric_light_strength, renderer);
+            m_volumetric_light_strength_pixel.set(volumetric_light_strength, renderer);
 		}
 	}
 

@@ -14,7 +14,7 @@
 #include "client/client.h"
 #include "client/clientmap.h"
 #include "profiler.h"
-#include "IMaterialRenderer.h"
+#include "MaterialRenderer.h"
 #include "VideoDriver.h"
 
 ShadowRenderer::ShadowRenderer(SDLDevice *device, Client *client) :
