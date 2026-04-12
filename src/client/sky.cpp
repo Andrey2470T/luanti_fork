@@ -713,8 +713,7 @@ static void getTextureAsImage(video::Image *&dst, const std::string &name, IText
 	if (tsrc->isKnownSourceImage(name)) {
 		auto *texture = tsrc->getTexture(name);
 		assert(texture);
-		auto *driver = RenderingEngine::get_video_driver();
-		dst = driver->createImageFromData(
+        dst = new video::Image(
 			texture->getColorFormat(), texture->getSize(),
 			texture->lock(video::ETLM_READ_ONLY));
 		texture->unlock();

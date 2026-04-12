@@ -429,8 +429,8 @@ video::Image *Minimap::getMinimapMask()
 	if (data->minimap_shape_round) {
 		if (!data->minimap_mask_round) {
 			// Get round minimap textures
-			data->minimap_mask_round = driver->createImage(
-				m_tsrc->getTexture("minimap_mask_round.png"),
+            data->minimap_mask_round =
+                m_tsrc->getTexture("minimap_mask_round.png")->createImage(
 				core::position2d<s32>(0, 0),
 				core::dimension2d<u32>(MINIMAP_MAX_SX, MINIMAP_MAX_SY));
 		}
@@ -439,8 +439,8 @@ video::Image *Minimap::getMinimapMask()
 
 	if (!data->minimap_mask_square) {
 		// Get square minimap textures
-		data->minimap_mask_square = driver->createImage(
-			m_tsrc->getTexture("minimap_mask_square.png"),
+        data->minimap_mask_square =
+            m_tsrc->getTexture("minimap_mask_square.png")->createImage(
 			core::position2d<s32>(0, 0),
 			core::dimension2d<u32>(MINIMAP_MAX_SX, MINIMAP_MAX_SY));
 	}
@@ -455,9 +455,9 @@ video::GLTexture *Minimap::getMinimapTexture()
 
 	// create minimap and heightmap images in memory
 	core::dimension2d<u32> dim(data->mode.map_size, data->mode.map_size);
-	video::Image *map_image       = driver->createImage(video::ECF_A8R8G8B8, dim);
-	video::Image *heightmap_image = driver->createImage(video::ECF_A8R8G8B8, dim);
-	video::Image *minimap_image   = driver->createImage(video::ECF_A8R8G8B8,
+    video::Image *map_image       = new video::Image(video::ECF_A8R8G8B8, dim);
+    video::Image *heightmap_image = new video::Image(video::ECF_A8R8G8B8, dim);
+    video::Image *minimap_image   = new video::Image(video::ECF_A8R8G8B8,
 		core::dimension2d<u32>(MINIMAP_MAX_SX, MINIMAP_MAX_SY));
 
 	// Blit MinimapPixels to images
@@ -473,7 +473,7 @@ video::GLTexture *Minimap::getMinimapTexture()
 	case MINIMAP_TYPE_TEXTURE:
 		// FIXME: this is a pointless roundtrip through the gpu
 		video::GLTexture* texture = m_tsrc->getTexture(data->mode.texture);
-		video::Image* image = driver->createImageFromData(
+        video::Image* image = new video::Image(
 			texture->getColorFormat(), texture->getSize(),
 			texture->lock(video::ETLM_READ_ONLY), true, false);
 

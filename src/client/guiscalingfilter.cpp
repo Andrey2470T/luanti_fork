@@ -36,8 +36,7 @@ void guiScalingCache(const io::path &key, video::VideoDriver *driver, video::Ima
 	if (g_imgCache.find(key) != g_imgCache.end())
 		return; // Already cached.
 
-	video::Image *copied = driver->createImage(value->getColorFormat(),
-			value->getDimension());
+    video::Image *copied = new video::Image(value->getColorFormat(), value->getDimension());
 	value->copyTo(copied);
 	g_imgCache[key] = copied;
 }
@@ -95,7 +94,7 @@ video::GLTexture *guiScalingResizeCached(video::VideoDriver *driver,
 	video::Image *srcimg = (it_img != g_imgCache.end()) ? it_img->second : nullptr;
 	if (!srcimg) {
 		// Download image from GPU
-		srcimg = driver->createImageFromData(src->getColorFormat(),
+        srcimg = new video::Image(src->getColorFormat(),
 			src->getSize(), src->lock(video::ETLM_READ_ONLY), false);
 		src->unlock();
 		g_imgCache[origname] = srcimg;
@@ -111,7 +110,7 @@ video::GLTexture *guiScalingResizeCached(video::VideoDriver *driver,
 		g_txrCache[scalename] = src;
 		return src;
 	}
-	video::Image *destimg = driver->createImage(src->getColorFormat(),
+    video::Image *destimg = new video::Image(src->getColorFormat(),
 			core::dimension2d<u32>((u32)destrect.getWidth(),
 			(u32)destrect.getHeight()));
 	imageScaleNNAA(srcimg, srcrect, destimg);

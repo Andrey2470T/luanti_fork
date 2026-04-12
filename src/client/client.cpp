@@ -801,25 +801,17 @@ bool Client::loadMedia(const std::string &data, const std::string &filename,
 			<< "file \"" << filename << "\"" << std::endl);
 
 		io::IFileSystem *irrfs = m_rendering_engine->get_filesystem();
-		video::VideoDriver *vdrv = m_rendering_engine->get_video_driver();
-
-		io::IReadFile *rfile = irrfs->createMemoryReadFile(
-				data.c_str(), data.size(), filename.c_str());
-
-		FATAL_ERROR_IF(!rfile, "Could not create irrlicht memory file.");
 
 		// Read image
-		video::Image *img = vdrv->createImageFromFile(rfile);
+        video::Image *img = video::Image::createFromMemory(data.c_str(), data.size(), filename.c_str(), irrfs);
 		if (!img) {
 			errorstream<<"Client: Cannot create image from data of "
 					<<"file \""<<filename<<"\""<<std::endl;
-			rfile->drop();
 			return false;
 		}
 
 		m_tsrc->insertSourceImage(filename, img);
 		img->drop();
-		rfile->drop();
 		return true;
 	}
 
@@ -1942,14 +1934,13 @@ void Client::makeScreenshot()
 	if (serial == SCREENSHOT_MAX_SERIAL_TRIES) {
 		infostream << "Could not find suitable filename for screenshot" << std::endl;
 	} else {
-		video::Image* const image =
-				driver->createImage(video::ECF_R8G8B8, raw_image->getDimension());
+        video::Image* const image = new video::Image(video::ECF_R8G8B8, raw_image->getDimension());
 
 		if (image) {
 			raw_image->copyTo(image);
 
 			std::ostringstream sstr;
-			if (driver->writeImageToFile(image, filename.c_str(), quality)) {
+            if (video::Image::writeImageToFile(image, filename.c_str(), driver->getFileSystem(), quality)) {
 				sstr << "Saved screenshot to '" << filename << "'";
 			} else {
 				sstr << "Failed to save screenshot '" << filename << "'";

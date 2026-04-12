@@ -74,7 +74,7 @@ video::GLTexture *MenuTextureSource::getTexture(const std::string &name, u32 *id
 	if (retval)
 		return retval;
 
-	video::Image *image = m_driver->createImageFromFile(name.c_str());
+    video::Image *image = video::Image::createFromFile(name.c_str(), m_driver->getFileSystem());
 	if (!image)
 		return NULL;
 
