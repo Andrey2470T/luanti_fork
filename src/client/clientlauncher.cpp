@@ -547,7 +547,7 @@ void ClientLauncher::main_menu(MainMenuData *menudata)
 	while (m_rendering_engine->run() && !*kill) {
 		if (!isMenuActive())
 			break;
-		driver->beginScene(true, true, video::SColor(255, 128, 128, 128));
+		driver->beginScene(video::SColor(255, 128, 128, 128));
 		m_rendering_engine->get_gui_env()->drawAll();
 		driver->endScene();
 		framemarker.end();

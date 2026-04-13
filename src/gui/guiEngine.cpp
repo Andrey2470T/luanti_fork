@@ -354,7 +354,7 @@ void GUIEngine::run()
 				last_window_info = window_info;
 			}
 
-			driver->beginScene(true, true, RenderingEngine::MENU_SKY_COLOR);
+			driver->beginScene(RenderingEngine::MENU_SKY_COLOR);
 
 			if (m_clouds_enabled) {
 				drawClouds(dtime);

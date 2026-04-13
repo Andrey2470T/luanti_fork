@@ -13,7 +13,7 @@
 #include "nameidmapping.h"
 #if CHECK_CLIENT_BUILD()
 #include "client/tile.h"
-#include <IMeshManipulator.h>
+#include <MeshManipulator.h>
 class Client;
 #endif
 #include "itemgroup.h"
@@ -507,7 +507,7 @@ struct ContentFeatures
 
 #if CHECK_CLIENT_BUILD()
 	void updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc,
-		scene::IMeshManipulator *meshmanip, Client *client, const TextureSettings &tsettings);
+		scene::MeshManipulator *meshmanip, Client *client, const TextureSettings &tsettings);
 #endif
 
 private:

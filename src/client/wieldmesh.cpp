@@ -18,7 +18,7 @@
 #include "log.h"
 #include "util/numeric.h"
 #include <map>
-#include <IMeshManipulator.h>
+#include <MeshManipulator.h>
 #include "client/renderingengine.h"
 #include <SMesh.h>
 #include <IMeshBuffer.h>

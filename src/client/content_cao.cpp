@@ -5,7 +5,7 @@
 #include "content_cao.h"
 #include <IBillboardSceneNode.h>
 #include <ICameraSceneNode.h>
-#include <IMeshManipulator.h>
+#include <MeshManipulator.h>
 #include <IAnimatedMeshSceneNode.h>
 #include "client/client.h"
 #include "client/renderingengine.h"

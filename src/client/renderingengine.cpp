@@ -309,7 +309,7 @@ void RenderingEngine::draw_load_screen(const std::wstring &text,
 	auto *driver = get_video_driver();
 
 	driver->setFog(RenderingEngine::MENU_SKY_COLOR);
-	driver->beginScene(true, true, RenderingEngine::MENU_SKY_COLOR);
+	driver->beginScene(RenderingEngine::MENU_SKY_COLOR);
 	if (g_settings->getBool("menu_clouds")) {
 		g_menuclouds->step(dtime * 3);
 		g_menucloudsmgr->drawAll();

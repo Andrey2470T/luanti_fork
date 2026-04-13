@@ -13,7 +13,7 @@
 #include "client/renderingengine.h"
 #include "client/texturesource.h"
 #include "client/tile.h"
-#include <IMeshManipulator.h>
+#include <MeshManipulator.h>
 #include <SMesh.h>
 #include <SkinnedMesh.h>
 #endif
@@ -761,7 +761,7 @@ static bool isWorldAligned(AlignStyle style, WorldAlignMode mode, NodeDrawType d
 }
 
 void ContentFeatures::updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc,
-	scene::IMeshManipulator *meshmanip, Client *client, const TextureSettings &tsettings)
+	scene::MeshManipulator *meshmanip, Client *client, const TextureSettings &tsettings)
 {
 	// Figure out the actual tiles to use
 	TileDef tdef[6];
@@ -1476,7 +1476,7 @@ void NodeDefManager::updateTextures(IGameDef *gamedef, void *progress_callback_a
 	ITextureSource *tsrc = client->tsrc();
 	IShaderSource *shdsrc = client->getShaderSource();
 	auto smgr = client->getSceneManager();
-	scene::IMeshManipulator *meshmanip = smgr->getMeshManipulator();
+	scene::MeshManipulator *meshmanip = smgr->getMeshManipulator();
 	TextureSettings tsettings;
 	tsettings.readSettings();
 
