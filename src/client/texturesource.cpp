@@ -4,7 +4,7 @@
 
 #include "texturesource.h"
 
-#include <VideoDriver.h>
+#include <Video/VideoDriver.h>
 #include "guiscalingfilter.h"
 #include "imagefilters.h"
 #include "imagesource.h"

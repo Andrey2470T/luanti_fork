@@ -22,7 +22,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <string>
 #include <string_view>
 #include <vector>
-#include <SColor.h>
+#include <Image/SColor.h>
 
 
 

@@ -6,6 +6,6 @@
 
 #include "irrlichttypes.h"
 
-#include <aabbox3d.h>
+#include <Utils/aabbox3d.h>
 
 typedef core::aabbox3d<f32> aabb3f;

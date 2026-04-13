@@ -6,8 +6,8 @@
 
 #include "modalMenu.h"
 #include "chat.h"
-#include "irr_ptr.h"
-#include <IGUIEnvironment.h>
+#include "Utils/irr_ptr.h"
+#include <GUI/IGUIEnvironment.h>
 
 class Client;
 class GUIScrollBar;

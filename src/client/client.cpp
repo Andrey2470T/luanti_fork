@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <sstream>
 #include <cmath>
-#include <IFileSystem.h>
+#include <IO/IFileSystem.h>
 #include <json/json.h>
 #include "client.h"
 #include "client/fontengine.h"

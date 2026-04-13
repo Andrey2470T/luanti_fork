@@ -6,9 +6,9 @@
 
 #include "client/guiscalingfilter.h"
 #include "debug.h"
-#include "IGUIEnvironment.h"
-#include "IGUIImage.h"
-#include "VideoDriver.h"
+#include "GUI/IGUIEnvironment.h"
+#include "GUI/IGUIImage.h"
+#include "Video/VideoDriver.h"
 #include "StyleSpec.h"
 
 

@@ -8,8 +8,8 @@
 #include <sstream>
 #include <utility>
 #include <cstring>
-#include <IGUISkin.h>
-#include <IGUIFont.h>
+#include <GUI/IGUISkin.h>
+#include <GUI/IGUIFont.h>
 #include "client/renderingengine.h"
 #include "debug.h"
 #include "irrlicht_changes/CGUITTFont.h"

@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include <IGUIElement.h>
-#include <IGUIEnvironment.h>
+#include <GUI/IGUIElement.h>
+#include <GUI/IGUIEnvironment.h>
 
 
 

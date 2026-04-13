@@ -6,7 +6,7 @@
 #pragma once
 
 #include "irr_v2d.h"
-#include <SColor.h>
+#include <Image/SColor.h>
 
 
 class SDLDevice;

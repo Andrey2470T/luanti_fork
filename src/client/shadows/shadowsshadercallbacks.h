@@ -3,7 +3,7 @@
 // Copyright (C) 2021 Liso <anlismon@gmail.com>
 
 #pragma once
-#include <IShaderConstantSetCallBack.h>
+#include <Video/IShaderConstantSetCallBack.h>
 #include "client/shader.h"
 
 // Used by main game rendering

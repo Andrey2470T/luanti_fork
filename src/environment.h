@@ -22,7 +22,7 @@
 #include <optional>
 #include "irr_v3d.h"
 #include "util/basic_macros.h"
-#include "line3d.h"
+#include "Utils/line3d.h"
 
 class IGameDef;
 class Map;

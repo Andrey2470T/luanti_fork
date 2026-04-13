@@ -5,7 +5,7 @@
 
 #include "porting.h"
 #include "profilergraph.h"
-#include "VideoDriver.h"
+#include "Video/VideoDriver.h"
 #include "util/string.h"
 
 void ProfilerGraph::put(const Profiler::GraphValues &values)

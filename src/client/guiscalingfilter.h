@@ -5,9 +5,9 @@
 #pragma once
 
 #include "irrlichttypes.h"
-#include <path.h>
-#include <rect.h>
-#include <SColor.h>
+#include <Utils/path.h>
+#include <Utils/rect.h>
+#include <Image/SColor.h>
 
 namespace video
 {

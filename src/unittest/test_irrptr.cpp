@@ -5,8 +5,8 @@
 #include "test.h"
 
 #include "exceptions.h"
-#include "irr_ptr.h"
-#include "IReferenceCounted.h"
+#include "Utils/irr_ptr.h"
+#include "Utils/IReferenceCounted.h"
 
 class TestIrrPtr : public TestBase
 {

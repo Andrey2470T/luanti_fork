@@ -3,18 +3,18 @@
 // Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "mesh.h"
-#include "IMeshBuffer.h"
-#include "SSkinMeshBuffer.h"
+#include "Mesh/IMeshBuffer.h"
+#include "Mesh/SSkinMeshBuffer.h"
 #include "debug.h"
 #include "log.h"
 #include <cmath>
 #include <iostream>
-#include <IAnimatedMesh.h>
-#include <SAnimatedMesh.h>
-#include <IAnimatedMeshSceneNode.h>
-#include "S3DVertex.h"
-#include "SMesh.h"
-#include "SMeshBuffer.h"
+#include <Mesh/IAnimatedMesh.h>
+#include <Mesh/SAnimatedMesh.h>
+#include <Scene/IAnimatedMeshSceneNode.h>
+#include "Mesh/S3DVertex.h"
+#include "Mesh/SMesh.h"
+#include "Mesh/SMeshBuffer.h"
 
 inline static void applyShadeFactor(video::SColor& color, float factor)
 {

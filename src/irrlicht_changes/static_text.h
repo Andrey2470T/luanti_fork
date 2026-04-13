@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include "IGUIStaticText.h"
-#include "irrArray.h"
+#include "GUI/IGUIStaticText.h"
+#include "Utils/irrArray.h"
 
 #include "log.h"
 
@@ -15,7 +15,7 @@
 
 #include "util/enriched_string.h"
 #include "config.h"
-#include <IGUIEnvironment.h>
+#include <GUI/IGUIEnvironment.h>
 
 namespace gui
 {

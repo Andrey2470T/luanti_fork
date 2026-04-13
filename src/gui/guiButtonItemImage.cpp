@@ -6,7 +6,7 @@
 
 #include "client/client.h"
 #include "guiItemImage.h"
-#include "IGUIEnvironment.h"
+#include "GUI/IGUIEnvironment.h"
 #include "itemdef.h"
 
 

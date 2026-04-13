@@ -23,11 +23,11 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "guiScrollBar.h"
 #include "serialization.h"
 #include <string>
-#include <IGUICheckBox.h>
-#include <IGUIButton.h>
-#include <IGUIStaticText.h>
-#include <IGUIFont.h>
-#include <VideoDriver.h>
+#include <GUI/IGUICheckBox.h>
+#include <GUI/IGUIButton.h>
+#include <GUI/IGUIStaticText.h>
+#include <GUI/IGUIFont.h>
+#include <Video/VideoDriver.h>
 #include "settings.h"
 
 #include "gettext.h"

@@ -13,7 +13,7 @@
 #include "nameidmapping.h"
 #if CHECK_CLIENT_BUILD()
 #include "client/tile.h"
-#include <MeshManipulator.h>
+#include <Mesh/MeshManipulator.h>
 class Client;
 #endif
 #include "itemgroup.h"

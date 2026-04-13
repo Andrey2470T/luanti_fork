@@ -18,11 +18,11 @@
 #include "log.h"
 #include "util/numeric.h"
 #include <map>
-#include <MeshManipulator.h>
+#include <Mesh/MeshManipulator.h>
 #include "client/renderingengine.h"
-#include <SMesh.h>
-#include <IMeshBuffer.h>
-#include <SMeshBuffer.h>
+#include <Mesh/SMesh.h>
+#include <Mesh/IMeshBuffer.h>
+#include <Mesh/SMeshBuffer.h>
 #include "item_visuals_manager.h"
 
 #define WIELD_SCALE_FACTOR 30.0f

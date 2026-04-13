@@ -8,9 +8,9 @@
 #include "inventory.h"
 #include "util/numeric.h"
 #include "client/localplayer.h"
-#include <ICameraSceneNode.h>
-#include <ISceneNode.h>
-#include <plane3d.h>
+#include <Scene/ICameraSceneNode.h>
+#include <Scene/ISceneNode.h>
+#include <Utils/plane3d.h>
 #include <array>
 #include <list>
 #include <optional>

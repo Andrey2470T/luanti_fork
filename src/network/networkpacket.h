@@ -7,7 +7,7 @@
 #include "util/pointer.h" // Buffer<T>
 #include "irrlichttypes_bloated.h"
 #include "networkprotocol.h"
-#include <SColor.h>
+#include <Image/SColor.h>
 #include <string>
 #include <string_view>
 #include <vector>

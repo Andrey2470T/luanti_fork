@@ -20,7 +20,7 @@
 #include "server/player_sao.h"
 #include "util/pointedthing.h"
 #include "debug.h" // For FATAL_ERROR
-#include <SColor.h>
+#include <Image/SColor.h>
 #include <json/json.h>
 #include "mapgen/treegen.h"
 

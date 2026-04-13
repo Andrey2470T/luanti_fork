@@ -8,7 +8,7 @@
 #include "itemgroup.h"
 #include "json-forwards.h"
 #include "util/enum_string.h"
-#include <SColor.h>
+#include <Image/SColor.h>
 
 #include <string>
 #include <iostream>

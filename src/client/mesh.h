@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include "SColor.h"
-#include "SMaterialLayer.h"
+#include "Image/SColor.h"
+#include "Video/SMaterialLayer.h"
 #include "nodedef.h"
 
 namespace irr {

@@ -5,9 +5,9 @@
 #pragma once
 
 #include "irrlichttypes.h"
-#include "irr_ptr.h"
-#include "rect.h"
-#include "SMeshBuffer.h"
+#include "Utils/irr_ptr.h"
+#include "Utils/rect.h"
+#include "Mesh/SMeshBuffer.h"
 
 #include "../hud.h"
 #include "mapnode.h"

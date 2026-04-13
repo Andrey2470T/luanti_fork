@@ -8,8 +8,8 @@
 #include <list>
 #include <unordered_map>
 #include <string>
-#include <IGUIElement.h>
-#include <IGUIEnvironment.h>
+#include <GUI/IGUIElement.h>
+#include <GUI/IGUIEnvironment.h>
 #include "irr_v3d.h"
 
 

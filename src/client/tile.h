@@ -5,9 +5,9 @@
 #pragma once
 
 #include "irrlichttypes.h"
-#include <Texture.h>
+#include <Video/Texture.h>
 #include <vector>
-#include <SMaterial.h>
+#include <Video/SMaterial.h>
 
 enum MaterialType : u8 {
 	TILE_MATERIAL_BASIC,

@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <IEventReceiver.h>
+#include <Device/IEventReceiver.h>
 #include "irrlichttypes.h"
 
 #include "keys.h"

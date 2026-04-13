@@ -6,10 +6,10 @@
 
 
 #include "client/guiscalingfilter.h"
-#include "IGUISkin.h"
-#include "IGUIEnvironment.h"
-#include "VideoDriver.h"
-#include "IGUIFont.h"
+#include "GUI/IGUISkin.h"
+#include "GUI/IGUIEnvironment.h"
+#include "Video/VideoDriver.h"
+#include "GUI/IGUIFont.h"
 #include "irrlicht_changes/static_text.h"
 #include "porting.h"
 #include "StyleSpec.h"

@@ -6,7 +6,7 @@
 #include "guiScrollBar.h"
 #include "client/fontengine.h"
 #include "drawItemStack.h"
-#include "VideoDriver.h"
+#include "Video/VideoDriver.h"
 #include "client/client.h"
 #include "client/renderingengine.h"
 #include "client/texturesource.h"

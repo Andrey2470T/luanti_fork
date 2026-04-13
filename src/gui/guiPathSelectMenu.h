@@ -8,7 +8,7 @@
 #include <string>
 
 #include "modalMenu.h"
-#include "IGUIFileOpenDialog.h"
+#include "GUI/IGUIFileOpenDialog.h"
 
 struct TextDest;
 

@@ -33,12 +33,12 @@
 
 #include "CGUITTFont.h"
 
-#include "irr_ptr.h"
+#include "Utils/irr_ptr.h"
 #include "log.h"
 #include "filesys.h"
 #include "debug.h"
-#include "IFileSystem.h"
-#include "IGUIEnvironment.h"
+#include "IO/IFileSystem.h"
+#include "GUI/IGUIEnvironment.h"
 
 #include <cstdlib>
 #include <iostream>

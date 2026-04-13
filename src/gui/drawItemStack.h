@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include <IGUIFont.h>
-#include <VideoDriver.h>
+#include <GUI/IGUIFont.h>
+#include <Video/VideoDriver.h>
 #include "irrlichttypes.h"
 #include "irr_v3d.h"
 

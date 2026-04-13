@@ -6,9 +6,9 @@
 #include "client.h"
 #include "client/mesh.h"
 #include "mapblock_mesh.h"
-#include <MaterialRenderer.h>
-#include <VideoDriver.h>
-#include <matrix4.h>
+#include <Video/MaterialRenderer.h>
+#include <Video/VideoDriver.h>
+#include <Utils/matrix4.h>
 #include "mapsector.h"
 #include "mapblock.h"
 #include "nodedef.h"

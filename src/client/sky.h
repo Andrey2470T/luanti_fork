@@ -5,11 +5,11 @@
 #pragma once
 
 #include "irrlichttypes_bloated.h"
-#include <ISceneNode.h>
-#include <SMeshBuffer.h>
+#include <Scene/ISceneNode.h>
+#include <Mesh/SMeshBuffer.h>
 #include <array>
 #include "camera.h" // CameraMode
-#include "irr_ptr.h"
+#include "Utils/irr_ptr.h"
 #include "skyparams.h"
 
 #define SKY_MATERIAL_COUNT 12

@@ -4,8 +4,8 @@
 // Copyright (C) 2017 nerzhul, Loic Blot <loic.blot@unix-experience.fr>
 
 #include <optional>
-#include <SDLDevice.h>
-#include "IMeshCache.h"
+#include <Device/SDLDevice.h>
+#include "Mesh/IMeshCache.h"
 #include "fontengine.h"
 #include "client.h"
 #include "clouds.h"
@@ -22,7 +22,7 @@
 #include "render/factory.h"
 #include "filesys.h"
 #include "irrlicht_changes/static_text.h"
-#include "irr_ptr.h"
+#include "Utils/irr_ptr.h"
 
 RenderingEngine *RenderingEngine::s_singleton = nullptr;
 const video::SColor RenderingEngine::MENU_SKY_COLOR = video::SColor(255, 140, 186, 250);

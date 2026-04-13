@@ -9,8 +9,8 @@
 #include "client/shader.h"
 #include "client/tile.h"
 #include "settings.h"
-#include <ISceneManager.h>
-#include <RenderTarget.h>
+#include <Scene/ISceneManager.h>
+#include <Video/RenderTarget.h>
 
 PostProcessingStep::PostProcessingStep(u32 _shader_id, const std::vector<u8> &_texture_map) :
 	shader_id(_shader_id), texture_map(_texture_map)

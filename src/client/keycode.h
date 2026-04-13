@@ -5,8 +5,8 @@
 #pragma once
 
 #include "irrlichttypes.h"
-#include <Keycodes.h>
-#include <IEventReceiver.h>
+#include <Device/Keycodes.h>
+#include <Device/IEventReceiver.h>
 #include <string>
 #include <variant>
 

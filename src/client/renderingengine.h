@@ -15,7 +15,7 @@
 #include "client/render/core.h"
 // include the shadow mapper classes too
 #include "client/shadows/dynamicshadowsrender.h"
-#include <VideoDriver.h>
+#include <Video/VideoDriver.h>
 
 #if !IS_CLIENT_BUILD
 #error Do not include in server builds

@@ -4,10 +4,10 @@
 
 #pragma once
 
-#include <SColor.h>
+#include <Image/SColor.h>
 #include <deque>
 #include <utility>
-#include <IGUIFont.h>
+#include <GUI/IGUIFont.h>
 #include "profiler.h"
 
 namespace video {

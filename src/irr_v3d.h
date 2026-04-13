@@ -6,7 +6,7 @@
 
 #include "irrlichttypes.h"
 
-#include <vector3d.h>
+#include <Utils/vector3d.h>
 
 typedef core::vector3df v3f;
 typedef core::vector3d<double> v3d;

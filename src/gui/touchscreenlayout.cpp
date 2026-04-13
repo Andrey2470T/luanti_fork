@@ -10,8 +10,8 @@
 #include "settings.h"
 #include <json/json.h>
 
-#include "IGUIFont.h"
-#include "IGUIStaticText.h"
+#include "GUI/IGUIFont.h"
+#include "GUI/IGUIStaticText.h"
 #include "util/enum_string.h"
 
 const struct EnumString es_TouchInteractionStyle[] =

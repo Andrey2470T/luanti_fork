@@ -7,7 +7,7 @@
 
 #include "object_properties.h"
 #include "serveractiveobject.h"
-#include <quaternion.h>
+#include <Utils/quaternion.h>
 #include "util/numeric.h"
 
 class UnitSAO : public ServerActiveObject

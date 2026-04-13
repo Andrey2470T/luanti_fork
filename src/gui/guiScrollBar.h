@@ -13,8 +13,8 @@ the arrow buttons where there is insufficient space.
 #pragma once
 
 #include <optional>
-#include <IGUIElement.h>
-#include <IGUIEnvironment.h>
+#include <GUI/IGUIElement.h>
+#include <GUI/IGUIEnvironment.h>
 
 class ISimpleTextureSource;
 

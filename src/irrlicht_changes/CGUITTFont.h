@@ -36,10 +36,10 @@
 #include <ft2build.h>
 #include <freetype/freetype.h>
 
-#include "IGUIEnvironment.h"
-#include "IGUIFont.h"
-#include "VideoDriver.h"
-#include "SDLDevice.h"
+#include "GUI/IGUIEnvironment.h"
+#include "GUI/IGUIFont.h"
+#include "Video/VideoDriver.h"
+#include "Device/SDLDevice.h"
 #include "util/enriched_string.h"
 #include "util/basic_macros.h"
 

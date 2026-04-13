@@ -7,7 +7,7 @@
 #include "environment.h"
 #include "util/numeric.h" // IntervalLimiter
 #include "activeobjectmgr.h" // client::ActiveObjectMgr
-#include "irr_ptr.h"
+#include "Utils/irr_ptr.h"
 #include "config.h"
 #include <set>
 

@@ -6,7 +6,7 @@
 #pragma once
 
 #include "irrlichttypes.h"
-#include "IEventReceiver.h"
+#include "Device/IEventReceiver.h"
 
 #include <memory>
 #include <optional>

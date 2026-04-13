@@ -5,8 +5,8 @@
 #pragma once
 
 #include "irrlichttypes.h"
-#include "IGUIEditBox.h"
-#include "Clipboard.h"
+#include "GUI/IGUIEditBox.h"
+#include "Device/Clipboard.h"
 #include "guiScrollBar.h"
 #include <vector>
 

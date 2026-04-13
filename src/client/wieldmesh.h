@@ -8,9 +8,9 @@
 #include <vector>
 #include "irr_aabb3d.h"
 #include "irr_v3d.h"
-#include <EMaterialTypes.h>
-#include <IMeshSceneNode.h>
-#include <SColor.h>
+#include <Enums/EMaterialTypes.h>
+#include <Scene/IMeshSceneNode.h>
+#include <Image/SColor.h>
 #include <memory>
 #include "tile.h"
 

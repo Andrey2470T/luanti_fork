@@ -6,10 +6,10 @@
 
 #include <string>
 #include <vector>
-#include <SDLDevice.h>
+#include <Device/SDLDevice.h>
 #include "client/shadows/dynamicshadows.h"
-#include <ISceneNode.h>
-#include <ISceneManager.h>
+#include <Scene/ISceneNode.h>
+#include <Scene/ISceneManager.h>
 
 class ShadowDepthShaderCB;
 class shadowScreenQuad;

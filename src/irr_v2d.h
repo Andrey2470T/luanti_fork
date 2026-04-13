@@ -6,7 +6,7 @@
 
 #include "irrlichttypes.h"
 
-#include <vector2d.h>
+#include <Utils/vector2d.h>
 
 typedef core::vector2d<f32> v2f;
 typedef core::vector2d<s16> v2s16;

@@ -7,7 +7,7 @@
 #include "drawItemStack.h"
 #include "client/client.h"
 #include "client/renderingengine.h"
-#include <VideoDriver.h>
+#include <Video/VideoDriver.h>
 
 GUIInventoryList::GUIInventoryList(gui::IGUIEnvironment *env,
 	gui::IGUIElement *parent,

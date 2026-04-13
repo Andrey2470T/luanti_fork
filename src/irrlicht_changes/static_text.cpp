@@ -6,10 +6,10 @@
 
 #include "static_text.h"
 
-#include <IGUIFont.h>
-#include <VideoDriver.h>
-#include <rect.h>
-#include <SColor.h>
+#include <GUI/IGUIFont.h>
+#include <Video/VideoDriver.h>
+#include <Utils/rect.h>
+#include <Image/SColor.h>
 
 #include "CGUITTFont.h"
 #include "util/string.h"

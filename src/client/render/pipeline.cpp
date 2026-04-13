@@ -5,8 +5,8 @@
 #include "pipeline.h"
 #include "client/client.h"
 #include "client/hud.h"
-#include "RenderTarget.h"
-#include "SColor.h"
+#include "Video/RenderTarget.h"
+#include "Image/SColor.h"
 
 #include <vector>
 #include <memory>

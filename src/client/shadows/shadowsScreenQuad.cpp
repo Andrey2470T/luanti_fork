@@ -3,7 +3,7 @@
 // Copyright (C) 2021 Liso <anlismon@gmail.com>
 
 #include "shadowsScreenQuad.h"
-#include <VideoDriver.h>
+#include <Video/VideoDriver.h>
 
 shadowScreenQuad::shadowScreenQuad()
 {

@@ -5,9 +5,9 @@
 #pragma once
 
 #include "irrlichttypes.h"
-#include "irr_ptr.h"
-#include "IMesh.h"
-#include "SMeshBuffer.h"
+#include "Utils/irr_ptr.h"
+#include "Mesh/IMesh.h"
+#include "Mesh/SMeshBuffer.h"
 
 #include "util/numeric.h"
 #include "client/tile.h"

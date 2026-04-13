@@ -3,7 +3,7 @@
 // Copyright (C) 2021 x2048, Dmitry Kostenko <codeforsmile@gmail.com>
 
 #pragma once
-#include "SColor.h"
+#include "Image/SColor.h"
 
 
 

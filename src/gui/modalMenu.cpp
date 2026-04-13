@@ -4,9 +4,9 @@
 // Copyright (C) 2018 stujones11, Stuart Jones <stujones111@gmail.com>
 
 #include <cstdlib>
-#include <IEventReceiver.h>
-#include <IGUIComboBox.h>
-#include <IGUIEditBox.h>
+#include <Device/IEventReceiver.h>
+#include <GUI/IGUIComboBox.h>
+#include <GUI/IGUIEditBox.h>
 #include "client/renderingengine.h"
 #include "modalMenu.h"
 #include "gettext.h"

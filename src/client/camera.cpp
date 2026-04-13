@@ -22,10 +22,10 @@
 #include "fontengine.h"
 #include "script/scripting_client.h"
 #include "gettext.h"
-#include <SViewFrustum.h>
-#include <IGUIFont.h>
-#include <VideoDriver.h>
-#include <DrawContext.h>
+#include <Video/SViewFrustum.h>
+#include <GUI/IGUIFont.h>
+#include <Video/VideoDriver.h>
+#include <Video/DrawContext.h>
 
 static constexpr f32 CAMERA_OFFSET_STEP = 200;
 

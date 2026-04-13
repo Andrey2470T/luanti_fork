@@ -5,9 +5,9 @@
 #pragma once
 
 #include "guiButton.h"
-#include "IGUIButton.h"
+#include "GUI/IGUIButton.h"
 #include "guiAnimatedImage.h"
-#include "irr_ptr.h"
+#include "Utils/irr_ptr.h"
 
 
 

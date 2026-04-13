@@ -4,7 +4,7 @@
 
 #pragma once
 #include <memory>
-#include "IGUIElement.h"
+#include "GUI/IGUIElement.h"
 
 // We cannot use irr_ptr for Irrlicht GUI elements we own.
 // Option 1: Pass IGUIElement* returned by IGUIEnvironment::add* into irr_ptr

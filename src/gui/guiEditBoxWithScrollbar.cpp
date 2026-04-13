@@ -5,13 +5,13 @@
 
 #include "guiEditBoxWithScrollbar.h"
 
-#include "IGUISkin.h"
-#include "IGUIEnvironment.h"
-#include "IGUIFont.h"
-#include "VideoDriver.h"
-#include "rect.h"
+#include "GUI/IGUISkin.h"
+#include "GUI/IGUIEnvironment.h"
+#include "GUI/IGUIFont.h"
+#include "Video/VideoDriver.h"
+#include "Utils/rect.h"
 #include "porting.h"
-#include "Keycodes.h"
+#include "Device/Keycodes.h"
 
 /*
 todo:

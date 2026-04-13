@@ -7,7 +7,7 @@
 #include <vector>
 #include "irrlichttypes.h"
 #include "irr_v3d.h"
-#include <S3DVertex.h>
+#include <Mesh/S3DVertex.h>
 #include "client/tile.h"
 
 struct PreMeshBuffer

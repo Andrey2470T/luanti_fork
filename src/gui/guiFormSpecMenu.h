@@ -10,7 +10,7 @@
 #include <unordered_set>
 
 #include "irrlichttypes_bloated.h"
-#include "irr_ptr.h"
+#include "Utils/irr_ptr.h"
 #include "inventory.h"
 #include "inventorymanager.h"
 #include "modalMenu.h"
@@ -20,8 +20,8 @@
 #include "util/string.h"
 #include "util/enriched_string.h"
 #include "StyleSpec.h"
-#include <CursorControl.h> // gui::ECURSOR_ICON
-#include <IGUIStaticText.h>
+#include <Device/CursorControl.h> // gui::ECURSOR_ICON
+#include <GUI/IGUIStaticText.h>
 
 class InventoryManager;
 class ISimpleTextureSource;

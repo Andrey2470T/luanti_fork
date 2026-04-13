@@ -18,9 +18,9 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "guiOpenURL.h"
 #include "guiButton.h"
 #include "guiEditBoxWithScrollbar.h"
-#include <IGUIEditBox.h>
-#include <IGUIFont.h>
-#include <VideoDriver.h>
+#include <GUI/IGUIEditBox.h>
+#include <GUI/IGUIFont.h>
+#include <Video/VideoDriver.h>
 #include "client/renderingengine.h"
 #include "porting.h"
 #include "gettext.h"

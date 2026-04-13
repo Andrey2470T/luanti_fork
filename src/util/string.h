@@ -7,7 +7,7 @@
 #include "irrlichttypes_bloated.h"
 #include "config.h" // IS_CLIENT_BUILD
 #if IS_CLIENT_BUILD
-#include "irrString.h"
+#include "Utils/irrString.h"
 #endif
 #include <cstdlib>
 #include <string>

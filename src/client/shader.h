@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <MaterialRenderer.h>
+#include <Video/MaterialRenderer.h>
 #include "irrlichttypes_bloated.h"
 #include <string>
 #include <map>

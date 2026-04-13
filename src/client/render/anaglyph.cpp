@@ -5,9 +5,9 @@
 
 #include "anaglyph.h"
 #include "client/camera.h"
-#include <SDLDevice.h>
-#include <ISceneManager.h>
-#include <DrawContext.h>
+#include <Device/SDLDevice.h>
+#include <Scene/ISceneManager.h>
+#include <Video/DrawContext.h>
 
 /// SetColorMaskStep step
 

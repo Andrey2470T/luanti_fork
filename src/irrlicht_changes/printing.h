@@ -4,8 +4,8 @@
 
 #pragma once
 #include <ostream>
-#include <vector2d.h>
-#include <vector3d.h>
+#include <Utils/vector2d.h>
+#include <Utils/vector3d.h>
 
 namespace core {
 

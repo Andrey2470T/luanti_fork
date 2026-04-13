@@ -5,7 +5,7 @@
 #include "raycast.h"
 #include "irr_v3d.h"
 #include "irr_aabb3d.h"
-#include <quaternion.h>
+#include <Utils/quaternion.h>
 #include "constants.h"
 
 bool RaycastSort::operator() (const PointedThing &pt1,

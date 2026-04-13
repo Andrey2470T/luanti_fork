@@ -6,7 +6,7 @@
 
 #include "irr_aabb3d.h"
 #include "irr_v3d.h"
-#include <quaternion.h>
+#include <Utils/quaternion.h>
 #include <string>
 #include <unordered_map>
 

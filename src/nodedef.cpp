@@ -4,7 +4,7 @@
 
 #include "nodedef.h"
 
-#include "SAnimatedMesh.h"
+#include "Mesh/SAnimatedMesh.h"
 #include "itemdef.h"
 #if CHECK_CLIENT_BUILD()
 #include "client/mesh.h"
@@ -13,9 +13,9 @@
 #include "client/renderingengine.h"
 #include "client/texturesource.h"
 #include "client/tile.h"
-#include <MeshManipulator.h>
-#include <SMesh.h>
-#include <SkinnedMesh.h>
+#include <Mesh/MeshManipulator.h>
+#include <Mesh/SMesh.h>
+#include <Mesh/SkinnedMesh.h>
 #endif
 #include "log.h"
 #include "settings.h"

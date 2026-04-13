@@ -6,7 +6,7 @@
 #include "client/client.h"
 #include "drawItemStack.h"
 #include "inventory.h"
-#include <IGUIFont.h>
+#include <GUI/IGUIFont.h>
 
 GUIItemImage::GUIItemImage(gui::IGUIEnvironment *env, gui::IGUIElement *parent,
 	s32 id, const core::rect<s32> &rectangle, const std::string &item_name,

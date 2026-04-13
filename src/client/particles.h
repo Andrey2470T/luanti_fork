@@ -5,10 +5,10 @@
 #pragma once
 
 #include "irrlichttypes_bloated.h"
-#include "irr_ptr.h"
-#include "ISceneNode.h"
-#include "S3DVertex.h"
-#include "SMeshBuffer.h"
+#include "Utils/irr_ptr.h"
+#include "Scene/ISceneNode.h"
+#include "Mesh/S3DVertex.h"
+#include "Mesh/SMeshBuffer.h"
 
 #include <mutex>
 #include <memory>

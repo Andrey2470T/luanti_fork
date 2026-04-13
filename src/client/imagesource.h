@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <Image.h>
+#include <Image/Image.h>
 #include <unordered_map>
 #include <set>
 #include <string>

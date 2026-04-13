@@ -3,7 +3,7 @@
 // Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "mapblock_mesh.h"
-#include "SMeshBuffer.h"
+#include "Mesh/SMeshBuffer.h"
 #include "client.h"
 #include "mapblock.h"
 #include "map.h"
@@ -21,9 +21,9 @@
 #include <algorithm>
 #include <cmath>
 #include "client/texturesource.h"
-#include <SMesh.h>
-#include <IMeshBuffer.h>
-#include <SMeshBuffer.h>
+#include <Mesh/SMesh.h>
+#include <Mesh/IMeshBuffer.h>
+#include <Mesh/SMeshBuffer.h>
 
 /*
 	MeshMakeData

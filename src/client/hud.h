@@ -6,10 +6,10 @@
 #pragma once
 
 #include <vector>
-#include <IGUIFont.h>
-#include <SMaterial.h>
-#include <SMeshBuffer.h>
-#include "irr_ptr.h"
+#include <GUI/IGUIFont.h>
+#include <Video/SMaterial.h>
+#include <Mesh/SMeshBuffer.h>
+#include "Utils/irr_ptr.h"
 #include "irr_aabb3d.h"
 #include "../hud.h"
 

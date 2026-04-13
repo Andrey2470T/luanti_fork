@@ -17,8 +17,8 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #pragma once
 
-#include <IGUIElement.h>
-#include <IGUIEnvironment.h>
+#include <GUI/IGUIElement.h>
+#include <GUI/IGUIEnvironment.h>
 #include "irr_v2d.h"
 
 

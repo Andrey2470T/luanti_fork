@@ -19,12 +19,12 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "guiPasswordChange.h"
 #include "client/client.h"
 #include "guiButton.h"
-#include <IGUICheckBox.h>
-#include <IGUIEditBox.h>
-#include <IGUIButton.h>
-#include <IGUIStaticText.h>
-#include <IGUIFont.h>
-#include <VideoDriver.h>
+#include <GUI/IGUICheckBox.h>
+#include <GUI/IGUIEditBox.h>
+#include <GUI/IGUIButton.h>
+#include <GUI/IGUIStaticText.h>
+#include <GUI/IGUIFont.h>
+#include <Video/VideoDriver.h>
 
 #include "porting.h"
 #include "gettext.h"

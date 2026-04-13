@@ -20,8 +20,8 @@
 #include "renderingengine.h"
 #include "settings.h"
 #include "util/tracy_wrapper.h"
-#include <IGUISpriteBank.h>
-#include <ICameraSceneNode.h>
+#include <GUI/IGUISpriteBank.h>
+#include <Scene/ICameraSceneNode.h>
 #include <unordered_map>
 
 #if USE_SOUND

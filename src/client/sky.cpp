@@ -5,11 +5,11 @@
 
 #include <cmath>
 #include "sky.h"
-#include <Texture.h>
-#include <VideoDriver.h>
-#include <ISceneManager.h>
-#include <ICameraSceneNode.h>
-#include <S3DVertex.h>
+#include <Video/Texture.h>
+#include <Video/VideoDriver.h>
+#include <Scene/ISceneManager.h>
+#include <Scene/ICameraSceneNode.h>
+#include <Mesh/S3DVertex.h>
 #include "client/mesh.h"
 #include "client/tile.h"
 #include "noise.h" // easeCurve

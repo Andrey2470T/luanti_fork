@@ -3,12 +3,12 @@
 
 #include "catch.h"
 #include "catch_amalgamated.hpp"
-#include "irrMath.h"
-#include "matrix4.h"
-#include "irrMath.h"
-#include "matrix4.h"
+#include "Utils/irrMath.h"
+#include "Utils/matrix4.h"
+#include "Utils/irrMath.h"
+#include "Utils/matrix4.h"
 #include "irr_v3d.h"
-#include "quaternion.h"
+#include "Utils/quaternion.h"
 #include <functional>
 
 // Irrlicht provides three different representations of rotations:

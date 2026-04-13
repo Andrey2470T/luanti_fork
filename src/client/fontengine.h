@@ -6,11 +6,11 @@
 
 #include <map>
 #include <unordered_map>
-#include "irr_ptr.h"
+#include "Utils/irr_ptr.h"
 #include "irrlicht_changes/CGUITTFont.h"
 #include "util/basic_macros.h"
 #include "irrlichttypes.h"
-#include "irrString.h" // utf8_to_wide
+#include "Utils/irrString.h" // utf8_to_wide
 #include "threading/mutex_auto_lock.h"
 
 namespace irr {

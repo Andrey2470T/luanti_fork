@@ -22,7 +22,7 @@
 #include "settings.h"
 #include "profiler.h"
 
-#include "SMeshBuffer.h"
+#include "Mesh/SMeshBuffer.h"
 
 using BlendMode = ParticleParamTypes::BlendMode;
 

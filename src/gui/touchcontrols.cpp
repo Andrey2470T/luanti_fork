@@ -18,13 +18,13 @@
 #include "util/enum_string.h"
 #include "util/numeric.h"
 #include "irr_gui_ptr.h"
-#include "IGUIImage.h"
-#include "IGUIStaticText.h"
-#include "IGUIFont.h"
-#include <SDLDevice.h>
-#include <ISceneCollisionManager.h>
-#include <IGUIElement.h>
-#include <IGUIEnvironment.h>
+#include "GUI/IGUIImage.h"
+#include "GUI/IGUIStaticText.h"
+#include "GUI/IGUIFont.h"
+#include <Device/SDLDevice.h>
+#include <Scene/ISceneCollisionManager.h>
+#include <GUI/IGUIElement.h>
+#include <GUI/IGUIEnvironment.h>
 
 #include <iostream>
 #include <algorithm>

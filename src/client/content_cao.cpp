@@ -3,10 +3,10 @@
 // Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "content_cao.h"
-#include <IBillboardSceneNode.h>
-#include <ICameraSceneNode.h>
-#include <MeshManipulator.h>
-#include <IAnimatedMeshSceneNode.h>
+#include <Scene/IBillboardSceneNode.h>
+#include <Scene/ICameraSceneNode.h>
+#include <Mesh/MeshManipulator.h>
+#include <Scene/IAnimatedMeshSceneNode.h>
 #include "client/client.h"
 #include "client/renderingengine.h"
 #include "client/sound.h"
@@ -34,10 +34,10 @@
 #include <cmath>
 #include "client/shader.h"
 #include "client/minimap.h"
-#include <quaternion.h>
-#include <SMesh.h>
-#include <IMeshBuffer.h>
-#include <SMeshBuffer.h>
+#include <Utils/quaternion.h>
+#include <Mesh/SMesh.h>
+#include <Mesh/IMeshBuffer.h>
+#include <Mesh/SMeshBuffer.h>
 
 class Settings;
 struct ToolCapabilities;

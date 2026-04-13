@@ -6,7 +6,7 @@
 #pragma once
 
 #include "irrlichttypes.h"
-#include <IGUIEnvironment.h>
+#include <GUI/IGUIEnvironment.h>
 #include "game.h"
 
 

@@ -16,9 +16,9 @@
 #include "config.h"
 #include "porting.h"
 #if CHECK_CLIENT_BUILD()
-#include "irr_ptr.h"
-#include <IFileArchive.h>
-#include <IFileSystem.h>
+#include "Utils/irr_ptr.h"
+#include <IO/IFileArchive.h>
+#include <IO/IFileSystem.h>
 #endif
 
 #ifdef __linux__

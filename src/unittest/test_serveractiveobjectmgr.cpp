@@ -4,7 +4,7 @@
 
 #include "activeobjectmgr.h"
 #include "catch.h"
-#include "irrTypes.h"
+#include "Utils/irrTypes.h"
 #include "irr_aabb3d.h"
 #include "mock_serveractiveobject.h"
 #include <algorithm>

@@ -8,8 +8,8 @@
 #include "settings.h"
 #include "irrlicht_changes/CGUITTFont.h"
 #include "util/numeric.h" // rangelim
-#include <IGUIEnvironment.h>
-#include <IGUIFont.h>
+#include <GUI/IGUIEnvironment.h>
+#include <GUI/IGUIFont.h>
 
 #include <cmath>
 #include <cstring>

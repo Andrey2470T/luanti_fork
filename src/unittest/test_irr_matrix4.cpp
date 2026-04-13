@@ -3,8 +3,8 @@
 
 #include "catch.h"
 #include "catch_amalgamated.hpp"
-#include "irrMath.h"
-#include "matrix4.h"
+#include "Utils/irrMath.h"
+#include "Utils/matrix4.h"
 #include "irr_v3d.h"
 
 using matrix4 = core::matrix4;

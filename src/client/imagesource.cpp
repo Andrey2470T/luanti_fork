@@ -4,7 +4,7 @@
 
 #include "imagesource.h"
 
-#include <IFileSystem.h>
+#include <IO/IFileSystem.h>
 #include "imagefilters.h"
 #include "mesh.h"
 #include "renderingengine.h"

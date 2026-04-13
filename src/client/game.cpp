@@ -52,12 +52,12 @@
 #include "util/directiontables.h"
 #include "util/pointedthing.h"
 #include "util/quicktune_shortcutter.h"
-#include "irr_ptr.h"
+#include "Utils/irr_ptr.h"
 #include "version.h"
 #include "script/scripting_client.h"
 #include "hud.h"
 #include "clientdynamicinfo.h"
-#include <IAnimatedMeshSceneNode.h>
+#include <Scene/IAnimatedMeshSceneNode.h>
 #include "util/tracy_wrapper.h"
 #include "item_visuals_manager.h"
 

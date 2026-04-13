@@ -11,12 +11,12 @@
 #include "irr_gui_ptr.h"
 #include "settings.h"
 
-#include "IGUIButton.h"
-#include "IGUIFont.h"
-#include "IGUIImage.h"
-#include "IGUIStaticText.h"
-#include <IGUIElement.h>
-#include <IGUIEnvironment.h>
+#include "GUI/IGUIButton.h"
+#include "GUI/IGUIFont.h"
+#include "GUI/IGUIImage.h"
+#include "GUI/IGUIStaticText.h"
+#include <GUI/IGUIElement.h>
+#include <GUI/IGUIEnvironment.h>
 
 GUITouchscreenLayout::GUITouchscreenLayout(gui::IGUIEnvironment* env,
 		gui::IGUIElement* parent, s32 id,

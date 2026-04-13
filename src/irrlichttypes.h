@@ -5,7 +5,7 @@
 #pragma once
 
 #include <cstdint>
-#include <irrTypes.h>
+#include <Utils/irrTypes.h>
 
 
 #define S8_MIN  INT8_MIN

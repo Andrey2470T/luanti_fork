@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include "EMaterialTypes.h"
-#include "IDummyTransformationSceneNode.h"
+#include "Enums/EMaterialTypes.h"
+#include "Scene/IDummyTransformationSceneNode.h"
 #include "irrlichttypes.h"
 
 #include "object_properties.h"

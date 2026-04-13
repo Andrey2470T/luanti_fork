@@ -4,8 +4,8 @@
 #pragma once
 
 #include "irrlichttypes_bloated.h"
-#include <SDLDevice.h> // used in all render/*.cpp
-#include <VideoDriver.h> // used in all render/*.cpp
+#include <Device/SDLDevice.h> // used in all render/*.cpp
+#include <Video/VideoDriver.h> // used in all render/*.cpp
 
 #include <vector>
 #include <memory>

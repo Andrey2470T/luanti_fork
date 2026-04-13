@@ -9,9 +9,9 @@
 #include "util/numeric.h"
 #include <cstdio>
 #include "client/renderingengine.h"
-#include <Image.h>
-#include <Texture.h>
-#include <VideoDriver.h>
+#include <Image/Image.h>
+#include <Video/Texture.h>
+#include <Video/VideoDriver.h>
 
 /* Maintain a static cache to store the images that correspond to textures
  * in a format that's manipulable by code.  Some platforms exhibit issues

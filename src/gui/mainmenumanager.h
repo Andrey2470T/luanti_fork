@@ -11,7 +11,7 @@
 #include <cassert>
 #include <list>
 
-#include "IGUIEnvironment.h"
+#include "GUI/IGUIEnvironment.h"
 
 namespace gui {
 	class IGUIStaticText;

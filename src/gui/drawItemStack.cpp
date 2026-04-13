@@ -14,7 +14,7 @@
 #include "client/texturesource.h"
 #include "client/guiscalingfilter.h"
 #include "client/item_visuals_manager.h"
-#include <DrawContext.h>
+#include <Video/DrawContext.h>
 
 struct MeshTimeInfo {
 	u64 time;

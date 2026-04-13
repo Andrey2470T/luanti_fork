@@ -4,11 +4,11 @@
 
 #pragma once
 
-#include "ICameraSceneNode.h"
+#include "Scene/ICameraSceneNode.h"
 #include "StyleSpec.h"
-#include <IAnimatedMeshSceneNode.h>
-#include <IGUIElement.h>
-#include <IGUIEnvironment.h>
+#include <Scene/IAnimatedMeshSceneNode.h>
+#include <GUI/IGUIElement.h>
+#include <GUI/IGUIEnvironment.h>
 
 
 

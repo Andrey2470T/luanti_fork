@@ -23,8 +23,8 @@
 #include "settings.h"
 #include "sound.h"
 #include "version.h"
-#include <ICameraSceneNode.h>
-#include <IGUIStaticText.h>
+#include <Scene/ICameraSceneNode.h>
+#include <GUI/IGUIStaticText.h>
 #include "client/imagefilters.h"
 #include "util/tracy_wrapper.h"
 #include "script/common/c_types.h" // LuaError
