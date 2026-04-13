@@ -255,22 +255,22 @@ class MainShaderUniformSetter : public IShaderUniformSetter
 {
 	using SamplerLayer_t = s32;
 
-    CachedShaderSetting<f32, 16> m_world_view_proj{"mWorldViewProj"};
-    CachedShaderSetting<f32, 16> m_world{"mWorld"};
+	CachedShaderSetting<f32, 16> m_world_view_proj{"mWorldViewProj"};
+	CachedShaderSetting<f32, 16> m_world{"mWorld"};
 
 	// Modelview matrix
-    CachedShaderSetting<float, 16> m_world_view{"mWorldView"};
+	CachedShaderSetting<float, 16> m_world_view{"mWorldView"};
 	// Texture matrix
-    CachedShaderSetting<float, 16> m_texture{"mTexture"};
+	CachedShaderSetting<float, 16> m_texture{"mTexture"};
 
-    CachedShaderSetting<SamplerLayer_t> m_texture0{"texture0"};
-    CachedShaderSetting<SamplerLayer_t> m_texture1{"texture1"};
-    CachedShaderSetting<SamplerLayer_t> m_texture2{"texture2"};
-    CachedShaderSetting<SamplerLayer_t> m_texture3{"texture3"};
+	CachedShaderSetting<SamplerLayer_t> m_texture0{"texture0"};
+	CachedShaderSetting<SamplerLayer_t> m_texture1{"texture1"};
+	CachedShaderSetting<SamplerLayer_t> m_texture2{"texture2"};
+	CachedShaderSetting<SamplerLayer_t> m_texture3{"texture3"};
 
 	// commonly used way to pass material color to shader
 	video::SColor m_material_color;
-    CachedShaderSetting<float, 4> m_material_color_setting{"materialColor"};
+	CachedShaderSetting<float, 4> m_material_color_setting{"materialColor"};
 
 public:
 	~MainShaderUniformSetter() = default;
@@ -307,13 +307,13 @@ public:
 
 		SamplerLayer_t tex_id;
 		tex_id = 0;
-        m_texture0.set(tex_id, renderer);
+		m_texture0.set(tex_id, renderer);
 		tex_id = 1;
-        m_texture1.set(tex_id, renderer);
+		m_texture1.set(tex_id, renderer);
 		tex_id = 2;
-        m_texture2.set(tex_id, renderer);
+		m_texture2.set(tex_id, renderer);
 		tex_id = 3;
-        m_texture3.set(tex_id, renderer);
+		m_texture3.set(tex_id, renderer);
 
 		video::SColorf colorf(m_material_color);
 		m_material_color_setting.set(colorf, renderer);
@@ -732,8 +732,8 @@ ShaderInfo ShaderSource::generateShader(const std::string &name,
 	auto cb = make_irr<ShaderCallback>(m_uniform_factories);
 	infostream << "Compiling high level shaders for " << log_name << std::endl;
 	s32 shadermat = driver->addHighLevelShaderMaterial(
-        vertex_shader, fragment_shader, geometry_shader,
-        log_name, scene::EPT_TRIANGLES, scene::EPT_TRIANGLES, 0,
+		vertex_shader, fragment_shader, geometry_shader,
+		log_name, scene::EPT_TRIANGLES, scene::EPT_TRIANGLES, 0,
 		cb.get(), shaderinfo.base_material);
 	if (shadermat == -1) {
 		errorstream << "generateShader(): failed to generate shaders for "

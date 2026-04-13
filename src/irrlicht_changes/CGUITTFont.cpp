@@ -148,7 +148,7 @@ video::Image* SGUITTGlyph::createGlyphImage(const FT_Bitmap& bits, video::VideoD
 		{
 			// Create a blank image and fill it with transparent pixels.
 			texture_size = d.getOptimalSize(true, true);
-            image = new video::Image(video::ECF_A1R5G5B5, texture_size);
+			image = new video::Image(video::ECF_A1R5G5B5, texture_size);
 			image->fill(video::SColor(0, 255, 255, 255));
 
 			// Load the monochrome data in.
@@ -176,7 +176,7 @@ video::Image* SGUITTGlyph::createGlyphImage(const FT_Bitmap& bits, video::VideoD
 		{
 			// Create our blank image.
 			texture_size = d.getOptimalSize(false, false, true, 0);
-            image = new video::Image(video::ECF_A8R8G8B8, texture_size);
+			image = new video::Image(video::ECF_A8R8G8B8, texture_size);
 			image->fill(video::SColor(0, 255, 255, 255));
 
 			// Load the grayscale data in.
@@ -900,11 +900,11 @@ video::Image* CGUITTFont::createTextureFromChar(const char32_t& ch)
 
 	video::ECOLOR_FORMAT format = tex->getColorFormat();
 	core::dimension2du tex_size = tex->getOriginalSize();
-    video::Image* pageholder = new video::Image(format, tex_size, ptr, true, false);
+	video::Image* pageholder = new video::Image(format, tex_size, ptr, true, false);
 
 	// Copy the image data out of the page texture.
 	core::dimension2du glyph_size(glyph.source_rect.getSize());
-    video::Image* image = new video::Image(format, glyph_size);
+	video::Image* image = new video::Image(format, glyph_size);
 	pageholder->copyTo(image, core::position2di(0, 0), glyph.source_rect);
 
 	tex->unlock();

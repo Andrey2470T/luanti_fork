@@ -46,8 +46,8 @@ void SourceImageCache::insert(const std::string &name, video::Image *img, bool p
 		std::string path = getTexturePath(name, &is_base_pack);
 		// Ignore base pack
 		if (!path.empty() && !is_base_pack) {
-            video::Image *img2 = video::Image::createFromFile(
-                path, RenderingEngine::get_video_driver()->getFileSystem());
+			video::Image *img2 = video::Image::createFromFile(
+				path, RenderingEngine::get_video_driver()->getFileSystem());
 			if (img2){
 				toadd = img2;
 				need_to_grab = false;
@@ -85,7 +85,7 @@ video::Image* SourceImageCache::getOrLoad(const std::string &name)
 	}
 	infostream << "SourceImageCache::getOrLoad(): Loading path \"" << path
 			<< "\"" << std::endl;
-    video::Image *img = video::Image::createFromFile(path, driver->getFileSystem());
+	video::Image *img = video::Image::createFromFile(path, driver->getFileSystem());
 
 	if (img){
 		m_images[name] = img;
@@ -202,12 +202,12 @@ static video::Image *createInventoryCubeImage(
 	u32 cube_size = 9 * size;
 	u32 offset = size / 2;
 
-    auto lock_image = [size] (video::Image *&image) -> const u32 * {
+	auto lock_image = [size] (video::Image *&image) -> const u32 * {
 		image->grab();
 		core::dimension2du dim = image->getDimension();
 		video::ECOLOR_FORMAT format = image->getColorFormat();
 		if (dim.Width != size || dim.Height != size || format != video::ECF_A8R8G8B8) {
-            video::Image *scaled = new video::Image(video::ECF_A8R8G8B8, {size, size});
+			video::Image *scaled = new video::Image(video::ECF_A8R8G8B8, {size, size});
 			image->copyToScaling(scaled);
 			image->drop();
 			image = scaled;
@@ -219,7 +219,7 @@ static video::Image *createInventoryCubeImage(
 		image->drop();
 	};
 
-    video::Image *result = new video::Image(video::ECF_A8R8G8B8, {cube_size, cube_size});
+	video::Image *result = new video::Image(video::ECF_A8R8G8B8, {cube_size, cube_size});
 	sanity_check(result->getPitch() == 4 * cube_size);
 	result->fill(video::SColor(0x00000000u));
 	u32 *target = reinterpret_cast<u32 *>(result->getData());
@@ -320,14 +320,14 @@ static void upscaleImagesToMatchLargest(video::Image *& img1,
 	}
 	else if (dim1.Width * dim1.Height < dim2.Width * dim2.Height) {
 		// Upscale img1
-        video::Image *scaled_image = new video::Image(video::ECF_A8R8G8B8, dim2);
+		video::Image *scaled_image = new video::Image(video::ECF_A8R8G8B8, dim2);
 		img1->copyToScaling(scaled_image);
 		img1->drop();
 		img1 = scaled_image;
 
 	} else {
 		// Upscale img2
-        video::Image *scaled_image = new video::Image(video::ECF_A8R8G8B8, dim1);
+		video::Image *scaled_image = new video::Image(video::ECF_A8R8G8B8, dim1);
 		img2->copyToScaling(scaled_image);
 		img2->drop();
 		img2 = scaled_image;
@@ -419,7 +419,7 @@ static void blit_with_alpha(video::Image *src, video::Image *dst, v2s32 dst_pos,
 	core::dimension2d<u32> dst_dim = dst->getDimension();
 	bool drop_src = false;
 	if (src->getColorFormat() != video::ECF_A8R8G8B8) {
-        video::Image *src_converted = new video::Image(video::ECF_A8R8G8B8, src_dim);
+		video::Image *src_converted = new video::Image(video::ECF_A8R8G8B8, src_dim);
 		sanity_check(src_converted != nullptr);
 		src->copyTo(src_converted);
 		src = src_converted;
@@ -736,13 +736,13 @@ static video::Image *create_crack_image(video::Image *crack, s32 frame_index,
 	video::Image *result = nullptr;
 
 	// extract crack frame
-    video::Image *crack_tile = new video::Image(video::ECF_A8R8G8B8, tile_size);
+	video::Image *crack_tile = new video::Image(video::ECF_A8R8G8B8, tile_size);
 	if (!crack_tile)
 		return nullptr;
 	if (tile_size == frame_size) {
 		crack->copyTo(crack_tile, v2s32(0, 0), frame);
 	} else {
-        video::Image *crack_frame = new video::Image(video::ECF_A8R8G8B8, frame_size);
+		video::Image *crack_frame = new video::Image(video::ECF_A8R8G8B8, frame_size);
 		if (!crack_frame)
 			goto exit__has_tile;
 		crack->copyTo(crack_frame, v2s32(0, 0), frame);
@@ -753,7 +753,7 @@ static video::Image *create_crack_image(video::Image *crack, s32 frame_index,
 		return crack_tile;
 
 	// tile it
-    result = new video::Image(video::ECF_A8R8G8B8, size);
+	result = new video::Image(video::ECF_A8R8G8B8, size);
 	if (!result)
 		goto exit__has_tile;
 	result->fill({});
@@ -980,7 +980,7 @@ bool ImageSource::generateImagePart(std::string_view part_of_name,
 				"Creating a dummy image" << std::endl;
 
 			core::dimension2d<u32> dim(1,1);
-            image = new video::Image(video::ECF_A8R8G8B8, dim);
+			image = new video::Image(video::ECF_A8R8G8B8, dim);
 			sanity_check(image != NULL);
 			image->setPixel(0,0, video::SColor(255,myrand()%256,
 					myrand()%256,myrand()%256));
@@ -994,7 +994,7 @@ bool ImageSource::generateImagePart(std::string_view part_of_name,
 				Otherwise images with alpha cannot be blitted on
 				images that don't have alpha in the original file.
 			*/
-            baseimg = new video::Image(video::ECF_A8R8G8B8, image->getDimension());
+			baseimg = new video::Image(video::ECF_A8R8G8B8, image->getDimension());
 			image->copyTo(baseimg);
 		}
 		// Else blit on base.
@@ -1067,7 +1067,7 @@ bool ImageSource::generateImagePart(std::string_view part_of_name,
 			u32 h0 = stoi(sf.next(":"));
 			if (!baseimg) {
 				CHECK_DIM(w0, h0);
-                baseimg = new video::Image(video::ECF_A8R8G8B8, {w0, h0});
+				baseimg = new video::Image(video::ECF_A8R8G8B8, {w0, h0});
 				baseimg->fill(video::SColor(0,0,0,0));
 			}
 
@@ -1141,7 +1141,7 @@ bool ImageSource::generateImagePart(std::string_view part_of_name,
 					COMPLAIN_INVALID("X or Y offset");
 			}
 
-            video::Image *img = new video::Image(video::ECF_A8R8G8B8, dim);
+			video::Image *img = new video::Image(video::ECF_A8R8G8B8, dim);
 			img->fill(color);
 
 			if (baseimg == nullptr) {
@@ -1236,7 +1236,7 @@ bool ImageSource::generateImagePart(std::string_view part_of_name,
 			u32 transform = parseImageTransform(part_of_name.substr(10));
 			core::dimension2d<u32> dim = imageTransformDimension(
 					transform, baseimg->getDimension());
-            video::Image *image = new video::Image(baseimg->getColorFormat(), dim);
+			video::Image *image = new video::Image(baseimg->getColorFormat(), dim);
 			sanity_check(image != NULL);
 			imageTransform(transform, baseimg, image);
 			baseimg->drop();
@@ -1304,7 +1304,7 @@ bool ImageSource::generateImagePart(std::string_view part_of_name,
 			if (img) {
 				core::dimension2d<u32> dim = img->getDimension();
 				if (!baseimg)
-                    baseimg = new video::Image(video::ECF_A8R8G8B8, dim);
+					baseimg = new video::Image(video::ECF_A8R8G8B8, dim);
 
 				core::position2d<s32> pos_base(0, 0);
 				core::position2d<s32> clippos(0, 0);
@@ -1347,7 +1347,7 @@ bool ImageSource::generateImagePart(std::string_view part_of_name,
 			if (frame_size.Y == 0)
 				frame_size.Y = 1;
 
-            video::Image *img = new video::Image(video::ECF_A8R8G8B8, frame_size);
+			video::Image *img = new video::Image(video::ECF_A8R8G8B8, frame_size);
 
 			// Fill target image with transparency
 			img->fill(video::SColor(0,0,0,0));
@@ -1501,7 +1501,7 @@ bool ImageSource::generateImagePart(std::string_view part_of_name,
 					u32 h = scale * dim.Height;
 					const core::dimension2d<u32> newdim(w, h);
 					if (w <= MAX_IMAGE_DIMENSION && h <= MAX_IMAGE_DIMENSION) {
-                        video::Image *newimg = new video::Image(baseimg->getColorFormat(), newdim);
+						video::Image *newimg = new video::Image(baseimg->getColorFormat(), newdim);
 						baseimg->copyToScaling(newimg);
 						baseimg->drop();
 						baseimg = newimg;
@@ -1523,7 +1523,7 @@ bool ImageSource::generateImagePart(std::string_view part_of_name,
 			u32 height = stoi(sf.next(""));
 			CHECK_DIM(width, height);
 
-            video::Image *image = new video::Image(video::ECF_A8R8G8B8, {width, height});
+			video::Image *image = new video::Image(video::ECF_A8R8G8B8, {width, height});
 			baseimg->copyToScaling(image);
 			baseimg->drop();
 			baseimg = image;
@@ -1614,7 +1614,7 @@ bool ImageSource::generateImagePart(std::string_view part_of_name,
 			if (tile_dim.Height == 0)
 				tile_dim.Height = 1;
 
-            video::Image *img = new video::Image(video::ECF_A8R8G8B8, tile_dim);
+			video::Image *img = new video::Image(video::ECF_A8R8G8B8, tile_dim);
 			img->fill(video::SColor(0,0,0,0));
 
 			v2u32 vdim(tile_dim);
@@ -1646,7 +1646,7 @@ bool ImageSource::generateImagePart(std::string_view part_of_name,
 
 			auto *device = RenderingEngine::get_raw_device();
 			auto *fs = device->getFileSystem();
-            video::Image* pngimg = video::Image::createFromMemory(png.data(), png.size(), "[png_tmpfile", fs);
+			video::Image* pngimg = video::Image::createFromMemory(png.data(), png.size(), "[png_tmpfile", fs);
 
 			if (!pngimg) {
 				errorstream << "generateImagePart(): Invalid PNG data" << std::endl;
@@ -1658,7 +1658,7 @@ bool ImageSource::generateImagePart(std::string_view part_of_name,
 				blitBaseImage(pngimg, baseimg);
 				pngimg->drop();
 			} else if (pngimg->getColorFormat() != video::ECF_A8R8G8B8) {
-                baseimg = new video::Image(video::ECF_A8R8G8B8, pngimg->getDimension());
+				baseimg = new video::Image(video::ECF_A8R8G8B8, pngimg->getDimension());
 				pngimg->copyTo(baseimg);
 				pngimg->drop();
 			} else {

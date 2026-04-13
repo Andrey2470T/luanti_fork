@@ -207,7 +207,7 @@ namespace gui
 
 				video::ECOLOR_FORMAT format = texture->getColorFormat();
 				core::dimension2du size = texture->getOriginalSize();
-                video::Image* pageholder = new video::Image(format, size, ptr, true, false);
+				video::Image* pageholder = new video::Image(format, size, ptr, true, false);
 
 				for (u32 i = 0; i < glyph_to_be_paged.size(); ++i)
 				{

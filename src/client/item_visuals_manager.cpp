@@ -40,7 +40,7 @@ ItemVisualsManager::ItemVisuals *ItemVisualsManager::createItemVisuals( const It
 	infostream << "Lazily creating item texture and mesh for \""
 			<< cache_key << "\"" << std::endl;
 
-    ITextureSource *tsrc = client->getTextureSource();
+	ITextureSource *tsrc = client->getTextureSource();
 
 	// Create new ItemVisuals
 	auto cc = std::make_unique<ItemVisuals>();

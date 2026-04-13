@@ -803,7 +803,7 @@ bool Client::loadMedia(const std::string &data, const std::string &filename,
 		io::IFileSystem *irrfs = m_rendering_engine->get_filesystem();
 
 		// Read image
-        video::Image *img = video::Image::createFromMemory(data.c_str(), data.size(), filename.c_str(), irrfs);
+		video::Image *img = video::Image::createFromMemory(data.c_str(), data.size(), filename.c_str(), irrfs);
 		if (!img) {
 			errorstream<<"Client: Cannot create image from data of "
 					<<"file \""<<filename<<"\""<<std::endl;
@@ -1934,13 +1934,13 @@ void Client::makeScreenshot()
 	if (serial == SCREENSHOT_MAX_SERIAL_TRIES) {
 		infostream << "Could not find suitable filename for screenshot" << std::endl;
 	} else {
-        video::Image* const image = new video::Image(video::ECF_R8G8B8, raw_image->getDimension());
+		video::Image* const image = new video::Image(video::ECF_R8G8B8, raw_image->getDimension());
 
 		if (image) {
 			raw_image->copyTo(image);
 
 			std::ostringstream sstr;
-            if (video::Image::writeImageToFile(image, filename.c_str(), driver->getFileSystem(), quality)) {
+		if (video::Image::writeImageToFile(image, filename.c_str(), driver->getFileSystem(), quality)) {
 				sstr << "Saved screenshot to '" << filename << "'";
 			} else {
 				sstr << "Failed to save screenshot '" << filename << "'";

@@ -713,7 +713,7 @@ static void getTextureAsImage(video::Image *&dst, const std::string &name, IText
 	if (tsrc->isKnownSourceImage(name)) {
 		auto *texture = tsrc->getTexture(name);
 		assert(texture);
-        dst = new video::Image(
+		dst = new video::Image(
 			texture->getColorFormat(), texture->getSize(),
 			texture->lock(video::ETLM_READ_ONLY));
 		texture->unlock();
@@ -877,7 +877,7 @@ void Sky::addTextureToSkybox(const std::string &texture, int material_id,
 		return;
 	// Keep a list of texture names handy.
 	m_sky_params.textures.emplace_back(texture);
-    video::GLTexture *result = tsrc->getTextureForMesh(texture);
+	video::GLTexture *result = tsrc->getTextureForMesh(texture);
 	m_materials[material_id+5] = baseMaterial();
 	m_materials[material_id+5].setTexture(0, result);
 	m_materials[material_id+5].MaterialType = video::EMT_SOLID;

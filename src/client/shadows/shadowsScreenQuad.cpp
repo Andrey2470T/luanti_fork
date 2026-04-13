@@ -35,11 +35,11 @@ void shadowScreenQuad::render(video::VideoDriver *driver)
 void shadowScreenQuadCB::OnSetConstants(video::MaterialRenderer *renderer, s32 userData)
 {
 	s32 TextureId = 0;
-    m_sm_client_map_setting.set(TextureId, renderer);
+	m_sm_client_map_setting.set(TextureId, renderer);
 
 	TextureId = 1;
-    m_sm_client_map_trans_setting.set(TextureId, renderer);
+	m_sm_client_map_trans_setting.set(TextureId, renderer);
 
 	TextureId = 2;
-    m_sm_dynamic_sampler_setting.set(TextureId, renderer);
+	m_sm_dynamic_sampler_setting.set(TextureId, renderer);
 }

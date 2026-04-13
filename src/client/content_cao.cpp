@@ -151,7 +151,7 @@ static bool setMaterialTextureAndFilters(video::SMaterial &material,
 	bool use_bilinear_filter = g_settings->getBool("bilinear_filter");
 	bool use_anisotropic_filter = g_settings->getBool("anisotropic_filter");
 
-    video::GLTexture *texture = tsrc->getTextureForMesh(texturestring);
+	video::GLTexture *texture = tsrc->getTextureForMesh(texturestring);
 	if (!texture)
 		return false;
 

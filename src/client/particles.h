@@ -35,7 +35,7 @@ struct ClientParticleTexture
 	/* per-spawner structure used to store the ParticleTexture structs
 	 * that spawned particles will refer to through ClientParticleTexRef */
 	ParticleTexture tex;
-    video::GLTexture *ref = nullptr;
+	video::GLTexture *ref = nullptr;
 
 	ClientParticleTexture() = default;
 	ClientParticleTexture(const ServerParticleTexture& p, ITextureSource *tsrc);

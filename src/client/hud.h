@@ -110,10 +110,10 @@ private:
 
 	void drawItem(const ItemStack &item, const core::rect<s32> &rect, bool selected);
 
-    void drawCompassTranslate(HudElement *e, video::GLTexture *texture,
+	void drawCompassTranslate(HudElement *e, video::GLTexture *texture,
 			const core::rect<s32> &rect, int way);
 
-    void drawCompassRotate(HudElement *e, video::GLTexture *texture,
+	void drawCompassRotate(HudElement *e, video::GLTexture *texture,
 			const core::rect<s32> &rect, int way);
 
 	Client *client = nullptr;

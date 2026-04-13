@@ -25,9 +25,9 @@ public:
 	virtual void OnSetConstants(video::MaterialRenderer *renderer,
 			s32 userData);
 private:
-    CachedShaderSetting<s32> m_sm_client_map_setting{"ShadowMapClientMap"};
-    CachedShaderSetting<s32>
+	CachedShaderSetting<s32> m_sm_client_map_setting{"ShadowMapClientMap"};
+	CachedShaderSetting<s32>
 		m_sm_client_map_trans_setting{"ShadowMapClientMapTraslucent"};
-    CachedShaderSetting<s32>
+	CachedShaderSetting<s32>
 		m_sm_dynamic_sampler_setting{"ShadowMapSamplerdynamic"};
 };

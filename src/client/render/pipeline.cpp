@@ -142,7 +142,7 @@ bool TextureBuffer::ensureTexture(video::GLTexture **texture, const TextureDefin
 			// (could be solved by more refactoring in Irrlicht, but not needed for now)
 			sanity_check(definition.msaa < 1);
 
-            video::Image *image = new video::Image(definition.format, size);
+			video::Image *image = new video::Image(definition.format, size);
 			// Cannot use image->fill because it's not implemented for all formats.
 			std::memset(image->getData(), 0, video::getDataSizeFromFormat(definition.format, size.Width, size.Height));
 			*texture = m_driver->addTexture(definition.name.c_str(), image);

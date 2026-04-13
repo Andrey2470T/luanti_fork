@@ -35,8 +35,8 @@ public:
 class ITextureSource : public ISimpleTextureSource
 {
 public:
-    ITextureSource() = default;
-    virtual ~ITextureSource() = default;
+	ITextureSource() = default;
+	virtual ~ITextureSource() = default;
 
 	using ISimpleTextureSource::getTexture;
 

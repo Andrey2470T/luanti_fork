@@ -54,7 +54,7 @@ GUIChatConsole::GUIChatConsole(
 	m_background_color.setAlpha(clamp_u8(console_alpha));
 
 	// load the background texture depending on settings
-    ITextureSource *tsrc = client->getTextureSource();
+	ITextureSource *tsrc = client->getTextureSource();
 	if (tsrc->isKnownSourceImage("background_chat.jpg")) {
 		m_background = tsrc->getTexture("background_chat.jpg");
 		m_background_color.setRed(255);
