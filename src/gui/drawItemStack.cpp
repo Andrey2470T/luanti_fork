@@ -131,7 +131,7 @@ void drawItemStack(
 
 			// TODO: could be moved to a shader
 			if (p.needColorize(c)) {
-				buf->setDirty(scene::EBT_VERTEX);
+				buf->setDirty(scene::EBF_VERTEX);
 				if (imesh->needs_shading)
 					colorizeMeshBuffer(buf, &c);
 				else

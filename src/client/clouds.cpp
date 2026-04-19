@@ -337,14 +337,14 @@ void Clouds::updateMesh()
 			}
 		}
 	}
-	mb->setDirty(scene::EBT_VERTEX);
+	mb->setDirty(scene::EBF_VERTEX);
 
 	const u32 quad_count = mb->getVertexCount() / 4;
 	const u32 index_count = quad_count * 6;
 	// rewrite index array as needed
 	if (mb->getIndexCount() > index_count) {
 		indices.resize(index_count);
-		mb->setDirty(scene::EBT_INDEX);
+		mb->setDirty(scene::EBF_INDEX);
 	} else if (mb->getIndexCount() < index_count) {
 		const u32 start = mb->getIndexCount() / 6;
 		assert(start * 6 == mb->getIndexCount());
@@ -356,7 +356,7 @@ void Clouds::updateMesh()
 			indices.push_back(4 * k + 3);
 			indices.push_back(4 * k + 0);
 		}
-		mb->setDirty(scene::EBT_INDEX);
+		mb->setDirty(scene::EBF_INDEX);
 	}
 
 	tracestream << "Cloud::updateMesh(): " << mb->getVertexCount() << " vertices"

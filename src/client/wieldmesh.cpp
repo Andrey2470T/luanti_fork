@@ -491,7 +491,7 @@ void WieldMeshSceneNode::setColor(video::SColor c)
 		scene::IMeshBuffer *buf = mesh->getMeshBuffer(j);
 
 		if (m_buffer_info[j].needColorize(buffercolor)) {
-			buf->setDirty(scene::EBT_VERTEX);
+			buf->setDirty(scene::EBF_VERTEX);
 			setMeshBufferColor(buf, buffercolor);
 		}
 	}
@@ -617,8 +617,8 @@ void getItemMesh(Client *client, const ItemStack &item, ItemMesh *result)
 
 	// might need to be re-colorized, this is done only when needed
 	if (mesh) {
-		mesh->setHardwareMappingHint(scene::EHM_DYNAMIC, scene::EBT_VERTEX);
-		mesh->setHardwareMappingHint(scene::EHM_STATIC, scene::EBT_INDEX);
+		mesh->setHardwareMappingHint(scene::EHM_DYNAMIC, scene::EBF_VERTEX);
+		mesh->setHardwareMappingHint(scene::EHM_STATIC, scene::EBF_INDEX);
 	}
 	result->mesh = mesh;
 }

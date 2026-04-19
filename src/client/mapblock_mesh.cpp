@@ -588,9 +588,7 @@ void MapBlockBspTree::traverse(s32 node, v3f viewpoint, std::vector<s32> &output
 
 void PartialMeshBuffer::draw(video::VideoDriver *driver) const
 {
-	const auto pType = m_buffer->getPrimitiveType();
-	driver->drawBuffers(m_buffer->getVertexBuffer(), m_indices.get(),
-		m_indices->getPrimitiveCount(pType), pType);
+	driver->drawMeshBuffer(m_buffer, m_indices.get());
 }
 
 /*

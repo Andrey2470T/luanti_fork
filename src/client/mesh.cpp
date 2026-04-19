@@ -121,7 +121,7 @@ inline static void transformMeshBuffer(scene::IMeshBuffer *buf,
 		auto *vertex = (scene::Vertex3D *)(vertices + i * stride);
 		transform_vertex(vertex);
 	}
-	buf->setDirty(scene::EBT_VERTEX);
+	buf->setDirty(scene::EBF_VERTEX);
 	buf->recalculateBoundingBox();
 }
 
@@ -178,7 +178,7 @@ void setMeshBufferColor(scene::IMeshBuffer *buf, const video::SColor color)
 	u8 *vertices = (u8 *) buf->getVertices();
 	for (u32 i = 0; i < vertex_count; i++)
 		((scene::Vertex3D *) (vertices + i * stride))->Color = color;
-	buf->setDirty(scene::EBT_VERTEX);
+	buf->setDirty(scene::EBF_VERTEX);
 }
 
 void setMeshColor(scene::IMesh *mesh, const video::SColor color)
@@ -202,7 +202,7 @@ static void applyToMesh(scene::IMesh *mesh, const F &fn)
 		char *vertices = reinterpret_cast<char *>(buf->getVertices());
 		for (u32 i = 0; i < vertex_count; i++)
 			fn(reinterpret_cast<scene::Vertex3D *>(vertices + i * stride));
-		buf->setDirty(scene::EBT_VERTEX);
+		buf->setDirty(scene::EBF_VERTEX);
 	}
 }
 
@@ -219,7 +219,7 @@ void colorizeMeshBuffer(scene::IMeshBuffer *buf, const video::SColor *buffercolo
 		// Apply shading
 		applyFacesShading(*vc, vertex->Normal);
 	}
-	buf->setDirty(scene::EBT_VERTEX);
+	buf->setDirty(scene::EBF_VERTEX);
 }
 
 void setMeshColorByNormalXYZ(scene::IMesh *mesh,

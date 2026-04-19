@@ -923,8 +923,7 @@ static u32 transformBuffersToDrawOrder(
 				// Upload buffer here explicitly to give the driver some
 				// extra time to get it ready before drawing.
 				tmp->setHardwareMappingHint(scene::EHM_STREAM);
-				driver->updateHardwareBuffer(tmp->getVertexBuffer());
-				driver->updateHardwareBuffer(tmp->getIndexBuffer());
+				tmp->reload(driver);
 			}
 			tmp = nullptr;
 		};

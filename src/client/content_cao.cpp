@@ -761,10 +761,10 @@ void GenericCAO::addToScene(ITextureSource *tsrc, scene::ISceneManager *smgr)
 			auto *mesh = m_animated_meshnode->getMesh();
 			// skinning happens on the CPU
 			if (m_animated_meshnode->getJointCount() > 0)
-				mesh->setHardwareMappingHint(scene::EHM_STREAM, scene::EBT_VERTEX);
+				mesh->setHardwareMappingHint(scene::EHM_STREAM, scene::EBF_VERTEX);
 			else
-				mesh->setHardwareMappingHint(scene::EHM_STATIC, scene::EBT_VERTEX);
-			mesh->setHardwareMappingHint(scene::EHM_STATIC, scene::EBT_INDEX);
+				mesh->setHardwareMappingHint(scene::EHM_STATIC, scene::EBF_VERTEX);
+			mesh->setHardwareMappingHint(scene::EHM_STATIC, scene::EBF_INDEX);
 		}
 	}
 
@@ -1195,7 +1195,7 @@ static void setMeshBufferTextureCoords(scene::IMeshBuffer *buf, const v2f *uv, u
 	auto *vertices = static_cast<scene::Vertex3D *>(buf->getVertices());
 	for (u32 i = 0; i < count; i++)
 		vertices[i].TCoords = uv[i];
-	buf->setDirty(scene::EBT_VERTEX);
+	buf->setDirty(scene::EBF_VERTEX);
 }
 
 void GenericCAO::updateTextureAnim()
