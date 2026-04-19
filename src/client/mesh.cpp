@@ -12,7 +12,7 @@
 #include <Mesh/IAnimatedMesh.h>
 #include <Mesh/SAnimatedMesh.h>
 #include <Scene/IAnimatedMeshSceneNode.h>
-#include "Mesh/S3DVertex.h"
+#include "Mesh/VertexTypes.h"
 #include "Mesh/SMesh.h"
 #include "Mesh/SMeshBuffer.h"
 
@@ -46,38 +46,44 @@ void applyFacesShading(video::SColor &color, const v3f normal)
 scene::IAnimatedMesh* createCubeMesh(v3f scale)
 {
 	video::SColor c(255,255,255,255);
-	video::S3DVertex vertices[24] =
+	scene::Vertex3D vertices[24] =
 	{
 		// Up
-		video::S3DVertex(-0.5,+0.5,-0.5, 0,1,0, c, 0,1),
-		video::S3DVertex(-0.5,+0.5,+0.5, 0,1,0, c, 0,0),
-		video::S3DVertex(+0.5,+0.5,+0.5, 0,1,0, c, 1,0),
-		video::S3DVertex(+0.5,+0.5,-0.5, 0,1,0, c, 1,1),
-		// Down
-		video::S3DVertex(-0.5,-0.5,-0.5, 0,-1,0, c, 0,0),
-		video::S3DVertex(+0.5,-0.5,-0.5, 0,-1,0, c, 1,0),
-		video::S3DVertex(+0.5,-0.5,+0.5, 0,-1,0, c, 1,1),
-		video::S3DVertex(-0.5,-0.5,+0.5, 0,-1,0, c, 0,1),
-		// Right
-		video::S3DVertex(+0.5,-0.5,-0.5, 1,0,0, c, 0,1),
-		video::S3DVertex(+0.5,+0.5,-0.5, 1,0,0, c, 0,0),
-		video::S3DVertex(+0.5,+0.5,+0.5, 1,0,0, c, 1,0),
-		video::S3DVertex(+0.5,-0.5,+0.5, 1,0,0, c, 1,1),
-		// Left
-		video::S3DVertex(-0.5,-0.5,-0.5, -1,0,0, c, 1,1),
-		video::S3DVertex(-0.5,-0.5,+0.5, -1,0,0, c, 0,1),
-		video::S3DVertex(-0.5,+0.5,+0.5, -1,0,0, c, 0,0),
-		video::S3DVertex(-0.5,+0.5,-0.5, -1,0,0, c, 1,0),
-		// Back
-		video::S3DVertex(-0.5,-0.5,+0.5, 0,0,1, c, 1,1),
-		video::S3DVertex(+0.5,-0.5,+0.5, 0,0,1, c, 0,1),
-		video::S3DVertex(+0.5,+0.5,+0.5, 0,0,1, c, 0,0),
-		video::S3DVertex(-0.5,+0.5,+0.5, 0,0,1, c, 1,0),
-		// Front
-		video::S3DVertex(-0.5,-0.5,-0.5, 0,0,-1, c, 0,1),
-		video::S3DVertex(-0.5,+0.5,-0.5, 0,0,-1, c, 0,0),
-		video::S3DVertex(+0.5,+0.5,-0.5, 0,0,-1, c, 1,0),
-		video::S3DVertex(+0.5,-0.5,-0.5, 0,0,-1, c, 1,1),
+		// Up (Y+)
+		{{-0.5f, +0.5f, -0.5f}, {0, 1, 0}, c, {0, 1}},
+		{{-0.5f, +0.5f, +0.5f}, {0, 1, 0}, c, {0, 0}},
+		{{+0.5f, +0.5f, +0.5f}, {0, 1, 0}, c, {1, 0}},
+		{{+0.5f, +0.5f, -0.5f}, {0, 1, 0}, c, {1, 1}},
+
+		// Down (Y-)
+		{{-0.5f, -0.5f, -0.5f}, {0, -1, 0}, c, {0, 0}},
+		{{+0.5f, -0.5f, -0.5f}, {0, -1, 0}, c, {1, 0}},
+		{{+0.5f, -0.5f, +0.5f}, {0, -1, 0}, c, {1, 1}},
+		{{-0.5f, -0.5f, +0.5f}, {0, -1, 0}, c, {0, 1}},
+
+		// Right (X+)
+		{{+0.5f, -0.5f, -0.5f}, {1, 0, 0}, c, {0, 1}},
+		{{+0.5f, +0.5f, -0.5f}, {1, 0, 0}, c, {0, 0}},
+		{{+0.5f, +0.5f, +0.5f}, {1, 0, 0}, c, {1, 0}},
+		{{+0.5f, -0.5f, +0.5f}, {1, 0, 0}, c, {1, 1}},
+
+		// Left (X-)
+		{{-0.5f, -0.5f, -0.5f}, {-1, 0, 0}, c, {1, 1}},
+		{{-0.5f, -0.5f, +0.5f}, {-1, 0, 0}, c, {0, 1}},
+		{{-0.5f, +0.5f, +0.5f}, {-1, 0, 0}, c, {0, 0}},
+		{{-0.5f, +0.5f, -0.5f}, {-1, 0, 0}, c, {1, 0}},
+
+		// Back (Z+)
+		{{-0.5f, -0.5f, +0.5f}, {0, 0, 1}, c, {1, 1}},
+		{{+0.5f, -0.5f, +0.5f}, {0, 0, 1}, c, {0, 1}},
+		{{+0.5f, +0.5f, +0.5f}, {0, 0, 1}, c, {0, 0}},
+		{{-0.5f, +0.5f, +0.5f}, {0, 0, 1}, c, {1, 0}},
+
+		// Front (Z-)
+		{{-0.5f, -0.5f, -0.5f}, {0, 0, -1}, c, {0, 1}},
+		{{-0.5f, +0.5f, -0.5f}, {0, 0, -1}, c, {0, 0}},
+		{{+0.5f, +0.5f, -0.5f}, {0, 0, -1}, c, {1, 0}},
+		{{+0.5f, -0.5f, -0.5f}, {0, 0, -1}, c, {1, 1}}
 	};
 
 	u16 indices[6] = {0,1,2,2,3,0};
@@ -108,11 +114,11 @@ template<typename F>
 inline static void transformMeshBuffer(scene::IMeshBuffer *buf,
 		const F &transform_vertex)
 {
-	const u32 stride = getVertexPitchFromType(buf->getVertexType());
+	const u32 stride = getVertexTypeSize(buf->getVertexType());
 	u32 vertex_count = buf->getVertexCount();
 	u8 *vertices = (u8 *)buf->getVertices();
 	for (u32 i = 0; i < vertex_count; i++) {
-		auto *vertex = (video::S3DVertex *)(vertices + i * stride);
+		auto *vertex = (scene::Vertex3D *)(vertices + i * stride);
 		transform_vertex(vertex);
 	}
 	buf->setDirty(scene::EBT_VERTEX);
@@ -129,7 +135,7 @@ void scaleMesh(scene::IMesh *mesh, v3f scale)
 	u32 mc = mesh->getMeshBufferCount();
 	for (u32 j = 0; j < mc; j++) {
 		scene::IMeshBuffer *buf = mesh->getMeshBuffer(j);
-		transformMeshBuffer(buf, [scale](video::S3DVertex *vertex) {
+		transformMeshBuffer(buf, [scale](scene::Vertex3D *vertex) {
 			vertex->Pos *= scale;
 		});
 
@@ -152,7 +158,7 @@ void translateMesh(scene::IMesh *mesh, v3f vec)
 	u32 mc = mesh->getMeshBufferCount();
 	for (u32 j = 0; j < mc; j++) {
 		scene::IMeshBuffer *buf = mesh->getMeshBuffer(j);
-		transformMeshBuffer(buf, [vec](video::S3DVertex *vertex) {
+		transformMeshBuffer(buf, [vec](scene::Vertex3D *vertex) {
 			vertex->Pos += vec;
 		});
 
@@ -167,11 +173,11 @@ void translateMesh(scene::IMesh *mesh, v3f vec)
 
 void setMeshBufferColor(scene::IMeshBuffer *buf, const video::SColor color)
 {
-	const u32 stride = getVertexPitchFromType(buf->getVertexType());
+	const u32 stride = getVertexTypeSize(buf->getVertexType());
 	u32 vertex_count = buf->getVertexCount();
 	u8 *vertices = (u8 *) buf->getVertices();
 	for (u32 i = 0; i < vertex_count; i++)
-		((video::S3DVertex *) (vertices + i * stride))->Color = color;
+		((scene::Vertex3D *) (vertices + i * stride))->Color = color;
 	buf->setDirty(scene::EBT_VERTEX);
 }
 
@@ -191,22 +197,22 @@ static void applyToMesh(scene::IMesh *mesh, const F &fn)
 	u16 mc = mesh->getMeshBufferCount();
 	for (u16 j = 0; j < mc; j++) {
 		scene::IMeshBuffer *buf = mesh->getMeshBuffer(j);
-		const u32 stride = getVertexPitchFromType(buf->getVertexType());
+		const u32 stride = getVertexTypeSize(buf->getVertexType());
 		u32 vertex_count = buf->getVertexCount();
 		char *vertices = reinterpret_cast<char *>(buf->getVertices());
 		for (u32 i = 0; i < vertex_count; i++)
-			fn(reinterpret_cast<video::S3DVertex *>(vertices + i * stride));
+			fn(reinterpret_cast<scene::Vertex3D *>(vertices + i * stride));
 		buf->setDirty(scene::EBT_VERTEX);
 	}
 }
 
 void colorizeMeshBuffer(scene::IMeshBuffer *buf, const video::SColor *buffercolor)
 {
-	const u32 stride = getVertexPitchFromType(buf->getVertexType());
+	const u32 stride = getVertexTypeSize(buf->getVertexType());
 	u32 vertex_count = buf->getVertexCount();
 	u8 *vertices = (u8 *) buf->getVertices();
 	for (u32 i = 0; i < vertex_count; i++) {
-		video::S3DVertex *vertex = (video::S3DVertex *) (vertices + i * stride);
+		scene::Vertex3D *vertex = (scene::Vertex3D *) (vertices + i * stride);
 		video::SColor *vc = &(vertex->Color);
 		// Reset color
 		*vc = *buffercolor;
@@ -223,7 +229,7 @@ void setMeshColorByNormalXYZ(scene::IMesh *mesh,
 {
 	if (!mesh)
 		return;
-	auto colorizator = [=] (video::S3DVertex *vertex) {
+	auto colorizator = [=] (scene::Vertex3D *vertex) {
 		f32 x = fabs(vertex->Normal.X);
 		f32 y = fabs(vertex->Normal.Y);
 		f32 z = fabs(vertex->Normal.Z);
@@ -242,7 +248,7 @@ void setMeshColorByNormal(scene::IMesh *mesh, const v3f &normal,
 {
 	if (!mesh)
 		return;
-	auto colorizator = [normal, color] (video::S3DVertex *vertex) {
+	auto colorizator = [normal, color] (scene::Vertex3D *vertex) {
 		if (vertex->Normal == normal)
 			vertex->Color = color;
 	};
@@ -255,7 +261,7 @@ static void rotateMesh(scene::IMesh *mesh, float degrees)
 	degrees *= M_PI / 180.0f;
 	float c = std::cos(degrees);
 	float s = std::sin(degrees);
-	auto rotator = [c, s] (video::S3DVertex *vertex) {
+	auto rotator = [c, s] (scene::Vertex3D *vertex) {
 		auto rotate_vec = [c, s] (v3f &vec) {
 			float u = vec.*U;
 			float v = vec.*V;
@@ -347,7 +353,7 @@ static scene::IMeshBuffer *cloneMeshBuffer(scene::IMeshBuffer *mesh_buffer)
 			mesh_buffer->getIndexCount());
 	// Rigidly animated meshes may have transformation matrices that need to be applied
 	if (auto *sbuf = dynamic_cast<scene::SSkinMeshBuffer *>(mesh_buffer)) {
-		transformMeshBuffer(cloned_buffer, [sbuf](video::S3DVertex *vertex) {
+		transformMeshBuffer(cloned_buffer, [sbuf](scene::Vertex3D *vertex) {
 			sbuf->Transformation.transformVect(vertex->Pos);
 			vertex->Normal = sbuf->Transformation.rotateAndScaleVect(vertex->Normal);
 			vertex->Normal.normalize();
@@ -359,12 +365,14 @@ static scene::IMeshBuffer *cloneMeshBuffer(scene::IMeshBuffer *mesh_buffer)
 scene::IMeshBuffer* cloneMeshBuffer(scene::IMeshBuffer *mesh_buffer)
 {
 	switch (mesh_buffer->getVertexType()) {
-	case video::EVT_STANDARD:
-		return cloneMeshBuffer<video::S3DVertex, scene::SMeshBuffer>(mesh_buffer);
-	case video::EVT_2TCOORDS:
-		return cloneMeshBuffer<video::S3DVertex2TCoords, scene::SMeshBufferLightMap>(mesh_buffer);
-	case video::EVT_TANGENTS:
-		return cloneMeshBuffer<video::S3DVertexTangents, scene::SMeshBufferTangents>(mesh_buffer);
+	case scene::EVT_3D:
+		return cloneMeshBuffer<scene::Vertex3D, scene::SMeshBuffer>(mesh_buffer);
+	case scene::EVT_2TCOORDS:
+		return cloneMeshBuffer<scene::Vertex2TCoords, scene::SMeshBufferLightMap>(mesh_buffer);
+	case scene::EVT_TANGENTS:
+		return cloneMeshBuffer<scene::VertexTangents, scene::SMeshBufferTangents>(mesh_buffer);
+	default:
+		break;
 	}
 	sanity_check(false);
 	return NULL;
@@ -440,38 +448,43 @@ scene::IMesh* convertNodeboxesToMesh(const std::vector<aabb3f> &boxes,
 		v3f min = box.MinEdge;
 		v3f max = box.MaxEdge;
 
-		video::S3DVertex vertices[24] =
+		scene::Vertex3D vertices[24] =
 		{
 			// up
-			video::S3DVertex(min.X,max.Y,max.Z, 0,1,0, c, txc[0],txc[1]),
-			video::S3DVertex(max.X,max.Y,max.Z, 0,1,0, c, txc[2],txc[1]),
-			video::S3DVertex(max.X,max.Y,min.Z, 0,1,0, c, txc[2],txc[3]),
-			video::S3DVertex(min.X,max.Y,min.Z, 0,1,0, c, txc[0],txc[3]),
+			{{min.X, max.Y, max.Z}, {0, 1, 0}, c, {txc[0], txc[1]}},
+			{{max.X, max.Y, max.Z}, {0, 1, 0}, c, {txc[2], txc[1]}},
+			{{max.X, max.Y, min.Z}, {0, 1, 0}, c, {txc[2], txc[3]}},
+			{{min.X, max.Y, min.Z}, {0, 1, 0}, c, {txc[0], txc[3]}},
+
 			// down
-			video::S3DVertex(min.X,min.Y,min.Z, 0,-1,0, c, txc[4],txc[5]),
-			video::S3DVertex(max.X,min.Y,min.Z, 0,-1,0, c, txc[6],txc[5]),
-			video::S3DVertex(max.X,min.Y,max.Z, 0,-1,0, c, txc[6],txc[7]),
-			video::S3DVertex(min.X,min.Y,max.Z, 0,-1,0, c, txc[4],txc[7]),
+			{{min.X, min.Y, min.Z}, {0, -1, 0}, c, {txc[4], txc[5]}},
+			{{max.X, min.Y, min.Z}, {0, -1, 0}, c, {txc[6], txc[5]}},
+			{{max.X, min.Y, max.Z}, {0, -1, 0}, c, {txc[6], txc[7]}},
+			{{min.X, min.Y, max.Z}, {0, -1, 0}, c, {txc[4], txc[7]}},
+
 			// right
-			video::S3DVertex(max.X,max.Y,min.Z, 1,0,0, c, txc[ 8],txc[9]),
-			video::S3DVertex(max.X,max.Y,max.Z, 1,0,0, c, txc[10],txc[9]),
-			video::S3DVertex(max.X,min.Y,max.Z, 1,0,0, c, txc[10],txc[11]),
-			video::S3DVertex(max.X,min.Y,min.Z, 1,0,0, c, txc[ 8],txc[11]),
+			{{max.X, max.Y, min.Z}, {1, 0, 0}, c, {txc[8], txc[9]}},
+			{{max.X, max.Y, max.Z}, {1, 0, 0}, c, {txc[10], txc[9]}},
+			{{max.X, min.Y, max.Z}, {1, 0, 0}, c, {txc[10], txc[11]}},
+			{{max.X, min.Y, min.Z}, {1, 0, 0}, c, {txc[8], txc[11]}},
+
 			// left
-			video::S3DVertex(min.X,max.Y,max.Z, -1,0,0, c, txc[12],txc[13]),
-			video::S3DVertex(min.X,max.Y,min.Z, -1,0,0, c, txc[14],txc[13]),
-			video::S3DVertex(min.X,min.Y,min.Z, -1,0,0, c, txc[14],txc[15]),
-			video::S3DVertex(min.X,min.Y,max.Z, -1,0,0, c, txc[12],txc[15]),
+			{{min.X, max.Y, max.Z}, {-1, 0, 0}, c, {txc[12], txc[13]}},
+			{{min.X, max.Y, min.Z}, {-1, 0, 0}, c, {txc[14], txc[13]}},
+			{{min.X, min.Y, min.Z}, {-1, 0, 0}, c, {txc[14], txc[15]}},
+			{{min.X, min.Y, max.Z}, {-1, 0, 0}, c, {txc[12], txc[15]}},
+
 			// back
-			video::S3DVertex(max.X,max.Y,max.Z, 0,0,1, c, txc[16],txc[17]),
-			video::S3DVertex(min.X,max.Y,max.Z, 0,0,1, c, txc[18],txc[17]),
-			video::S3DVertex(min.X,min.Y,max.Z, 0,0,1, c, txc[18],txc[19]),
-			video::S3DVertex(max.X,min.Y,max.Z, 0,0,1, c, txc[16],txc[19]),
+			{{max.X, max.Y, max.Z}, {0, 0, 1}, c, {txc[16], txc[17]}},
+			{{min.X, max.Y, max.Z}, {0, 0, 1}, c, {txc[18], txc[17]}},
+			{{min.X, min.Y, max.Z}, {0, 0, 1}, c, {txc[18], txc[19]}},
+			{{max.X, min.Y, max.Z}, {0, 0, 1}, c, {txc[16], txc[19]}},
+
 			// front
-			video::S3DVertex(min.X,max.Y,min.Z, 0,0,-1, c, txc[20],txc[21]),
-			video::S3DVertex(max.X,max.Y,min.Z, 0,0,-1, c, txc[22],txc[21]),
-			video::S3DVertex(max.X,min.Y,min.Z, 0,0,-1, c, txc[22],txc[23]),
-			video::S3DVertex(min.X,min.Y,min.Z, 0,0,-1, c, txc[20],txc[23]),
+			{{min.X, max.Y, min.Z}, {0, 0, -1}, c, {txc[20], txc[21]}},
+			{{max.X, max.Y, min.Z}, {0, 0, -1}, c, {txc[22], txc[21]}},
+			{{max.X, min.Y, min.Z}, {0, 0, -1}, c, {txc[22], txc[23]}},
+			{{min.X, min.Y, min.Z}, {0, 0, -1}, c, {txc[20], txc[23]}},
 		};
 
 		u16 indices[] = {0,1,2,2,3,0};

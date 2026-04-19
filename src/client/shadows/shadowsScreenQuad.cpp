@@ -10,18 +10,12 @@ shadowScreenQuad::shadowScreenQuad()
 	Material.Wireframe = false;
 
 	video::SColor color(0x0);
-	Vertices[0] = video::S3DVertex(
-			-1.0f, -1.0f, 0.0f, 0, 0, 1, color, 0.0f, 1.0f);
-	Vertices[1] = video::S3DVertex(
-			-1.0f, 1.0f, 0.0f, 0, 0, 1, color, 0.0f, 0.0f);
-	Vertices[2] = video::S3DVertex(
-			1.0f, 1.0f, 0.0f, 0, 0, 1, color, 1.0f, 0.0f);
-	Vertices[3] = video::S3DVertex(
-			1.0f, -1.0f, 0.0f, 0, 0, 1, color, 1.0f, 1.0f);
-	Vertices[4] = video::S3DVertex(
-			-1.0f, -1.0f, 0.0f, 0, 0, 1, color, 0.0f, 1.0f);
-	Vertices[5] = video::S3DVertex(
-			1.0f, 1.0f, 0.0f, 0, 0, 1, color, 1.0f, 0.0f);
+	Vertices[0] = {{-1.0f, -1.0f, 0.0f}, {0, 0, 1}, color, {0.0f, 1.0f}};
+	Vertices[1] = {{-1.0f, 1.0f, 0.0f}, {0, 0, 1}, color, {0.0f, 0.0f}};
+	Vertices[2] = {{1.0f, 1.0f, 0.0f}, {0, 0, 1}, color, {1.0f, 0.0f}};
+	Vertices[3] = {{1.0f, -1.0f, 0.0f}, {0, 0, 1}, color, {1.0f, 1.0f}};
+	Vertices[4] = {{-1.0f, -1.0f, 0.0f}, {0, 0, 1}, color, {0.0f, 1.0f}};
+	Vertices[5] = {{1.0f, 1.0f, 0.0f}, {0, 0, 1}, color, {1.0f, 0.0f}};
 }
 
 void shadowScreenQuad::render(video::VideoDriver *driver)

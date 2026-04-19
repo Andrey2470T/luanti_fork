@@ -118,10 +118,10 @@ Hud::Hud(Client *client, LocalPlayer *player,
 	video::SColor white(255, 255, 255, 255);
 	v3f normal(0.f, 0.f, 1.f);
 
-	vertices[0] = video::S3DVertex(v3f(-1.f, -1.f, 0.f), normal, white, v2f(0.f, 1.f));
-	vertices[1] = video::S3DVertex(v3f(-1.f,  1.f, 0.f), normal, white, v2f(0.f, 0.f));
-	vertices[2] = video::S3DVertex(v3f( 1.f,  1.f, 0.f), normal, white, v2f(1.f, 0.f));
-	vertices[3] = video::S3DVertex(v3f( 1.f, -1.f, 0.f), normal, white, v2f(1.f, 1.f));
+	vertices[0] = {{-1.f, -1.f, 0.f}, normal, white, {0.f, 1.f}};
+	vertices[1] = {{-1.f,  1.f, 0.f}, normal, white, {0.f, 0.f}};
+	vertices[2] = {{1.f,  1.f, 0.f}, normal, white, {1.f, 0.f}};
+	vertices[3] = {{1.f, -1.f, 0.f}, normal, white, {1.f, 1.f}};
 
 	indices[0] = 0;
 	indices[1] = 1;

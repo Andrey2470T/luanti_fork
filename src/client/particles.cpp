@@ -190,7 +190,7 @@ void Particle::updateVertices(ClientEnvironment *env, video::SColor color)
 	if (!m_buffer)
 		return;
 
-	video::S3DVertex *vertices = m_buffer->getVertices(m_index);
+	scene::Vertex3D *vertices = m_buffer->getVertices(m_index);
 
 	if (m_texture.tex != nullptr)
 		scale = m_texture.tex -> scale.blend(m_time / (m_expiration+0.1f));
@@ -219,21 +219,17 @@ void Particle::updateVertices(ClientEnvironment *env, video::SColor color)
 	auto half = m_p.size * .5f,
 	     hx   = half * scale.X,
 	     hy   = half * scale.Y;
-	vertices[0] = video::S3DVertex(-hx, -hy,
-		0, 0, 0, 0, color, tx0, ty1);
-	vertices[1] = video::S3DVertex(hx, -hy,
-		0, 0, 0, 0, color, tx1, ty1);
-	vertices[2] = video::S3DVertex(hx, hy,
-		0, 0, 0, 0, color, tx1, ty0);
-	vertices[3] = video::S3DVertex(-hx, hy,
-		0, 0, 0, 0, color, tx0, ty0);
+	vertices[0] = {{-hx, -hy, 0}, {0, 0, 0}, color, {tx0, ty1}};
+	vertices[1] = {{hx, -hy, 0}, {0, 0, 0}, color, {tx1, ty1}};
+	vertices[2] = {{hx, hy, 0}, {0, 0, 0}, color, {tx1, ty0}};
+	vertices[3] = {{-hx, hy, 0}, {0, 0, 0}, color, {tx0, ty0}};
 
 	// Update position -- see #10398
 	auto *player = env->getLocalPlayer();
 	v3s16 camera_offset = env->getCameraOffset();
 
 	for (u16 i = 0; i < 4; i++) {
-		video::S3DVertex &vertex = vertices[i];
+		scene::Vertex3D &vertex = vertices[i];
 		if (m_p.vertical) {
 			v3f ppos = player->getPosition() / BS;
 			vertex.Pos.rotateXZBy(std::atan2(ppos.Z - m_pos.Z, ppos.X - m_pos.X) /
@@ -567,11 +563,11 @@ std::optional<u16> ParticleBuffer::allocate()
 	if (!m_free_list.empty()) {
 		index = m_free_list.back();
 		m_free_list.pop_back();
-		auto *vertices = static_cast<video::S3DVertex*>(m_mesh_buffer->getVertices());
+		auto *vertices = static_cast<scene::Vertex3D*>(m_mesh_buffer->getVertices());
 		u16 *indices = m_mesh_buffer->getIndices();
 		// reset vertices, because it is only written in Particle::step()
 		for (u16 i = 0; i < 4; i++)
-			vertices[4 * index + i] = video::S3DVertex();
+			vertices[4 * index + i] = scene::Vertex3D();
 		for (u16 i = 0; i < 6; i++)
 			indices[6 * index + i] = 4 * index + quad_indices[i];
 		return index;
@@ -583,7 +579,7 @@ std::optional<u16> ParticleBuffer::allocate()
 	// append new vertices
 	// note: Our buffer never gets smaller, but ParticleManager will delete
 	//       us after a while.
-	std::array<video::S3DVertex, 4> vertices {};
+	std::array<scene::Vertex3D, 4> vertices {};
 	m_mesh_buffer->append(&vertices.front(), 4, quad_indices, 6);
 	index = m_count++;
 	return index;
@@ -598,12 +594,12 @@ void ParticleBuffer::release(u16 index)
 	m_free_list.push_back(index);
 }
 
-video::S3DVertex *ParticleBuffer::getVertices(u16 index)
+scene::Vertex3D *ParticleBuffer::getVertices(u16 index)
 {
 	if (index >= m_count)
 		return nullptr;
 	m_bounding_box_dirty = true;
-	return &(static_cast<video::S3DVertex *>(m_mesh_buffer->getVertices())[4 * index]);
+	return &(static_cast<scene::Vertex3D *>(m_mesh_buffer->getVertices())[4 * index]);
 }
 
 void ParticleBuffer::OnRegisterSceneNode()

@@ -619,11 +619,11 @@ void GenericCAO::addToScene(ITextureSource *tsrc, scene::ISceneManager *smgr)
 		f32 dy = BS * m_prop.visual_size.Y / 2;
 		video::SColor c(0xFFFFFFFF);
 
-		video::S3DVertex vertices[4] = {
-			video::S3DVertex(-dx, -dy, 0, 0,0,1, c, 1,1),
-			video::S3DVertex( dx, -dy, 0, 0,0,1, c, 0,1),
-			video::S3DVertex( dx,  dy, 0, 0,0,1, c, 0,0),
-			video::S3DVertex(-dx,  dy, 0, 0,0,1, c, 1,0),
+		scene::Vertex3D vertices[4] = {
+			{{-dx, -dy, 0}, {0,0,1}, c, {1,1}},
+			{{dx, -dy, 0}, {0,0,1}, c, {0,1}},
+			{{dx,  dy, 0}, {0,0,1}, c, {0,0}},
+			{{-dx,  dy, 0}, {0,0,1}, c, {1,0}},
 		};
 		if (m_is_player) {
 			// Move minimal Y position to 0 (feet position)
@@ -1190,9 +1190,9 @@ void GenericCAO::step(float dtime, ClientEnvironment *env)
 
 static void setMeshBufferTextureCoords(scene::IMeshBuffer *buf, const v2f *uv, u32 count)
 {
-	assert(buf->getVertexType() == video::EVT_STANDARD);
+	assert(buf->getVertexType() == scene::EVT_3D);
 	assert(buf->getVertexCount() == count);
-	auto *vertices = static_cast<video::S3DVertex *>(buf->getVertices());
+	auto *vertices = static_cast<scene::Vertex3D *>(buf->getVertices());
 	for (u32 i = 0; i < count; i++)
 		vertices[i].TCoords = uv[i];
 	buf->setDirty(scene::EBT_VERTEX);

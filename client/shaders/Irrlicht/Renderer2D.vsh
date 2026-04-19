@@ -2,7 +2,7 @@
 
 /* Attributes */
 
-attribute vec4 inVertexPosition;
+attribute vec2 inVertexPosition;
 attribute vec4 inVertexColor;
 attribute vec2 inTexCoord0;
 
@@ -18,7 +18,7 @@ varying vec4 vVertexColor;
 
 void main()
 {
-	gl_Position = uProjection * inVertexPosition;
+	gl_Position = uProjection * vec4(inVertexPosition, 1.0, 1.0);
 	gl_PointSize = uThickness;
 	vTextureCoord = inTexCoord0;
 	vVertexColor = inVertexColor.bgra;

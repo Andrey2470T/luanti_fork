@@ -7,7 +7,7 @@
 #include "irrlichttypes_bloated.h"
 #include "Utils/irr_ptr.h"
 #include "Scene/ISceneNode.h"
-#include "Mesh/S3DVertex.h"
+#include "Mesh/VertexTypes.h"
 #include "Mesh/SMeshBuffer.h"
 
 #include <mutex>
@@ -169,8 +169,8 @@ public:
 	/// Frees the particle at `index`
 	void release(u16 index);
 
-	/// @return video::S3DVertex[4]
-	video::S3DVertex *getVertices(u16 index);
+	/// @return scene::Vertex3D[4]
+	scene::Vertex3D *getVertices(u16 index);
 
 	inline bool isEmpty() const {
 		return m_free_list.size() == m_count;

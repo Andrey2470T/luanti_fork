@@ -49,17 +49,17 @@ static scene::IMesh *createExtrusionMesh(int resolution_x, int resolution_y)
 
 	// Front and back
 	{
-		video::S3DVertex vertices[8] = {
+		scene::Vertex3D vertices[8] = {
 			// z-
-			video::S3DVertex(-r,+r,-r, 0,0,-1, c, 0,0),
-			video::S3DVertex(+r,+r,-r, 0,0,-1, c, 1,0),
-			video::S3DVertex(+r,-r,-r, 0,0,-1, c, 1,1),
-			video::S3DVertex(-r,-r,-r, 0,0,-1, c, 0,1),
+			{{-r, +r, -r}, {0, 0, -1}, c, {0, 0}},
+			{{+r, +r, -r}, {0, 0, -1}, c, {1, 0}},
+			{{+r, -r, -r}, {0, 0, -1}, c, {1, 1}},
+			{{-r, -r, -r}, {0, 0, -1}, c, {0, 1}},
 			// z+
-			video::S3DVertex(-r,+r,+r, 0,0,+1, c, 0,0),
-			video::S3DVertex(-r,-r,+r, 0,0,+1, c, 0,1),
-			video::S3DVertex(+r,-r,+r, 0,0,+1, c, 1,1),
-			video::S3DVertex(+r,+r,+r, 0,0,+1, c, 1,0),
+			{{-r, +r, +r}, {0, 0, +1}, c, {0, 0}},
+			{{-r, -r, +r}, {0, 0, +1}, c, {0, 1}},
+			{{+r, -r, +r}, {0, 0, +1}, c, {1, 1}},
+			{{+r, +r, +r}, {0, 0, +1}, c, {1, 0}},
 		};
 		u16 indices[12] = {0,1,2,2,3,0,4,5,6,6,7,4};
 		buf->append(vertices, 8, indices, 12);
@@ -74,17 +74,17 @@ static scene::IMesh *createExtrusionMesh(int resolution_x, int resolution_y)
 		f32 x1 = pixelpos_x + pixelsize_x;
 		f32 tex0 = (i + 0.1) * pixelsize_x;
 		f32 tex1 = (i + 0.9) * pixelsize_x;
-		video::S3DVertex vertices[8] = {
+		scene::Vertex3D vertices[8] = {
 			// x-
-			video::S3DVertex(x0,-r,-r, -1,0,0, c, tex0,1),
-			video::S3DVertex(x0,-r,+r, -1,0,0, c, tex1,1),
-			video::S3DVertex(x0,+r,+r, -1,0,0, c, tex1,0),
-			video::S3DVertex(x0,+r,-r, -1,0,0, c, tex0,0),
+			{{x0, -r, -r}, {-1, 0, 0}, c, {tex0, 1}},
+			{{x0, -r, +r}, {-1, 0, 0}, c, {tex1, 1}},
+			{{x0, +r, +r}, {-1, 0, 0}, c, {tex1, 0}},
+			{{x0, +r, -r}, {-1, 0, 0}, c, {tex0, 0}},
 			// x+
-			video::S3DVertex(x1,-r,-r, +1,0,0, c, tex0,1),
-			video::S3DVertex(x1,+r,-r, +1,0,0, c, tex0,0),
-			video::S3DVertex(x1,+r,+r, +1,0,0, c, tex1,0),
-			video::S3DVertex(x1,-r,+r, +1,0,0, c, tex1,1),
+			{{x1, -r, -r}, {+1, 0, 0}, c, {tex0, 1}},
+			{{x1, +r, -r}, {+1, 0, 0}, c, {tex0, 0}},
+			{{x1, +r, +r}, {+1, 0, 0}, c, {tex1, 0}},
+			{{x1, -r, +r}, {+1, 0, 0}, c, {tex1, 1}},
 		};
 		u16 indices[12] = {0,1,2,2,3,0,4,5,6,6,7,4};
 		buf->append(vertices, 8, indices, 12);
@@ -95,17 +95,17 @@ static scene::IMesh *createExtrusionMesh(int resolution_x, int resolution_y)
 		f32 y1 = -pixelpos_y;
 		f32 tex0 = (i + 0.1) * pixelsize_y;
 		f32 tex1 = (i + 0.9) * pixelsize_y;
-		video::S3DVertex vertices[8] = {
+		scene::Vertex3D vertices[8] = {
 			// y-
-			video::S3DVertex(-r,y0,-r, 0,-1,0, c, 0,tex0),
-			video::S3DVertex(+r,y0,-r, 0,-1,0, c, 1,tex0),
-			video::S3DVertex(+r,y0,+r, 0,-1,0, c, 1,tex1),
-			video::S3DVertex(-r,y0,+r, 0,-1,0, c, 0,tex1),
+			{{-r, y0, -r}, {0, -1, 0}, c, {0, tex0}},
+			{{+r, y0, -r}, {0, -1, 0}, c, {1, tex0}},
+			{{+r, y0, +r}, {0, -1, 0}, c, {1, tex1}},
+			{{-r, y0, +r}, {0, -1, 0}, c, {0, tex1}},
 			// y+
-			video::S3DVertex(-r,y1,-r, 0,+1,0, c, 0,tex0),
-			video::S3DVertex(-r,y1,+r, 0,+1,0, c, 0,tex1),
-			video::S3DVertex(+r,y1,+r, 0,+1,0, c, 1,tex1),
-			video::S3DVertex(+r,y1,-r, 0,+1,0, c, 1,tex0),
+			{{-r, y1, -r}, {0, +1, 0}, c, {0, tex0}},
+			{{-r, y1, +r}, {0, +1, 0}, c, {0, tex1}},
+			{{+r, y1, +r}, {0, +1, 0}, c, {1, tex1}},
+			{{+r, y1, -r}, {0, +1, 0}, c, {1, tex0}},
 		};
 		u16 indices[12] = {0,1,2,2,3,0,4,5,6,6,7,4};
 		buf->append(vertices, 8, indices, 12);
@@ -326,7 +326,7 @@ static scene::SMesh *createGenericNodeMesh(Client *client, MapNode n,
 				const FrameSpec &frame = (*p.layer.frames)[0];
 				p.layer.texture = frame.texture;
 			}
-			for (video::S3DVertex &v : p.vertices)
+			for (scene::Vertex3D &v : p.vertices)
 				v.Color.setAlpha(255);
 
 			auto buf = make_irr<scene::SMeshBuffer>();

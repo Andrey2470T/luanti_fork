@@ -7,7 +7,7 @@
 #include "log.h"
 #include "client/mesh.h"
 
-void MeshCollector::append(const TileSpec &tile, const video::S3DVertex *vertices,
+void MeshCollector::append(const TileSpec &tile, const scene::Vertex3D *vertices,
 		u32 numVertices, const u16 *indices, u32 numIndices)
 {
 	for (int layernum = 0; layernum < MAX_TILE_LAYERS; layernum++) {
@@ -19,7 +19,7 @@ void MeshCollector::append(const TileSpec &tile, const video::S3DVertex *vertice
 	}
 }
 
-void MeshCollector::append(const TileLayer &layer, const video::S3DVertex *vertices,
+void MeshCollector::append(const TileLayer &layer, const scene::Vertex3D *vertices,
 		u32 numVertices, const u16 *indices, u32 numIndices, u8 layernum,
 		bool use_scale)
 {
@@ -31,8 +31,8 @@ void MeshCollector::append(const TileLayer &layer, const video::S3DVertex *verti
 
 	u32 vertex_count = p.vertices.size();
 	for (u32 i = 0; i < numVertices; i++) {
-		p.vertices.emplace_back(vertices[i].Pos + offset, vertices[i].Normal,
-				vertices[i].Color, scale * vertices[i].TCoords);
+		p.vertices.push_back({vertices[i].Pos + offset, vertices[i].Normal,
+			vertices[i].Color, scale * vertices[i].TCoords});
 		m_bounding_radius_sq = std::max(m_bounding_radius_sq,
 				(vertices[i].Pos - m_center_pos).getLengthSQ());
 	}

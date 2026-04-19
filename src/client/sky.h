@@ -212,10 +212,10 @@ private:
 		const video::SColor &suncolor2, float wicked_time_of_day);
 	void draw_moon(video::VideoDriver *driver, const video::SColor &mooncolor,
 		const video::SColor &mooncolor2, float wicked_time_of_day);
-	void draw_sky_body(std::array<video::S3DVertex, 4> &vertices,
+	void draw_sky_body(std::array<scene::Vertex3D, 4> &vertices,
 		float pos_1, float pos_2, const video::SColor &c);
 	void draw_stars(video::VideoDriver *driver, float wicked_time_of_day);
-	void place_sky_body(std::array<video::S3DVertex, 4> &vertices,
+	void place_sky_body(std::array<scene::Vertex3D, 4> &vertices,
 		float horizon_position,	float day_position);
 };
 

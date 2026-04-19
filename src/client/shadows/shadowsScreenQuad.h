@@ -15,7 +15,7 @@ public:
 	video::SMaterial &getMaterial() { return Material; }
 
 private:
-	video::S3DVertex Vertices[6];
+	scene::Vertex3D Vertices[6];
 	video::SMaterial Material;
 };
 

@@ -541,10 +541,10 @@ irr_ptr<scene::SMeshBuffer> Minimap::createMinimapMeshBuffer()
 	indices.resize(6);
 	static const video::SColor c(255, 255, 255, 255);
 
-	vertices[0] = video::S3DVertex(-1, -1, 0, 0, 0, 1, c, 0, 1);
-	vertices[1] = video::S3DVertex(-1,  1, 0, 0, 0, 1, c, 0, 0);
-	vertices[2] = video::S3DVertex( 1,  1, 0, 0, 0, 1, c, 1, 0);
-	vertices[3] = video::S3DVertex( 1, -1, 0, 0, 0, 1, c, 1, 1);
+	vertices[0] = {{-1, -1, 0}, {0, 0, 1}, c, {0, 1}};
+	vertices[1] = {{-1,  1, 0}, {0, 0, 1}, c, {0, 0}};
+	vertices[2] = {{1,  1, 0}, {0, 0, 1}, c, {1, 0}};
+	vertices[3] = {{1, -1, 0}, {0, 0, 1}, c, {1, 1}};
 
 	indices[0] = 0;
 	indices[1] = 1;

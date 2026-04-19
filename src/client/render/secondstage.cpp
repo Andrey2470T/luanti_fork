@@ -61,15 +61,15 @@ void PostProcessingStep::run(PipelineContext &context)
 		material.TextureLayers[i].Texture = source->getTexture(texture_map[i]);
 
 	static const video::SColor color = video::SColor(0, 0, 0, 255);
-	static const video::S3DVertex vertices[4] = {
-			video::S3DVertex(1.0, -1.0, 0.0, 0.0, 0.0, -1.0,
-					color, 1.0, 0.0),
-			video::S3DVertex(-1.0, -1.0, 0.0, 0.0, 0.0, -1.0,
-					color, 0.0, 0.0),
-			video::S3DVertex(-1.0, 1.0, 0.0, 0.0, 0.0, -1.0,
-					color, 0.0, 1.0),
-			video::S3DVertex(1.0, 1.0, 0.0, 0.0, 0.0, -1.0,
-					color, 1.0, 1.0),
+	static const scene::Vertex3D vertices[4] = {
+		{{1.0, -1.0, 0.0}, {0.0, 0.0, -1.0},
+			color, {1.0, 0.0}},
+		{{-1.0, -1.0, 0.0}, {0.0, 0.0, -1.0},
+			color, {0.0, 0.0}},
+		{{-1.0, 1.0, 0.0}, {0.0, 0.0, -1.0},
+			color, {0.0, 1.0}},
+		{{1.0, 1.0, 0.0}, {0.0, 0.0, -1.0},
+			color, {1.0, 1.0}},
 	};
 	static const u16 indices[6] = {0, 1, 2, 2, 3, 0};
 	driver->setMaterial(material);

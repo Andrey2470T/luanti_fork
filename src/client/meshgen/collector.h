@@ -7,14 +7,14 @@
 #include <vector>
 #include "irrlichttypes.h"
 #include "irr_v3d.h"
-#include <Mesh/S3DVertex.h>
+#include <Mesh/VertexTypes.h>
 #include "client/tile.h"
 
 struct PreMeshBuffer
 {
 	TileLayer layer;
 	std::vector<u16> indices;
-	std::vector<video::S3DVertex> vertices;
+	std::vector<scene::Vertex3D> vertices;
 
 	PreMeshBuffer() = default;
 	explicit PreMeshBuffer(const TileLayer &layer) : layer(layer) {}
@@ -48,12 +48,12 @@ struct MeshCollector
 	MeshCollector(const v3f center_pos, v3f offset = v3f()) : m_center_pos(center_pos), offset(offset) {}
 
 	void append(const TileSpec &material,
-			const video::S3DVertex *vertices, u32 numVertices,
+			const scene::Vertex3D *vertices, u32 numVertices,
 			const u16 *indices, u32 numIndices);
 
 private:
 	void append(const TileLayer &material,
-			const video::S3DVertex *vertices, u32 numVertices,
+			const scene::Vertex3D *vertices, u32 numVertices,
 			const u16 *indices, u32 numIndices,
 			u8 layernum, bool use_scale = false);
 

@@ -9,7 +9,7 @@
 #include <Video/VideoDriver.h>
 #include <Scene/ISceneManager.h>
 #include <Scene/ICameraSceneNode.h>
-#include <Mesh/S3DVertex.h>
+#include <Mesh/VertexTypes.h>
 #include "client/mesh.h"
 #include "client/tile.h"
 #include "noise.h" // easeCurve
@@ -159,7 +159,7 @@ void Sky::render()
 		const f32 t = 1.0f;
 		const f32 o = 0.0f;
 		static const u16 indices[6] = {0, 1, 2, 0, 2, 3};
-		video::S3DVertex vertices[4];
+		scene::Vertex3D vertices[4];
 
 		driver->setMaterial(m_materials[1]);
 
@@ -177,11 +177,11 @@ void Sky::render()
 				driver->setMaterial(m_materials[j]);
 				// Use 1.05 rather than 1.0 to avoid colliding with the
 				// sun, moon and stars, as this is a background skybox.
-				vertices[0] = video::S3DVertex(-1.05, -1.05, -1.05, 0, 0, 1, c, t, t);
-				vertices[1] = video::S3DVertex( 1.05, -1.05, -1.05, 0, 0, 1, c, o, t);
-				vertices[2] = video::S3DVertex( 1.05,  1.05, -1.05, 0, 0, 1, c, o, o);
-				vertices[3] = video::S3DVertex(-1.05,  1.05, -1.05, 0, 0, 1, c, t, o);
-				for (video::S3DVertex &vertex : vertices) {
+				vertices[0] = {{-1.05, -1.05, -1.05}, {0, 0, 1}, c, {t, t}};
+				vertices[1] = {{1.05, -1.05, -1.05}, {0, 0, 1}, c, {o, t}};
+				vertices[2] = {{1.05,  1.05, -1.05}, {0, 0, 1}, c, {o, o}};
+				vertices[3] = {{-1.05,  1.05, -1.05}, {0, 0, 1}, c, {t, o}};
+				for (scene::Vertex3D &vertex : vertices) {
 					if (j == 5) { // Top texture
 						vertex.Pos.rotateYZBy(90);
 						vertex.Pos.rotateXZBy(90);
@@ -208,11 +208,11 @@ void Sky::render()
 		if (m_visible) {
 			driver->setMaterial(m_materials[1]);
 			for (u32 j = 0; j < 4; j++) {
-				vertices[0] = video::S3DVertex(-1, -0.02, -1, 0, 0, 1, m_bgcolor, t, t);
-				vertices[1] = video::S3DVertex( 1, -0.02, -1, 0, 0, 1, m_bgcolor, o, t);
-				vertices[2] = video::S3DVertex( 1, 0.45, -1, 0, 0, 1, m_skycolor, o, o);
-				vertices[3] = video::S3DVertex(-1, 0.45, -1, 0, 0, 1, m_skycolor, t, o);
-				for (video::S3DVertex &vertex : vertices) {
+				vertices[0] = {{-1, -0.02, -1}, {0, 0, 1}, m_bgcolor, {t, t}};
+				vertices[1] = {{1, -0.02, -1}, {0, 0, 1}, m_bgcolor, {o, t}};
+				vertices[2] = {{1, 0.45, -1}, {0, 0, 1}, m_skycolor, {o, o}};
+				vertices[3] = {{-1, 0.45, -1}, {0, 0, 1}, m_skycolor, {t, o}};
+				for (scene::Vertex3D &vertex : vertices) {
 					if (j == 0)
 						// Don't switch
 						{}
@@ -245,11 +245,11 @@ void Sky::render()
 			//std::cerr<<"a_="<<a_<<" a="<<a<<std::endl;
 			video::SColor c(255, 255, 255, 255);
 			float y = -(1.0 - a) * 0.22;
-			vertices[0] = video::S3DVertex(-1, -0.05 + y, -1, 0, 0, 1, c, t, t);
-			vertices[1] = video::S3DVertex( 1, -0.05 + y, -1, 0, 0, 1, c, o, t);
-			vertices[2] = video::S3DVertex( 1,   0.2 + y, -1, 0, 0, 1, c, o, o);
-			vertices[3] = video::S3DVertex(-1,   0.2 + y, -1, 0, 0, 1, c, t, o);
-			for (video::S3DVertex &vertex : vertices) {
+			vertices[0] = {{-1, -0.05f + y, -1}, {0, 0, 1}, c, {t, t}};
+			vertices[1] = {{1, -0.05f + y, -1}, {0, 0, 1}, c, {o, t}};
+			vertices[2] = {{1,   0.2f + y, -1}, {0, 0, 1}, c, {o, o}};
+			vertices[3] = {{-1,   0.2f + y, -1}, {0, 0, 1}, c, {t, o}};
+			for (scene::Vertex3D &vertex : vertices) {
 				if (wicked_time_of_day < 0.5)
 					// Switch from -Z (south) to +X (east)
 					vertex.Pos.rotateXZBy(90);
@@ -275,11 +275,11 @@ void Sky::render()
 
 			for (u32 j = 0; j < 4; j++) {
 				video::SColor c = cloudyfogcolor;
-				vertices[0] = video::S3DVertex(-1, -1.0,  -1, 0, 0, 1, c, t, t);
-				vertices[1] = video::S3DVertex( 1, -1.0,  -1, 0, 0, 1, c, o, t);
-				vertices[2] = video::S3DVertex( 1, -0.02, -1, 0, 0, 1, c, o, o);
-				vertices[3] = video::S3DVertex(-1, -0.02, -1, 0, 0, 1, c, t, o);
-				for (video::S3DVertex &vertex : vertices) {
+				vertices[0] = {{-1, -1.0f,  -1}, {0, 0, 1}, c, {t, t}};
+				vertices[1] = {{1, -1.0f,  -1}, {0, 0, 1}, c, {o, t}};
+				vertices[2] = {{1, -0.02f, -1}, {0, 0, 1}, c, {o, o}};
+				vertices[3] = {{-1, -0.02f, -1}, {0, 0, 1}, c, {t, o}};
+				for (scene::Vertex3D &vertex : vertices) {
 					if (j == 0)
 						// Don't switch
 						{}
@@ -298,10 +298,10 @@ void Sky::render()
 
 			// Draw bottom far cloudy fog thing in front of sun, moon and stars
 			video::SColor c = cloudyfogcolor;
-			vertices[0] = video::S3DVertex(-1, -1.0, -1, 0, 1, 0, c, t, t);
-			vertices[1] = video::S3DVertex( 1, -1.0, -1, 0, 1, 0, c, o, t);
-			vertices[2] = video::S3DVertex( 1, -1.0, 1, 0, 1, 0, c, o, o);
-			vertices[3] = video::S3DVertex(-1, -1.0, 1, 0, 1, 0, c, t, o);
+			vertices[0] = {{-1, -1.0f, -1}, {0, 1, 0}, c, {t, t}};
+			vertices[1] = {{1, -1.0f, -1}, {0, 1, 0}, c, {o, t}};
+			vertices[2] = {{1, -1.0f, 1}, {0, 1, 0}, c, {o, o}};
+			vertices[3] = {{-1, -1.0f, 1}, {0, 1, 0}, c, {t, o}};
 			driver->drawIndexedTriangleList(&vertices[0], 4, indices, 2);
 		}
 	}
@@ -554,7 +554,7 @@ void Sky::draw_sun(video::VideoDriver *driver, const video::SColor &suncolor,
 	constexpr float sunsize = 0.07;
 
 	static const u16 indices[] = {0, 1, 2, 0, 2, 3};
-	std::array<video::S3DVertex, 4> vertices;
+	std::array<scene::Vertex3D, 4> vertices;
 	if (!m_sun_texture) {
 		driver->setMaterial(m_materials[1]);
 		const float sunsizes[4] = {
@@ -602,7 +602,7 @@ void Sky::draw_moon(video::VideoDriver *driver, const video::SColor &mooncolor,
 	constexpr float moonsize = 0.04;
 
 	static const u16 indices[] = {0, 1, 2, 0, 2, 3};
-	std::array<video::S3DVertex, 4> vertices;
+	std::array<scene::Vertex3D, 4> vertices;
 	if (!m_moon_texture) {
 		driver->setMaterial(m_materials[1]);
 		const float moonsizes_1[4] = {
@@ -669,7 +669,7 @@ void Sky::draw_stars(video::VideoDriver * driver, float wicked_time_of_day)
 	driver->setTransform(video::ETS_WORLD, world_matrix);
 }
 
-void Sky::draw_sky_body(std::array<video::S3DVertex, 4> &vertices, float pos_1, float pos_2, const video::SColor &c)
+void Sky::draw_sky_body(std::array<scene::Vertex3D, 4> &vertices, float pos_1, float pos_2, const video::SColor &c)
 {
 	/*
 	* Create an array of vertices with the dimensions specified.
@@ -679,15 +679,15 @@ void Sky::draw_sky_body(std::array<video::S3DVertex, 4> &vertices, float pos_1, 
 
 	const f32 t = 1.0f;
 	const f32 o = 0.0f;
-	vertices[0] = video::S3DVertex(pos_1, pos_1, -1, 0, 0, 1, c, t, t);
-	vertices[1] = video::S3DVertex(pos_2, pos_1, -1, 0, 0, 1, c, o, t);
-	vertices[2] = video::S3DVertex(pos_2, pos_2, -1, 0, 0, 1, c, o, o);
-	vertices[3] = video::S3DVertex(pos_1, pos_2, -1, 0, 0, 1, c, t, o);
+	vertices[0] = {{pos_1, pos_1, -1}, {0, 0, 1}, c, {t, t}};
+	vertices[1] = {{pos_2, pos_1, -1}, {0, 0, 1}, c, {o, t}};
+	vertices[2] = {{pos_2, pos_2, -1}, {0, 0, 1}, c, {o, o}};
+	vertices[3] = {{pos_1, pos_2, -1}, {0, 0, 1}, c, {t, o}};
 }
 
 
 void Sky::place_sky_body(
-	std::array<video::S3DVertex, 4> &vertices, float horizon_position, float day_position)
+	std::array<scene::Vertex3D, 4> &vertices, float horizon_position, float day_position)
 	/*
 	* Place body in the sky.
 	* vertices: The body as a rectangle of 4 vertices
@@ -695,7 +695,7 @@ void Sky::place_sky_body(
 	* day_position: turn the body around the Z axis, to place it depending of the time of the day
 	*/
 {
-	for (video::S3DVertex &vertex : vertices) {
+	for (scene::Vertex3D &vertex : vertices) {
 		// Body is directed to -Z (south) by default
 		vertex.Pos.rotateXZBy(horizon_position);
 		vertex.Pos.rotateXYBy(day_position);
@@ -833,10 +833,10 @@ void Sky::updateStars()
 		v3f p1 = a.rotateAndScaleVect(v3f(d, 1, -d));
 		v3f p2 = a.rotateAndScaleVect(v3f(d, 1, d));
 		v3f p3 = a.rotateAndScaleVect(v3f(-d, 1, d));
-		vertices.push_back(video::S3DVertex(p, {}, {}, {}));
-		vertices.push_back(video::S3DVertex(p1, {}, {}, {}));
-		vertices.push_back(video::S3DVertex(p2, {}, {}, {}));
-		vertices.push_back(video::S3DVertex(p3, {}, {}, {}));
+		vertices.push_back({p, {}, {}, {}});
+		vertices.push_back({p1, {}, {}, {}});
+		vertices.push_back({p2, {}, {}, {}});
+		vertices.push_back({p3, {}, {}, {}});
 	}
 	for (u16 i = 0; i < m_star_params.count; i++) {
 		indices.push_back(i * 4 + 0);
