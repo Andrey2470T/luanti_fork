@@ -240,6 +240,7 @@ void Particle::updateVertices(ClientEnvironment *env, video::SColor color)
 		}
 		vertex.Pos += m_pos * BS - intToFloat(camera_offset, BS);
 	}
+	m_buffer->markVerticesModified();
 }
 
 /*
@@ -550,6 +551,7 @@ ParticleBuffer::ParticleBuffer(ClientEnvironment *env, const video::SMaterial &m
 	m_mesh_buffer(make_irr<scene::SMeshBuffer>())
 {
 	m_mesh_buffer->getMaterial() = material;
+	m_mesh_buffer->setHardwareMappingHint(scene::EHM_STATIC);
 }
 
 static constexpr u16 quad_indices[] = { 0, 1, 2, 2, 3, 0 };
@@ -581,6 +583,7 @@ std::optional<u16> ParticleBuffer::allocate()
 	//       us after a while.
 	std::array<scene::Vertex3D, 4> vertices {};
 	m_mesh_buffer->append(&vertices.front(), 4, quad_indices, 6);
+	m_mesh_buffer->setDirty();
 	index = m_count++;
 	return index;
 }
@@ -591,6 +594,7 @@ void ParticleBuffer::release(u16 index)
 	u16 *indices = m_mesh_buffer->getIndices();
 	for (u16 i = 0; i < 6; i++)
 		indices[6 * index + i] = 0;
+	m_mesh_buffer->setDirty(scene::EBF_INDEX);
 	m_free_list.push_back(index);
 }
 
@@ -600,6 +604,11 @@ scene::Vertex3D *ParticleBuffer::getVertices(u16 index)
 		return nullptr;
 	m_bounding_box_dirty = true;
 	return &(static_cast<scene::Vertex3D *>(m_mesh_buffer->getVertices())[4 * index]);
+}
+
+void ParticleBuffer::markVerticesModified()
+{
+	m_mesh_buffer->setDirty(scene::EBF_VERTEX);
 }
 
 void ParticleBuffer::OnRegisterSceneNode()

@@ -172,6 +172,8 @@ public:
 	/// @return scene::Vertex3D[4]
 	scene::Vertex3D *getVertices(u16 index);
 
+	void markVerticesModified();
+
 	inline bool isEmpty() const {
 		return m_free_list.size() == m_count;
 	}
