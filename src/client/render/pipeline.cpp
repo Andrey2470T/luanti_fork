@@ -178,7 +178,7 @@ TextureBufferOutput::TextureBufferOutput(TextureBuffer *_buffer, const std::vect
 TextureBufferOutput::~TextureBufferOutput()
 {
 	if (render_target && driver)
-		driver->removeRenderTarget(render_target);
+		render_target->drop();
 }
 
 void TextureBufferOutput::activate(PipelineContext &context)
@@ -187,7 +187,7 @@ void TextureBufferOutput::activate(PipelineContext &context)
 		driver = context.device->getVideoDriver();
 
 	if (!render_target)
-		render_target = driver->addRenderTarget();
+		render_target = new video::RenderTarget(driver);
 
 	std::vector<video::GLTexture *> textures;
 	core::dimension2du size(0, 0);
