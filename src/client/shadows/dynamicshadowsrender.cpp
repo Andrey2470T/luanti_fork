@@ -537,7 +537,7 @@ void ShadowRenderer::createShaders()
 
 		depth_shader = m_driver->addHighLevelShaderMaterial(
 				readShaderFile(depth_shader_vs).c_str(),
-				readShaderFile(depth_shader_fs).c_str(), nullptr,
+				readShaderFile(depth_shader_fs).c_str(), "",
 				m_shadow_depth_cb, video::EMT_ONETEXTURE_BLEND);
 
 		if (depth_shader == -1) {
@@ -575,7 +575,7 @@ void ShadowRenderer::createShaders()
 
 		depth_shader_entities = m_driver->addHighLevelShaderMaterial(
 				readShaderFile(depth_shader_vs).c_str(),
-				readShaderFile(depth_shader_fs).c_str(), nullptr,
+				readShaderFile(depth_shader_fs).c_str(), "",
 				m_shadow_depth_entity_cb);
 
 		if (depth_shader_entities == -1) {
@@ -612,7 +612,7 @@ void ShadowRenderer::createShaders()
 		m_screen_quad = new shadowScreenQuad();
 		mixcsm_shader = m_driver->addHighLevelShaderMaterial(
 				readShaderFile(depth_shader_vs).c_str(),
-				readShaderFile(depth_shader_fs).c_str(), nullptr,
+				readShaderFile(depth_shader_fs).c_str(), "",
 				m_shadow_mix_cb);
 
 		m_screen_quad->getMaterial().MaterialType =
@@ -650,7 +650,7 @@ void ShadowRenderer::createShaders()
 
 		depth_shader_trans = m_driver->addHighLevelShaderMaterial(
 				readShaderFile(depth_shader_vs).c_str(),
-				readShaderFile(depth_shader_fs).c_str(), nullptr,
+				readShaderFile(depth_shader_fs).c_str(), "",
 				m_shadow_depth_trans_cb);
 
 		if (depth_shader_trans == -1) {

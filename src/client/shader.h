@@ -141,11 +141,11 @@ public:
 		has_been_set = true;
 	}
 	SPECIALIZE(f32, count == 4)
-	set(const f32 value[count], video::MaterialRenderer *renderer)
+	set(f32 value[count], video::MaterialRenderer *renderer)
 	{
 		if (has_been_set && std::equal(m_sent, m_sent + count, value))
 			return;
-		renderer->setUniformFloatArray(m_name, {value[0], value[1], value[2], value[3]});
+		renderer->setUniform4Float(m_name, value);
 
 		std::copy(value, value + count, m_sent);
 		has_been_set = true;
