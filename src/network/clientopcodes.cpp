@@ -4,7 +4,7 @@
 // Copyright (C) 2015 nerzhul, Loic Blot <loic.blot@unix-experience.fr>
 
 #include "clientopcodes.h"
-#include "client/client.h"
+#include "client/core/client.h"
 
 const static ToClientCommandHandler null_command_handler =
 	{"TOCLIENT_NULL", TOCLIENT_STATE_ALL, &Client::handleCommand_Null};

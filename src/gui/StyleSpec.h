@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include "client/texturesource.h"
-#include "client/fontengine.h"
+#include "client/media/texturesource.h"
+#include "client/ui/fontengine.h"
 #include "debug.h"
 #include "irrlichttypes_bloated.h"
 #include "util/string.h"

@@ -17,7 +17,7 @@
 #include "content_nodemeta.h" // For legacy deserialization
 #include "serialization.h"
 #if CHECK_CLIENT_BUILD()
-#include "client/mapblock_mesh.h"
+#include "client/mesh/mapblock_mesh.h"
 #endif
 #include "porting.h"
 #include "util/string.h"

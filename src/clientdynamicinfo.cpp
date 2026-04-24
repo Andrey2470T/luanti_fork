@@ -7,7 +7,7 @@
 #if CHECK_CLIENT_BUILD()
 
 #include "settings.h"
-#include "client/renderingengine.h"
+#include "client/render/renderingengine.h"
 #include "gui/guiFormSpecMenu.h"
 #include "gui/touchcontrols.h"
 

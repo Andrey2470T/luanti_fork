@@ -6,8 +6,8 @@
 
 #include "l_client_common.h"
 
-#include "client/client.h"
-#include "client/clientevent.h"
+#include "client/core/client.h"
+#include "client/core/clientevent.h"
 #include "cpp_api/s_base.h"
 #include "lua_api/l_internal.h"
 

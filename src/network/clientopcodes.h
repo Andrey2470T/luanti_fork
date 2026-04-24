@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "client/client.h"
+#include "client/core/client.h"
 #include "networkprotocol.h"
 
 class NetworkPacket;

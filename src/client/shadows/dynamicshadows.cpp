@@ -5,10 +5,10 @@
 #include <cmath>
 
 #include "client/shadows/dynamicshadows.h"
-#include "client/client.h"
-#include "client/clientenvironment.h"
-#include "client/clientmap.h"
-#include "client/camera.h"
+#include "client/core/client.h"
+#include "client/core/clientenvironment.h"
+#include "client/render/clientmap.h"
+#include "client/player/camera.h"
 #include <Video/VideoDriver.h>
 
 using m4f = core::matrix4;

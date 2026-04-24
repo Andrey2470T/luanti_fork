@@ -9,9 +9,9 @@
 
 #include "gamedef.h"
 #include "dummygamedef.h"
-#include "client/content_mapblock.h"
-#include "client/mapblock_mesh.h"
-#include "client/meshgen/collector.h"
+#include "client/mesh/meshgen.h"
+#include "client/mesh/mapblock_mesh.h"
+#include "client/mesh/collector.h"
 #include "mesh_compare.h"
 #include "util/directiontables.h"
 

@@ -4,7 +4,7 @@
 
 #pragma once
 #include <Video/IShaderConstantSetCallBack.h>
-#include "client/shader.h"
+#include "client/media/shader.h"
 
 // Used by main game rendering
 

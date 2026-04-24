@@ -7,7 +7,7 @@
 #include <Device/IEventReceiver.h>
 #include <GUI/IGUIComboBox.h>
 #include <GUI/IGUIEditBox.h>
-#include "client/renderingengine.h"
+#include "client/render/renderingengine.h"
 #include "modalMenu.h"
 #include "gettext.h"
 #include "gui/guiInventoryList.h"

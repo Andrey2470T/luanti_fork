@@ -29,7 +29,7 @@
 #include "util/string.h"
 #include "translation.h"
 #if CHECK_CLIENT_BUILD()
-#include "client/client.h"
+#include "client/core/client.h"
 #endif
 
 const EnumString ModApiEnvBase::es_ClearObjectsMode[] =

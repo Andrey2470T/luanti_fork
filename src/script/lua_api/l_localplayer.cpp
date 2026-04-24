@@ -6,10 +6,10 @@
 #include "l_internal.h"
 #include "lua_api/l_item.h"
 #include "script/common/c_converter.h"
-#include "client/localplayer.h"
+#include "client/player/localplayer.h"
 #include "hud.h"
 #include "common/c_content.h"
-#include "client/content_cao.h"
+#include "client/activeobject/content_cao.h"
 
 LuaLocalPlayer::LuaLocalPlayer(LocalPlayer *m) : m_localplayer(m)
 {

@@ -5,7 +5,7 @@
 
 #include "l_menu_common.h"
 
-#include "client/renderingengine.h"
+#include "client/render/renderingengine.h"
 #include "gettext.h"
 #include "lua_api/l_internal.h"
 

@@ -16,9 +16,9 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
 #include "guiBackgroundImage.h"
-#include "client/guiscalingfilter.h"
+#include "client/media/guiscalingfilter.h"
 #include "log.h"
-#include "client/texturesource.h"
+#include "client/media/texturesource.h"
 #include <Video/Texture.h>
 
 GUIBackgroundImage::GUIBackgroundImage(gui::IGUIEnvironment *env,

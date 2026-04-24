@@ -8,8 +8,8 @@
 #include "l_internal.h"
 #include "common/c_content.h"
 #include "common/c_converter.h"
-#include "client/client.h"
-#include "client/sound.h"
+#include "client/core/client.h"
+#include "client/sound/sound.h"
 
 /* ModApiClientSound */
 

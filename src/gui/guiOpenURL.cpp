@@ -21,7 +21,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <GUI/IGUIEditBox.h>
 #include <GUI/IGUIFont.h>
 #include <Video/VideoDriver.h>
-#include "client/renderingengine.h"
+#include "client/render/renderingengine.h"
 #include "porting.h"
 #include "gettext.h"
 #include "util/colorize.h"

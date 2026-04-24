@@ -5,7 +5,7 @@
 
 #include "s_client.h"
 #include "s_internal.h"
-#include "client/client.h"
+#include "client/core/client.h"
 #include "common/c_converter.h"
 #include "common/c_content.h"
 #include "lua_api/l_item.h"

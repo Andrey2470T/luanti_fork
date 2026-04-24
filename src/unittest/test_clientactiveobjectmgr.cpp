@@ -4,7 +4,7 @@
 
 #include "test.h"
 
-#include "client/activeobjectmgr.h"
+#include "client/activeobject/activeobjectmgr.h"
 
 #include "catch.h"
 

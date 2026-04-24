@@ -3,8 +3,8 @@
 // Copyright (C) 2024 grorp, Gregor Parzefall <grorp@posteo.de>
 
 #include "touchscreenlayout.h"
-#include "client/renderingengine.h"
-#include "client/texturesource.h"
+#include "client/render/renderingengine.h"
+#include "client/media/texturesource.h"
 #include "convert_json.h"
 #include "gettext.h"
 #include "settings.h"

@@ -9,9 +9,9 @@
 #include "lua_api/l_internal.h"
 #include "lua_api/l_object.h"
 #include "lua_api/l_particleparams.h"
-#include "client/particles.h"
-#include "client/client.h"
-#include "client/clientevent.h"
+#include "client/render/particles.h"
+#include "client/core/client.h"
+#include "client/core/clientevent.h"
 
 int ModApiParticlesLocal::l_add_particle(lua_State *L)
 {

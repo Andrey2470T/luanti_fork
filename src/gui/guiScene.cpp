@@ -9,7 +9,7 @@
 #include <Video/VideoDriver.h>
 #include <Scene/ISceneManager.h>
 #include "porting.h"
-#include "client/mesh.h"
+#include "client/mesh/mesh.h"
 #include <Video/DrawContext.h>
 
 GUIScene::GUIScene(gui::IGUIEnvironment *env, scene::ISceneManager *smgr,

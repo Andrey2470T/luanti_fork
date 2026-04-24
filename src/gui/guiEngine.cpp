@@ -4,11 +4,11 @@
 
 #include "guiEngine.h"
 
-#include "client/fontengine.h"
-#include "client/guiscalingfilter.h"
-#include "client/renderingengine.h"
-#include "client/shader.h"
-#include "client/tile.h"
+#include "client/ui/fontengine.h"
+#include "client/media/guiscalingfilter.h"
+#include "client/render/renderingengine.h"
+#include "client/media/shader.h"
+#include "client/render/tile.h"
 #include "clientdynamicinfo.h"
 #include "config.h"
 #include "content/content.h"
@@ -25,7 +25,7 @@
 #include "version.h"
 #include <Scene/ICameraSceneNode.h>
 #include <GUI/IGUIStaticText.h>
-#include "client/imagefilters.h"
+#include "client/media/imagefilters.h"
 #include "util/tracy_wrapper.h"
 #include "script/common/c_types.h" // LuaError
 

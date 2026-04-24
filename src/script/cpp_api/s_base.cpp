@@ -15,7 +15,7 @@
 #include "util/string.h"
 #include "server.h"
 #if CHECK_CLIENT_BUILD()
-#include "client/client.h"
+#include "client/core/client.h"
 #endif
 
 #if BUILD_WITH_TRACY

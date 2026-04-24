@@ -3,7 +3,7 @@
 // Copyright (C) 2021 Liso <anlismon@gmail.com>
 
 #include "client/shadows/shadowsshadercallbacks.h"
-#include "client/renderingengine.h"
+#include "client/render/renderingengine.h"
 
 void ShadowUniformSetter::onSetUniforms(video::MaterialRenderer *renderer)
 {

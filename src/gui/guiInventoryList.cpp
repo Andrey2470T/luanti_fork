@@ -4,9 +4,9 @@
 
 #include "guiInventoryList.h"
 #include "guiFormSpecMenu.h"
-#include "drawItemStack.h"
-#include "client/client.h"
-#include "client/renderingengine.h"
+#include "client/ui/drawItemStack.h"
+#include "client/core/client.h"
+#include "client/render/renderingengine.h"
 #include <Video/VideoDriver.h>
 
 GUIInventoryList::GUIInventoryList(gui::IGUIEnvironment *env,

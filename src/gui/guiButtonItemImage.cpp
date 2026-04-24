@@ -4,7 +4,7 @@
 
 #include "guiButtonItemImage.h"
 
-#include "client/client.h"
+#include "client/core/client.h"
 #include "guiItemImage.h"
 #include "GUI/IGUIEnvironment.h"
 #include "itemdef.h"

@@ -3,8 +3,8 @@
 // Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "guiItemImage.h"
-#include "client/client.h"
-#include "drawItemStack.h"
+#include "client/core/client.h"
+#include "client/ui/drawItemStack.h"
 #include "inventory.h"
 #include <GUI/IGUIFont.h>
 

@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "client/sound.h"
+#include "sound.h"
 #include <memory>
 
 namespace sound { class SoundManagerSingleton; }

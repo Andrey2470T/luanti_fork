@@ -6,9 +6,9 @@
 #include <cmath>
 #include "script/common/c_converter.h"
 #include "l_internal.h"
-#include "client/content_cao.h"
-#include "client/camera.h"
-#include "client/client.h"
+#include "client/activeobject/content_cao.h"
+#include "client/player/camera.h"
+#include "client/core/client.h"
 
 LuaCamera::LuaCamera(Camera *m) : m_camera(m)
 {

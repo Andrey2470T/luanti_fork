@@ -4,7 +4,7 @@
 
 #include "guiButtonImage.h"
 
-#include "client/guiscalingfilter.h"
+#include "client/media/guiscalingfilter.h"
 #include "debug.h"
 #include "GUI/IGUIEnvironment.h"
 #include "GUI/IGUIImage.h"

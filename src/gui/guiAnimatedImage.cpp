@@ -1,6 +1,6 @@
 #include "guiAnimatedImage.h"
 
-#include "client/guiscalingfilter.h"
+#include "client/media/guiscalingfilter.h"
 #include "log.h"
 #include "porting.h"
 #include "util/string.h"

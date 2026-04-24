@@ -6,8 +6,8 @@
 #include "lua_api/l_minimap.h"
 #include "lua_api/l_internal.h"
 #include "common/c_converter.h"
-#include "client/client.h"
-#include "client/minimap.h"
+#include "client/core/client.h"
+#include "client/ui/minimap.h"
 #include "settings.h"
 
 LuaMinimap::LuaMinimap(Minimap *m) : m_minimap(m)

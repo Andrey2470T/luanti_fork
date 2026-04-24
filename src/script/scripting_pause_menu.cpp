@@ -3,7 +3,7 @@
 // Copyright (C) 2025 grorp
 
 #include "scripting_pause_menu.h"
-#include "client/client.h"
+#include "client/core/client.h"
 #include "cpp_api/s_internal.h"
 #include "filesys.h"
 #include "lua_api/l_client_common.h"

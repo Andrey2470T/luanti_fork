@@ -11,8 +11,8 @@
 #include "gamedef.h"
 #include "util/numeric.h"
 #if CHECK_CLIENT_BUILD()
-#include "client/clientenvironment.h"
-#include "client/localplayer.h"
+#include "client/core/clientenvironment.h"
+#include "client/player/localplayer.h"
 #endif
 #include "serverenvironment.h"
 #include "server/serveractiveobject.h"

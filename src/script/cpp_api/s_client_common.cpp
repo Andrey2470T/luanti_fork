@@ -6,7 +6,7 @@
 
 #include "s_client_common.h"
 #include "s_internal.h"
-#include "client/client.h"
+#include "client/core/client.h"
 
 bool ScriptApiClientCommon::on_formspec_input(const std::string &formname,
 		const StringMap &fields)

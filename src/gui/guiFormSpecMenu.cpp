@@ -13,7 +13,7 @@
 #include "Enums/EGUIElementTypes.h"
 #include "constants.h"
 #include "gamedef.h"
-#include "client/keycode.h"
+#include "client/input/keycode.h"
 #include "gui/guiTable.h"
 #include "util/strfnd.h"
 #include <GUI/IGUIButton.h>
@@ -24,10 +24,10 @@
 #include <GUI/IGUITabControl.h>
 #include <GUI/IGUIImage.h>
 #include <Scene/IAnimatedMeshSceneNode.h>
-#include "client/renderingengine.h"
-#include "client/joystick_controller.h"
+#include "client/render/renderingengine.h"
+#include "client/input/joystick_controller.h"
 #include "log.h"
-#include "drawItemStack.h"
+#include "client/ui/drawItemStack.h"
 #include "filesys.h"
 #include "gettime.h"
 #include "gettext.h"
@@ -35,14 +35,14 @@
 #include "mainmenumanager.h"
 #include "porting.h"
 #include "settings.h"
-#include "client/client.h"
-#include "client/fontengine.h"
-#include "client/sound.h"
+#include "client/core/client.h"
+#include "client/ui/fontengine.h"
+#include "client/sound/sound.h"
 #include "util/hex.h"
 #include "util/numeric.h"
 #include "util/string.h" // for parseColorString()
 #include "irrlicht_changes/static_text.h"
-#include "client/guiscalingfilter.h"
+#include "client/media/guiscalingfilter.h"
 #include "guiAnimatedImage.h"
 #include "guiBackgroundImage.h"
 #include "guiBox.h"

@@ -12,7 +12,7 @@
 #include "mapnode.h"
 #include "nameidmapping.h"
 #if CHECK_CLIENT_BUILD()
-#include "client/tile.h"
+#include "client/render/tile.h"
 #include <Mesh/MeshManipulator.h>
 class Client;
 #endif

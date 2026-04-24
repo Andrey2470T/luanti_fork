@@ -6,7 +6,7 @@
 #include "touchcontrols.h"
 #include "touchscreenlayout.h"
 
-#include "client/renderingengine.h"
+#include "client/render/renderingengine.h"
 #include "gettext.h"
 #include "irr_gui_ptr.h"
 #include "settings.h"

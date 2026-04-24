@@ -31,7 +31,7 @@
 #endif
 #if CHECK_CLIENT_BUILD()
 #include "gui/guiMainMenu.h"
-#include "client/clientlauncher.h"
+#include "client/core/clientlauncher.h"
 #include "gui/guiEngine.h"
 #include "gui/mainmenumanager.h"
 #endif

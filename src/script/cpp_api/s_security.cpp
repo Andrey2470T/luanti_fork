@@ -8,7 +8,7 @@
 #include "porting.h"
 #include "server.h"
 #if CHECK_CLIENT_BUILD()
-#include "client/client.h"
+#include "client/core/client.h"
 #endif
 #include "settings.h"
 
