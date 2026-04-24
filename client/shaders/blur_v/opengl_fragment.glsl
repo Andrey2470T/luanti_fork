@@ -6,9 +6,9 @@ uniform mediump float bloomRadius;
 uniform mat3 bloomBlurWeights;
 
 #ifdef GL_ES
-varying mediump vec2 varTexCoord;
+in mediump vec2 varTexCoord;
 #else
-centroid varying vec2 varTexCoord;
+centroid in vec2 varTexCoord;
 #endif
 
 // smoothstep - squared
@@ -33,5 +33,5 @@ void main(void)
 		uv += vec2(0., texelSize0.y);
 	}
 	color /= sum;
-	gl_FragColor = vec4(color.rgb, 1.0); // force full alpha to avoid holes in the image.
+	outColor0 = vec4(color.rgb, 1.0); // force full alpha to avoid holes in the image.
 }

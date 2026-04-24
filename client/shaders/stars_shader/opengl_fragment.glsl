@@ -2,5 +2,6 @@ uniform lowp vec4 materialColor;
 
 void main(void)
 {
-	gl_FragColor = materialColor;
+	vec4 color = materialColor;
+	outColor0 = color;
 }

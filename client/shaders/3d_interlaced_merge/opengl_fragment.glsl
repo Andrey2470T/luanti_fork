@@ -6,7 +6,7 @@ uniform sampler2D textureFlags;
 #define rightImage normalTexture
 #define maskImage textureFlags
 
-varying mediump vec4 varTexCoord;
+in mediump vec4 varTexCoord;
 
 void main(void)
 {
@@ -19,5 +19,5 @@ void main(void)
 		color = right;
 	else
 		color = left;
-	gl_FragColor = color;
+	outColor0 = color;
 }

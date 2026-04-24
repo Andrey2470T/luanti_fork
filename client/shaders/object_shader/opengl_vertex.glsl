@@ -3,14 +3,14 @@ uniform vec3 dayLight;
 uniform float animationTimer;
 uniform lowp vec4 materialColor;
 
-varying vec3 vNormal;
-varying vec3 vPosition;
-varying vec3 worldPosition;
-varying lowp vec4 varColor;
+out vec3 vNormal;
+out vec3 vPosition;
+out vec3 worldPosition;
+out lowp vec4 varColor;
 #ifdef GL_ES
-varying mediump vec2 varTexCoord;
+out mediump vec2 varTexCoord;
 #else
-centroid varying vec2 varTexCoord;
+centroid out vec2 varTexCoord;
 #endif
 
 #ifdef ENABLE_DYNAMIC_SHADOWS
@@ -23,18 +23,18 @@ centroid varying vec2 varTexCoord;
 	uniform float f_timeofday;
 	uniform vec4 CameraPos;
 
-	varying float cosLight;
-	varying float adj_shadow_strength;
-	varying float f_normal_length;
-	varying vec3 shadow_position;
-	varying float perspective_factor;
+	out float cosLight;
+	out float adj_shadow_strength;
+	out float f_normal_length;
+	out vec3 shadow_position;
+	out float perspective_factor;
 #endif
 
-varying highp vec3 eyeVec;
-varying float nightRatio;
+out highp vec3 eyeVec;
+out float nightRatio;
 // Color of the light emitted by the light sources.
 const vec3 artificialLight = vec3(1.04, 1.04, 1.04);
-varying float vIDiff;
+out float vIDiff;
 const float e = 2.718281828459;
 const float BS = 10.0;
 uniform float xyPerspectiveBias0;
@@ -92,24 +92,24 @@ float directional_ambient(vec3 normal)
 void main(void)
 {
 	varTexCoord = (mTexture * vec4(inTexCoord0.xy, 1.0, 1.0)).st;
-	gl_Position = mWorldViewProj * inVertexPosition;
+	gl_Position = mWorldViewProj * vec4(inPosition, 1.0);
 
 	vPosition = gl_Position.xyz;
-	vNormal = (mWorld * vec4(inVertexNormal, 0.0)).xyz;
-	worldPosition = (mWorld * inVertexPosition).xyz;
-	eyeVec = -(mWorldView * inVertexPosition).xyz;
+	vNormal = (mWorld * vec4(inNormal, 0.0)).xyz;
+	worldPosition = (mWorld * vec4(inPosition, 1.0)).xyz;
+	eyeVec = -(mWorldView * vec4(inPosition, 1.0)).xyz;
 
 #if (MATERIAL_TYPE == TILE_MATERIAL_PLAIN) || (MATERIAL_TYPE == TILE_MATERIAL_PLAIN_ALPHA)
 	vIDiff = 1.0;
 #else
 	// This is intentional comparison with zero without any margin.
 	// If normal is not equal to zero exactly, then we assume it's a valid, just not normalized vector
-	vIDiff = length(inVertexNormal) == 0.0
+	vIDiff = length(inNormal) == 0.0
 		? 1.0
-		: directional_ambient(normalize(inVertexNormal));
+		: directional_ambient(normalize(inNormal));
 #endif
 
-	vec4 color = inVertexColor;
+	vec4 color = inColor;
 
 	color *= materialColor;
 
@@ -136,7 +136,7 @@ void main(void)
 		/* normalOffsetScale is in world coordinates (1/10th of a meter)
 		   z_bias is in light space coordinates */
 		float normalOffsetScale, z_bias;
-		float pFactor = getPerspectiveFactor(getRelativePosition(m_ShadowViewProj * mWorld * inVertexPosition));
+		float pFactor = getPerspectiveFactor(getRelativePosition(m_ShadowViewProj * mWorld * vec4(inPosition, 1.0)));
 		if (f_normal_length > 0.0) {
 			nNormal = normalize(vNormal);
 			cosLight = max(1e-5, dot(nNormal, -v_LightDirection));
@@ -154,7 +154,7 @@ void main(void)
 		}
 		z_bias *= pFactor * pFactor / f_textureresolution / f_shadowfar;
 
-		shadow_position = applyPerspectiveDistortion(m_ShadowViewProj * mWorld * (inVertexPosition + vec4(normalOffsetScale * nNormal, 0.0))).xyz;
+		shadow_position = applyPerspectiveDistortion(m_ShadowViewProj * mWorld * (vec4(inPosition, 1.0) + vec4(normalOffsetScale * nNormal, 0.0))).xyz;
 		shadow_position.z -= z_bias;
 		perspective_factor = pFactor;
 

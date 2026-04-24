@@ -6,9 +6,9 @@ uniform sampler2D rendered;
 uniform vec2 texelSize0;
 
 #ifdef GL_ES
-varying mediump vec2 varTexCoord;
+in mediump vec2 varTexCoord;
 #else
-centroid varying vec2 varTexCoord;
+centroid in vec2 varTexCoord;
 #endif
 
 void main(void)
@@ -33,5 +33,5 @@ void main(void)
 		(b + d + f + h) * 0.0625 +
 		(e + j + k + l + m) * 0.125;
 
-	gl_FragColor = max(vec4(color, 1.0), 1e-4);
+	outColor0 = max(vec4(color, 1.0), 1e-4);
 }

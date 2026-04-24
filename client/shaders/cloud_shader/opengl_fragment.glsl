@@ -1,9 +1,9 @@
 uniform lowp vec4 fogColor;
 uniform float fogDistance;
 uniform float fogShadingParameter;
-varying highp vec3 eyeVec;
+in highp vec3 eyeVec;
 
-varying lowp vec4 varColor;
+in lowp vec4 varColor;
 
 void main(void)
 {
@@ -13,5 +13,5 @@ void main(void)
 		- fogShadingParameter * length(eyeVec) / fogDistance, 0.0, 1.0);
 	col.rgb = mix(fogColor.rgb, col.rgb, clarity);
 
-	gl_FragColor = col;
+	outColor0 = col;
 }

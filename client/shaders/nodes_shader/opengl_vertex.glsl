@@ -6,25 +6,25 @@ uniform vec3 dayLight;
 uniform highp vec3 cameraOffset;
 uniform float animationTimer;
 
-varying vec3 vNormal;
-varying vec3 vPosition;
+out vec3 vNormal;
+out vec3 vPosition;
 // World position in the visible world (i.e. relative to the cameraOffset.)
 // This can be used for many shader effects without loss of precision.
 // If the absolute position is required it can be calculated with
 // cameraOffset + worldPosition (for large coordinates the limits of float
 // precision must be considered).
-varying vec3 worldPosition;
+out vec3 worldPosition;
 // The centroid keyword ensures that after interpolation the texture coordinates
 // lie within the same bounds when MSAA is en- and disabled.
 // This fixes the stripes problem with nearest-neighbor textures and MSAA.
 #ifdef GL_ES
-varying lowp vec4 varColor;
-varying mediump vec2 varTexCoord;
-varying float nightRatio;
+out lowp vec4 varColor;
+out mediump vec2 varTexCoord;
+out float nightRatio;
 #else
-centroid varying lowp vec4 varColor;
-centroid varying vec2 varTexCoord;
-centroid varying float nightRatio;
+centroid out lowp vec4 varColor;
+centroid out vec2 varTexCoord;
+centroid out float nightRatio;
 #endif
 #ifdef ENABLE_DYNAMIC_SHADOWS
 	// shadow uniforms
@@ -36,15 +36,15 @@ centroid varying float nightRatio;
 	uniform float f_timeofday;
 	uniform vec4 CameraPos;
 
-	varying float cosLight;
-	varying float normalOffsetScale;
-	varying float adj_shadow_strength;
-	varying float f_normal_length;
-	varying vec3 shadow_position;
-	varying float perspective_factor;
+	out float cosLight;
+	out float normalOffsetScale;
+	out float adj_shadow_strength;
+	out float f_normal_length;
+	out vec3 shadow_position;
+	out float perspective_factor;
 #endif
 
-varying highp vec3 eyeVec;
+out highp vec3 eyeVec;
 // Color of the light emitted by the light sources.
 const vec3 artificialLight = vec3(1.04, 1.04, 1.04);
 const float e = 2.718281828459;
@@ -155,7 +155,7 @@ void main(void)
 	float disp_z;
 // OpenGL < 4.3 does not support continued preprocessor lines
 #if (MATERIAL_TYPE == TILE_MATERIAL_WAVING_LEAVES && ENABLE_WAVING_LEAVES) || (MATERIAL_TYPE == TILE_MATERIAL_WAVING_PLANTS && ENABLE_WAVING_PLANTS)
-	vec4 pos2 = mWorld * inVertexPosition;
+	vec4 pos2 = mWorld * vec4(inPosition, 1.0);
 	float tOffset = (pos2.x + pos2.y) * 0.001 + pos2.z * 0.002;
 	disp_x = (smoothTriangleWave(animationTimer * 23.0 + tOffset) +
 		smoothTriangleWave(animationTimer * 11.0 + tOffset)) * 0.4;
@@ -164,7 +164,7 @@ void main(void)
 		smoothTriangleWave(animationTimer * 13.0 + tOffset)) * 0.5;
 #endif
 
-	vec4 pos = inVertexPosition;
+	vec4 pos = vec4(inPosition, 1.0);
 #if MATERIAL_WAVING_LIQUID && ENABLE_WAVING_WATER
 	// Generate waves with Perlin-type noise.
 	// The constants are calibrated such that they roughly
@@ -192,12 +192,12 @@ void main(void)
 	vPosition = gl_Position.xyz;
 	eyeVec = -(mWorldView * pos).xyz;
 #ifdef SECONDSTAGE
-	normalPass = normalize((inVertexNormal+1)/2);
+	normalPass = normalize((inNormal+1)/2);
 #endif
-	vNormal = inVertexNormal;
+	vNormal = inNormal;
 
 	// Calculate color.
-	vec4 color = inVertexColor;
+	vec4 color = inColor;
 	// Red, green and blue components are pre-multiplied with
 	// the brightness, so now we have to multiply these
 	// colors with the color of the incoming light.
@@ -220,8 +220,8 @@ void main(void)
 	if (f_shadow_strength > 0.0) {
 #if MATERIAL_TYPE == TILE_MATERIAL_WAVING_PLANTS && ENABLE_WAVING_PLANTS
 		// The shadow shaders don't apply waving when creating the shadow-map.
-		// We are using the not waved inVertexPosition to avoid ugly self-shadowing.
-		vec4 shadow_pos = inVertexPosition;
+		// We are using the not waved inPosition to avoid ugly self-shadowing.
+		vec4 shadow_pos = vec4(inPosition, 1.0);
 #else
 		vec4 shadow_pos = pos;
 #endif

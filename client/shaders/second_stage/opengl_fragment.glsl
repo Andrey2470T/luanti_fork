@@ -22,13 +22,13 @@ uniform lowp float bloomIntensity;
 uniform lowp float saturation;
 
 #ifdef GL_ES
-varying mediump vec2 varTexCoord;
+in mediump vec2 varTexCoord;
 #else
-centroid varying vec2 varTexCoord;
+centroid in vec2 varTexCoord;
 #endif
 
 #ifdef ENABLE_AUTO_EXPOSURE
-varying float exposure; // linear exposure factor, see vertex shader
+in float exposure; // linear exposure factor, see vertex shader
 #endif
 
 #ifdef ENABLE_BLOOM
@@ -155,5 +155,5 @@ void main(void)
 	color.rgb += screen_space_dither(gl_FragCoord.xy);
 #endif
 
-	gl_FragColor = vec4(color.rgb, 1.0); // force full alpha to avoid holes in the image.
+	outColor0 = vec4(color.rgb, 1.0); // force full alpha to avoid holes in the image.
 }

@@ -168,7 +168,7 @@ public:
 		}
 	}
 
-	virtual void OnSetUniforms(video::MaterialRenderer *renderer, s32 userData) override
+	virtual void OnSetUniforms(video::MaterialRenderer *renderer) override
 	{
 		for (auto &&setter : m_setters)
 			setter->onSetUniforms(renderer);
@@ -611,61 +611,66 @@ ShaderInfo ShaderSource::generateShader(const std::string &name,
 	auto *driver = RenderingEngine::get_video_driver();
 
 	// Create shaders header
-	bool fully_programmable = driver->getDriverType() == video::EDT_OGLES2 || driver->getDriverType() == video::EDT_OPENGL3;
 	std::ostringstream shaders_header;
 	shaders_header
 		<< std::noboolalpha
 		<< std::showpoint // for GLSL ES
 		;
 	std::string vertex_header, fragment_header, geometry_header;
-	if (fully_programmable) {
-		if (driver->getDriverType() == video::EDT_OPENGL3) {
-			shaders_header << "#version 150\n";
-		} else {
-			shaders_header << "#version 100\n";
-		}
-		// cf. EVertexAttributes.h for the predefined ones
-		vertex_header = R"(
-			precision mediump float;
 
-			uniform highp mat4 mWorldView;
-			uniform highp mat4 mWorldViewProj;
-			uniform mediump mat4 mTexture;
-
-			attribute highp vec4 inVertexPosition;
-			attribute lowp vec4 inVertexColor;
-			attribute mediump vec2 inTexCoord0;
-			attribute mediump vec3 inVertexNormal;
-			attribute mediump vec4 inVertexTangent;
-			attribute mediump vec4 inVertexBinormal;
-		)";
-		// Our vertex color has components reversed compared to what OpenGL
-		// normally expects, so we need to take that into account.
-		vertex_header += "#define inVertexColor (inVertexColor.bgra)\n";
-		fragment_header = R"(
-			precision mediump float;
-		)";
+	if (driver->getDriverType() == video::EDT_OPENGL3) {
+		shaders_header << "#version 150\n";
 	} else {
-		/* legacy OpenGL driver */
-		shaders_header << R"(
-			#version 120
-			#define lowp
-			#define mediump
-			#define highp
-		)";
-		vertex_header = R"(
-			#define mWorldView gl_ModelViewMatrix
-			#define mWorldViewProj gl_ModelViewProjectionMatrix
-			#define mTexture (gl_TextureMatrix[0])
-
-			#define inVertexPosition gl_Vertex
-			#define inVertexColor gl_Color
-			#define inTexCoord0 gl_MultiTexCoord0
-			#define inVertexNormal gl_Normal
-			#define inVertexTangent gl_MultiTexCoord1
-			#define inVertexBinormal gl_MultiTexCoord2
-		)";
+		shaders_header << "#version 100\n";
 	}
+
+	vertex_header = R"(
+		precision mediump float;
+
+		uniform highp mat4 mWorldView;
+		uniform highp mat4 mWorldViewProj;
+		uniform mediump mat4 mTexture;
+	)";
+
+	// Generate vertex inputs
+	for (auto &attr : shaderinfo.vertex_desc.Attributes) {
+		std::string inAttr = "in ";
+
+		if (attr.Count == 1) {
+			switch (attr.Type) {
+			case scene::VertexAttribute::Type::FLOAT:
+				inAttr += "float ";
+				break;
+			case scene::VertexAttribute::Type::INT:
+				inAttr += "int ";
+				break;
+			default:
+				break;
+			}
+		}
+		else {
+			assert(attr.Count <= 4);
+
+			inAttr += "vec";
+			inAttr += std::to_string(attr.Count);
+
+			if (attr.Type == scene::VertexAttribute::Type::INT)
+				inAttr += "i";
+			inAttr += " ";
+		}
+
+		inAttr += attr.Name;
+		inAttr += ";\n";
+
+		vertex_header += inAttr;
+	}
+
+	// Our vertex color has components reversed compared to what OpenGL
+	// normally expects, so we need to take that into account.
+	vertex_header += "#define inColor (inColor.bgra)\n";
+	fragment_header = R"(
+		precision mediump float;
+	)";
 
 	// map legacy semantic texture names to texture identifiers
 	fragment_header += R"(
@@ -673,6 +678,16 @@ ShaderInfo ShaderSource::generateShader(const std::string &name,
 		#define normalTexture texture1
 		#define textureFlags texture2
 	)";
+
+	// Allow for multiple color outputs
+	u8 maxColorOutputs = driver->getFeatures().ColorAttachment;
+
+	for (u8 k = 0; k < maxColorOutputs; k++) {
+		std::string outColor = "out vec4 outColor";
+		outColor += std::to_string(k);
+		outColor += ";\n";
+		fragment_header += outColor;
+	}
 
 	/// Unique name of this shader, for debug/logging
 	std::string log_name = name;
@@ -688,19 +703,10 @@ ShaderInfo ShaderSource::generateShader(const std::string &name,
 
 	ShaderConstants constants = input_const;
 
-	bool use_discard = fully_programmable;
-	if (!use_discard) {
-		// workaround for a certain OpenGL implementation lacking GL_ALPHA_TEST
-		const char *renderer = driver->getVendorInfo().c_str();
-		if (strstr(renderer, "GC7000"))
-			use_discard = true;
-	}
-	if (use_discard) {
-		if (shaderinfo.base_material == video::EMT_TRANSPARENT_ALPHA_CHANNEL)
-			constants["USE_DISCARD"] = 1;
-		else if (shaderinfo.base_material == video::EMT_TRANSPARENT_ALPHA_CHANNEL_REF)
-			constants["USE_DISCARD_REF"] = 1;
-	}
+	if (shaderinfo.base_material == video::EMT_TRANSPARENT_ALPHA_CHANNEL)
+		constants["USE_DISCARD"] = 1;
+	else if (shaderinfo.base_material == video::EMT_TRANSPARENT_ALPHA_CHANNEL_REF)
+		constants["USE_DISCARD_REF"] = 1;
 
 	/* Let the constant setters do their job and emit constants */
 	for (auto &setter : m_constant_setters) {
@@ -734,7 +740,7 @@ ShaderInfo ShaderSource::generateShader(const std::string &name,
 	s32 shadermat = driver->addHighLevelShaderMaterial(
 		vertex_shader, fragment_shader, geometry_shader,
 		log_name, scene::EPT_TRIANGLES, scene::EPT_TRIANGLES, 0,
-		cb.get(), shaderinfo.base_material);
+		cb.get(), shaderinfo.base_material, shaderinfo.vertex_desc);
 	if (shadermat == -1) {
 		errorstream << "generateShader(): failed to generate shaders for "
 			<< log_name << ", addHighLevelShaderMaterial failed." << std::endl;

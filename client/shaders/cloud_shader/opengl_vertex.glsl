@@ -1,17 +1,17 @@
 uniform lowp vec4 materialColor;
 
-varying lowp vec4 varColor;
+out lowp vec4 varColor;
 
-varying highp vec3 eyeVec;
+out highp vec3 eyeVec;
 
 void main(void)
 {
-	gl_Position = mWorldViewProj * inVertexPosition;
+	gl_Position = mWorldViewProj * vec4(inPosition, 1.0);
 
-	vec4 color = inVertexColor;
+	vec4 color = inColor;
 
 	color *= materialColor;
 	varColor = color;
 
-	eyeVec = -(mWorldView * inVertexPosition).xyz;
+	eyeVec = -(mWorldView * vec4(inPosition, 1.0)).xyz;
 }

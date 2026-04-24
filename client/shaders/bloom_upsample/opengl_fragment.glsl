@@ -7,9 +7,9 @@ uniform vec2 texelSize0;
 uniform mediump float bloomRadius;
 
 #ifdef GL_ES
-varying mediump vec2 varTexCoord;
+in mediump vec2 varTexCoord;
 #else
-centroid varying vec2 varTexCoord;
+centroid in vec2 varTexCoord;
 #endif
 
 void main(void)
@@ -28,7 +28,7 @@ void main(void)
 
 	vec3 base = texture2D(current, varTexCoord.st).rgb;
 
-	gl_FragColor = max(vec4(base +
+	outColor0 = max(vec4(base +
 			(a + c + g + i) * 0.0625 +
 			(b + d + f + h) * 0.125 +
 			e * 0.25, 1.), 1e-4);

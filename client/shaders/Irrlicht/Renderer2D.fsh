@@ -1,16 +1,14 @@
-#version 100
+#version 150
 
 precision mediump float;
-
-/* Uniforms */
 
 uniform int uTextureUsage;
 uniform sampler2D uTextureUnit;
 
-/* Varyings */
+in vec2 vTextureCoord;
+in vec4 vVertexColor;
 
-varying vec2 vTextureCoord;
-varying vec4 vVertexColor;
+out vec4 outColor0;
 
 void main()
 {
@@ -19,5 +17,5 @@ void main()
 	if (bool(uTextureUsage))
 		Color *= texture2D(uTextureUnit, vTextureCoord);
 
-	gl_FragColor = Color;
+	outColor0 = Color;
 }

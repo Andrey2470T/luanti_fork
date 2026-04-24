@@ -1,15 +1,15 @@
 uniform vec2 texelSize0;
 
 #ifdef GL_ES
-varying mediump vec2 varTexCoord;
+out mediump vec2 varTexCoord;
 #else
-centroid varying vec2 varTexCoord;
+centroid out vec2 varTexCoord;
 #endif
 
-varying vec2 sampleNW;
-varying vec2 sampleNE;
-varying vec2 sampleSW;
-varying vec2 sampleSE;
+out vec2 sampleNW;
+out vec2 sampleNE;
+out vec2 sampleSW;
+out vec2 sampleSE;
 
 /*
 Based on
@@ -23,5 +23,5 @@ void main(void)
 	sampleNE = varTexCoord.st + vec2(1.0, -1.0) * texelSize0;
 	sampleSW = varTexCoord.st + vec2(-1.0, 1.0) * texelSize0;
 	sampleSE = varTexCoord.st + vec2(1.0, 1.0) * texelSize0;
-	gl_Position = inVertexPosition;
+	gl_Position = vec4(inPosition, 1.0);
 }

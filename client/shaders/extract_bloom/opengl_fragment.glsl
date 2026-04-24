@@ -9,13 +9,13 @@ uniform mediump float bloomStrength;
 uniform ExposureParams exposureParams;
 
 #ifdef GL_ES
-varying mediump vec2 varTexCoord;
+in mediump vec2 varTexCoord;
 #else
-centroid varying vec2 varTexCoord;
+centroid in vec2 varTexCoord;
 #endif
 
 #ifdef ENABLE_AUTO_EXPOSURE
-varying float exposure; // linear exposure factor, see vertex shader
+in float exposure; // linear exposure factor, see vertex shader
 #endif
 
 void main(void)
@@ -36,5 +36,5 @@ void main(void)
 	color *= exposure;
 #endif
 
-	gl_FragColor = vec4(color, 1.0); // force full alpha to avoid holes in the image.
+	outColor0 = vec4(color, 1.0); // force full alpha to avoid holes in the image.
 }

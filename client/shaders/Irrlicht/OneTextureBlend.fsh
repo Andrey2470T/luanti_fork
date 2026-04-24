@@ -1,8 +1,6 @@
-#version 100
+#version 150
 
 precision mediump float;
-
-/* Uniforms */
 
 uniform int uTextureUsage0;
 uniform sampler2D uTextureUnit0;
@@ -14,11 +12,9 @@ uniform float uFogStart;
 uniform float uFogEnd;
 uniform float uFogDensity;
 
-/* Varyings */
-
-varying vec2 vTextureCoord0;
-varying vec4 vVertexColor;
-varying float vFogCoord;
+in vec2 vTextureCoord0;
+in vec4 vVertexColor;
+in float vFogCoord;
 
 float computeFog()
 {
@@ -43,6 +39,8 @@ float computeFog()
 
 	return FogFactor;
 }
+
+out vec4 outColor0;
 
 void main()
 {
@@ -71,5 +69,5 @@ void main()
 		FinalColor = mix(FogColor, FinalColor, FogFactor);
 	}
 
-	gl_FragColor = FinalColor;
+	outColor0 = FinalColor;
 }

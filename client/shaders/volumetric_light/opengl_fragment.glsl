@@ -19,9 +19,9 @@ const vec3 v_LightDirection = vec3(0.0, -1.0, 0.0);
 #endif
 
 #ifdef GL_ES
-varying mediump vec2 varTexCoord;
+in mediump vec2 varTexCoord;
 #else
-centroid varying vec2 varTexCoord;
+centroid in vec2 varTexCoord;
 #endif
 
 const float far = 1000.;
@@ -113,5 +113,5 @@ void main(void)
 		color = applyVolumetricLight(color, uv, rawDepth);
 	}
 
-	gl_FragColor = vec4(color, 1.0); // force full alpha to avoid holes in the image.
+	outColor0 = vec4(color, 1.0); // force full alpha to avoid holes in the image.
 }

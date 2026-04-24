@@ -26,7 +26,7 @@ void shadowScreenQuad::render(video::VideoDriver *driver)
 	driver->drawIndexedTriangleList(&Vertices[0], 6, &indices[0], 2);
 }
 
-void shadowScreenQuadCB::OnSetUniforms(video::MaterialRenderer *renderer, s32 userData)
+void shadowScreenQuadCB::OnSetUniforms(video::MaterialRenderer *renderer)
 {
 	s32 TextureId = 0;
 	m_sm_client_map_setting.set(TextureId, renderer);

@@ -223,6 +223,8 @@ struct ShaderInfo {
 	video::E_MATERIAL_TYPE material = video::EMT_SOLID;
 	// Input constants
 	ShaderConstants input_constants;
+	// Vertex Type Descriptor
+	scene::VertexDescriptor vertex_desc = scene::Vertex3D::FORMAT;
 };
 
 class IShaderSource {

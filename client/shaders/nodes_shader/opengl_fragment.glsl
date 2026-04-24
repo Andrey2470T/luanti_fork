@@ -23,32 +23,32 @@ uniform float animationTimer;
 	uniform float xyPerspectiveBias1;
 	uniform vec3 shadow_tint;
 
-	varying float adj_shadow_strength;
-	varying float cosLight;
-	varying float f_normal_length;
-	varying vec3 shadow_position;
-	varying float perspective_factor;
+	in float adj_shadow_strength;
+	in float cosLight;
+	in float f_normal_length;
+	in vec3 shadow_position;
+	in float perspective_factor;
 #endif
 
 
-varying vec3 vNormal;
-varying vec3 vPosition;
+in vec3 vNormal;
+in vec3 vPosition;
 // World position in the visible world (i.e. relative to the cameraOffset.)
 // This can be used for many shader effects without loss of precision.
 // If the absolute position is required it can be calculated with
 // cameraOffset + worldPosition (for large coordinates the limits of float
 // precision must be considered).
-varying vec3 worldPosition;
+in vec3 worldPosition;
 #ifdef GL_ES
-varying lowp vec4 varColor;
-varying mediump vec2 varTexCoord;
-varying float nightRatio;
+in lowp vec4 varColor;
+in mediump vec2 varTexCoord;
+in float nightRatio;
 #else
-centroid varying lowp vec4 varColor;
-centroid varying vec2 varTexCoord;
-centroid varying float nightRatio;
+centroid in lowp vec4 varColor;
+centroid in vec2 varTexCoord;
+centroid in float nightRatio;
 #endif
-varying highp vec3 eyeVec;
+in highp vec3 eyeVec;
 
 #ifdef ENABLE_DYNAMIC_SHADOWS
 #if (defined(ENABLE_WATER_REFLECTIONS) && MATERIAL_WATER_REFLECTIONS && ENABLE_WAVING_WATER)
@@ -570,5 +570,5 @@ void main(void)
 	col = mix(fogColor * pow(fogColor / fogColorMax, vec4(2.0 * clarity)), col, clarity);
 	col = vec4(col.rgb, base.a);
 
-	gl_FragData[0] = col;
+	outColor0 = col;
 }

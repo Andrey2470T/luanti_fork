@@ -53,8 +53,7 @@ class ShadowDepthShaderCB : public video::IShaderConstantSetCallBack
 public:
 	void OnSetMaterial(const video::SMaterial &material) override {}
 
-	void OnSetUniforms(video::MaterialRenderer *renderer,
-			s32 userData) override;
+	void OnSetUniforms(video::MaterialRenderer *renderer) override;
 
 	f32 MaxFar{2048.0f}, MapRes{1024.0f};
 	f32 PerspectiveBiasXY {0.9f}, PerspectiveBiasZ {0.5f};
