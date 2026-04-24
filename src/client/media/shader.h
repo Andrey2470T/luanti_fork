@@ -222,7 +222,11 @@ struct ShaderInfo {
 	// Material ID the shader has received from Irrlicht
 	video::E_MATERIAL_TYPE material = video::EMT_SOLID;
 	// Input constants
-	ShaderConstants input_constants;
+	ShaderConstants input_constants = {};
+	// Vertex includes
+	std::vector<std::string> vertex_includes = {};
+	// Fragment includes
+	std::vector<std::string> fragment_includes = {};
 	// Vertex Type Descriptor
 	scene::VertexDescriptor vertex_desc = scene::Vertex3D::FORMAT;
 };
@@ -251,11 +255,17 @@ public:
 	 * @note `base_material` only controls alpha behavior
 	 */
 	virtual u32 getShader(const std::string &name,
-		const ShaderConstants &input_const, video::E_MATERIAL_TYPE base_mat) = 0;
+		const ShaderConstants &input_const, video::E_MATERIAL_TYPE base_mat,
+		const std::vector<std::string> &vertex_includes = {},
+		const std::vector<std::string> &fragment_includes = {},
+		const scene::VertexDescriptor &vertex_desc = scene::Vertex3D::FORMAT) = 0;
 
 	/// @brief Helper: Generates or gets a shader suitable for nodes and entities
 	u32 getShader(const std::string &name,
-		MaterialType material_type, NodeDrawType drawtype = NDT_NORMAL);
+		MaterialType material_type, NodeDrawType drawtype = NDT_NORMAL,
+		const std::vector<std::string> &vertex_includes = {},
+		const std::vector<std::string> &fragment_includes = {},
+		const scene::VertexDescriptor &vertex_desc = scene::Vertex3D::FORMAT);
 
 	/**
 	 * Helper: Generates or gets a shader for common, general use.

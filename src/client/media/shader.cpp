@@ -345,8 +345,12 @@ public:
 
 		The id 0 points to a null shader. Its material is EMT_SOLID.
 	*/
-	u32 getShaderIdDirect(const std::string &name, const ShaderConstants &input_const,
-		video::E_MATERIAL_TYPE base_mat);
+	u32 getShaderIdDirect(
+		const std::string &name, const ShaderConstants &input_const,
+		video::E_MATERIAL_TYPE base_mat,
+		const std::vector<std::string> &vertex_includes,
+		const std::vector<std::string> &fragment_includes,
+		const scene::VertexDescriptor &vertex_desc);
 
 	/*
 		If shader specified by the name pointed by the id doesn't
@@ -356,8 +360,12 @@ public:
 		and not found in cache, the call is queued to the main thread
 		for processing.
 	*/
-	u32 getShader(const std::string &name, const ShaderConstants &input_const,
-		video::E_MATERIAL_TYPE base_mat) override;
+	u32 getShader(
+		const std::string &name, const ShaderConstants &input_const,
+		video::E_MATERIAL_TYPE base_mat,
+		const std::vector<std::string> &vertex_includes,
+		const std::vector<std::string> &fragment_includes,
+		const scene::VertexDescriptor &vertex_desc) override;
 
 	const ShaderInfo &getShaderInfo(u32 id) override;
 
@@ -411,8 +419,12 @@ private:
 	std::vector<std::unique_ptr<IShaderUniformSetterFactory>> m_uniform_factories;
 
 	// Generate shader given the shader name.
-	ShaderInfo generateShader(const std::string &name,
-		const ShaderConstants &input_const, video::E_MATERIAL_TYPE base_mat);
+	ShaderInfo generateShader(
+		const std::string &name, const ShaderConstants &input_const,
+		video::E_MATERIAL_TYPE base_mat,
+		const std::vector<std::string> &vertex_includes,
+		const std::vector<std::string> &fragment_includes,
+		const scene::VertexDescriptor &vertex_desc);
 
 	/// @brief outputs a constant to an ostream
 	inline void putConstant(std::ostream &os, const ShaderConstants::mapped_type &it)
@@ -458,15 +470,21 @@ ShaderSource::~ShaderSource()
 	infostream << "~ShaderSource() cleaned up " << n << " materials" << std::endl;
 }
 
-u32 ShaderSource::getShader(const std::string &name,
-	const ShaderConstants &input_const, video::E_MATERIAL_TYPE base_mat)
+u32 ShaderSource::getShader(
+	const std::string &name,
+	const ShaderConstants &input_const,
+	video::E_MATERIAL_TYPE base_mat,
+	const std::vector<std::string> &vertex_includes,
+	const std::vector<std::string> &fragment_includes,
+	const scene::VertexDescriptor &vertex_desc)
 {
 	/*
 		Get shader
 	*/
 
 	if (std::this_thread::get_id() == m_main_thread) {
-		return getShaderIdDirect(name, input_const, base_mat);
+		return getShaderIdDirect(
+			name, input_const, base_mat, vertex_includes, fragment_includes, vertex_desc);
 	}
 
 	errorstream << "ShaderSource::getShader(): getting from "
@@ -503,8 +521,12 @@ u32 ShaderSource::getShader(const std::string &name,
 /*
 	This method generates all the shaders
 */
-u32 ShaderSource::getShaderIdDirect(const std::string &name,
-	const ShaderConstants &input_const, video::E_MATERIAL_TYPE base_mat)
+u32 ShaderSource::getShaderIdDirect(
+	const std::string &name, const ShaderConstants &input_const,
+	video::E_MATERIAL_TYPE base_mat,
+	const std::vector<std::string> &vertex_includes,
+	const std::vector<std::string> &fragment_includes,
+	const scene::VertexDescriptor &vertex_desc)
 {
 	// Empty name means shader 0
 	if (name.empty()) {
@@ -529,7 +551,8 @@ u32 ShaderSource::getShaderIdDirect(const std::string &name,
 		return 0;
 	}
 
-	ShaderInfo info = generateShader(name, input_const, base_mat);
+	ShaderInfo info = generateShader(
+		name, input_const, base_mat, vertex_includes, fragment_includes, vertex_desc);
 
 	/*
 		Add shader to caches (add dummy shaders too)
@@ -591,40 +614,31 @@ void ShaderSource::rebuildShaders()
 	for (ShaderInfo &i : m_shaderinfo_cache) {
 		ShaderInfo *info = &i;
 		if (!info->name.empty()) {
-			*info = generateShader(info->name, info->input_constants, info->base_material);
+			*info = generateShader(
+				info->name, info->input_constants, info->base_material,
+				info->vertex_includes, info->fragment_includes, info->vertex_desc);
 		}
 	}
 }
 
-
-ShaderInfo ShaderSource::generateShader(const std::string &name,
-	const ShaderConstants &input_const, video::E_MATERIAL_TYPE base_mat)
+std::string readIncludeShader(const std::string &name)
 {
-	ShaderInfo shaderinfo;
-	shaderinfo.name = name;
-	shaderinfo.input_constants = input_const;
-	// fixed pipeline materials don't make sense here
-	assert(base_mat != video::EMT_TRANSPARENT_VERTEX_ALPHA && base_mat != video::EMT_ONETEXTURE_BLEND);
-	shaderinfo.base_material = base_mat;
-	shaderinfo.material = shaderinfo.base_material;
+	auto path = getShaderPath("includes", name + ".glsl");
 
-	auto *driver = RenderingEngine::get_video_driver();
+	if (path.empty())
+		return "";
 
-	// Create shaders header
-	std::ostringstream shaders_header;
-	shaders_header
-		<< std::noboolalpha
-		<< std::showpoint // for GLSL ES
-		;
-	std::string vertex_header, fragment_header, geometry_header;
+	std::string content;
+	if (!fs::ReadFile(path, content, true))
+		return "";
 
-	if (driver->getDriverType() == video::EDT_OPENGL3) {
-		shaders_header << "#version 150\n";
-	} else {
-		shaders_header << "#version 100\n";
-	}
+	return content;
+}
 
-	vertex_header = R"(
+std::string generateVertexHeader(const ShaderInfo &info)
+{
+	std::string header;
+	header = R"(
 		precision mediump float;
 
 		uniform highp mat4 mWorldView;
@@ -633,7 +647,7 @@ ShaderInfo ShaderSource::generateShader(const std::string &name,
 	)";
 
 	// Generate vertex inputs
-	for (auto &attr : shaderinfo.vertex_desc.Attributes) {
+	for (auto &attr : info.vertex_desc.Attributes) {
 		std::string inAttr = "in ";
 
 		if (attr.Count == 1) {
@@ -662,32 +676,100 @@ ShaderInfo ShaderSource::generateShader(const std::string &name,
 		inAttr += attr.Name;
 		inAttr += ";\n";
 
-		vertex_header += inAttr;
+		header += inAttr;
 	}
 
 	// Our vertex color has components reversed compared to what OpenGL
 	// normally expects, so we need to take that into account.
-	vertex_header += "#define inColor (inColor.bgra)\n";
-	fragment_header = R"(
+	header += "#define inColor (inColor.bgra)\n";
+
+	// Append the files contents from /include shader subpath
+	for (auto &include : info.vertex_includes) {
+		auto content = readIncludeShader(include);
+
+		if (content.empty())
+			continue;
+
+		header += content;
+		header += "\n";
+	}
+
+	return header;
+}
+
+std::string generateFragmentHeader(const ShaderInfo &info, u8 colorAttachments)
+{
+	std::string header;
+	header = R"(
 		precision mediump float;
 	)";
 
 	// map legacy semantic texture names to texture identifiers
-	fragment_header += R"(
+	header += R"(
 		#define baseTexture texture0
 		#define normalTexture texture1
 		#define textureFlags texture2
 	)";
 
 	// Allow for multiple color outputs
-	u8 maxColorOutputs = driver->getFeatures().ColorAttachment;
 
-	for (u8 k = 0; k < maxColorOutputs; k++) {
+	for (u8 k = 0; k < colorAttachments; k++) {
 		std::string outColor = "out vec4 outColor";
 		outColor += std::to_string(k);
 		outColor += ";\n";
-		fragment_header += outColor;
+		header += outColor;
 	}
+
+	// Append the files contents from /include shader subpath
+	for (auto &include : info.fragment_includes) {
+		auto content = readIncludeShader(include);
+
+		if (content.empty())
+			continue;
+
+		header += content;
+		header += "\n";
+	}
+
+	return header;
+}
+
+ShaderInfo ShaderSource::generateShader(
+	const std::string &name, const ShaderConstants &input_const,
+	video::E_MATERIAL_TYPE base_mat,
+	const std::vector<std::string> &vertex_includes,
+	const std::vector<std::string> &fragment_includes,
+	const scene::VertexDescriptor &vertex_desc)
+{
+	ShaderInfo shaderinfo;
+	shaderinfo.name = name;
+	shaderinfo.input_constants = input_const;
+	// fixed pipeline materials don't make sense here
+	assert(base_mat != video::EMT_TRANSPARENT_VERTEX_ALPHA && base_mat != video::EMT_ONETEXTURE_BLEND);
+	shaderinfo.base_material = base_mat;
+	shaderinfo.material = shaderinfo.base_material;
+	shaderinfo.vertex_includes = vertex_includes;
+	shaderinfo.fragment_includes = fragment_includes;
+	shaderinfo.vertex_desc = vertex_desc;
+
+	auto *driver = RenderingEngine::get_video_driver();
+
+	// Create shaders header
+	std::ostringstream shaders_header;
+	shaders_header
+		<< std::noboolalpha
+		<< std::showpoint // for GLSL ES
+		;
+	std::string vertex_header, fragment_header, geometry_header;
+
+	if (driver->getDriverType() == video::EDT_OPENGL3) {
+		shaders_header << "#version 150\n";
+	} else {
+		shaders_header << "#version 100\n";
+	}
+
+	vertex_header = generateVertexHeader(shaderinfo);
+	fragment_header = generateFragmentHeader(shaderinfo, driver->getFeatures().ColorAttachment);
 
 	/// Unique name of this shader, for debug/logging
 	std::string log_name = name;
@@ -761,8 +843,12 @@ ShaderInfo ShaderSource::generateShader(const std::string &name,
 	Other functions and helpers
 */
 
-u32 IShaderSource::getShader(const std::string &name,
-	MaterialType material_type, NodeDrawType drawtype)
+u32 IShaderSource::getShader(
+	const std::string &name, MaterialType material_type,
+	NodeDrawType drawtype,
+	const std::vector<std::string> &vertex_includes,
+	const std::vector<std::string> &fragment_includes,
+	const scene::VertexDescriptor &vertex_desc)
 {
 	ShaderConstants input_const;
 	input_const["MATERIAL_TYPE"] = (int)material_type;
@@ -787,7 +873,9 @@ u32 IShaderSource::getShader(const std::string &name,
 			break;
 	}
 
-	return getShader(name, input_const, base_mat);
+	return getShader(
+		name, input_const, base_mat,
+		vertex_includes, fragment_includes, vertex_desc);
 }
 
 void dumpShaderProgram(std::ostream &output_stream,
