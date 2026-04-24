@@ -168,7 +168,7 @@ public:
 		}
 	}
 
-	virtual void OnSetConstants(video::MaterialRenderer *renderer, s32 userData) override
+	virtual void OnSetUniforms(video::MaterialRenderer *renderer, s32 userData) override
 	{
 		for (auto &&setter : m_setters)
 			setter->onSetUniforms(renderer);

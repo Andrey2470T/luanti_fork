@@ -52,7 +52,7 @@ void ShadowUniformSetter::onSetUniforms(video::MaterialRenderer *renderer)
 	m_perspective_zbias_pixel.set(zbias, renderer);
 }
 
-void ShadowDepthShaderCB::OnSetConstants(
+void ShadowDepthShaderCB::OnSetUniforms(
 		video::MaterialRenderer *renderer, s32 userData)
 {
 	video::VideoDriver *driver = renderer->getVideoDriver();
