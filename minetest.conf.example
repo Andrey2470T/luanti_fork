@@ -1238,7 +1238,7 @@
 #    csm_restriction_noderange)
 #    READ_PLAYERINFO: 32 (disable get_player_names call client-side)
 #    type: int min: 0 max: 63
-# csm_restriction_flags = 62
+# csm_restriction_flags = 0
 
 #    If the CSM restriction for node range is enabled, get_node calls are limited
 #    to this distance from the player to the node.
@@ -2949,7 +2949,7 @@
 #    Enable Lua modding support on client.
 #    This support is experimental and API can change.
 #    type: bool
-# enable_client_modding = false
+# enable_client_modding = true
 
 #    Replaces the default main menu with a custom one.
 #    type: string

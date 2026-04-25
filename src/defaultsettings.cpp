@@ -120,7 +120,7 @@ void set_default_settings()
 	settings->setDefault("curl_file_download_timeout", "300000");
 	settings->setDefault("curl_verify_cert", "true");
 	settings->setDefault("enable_remote_media_server", "true");
-	settings->setDefault("enable_client_modding", "false");
+	settings->setDefault("enable_client_modding", "true");
 	settings->setDefault("max_out_chat_queue_size", "20");
 	settings->setDefault("pause_on_lost_focus", "false");
 	settings->setDefault("enable_split_login_register", "true");
@@ -448,7 +448,7 @@ void set_default_settings()
 	settings->setDefault("default_password", "");
 	settings->setDefault("default_privs", "interact, shout");
 	settings->setDefault("enable_pvp", "true");
-	settings->setDefault("enable_mod_channels", "false");
+	settings->setDefault("enable_mod_channels", "true");
 	settings->setDefault("disallow_empty_password", "false");
 	settings->setDefault("anticheat_flags", flagdesc_anticheat,
 		AC_DIGGING | AC_INTERACTION | AC_MOVEMENT);
@@ -470,7 +470,7 @@ void set_default_settings()
 	settings->setDefault("block_send_optimize_distance", "4");
 	settings->setDefault("block_cull_optimize_distance", "25");
 	settings->setDefault("server_side_occlusion_culling", "true");
-	settings->setDefault("csm_restriction_flags", "62");
+	settings->setDefault("csm_restriction_flags", "0");
 	settings->setDefault("csm_restriction_noderange", "0");
 	settings->setDefault("max_clearobjects_extra_loaded_blocks", "4096");
 	settings->setDefault("time_speed", "72");
