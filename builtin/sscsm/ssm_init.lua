@@ -34,13 +34,10 @@ if math.floor(flags / 2) % 2 == 1 then
 		.. "send chat messages! Current set flags: " .. tostring(flags))
 end
 
-local sscsmpath = core.get_builtin_path() .. "sscsm" .. DIR_DELIM
-
 local sscsm = {}
+sscsm.path = core.get_builtin_path() .. "sscsm" .. DIR_DELIM
 
-sscsm.minify_code = dofile(sscsmpath .. "minify.lua")
-
---_G[modname] = sscsm
+local minify_code = dofile(sscsm.path .. "minify.lua")
 
 sscsm.loaded_csms = {}
 
@@ -59,6 +56,29 @@ local function entry_exists(dir, name, is_dir)
 	return false
 end
 
+-- Merge the original sscsm code with includes
+local function append_includes(modname, code, includes_list)
+	local extracted_code = {}
+	local modpath = core.get_modpath(modname)
+
+	for _, includename in ipairs(includes_list) do
+		local f = io.open(modpath .. DIR_DELIM .. includename)
+
+		if not f then
+			error(("Could not open \'%s\' as an include for \'%s\' mod"):format(includename, modname), 2)
+		end
+
+		local includecode = f:read("*a")
+		f:close()
+
+		table.insert(extracted_code, includecode)
+	end
+
+	table.insert(extracted_code, code)
+
+	return table.concat(extracted_code, '\n')
+end
+
 -- Load all SSCSMs provided by server mods from 'client' subpath
 -- TODO: allow for loading secondary files (not init.lua) and defining depends from other SSCSMs
 local function load_sscsms()
@@ -70,12 +90,20 @@ local function load_sscsms()
 	for _, name in ipairs(modspath) do
 		local modpath = core.get_modpath(name)
 
-		local client_subpath = modpath .. DIR_DELIM .. "client"
 		if entry_exists(modpath, "client", true) then
 			local client_subpath = modpath .. DIR_DELIM .. "client"
 
-			if entry_exists(client_subpath, "init.lua") then
-				core.log("action", "[SSCSM] open init.lua...")
+			if entry_exists(client_subpath, "sscsm.conf") then
+				core.log("action", "[SSCSM] open sscsm.conf...")
+				local conf = Settings(client_subpath .. DIR_DELIM .. "sscsm.conf")
+
+				if not conf then
+					error("Required sscsm.conf in the client subpath of \'"
+						.. name .. "\' mod", 2)
+				end
+
+				conf = conf:to_table()
+
 				local f = io.open(client_subpath .. DIR_DELIM .. "init.lua")
 
 				if not f then
@@ -83,7 +111,12 @@ local function load_sscsms()
 						.. name .. "\' mod", 2)
 				end
 
-				local code = sscsm.minify_code(f:read("*a"))
+				local code = minify_code(f:read("*a"))
+
+				core.debug(core.serialize(conf))
+				if conf.includes then
+					code = append_includes(name, code, string.split(conf.includes, ','))
+				end
 				core.log("action", "[SSCSM] loaded code: " .. code)
 				f:close()
 

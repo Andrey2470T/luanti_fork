@@ -61,26 +61,8 @@ allowed.core = core
 allowed.minetest = allowed.core
 
 
--- Environment interface
-------------------------
-
---local Env = {}
-
---function Env.new(allow_table)
-	--local env = {}
-
-	--[[local mt = {
-		__index = allow_table,
-		__newindex = function(k, v)
-			rawset(env, k, v)
-		end
-	}]]
-
-	--setmetatable(env, allow_table)
-	--env._G = env
-
-	--return env
---end
+-- Basic functions
+------------------
 
 -- Load and execute the code in the protected mode
 function exec(code, file)
@@ -121,7 +103,7 @@ function leave_mod_channel()
 	end
 end
 
--- Creation of the environment and modchannel callbacks
+-- Creating modchannel callbacks
 -------------------------------------------------------
 
 --local env = Env:new()
