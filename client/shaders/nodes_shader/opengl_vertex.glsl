@@ -1,6 +1,5 @@
 uniform mat4 mWorld;
-// Color of the light emitted by the sun.
-uniform vec3 dayLight;
+uniform float dayNightRatio;
 
 // The cameraOffset is the current center of the visible world.
 uniform highp vec3 cameraOffset;
@@ -19,23 +18,16 @@ out vec3 worldPosition;
 // This fixes the stripes problem with nearest-neighbor textures and MSAA.
 #ifdef GL_ES
 out lowp vec4 varColor;
+out lowp vec3 dayLight;
 out mediump vec2 varTexCoord;
 out float nightRatio;
 #else
 centroid out lowp vec4 varColor;
+centroid out lowp vec3 dayLight;
 centroid out vec2 varTexCoord;
 centroid out float nightRatio;
 #endif
 #ifdef ENABLE_DYNAMIC_SHADOWS
-	// shadow uniforms
-	uniform vec3 v_LightDirection;
-	uniform float f_textureresolution;
-	uniform mat4 m_ShadowViewProj;
-	uniform float f_shadowfar;
-	uniform float f_shadow_strength;
-	uniform float f_timeofday;
-	uniform vec4 CameraPos;
-
 	out float cosLight;
 	out float normalOffsetScale;
 	out float adj_shadow_strength;
@@ -45,51 +37,8 @@ centroid out float nightRatio;
 #endif
 
 out highp vec3 eyeVec;
-// Color of the light emitted by the light sources.
-const vec3 artificialLight = vec3(1.04, 1.04, 1.04);
 const float e = 2.718281828459;
 const float BS = 10.0;
-uniform float xyPerspectiveBias0;
-uniform float xyPerspectiveBias1;
-uniform float zPerspectiveBias;
-
-#ifdef ENABLE_DYNAMIC_SHADOWS
-
-vec4 getRelativePosition(in vec4 position)
-{
-	vec2 l = position.xy - CameraPos.xy;
-	vec2 s = l / abs(l);
-	s = (1.0 - s * CameraPos.xy);
-	l /= s;
-	return vec4(l, s);
-}
-
-float getPerspectiveFactor(in vec4 relativePosition)
-{
-	float pDistance = length(relativePosition.xy);
-	float pFactor = pDistance * xyPerspectiveBias0 + xyPerspectiveBias1;
-	return pFactor;
-}
-
-vec4 applyPerspectiveDistortion(in vec4 position)
-{
-	vec4 l = getRelativePosition(position);
-	float pFactor = getPerspectiveFactor(l);
-	l.xy /= pFactor;
-	position.xy = l.xy * l.zw + CameraPos.xy;
-	position.z *= zPerspectiveBias;
-	return position;
-}
-
-// custom smoothstep implementation because it's not defined in glsl1.2
-// https://docs.gl/sl4/smoothstep
-float mtsmoothstep(in float edge0, in float edge1, in float x)
-{
-	float t = clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0);
-	return t * t * (3.0 - 2.0 * t);
-}
-#endif
-
 
 float smoothCurve(float x)
 {
@@ -198,23 +147,9 @@ void main(void)
 
 	// Calculate color.
 	vec4 color = inColor;
-	// Red, green and blue components are pre-multiplied with
-	// the brightness, so now we have to multiply these
-	// colors with the color of the incoming light.
-	// The pre-baked colors are halved to prevent overflow.
-	// The alpha gives the ratio of sunlight in the incoming light.
+	dayLight = getSunlightColor(dayNightRatio);
 	nightRatio = 1.0 - color.a;
-	color.rgb = color.rgb * (color.a * dayLight.rgb +
-		nightRatio * artificialLight.rgb) * 2.0;
-	color.a = 1.0;
-
-	// Emphase blue a bit in darker places
-	// See C++ implementation in mapblock_mesh.cpp final_color_blend()
-	float brightness = (color.r + color.g + color.b) / 3.0;
-	color.b += max(0.0, 0.021 - abs(0.2 * brightness - 0.021) +
-		0.07 * brightness);
-
-	varColor = clamp(color, 0.0, 1.0);
+	varColor = finalLightColor(dayLight, color);
 
 #ifdef ENABLE_DYNAMIC_SHADOWS
 	if (f_shadow_strength > 0.0) {

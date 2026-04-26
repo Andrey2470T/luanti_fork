@@ -299,11 +299,9 @@ public:
 		worldViewProj *= worldView;
 		m_world_view_proj.set(worldViewProj, renderer);
 
-		if (driver->getDriverType() == video::EDT_OGLES2 || driver->getDriverType() == video::EDT_OPENGL3) {
-			auto &texture = driver->getTransform(video::ETS_TEXTURE_0);
-			m_world_view.set(worldView, renderer);
-			m_texture.set(texture, renderer);
-		}
+		auto &texture = driver->getTransform(video::ETS_TEXTURE_0);
+		m_world_view.set(worldView, renderer);
+		m_texture.set(texture, renderer);
 
 		SamplerLayer_t tex_id;
 		tex_id = 0;
@@ -365,6 +363,7 @@ public:
 		video::E_MATERIAL_TYPE base_mat,
 		const std::vector<std::string> &vertex_includes,
 		const std::vector<std::string> &fragment_includes,
+		bool apply_shadows,
 		const scene::VertexDescriptor &vertex_desc) override;
 
 	const ShaderInfo &getShaderInfo(u32 id) override;
@@ -476,6 +475,7 @@ u32 ShaderSource::getShader(
 	video::E_MATERIAL_TYPE base_mat,
 	const std::vector<std::string> &vertex_includes,
 	const std::vector<std::string> &fragment_includes,
+	bool apply_shadows,
 	const scene::VertexDescriptor &vertex_desc)
 {
 	/*
@@ -483,8 +483,17 @@ u32 ShaderSource::getShader(
 	*/
 
 	if (std::this_thread::get_id() == m_main_thread) {
+		std::vector<std::string> vertex_includes_c = vertex_includes;
+		std::vector<std::string> fragment_includes_c = fragment_includes;
+
+		if (apply_shadows && g_settings->getBool("enable_dynamic_shadows")) {
+			std::vector<std::string> shadow_vertex = {"shadow_uniforms", "shadow_vertex"};
+			std::vector<std::string> shadow_fragment = {"shadow_uniforms", "shadow_common", "shadow_depth", "shadow_filter"};
+			vertex_includes_c.insert(vertex_includes_c.end(), shadow_vertex.begin(), shadow_vertex.end());
+			fragment_includes_c.insert(fragment_includes_c.end(), shadow_fragment.begin(), shadow_fragment.end());
+		}
 		return getShaderIdDirect(
-			name, input_const, base_mat, vertex_includes, fragment_includes, vertex_desc);
+			name, input_const, base_mat, vertex_includes_c, fragment_includes_c, vertex_desc);
 	}
 
 	errorstream << "ShaderSource::getShader(): getting from "
@@ -848,6 +857,7 @@ u32 IShaderSource::getShader(
 	NodeDrawType drawtype,
 	const std::vector<std::string> &vertex_includes,
 	const std::vector<std::string> &fragment_includes,
+	bool apply_shadows,
 	const scene::VertexDescriptor &vertex_desc)
 {
 	ShaderConstants input_const;
@@ -875,7 +885,7 @@ u32 IShaderSource::getShader(
 
 	return getShader(
 		name, input_const, base_mat,
-		vertex_includes, fragment_includes, vertex_desc);
+		vertex_includes, fragment_includes, apply_shadows, vertex_desc);
 }
 
 void dumpShaderProgram(std::ostream &output_stream,

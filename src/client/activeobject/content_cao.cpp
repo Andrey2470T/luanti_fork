@@ -246,7 +246,7 @@ static scene::SMesh *generateNodeMesh(Client *client, MapNode n,
 			// Set up material
 			auto &mat = buf->Material;
 			u32 shader_id = shdsrc->getShader(
-				"object_shader", p.layer.material_type, NDT_NORMAL, {}, {"fog"});
+				"object_shader", p.layer.material_type, NDT_NORMAL, {"final_light_color"}, {"fog"}, true);
 			mat.MaterialType = shdsrc->getShaderInfo(shader_id).material;
 			p.layer.applyMaterialOptions(mat, layer);
 
@@ -590,7 +590,7 @@ void GenericCAO::addToScene(ITextureSource *tsrc, scene::ISceneManager *smgr)
 				TILE_MATERIAL_PLAIN_ALPHA : TILE_MATERIAL_PLAIN;
 
 		u32 shader_id = shader_source->getShader(
-			"object_shader", material_type, NDT_NORMAL, {}, {"fog"});
+			"object_shader", material_type, NDT_NORMAL, {"final_light_color"}, {"fog"}, true);
 		m_material_type = shader_source->getShaderInfo(shader_id).material;
 	} else {
 		// Not used, so make sure it's not valid

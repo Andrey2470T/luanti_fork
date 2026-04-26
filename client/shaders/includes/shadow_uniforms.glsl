@@ -1,0 +1,14 @@
+// shadow texture
+uniform sampler2D ShadowMapSampler;
+// shadow uniforms
+uniform vec3 v_LightDirection;
+uniform float f_textureresolution;
+uniform mat4 m_ShadowViewProj;
+uniform float f_shadowfar;
+uniform float f_shadow_strength;
+uniform float f_timeofday;
+uniform vec4 CameraPos;
+uniform float xyPerspectiveBias0;
+uniform float xyPerspectiveBias1;
+uniform float zPerspectiveBias;
+uniform vec3 shadow_tint;

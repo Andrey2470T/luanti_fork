@@ -897,7 +897,7 @@ void ContentFeatures::updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc
 		}
 	}
 
-	u32 tile_shader = shdsrc->getShader("nodes_shader", material_type, drawtype, {}, {"fog"});
+	u32 tile_shader = shdsrc->getShader("nodes_shader", material_type, drawtype, {"final_light_color"}, {"fog"}, true);
 
 	MaterialType overlay_material = material_type;
 	if (overlay_material == TILE_MATERIAL_OPAQUE)
@@ -905,7 +905,7 @@ void ContentFeatures::updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc
 	else if (overlay_material == TILE_MATERIAL_LIQUID_OPAQUE)
 		overlay_material = TILE_MATERIAL_LIQUID_TRANSPARENT;
 
-	u32 overlay_shader = shdsrc->getShader("nodes_shader", overlay_material, drawtype, {}, {"fog"});
+	u32 overlay_shader = shdsrc->getShader("nodes_shader", overlay_material, drawtype, {"final_light_color"}, {"fog"}, true);
 
 	// minimap pixel color = average color of top tile
 	if (tsettings.enable_minimap && !tdef[0].name.empty() && drawtype != NDT_AIRLIKE)
@@ -945,7 +945,7 @@ void ContentFeatures::updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc
 		else if (waving == 2)
 			special_material = TILE_MATERIAL_WAVING_LEAVES;
 	}
-	u32 special_shader = shdsrc->getShader("nodes_shader", special_material, drawtype, {}, {"fog"});
+	u32 special_shader = shdsrc->getShader("nodes_shader", special_material, drawtype, {"final_light_color"}, {"fog"}, true);
 
 	// Special tiles (fill in f->special_tiles[])
 	for (u16 j = 0; j < CF_SPECIAL_COUNT; j++)

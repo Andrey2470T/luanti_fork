@@ -258,6 +258,7 @@ public:
 		const ShaderConstants &input_const, video::E_MATERIAL_TYPE base_mat,
 		const std::vector<std::string> &vertex_includes = {},
 		const std::vector<std::string> &fragment_includes = {},
+		bool apply_shadows = false,
 		const scene::VertexDescriptor &vertex_desc = scene::Vertex3D::FORMAT) = 0;
 
 	/// @brief Helper: Generates or gets a shader suitable for nodes and entities
@@ -265,6 +266,7 @@ public:
 		MaterialType material_type, NodeDrawType drawtype = NDT_NORMAL,
 		const std::vector<std::string> &vertex_includes = {},
 		const std::vector<std::string> &fragment_includes = {},
+		bool apply_shadows = false,
 		const scene::VertexDescriptor &vertex_desc = scene::Vertex3D::FORMAT);
 
 	/**
