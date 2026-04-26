@@ -91,13 +91,11 @@ function join_mod_channel()
 		mod_channel:leave()
 	end
 
-	core.log("action", "[SSCSM] Join mod channel...")
 	mod_channel = core.mod_channel_join("sscsm:exec_pipe")
 end
 
 function leave_mod_channel()
 	if mod_channel then
-		core.log("action", "[SSCSM] Leaving mod channel...")
 		mod_channel:leave()
 		mod_channel = false
 	end
@@ -148,7 +146,6 @@ local was_repeat_try = false
 
 local function attempt_to_join_mod_channel()
 	-- Wait for core.localplayer to become available.
-	core.log("action", "[SSCSM] Trying to join mod channel...")
 	if not core.localplayer then
 		core.after(0.05, attempt_to_join_mod_channel)
 		return

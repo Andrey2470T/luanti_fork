@@ -56,13 +56,12 @@ local function entry_exists(dir, name, is_dir)
 	return false
 end
 
--- Merge the original sscsm code with includes
-local function append_includes(modname, code, includes_list)
+-- Merge the original sscsm code with includes in some path
+local function append_includes(include_path, modname, code, includes_list)
 	local extracted_code = {}
-	local modpath = core.get_modpath(modname)
 
 	for _, includename in ipairs(includes_list) do
-		local f = io.open(modpath .. DIR_DELIM .. includename)
+		local f = io.open(include_path .. DIR_DELIM .. includename)
 
 		if not f then
 			error(("Could not open \'%s\' as an include for \'%s\' mod"):format(includename, modname), 2)
@@ -94,7 +93,7 @@ local function load_sscsms()
 			local client_subpath = modpath .. DIR_DELIM .. "client"
 
 			if entry_exists(client_subpath, "sscsm.conf") then
-				core.log("action", "[SSCSM] open sscsm.conf...")
+				core.log("action", "[SSCSM] open sscsm.conf of " .. name .. " mod...")
 				local conf = Settings(client_subpath .. DIR_DELIM .. "sscsm.conf")
 
 				if not conf then
@@ -112,13 +111,14 @@ local function load_sscsms()
 				end
 
 				local code = minify_code(f:read("*a"))
-
-				core.debug(core.serialize(conf))
-				if conf.includes then
-					code = append_includes(name, code, string.split(conf.includes, ','))
-				end
-				core.log("action", "[SSCSM] loaded code: " .. code)
 				f:close()
+
+				if conf.external_includes then
+					code = append_includes(modpath, name, code, string.split(conf.external_includes, ','))
+				end
+				if conf.includes then
+					code = append_includes(client_subpath, name, code, string.split(conf.includes, ','))
+				end
 
 				if (#name + #code) > 65300 then
 					error("The code + name of \'" .. name .. "\' sscsm is too large"
@@ -135,11 +135,7 @@ end
 core.register_on_mods_loaded(load_sscsms)
 
 -- Handle players joining
-core.log("action", "[SSCSM] Join mod channel...")
 local mod_channel = core.mod_channel_join("sscsm:exec_pipe")
-if mod_channel then
-	core.log("action", "[SSCSM] Joined mod channel!")
-end
 
 core.register_on_modchannel_message(function(channel_name, sender, message)
 	if channel_name ~= "sscsm:exec_pipe" or not sender or
