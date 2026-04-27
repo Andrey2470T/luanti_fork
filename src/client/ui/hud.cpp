@@ -84,7 +84,7 @@ Hud::Hud(Client *client, LocalPlayer *player,
 	}
 
 	// Initialize m_selection_material
-	IShaderSource *shdrsrc = client->getShaderSource();
+	ShaderSource *shdrsrc = client->getShaderSource();
 	if (m_mode == HIGHLIGHT_HALO) {
 		auto shader_id = shdrsrc->getShaderRaw("selection_shader", true);
 		m_selection_material.MaterialType = shdrsrc->getShaderInfo(shader_id).material;

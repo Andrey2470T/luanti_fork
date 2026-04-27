@@ -453,6 +453,7 @@ core.register_item(":", {
 local itemdefs_finalized = false
 
 function core.override_item(name, redefinition, del_fields)
+	core.log("action", "core.override_item for " .. name)
 	if redefinition.name ~= nil then
 		error("Attempt to redefine name of "..name.." to "..dump(redefinition.name), 2)
 	end

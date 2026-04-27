@@ -43,7 +43,7 @@ static inline void disableTextureFiltering(video::SMaterial &mat)
 	});
 }
 
-Sky::Sky(s32 id, RenderingEngine *rendering_engine, ITextureSource *tsrc, IShaderSource *ssrc) :
+Sky::Sky(s32 id, RenderingEngine *rendering_engine, ITextureSource *tsrc, ShaderSource *ssrc) :
 		scene::ISceneNode(rendering_engine->get_scene_manager()->getRootSceneNode(),
 			rendering_engine->get_scene_manager(), id)
 {

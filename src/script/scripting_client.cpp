@@ -9,6 +9,7 @@
 #include "lua_api/l_client.h"
 #include "lua_api/l_client_common.h"
 #include "lua_api/l_env.h"
+#include "lua_api/l_graphics.h"
 #include "lua_api/l_item.h"
 #include "lua_api/l_itemstackmeta.h"
 #include "lua_api/l_minimap.h"
@@ -45,6 +46,15 @@ ClientScripting::ClientScripting(Client *client):
 	// Push builtin initialization type
 	lua_pushstring(L, "client");
 	lua_setglobal(L, "INIT");
+
+	// Set "gfx" global and push it to the stack
+	lua_newtable(L);
+	lua_setglobal(L, "gfx");
+
+	lua_getglobal(L, "gfx");
+	top = lua_gettop(L);
+	ModApiGraphics::Initialize(L, top);
+	lua_pop(L, 1);
 
 	infostream << "SCRIPTAPI: Initialized client game modules" << std::endl;
 }

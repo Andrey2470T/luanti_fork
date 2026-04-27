@@ -14,7 +14,7 @@
 class ShadowDepthShaderCB;
 class shadowScreenQuad;
 class shadowScreenQuadCB;
-class IWritableShaderSource;
+class ShaderSource;
 
 enum E_SHADOW_MODE : u8
 {
@@ -48,7 +48,7 @@ public:
 	// Call before generating any shaders
 	// This is required because this class is initialized much later than all
 	// the shaders are dealt with.
-	static void preInit(IWritableShaderSource *shsrc);
+	static void preInit(ShaderSource *shsrc);
 
 	void initialize();
 

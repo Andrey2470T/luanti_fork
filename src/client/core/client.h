@@ -33,7 +33,7 @@ class Camera;
 class ClientMediaDownloader;
 class ISoundManager;
 class IWritableItemDefManager;
-class IWritableShaderSource;
+class ShaderSource;
 class IWritableTextureSource;
 class MapBlockMesh;
 class MapDatabase;
@@ -113,7 +113,7 @@ public:
 			const std::string &password,
 			MapDrawControl &control,
 			IWritableTextureSource *tsrc,
-			IWritableShaderSource *shsrc,
+			ShaderSource *shsrc,
 			IWritableItemDefManager *itemdef,
 			NodeDefManager *nodedef,
 			ISoundManager *sound,
@@ -374,7 +374,7 @@ public:
 	const NodeDefManager* getNodeDefManager() override;
 	ICraftDefManager* getCraftDefManager() override;
 	ITextureSource* getTextureSource();
-	virtual IWritableShaderSource* getShaderSource();
+	virtual ShaderSource* getShaderSource();
 	u16 allocateUnknownNodeId(const std::string &name) override;
 	virtual ISoundManager* getSoundManager();
 	MtEventManager* getEventManager();
@@ -478,7 +478,7 @@ private:
 	IntervalLimiter m_map_timer_and_unload_interval;
 
 	IWritableTextureSource *m_tsrc;
-	IWritableShaderSource *m_shsrc;
+	ShaderSource *m_shsrc;
 	IWritableItemDefManager *m_itemdef;
 	NodeDefManager *m_nodedef;
 	ISoundManager *m_sound;

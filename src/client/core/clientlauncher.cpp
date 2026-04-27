@@ -121,7 +121,7 @@ bool ClientLauncher::run(GameStartData &start_data, const Settings &cmd_args)
 	// Create the menu clouds
 	// This is only global so it can be used by RenderingEngine::draw_load_screen().
 	assert(!g_menucloudsmgr && !g_menuclouds);
-	std::unique_ptr<IWritableShaderSource> ssrc(createShaderSource());
+	std::unique_ptr<ShaderSource> ssrc(new ShaderSource());
 	ssrc->addShaderUniformSetterFactory(new FogShaderUniformSetterFactory());
 	g_menucloudsmgr = m_rendering_engine->get_scene_manager()->createNewSceneManager();
 	g_menuclouds = new Clouds(g_menucloudsmgr, ssrc.get(), -1, rand());

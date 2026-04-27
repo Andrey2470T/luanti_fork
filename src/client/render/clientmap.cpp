@@ -1473,8 +1473,8 @@ void ClientMap::renderMapShadows(video::VideoDriver *driver,
 	if (translucent_foliage) {
 		// this is the material leaves would use, compare to nodedef.cpp
 		auto* shdsrc = m_client->getShaderSource();
-		const u32 leaves_shader = shdsrc->getShader(
-			"nodes_shader", TILE_MATERIAL_WAVING_LEAVES, NDT_ALLFACES, {"final_light_color"}, {"fog"}, true);
+		const u32 leaves_shader = shdsrc->getShader({
+			"nodes_shader", {"final_light_color"}, {"fog"}}, TILE_MATERIAL_WAVING_LEAVES, NDT_ALLFACES);
 		leaves_material = shdsrc->getShaderInfo(leaves_shader).material;
 	}
 

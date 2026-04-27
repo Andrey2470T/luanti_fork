@@ -29,7 +29,7 @@ namespace scene {
 class Client;
 class NodeDefManager;
 class ITextureSource;
-class IShaderSource;
+class ShaderSource;
 class VoxelManipulator;
 
 #define MINIMAP_MAX_SX 512
@@ -163,7 +163,7 @@ public:
 
 private:
 	ITextureSource *m_tsrc;
-	IShaderSource *m_shdrsrc;
+	ShaderSource *m_shdrsrc;
 	const NodeDefManager *m_ndef;
 	std::unique_ptr<MinimapUpdateThread> m_minimap_update_thread;
 	irr_ptr<scene::SMeshBuffer> m_meshbuffer;

@@ -7,26 +7,12 @@
 
 #include <Video/MaterialRenderer.h>
 #include "irrlichttypes_bloated.h"
+#include <mutex>
+#include <thread>
 #include <string>
 #include <map>
 #include <variant>
 #include "nodedef.h"
-
-/*
-	shader.{h,cpp}: Shader handling stuff.
-*/
-
-/*
-	Gets the path to a shader by first checking if the file
-	  name_of_shader/filename
-	exists in shader_path and if not, using the data path.
-
-	If not found, returns "".
-
-	Utilizes a thread-safe cache.
-*/
-std::string getShaderPath(const std::string &name_of_shader,
-		const std::string &filename);
 
 /*
 	Abstraction for pushing constants (or what we pretend is) into
@@ -218,30 +204,38 @@ public:
 
 struct ShaderInfo {
 	std::string name;
-	video::E_MATERIAL_TYPE base_material = video::EMT_SOLID;
-	// Material ID the shader has received from Irrlicht
-	video::E_MATERIAL_TYPE material = video::EMT_SOLID;
-	// Input constants
-	ShaderConstants input_constants = {};
 	// Vertex includes
 	std::vector<std::string> vertex_includes = {};
 	// Fragment includes
 	std::vector<std::string> fragment_includes = {};
+	video::E_MATERIAL_TYPE base_material = video::EMT_SOLID;
+	// Vertex shader filename
+	std::string vertex_shader = "opengl_vertex.glsl";
+	// Geometry shader filename
+	std::string geometry_shader = "opengl_geometry.glsl";
+	// Fragment shader filename
+	std::string fragment_shader = "opengl_fragment.glsl";
+	// Input constants
+	ShaderConstants constants = {};
+	// Vertex includes
 	// Vertex Type Descriptor
 	scene::VertexDescriptor vertex_desc = scene::Vertex3D::FORMAT;
+	// Material ID the shader has received from Irrlicht
+	video::E_MATERIAL_TYPE material = video::EMT_SOLID;
+	std::string basic_name = "";
 };
 
-class IShaderSource {
+class ShaderSource {
 public:
-	IShaderSource() = default;
-	virtual ~IShaderSource() = default;
+	ShaderSource();
+	~ShaderSource();
 
 	/**
 	 * @brief returns information about an existing shader
 	 *
 	 * Use this to get the material ID to plug into `video::SMaterial`.
 	 */
-	virtual const ShaderInfo &getShaderInfo(u32 id) = 0;
+	const ShaderInfo& getShaderInfo(u32 id);
 
 	/**
 	 * Generates or gets a shader.
@@ -254,20 +248,12 @@ public:
 	 * @return shader ID
 	 * @note `base_material` only controls alpha behavior
 	 */
-	virtual u32 getShader(const std::string &name,
-		const ShaderConstants &input_const, video::E_MATERIAL_TYPE base_mat,
-		const std::vector<std::string> &vertex_includes = {},
-		const std::vector<std::string> &fragment_includes = {},
-		bool apply_shadows = false,
-		const scene::VertexDescriptor &vertex_desc = scene::Vertex3D::FORMAT) = 0;
+	u32 getShader(const ShaderInfo &info, bool apply_shadows=false, bool force_recompile=false);
 
 	/// @brief Helper: Generates or gets a shader suitable for nodes and entities
-	u32 getShader(const std::string &name,
-		MaterialType material_type, NodeDrawType drawtype = NDT_NORMAL,
-		const std::vector<std::string> &vertex_includes = {},
-		const std::vector<std::string> &fragment_includes = {},
-		bool apply_shadows = false,
-		const scene::VertexDescriptor &vertex_desc = scene::Vertex3D::FORMAT);
+	u32 getShader(
+		const ShaderInfo &info, MaterialType material_type,
+		NodeDrawType drawtype=NDT_NORMAL, bool apply_shadows=true, bool force_recompile=false);
 
 	/**
 	 * Helper: Generates or gets a shader for common, general use.
@@ -279,28 +265,36 @@ public:
 	{
 		auto base_mat = blendAlpha ? video::EMT_TRANSPARENT_ALPHA_CHANNEL :
 			video::EMT_TRANSPARENT_ALPHA_CHANNEL_REF;
-		return getShader(name, ShaderConstants(), base_mat);
+		return getShader({name, {}, {}, base_mat});
 	}
+
+	void insertSourceShader(const std::string &name_of_shader,
+		const std::string &filename, const std::string &program);
+
+	std::string getOrLoadSource(
+		const std::string &name_of_shader,
+		const std::string &rel_path,
+		const std::string &filename);
+
+	void addShaderConstantSetter(IShaderConstantSetter *setter);
+	void addShaderUniformSetterFactory(IShaderUniformSetterFactory *setter);
+
+	static std::string getShaderPath(const std::string &name_of_shader, const std::string &filename);
+
+	friend class ShaderGenerator;
+
+private:
+	std::thread::id m_main_thread;
+	std::mutex m_shader_mutex;
+	std::vector<ShaderInfo> m_shaders;
+
+	// Source cache (simple map)
+	std::map<std::string, std::string> m_source_cache;
+
+	// Setters
+	std::vector<std::unique_ptr<IShaderConstantSetter>> m_constant_setters;
+	std::vector<std::unique_ptr<IShaderUniformSetterFactory>> m_uniform_factories;
 };
-
-class IWritableShaderSource : public IShaderSource {
-public:
-	IWritableShaderSource() = default;
-	virtual ~IWritableShaderSource() = default;
-
-	virtual void processQueue()=0;
-	virtual void insertSourceShader(const std::string &name_of_shader,
-		const std::string &filename, const std::string &program)=0;
-	virtual void rebuildShaders()=0;
-
-	/// @note Takes ownership of @p setter.
-	virtual void addShaderConstantSetter(IShaderConstantSetter *setter) = 0;
-
-	/// @note Takes ownership of @p setter.
-	virtual void addShaderUniformSetterFactory(IShaderUniformSetterFactory *setter) = 0;
-};
-
-IWritableShaderSource *createShaderSource();
 
 void dumpShaderProgram(std::ostream &output_stream,
 	const std::string &program_type, std::string_view program);

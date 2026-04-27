@@ -2554,13 +2554,18 @@ bool Server::addMediaFile(const std::string &filename,
 	}
 	// If name is not in a supported format, ignore it
 	const char *supported_ext[] = {
+		// Texture
 		".png", ".jpg", ".tga",
+		// Sound
 		".ogg",
+		// Models
 		".x", ".b3d", ".obj", ".gltf", ".glb",
-		// Translation file formats
+		// Translations
 		".tr", ".po", ".mo",
 		// Fonts
 		".ttf", ".woff",
+		// Shaders
+		".glsl", ".vsh", ".fsh",
 		NULL
 	};
 	if (removeStringEnd(filename, supported_ext).empty()) {

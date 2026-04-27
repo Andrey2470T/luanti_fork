@@ -90,7 +90,7 @@ Client::Client(
 		const std::string &password,
 		MapDrawControl &control,
 		IWritableTextureSource *tsrc,
-		IWritableShaderSource *shsrc,
+		ShaderSource *shsrc,
 		IWritableItemDefManager *itemdef,
 		NodeDefManager *nodedef,
 		ISoundManager *sound,
@@ -861,6 +861,15 @@ bool Client::loadMedia(const std::string &data, const std::string &filename,
 		verbosestream<<"Client: Loading file as font: \""
 				<< filename << "\"" << std::endl;
 		g_fontengine->setMediaFont(name, data);
+		return true;
+	}
+
+	const char *shader_ext[] = {".glsl", ".vsh", ".fsh", NULL};
+	name = removeStringEnd(filename, shader_ext);
+	if (!name.empty()) { // dynamic shader loading is prohibited for now
+		actionstream << "Client: Received shader code with name \'"
+			<< name << "\': " << data;
+		m_shsrc->insertSourceShader("", filename, data);
 		return true;
 	}
 
@@ -1831,12 +1840,6 @@ void Client::afterContentReceived()
 			guienv, m_tsrc, 0, 70);
 	m_tsrc->rebuildImagesAndTextures();
 
-	// Rebuild shaders
-	infostream<<"- Rebuilding shaders"<<std::endl;
-	m_rendering_engine->draw_load_screen(wstrgettext("Rebuilding shaders..."),
-			guienv, m_tsrc, 0, 71);
-	m_shsrc->rebuildShaders();
-
 	// Update node aliases
 	infostream<<"- Updating node aliases"<<std::endl;
 	m_rendering_engine->draw_load_screen(wstrgettext("Initializing nodes..."),
@@ -1979,7 +1982,7 @@ ITextureSource* Client::getTextureSource()
 {
 	return m_tsrc;
 }
-IWritableShaderSource* Client::getShaderSource()
+ShaderSource* Client::getShaderSource()
 {
 	return m_shsrc;
 }

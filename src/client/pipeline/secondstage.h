@@ -16,7 +16,7 @@ public:
 	/**
 	 * Construct a new PostProcessingStep object
 	 *
-	 * @param shader_id ID of the shader in IShaderSource
+	 * @param shader_id ID of the shader in ShaderSource
 	 * @param texture_map Map of textures to be chosen from the render source
 	 */
 	PostProcessingStep(u32 shader_id, const std::vector<u8> &texture_map);

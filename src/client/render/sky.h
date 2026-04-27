@@ -20,7 +20,7 @@ namespace video
 	class Image;
 }
 
-class IShaderSource;
+class ShaderSource;
 class ITextureSource;
 
 // Skybox, rendered with zbuffer turned off, before all other nodes.
@@ -28,7 +28,7 @@ class Sky : public scene::ISceneNode
 {
 public:
 	//! constructor
-	Sky(s32 id, RenderingEngine *rendering_engine, ITextureSource *tsrc, IShaderSource *ssrc);
+	Sky(s32 id, RenderingEngine *rendering_engine, ITextureSource *tsrc, ShaderSource *ssrc);
 
 	virtual void OnRegisterSceneNode();
 

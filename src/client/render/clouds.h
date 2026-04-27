@@ -13,7 +13,7 @@
 #include <Video/SMaterial.h>
 #include <Mesh/SMeshBuffer.h>
 
-class IShaderSource;
+class ShaderSource;
 
 namespace scene
 {
@@ -30,7 +30,7 @@ extern Clouds *g_menuclouds;
 class Clouds : public scene::ISceneNode
 {
 public:
-	Clouds(scene::ISceneManager* mgr, IShaderSource *ssrc,
+	Clouds(scene::ISceneManager* mgr, ShaderSource *ssrc,
 			s32 id,
 			u32 seed
 	);

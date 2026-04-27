@@ -22,7 +22,7 @@ namespace video {
 
 class Client;
 class NodeDefManager;
-class IShaderSource;
+class ShaderSource;
 class ITextureSource;
 
 /*
@@ -250,7 +250,7 @@ private:
 	irr_ptr<scene::IMesh> m_mesh[MAX_TILE_LAYERS];
 	std::vector<MinimapMapblock*> m_minimap_mapblocks;
 	ITextureSource *m_tsrc;
-	IShaderSource *m_shdrsrc;
+	ShaderSource *m_shdrsrc;
 
 	f32 m_bounding_radius;
 	v3f m_bounding_sphere_center;

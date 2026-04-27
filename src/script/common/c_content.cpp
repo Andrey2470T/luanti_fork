@@ -702,6 +702,25 @@ void read_content_features(lua_State *L, ContentFeatures &f, int index)
 	/* Meshnode model filename */
 	getstringfield(L, index, "mesh", f.mesh);
 
+	// materials = {}
+	lua_getfield(L, index, "materials");
+	if(lua_istable(L, -1)){
+		int table = lua_gettop(L);
+		lua_pushnil(L);
+		u8 i = 0;
+		while(lua_next(L, table) != 0){
+			// key at index -2 and value at index -1
+			if(lua_isstring(L, -1))
+				f.materials[i] = lua_tostring(L, -1);
+
+			// removes value, keeps key for next iteration
+			lua_pop(L, 1);
+
+			i++;
+		}
+	}
+	lua_pop(L, 1);
+
 	// tiles = {}
 	lua_getfield(L, index, "tiles");
 	if(lua_istable(L, -1)){

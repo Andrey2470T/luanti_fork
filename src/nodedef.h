@@ -25,7 +25,7 @@ class Client;
 
 class IItemDefManager;
 class ITextureSource;
-class IShaderSource;
+class ShaderSource;
 class IGameDef;
 class NodeResolver;
 #if BUILD_UNITTESTS
@@ -351,6 +351,8 @@ struct ContentFeatures
 	TileDef tiledef_overlay[6];
 	TileDef tiledef_special[CF_SPECIAL_COUNT]; // eg. flowing liquid
 	AlphaMode alpha;
+	// Materials list
+	std::array<std::string, 6> materials;
 	// The color of the node.
 	video::SColor color;
 	std::string palette_name;
@@ -506,7 +508,7 @@ struct ContentFeatures
 	}
 
 #if CHECK_CLIENT_BUILD()
-	void updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc,
+	void updateTextures(ITextureSource *tsrc, ShaderSource *shdsrc,
 		scene::MeshManipulator *meshmanip, Client *client, const TextureSettings &tsettings);
 #endif
 
@@ -668,6 +670,7 @@ public:
 	 */
 	void updateAliases(IItemDefManager *idef);
 
+	void overrideShaderMaterials(const std::string &materialName, u32 shaderId);
 	/*!
 	 * Replaces the textures of registered nodes with the ones specified in
 	 * the texturepack's override.txt file

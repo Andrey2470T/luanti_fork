@@ -755,7 +755,7 @@ private:
 	float dynamic_info_send_timer = 0;
 
 	IWritableTextureSource *texture_src = nullptr;
-	IWritableShaderSource *shader_src = nullptr;
+	ShaderSource *shader_src = nullptr;
 
 	// When created, these will be filled with data received from the server
 	IWritableItemDefManager *itemdef_manager = nullptr;
@@ -1141,7 +1141,6 @@ void Game::shutdown()
 			assert(texture_src != NULL);
 			assert(shader_src != NULL);
 			texture_src->processQueue();
-			shader_src->processQueue();
 			sleep_ms(100);
 		}
 	}
@@ -1189,7 +1188,7 @@ bool Game::init(
 
 	showOverlayMessage(N_("Loading..."), 0, 0);
 
-	shader_src = createShaderSource();
+	shader_src = new ShaderSource();
 
 	itemdef_manager = createItemDefManager();
 	nodedef_manager = createNodeDefManager();
@@ -1726,7 +1725,6 @@ inline bool Game::checkConnection()
 void Game::processQueues()
 {
 	texture_src->processQueue();
-	shader_src->processQueue();
 }
 
 void Game::updateDebugState()

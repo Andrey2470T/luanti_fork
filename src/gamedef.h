@@ -12,7 +12,7 @@ class IItemDefManager;
 class NodeDefManager;
 class ICraftDefManager;
 class ITextureSource;
-class IShaderSource;
+class ShaderSource;
 class IRollbackManager;
 class EmergeManager;
 class Camera;

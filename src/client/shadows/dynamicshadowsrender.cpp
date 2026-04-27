@@ -103,7 +103,7 @@ void ShadowRenderer::disable()
 		});
 }
 
-void ShadowRenderer::preInit(IWritableShaderSource *shsrc)
+void ShadowRenderer::preInit(ShaderSource *shsrc)
 {
 	if (g_settings->getBool("enable_dynamic_shadows")) {
 		shsrc->addShaderUniformSetterFactory(new ShadowUniformSetterFactory());
@@ -521,13 +521,13 @@ void ShadowRenderer::mixShadowsQuad()
 void ShadowRenderer::createShaders()
 {
 	if (depth_shader == -1) {
-		std::string depth_shader_vs = getShaderPath("shadow_shaders", "pass1_vertex.glsl");
+		std::string depth_shader_vs = ShaderSource::getShaderPath("shadow_shaders", "pass1_vertex.glsl");
 		if (depth_shader_vs.empty()) {
 			m_shadows_supported = false;
 			errorstream << "Error shadow mapping vs shader not found." << std::endl;
 			return;
 		}
-		std::string depth_shader_fs = getShaderPath("shadow_shaders", "pass1_fragment.glsl");
+		std::string depth_shader_fs = ShaderSource::getShaderPath("shadow_shaders", "pass1_fragment.glsl");
 		if (depth_shader_fs.empty()) {
 			m_shadows_supported = false;
 			errorstream << "Error shadow mapping fs shader not found." << std::endl;
@@ -559,13 +559,13 @@ void ShadowRenderer::createShaders()
 	// This creates a clone of depth_shader with base material set to EMT_SOLID,
 	// because entities won't render shadows with base material EMP_ONETEXTURE_BLEND
 	if (depth_shader_entities == -1) {
-		std::string depth_shader_vs = getShaderPath("shadow_shaders", "pass1_vertex.glsl");
+		std::string depth_shader_vs = ShaderSource::getShaderPath("shadow_shaders", "pass1_vertex.glsl");
 		if (depth_shader_vs.empty()) {
 			m_shadows_supported = false;
 			errorstream << "Error shadow mapping vs shader not found." << std::endl;
 			return;
 		}
-		std::string depth_shader_fs = getShaderPath("shadow_shaders", "pass1_fragment.glsl");
+		std::string depth_shader_fs = ShaderSource::getShaderPath("shadow_shaders", "pass1_fragment.glsl");
 		if (depth_shader_fs.empty()) {
 			m_shadows_supported = false;
 			errorstream << "Error shadow mapping fs shader not found." << std::endl;
@@ -595,14 +595,14 @@ void ShadowRenderer::createShaders()
 	}
 
 	if (mixcsm_shader == -1) {
-		std::string depth_shader_vs = getShaderPath("shadow_shaders", "pass2_vertex.glsl");
+		std::string depth_shader_vs = ShaderSource::getShaderPath("shadow_shaders", "pass2_vertex.glsl");
 		if (depth_shader_vs.empty()) {
 			m_shadows_supported = false;
 			errorstream << "Error cascade shadow mapping fs shader not found." << std::endl;
 			return;
 		}
 
-		std::string depth_shader_fs = getShaderPath("shadow_shaders", "pass2_fragment.glsl");
+		std::string depth_shader_fs = ShaderSource::getShaderPath("shadow_shaders", "pass2_fragment.glsl");
 		if (depth_shader_fs.empty()) {
 			m_shadows_supported = false;
 			errorstream << "Error cascade shadow mapping fs shader not found." << std::endl;
@@ -634,13 +634,13 @@ void ShadowRenderer::createShaders()
 	}
 
 	if (m_shadow_map_colored && depth_shader_trans == -1) {
-		std::string depth_shader_vs = getShaderPath("shadow_shaders", "pass1_trans_vertex.glsl");
+		std::string depth_shader_vs = ShaderSource::getShaderPath("shadow_shaders", "pass1_trans_vertex.glsl");
 		if (depth_shader_vs.empty()) {
 			m_shadows_supported = false;
 			errorstream << "Error shadow mapping vs shader not found." << std::endl;
 			return;
 		}
-		std::string depth_shader_fs = getShaderPath("shadow_shaders", "pass1_trans_fragment.glsl");
+		std::string depth_shader_fs = ShaderSource::getShaderPath("shadow_shaders", "pass1_trans_fragment.glsl");
 		if (depth_shader_fs.empty()) {
 			m_shadows_supported = false;
 			errorstream << "Error shadow mapping fs shader not found." << std::endl;

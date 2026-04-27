@@ -67,7 +67,12 @@
                     transmission = <number>,
                     ior = <number>
                 },
-                on_render = function() { ... }
+                on_set_uniforms = function(self, setter)
+                {
+                    local pos = core.localplayer:get_pos()
+                    setter.set("cameraPos", {x=pos.x, y+pos.y+1.5, z=pos.z})
+                    setter.set("animationTimer", core.get_us_time())
+                }
             },
             ...
          }
@@ -81,15 +86,20 @@
             vertex = "block_vertex.glsl"/"block.vsh"/"<код>",
             geometry = "block_geometry.glsl"/"block.gsh"/"<код>",
             fragment = "block_fragment.glsl"/"block.fsh"/"<код>",
+            constants = {
+                {"ENABLE_NODE_SPECULAR", "1"},
+                {"USE_DISCARD", "0"},
+                ...
+            },
             uniforms = {
-                {name = "cameraPos", type = "vector3d", value = vector.new()},
-                {name = "animationTimer", type = "float", value = curTime},
+                {name = "cameraPos", type = "vector3d", def_value = vector.new()},
+                {name = "animationTimer", type = "float", def_value = 0.0},
                 ...
             }
          }
          ```
 
-      * Коллбэк таблицы (`on_render = function(self)`), позволяющий менять ее параметры в каждом шаге рендера
+      * Коллбэк таблицы (`on_set_uniforms = function(self, setter)`) дает возможность обновлять юниформы через сеттер каждый кадр
    * Поддержка кастомных шейдеров (через `materials` и `pipeline`)
    * Поддержка кастомных рендер проходов и постэффектов (`pipeline` таблица)
         * Три типа:

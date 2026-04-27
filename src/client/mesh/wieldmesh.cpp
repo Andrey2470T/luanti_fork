@@ -349,7 +349,7 @@ void WieldMeshSceneNode::setItem(const ItemStack &item, Client *client, bool che
 	ITextureSource *tsrc = client->getTextureSource();
 	IItemDefManager *idef = client->getItemDefManager();
 	ItemVisualsManager *item_visuals = client->getItemVisualsManager();
-	IShaderSource *shdrsrc = client->getShaderSource();
+	ShaderSource *shdrsrc = client->getShaderSource();
 	const NodeDefManager *ndef = client->getNodeDefManager();
 	const ItemDefinition &def = item.getDefinition(idef);
 	const ContentFeatures &f = ndef->get(def.name);
@@ -357,7 +357,7 @@ void WieldMeshSceneNode::setItem(const ItemStack &item, Client *client, bool che
 
 	scene::SMesh *mesh = nullptr;
 
-	u32 shader_id = shdrsrc->getShader("object_shader", TILE_MATERIAL_BASIC, NDT_NORMAL, {"final_light_color"}, {"fog"}, true);
+	u32 shader_id = shdrsrc->getShader({"object_shader", {"final_light_color"}, {"fog"}}, TILE_MATERIAL_BASIC);
 	m_material_type = shdrsrc->getShaderInfo(shader_id).material;
 
 	// Color-related

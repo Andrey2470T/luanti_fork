@@ -25,7 +25,7 @@ static void cloud_3d_setting_changed(const std::string &settingname, void *data)
 	((Clouds *)data)->readSettings();
 }
 
-Clouds::Clouds(scene::ISceneManager* mgr, IShaderSource *ssrc,
+Clouds::Clouds(scene::ISceneManager* mgr, ShaderSource *ssrc,
 		s32 id,
 		u32 seed
 ):
@@ -38,8 +38,7 @@ Clouds::Clouds(scene::ISceneManager* mgr, IShaderSource *ssrc,
 	m_material.FogEnable = true;
 	m_material.AntiAliasing = video::EAAM_SIMPLE;
 	{
-		auto sid = ssrc->getShader("cloud_shader", {},
-			video::EMT_TRANSPARENT_ALPHA_CHANNEL, {}, {"fog"});
+		auto sid = ssrc->getShader({"cloud_shader", {}, {"fog"}, video::EMT_TRANSPARENT_ALPHA_CHANNEL});
 		m_material.MaterialType = ssrc->getShaderInfo(sid).material;
 	}
 

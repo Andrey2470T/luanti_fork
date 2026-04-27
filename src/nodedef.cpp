@@ -364,6 +364,7 @@ void ContentFeatures::reset()
 	for (auto &j : tiledef_special)
 		j = TileDef();
 	alpha = ALPHAMODE_OPAQUE;
+	materials = {};
 	post_effect_color = video::SColor(0, 0, 0, 0);
 	param_type = CPT_NONE;
 	param_type_2 = CPT2_NONE;
@@ -467,6 +468,11 @@ void ContentFeatures::serialize(std::ostream &os, u16 protocol_version) const
 		td.serialize(os, protocol_version);
 	}
 	writeU8(os, getAlphaForLegacy());
+	for (const std::string &m : materials) {
+		if (m == "metal_specular")
+			actionstream << "ContentFeatures::serialize(): metal_specular was found" << std::endl;
+		os << serializeString16(m);
+	}
 	writeU8(os, color.getRed());
 	writeU8(os, color.getGreen());
 	writeU8(os, color.getBlue());
@@ -578,6 +584,11 @@ void ContentFeatures::deSerialize(std::istream &is, u16 protocol_version)
 	for (TileDef &td : tiledef_special)
 		td.deSerialize(is, drawtype, protocol_version);
 	setAlphaFromLegacy(readU8(is));
+	for (std::string &m : materials) {
+		m = deSerializeString16(is);
+		if (m == "metal_specular")
+			actionstream << "ContentFeatures::deserialize(): metal_specular was found" << std::endl;
+	}
 	color.setRed(readU8(is));
 	color.setGreen(readU8(is));
 	color.setBlue(readU8(is));
@@ -760,7 +771,7 @@ static bool isWorldAligned(AlignStyle style, WorldAlignMode mode, NodeDrawType d
 	return false;
 }
 
-void ContentFeatures::updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc,
+void ContentFeatures::updateTextures(ITextureSource *tsrc, ShaderSource *shdsrc,
 	scene::MeshManipulator *meshmanip, Client *client, const TextureSettings &tsettings)
 {
 	// Figure out the actual tiles to use
@@ -897,7 +908,7 @@ void ContentFeatures::updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc
 		}
 	}
 
-	u32 tile_shader = shdsrc->getShader("nodes_shader", material_type, drawtype, {"final_light_color"}, {"fog"}, true);
+	u32 tile_shader = shdsrc->getShader({"nodes_shader", {"final_light_color"}, {"fog"}}, material_type, drawtype, true);
 
 	MaterialType overlay_material = material_type;
 	if (overlay_material == TILE_MATERIAL_OPAQUE)
@@ -905,24 +916,41 @@ void ContentFeatures::updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc
 	else if (overlay_material == TILE_MATERIAL_LIQUID_OPAQUE)
 		overlay_material = TILE_MATERIAL_LIQUID_TRANSPARENT;
 
-	u32 overlay_shader = shdsrc->getShader("nodes_shader", overlay_material, drawtype, {"final_light_color"}, {"fog"}, true);
+	u32 overlay_shader = shdsrc->getShader({"nodes_shader", {"final_light_color"}, {"fog"}}, overlay_material, drawtype, true);
 
 	// minimap pixel color = average color of top tile
 	if (tsettings.enable_minimap && !tdef[0].name.empty() && drawtype != NDT_AIRLIKE)
 		minimap_color = tsrc->getTextureAverageColor(tdef[0].name);
 
+	// Fallback to nodes_shader if user one is not provided
+	std::array<bool, 6> use_shadows;
+	for (u8 i = 0; i < 6; i++) {
+		std::string &matName = materials[i];
+		if (matName.empty()) {
+			matName = "nodes_shader";
+			use_shadows[i] = true;
+		}
+	}
 	// Tiles (fill in f->tiles[])
 	bool any_polygon_offset = false;
 	for (u16 j = 0; j < 6; j++) {
 		tiles[j].world_aligned = isWorldAligned(tdef[j].align_style,
 				tsettings.world_aligned_mode, drawtype);
+
+		//u32 tile_shader = materials[j] == "nodes_shader" ? shdsrc->getShader({
+		//	materials[j], {"final_light_color"}, {"fog"}}, material_type, drawtype, use_shadows[j])
+		//	: shdsrc->getShader({materials[j]});
 		fillTileAttribs(tsrc, &tiles[j].layers[0], tiles[j], tdef[j],
 				color, material_type, tile_shader,
 				tdef[j].backface_culling, tsettings);
-		if (!tdef_overlay[j].name.empty())
+		if (!tdef_overlay[j].name.empty()) {
+			//u32 overlay_shader = materials[j] == "nodes_shader" ? shdsrc->getShader({
+			//	materials[j], {"final_light_color"}, {"fog"}}, overlay_material, drawtype, use_shadows[j])
+			//	: shdsrc->getShader({materials[j]});
 			fillTileAttribs(tsrc, &tiles[j].layers[1], tiles[j], tdef_overlay[j],
 					color, overlay_material, overlay_shader,
 					tdef[j].backface_culling, tsettings);
+		}
 
 		tiles[j].layers[0].need_polygon_offset = !tiles[j].layers[1].empty();
 		any_polygon_offset |= tiles[j].layers[0].need_polygon_offset;
@@ -945,13 +973,17 @@ void ContentFeatures::updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc
 		else if (waving == 2)
 			special_material = TILE_MATERIAL_WAVING_LEAVES;
 	}
-	u32 special_shader = shdsrc->getShader("nodes_shader", special_material, drawtype, {"final_light_color"}, {"fog"}, true);
+	u32 special_shader = shdsrc->getShader({"nodes_shader", {"final_light_color"}, {"fog"}}, special_material, drawtype, true);
 
 	// Special tiles (fill in f->special_tiles[])
-	for (u16 j = 0; j < CF_SPECIAL_COUNT; j++)
+	for (u16 j = 0; j < CF_SPECIAL_COUNT; j++) {
+		//u32 special_shader = materials[j] == "nodes_shader" ? shdsrc->getShader({
+		//	materials[j], {"final_light_color"}, {"fog"}}, special_material, drawtype, use_shadows[j])
+		//	: shdsrc->getShader({materials[j]});
 		fillTileAttribs(tsrc, &special_tiles[j].layers[0], special_tiles[j], tdef_spec[j],
 				color, special_material, special_shader,
 				tdef_spec[j].backface_culling, tsettings);
+	}
 
 	if (param_type_2 == CPT2_COLOR ||
 			param_type_2 == CPT2_COLORED_FACEDIR ||
@@ -1405,6 +1437,23 @@ void NodeDefManager::updateAliases(IItemDefManager *idef)
 	}
 }
 
+void NodeDefManager::overrideShaderMaterials(const std::string &materialName, u32 shaderId)
+{
+	actionstream << "NodeDefManager::overrideShaderMaterials(): Overrides "
+		"the shader with \'" << shaderId << "\' ID for all content features having \'"
+		<< materialName << "\' material" << std::endl;
+
+	for (auto &def : m_content_features) {
+		for (u8 i = 0; i < def.materials.size(); i++) {
+			if (def.materials[i] == materialName) {
+				def.tiles[i].layers[0].shader_id = shaderId;
+				def.tiles[i].layers[1].shader_id = shaderId;
+				def.special_tiles[i].layers[0].shader_id = shaderId;
+			}
+		}
+	}
+}
+
 void NodeDefManager::applyTextureOverrides(const std::vector<TextureOverride> &overrides)
 {
 	infostream << "NodeDefManager::applyTextureOverrides(): Applying "
@@ -1474,7 +1523,7 @@ void NodeDefManager::updateTextures(IGameDef *gamedef, void *progress_callback_a
 
 	Client *client = (Client *)gamedef;
 	ITextureSource *tsrc = client->tsrc();
-	IShaderSource *shdsrc = client->getShaderSource();
+	ShaderSource *shdsrc = client->getShaderSource();
 	auto smgr = client->getSceneManager();
 	scene::MeshManipulator *meshmanip = smgr->getMeshManipulator();
 	TextureSettings tsettings;

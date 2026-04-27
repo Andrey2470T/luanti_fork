@@ -59,6 +59,7 @@ allowed.os.time = os.time
 -- core
 allowed.core = core
 allowed.minetest = allowed.core
+allowed.gfx = gfx
 
 
 -- Basic functions
