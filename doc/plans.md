@@ -1,17 +1,13 @@
 `Планы в IrrlichtRedo`
 ----------------------
 
-* Рефакторить Video классы (добавить на замену новые классы из old ветки: DrawContext, ITexture, Texture2D, TextureCubeMap, VAO...)
-* Перенести /src/GUI в luanti_fork/src/gui, объединить классы-дупликаты
-* Удалить /src/IO, использовать cpp filesystem
+* Перенести /src/GUI в luanti_fork/src/gui
+* Перенести систему материалов с коллбэками в luanti_fork
 * Заменить меш загрузчики на Assimp
 * Удалить абстрактные классы из /include, объединив их с классами реализаций
-* Распределить /include файлы по папкам
 
 `Планы в Luanti Fork`
 ---------------------
-
-* Адаптировать SSCSM выполнение от luk3yx: https://gitlab.com/luk3yx/minetest-sscsm
 
 * Добавить API матриц и кватернионов в builtin (#8515)
 
@@ -24,13 +20,10 @@
             {  -- первый слот
                 blend = {
                     enable = true/false,
-                    mode = "normal"/"alpha"/"add"/"subtract",
-                    -- Blend functions: "zero", "one", "src_alpha", "one_minus_src_alpha", "dst_alpha", "one_minus_dst_alpha"...
-                    srcrgb_func = <Blend functions>,
-                    srca_func = <Blend functions>,
-                    dstrgb_func = <Blend functions>,
-                    desta_func = <Blend functions>,
-                    color = <ColorSpec>
+                    -- Blend modes: "normal", "alpha", "add", "subtract", "multiply", "division",
+                      "screen", "overlay", "hardlight", "softlight", "grain_extract", "grain_merge",
+                      "darken_only", "lighten_only"
+                    mode = <Blend modes>
                 },
                 depth = {
                     enable = true/false,
@@ -48,14 +41,6 @@
                     mode = "back"/"front"/"front_and_back"
                 },
                 shader = <Shader table>,
-                texture_outputs = { -- map the texture buffer indices to the correponding target
-                    texture_buffer = <name>, -- name of used texture buffer
-                    index = <integer>,
-                    cubemap_face = "posx"/"posy"/"posz"/"negx"/"negy"/"negz", -- for type="cubemap"
-                    array_layer = <integer> -- for type="array"
-                },
-                viewport = {x1 = 0, y1 = 0, x2 = 1, y2 = 1},
-                cliprect = {x1 = 0, y1 = 0, x2 = 1, y2 = 1},
                 line_width = 2.0,
                 pbr = {
                     color = <ColorSpec>,
@@ -66,12 +51,6 @@
                     emission = <number>/<mapname>,
                     transmission = <number>,
                     ior = <number>
-                },
-                on_set_uniforms = function(self, setter)
-                {
-                    local pos = core.localplayer:get_pos()
-                    setter.set("cameraPos", {x=pos.x, y+pos.y+1.5, z=pos.z})
-                    setter.set("animationTimer", core.get_us_time())
                 }
             },
             ...
@@ -79,7 +58,7 @@
          ```
 
       * Таблица `materials` будет доступна в NodeDef, ItemDef, EntityDef, ParticleSpawnerDef, HudDef
-      * Подтаблица `shader`, задающая вершинный и фрагментный шейдеры:
+      * Подтаблица `shader`, задающая вершинный, геометрический, фрагментный шейдеры:
 
          ```lua
          shader = {
@@ -91,48 +70,64 @@
                 {"USE_DISCARD", "0"},
                 ...
             },
-            uniforms = {
-                {name = "cameraPos", type = "vector3d", def_value = vector.new()},
-                {name = "animationTimer", type = "float", def_value = 0.0},
+            vertex_includes = {"matrices"},
+            fragment_includes = {"fog", "blending"},
+            outputs = { -- map the texture buffer indices to the correponding target
+                {               -- [0] output
+                    texture_buffer = <name>, -- name of used texture buffer
+                    index = <integer>,
+                    cubemap_face = "posx"/"posy"/"posz"/"negx"/"negy"/"negz", -- for type="cubemap"
+                },
                 ...
+            },
+            vertex_type = "vertex3d",
+            on_set_uniforms = function(self, setter)
+            {
+                -- Set uniforms using the uniform setter
+                local pos = core.localplayer:get_pos()
+                setter.set("cameraPos", {x=pos.x, y+pos.y+1.5, z=pos.z})
+                setter.set("animationTimer", core.get_us_time())
             }
          }
          ```
 
-      * Коллбэк таблицы (`on_set_uniforms = function(self, setter)`) дает возможность обновлять юниформы через сеттер каждый кадр
+      * Коллбэк `shader` таблицы (`on_set_uniforms = function(self, setter)`) дает возможность обновлять юниформы через сеттер каждый кадр
    * Поддержка кастомных шейдеров (через `materials` и `pipeline`)
-   * Поддержка кастомных рендер проходов и постэффектов (`pipeline` таблица)
+   * Поддержка кастомных рендер проходов и постэффектов
         * Три типа:
-          * `3d`: кастомный проход для рендера 3d объектов с таблицей `materials`
+          * `custom`: кастомный проход делающий ручную настройку контекста и рендер через коллбэк в `gfx.add_custom_step`
           * `postprocess`: проход рендера в пространстве экрана, принимает только фрагментный шейдер
           * `builtin`: один из встроенных проходов в движке (draw3D, drawHud, postprocess, ...)
-        * `pipeline.get_render_pass_chain()`
-          * Returns the table of all current render passes chain of the pipeline in the format:
+        * `gfx.get_render_pass_chain()`
+          * Returns the ordered table of all current render passes chain of the pipeline in the format:
 
             ```lua
             {
-                {
-                    type = "3d"/"postprocess"/"builtin",
-                    name = <string>, -- <modname:name> for "3d" and "postprocess"
-                    order = <integer>, -- order number of the given pass
+                {   -- [n] where 'n' is the order number
+                    type = "custom"/"postprocess"/"builtin",
+                    name = <string>, -- <modname:name> for "custom" and "postprocess" or <name> ("draw3D", "drawHud"...) for "builtin"
                     enable = true/false, -- enable or disable the given pass?
                 },
                 ...
             }
             ```
 
-        * `pipeline.set_render_pass_chain(table)`
-        * `pipeline.enable_render_pass(name, bool)` -- enable or disable the given render pass
-        * `pipeline.add_texture_buffer(name, list)`
+        * `gfx.set_render_pass_order(name, order)`
+          * Sets the order number for "name" pass
+          * If there is already some pass with the given order, shift that and following passes forward by the unit in the render pass chain
+        * `gfx.enable_render_pass(name, bool)`
+          * Enable or disable the given render pass
+          * Each builtin and custom passes are enabled by default
+        * `gfx.add_texture_buffer(name, list)`
           * Creates new textures definitions and GPU textures themselves
           * Each texture def looks like:
 
             ```lua
             {
-                type = "2d"/"cubemap"/"array",
+                type = "2d"/"cubemap",
                 name = <string>, -- texture name
-                -- Resolution in pixels, third coord is the texture array layers count if type="array"
-                resolution = {x=<number>, y=<number>, [z=<integer>]},
+                -- Resolution in pixels
+                resolution = {x=<number>, y=<number>},
                 format = "argb8"/"rgb8"/"d16"/"d32"/"d24s8", -- texture pixel format
                 settings = {
                     -- Wrapping: "repeat", "clamp_to_edge", "clamp_to_border", "mirrored_repeat", "mirror_clamp_to_edge"
@@ -150,35 +145,59 @@
             }
             ```
 
-        * `pipeline.add_3d_step(<Material table>)`
-        * `pipeline.get_posteffects()`
+        * `gfx.add_custom_step(name, function(context))`
+          * Adds "custom" type step doing the manual render configuration (transforms, viewports, materials, draw calls...)
+          * `context` is the userdata accessing the render context
+
+        * `gfx.get_posteffects()`
           * Returns the consequent list of all screen effects (bloom, distance-of-field, reflections and etc):
 
           ```lua
           {
-        	  {
-        	  	  name = <string>,
-        	  	  shader = <file>/<code>, -- fragment
-        	  	  uniforms = <list>,
-        	  	  texture_outputs = <Texture outputs>,
-        	  	  viewport = {x1=..., y1=..., x2=..., y2=...},
-        	  	  cliprect = {x1=..., y1=..., x2=..., y2=...},
+              {
+                  name = <string>,
+                  shader = {
+                      src = "bloom.glsl"/"bloom.fsh"/"<код>",
+                      constants = {
+                          {"BLOOM_RADIUS", "4"},
+                          {"BLOOM_STRENGTH", "1.5"},
+                          ...
+                      },
+                      includes = {"filters"},
+                      on_set_uniforms = function(self, setter)
+                      {
+                          -- Set uniforms using the uniform setter
+                          local pos = core.localplayer:get_pos()
+                          setter.set("blurWeights", {0.05, 0.1, 0.3, 0.7, 1.0})
+                      }
+                  },
+                  viewport = {x1=..., y1=..., x2=..., y2=...},
+                  cliprect = {x1=..., y1=..., x2=..., y2=...},
                   blend = {<Blend table>},
                   line_width = <number>
-        	  }
+              }
           }
           ```
 
-        * `pipeline.add_posteffect(<Posteffect table>)` -- adds a new post effect
-        * `pipeline.override_builtin_posteffect(<Posteffect table>)` -- overrides the builtin effects like bloom, godrays, fsaa and etc
+        * `gfx.add_posteffect(<Posteffect table>)` -- adds a new post effect
+        * `gfx.override_builtin_posteffect(<Posteffect table>)` -- overrides the builtin effects like bloom, godrays, fsaa and etc
 
-    * Рендеринг примитивов (таблица drawer):
-         * `drawer.set_material(<Material table>)`
+    * Прямой доступ к рендер контексту (пропускается как `context` параметр в коллбэк `gfx.add_custom_step`):
+         * `context:set_viewport({x1=..., y1=..., x2=..., y2=...})`
+           * Sets the current viewport rectangle
+         * `context:set_scissor(enable, <Rect>)`
+           * Enables/disables the scissortest and sets the rectangle
+         * `context:set_material(<Material table>)`
            * Sets the current material used by the following drawer calls
-         * `drawer.set_transform(<Transform matrices>)`
+         * `context:set_transform(<Transform matrices>)`
            * Sets the current `world`, `view` and `projection` matrices
              used by the following drawer calls
-         * `drawer.draw_list(<Params table>)`
+         * `context:clear(clear_flag, clear_color, clear_depth)`
+           * Clears the color, depth and stencil buffers
+           * `clear_flag`: 0 (none), 1 (color), 2 (depth), 4 (stencil), 7 (all)
+           * `clear_color`: ColorSpec
+           * `clear_depth`: float
+         * `context:draw_list(<Params table>)`
            * Params table:
 
              ```lua
@@ -197,7 +216,7 @@
              }
              ```
 
-         * `drawer.draw_rect(<Params table>)`
+         * `context:draw_rect(<Params table>)`
            * Params table:
 
              ```lua
@@ -207,7 +226,7 @@
              }
              ```
 
-         * `drawer.draw_image(<Params table>)` -- requires the Image API
+         * `context:draw_image(<Params table>)` -- requires the Image API
            * Params table:
 
              ```lua
@@ -219,25 +238,25 @@
              }
              ```
 
-         * `drawer.draw_mesh(<Mesh table>)`:
+         * `context:draw_mesh(<Mesh table>)`:
            * Mesh table:
 
              ```lua
              {
-             	name = "*.obj"/"*.b3d"/"*.gltf"/"*.x",
-             	vertex_type = "standard3d"/"standard2d",
-             	use_aux1_attrib = <bool>,
-             	use_aux2_attrib = <bool>,
-             	triangulate = <bool>,
-             	merge_vertices = <bool>,
-             	generate_normals = <bool>,
-             	flip_normals = <bool>,
-             	limit_bone_weights = <bool>,
-             	flip_winding_order = <bool>
+                name = "*.obj"/"*.b3d"/"*.gltf"/"*.x",
+             	  vertex_type = "standard3d"/"standard2d",
+             	  use_aux1_attrib = <bool>,
+             	  use_aux2_attrib = <bool>,
+             	  triangulate = <bool>,
+             	  merge_vertices = <bool>,
+             	  generate_normals = <bool>,
+             	  flip_normals = <bool>,
+             	  limit_bone_weights = <bool>,
+             	  flip_winding_order = <bool>
              }
              ```
     * Возможность настраивать загрузку моделей через Mesh table
-        * Будет пропускаться в `drawer.draw_mesh`, в поле `mesh` NodeDef, EntityDef
+        * Будет пропускаться в `context.draw_mesh(self, <Mesh table>)`, в поле `mesh` NodeDef, EntityDef
 
 * Использовать aux1 аттрибут для хранения hardware цвета для блоков colorwallmounted, colorfacedir, color и тд.
 

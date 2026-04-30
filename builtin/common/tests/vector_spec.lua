@@ -1,4 +1,5 @@
 _G.vector = {}
+
 dofile("builtin/common/math.lua")
 dofile("builtin/common/vector.lua")
 

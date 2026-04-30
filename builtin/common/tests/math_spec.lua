@@ -1,4 +1,5 @@
 _G.core = {}
+
 dofile("builtin/common/math.lua")
 
 describe("math", function()

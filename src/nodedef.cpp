@@ -464,15 +464,11 @@ void ContentFeatures::serialize(std::ostream &os, u16 protocol_version) const
 	for (const TileDef &td : tiledef_overlay)
 		td.serialize(os, protocol_version);
 	writeU8(os, CF_SPECIAL_COUNT);
-	for (const TileDef &td : tiledef_special) {
+	for (const TileDef &td : tiledef_special)
 		td.serialize(os, protocol_version);
-	}
 	writeU8(os, getAlphaForLegacy());
-	for (const std::string &m : materials) {
-		if (m == "metal_specular")
-			actionstream << "ContentFeatures::serialize(): metal_specular was found" << std::endl;
+	for (const std::string &m : materials)
 		os << serializeString16(m);
-	}
 	writeU8(os, color.getRed());
 	writeU8(os, color.getGreen());
 	writeU8(os, color.getBlue());
@@ -584,11 +580,8 @@ void ContentFeatures::deSerialize(std::istream &is, u16 protocol_version)
 	for (TileDef &td : tiledef_special)
 		td.deSerialize(is, drawtype, protocol_version);
 	setAlphaFromLegacy(readU8(is));
-	for (std::string &m : materials) {
+	for (std::string &m : materials)
 		m = deSerializeString16(is);
-		if (m == "metal_specular")
-			actionstream << "ContentFeatures::deserialize(): metal_specular was found" << std::endl;
-	}
 	color.setRed(readU8(is));
 	color.setGreen(readU8(is));
 	color.setBlue(readU8(is));
@@ -1439,6 +1432,7 @@ void NodeDefManager::updateAliases(IItemDefManager *idef)
 
 void NodeDefManager::overrideShaderMaterials(const std::string &materialName, u32 shaderId)
 {
+#if CHECK_CLIENT_BUILD()
 	actionstream << "NodeDefManager::overrideShaderMaterials(): Overrides "
 		"the shader with \'" << shaderId << "\' ID for all content features having \'"
 		<< materialName << "\' material" << std::endl;
@@ -1452,6 +1446,7 @@ void NodeDefManager::overrideShaderMaterials(const std::string &materialName, u3
 			}
 		}
 	}
+#endif
 }
 
 void NodeDefManager::applyTextureOverrides(const std::vector<TextureOverride> &overrides)

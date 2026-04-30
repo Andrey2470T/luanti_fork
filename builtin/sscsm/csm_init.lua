@@ -59,7 +59,10 @@ allowed.os.time = os.time
 -- core
 allowed.core = core
 allowed.minetest = allowed.core
-allowed.gfx = gfx
+
+if rawget(_G, "gfx") then
+	allowed.gfx = gfx
+end
 
 
 -- Basic functions
