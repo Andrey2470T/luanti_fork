@@ -69,6 +69,7 @@ struct TileLayer
 	{
 		return
 			texture_id == other.texture_id &&
+			shader_id == other.shader_id &&
 			material_type == other.material_type &&
 			material_flags == other.material_flags &&
 			has_color == other.has_color &&

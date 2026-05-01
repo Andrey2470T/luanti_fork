@@ -868,7 +868,7 @@ bool Client::loadMedia(const std::string &data, const std::string &filename,
 	name = removeStringEnd(filename, shader_ext);
 	if (!name.empty()) { // dynamic shader loading is prohibited for now
 		actionstream << "Client: Received shader code with name \'"
-			<< name << "\': " << data;
+			<< name << std::endl;
 		m_shsrc->insertSourceShader("", filename, data);
 		return true;
 	}

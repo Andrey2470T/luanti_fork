@@ -133,9 +133,9 @@ class MainShaderUniformSetter : public IShaderUniformSetter
 	CachedShaderSetting<f32, 16> m_world{"mWorld"};
 
 	// Modelview matrix
-	CachedShaderSetting<float, 16> m_world_view{"mWorldView"};
+	CachedShaderSetting<f32, 16> m_world_view{"mWorldView"};
 	// Texture matrix
-	CachedShaderSetting<float, 16> m_texture{"mTexture"};
+	CachedShaderSetting<f32, 16> m_texture{"mTexture"};
 
 	CachedShaderSetting<SamplerLayer_t> m_texture0{"texture0"};
 	CachedShaderSetting<SamplerLayer_t> m_texture1{"texture1"};
@@ -144,7 +144,7 @@ class MainShaderUniformSetter : public IShaderUniformSetter
 
 	// commonly used way to pass material color to shader
 	video::SColor m_material_color;
-	CachedShaderSetting<float, 4> m_material_color_setting{"materialColor"};
+	CachedShaderSetting<f32, 4> m_material_color_setting{"materialColor"};
 
 public:
 	~MainShaderUniformSetter() = default;

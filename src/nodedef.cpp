@@ -901,7 +901,7 @@ void ContentFeatures::updateTextures(ITextureSource *tsrc, ShaderSource *shdsrc,
 		}
 	}
 
-	u32 tile_shader = shdsrc->getShader({"nodes_shader", {"final_light_color"}, {"fog"}}, material_type, drawtype, true);
+	u32 tile_shader = shdsrc->getShader({"nodes_shader", {"final_light_color"}, {"fog"}}, material_type, drawtype);
 
 	MaterialType overlay_material = material_type;
 	if (overlay_material == TILE_MATERIAL_OPAQUE)
@@ -909,37 +909,22 @@ void ContentFeatures::updateTextures(ITextureSource *tsrc, ShaderSource *shdsrc,
 	else if (overlay_material == TILE_MATERIAL_LIQUID_OPAQUE)
 		overlay_material = TILE_MATERIAL_LIQUID_TRANSPARENT;
 
-	u32 overlay_shader = shdsrc->getShader({"nodes_shader", {"final_light_color"}, {"fog"}}, overlay_material, drawtype, true);
+	u32 overlay_shader = shdsrc->getShader({"nodes_shader", {"final_light_color"}, {"fog"}}, overlay_material, drawtype);
 
 	// minimap pixel color = average color of top tile
 	if (tsettings.enable_minimap && !tdef[0].name.empty() && drawtype != NDT_AIRLIKE)
 		minimap_color = tsrc->getTextureAverageColor(tdef[0].name);
 
-	// Fallback to nodes_shader if user one is not provided
-	std::array<bool, 6> use_shadows;
-	for (u8 i = 0; i < 6; i++) {
-		std::string &matName = materials[i];
-		if (matName.empty()) {
-			matName = "nodes_shader";
-			use_shadows[i] = true;
-		}
-	}
 	// Tiles (fill in f->tiles[])
 	bool any_polygon_offset = false;
 	for (u16 j = 0; j < 6; j++) {
 		tiles[j].world_aligned = isWorldAligned(tdef[j].align_style,
 				tsettings.world_aligned_mode, drawtype);
 
-		//u32 tile_shader = materials[j] == "nodes_shader" ? shdsrc->getShader({
-		//	materials[j], {"final_light_color"}, {"fog"}}, material_type, drawtype, use_shadows[j])
-		//	: shdsrc->getShader({materials[j]});
 		fillTileAttribs(tsrc, &tiles[j].layers[0], tiles[j], tdef[j],
 				color, material_type, tile_shader,
 				tdef[j].backface_culling, tsettings);
 		if (!tdef_overlay[j].name.empty()) {
-			//u32 overlay_shader = materials[j] == "nodes_shader" ? shdsrc->getShader({
-			//	materials[j], {"final_light_color"}, {"fog"}}, overlay_material, drawtype, use_shadows[j])
-			//	: shdsrc->getShader({materials[j]});
 			fillTileAttribs(tsrc, &tiles[j].layers[1], tiles[j], tdef_overlay[j],
 					color, overlay_material, overlay_shader,
 					tdef[j].backface_culling, tsettings);
@@ -966,13 +951,10 @@ void ContentFeatures::updateTextures(ITextureSource *tsrc, ShaderSource *shdsrc,
 		else if (waving == 2)
 			special_material = TILE_MATERIAL_WAVING_LEAVES;
 	}
-	u32 special_shader = shdsrc->getShader({"nodes_shader", {"final_light_color"}, {"fog"}}, special_material, drawtype, true);
+	u32 special_shader = shdsrc->getShader({"nodes_shader", {"final_light_color"}, {"fog"}}, special_material, drawtype);
 
 	// Special tiles (fill in f->special_tiles[])
 	for (u16 j = 0; j < CF_SPECIAL_COUNT; j++) {
-		//u32 special_shader = materials[j] == "nodes_shader" ? shdsrc->getShader({
-		//	materials[j], {"final_light_color"}, {"fog"}}, special_material, drawtype, use_shadows[j])
-		//	: shdsrc->getShader({materials[j]});
 		fillTileAttribs(tsrc, &special_tiles[j].layers[0], special_tiles[j], tdef_spec[j],
 				color, special_material, special_shader,
 				tdef_spec[j].backface_culling, tsettings);
