@@ -7,6 +7,7 @@
 #include <iterator>
 #include "shader.h"
 #include "Utils/irr_ptr.h"
+#include "client/activeobject/clientobject.h"
 #include "debug.h"
 #include "filesys.h"
 #include "util/container.h"
@@ -21,6 +22,8 @@
 #include "gamedef.h"
 #include "client/render/tile.h"
 #include "config.h"
+#include "client/core/client.h"
+#include "scripting_client.h"
 
 
 /*
@@ -30,10 +33,12 @@
 class ShaderCallback : public video::IShaderConstantSetCallBack
 {
 	std::vector<std::unique_ptr<IShaderUniformSetter>> m_setters;
-
+	ShaderSource *m_src = nullptr;
+	ShaderInfo m_info;
 public:
 	template <typename Factories>
-	ShaderCallback(const Factories &factories)
+	ShaderCallback(ShaderSource *src, const ShaderInfo &info, const Factories &factories)
+		: m_src(src), m_info(info)
 	{
 		for (auto &&factory : factories) {
 			auto *setter = factory->create();
@@ -46,6 +51,9 @@ public:
 	{
 		for (auto &&setter : m_setters)
 			setter->onSetUniforms(renderer);
+
+		if (m_src->m_script)
+			m_src->m_script->on_set_uniforms(m_info, renderer);
 	}
 
 	virtual void OnSetMaterial(const video::SMaterial& material) override
@@ -599,7 +607,7 @@ void ShaderGenerator::generate()
 		geometry_shader = main_header + geometry_header + final_header + geometry_shader;
 	}
 
-	auto cb = make_irr<ShaderCallback>(src->m_uniform_factories);
+	auto cb = make_irr<ShaderCallback>(src, info, src->m_uniform_factories);
 	infostream << "Compiling high level shaders for " << log_name << std::endl;
 	s32 shadermat = RenderingEngine::get_video_driver()->addHighLevelShaderMaterial(
 		vertex_shader, fragment_shader, geometry_shader,

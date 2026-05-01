@@ -17,6 +17,12 @@ class Client;
 class LocalPlayer;
 class Camera;
 class Minimap;
+struct ShaderInfo;
+
+namespace video
+{
+class MaterialRenderer;
+}
 
 class ClientScripting:
 	virtual public ScriptApiBase,
@@ -30,6 +36,8 @@ public:
 	void on_client_ready(LocalPlayer *localplayer);
 	void on_camera_ready(Camera *camera);
 	void on_minimap_ready(Minimap *minimap);
+
+	void on_set_uniforms(const ShaderInfo &info, video::MaterialRenderer *renderer);
 
 protected:
 	// from ScriptApiSecurity:

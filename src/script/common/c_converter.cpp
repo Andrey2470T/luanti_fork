@@ -148,6 +148,9 @@ v3s32 read_v3i(lua_State *L, int index)
 	lua_getfield(L, index, "y");
 	p.Y = lua_tonumber(L, -1);
 	lua_pop(L, 1);
+	lua_getfield(L, index, "z");
+	p.Z = lua_tonumber(L, -1);
+	lua_pop(L, 1);
 	return p;
 }
 

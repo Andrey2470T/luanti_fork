@@ -21,7 +21,6 @@ public:
 	{}
 
 	static void create(lua_State *L,  video::MaterialRenderer *renderer);
-
 	static void Register(lua_State *L);
 
 	static const char className[];

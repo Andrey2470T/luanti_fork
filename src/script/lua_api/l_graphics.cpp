@@ -73,7 +73,8 @@ void UniformSetter::create(lua_State *L,  video::MaterialRenderer *renderer)
 void UniformSetter::Register(lua_State *L)
 {
 	static const luaL_Reg methods[] = {
-		luamethod(UniformSetter, set)
+		luamethod(UniformSetter, set),
+		{0, 0}
 	};
 	static const luaL_Reg metamethods[] = {
 		{"__gc", gc_object},
@@ -83,6 +84,7 @@ void UniformSetter::Register(lua_State *L)
 }
 
 const char UniformSetter::className[] = "Setter";
+
 
 void ModApiGraphics::read_constants(lua_State *L, ShaderConstants &constants)
 {
@@ -145,6 +147,19 @@ void ModApiGraphics::read_shader_info(lua_State *L, ShaderInfo &info)
 		{"vertex3dext", scene::Vertex3DExt::FORMAT}
 	};
 	info.vertex_desc = mapNameToDesc[getstringfield_default(L, -1, "vertex_type", "vertex3d")];
+
+	lua_getfield(L, -1, "on_set_uniforms");
+
+	if (lua_isfunction(L, -1)) {
+		lua_getglobal(L, "gfx");
+		lua_getfield(L, -1, "uniform_setters");
+
+		lua_pushstring(L, info.name.c_str());
+		lua_pushvalue(L, -4);
+		lua_settable(L, -3);
+
+		lua_pop(L, 3);
+	}
 }
 
 int ModApiGraphics::l_register_material(lua_State *L)
@@ -173,4 +188,9 @@ int ModApiGraphics::l_register_material(lua_State *L)
 void ModApiGraphics::Initialize(lua_State *L, int top)
 {
 	API_FCT(register_material);
+
+	UniformSetter::Register(L);
+
+	lua_newtable(L);
+	lua_setfield(L, top, "uniform_setters");
 }

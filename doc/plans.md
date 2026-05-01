@@ -81,7 +81,7 @@
                 ...
             },
             vertex_type = "vertex3d",
-            on_set_uniforms = function(self, setter)
+            on_set_uniforms = function(setter)
             {
                 -- Set uniforms using the uniform setter
                 local pos = core.localplayer:get_pos()

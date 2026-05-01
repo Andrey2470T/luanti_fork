@@ -238,6 +238,8 @@ void Client::loadMods()
 	m_script->on_mods_loaded();
 
 	// Create objects if they're ready
+	m_shsrc->setScripting(m_script);
+
 	if (m_state == LC_Ready)
 		m_script->on_client_ready(m_env.getLocalPlayer());
 	if (m_camera)

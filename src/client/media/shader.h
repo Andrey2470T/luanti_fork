@@ -225,11 +225,18 @@ struct ShaderInfo {
 	std::string basic_name = "";
 };
 
+class ClientScripting;
+
 class ShaderSource {
+	ClientScripting *m_script = nullptr;
 public:
 	ShaderSource();
 	~ShaderSource();
 
+	void setScripting(ClientScripting *script)
+	{
+		m_script = script;
+	}
 	/**
 	 * @brief returns information about an existing shader
 	 *
@@ -282,6 +289,7 @@ public:
 	static std::string getShaderPath(const std::string &name_of_shader, const std::string &filename);
 
 	friend class ShaderGenerator;
+	friend class ShaderCallback;
 
 private:
 	std::thread::id m_main_thread;

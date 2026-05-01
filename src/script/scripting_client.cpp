@@ -98,3 +98,25 @@ void ClientScripting::on_minimap_ready(Minimap *minimap)
 {
 	LuaMinimap::create(getStack(), minimap);
 }
+
+void ClientScripting::on_set_uniforms(const ShaderInfo &info, video::MaterialRenderer *renderer)
+{
+	SCRIPTAPI_PRECHECKHEADER
+
+	int error_handler = PUSH_ERROR_HANDLER(L);
+
+	lua_getglobal(L, "gfx");
+	lua_getfield(L, -1, "uniform_setters");
+	lua_getfield(L, -1, info.name.c_str());
+
+	if (!lua_isfunction(L, -1)) {
+		lua_settop(L, error_handler - 1);
+		return;
+	}
+
+	UniformSetter::create(getStack(), renderer);
+
+	PCALL_RES(lua_pcall(L, 1, 0, error_handler));
+
+	lua_settop(L, error_handler - 1);
+}
