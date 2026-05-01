@@ -85,8 +85,8 @@
             {
                 -- Set uniforms using the uniform setter
                 local pos = core.localplayer:get_pos()
-                setter.set("cameraPos", {x=pos.x, y+pos.y+1.5, z=pos.z})
-                setter.set("animationTimer", core.get_us_time())
+                setter.set("cameraPos", "v3f", {x=pos.x, y+pos.y+1.5, z=pos.z})
+                setter.set("animationTimer", "f32", core.get_us_time())
             }
          }
          ```

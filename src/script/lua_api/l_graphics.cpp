@@ -5,6 +5,85 @@
 #include "common/c_converter.h"
 #include "l_internal.h"
 
+int UniformSetter::gc_object(lua_State *L) {
+	auto *o = *(UniformSetter **)(lua_touserdata(L, 1));
+	delete o;
+	return 0;
+}
+
+int UniformSetter::l_set(lua_State *L)
+{
+	auto ref = getobject(L);
+	auto name = readParam<std::string>(L, 2);
+
+	if (name.empty())
+		return 0;
+
+	auto type = readParam<std::string>(L, 3);
+
+	if (type.empty())
+		return 0;
+
+	if (type == "f32") {
+		auto val = readParam<f32>(L, 4);
+		ref->setUniformFloat(name, val);
+	}
+	else if (type == "s32") {
+		auto val = readParam<s32>(L, 4);
+		ref->setUniformInt(name, val);
+	}
+	else if (type == "v2f") {
+		auto val = readParam<v2f>(L, 4);
+		ref->setUniform2Float(name, val);
+	}
+	else if (type == "v3f") {
+		auto val = readParam<v3f>(L, 4);
+		ref->setUniform3Float(name, val);
+	}
+	else if (type == "v2i") {
+		auto val = readParam<core::vector2di>(L, 4);
+		ref->setUniform2Int(name, val);
+	}
+	else if (type == "v3i") {
+		auto val = readParam<core::vector3di>(L, 4);
+		ref->setUniform3Int(name, val);
+	}
+	else if (type == "mat4") {
+		// TODO
+	}
+
+	return 1;
+}
+
+video::MaterialRenderer *UniformSetter::getobject(lua_State *L)
+{
+	UniformSetter *ref = checkObject<UniformSetter>(L, 1);
+	assert(ref);
+	return ref->m_renderer;
+}
+
+void UniformSetter::create(lua_State *L,  video::MaterialRenderer *renderer)
+{
+	auto *o = new UniformSetter(renderer);
+	*(void **)(lua_newuserdata(L, sizeof(void *))) = o;
+	luaL_getmetatable(L, className);
+	lua_setmetatable(L, -2);
+}
+
+void UniformSetter::Register(lua_State *L)
+{
+	static const luaL_Reg methods[] = {
+		luamethod(UniformSetter, set)
+	};
+	static const luaL_Reg metamethods[] = {
+		{"__gc", gc_object},
+		{0, 0}
+	};
+	registerClass<UniformSetter>(L, methods, metamethods);
+}
+
+const char UniformSetter::className[] = "Setter";
+
 void ModApiGraphics::read_constants(lua_State *L, ShaderConstants &constants)
 {
 	lua_getfield(L, -1, "constants");

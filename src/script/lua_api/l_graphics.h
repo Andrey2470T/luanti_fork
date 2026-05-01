@@ -3,6 +3,30 @@
 #include "l_base.h"
 #include "client/media/shader.h"
 
+class UniformSetter : public ModApiBase
+{
+private:
+	video::MaterialRenderer *m_renderer = nullptr;
+
+	// garbage collector
+	static int gc_object(lua_State *L);
+
+	static int l_set(lua_State *L);
+
+	static video::MaterialRenderer *getobject(lua_State *L);
+
+public:
+	UniformSetter(video::MaterialRenderer *renderer)
+		: m_renderer(renderer)
+	{}
+
+	static void create(lua_State *L,  video::MaterialRenderer *renderer);
+
+	static void Register(lua_State *L);
+
+	static const char className[];
+};
+
 class ModApiGraphics : public ModApiBase
 {
 private:
