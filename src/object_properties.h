@@ -32,6 +32,7 @@ struct ObjectProperties
 {
 	/* member variables ordered roughly by size */
 
+	std::vector<std::string> materials;
 	std::vector<std::string> textures;
 	std::vector<video::SColor> colors; // Currently unused
 	// Values are BS=1

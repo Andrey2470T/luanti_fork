@@ -43,6 +43,10 @@ std::string ObjectProperties::dump() const
 	os << ", visual=" << enum_to_string(es_ObjectVisual, visual);
 	os << ", mesh=" << mesh;
 	os << ", visual_size=" << visual_size;
+	os << ", materials=[";
+	for (const std::string &mat : materials) {
+		os << "\"" << mat << "\" ";
+	}
 	os << ", textures=[";
 	for (const std::string &texture : textures) {
 		os << "\"" << texture << "\" ";
@@ -90,7 +94,7 @@ static auto tie(const ObjectProperties &o)
 {
 	// Make sure to add new members to this list!
 	return std::tie(
-	o.textures, o.colors, o.collisionbox, o.selectionbox, o.visual, o.mesh,
+	o.materials, o.textures, o.colors, o.collisionbox, o.selectionbox, o.visual, o.mesh,
 	o.damage_texture_modifier, o.nametag, o.infotext, o.wield_item, o.visual_size,
 	o.nametag_color, o.nametag_bgcolor, o.spritediv, o.initial_sprite_basepos,
 	o.stepheight, o.automatic_rotate, o.automatic_face_movement_dir_offset,
@@ -156,6 +160,10 @@ void ObjectProperties::serialize(std::ostream &os) const
 	os << serializeString16(enum_to_string(es_ObjectVisual, visual));
 
 	writeV3F32(os, visual_size);
+	writeU16(os, materials.size());
+	for (const std::string &mat : materials) {
+		os << serializeString16(mat);
+	}
 	writeU16(os, textures.size());
 	for (const std::string &texture : textures) {
 		os << serializeString16(texture);
@@ -248,6 +256,11 @@ void ObjectProperties::deSerialize(std::istream &is)
 	}
 
 	visual_size = readV3F32(is);
+	materials.clear();
+	u32 mat_count = readU16(is);
+	for (u32 i = 0; i < mat_count; i++){
+		materials.push_back(deSerializeString16(is));
+	}
 	textures.clear();
 	u32 texture_count = readU16(is);
 	for (u32 i = 0; i < texture_count; i++){

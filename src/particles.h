@@ -246,6 +246,8 @@ namespace ParticleParamTypes
 
 struct ParticleTexture
 {
+	virtual ~ParticleTexture() = default;
+
 	bool animated = false;
 	ParticleParamTypes::BlendMode blendmode = ParticleParamTypes::BlendMode::alpha;
 	TileAnimationParams animation;
@@ -256,6 +258,7 @@ struct ParticleTexture
 struct ServerParticleTexture : public ParticleTexture
 {
 	std::string string;
+	std::string material;
 	void serialize(std::ostream &os, u16 protocol_ver, bool newPropertiesOnly = false,
 			bool skipAnimation = false) const;
 	void deSerialize(std::istream &is, u16 protocol_ver, bool newPropertiesOnly = false,

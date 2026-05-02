@@ -63,6 +63,12 @@ int ModApiParticlesLocal::l_add_particle(lua_State *L)
 	p.animation = read_animation_definition(L, -1);
 	lua_pop(L, 1);
 
+	lua_getfield(L, 1, "material");
+	if (!lua_isnil(L, -1)) {
+		 p.texture.material = lua_tostring(L, -1);
+	}
+	lua_pop(L, 1);
+
 	lua_getfield(L, 1, "texture");
 	if (!lua_isnil(L, -1)) {
 		LuaParticleParams::readTexValue(L,p.texture);
@@ -144,6 +150,12 @@ int ModApiParticlesLocal::l_add_particlespawner(lua_State *L)
 
 	lua_getfield(L, 1, "animation");
 	p.animation = read_animation_definition(L, -1);
+	lua_pop(L, 1);
+
+	lua_getfield(L, 1, "material");
+	if (!lua_isnil(L, -1)) {
+		 p.texture.material = lua_tostring(L, -1);
+	}
 	lua_pop(L, 1);
 
 	lua_getfield(L, 1, "texture");

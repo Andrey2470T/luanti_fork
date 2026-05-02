@@ -665,8 +665,8 @@ void ParticleBuffer::render()
 	ParticleManager
 */
 
-ParticleManager::ParticleManager(ClientEnvironment *env) :
-	m_env(env)
+ParticleManager::ParticleManager(ClientEnvironment *env, ShaderSource *shdsrc) :
+	m_env(env), m_shdsrc(shdsrc)
 {}
 
 ParticleManager::~ParticleManager()
@@ -1000,7 +1000,7 @@ static void setBlendMode(video::SMaterial &material, BlendMode blendmode)
 	material.BlendOperation = blendop;
 }
 
-video::SMaterial ParticleManager::getMaterialForParticle(const Particle *particle)
+video::SMaterial ParticleManager::getMaterialForParticle(ShaderSource *shdsrc, const Particle *particle)
 {
 	const ClientParticleTexRef &texture = particle->getTextureRef();
 
@@ -1026,6 +1026,10 @@ video::SMaterial ParticleManager::getMaterialForParticle(const Particle *particl
 		material.MaterialType = video::EMT_ONETEXTURE_BLEND;
 		setBlendMode(material, blendmode);
 	}
+
+	auto server_tex = dynamic_cast<ServerParticleTexture *>(texture.tex);
+	if (server_tex && !server_tex->material.empty())
+		material.MaterialType = shdsrc->getShaderInfo(shdsrc->getShader({server_tex->material})).material;
 	material.setTexture(0, texture.ref);
 
 	return material;
@@ -1035,7 +1039,7 @@ bool ParticleManager::addParticle(std::unique_ptr<Particle> toadd)
 {
 	MutexAutoLock lock(m_particle_list_lock);
 
-	auto material = getMaterialForParticle(toadd.get());
+	auto material = getMaterialForParticle(m_shdsrc, toadd.get());
 
 	ParticleBuffer *found = nullptr;
 	// simple shortcut when multiple particles of the same type get added

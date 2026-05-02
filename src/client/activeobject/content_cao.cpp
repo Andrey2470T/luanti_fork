@@ -1294,6 +1294,8 @@ void GenericCAO::updateTextures(std::string mod)
 	m_previous_texture_modifier = m_current_texture_modifier;
 	m_current_texture_modifier = mod;
 
+	auto shdsrc = m_client->getShaderSource();
+
 	if (m_spritenode) {
 		if (m_prop.visual == OBJECTVISUAL_SPRITE) {
 			std::string texturestring = "no_texture.png";
@@ -1303,6 +1305,9 @@ void GenericCAO::updateTextures(std::string mod)
 
 			video::SMaterial &material = m_spritenode->getMaterial(0);
 			material.MaterialType = m_material_type;
+
+			if (!m_prop.materials.empty() && !m_prop.materials[0].empty())
+				material.MaterialType = shdsrc->getShaderInfo(shdsrc->getShader({m_prop.materials[0]})).material;
 			setMaterialTextureAndFilters(material, texturestring, tsrc);
 		}
 	}
@@ -1321,6 +1326,9 @@ void GenericCAO::updateTextures(std::string mod)
 				// Set material flags and texture
 				video::SMaterial &material = m_animated_meshnode->getMaterial(i);
 				material.MaterialType = m_material_type;
+
+				if (i < m_prop.materials.size() && !m_prop.materials[i].empty())
+					material.MaterialType = shdsrc->getShaderInfo(shdsrc->getShader({m_prop.materials[i]})).material;
 				material.BackfaceCulling = m_prop.backface_culling;
 				setMaterialTextureAndFilters(material, texturestring, tsrc);
 			}
@@ -1340,6 +1348,9 @@ void GenericCAO::updateTextures(std::string mod)
 				// Set material flags and texture
 				video::SMaterial &material = m_meshnode->getMaterial(i);
 				material.MaterialType = m_material_type;
+
+				if (i < m_prop.materials.size() && !m_prop.materials[i].empty())
+					material.MaterialType = shdsrc->getShaderInfo(shdsrc->getShader({m_prop.materials[i]})).material;
 				setMaterialTextureAndFilters(material, texturestring, tsrc);
 			}
 		} else if (m_prop.visual == OBJECTVISUAL_UPRIGHT_SPRITE) {
@@ -1351,6 +1362,9 @@ void GenericCAO::updateTextures(std::string mod)
 				tname += mod;
 
 				auto &material = m_meshnode->getMaterial(0);
+
+				if (!m_prop.materials.empty() && !m_prop.materials[0].empty())
+					material.MaterialType = shdsrc->getShaderInfo(shdsrc->getShader({m_prop.materials[0]})).material;
 				setMaterialTextureAndFilters(material, tname, tsrc);
 			}
 			{
@@ -1362,6 +1376,9 @@ void GenericCAO::updateTextures(std::string mod)
 				tname += mod;
 
 				auto &material = m_meshnode->getMaterial(1);
+
+				if (!m_prop.materials.empty() && !m_prop.materials[0].empty())
+					material.MaterialType = shdsrc->getShaderInfo(shdsrc->getShader({m_prop.materials[0]})).material;
 				setMaterialTextureAndFilters(material, tname, tsrc);
 			}
 			// Set mesh color (only if lighting is disabled)
@@ -1508,7 +1525,8 @@ bool GenericCAO::visualExpiryRequired(const ObjectProperties &new_) const
 		old.visual_size != new_.visual_size ||
 		old.wield_item != new_.wield_item ||
 		old.colors != new_.colors ||
-		(uses_legacy_texture && old.textures != new_.textures);
+		(uses_legacy_texture && old.textures != new_.textures) ||
+		old.materials != new_.materials;
 }
 
 void GenericCAO::processMessage(const std::string &data)
@@ -1525,7 +1543,7 @@ void GenericCAO::processMessage(const std::string &data)
 
 		// Check what exactly changed
 		bool expire_visuals = visualExpiryRequired(newprops);
-		bool textures_changed = m_prop.textures != newprops.textures;
+		bool textures_changed = m_prop.textures != newprops.textures || m_prop.materials != newprops.materials;
 
 		// Apply changes
 		m_prop = std::move(newprops);

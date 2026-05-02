@@ -112,7 +112,7 @@ Client::Client(
 		make_irr<ClientMap>(this, rendering_engine, control, 666),
 		tsrc, this
 	),
-	m_particle_manager(std::make_unique<ParticleManager>(&m_env)),
+	m_particle_manager(std::make_unique<ParticleManager>(&m_env, m_shsrc)),
 	m_allow_login_or_register(allow_login_or_register),
 	m_server_ser_ver(SER_FMT_VER_INVALID),
 	m_last_chat_message_sent(time(NULL)),

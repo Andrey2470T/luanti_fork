@@ -379,6 +379,8 @@ void read_object_properties(lua_State *L, int index,
 	}
 	lua_pop(L, 1);
 
+	getstringlistfield(L, -1, "materials", &prop->materials);
+
 	lua_getfield(L, -1, "textures");
 	if(lua_istable(L, -1)){
 		prop->textures.clear();
@@ -516,8 +518,16 @@ void push_object_properties(lua_State *L, const ObjectProperties *prop)
 	push_v3f(L, prop->visual_size);
 	lua_setfield(L, -2, "visual_size");
 
-	lua_createtable(L, prop->textures.size(), 0);
+	lua_createtable(L, prop->materials.size(), 0);
 	u16 i = 1;
+	for (const std::string &mat : prop->materials) {
+		lua_pushlstring(L, mat.c_str(), mat.size());
+		lua_rawseti(L, -2, i++);
+	}
+	lua_setfield(L, -2, "materials");
+
+	lua_createtable(L, prop->textures.size(), 0);
+	i = 1;
 	for (const std::string &texture : prop->textures) {
 		lua_pushlstring(L, texture.c_str(), texture.size());
 		lua_rawseti(L, -2, i++);

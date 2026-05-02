@@ -203,6 +203,9 @@ void ServerParticleTexture::serialize(std::ostream &os, u16 protocol_ver,
 
 	if (!skipAnimation && animated)
 		animation.serialize(os, protocol_ver);
+
+	if (!newPropertiesOnly)
+		os << serializeString32(material);
 }
 
 void ServerParticleTexture::deSerialize(std::istream &is, u16 protocol_ver,
@@ -227,6 +230,9 @@ void ServerParticleTexture::deSerialize(std::istream &is, u16 protocol_ver,
 
 	if (!skipAnimation && animated)
 		animation.deSerialize(is, protocol_ver);
+
+	if (!newPropertiesOnly)
+		material = deSerializeString32(is);
 }
 
 void ParticleParameters::serialize(std::ostream &os, u16 protocol_ver) const
