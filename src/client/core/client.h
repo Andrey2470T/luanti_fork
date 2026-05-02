@@ -56,6 +56,7 @@ struct MinimapMapblock;
 struct PlayerControl;
 struct PointedThing;
 struct ItemVisualsManager;
+class MaterialStorage;
 
 namespace con {
 class IConnection;
@@ -374,6 +375,10 @@ public:
 	const NodeDefManager* getNodeDefManager() override;
 	ICraftDefManager* getCraftDefManager() override;
 	ITextureSource* getTextureSource();
+	MaterialStorage* getMaterialStorage()
+	{
+		return m_matst.get();
+	}
 	virtual ShaderSource* getShaderSource();
 	u16 allocateUnknownNodeId(const std::string &name) override;
 	virtual ISoundManager* getSoundManager();
@@ -478,6 +483,7 @@ private:
 	IntervalLimiter m_map_timer_and_unload_interval;
 
 	IWritableTextureSource *m_tsrc;
+	std::unique_ptr<MaterialStorage> m_matst;
 	ShaderSource *m_shsrc;
 	IWritableItemDefManager *m_itemdef;
 	NodeDefManager *m_nodedef;

@@ -77,6 +77,7 @@ set(render_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/render/clientmap.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/clouds.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/item_visuals_manager.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/render/material.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/particles.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/renderingengine.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/sky.cpp

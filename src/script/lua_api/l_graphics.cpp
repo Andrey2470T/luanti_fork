@@ -1,6 +1,7 @@
 #include "l_graphics.h"
 #include "client/core/client.h"
 #include "client/media/shader.h"
+#include "client/media/texturesource.h"
 #include "nodedef.h"
 #include "common/c_converter.h"
 #include "l_internal.h"
@@ -86,6 +87,26 @@ void UniformSetter::Register(lua_State *L)
 const char UniformSetter::className[] = "Setter";
 
 
+void ModApiGraphics::read_pbr(lua_State *L, PBRTextures &textures)
+{
+	read_texture(L, "metallic", &textures.Metallic);
+	read_texture(L, "roughness", &textures.Roughness);
+	read_texture(L, "ambient_occlusion", &textures.AO);
+	read_texture(L, "normal", &textures.Normal);
+	read_texture(L, "emission", &textures.Emission);
+}
+
+void ModApiGraphics::read_texture(lua_State *L, const std::string &name, video::GLTexture **tex)
+{
+	std::string texname;
+	getstringfield(L, -1, name.c_str(), texname);
+
+	if (texname.empty())
+		return;
+
+	*tex = getClient(L)->getTextureSource()->getTexture(texname);
+}
+
 void ModApiGraphics::read_constants(lua_State *L, ShaderConstants &constants)
 {
 	lua_getfield(L, -1, "constants");
@@ -169,18 +190,41 @@ int ModApiGraphics::l_register_material(lua_State *L)
 
 	std::string name = readParam<std::string>(L, 1);
 
+	auto mat_st = getClient(L)->getMaterialStorage();
+	auto foundMat = mat_st->getMaterial(name);
+
+	// Dont allow to re-register
+	if (!foundMat.Name.empty())
+		return 0;
+
+	MaterialStorageEntry entry;
+	entry.Name = name;
+
+	// Shader table
 	lua_getfield(L, 2, "shader");
 
 	if (lua_istable(L, -1)) {
 		ShaderInfo info = {name};
 		read_shader_info(L, info);
 
-		u32 id = getClient(L)->getShaderSource()->getShader(info, false);
+		entry.ShaderID = getClient(L)->getShaderSource()->getShader(info, false);
 
-		const_cast<NodeDefManager *>(getClient(L)->getNodeDefManager())->overrideShaderMaterials(name, id);
+		// It is necessary, because Game::afterContentReceived() is called before the client scripting creation
+		const_cast<NodeDefManager *>(getClient(L)->getNodeDefManager())->overrideShaderMaterials(name, entry.ShaderID);
 	}
 
 	lua_pop(L, 1);
+
+	// PBR table
+	lua_getfield(L, 2, "pbr");
+
+	if (lua_istable(L, -1)) {
+		read_pbr(L, entry.PBR);
+	}
+
+	lua_pop(L, 1);
+
+	mat_st->addMaterial(entry);
 
 	return 1;
 }

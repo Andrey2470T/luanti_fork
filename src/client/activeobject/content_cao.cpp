@@ -8,6 +8,7 @@
 #include <Mesh/MeshManipulator.h>
 #include <Scene/IAnimatedMeshSceneNode.h>
 #include "client/core/client.h"
+#include "client/render/material.h"
 #include "client/render/renderingengine.h"
 #include "client/sound/sound.h"
 #include "client/media/texturesource.h"
@@ -1294,7 +1295,7 @@ void GenericCAO::updateTextures(std::string mod)
 	m_previous_texture_modifier = m_current_texture_modifier;
 	m_current_texture_modifier = mod;
 
-	auto shdsrc = m_client->getShaderSource();
+	auto matst = m_client->getMaterialStorage();
 
 	if (m_spritenode) {
 		if (m_prop.visual == OBJECTVISUAL_SPRITE) {
@@ -1307,7 +1308,7 @@ void GenericCAO::updateTextures(std::string mod)
 			material.MaterialType = m_material_type;
 
 			if (!m_prop.materials.empty() && !m_prop.materials[0].empty())
-				material.MaterialType = shdsrc->getShaderInfo(shdsrc->getShader({m_prop.materials[0]})).material;
+				matst->applyToSMaterial(m_prop.materials[0], &material);
 			setMaterialTextureAndFilters(material, texturestring, tsrc);
 		}
 	}
@@ -1328,7 +1329,7 @@ void GenericCAO::updateTextures(std::string mod)
 				material.MaterialType = m_material_type;
 
 				if (i < m_prop.materials.size() && !m_prop.materials[i].empty())
-					material.MaterialType = shdsrc->getShaderInfo(shdsrc->getShader({m_prop.materials[i]})).material;
+					matst->applyToSMaterial(m_prop.materials[i], &material);
 				material.BackfaceCulling = m_prop.backface_culling;
 				setMaterialTextureAndFilters(material, texturestring, tsrc);
 			}
@@ -1350,7 +1351,7 @@ void GenericCAO::updateTextures(std::string mod)
 				material.MaterialType = m_material_type;
 
 				if (i < m_prop.materials.size() && !m_prop.materials[i].empty())
-					material.MaterialType = shdsrc->getShaderInfo(shdsrc->getShader({m_prop.materials[i]})).material;
+					matst->applyToSMaterial(m_prop.materials[i], &material);
 				setMaterialTextureAndFilters(material, texturestring, tsrc);
 			}
 		} else if (m_prop.visual == OBJECTVISUAL_UPRIGHT_SPRITE) {
@@ -1364,7 +1365,7 @@ void GenericCAO::updateTextures(std::string mod)
 				auto &material = m_meshnode->getMaterial(0);
 
 				if (!m_prop.materials.empty() && !m_prop.materials[0].empty())
-					material.MaterialType = shdsrc->getShaderInfo(shdsrc->getShader({m_prop.materials[0]})).material;
+					matst->applyToSMaterial(m_prop.materials[0], &material);
 				setMaterialTextureAndFilters(material, tname, tsrc);
 			}
 			{
@@ -1378,7 +1379,7 @@ void GenericCAO::updateTextures(std::string mod)
 				auto &material = m_meshnode->getMaterial(1);
 
 				if (!m_prop.materials.empty() && !m_prop.materials[0].empty())
-					material.MaterialType = shdsrc->getShaderInfo(shdsrc->getShader({m_prop.materials[0]})).material;
+					matst->applyToSMaterial(m_prop.materials[0], &material);
 				setMaterialTextureAndFilters(material, tname, tsrc);
 			}
 			// Set mesh color (only if lighting is disabled)

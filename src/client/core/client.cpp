@@ -9,6 +9,7 @@
 #include <IO/IFileSystem.h>
 #include <json/json.h>
 #include "client.h"
+#include "client/render/material.h"
 #include "client/ui/fontengine.h"
 #include "network/clientopcodes.h"
 #include "network/connection.h"
@@ -100,6 +101,7 @@ Client::Client(
 		ELoginRegister allow_login_or_register
 ):
 	m_tsrc(tsrc),
+	m_matst(std::make_unique<MaterialStorage>(shsrc)),
 	m_shsrc(shsrc),
 	m_itemdef(itemdef),
 	m_nodedef(nodedef),

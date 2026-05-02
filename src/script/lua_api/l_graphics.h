@@ -2,6 +2,7 @@
 
 #include "l_base.h"
 #include "client/media/shader.h"
+#include "client/render/material.h"
 
 class UniformSetter : public ModApiBase
 {
@@ -31,6 +32,9 @@ class ModApiGraphics : public ModApiBase
 private:
 	// gfx.register_material
 	static int l_register_material(lua_State *L);
+
+	static void read_pbr(lua_State *L, PBRTextures &textures);
+	static void read_texture(lua_State *L, const std::string &name, video::GLTexture **tex);
 
 	static void read_constants(lua_State *L, ShaderConstants &constants);
 	static void read_shader_info(lua_State *L, ShaderInfo &info);
