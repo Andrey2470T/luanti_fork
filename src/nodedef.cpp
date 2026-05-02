@@ -1423,7 +1423,9 @@ void NodeDefManager::overrideShaderMaterials(const std::string &materialName, u3
 		for (u8 i = 0; i < def.materials.size(); i++) {
 			if (def.materials[i] == materialName) {
 				def.tiles[i].layers[0].shader_id = shaderId;
-				def.tiles[i].layers[1].shader_id = shaderId;
+
+				if (def.tiles[i].layers[1].texture)
+					def.tiles[i].layers[1].shader_id = shaderId;
 				def.special_tiles[i].layers[0].shader_id = shaderId;
 			}
 		}
