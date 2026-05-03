@@ -797,8 +797,7 @@ void MeshBufListMaps::addFromBlock(v3s16 block_pos, MapBlockMesh *block_mesh,
 			scene::IMeshBuffer *buf = mesh->getMeshBuffer(i);
 
 			auto &material = buf->getMaterial();
-			auto *rnd = driver->getMaterialRenderer(material.MaterialType);
-			bool transparent = rnd && rnd->isTransparent();
+			bool transparent = material.isTransparent();
 			if (!transparent)
 				add(buf, block_pos, layer);
 		}
@@ -1495,7 +1494,7 @@ void ClientMap::renderMapShadows(video::VideoDriver *driver,
 				local_material.FrontfaceCulling = false;
 			}
 			local_material.MaterialType = material.MaterialType;
-			local_material.BlendOperation = material.BlendOperation;
+			local_material.BlendMode = material.BlendMode;
 			driver->setMaterial(local_material);
 			++material_swaps;
 		}
@@ -1508,7 +1507,7 @@ void ClientMap::renderMapShadows(video::VideoDriver *driver,
 
 	// restore the driver material state
 	video::SMaterial clean;
-	clean.BlendOperation = video::EBO_ADD;
+	clean.BlendMode = video::EBM_ADD;
 	driver->setMaterial(clean); // reset material to defaults
 	// FIXME: why is this here?
 	driver->draw3DLine(v3f(), v3f(), video::SColor(0));

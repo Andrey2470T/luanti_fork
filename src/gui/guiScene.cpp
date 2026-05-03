@@ -51,7 +51,7 @@ void GUIScene::setTexture(u32 idx, video::GLTexture *texture)
 {
 	video::SMaterial &material = m_mesh->getMaterial(idx);
 	material.MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL;
-	material.MaterialTypeParam = 0.5f;
+	material.BlendMode = video::EBM_NONE;
 	material.TextureLayers[0].Texture = texture;
 	material.FogEnable = true;
 	material.TextureLayers[0].MinFilter = video::ETMINF_NEAREST_MIPMAP_NEAREST;

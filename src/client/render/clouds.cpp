@@ -38,7 +38,7 @@ Clouds::Clouds(scene::ISceneManager* mgr, ShaderSource *ssrc,
 	m_material.FogEnable = true;
 	m_material.AntiAliasing = video::EAAM_SIMPLE;
 	{
-		auto sid = ssrc->getShader({"cloud_shader", {}, {"fog"}, video::EMT_TRANSPARENT_ALPHA_CHANNEL});
+		auto sid = ssrc->getShader({"cloud_shader", {}, {"fog"}, true});
 		m_material.MaterialType = ssrc->getShaderInfo(sid).material;
 	}
 

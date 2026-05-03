@@ -51,7 +51,7 @@ public:
 class ShadowDepthShaderCB : public video::IShaderConstantSetCallBack
 {
 public:
-	void OnSetMaterial(const video::SMaterial &material) override {}
+	void OnSetMaterial(video::SMaterial &material) override {}
 
 	void OnSetUniforms(video::MaterialRenderer *renderer) override;
 

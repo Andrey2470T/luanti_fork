@@ -5,6 +5,19 @@
 #include "tile.h"
 #include <cassert>
 
+bool isTransparentLayer(MaterialType type)
+{
+	switch (type) {
+	case TILE_MATERIAL_ALPHA:
+	case TILE_MATERIAL_PLAIN_ALPHA:
+	case TILE_MATERIAL_LIQUID_TRANSPARENT:
+	case TILE_MATERIAL_WAVING_LIQUID_TRANSPARENT:
+		return true;
+	default:
+		return false;
+	}
+}
+
 void AnimationInfo::updateTexture(video::SMaterial &material, float animation_time)
 {
 	// Figure out current frame

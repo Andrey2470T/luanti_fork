@@ -43,14 +43,11 @@
                 shader = <Shader table>,
                 line_width = 2.0,
                 pbr = {
-                    color = <ColorSpec>,
                     metallic = <number>/<mapname>,
                     roughness = <number>/<mapname>,
                     ambient_occlusion = <number>/<mapname>,
                     normal = <mapname>,
-                    emission = <number>/<mapname>,
-                    transmission = <number>,
-                    ior = <number>
+                    emission = <number>/<mapname>
                 }
             },
             ...

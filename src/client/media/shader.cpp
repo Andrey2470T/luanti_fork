@@ -56,10 +56,17 @@ public:
 			m_src->m_script->on_set_uniforms(m_info, renderer);
 	}
 
-	virtual void OnSetMaterial(const video::SMaterial& material) override
+	virtual void OnSetMaterial(video::SMaterial& material) override
 	{
 		for (auto &&setter : m_setters)
 			setter->onSetMaterial(material);
+
+		if (m_info.transparent)
+			material.BlendMode = video::EBM_ALPHA;
+		else {
+			if (material.BlendMode == video::EBM_ALPHA)
+				material.BlendMode = video::EBM_NONE;
+		}
 	}
 };
 
@@ -162,7 +169,7 @@ class MainShaderUniformSetter : public IShaderUniformSetter
 public:
 	~MainShaderUniformSetter() = default;
 
-	virtual void onSetMaterial(const video::SMaterial& material) override
+	virtual void onSetMaterial(video::SMaterial& material) override
 	{
 		m_material_color = material.ColorParam;
 	}
@@ -303,6 +310,14 @@ u32 ShaderSource::getShader(const ShaderInfo &info, bool apply_shadows, bool for
 			info_c.fragment_includes.end(), {"shadow_uniforms", "shadow_common", "shadow_depth", "shadow_filter"});
 	}
 
+	if (info_c.basic_name.empty())
+		info_c.basic_name = info_c.name;
+
+	if (info_c.transparent)
+		info_c.constants["USE_DISCARD"] = 1;
+	else
+		info_c.constants["USE_DISCARD_REF"] = 1;
+
 	// Check if already have such instance
 	u32 i = 0;
 	for (; i < m_shaders.size(); i++) {
@@ -354,26 +369,7 @@ u32 ShaderSource::getShader(
 	info_c.constants["MATERIAL_TYPE"] = (s32)material_type;
 	info_c.constants["DRAWTYPE"] = (s32)drawtype;
 
-	video::E_MATERIAL_TYPE base_mat = video::EMT_SOLID;
-	switch (material_type) {
-		case TILE_MATERIAL_ALPHA:
-		case TILE_MATERIAL_PLAIN_ALPHA:
-		case TILE_MATERIAL_LIQUID_TRANSPARENT:
-		case TILE_MATERIAL_WAVING_LIQUID_TRANSPARENT:
-			base_mat = video::EMT_TRANSPARENT_ALPHA_CHANNEL;
-			break;
-		case TILE_MATERIAL_BASIC:
-		case TILE_MATERIAL_PLAIN:
-		case TILE_MATERIAL_WAVING_LEAVES:
-		case TILE_MATERIAL_WAVING_PLANTS:
-		case TILE_MATERIAL_WAVING_LIQUID_BASIC:
-			base_mat = video::EMT_TRANSPARENT_ALPHA_CHANNEL_REF;
-			break;
-		default:
-			break;
-	}
-
-	info_c.base_material = base_mat;
+	info_c.transparent = isTransparentLayer(material_type);
 
 	return getShader(info_c, apply_shadows, force_recompile);
 }
@@ -579,19 +575,6 @@ std::string ShaderGenerator::generateFragmentHeader()
 
 void ShaderGenerator::generate()
 {
-	// fixed pipeline materials don't make sense here
-	assert(info.base_material != video::EMT_TRANSPARENT_VERTEX_ALPHA &&
-			info.base_material != video::EMT_ONETEXTURE_BLEND);
-	info.material = info.base_material;
-
-	if (info.basic_name.empty())
-		info.basic_name = info.name;
-
-	if (info.base_material == video::EMT_TRANSPARENT_ALPHA_CHANNEL)
-		info.constants["USE_DISCARD"] = 1;
-	else if (info.base_material == video::EMT_TRANSPARENT_ALPHA_CHANNEL_REF)
-		info.constants["USE_DISCARD_REF"] = 1;
-
 	auto main_header = generateMainHeader();
 	auto vertex_header = generateVertexHeader();
 	auto fragment_header = generateFragmentHeader();
@@ -626,8 +609,7 @@ void ShaderGenerator::generate()
 	infostream << "Compiling high level shaders for " << log_name << std::endl;
 	s32 shadermat = RenderingEngine::get_video_driver()->addHighLevelShaderMaterial(
 		vertex_shader, fragment_shader, geometry_shader,
-		log_name, scene::EPT_TRIANGLES, scene::EPT_TRIANGLES, 0,
-		cb.get(), info.base_material, info.vertex_desc);
+		log_name, cb.get(), info.vertex_desc);
 	if (shadermat == -1) {
 		errorstream << "generateShader(): failed to generate shaders for "
 			<< log_name << ", addHighLevelShaderMaterial failed." << std::endl;

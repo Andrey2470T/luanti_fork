@@ -365,7 +365,7 @@ public:
 		}
 	}
 
-	void onSetMaterial(const video::SMaterial &material) override
+	void onSetMaterial(video::SMaterial &material) override
 	{
 		video::GLTexture *texture = material.getTexture(0);
 		if (texture) {

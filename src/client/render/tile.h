@@ -25,6 +25,8 @@ enum MaterialType : u8 {
 	TILE_MATERIAL_PLAIN_ALPHA
 };
 
+bool isTransparentLayer(MaterialType type);
+
 // Material flags
 // Should backface culling be enabled?
 #define MATERIAL_FLAG_BACKFACE_CULLING 0x01
@@ -103,16 +105,7 @@ struct TileLayer
 	/// @return is this layer semi-transparent?
 	bool isTransparent() const
 	{
-		// see also: the mapping in ShaderSource::generateShader()
-		switch (material_type) {
-		case TILE_MATERIAL_ALPHA:
-		case TILE_MATERIAL_PLAIN_ALPHA:
-		case TILE_MATERIAL_LIQUID_TRANSPARENT:
-		case TILE_MATERIAL_WAVING_LIQUID_TRANSPARENT:
-			return true;
-		default:
-			return false;
-		}
+		return isTransparentLayer(material_type);
 	}
 
 	// Ordered for size, please do not reorder

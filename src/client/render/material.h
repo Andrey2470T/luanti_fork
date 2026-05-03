@@ -18,18 +18,6 @@ struct PBRTextures
 	std::vector<video::GLTexture *> getUsedTextures() const;
 };
 
-enum class MaterialBlendMode : u8
-{
-	NORMAL,
-	ALPHA,
-	ADD,
-	SUBTRACT,
-	MULTIPLY,
-	DIVISION,
-	SCREEN,
-	OVERLAY
-};
-
 class ShaderSource;
 
 struct MaterialStorageEntry
@@ -38,7 +26,7 @@ struct MaterialStorageEntry
 
 	struct {
 		bool enable{false};
-		MaterialBlendMode mode{MaterialBlendMode::NORMAL};
+		video::E_BLEND_MODE mode{video::EBM_NONE};
 	} Blend;
 
 	struct {

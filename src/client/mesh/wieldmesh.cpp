@@ -279,7 +279,7 @@ void WieldMeshSceneNode::setExtruded(const std::string &imagename,
 		material.TextureLayers[0].TextureWrapU = video::ETC_CLAMP_TO_EDGE;
 		material.TextureLayers[0].TextureWrapV = video::ETC_CLAMP_TO_EDGE;
 		material.MaterialType = m_material_type;
-		material.MaterialTypeParam = 0.5f;
+		material.BlendMode = video::EBM_ALPHA;
 		material.BackfaceCulling = true;
 		// don't filter low-res textures, makes them look blurry
 		bool f_ok = std::min(dim.Width, dim.Height) >= TEXTURE_FILTER_MIN_SIZE;
@@ -436,7 +436,6 @@ void WieldMeshSceneNode::setItem(const ItemStack &item, Client *client, bool che
 			video::SMaterial &material = m_meshnode->getMaterial(i);
 			// FIXME: we should take different alpha modes of the mesh into account here
 			material.MaterialType = m_material_type;
-			material.MaterialTypeParam = 0.5f;
 			material.forEachTexture([this] (auto &tex) {
 				setMaterialFilters(tex, m_bilinear_filter, m_trilinear_filter,
 						m_anisotropic_filter);
@@ -604,7 +603,6 @@ void getItemMesh(Client *client, const ItemStack &item, ItemMesh *result)
 			video::SMaterial &material = buf->getMaterial();
 			// FIXME: overriding this breaks different alpha modes the mesh may have
 			material.MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL;
-			material.MaterialTypeParam = 0.5f;
 			material.forEachTexture([] (auto &tex) {
 				tex.MinFilter = video::ETMINF_NEAREST_MIPMAP_NEAREST;
 				tex.MagFilter = video::ETMAGF_NEAREST;
@@ -662,7 +660,7 @@ scene::SMesh *getExtrudedMesh(ITextureSource *tsrc,
 		});
 		material.BackfaceCulling = true;
 		material.MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL;
-		material.MaterialTypeParam = 0.5f;
+		material.BlendMode = video::EBM_ALPHA;
 	}
 	scaleMesh(mesh, v3f(2));
 

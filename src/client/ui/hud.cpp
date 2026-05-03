@@ -86,7 +86,7 @@ Hud::Hud(Client *client, LocalPlayer *player,
 	// Initialize m_selection_material
 	ShaderSource *shdrsrc = client->getShaderSource();
 	if (m_mode == HIGHLIGHT_HALO) {
-		auto shader_id = shdrsrc->getShaderRaw("selection_shader", true);
+		auto shader_id = shdrsrc->getShader({"selection_shader", {}, {}, true});
 		m_selection_material.MaterialType = shdrsrc->getShaderInfo(shader_id).material;
 	} else {
 		m_selection_material.MaterialType = video::EMT_SOLID;

@@ -965,7 +965,24 @@ void ParticleManager::reserveParticleSpace(size_t max_estimate)
 
 static void setBlendMode(video::SMaterial &material, BlendMode blendmode)
 {
-	video::E_BLEND_FACTOR bfsrc, bfdst;
+	switch(blendmode) {
+	case BlendMode::add:
+		material.BlendMode = video::EBM_ADD;
+		break;
+	case BlendMode::sub:
+		material.BlendMode = video::EBM_REVSUBTRACT;
+		break;
+	case BlendMode::screen:
+		material.BlendMode = video::EBM_SCREEN;
+		break;
+	default:
+		material.BlendMode = video::EBM_ALPHA;
+		break;
+	}
+
+	material.AlphaSource = video::EAS_TEXTURE | video::EAS_VERTEX_COLOR;
+
+	/*video::E_BLEND_FACTOR bfsrc, bfdst;
 	video::E_BLEND_OPERATION blendop;
 	switch (blendmode) {
 		case BlendMode::add:
@@ -997,7 +1014,7 @@ static void setBlendMode(video::SMaterial &material, BlendMode blendmode)
 			bfsrc, bfdst,
 			video::EMFN_MODULATE_1X,
 			video::EAS_TEXTURE | video::EAS_VERTEX_COLOR);
-	material.BlendOperation = blendop;
+	material.BlendOperation = blendop;*/
 }
 
 video::SMaterial ParticleManager::getMaterialForParticle(ShaderSource *shdsrc, const Particle *particle)
@@ -1018,7 +1035,8 @@ video::SMaterial ParticleManager::getMaterialForParticle(ShaderSource *shdsrc, c
 	if (blendmode == BlendMode::clip) {
 		material.ZWriteEnable = video::EZW_ON;
 		material.MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL_REF;
-		material.MaterialTypeParam = 0.5f;
+		material.BlendMode = video::EBM_NONE;
+		//material.MaterialTypeParam = 0.5f;
 	} else {
 		// We don't have working transparency sorting. Disable Z-Write for
 		// correct results for clipped-alpha at least.

@@ -434,7 +434,7 @@ void ShadowRenderer::renderShadowMap(video::GLTexture *target,
 	}
 	else {
 		material.MaterialType = (video::E_MATERIAL_TYPE) depth_shader;
-		material.BlendOperation = video::EBO_MIN;
+		material.BlendMode = video::EBM_MIN;
 	}
 
 	m_driver->setTransform(video::ETS_WORLD,
@@ -461,10 +461,10 @@ void ShadowRenderer::renderShadowObjects(
 		u32 n_node_materials = shadow_node.node->getMaterialCount();
 		std::vector<s32> BufferMaterialList;
 		std::vector<std::pair<bool, bool>> BufferMaterialCullingList;
-		std::vector<video::E_BLEND_OPERATION> BufferBlendOperationList;
+		std::vector<video::E_BLEND_MODE> BufferBlendModeList;
 		BufferMaterialList.reserve(n_node_materials);
 		BufferMaterialCullingList.reserve(n_node_materials);
-		BufferBlendOperationList.reserve(n_node_materials);
+		BufferBlendModeList.reserve(n_node_materials);
 
 		// backup materialtype for each material
 		// (aka shader)
@@ -478,7 +478,7 @@ void ShadowRenderer::renderShadowObjects(
 
 			BufferMaterialCullingList.emplace_back(
 				(bool)current_mat.BackfaceCulling, (bool)current_mat.FrontfaceCulling);
-			BufferBlendOperationList.push_back(current_mat.BlendOperation);
+			BufferBlendModeList.push_back(current_mat.BlendMode);
 
 			current_mat.BackfaceCulling = true;
 			current_mat.FrontfaceCulling = false;
@@ -497,7 +497,7 @@ void ShadowRenderer::renderShadowObjects(
 
 			current_mat.BackfaceCulling = BufferMaterialCullingList[m].first;
 			current_mat.FrontfaceCulling = BufferMaterialCullingList[m].second;
-			current_mat.BlendOperation = BufferBlendOperationList[m];
+			current_mat.BlendMode = BufferBlendModeList[m];
 		}
 
 	} // end for caster shadow nodes
@@ -538,7 +538,7 @@ void ShadowRenderer::createShaders()
 		depth_shader = m_driver->addHighLevelShaderMaterial(
 				readShaderFile(depth_shader_vs).c_str(),
 				readShaderFile(depth_shader_fs).c_str(), "",
-				m_shadow_depth_cb, video::EMT_ONETEXTURE_BLEND);
+				m_shadow_depth_cb);
 
 		if (depth_shader == -1) {
 			// upsi, something went wrong loading shader.

@@ -19,7 +19,7 @@ public:
 	 * @param shader_id ID of the shader in ShaderSource
 	 * @param texture_map Map of textures to be chosen from the render source
 	 */
-	PostProcessingStep(u32 shader_id, const std::vector<u8> &texture_map);
+	PostProcessingStep(u32 shader_id, const std::vector<u8> &texture_map, bool alpha_blend=false);
 
 
 	void setRenderSource(RenderSource *source) override;
@@ -36,6 +36,7 @@ public:
 	void setBilinearFilter(u8 index, bool value);
 private:
 	u32 shader_id;
+	bool alpha_blend {false};
 	std::vector<u8> texture_map;
 	RenderSource *source { nullptr };
 	RenderTarget *target { nullptr };

@@ -41,7 +41,7 @@ class IShaderUniformSetter {
 public:
 	virtual ~IShaderUniformSetter() = default;
 	virtual void onSetUniforms(video::MaterialRenderer *renderer) = 0;
-	virtual void onSetMaterial(const video::SMaterial& material)
+	virtual void onSetMaterial(video::SMaterial& material)
 	{ }
 };
 
@@ -208,7 +208,7 @@ struct ShaderInfo {
 	std::vector<std::string> vertex_includes = {};
 	// Fragment includes
 	std::vector<std::string> fragment_includes = {};
-	video::E_MATERIAL_TYPE base_material = video::EMT_SOLID;
+	bool transparent = false;
 	// Vertex shader filename
 	std::string vertex_shader = "opengl_vertex.glsl";
 	// Geometry shader filename
@@ -251,9 +251,7 @@ public:
 	 * the shader. Use `IShaderConstantSetter` to handle user settings.
 	 * @param name name of the shader (directory on disk)
 	 * @param input_const primary key constants for this shader
-	 * @param base_mat base material to use
 	 * @return shader ID
-	 * @note `base_material` only controls alpha behavior
 	 */
 	u32 getShader(const ShaderInfo &info, bool apply_shadows=false, bool force_recompile=false);
 
@@ -261,19 +259,6 @@ public:
 	u32 getShader(
 		const ShaderInfo &info, MaterialType material_type,
 		NodeDrawType drawtype=NDT_NORMAL, bool apply_shadows=true, bool force_recompile=false);
-
-	/**
-	 * Helper: Generates or gets a shader for common, general use.
-	 * @param name name of the shader
-	 * @param blendAlpha enable alpha blending for this material?
-	 * @return shader ID
-	 */
-	inline u32 getShaderRaw(const std::string &name, bool blendAlpha = false)
-	{
-		auto base_mat = blendAlpha ? video::EMT_TRANSPARENT_ALPHA_CHANNEL :
-			video::EMT_TRANSPARENT_ALPHA_CHANNEL_REF;
-		return getShader({name, {}, {}, base_mat});
-	}
 
 	void insertSourceShader(const std::string &name_of_shader,
 		const std::string &filename, const std::string &program);
