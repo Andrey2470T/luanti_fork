@@ -26,6 +26,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <GUI/IGUIFont.h>
 #include <Video/VideoDriver.h>
 
+#include "guiEditBoxWithScrollbar.h"
 #include "porting.h"
 #include "gettext.h"
 
@@ -84,8 +85,9 @@ void GUIPasswordChange::regenerateGui(v2u32 screensize)
 	{
 		core::rect<s32> rect(0, 0, 230 * s, 30 * s);
 		rect += topleft_client + v2s32(160 * s, ypos);
-		gui::IGUIEditBox *e = Environment->addEditBox(
-				m_oldpass.c_str(), rect, true, this, ID_oldPassword);
+		gui::IGUIEditBox *e = new GUIEditBoxWithScrollBar(
+				m_oldpass.c_str(), true, Environment, (IGUIElement *)Environment,
+				ID_oldPassword, rect, m_tsrc, true, false);
 		Environment->setFocus(e);
 		e->setPasswordBox(true);
 	}
@@ -99,8 +101,9 @@ void GUIPasswordChange::regenerateGui(v2u32 screensize)
 	{
 		core::rect<s32> rect(0, 0, 230 * s, 30 * s);
 		rect += topleft_client + v2s32(160 * s, ypos);
-		gui::IGUIEditBox *e = Environment->addEditBox(
-				m_newpass.c_str(), rect, true, this, ID_newPassword1);
+		gui::IGUIEditBox *e = new GUIEditBoxWithScrollBar(
+				m_newpass.c_str(), true, Environment, (IGUIElement *)Environment,
+				ID_newPassword1, rect, m_tsrc, true, false);
 		e->setPasswordBox(true);
 	}
 	ypos += 50 * s;
@@ -113,8 +116,9 @@ void GUIPasswordChange::regenerateGui(v2u32 screensize)
 	{
 		core::rect<s32> rect(0, 0, 230 * s, 30 * s);
 		rect += topleft_client + v2s32(160 * s, ypos);
-		gui::IGUIEditBox *e = Environment->addEditBox(
-				m_newpass_confirm.c_str(), rect, true, this, ID_newPassword2);
+		gui::IGUIEditBox *e = new GUIEditBoxWithScrollBar(
+				m_newpass_confirm.c_str(), true, Environment, (IGUIElement *)Environment,
+				ID_newPassword2, rect, m_tsrc, true, false);
 		e->setPasswordBox(true);
 	}
 

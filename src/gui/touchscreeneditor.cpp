@@ -11,7 +11,7 @@
 #include "irr_gui_ptr.h"
 #include "settings.h"
 
-#include "GUI/IGUIButton.h"
+#include "guiButton.h"
 #include "GUI/IGUIFont.h"
 #include "GUI/IGUIImage.h"
 #include "GUI/IGUIStaticText.h"
@@ -31,15 +31,15 @@ GUITouchscreenLayout::GUITouchscreenLayout(gui::IGUIEnvironment* env,
 			L"", core::recti(), false, false, this, -1));
 	m_gui_help_text->setTextAlignment(EGUIA_CENTER, EGUIA_CENTER);
 
-	m_gui_add_btn = grab_gui_element<IGUIButton>(Environment->addButton(
-			core::recti(), this, -1, wstrgettext("Add button").c_str()));
-	m_gui_reset_btn = grab_gui_element<IGUIButton>(Environment->addButton(
-			core::recti(), this, -1, wstrgettext("Reset").c_str()));
-	m_gui_done_btn = grab_gui_element<IGUIButton>(Environment->addButton(
-			core::recti(), this, -1, wstrgettext("Done").c_str()));
+	m_gui_add_btn = grab_gui_element<IGUIButton>(GUIButton::addButton(
+			env, core::recti(), tsrc, this, -1, wstrgettext("Add button").c_str()));
+	m_gui_reset_btn = grab_gui_element<IGUIButton>(GUIButton::addButton(
+			env, core::recti(), tsrc, this, -1, wstrgettext("Reset").c_str()));
+	m_gui_done_btn = grab_gui_element<IGUIButton>(GUIButton::addButton(
+			env, core::recti(), tsrc, this, -1, wstrgettext("Done").c_str()));
 
-	m_gui_remove_btn = grab_gui_element<IGUIButton>(Environment->addButton(
-		core::recti(), this, -1, wstrgettext("Remove").c_str()));
+	m_gui_remove_btn = grab_gui_element<IGUIButton>(GUIButton::addButton(
+		env, core::recti(), tsrc, this, -1, wstrgettext("Remove").c_str()));
 }
 
 GUITouchscreenLayout::~GUITouchscreenLayout()

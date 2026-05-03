@@ -14,6 +14,7 @@
 #include "constants.h"
 #include "gamedef.h"
 #include "client/input/keycode.h"
+#include "gui/guiComboBox.h"
 #include "gui/guiTable.h"
 #include "util/strfnd.h"
 #include <GUI/IGUIButton.h>
@@ -54,6 +55,7 @@
 #include "guiInventoryList.h"
 #include "guiItemImage.h"
 #include "guiScrollContainer.h"
+#include "guiTabControl.h"
 #include "guiHyperText.h"
 #include "guiScene.h"
 
@@ -1387,8 +1389,8 @@ void GUIFormSpecMenu::parseDropDown(parserData* data, const std::string &element
 	spec.send = true;
 
 	//now really show list
-	gui::IGUIComboBox *e = Environment->addComboBox(rect, data->current_parent,
-			spec.fid);
+	gui::IGUIComboBox *e = CGUIComboBox::addComboBox(Environment, rect, data->current_parent,
+			spec.fid, m_tsrc);
 
 	if (spec.fname == m_focused_element) {
 		Environment->setFocus(e);
@@ -1480,8 +1482,8 @@ void GUIFormSpecMenu::parsePwdField(parserData* data, const std::string &element
 		);
 
 	spec.send = true;
-	gui::IGUIEditBox *e = Environment->addEditBox(0, rect, true,
-			data->current_parent, spec.fid);
+	gui::IGUIEditBox *e = new GUIEditBoxWithScrollBar(0, true, Environment,
+			data->current_parent, spec.fid, rect, m_tsrc, true, false);
 
 	if (spec.fname == m_focused_element) {
 		Environment->setFocus(e);
@@ -1537,15 +1539,8 @@ void GUIFormSpecMenu::createTextField(parserData *data, FieldSpec &spec,
 		spec.flabel.swap(spec.fdefault);
 	}
 
-	gui::IGUIEditBox *e = nullptr;
-	if (is_multiline) {
-		e = new GUIEditBoxWithScrollBar(spec.fdefault.c_str(), true, Environment,
-				data->current_parent, spec.fid, rect, m_tsrc, is_editable, true);
-	} else if (is_editable) {
-		e = Environment->addEditBox(spec.fdefault.c_str(), rect, true,
-				data->current_parent, spec.fid);
-		e->grab();
-	}
+	gui::IGUIEditBox *e = new GUIEditBoxWithScrollBar(spec.fdefault.c_str(), true, Environment,
+				data->current_parent, spec.fid, rect, m_tsrc, is_editable, is_multiline);
 
 	auto style = getDefaultStyleForElement(is_multiline ? "textarea" : "field", spec.fname);
 
@@ -2133,8 +2128,10 @@ void GUIFormSpecMenu::parseTabHeader(parserData* data, const std::string &elemen
 	core::rect<s32> rect = core::rect<s32>(pos.X, pos.Y, pos.X+geom.X,
 			pos.Y+geom.Y);
 
-	gui::IGUITabControl *e = Environment->addTabControl(rect,
-			data->current_parent, show_background, show_border, spec.fid);
+	gui::IGUITabControl *e = new gui::CGUITabControl(Environment,
+			data->current_parent ? data->current_parent : (gui::IGUIElement *)Environment,
+			rect, m_tsrc, show_background, show_border, spec.fid);
+	e->drop();
 	e->setAlignment(gui::EGUIA_UPPERLEFT, gui::EGUIA_UPPERLEFT,
 			gui::EGUIA_UPPERLEFT, gui::EGUIA_LOWERRIGHT);
 	e->setTabHeight(geom.Y);

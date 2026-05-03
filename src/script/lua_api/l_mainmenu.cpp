@@ -855,6 +855,7 @@ int ModApiMainMenu::l_show_path_select_dialog(lua_State *L)
 		new GUIFileSelectMenu(engine->m_rendering_engine->get_gui_env(),
 				engine->m_parent,
 				-1,
+				getClient(L)->getTextureSource(),
 				engine->m_menumanager,
 				title,
 				formname,

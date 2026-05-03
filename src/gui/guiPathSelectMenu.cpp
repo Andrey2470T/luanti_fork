@@ -4,14 +4,15 @@
 
 #include "guiPathSelectMenu.h"
 #include "guiFormSpecMenu.h" //required because of TextDest only !!!
+#include "guiFileOpenDialog.h"
 
 GUIFileSelectMenu::GUIFileSelectMenu(gui::IGUIEnvironment* env,
-		gui::IGUIElement* parent, s32 id, IMenuManager *menumgr,
-		const std::string &title, const std::string &formname,
+		gui::IGUIElement* parent, s32 id, ISimpleTextureSource *tsrc,
+		IMenuManager *menumgr, const std::string &title, const std::string &formname,
 		bool is_file_select) :
 	GUIModalMenu(env, parent, id, menumgr),
 	m_title(utf8_to_wide(title)),
-	m_formname(formname),
+	m_tsrc(tsrc), m_formname(formname),
 	m_file_select_dialog(is_file_select)
 {
 }
@@ -33,7 +34,7 @@ void GUIFileSelectMenu::regenerateGui(v2u32 screensize)
 	recalculateAbsolutePosition(false);
 
 	m_fileOpenDialog =
-			Environment->addFileOpenDialog(m_title.c_str(), false, this, -1);
+			CGUIFileOpenDialog::addFileOpenDialog(m_title.c_str(), false, Environment, this, -1, m_tsrc);
 
 	core::position2di pos = core::position2di(screensize.X / 2 - size.Width / 2,
 			screensize.Y / 2 - size.Height / 2);

@@ -11,12 +11,13 @@
 #include "GUI/IGUIFileOpenDialog.h"
 
 struct TextDest;
+class ISimpleTextureSource;
 
 class GUIFileSelectMenu : public GUIModalMenu
 {
 public:
 	GUIFileSelectMenu(gui::IGUIEnvironment *env, gui::IGUIElement *parent, s32 id,
-			IMenuManager *menumgr, const std::string &title,
+			ISimpleTextureSource *tsrc, IMenuManager *menumgr, const std::string &title,
 			const std::string &formid, bool is_file_select);
 	~GUIFileSelectMenu();
 
@@ -42,6 +43,8 @@ private:
 	bool m_accepted = false;
 
 	gui::IGUIFileOpenDialog *m_fileOpenDialog = nullptr;
+
+	ISimpleTextureSource *m_tsrc;
 
 	TextDest *m_text_dst = nullptr;
 
