@@ -86,6 +86,95 @@ void UniformSetter::Register(lua_State *L)
 
 const char UniformSetter::className[] = "Setter";
 
+void ModApiGraphics::read_basic_state(lua_State *L, MaterialStorageEntry &entry)
+{
+	// Blend
+	lua_getfield(L, 2, "blend");
+
+	if (lua_istable(L, -1)) {
+		entry.StateFlags |= MF_BLEND;
+
+		bool enable = getboolfield_default(L, -1, "enable", false);
+
+		std::unordered_map<std::string, video::E_BLEND_MODE> mapNameToBM = {
+			{"alpha", video::EBM_ALPHA}, {"add", video::EBM_ADD},
+			{"subtract", video::EBM_SUBTRACT}, {"revsubtract", video::EBM_REVSUBTRACT},
+			{"multiply", video::EBM_MULTIPLY}, {"screen", video::EBM_SCREEN}
+		};
+		if (!enable)
+			entry.Blend = video::EBM_NONE;
+		else {
+			std::string mode = getstringfield_default(L, -1, "mode", "alpha");
+			entry.Blend = mapNameToBM[mode];
+		}
+	}
+
+	lua_pop(L, 1);
+
+	std::unordered_map<std::string, video::E_COMPARISON_FUNC> mapNameToCF = {
+		{"lessequal", video::ECFN_LESSEQUAL}, {"equal", video::ECFN_EQUAL},
+		{"less", video::ECFN_LESS}, {"notequal", video::ECFN_NOTEQUAL},
+		{"greaterequal", video::ECFN_GREATEREQUAL}, {"greater", video::ECFN_GREATER},
+		{"always", video::ECFN_ALWAYS}, {"never", video::ECFN_NEVER}
+	};
+
+	// Depth
+	lua_getfield(L, 2, "depth");
+
+	if (lua_istable(L, -1)) {
+		entry.StateFlags |= MF_DEPTH;
+
+		bool enable = getboolfield_default(L, -1, "enable", false);
+
+		if (!enable)
+			entry.Depth = video::ECFN_DISABLED;
+		else {
+			std::string func = getstringfield_default(L, -1, "func", "less");
+			entry.Depth = mapNameToCF[func];
+		}
+	}
+
+	lua_pop(L, 1);
+
+	// Stencil
+	lua_getfield(L, 2, "stencil");
+
+	if (lua_istable(L, -1)) {
+		entry.StateFlags |= MF_STENCIL;
+
+		bool enable = getboolfield_default(L, -1, "enable", false);
+
+		if (!enable)
+			entry.Depth = video::ECFN_DISABLED;
+		else {
+			std::string func = getstringfield_default(L, -1, "func", "less");
+			entry.Depth = mapNameToCF[func];
+		}
+	}
+
+	lua_pop(L, 1);
+
+	// Culling
+	lua_getfield(L, 2, "cull");
+
+	if (lua_istable(L, -1)) {
+		entry.StateFlags |= MF_CULL;
+
+		entry.Cull.enable = getboolfield_default(L, -1, "enable", false);
+
+		if (entry.Cull.enable) {
+			std::string mode = getstringfield_default(L, -1, "mode", "back");
+
+			std::unordered_map<std::string, video::E_CULL_MODE> mapNameToCM = {
+				{"back", video::ECM_BACK}, {"front", video::ECM_FRONT}, {"back_and_front", video::ECM_FRONT_AND_BACK}
+			};
+
+			entry.Cull.mode = mapNameToCM[mode];
+		}
+	}
+
+	lua_pop(L, 1);
+}
 
 void ModApiGraphics::read_pbr(lua_State *L, PBRTextures &textures)
 {
@@ -199,6 +288,9 @@ int ModApiGraphics::l_register_material(lua_State *L)
 
 	MaterialStorageEntry entry;
 	entry.Name = name;
+
+	// Blend, depth, stencil and cull tables
+	read_basic_state(L, entry);
 
 	// Shader table
 	lua_getfield(L, 2, "shader");

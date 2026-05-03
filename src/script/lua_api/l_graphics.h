@@ -33,6 +33,7 @@ private:
 	// gfx.register_material
 	static int l_register_material(lua_State *L);
 
+	static void read_basic_state(lua_State *L, MaterialStorageEntry &entry);
 	static void read_pbr(lua_State *L, PBRTextures &textures);
 	static void read_texture(lua_State *L, const std::string &name, video::GLTexture **tex);
 

@@ -18,35 +18,35 @@ struct PBRTextures
 	std::vector<video::GLTexture *> getUsedTextures() const;
 };
 
+enum MaterialStateFlags : u8
+{
+	MF_NONE =	 0x00,
+	MF_BLEND =	 0x01,
+	MF_DEPTH =	 0x02,
+	MF_STENCIL = 0x04,
+	MF_CULL =	 0x07
+};
+
 class ShaderSource;
 
 struct MaterialStorageEntry
 {
 	std::string Name{""};
 
-	struct {
-		bool enable{false};
-		video::E_BLEND_MODE mode{video::EBM_NONE};
-	} Blend;
+	video::E_BLEND_MODE Blend{video::EBM_NONE};
 
-	struct {
-		bool enable{true};
-		video::E_COMPARISON_FUNC func{video::ECFN_LESS};
-	} Depth;
+	video::E_COMPARISON_FUNC Depth{video::ECFN_LESS};
 
-	struct {
-		bool enable{false};
-		video::E_COMPARISON_FUNC func{video::ECFN_LESS};
-	} Stencil;
+	video::E_COMPARISON_FUNC Stencil{video::ECFN_LESS};
 
 	struct {
 		bool enable{true};
 		video::E_CULL_MODE mode{video::ECM_BACK};
 	} Cull;
 
-	u32 ShaderID{0};
+	u8 StateFlags{MF_NONE};
 
-	f32 LineWidth{1.0f};
+	u32 ShaderID{0};
 
 	PBRTextures PBR;
 

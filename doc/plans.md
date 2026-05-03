@@ -20,9 +20,7 @@
             {  -- первый слот
                 blend = {
                     enable = true/false,
-                    -- Blend modes: "normal", "alpha", "add", "subtract", "multiply", "division",
-                      "screen", "overlay", "hardlight", "softlight", "grain_extract", "grain_merge",
-                      "darken_only", "lighten_only"
+                    -- Blend modes: "alpha", "add", "subtract", "revsubtract", "multiply", "screen"
                     mode = <Blend modes>
                 },
                 depth = {
@@ -33,15 +31,12 @@
                 stencil = {
                     enable = true/false,
                     func = = <Compare functions>,
-                    ref = 1.0,
-                    mode = "keep"/"zero"/"replace"...
                 },
                 cull = {
                     enable = true/false,
                     mode = "back"/"front"/"front_and_back"
                 },
                 shader = <Shader table>,
-                line_width = 2.0,
                 pbr = {
                     metallic = <number>/<mapname>,
                     roughness = <number>/<mapname>,

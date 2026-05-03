@@ -26,6 +26,25 @@ void MaterialStorageEntry::applyToSMaterial(ShaderSource *shdsrc, video::SMateri
 
 	mat->MaterialType = shdsrc->getShaderInfo(ShaderID).material;
 
+	if (StateFlags & MF_BLEND)
+		mat->BlendMode = Blend;
+	if (StateFlags & MF_DEPTH)
+		mat->ZBuffer = Depth;
+	if (StateFlags & MF_STENCIL)
+		mat->StencilBuffer = Stencil;
+	if (StateFlags & MF_CULL) {
+		if (!Cull.enable) {
+			mat->BackfaceCulling = false;
+			mat->FrontfaceCulling = false;
+		}
+		else {
+			if (Cull.mode == video::ECM_BACK || Cull.mode == video::ECM_FRONT_AND_BACK)
+				mat->BackfaceCulling = true;
+			if (Cull.mode == video::ECM_FRONT || Cull.mode == video::ECM_FRONT_AND_BACK)
+				mat->FrontfaceCulling = true;
+		}
+	}
+
 	auto pbr_textures = PBR.getUsedTextures();
 
 	if (pbr_textures.empty())
