@@ -111,7 +111,7 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/lib/irrlicht_redo")
 	get_target_property(IrrlichtRedo_VERSION IrrlichtRedo VERSION)
 	message(STATUS "Found IrrlichtRedo ${IrrlichtRedo_VERSION}")
 
-	set(REQUIRED_VERSION 1.0.0)
+	set(REQUIRED_VERSION 1.3.0)
 	if(IrrlichtRedo_VERSION VERSION_LESS ${REQUIRED_VERSION})
 		message(FATAL_ERROR "At least IrrlichtRedo ${REQUIRED_VERSION} is required to build")
 	elseif(NOT DEVELOPMENT_BUILD AND IrrlichtRedo_VERSION VERSION_GREATER ${REQUIRED_VERSION})

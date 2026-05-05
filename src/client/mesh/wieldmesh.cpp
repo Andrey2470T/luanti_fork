@@ -357,7 +357,7 @@ void WieldMeshSceneNode::setItem(const ItemStack &item, Client *client, bool che
 
 	scene::SMesh *mesh = nullptr;
 
-	u32 shader_id = shdrsrc->getShader({"object_shader", {"final_light_color"}, {"fog"}}, TILE_MATERIAL_BASIC);
+	u32 shader_id = shdrsrc->getShader({"object_shader", {"lighting"}, {"fog"}}, TILE_MATERIAL_BASIC);
 	m_material_type = shdrsrc->getShaderInfo(shader_id).material;
 
 	// Color-related

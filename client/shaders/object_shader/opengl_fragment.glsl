@@ -20,7 +20,7 @@ in vec3 vPosition;
 // cameraOffset + worldPosition (for large coordinates the limits of float
 // precision must be considered).
 in vec3 worldPosition;
-in lowp vec4 varColor;
+in lowp vec3 varColor;
 in lowp vec3 dayLight;
 
 #ifdef GL_ES

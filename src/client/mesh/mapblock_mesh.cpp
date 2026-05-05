@@ -891,7 +891,7 @@ void MapBlockMesh::consolidateTransparentBuffers()
 video::SColor encode_light(u16 light, u8 emissive_light)
 {
 	// Get components
-	u32 day = (light & 0xff);
+	/*u32 day = (light & 0xff);
 	u32 night = (light >> 8);
 	// Add emissive light
 	night += emissive_light * 2.5f;
@@ -912,8 +912,10 @@ video::SColor encode_light(u16 light, u8 emissive_light)
 	else
 		r = 0;
 	// Average light:
-	float b = (day + night) / 2;
-	return video::SColor(r, b, b, b);
+	float b = (day + night) / 2;*/
+	u8 skyLight = light & 0xff;
+	u8 blockLight = (light >> 8);
+	return video::SColor(0, skyLight, blockLight, 0);
 }
 
 u8 get_solid_sides(MeshMakeData *data)

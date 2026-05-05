@@ -22,12 +22,12 @@ in vec3 vPosition;
 // precision must be considered).
 in vec3 worldPosition;
 #ifdef GL_ES
-in lowp vec4 varColor;
+in lowp vec3 varColor;
 in lowp vec3 dayLight;
 in mediump vec2 varTexCoord;
 in float nightRatio;
 #else
-centroid in lowp vec4 varColor;
+centroid in lowp vec3 varColor;
 centroid in lowp vec3 dayLight;
 centroid in vec2 varTexCoord;
 centroid in float nightRatio;

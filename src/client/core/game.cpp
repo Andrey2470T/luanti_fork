@@ -198,6 +198,7 @@ class GameGlobalShaderUniformSetter : public IShaderUniformSetter
 	CachedShaderSetting<f32>
 		m_animation_timer_delta_pixel{"animationTimerDelta"};
 	CachedShaderSetting<f32> m_daynight_ratio{"dayNightRatio"};
+	CachedShaderSetting<f32> m_timeofday{"timeOfDay"};
 	CachedShaderSetting<f32, 3> m_minimap_yaw{"yawVec"};
 	CachedShaderSetting<f32, 3> m_camera_offset_pixel{"cameraOffset"};
 	CachedShaderSetting<f32, 3> m_camera_offset_vertex{"cameraOffset"};
@@ -268,6 +269,9 @@ public:
 	{
 		f32 daynight_ratio = (f32)m_client->getEnv().getDayNightRatio();
 		m_daynight_ratio.set(daynight_ratio, renderer);
+
+		f32 timeofday = m_client->getEnv().getTimeOfDayF();
+		m_timeofday.set(timeofday, renderer);
 
 		u32 animation_timer = m_client->getEnv().getFrameTime() % 1000000;
 		f32 animation_timer_f = (f32)animation_timer / 100000.f;

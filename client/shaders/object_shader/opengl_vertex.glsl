@@ -2,11 +2,12 @@ uniform mat4 mWorld;
 uniform float dayNightRatio;
 uniform float animationTimer;
 uniform lowp vec4 materialColor;
+uniform float timeOfDay;
 
 out vec3 vNormal;
 out vec3 vPosition;
 out vec3 worldPosition;
-out lowp vec4 varColor;
+out lowp vec3 varColor;
 out lowp vec3 dayLight;
 
 #ifdef GL_ES
@@ -62,9 +63,13 @@ void main(void)
 	// Calculate color.
 	vec4 color = inColor;
 	color *= materialColor;
-	dayLight = getSunlightColor(dayNightRatio);
-	nightRatio = 1.0 - color.a;
-	varColor = finalLightColor(dayLight, color);
+	//dayLight = getSunlightColor(dayNightRatio);
+	int skyLight = int(color.r * 16.0);
+	int blockLight = int(color.g * 16.0);
+	float sum = float(max(skyLight + blockLight, 0));
+	nightRatio = 1.0 - (skyLight / sum);
+	//varColor = finalLightColor(dayLight, color);
+	varColor = calculateLighting(skyLight, blockLight, timeOfDay);
 
 #ifdef ENABLE_DYNAMIC_SHADOWS
 	if (f_shadow_strength > 0.0) {
