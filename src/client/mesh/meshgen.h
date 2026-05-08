@@ -12,6 +12,7 @@ struct MeshCollector;
 struct LightPair {
 	u8 lightDay;
 	u8 lightNight;
+	f32 ambientOcclusion = 0.0f;
 
 	LightPair() = default;
 	explicit LightPair(u16 value) : lightDay(value & 0xff), lightNight(value >> 8) {}
@@ -23,9 +24,10 @@ struct LightPair {
 };
 
 struct LightInfo {
-	float light_day;
-	float light_night;
-	float light_boosted;
+	f32 light_day;
+	f32 light_night;
+	f32 light_boosted;
+	f32 ambient_occlusion = 0.0f;
 
 	LightPair getPair(float sunlight_boost = 0.0) const
 	{
@@ -39,6 +41,7 @@ struct LightInfo {
 struct LightFrame {
 	f32 lightsDay[8];
 	f32 lightsNight[8];
+	f32 ambientOcclusion[8];
 	bool sunlight[8];
 };
 

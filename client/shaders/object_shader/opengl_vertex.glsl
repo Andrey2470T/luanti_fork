@@ -65,9 +65,10 @@ void main(void)
 	color *= materialColor;
 	float skyLight = color.r;
 	float blockLight = color.g;
+	float ao = color.b;
 	float sum = float(max(skyLight + blockLight, 0));
 	nightRatio = 1.0 - (skyLight / sum);
-	varColor = calculateLighting(skyLight, blockLight, timeOfDay);
+	varColor = calculateLighting(skyLight, blockLight, timeOfDay, ao);
 
 #ifdef ENABLE_DYNAMIC_SHADOWS
 	if (f_shadow_strength > 0.0) {

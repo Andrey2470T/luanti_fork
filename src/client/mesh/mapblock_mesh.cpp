@@ -152,16 +152,14 @@ u16 getFaceLight(MapNode n, MapNode n2, const NodeDefManager *ndef)
 	Both light banks
 */
 static u16 getSmoothLightCombined(const v3s16 &p,
-	const std::array<v3s16,8> &dirs, MeshMakeData *data)
+	const std::array<v3s16,8> &dirs, MeshMakeData *data, f32 &ambient_occlusion_f)
 {
 	const NodeDefManager *ndef = data->m_nodedef;
 
 	u16 ambient_occlusion = 0;
-	u16 light_count = 0;
 	u8 light_source_max = 0;
-	u16 light_day = 0;
-	u16 light_night = 0;
-	bool direct_sunlight = false;
+	u16 light_day_max = 0;
+	u16 light_night_max = 0;
 
 	auto add_node = [&] (u8 i, bool obstructed = false) -> bool {
 		if (obstructed) {
@@ -178,11 +176,9 @@ static u16 getSmoothLightCombined(const v3s16 &p,
 		if (f.param_type == CPT_LIGHT && f.solidness != 2) {
 			u8 light_level_day = n.getLight(LIGHTBANK_DAY, f.getLightingFlags());
 			u8 light_level_night = n.getLight(LIGHTBANK_NIGHT, f.getLightingFlags());
-			if (light_level_day == LIGHT_SUN)
-				direct_sunlight = true;
-			light_day += decode_light(light_level_day);
-			light_night += decode_light(light_level_night);
-			light_count++;
+
+			light_day_max = std::max((u16)decode_light(light_level_day), light_day_max);
+			light_night_max = std::max((u16)decode_light(light_level_night), light_night_max);
 		} else {
 			ambient_occlusion++;
 		}
@@ -206,30 +202,6 @@ static u16 getSmoothLightCombined(const v3s16 &p,
 			add_node(k + 4, !obstructed[k]);
 	}
 
-	if (light_count == 0) {
-		light_day = light_night = 0;
-	} else {
-		light_day /= light_count;
-		light_night /= light_count;
-	}
-
-	// boost direct sunlight, if any
-	if (direct_sunlight)
-		light_day = 0xFF;
-
-	// Boost brightness around light sources
-	bool skip_ambient_occlusion_day = false;
-	if (decode_light(light_source_max) >= light_day) {
-		light_day = decode_light(light_source_max);
-		skip_ambient_occlusion_day = true;
-	}
-
-	bool skip_ambient_occlusion_night = false;
-	if(decode_light(light_source_max) >= light_night) {
-		light_night = decode_light(light_source_max);
-		skip_ambient_occlusion_night = true;
-	}
-
 	if (ambient_occlusion > 4) {
 		static thread_local const float ao_gamma = rangelim(
 			g_settings->getFloat("ambient_occlusion_gamma"), 0.25, 4.0);
@@ -244,15 +216,13 @@ static u16 getSmoothLightCombined(const v3s16 &p,
 		//calculate table index for gamma space multiplier
 		ambient_occlusion -= 5;
 
-		if (!skip_ambient_occlusion_day)
-			light_day = rangelim(core::round32(
-				light_day * light_amount[ambient_occlusion]), 0, 255);
-		if (!skip_ambient_occlusion_night)
-			light_night = rangelim(core::round32(
-				light_night * light_amount[ambient_occlusion]), 0, 255);
+		ambient_occlusion_f = light_amount[ambient_occlusion];
 	}
 
-	return light_day | (light_night << 8);
+	// Boost the night part with the max light source
+	light_night_max = std::max(light_night_max, (u16)decode_light(light_source_max));
+
+	return light_day_max | (light_night_max << 8);
 }
 
 /*
@@ -260,9 +230,9 @@ static u16 getSmoothLightCombined(const v3s16 &p,
 	Both light banks.
 	Node at p is solid, and thus the lighting is face-dependent.
 */
-u16 getSmoothLightSolid(const v3s16 &p, const v3s16 &face_dir, const v3s16 &corner, MeshMakeData *data)
+u16 getSmoothLightSolid(const v3s16 &p, const v3s16 &face_dir, const v3s16 &corner, MeshMakeData *data, f32 &ambient_occlusion_f)
 {
-	return getSmoothLightTransparent(p + face_dir, corner - 2 * face_dir, data);
+	return getSmoothLightTransparent(p + face_dir, corner - 2 * face_dir, data, ambient_occlusion_f);
 }
 
 /*
@@ -270,7 +240,7 @@ u16 getSmoothLightSolid(const v3s16 &p, const v3s16 &face_dir, const v3s16 &corn
 	Both light banks.
 	Node at p is not solid, and the lighting is not face-dependent.
 */
-u16 getSmoothLightTransparent(const v3s16 &p, const v3s16 &corner, MeshMakeData *data)
+u16 getSmoothLightTransparent(const v3s16 &p, const v3s16 &corner, MeshMakeData *data, f32 &ambient_occlusion_f)
 {
 	const std::array<v3s16,8> dirs = {{
 		// Always shine light
@@ -285,7 +255,7 @@ u16 getSmoothLightTransparent(const v3s16 &p, const v3s16 &corner, MeshMakeData 
 		v3s16(0,corner.Y,corner.Z),
 		v3s16(corner.X,corner.Y,corner.Z)
 	}};
-	return getSmoothLightCombined(p, dirs, data);
+	return getSmoothLightCombined(p, dirs, data, ambient_occlusion_f);
 }
 
 /*
@@ -843,14 +813,14 @@ void MapBlockMesh::consolidateTransparentBuffers()
 	m_transparent_buffers_consolidated = true;
 }
 
-video::SColor encode_light(u16 light, u8 emissive_light)
+video::SColor encode_light(u16 light, u8 emissive_light, f32 ambient_occlusion)
 {
 	u16 skyLight = light & 0xff;
 	u16 blockLight = (light >> 8);
 	blockLight += emissive_light * 2.5f;
 	blockLight = std::min<u16>(blockLight, 255);
 
-	return video::SColor(0, skyLight, blockLight, 0);
+	return video::SColor(0, skyLight, blockLight, ambient_occlusion*255.0f);
 }
 
 u8 get_solid_sides(MeshMakeData *data)
