@@ -3372,19 +3372,7 @@ PointedThing Game::updatePointedThing(
 				light_level = node_light;
 		}
 
-		u32 daynight_ratio = client->getEnv().getDayNightRatio();
-		video::SColor c;
-		final_color_blend(&c, light_level, daynight_ratio);
-
-		// Modify final color a bit with time
-		u32 timer = client->getEnv().getFrameTime() % 5000;
-		float timerf = (float) (core::PI * ((timer / 2500.0) - 0.5));
-		float sin_r = 0.08f * std::sin(timerf);
-		float sin_g = 0.08f * std::sin(timerf + core::PI * 0.5f);
-		float sin_b = 0.08f * std::sin(timerf + core::PI);
-		c.setRed(core::clamp(core::round32(c.getRed() * (0.8 + sin_r)), 0, 255));
-		c.setGreen(core::clamp(core::round32(c.getGreen() * (0.8 + sin_g)), 0, 255));
-		c.setBlue(core::clamp(core::round32(c.getBlue() * (0.8 + sin_b)), 0, 255));
+		video::SColor c = encode_light(light_level, 0);
 
 		// Set mesh final color
 		hud->setSelectionMeshColor(c);

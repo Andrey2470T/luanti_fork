@@ -172,8 +172,8 @@ static u16 getSmoothLightCombined(const v3s16 &p,
 		if (n.getContent() == CONTENT_IGNORE)
 			return true;
 		const ContentFeatures &f = ndef->get(n);
-		if (f.light_source > light_source_max)
-			light_source_max = f.light_source;
+		light_source_max = std::max(light_source_max, f.light_source);
+
 		// Check f.solidness because fast-style leaves look better this way
 		if (f.param_type == CPT_LIGHT && f.solidness != 2) {
 			u8 light_level_day = n.getLight(LIGHTBANK_DAY, f.getLightingFlags());
@@ -246,10 +246,10 @@ static u16 getSmoothLightCombined(const v3s16 &p,
 
 		if (!skip_ambient_occlusion_day)
 			light_day = rangelim(core::round32(
-					light_day * light_amount[ambient_occlusion]), 0, 255);
+				light_day * light_amount[ambient_occlusion]), 0, 255);
 		if (!skip_ambient_occlusion_night)
 			light_night = rangelim(core::round32(
-					light_night * light_amount[ambient_occlusion]), 0, 255);
+				light_night * light_amount[ambient_occlusion]), 0, 255);
 	}
 
 	return light_day | (light_night << 8);
@@ -890,31 +890,11 @@ void MapBlockMesh::consolidateTransparentBuffers()
 
 video::SColor encode_light(u16 light, u8 emissive_light)
 {
-	// Get components
-	/*u32 day = (light & 0xff);
-	u32 night = (light >> 8);
-	// Add emissive light
-	night += emissive_light * 2.5f;
-	if (night > 255)
-		night = 255;
-	// Since we don't know if the day light is sunlight or
-	// artificial light, assume it is artificial when the night
-	// light bank is also lit.
-	if (day < night)
-		day = 0;
-	else
-		day = day - night;
-	u32 sum = day + night;
-	// Ratio of sunlight:
-	u32 r;
-	if (sum > 0)
-		r = day * 255 / sum;
-	else
-		r = 0;
-	// Average light:
-	float b = (day + night) / 2;*/
-	u8 skyLight = light & 0xff;
-	u8 blockLight = (light >> 8);
+	u16 skyLight = light & 0xff;
+	u16 blockLight = (light >> 8);
+	blockLight += emissive_light * 2.5f;
+	blockLight = std::min<u16>(blockLight, 255);
+
 	return video::SColor(0, skyLight, blockLight, 0);
 }
 

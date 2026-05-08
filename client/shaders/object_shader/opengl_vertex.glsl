@@ -63,12 +63,10 @@ void main(void)
 	// Calculate color.
 	vec4 color = inColor;
 	color *= materialColor;
-	//dayLight = getSunlightColor(dayNightRatio);
-	int skyLight = int(color.r * 16.0);
-	int blockLight = int(color.g * 16.0);
+	float skyLight = color.r;
+	float blockLight = color.g;
 	float sum = float(max(skyLight + blockLight, 0));
 	nightRatio = 1.0 - (skyLight / sum);
-	//varColor = finalLightColor(dayLight, color);
 	varColor = calculateLighting(skyLight, blockLight, timeOfDay);
 
 #ifdef ENABLE_DYNAMIC_SHADOWS

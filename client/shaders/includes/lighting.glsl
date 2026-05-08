@@ -1,68 +1,72 @@
 vec3 getSkyColor(float timeOfDay)
 {
-	// Hardcoded sky colors in the 4 time points:
-	// 1. midnight:	 0
-	// 2. morning:	 0.25
-	// 3. noon:		 0.5
-	// 4. evening:	 0.75
-	vec3 midnight = vec3(0.04, 0.04, 0.12);   // dark-blue
-	vec3 sunrise  = vec3(0.80, 0.35, 0.20);   // pink-orange
-	vec3 noon   =   vec3(1.00, 0.98, 0.95);   // white with blueish tint
-	vec3 sunset   = vec3(0.85, 0.30, 0.15);   // orange-red
-
-	vec3 color;
-	if (timeOfDay < 0.25) {
-		// Midnight -> Sunrise
-		float t = timeOfDay / 0.25;
-		color = mix(midnight, sunrise, t);
-	} else if (timeOfDay < 0.5) {
-		// Sunrise -> Noon
-		float t = (timeOfDay - 0.25) / 0.25;
-		color = mix(sunrise, noon, t);
-	} else if (timeOfDay < 0.75) {
-		// Noon -> Sunset
-		float t = (timeOfDay - 0.5) / 0.25;
-		color = mix(noon, sunset, t);
-	} else {
-		// Sunset -> Midnight
-		float t = (timeOfDay - 0.75) / 0.25;
-		color = mix(sunset, midnight, t);
-	}
-
-	return color;
+    vec3 night = vec3(0.04, 0.04, 0.12);
+    vec3 sunrise = vec3(0.80, 0.35, 0.20);
+    vec3 day = vec3(1.00, 0.98, 0.95);
+    vec3 sunset = vec3(0.85, 0.30, 0.15);
+    
+    // Handle night period (including wrap-around from 0.825 to 0.18)
+    float isNight = step(0.825, timeOfDay) + step(timeOfDay, 0.18);
+    isNight = clamp(isNight, 0.0, 1.0);
+    
+    // Normalize timeOfDay for non-night periods
+    float t = timeOfDay;
+    t = t < 0.18 ? t + 1.0 : t;
+    
+    // Sunrise interpolation factors (shifted by -0.02)
+    // [0.18;0.23] and [0.23;0.28]
+    float sunrise1 = smoothstep(0.18, 0.23, t);
+    float sunrise2 = 1.0 - smoothstep(0.23, 0.28, t);
+    float sunriseFactor = sunrise1 * sunrise2;
+    
+    // Day factor (constant in [0.28-0.725])
+    float dayFactor = step(0.28, t) * (1.0 - step(0.725, t));
+    
+    // Sunset interpolation factors (shifted forward by +0.025)
+    // Old: [0.70;0.75] and [0.75;0.80]
+    // New: [0.725;0.775] and [0.775;0.825]
+    float sunset1 = smoothstep(0.725, 0.775, t);
+    float sunset2 = 1.0 - smoothstep(0.775, 0.825, t);
+    float sunsetFactor = sunset1 * sunset2;
+    
+    // Determine which period we're in (each period gets 1, others 0)
+    // Sunrise period: [0.18;0.28]
+    float isSunrise = step(0.18, t) * (1.0 - step(0.28, t));
+    // Day period: [0.28;0.725]
+    float isDay = step(0.28, t) * (1.0 - step(0.725, t));
+    // Sunset period: [0.725;0.825]
+    float isSunset = step(0.725, t) * (1.0 - step(0.825, t));
+    
+    // Apply smoothstep interpolation within sunrise and sunset periods
+    // Sunrise peak at 0.23
+    vec3 sunriseColor = mix(night, sunrise, sunrise1) * (1.0 - step(0.23, t)) +
+                        mix(sunrise, day, 1.0 - sunrise2) * step(0.23, t);
+    sunriseColor = sunriseColor * isSunrise;
+    
+    // Sunset peak at 0.775 (was 0.75)
+    vec3 sunsetColor = mix(day, sunset, sunset1) * (1.0 - step(0.775, t)) +
+                       mix(sunset, night, 1.0 - sunset2) * step(0.775, t);
+    sunsetColor = sunsetColor * isSunset;
+    
+    vec3 dayColor = day * isDay;
+    vec3 nightColor = night * isNight;
+    
+    // Combine everything
+    return nightColor + sunriseColor + dayColor + sunsetColor;
 }
 
-vec3 calculateLighting(int skyLight, int blockLight, float timeOfDay)
+vec3 calculateLighting(float skyLight, float blockLight, float timeOfDay)
 {
-	// 1. Normalizing the light values (0-15 -> 0.0-1.0)
-	float blockIntensity = float(blockLight) / 15.0;
-	float skyIntensity   = float(skyLight)   / 15.0;
-
-	// 2. Calculate the light colors (the block one is hardcoded)
+	// 1. Calculate the light colors (the block one is hardcoded)
 	vec3 blockColor = vec3(1.0, 0.65, 0.4);
 	vec3 skyColor = getSkyColor(timeOfDay);
 
-	// 3. Exponential intensity attenuation
-	float maxLevel = max(float(blockLight), float(skyLight));
-	float attenuation = pow(0.8, 15.0 - maxLevel);
+	// 2. Blending the light colors
+	vec3 mixedColor = blockColor * blockLight + skyColor * skyLight;
 
-	// 4. Normalized blending the light colors
-	float totalIntensity = blockIntensity + skyIntensity;
-
-	vec3 mixedColor;// = max(blockColor * blockIntensity, skyColor * skyIntensity);
-	if (totalIntensity > 0.001) {
-		mixedColor = (blockColor * blockIntensity + skyColor * skyIntensity) / totalIntensity;
-	} else {
-		mixedColor = vec3(0.0); // full darkness
-	}
-
-	// 5. Multiplying the mixed color with the intensity and attenuation
-	float finalBrightness = min(totalIntensity, 1.0) * attenuation; // min(totalIntensity, 1.0) is to prevent light overflow
-	vec3 finalColor = mixedColor * finalBrightness;
-
-	// 6. Ambient light adding (hardcoded)
+	// 3. Ambient light adding (hardcoded)
 	vec3 ambientColor = vec3(0.05);
-	finalColor = max(finalColor, ambientColor);
+	mixedColor += ambientColor;
 
-	return finalColor;
+	return mixedColor;
 }
