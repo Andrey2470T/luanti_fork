@@ -288,51 +288,6 @@ u16 getSmoothLightTransparent(const v3s16 &p, const v3s16 &corner, MeshMakeData 
 	return getSmoothLightCombined(p, dirs, data);
 }
 
-void get_sunlight_color(video::SColorf *sunlight, u32 daynight_ratio)
-{
-	f32 rg = daynight_ratio / 1000.0f - 0.04f;
-	f32 b = (0.98f * daynight_ratio) / 1000.0f + 0.078f;
-	sunlight->r = rg;
-	sunlight->g = rg;
-	sunlight->b = b;
-}
-
-void final_color_blend(video::SColor *result,
-		u16 light, u32 daynight_ratio)
-{
-	video::SColorf dayLight;
-	get_sunlight_color(&dayLight, daynight_ratio);
-	final_color_blend(result,
-		encode_light(light, 0), dayLight);
-}
-
-void final_color_blend(video::SColor *result,
-		const video::SColor &data, const video::SColorf &dayLight)
-{
-	static const video::SColorf artificialColor(1.04f, 1.04f, 1.04f);
-
-	video::SColorf c(data);
-	f32 n = 1 - c.a;
-
-	f32 r = c.r * (c.a * dayLight.r + n * artificialColor.r) * 2.0f;
-	f32 g = c.g * (c.a * dayLight.g + n * artificialColor.g) * 2.0f;
-	f32 b = c.b * (c.a * dayLight.b + n * artificialColor.b) * 2.0f;
-
-	// Emphase blue a bit in darker places
-	// Each entry of this array represents a range of 8 blue levels
-	static const u8 emphase_blue_when_dark[32] = {
-		1, 4, 6, 6, 6, 5, 4, 3, 2, 1, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	};
-
-	b += emphase_blue_when_dark[core::clamp((s32) ((r + g + b) / 3 * 255),
-		0, 255) / 8] / 255.0f;
-
-	result->setRed(core::clamp((s32) (r * 255.0f), 0, 255));
-	result->setGreen(core::clamp((s32) (g * 255.0f), 0, 255));
-	result->setBlue(core::clamp((s32) (b * 255.0f), 0, 255));
-}
-
 /*
 	Mesh generation helpers
 */

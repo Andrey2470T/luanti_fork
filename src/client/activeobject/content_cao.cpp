@@ -847,11 +847,9 @@ void GenericCAO::updateLight(u32 day_night_ratio)
 	if (!pos_ok)
 		light_at_pos = LIGHT_SUN;
 
-	video::SColor light;
-
 	// Encode light into color, adding a small boost
 	// based on the entity glow.
-	light = encode_light(light_at_pos, m_prop.glow);
+	video::SColor light = encode_light(light_at_pos, m_prop.glow);
 
 	if (light != m_last_light) {
 		m_last_light = light;

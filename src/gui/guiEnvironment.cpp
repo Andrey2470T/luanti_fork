@@ -128,7 +128,7 @@ CGUIEnvironment::~CGUIEnvironment()
 void CGUIEnvironment::loadBuiltInFont()
 {
 	CGUIFont *font = new CGUIFont(this, DefaultFontName);
-    if (!font->load(BuiltInFontData, BuiltInFontDataSize, DefaultFontName)) {
+	if (!font->load(BuiltInFontData, BuiltInFontDataSize, DefaultFontName)) {
 		g_irrlogger->log("Error: Could not load built-in Font.", ELL_ERROR);
 		font->drop();
 		return;
@@ -688,18 +688,18 @@ IGUIFont *CGUIEnvironment::getFont(const io::path &filename)
 		return 0;
 	}
 
-    CGUIFont *font =  new CGUIFont(this, f.NamedPath.getPath());
-    if (!font->load(f.NamedPath.getPath())) {
-        font->drop();
-        return 0;
+	CGUIFont *font =  new CGUIFont(this, f.NamedPath.getPath());
+	if (!font->load(f.NamedPath.getPath())) {
+		font->drop();
+		return 0;
 	}
 
 	// add to fonts.
 
-    f.Font = font;
+	f.Font = font;
 	Fonts.push_back(f);
 
-    return font;
+	return font;
 }
 
 //! add an externally loaded font
