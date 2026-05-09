@@ -626,7 +626,7 @@ void GenericCAO::addToScene(ITextureSource *tsrc, scene::ISceneManager *smgr)
 			{{-dx, -dy, 0}, {0,0,1}, c, {1,1}},
 			{{dx, -dy, 0}, {0,0,1}, c, {0,1}},
 			{{dx,  dy, 0}, {0,0,1}, c, {0,0}},
-			{{-dx,  dy, 0}, {0,0,1}, c, {1,0}},
+			{{-dx,  dy, 0}, {0,0,1}, c, {1,0}}
 		};
 		if (m_is_player) {
 			// Move minimal Y position to 0 (feet position)
@@ -755,21 +755,21 @@ void GenericCAO::addToScene(ITextureSource *tsrc, scene::ISceneManager *smgr)
 
 	/* Set VBO hint */
 	// wieldmesh sets its own hint, no need to handle it
-	if (m_meshnode || m_animated_meshnode) {
-		// sprite uses vertex animation
-		if (m_meshnode && m_prop.visual != OBJECTVISUAL_UPRIGHT_SPRITE)
-			m_meshnode->getMesh()->setHardwareMappingHint(scene::EHM_STATIC);
+	if (m_meshnode)
+		m_meshnode->getMesh()->setHardwareMappingHint(scene::EHM_STATIC);
 
-		if (m_animated_meshnode) {
-			auto *mesh = m_animated_meshnode->getMesh();
-			// skinning happens on the CPU
-			if (m_animated_meshnode->getJointCount() > 0)
-				mesh->setHardwareMappingHint(scene::EHM_STREAM, scene::EBF_VERTEX);
-			else
-				mesh->setHardwareMappingHint(scene::EHM_STATIC, scene::EBF_VERTEX);
-			mesh->setHardwareMappingHint(scene::EHM_STATIC, scene::EBF_INDEX);
-		}
+	if (m_animated_meshnode) {
+		auto *mesh = m_animated_meshnode->getMesh();
+		// skinning happens on the CPU
+		if (m_animated_meshnode->getJointCount() > 0)
+			mesh->setHardwareMappingHint(scene::EHM_STREAM, scene::EBF_VERTEX);
+		else
+			mesh->setHardwareMappingHint(scene::EHM_STATIC, scene::EBF_VERTEX);
+		mesh->setHardwareMappingHint(scene::EHM_STATIC, scene::EBF_INDEX);
 	}
+
+	if (m_spritenode)
+		m_spritenode->getMeshBuffer(0)->setHardwareMappingHint(scene::EHM_STATIC);
 
 	/* don't update while punch texture modifier is active */
 	if (m_reset_textures_timer < 0)
