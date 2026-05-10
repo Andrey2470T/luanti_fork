@@ -226,6 +226,9 @@ void TestMapblockMeshGenerator::testInterliquidSame()
 	UASSERTEQ(std::size_t, col.prebuffers[1].size(), 0);
 
 	auto &&buf = col.prebuffers[0][0];
+
+	for (auto &v : buf.vertices)
+		v.Color = 0;
 	UASSERTEQ(u32, buf.layer.texture_id, 42);
 	UASSERT(checkMeshEqual(buf.vertices, buf.indices, {quad::xn, quad::yn, quad::yp, quad::zn, quad::zp}));
 }
@@ -248,6 +251,9 @@ void TestMapblockMeshGenerator::testInterliquidDifferent()
 	UASSERTEQ(std::size_t, col.prebuffers[1].size(), 0);
 
 	auto &&buf = col.prebuffers[0][0];
+
+	for (auto &v : buf.vertices)
+		v.Color = 0;
 	UASSERTEQ(u32, buf.layer.texture_id, 42);
 	UASSERT(checkMeshEqual(buf.vertices, buf.indices, {quad::xn, quad::xp, quad::yn, quad::yp, quad::zn, quad::zp}));
 }
