@@ -150,7 +150,14 @@ void GameUI::update(const RunStats &stats, Client *client, MapDrawControl *draw_
 				} else {
 					os << ", pointed: " << nodedef->get(n).name;
 				}
-				os << ", param2: " << (u64) n.getParam2();
+				const auto &lf = nodedef->get(n).getLightingFlags();
+				os << ", param1: ";
+				os << "[sky: " << (u64)n.getLight(LIGHTBANK_DAY, lf);
+				os << ", ";
+				os << "block: " << (u64)n.getLight(LIGHTBANK_NIGHT, lf);
+				os << "]";
+
+				os << ", param2: " << (u64)n.getParam2();
 			}
 		}
 
