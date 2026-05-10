@@ -242,7 +242,7 @@ void MapblockMeshGenerator::getSmoothLightFrame()
 	for (int k = 0; k < 8; ++k)
 		cur_node.lframe.sunlight[k] = false;
 	for (int k = 0; k < 8; ++k) {
-		f32 ao = 0.0f;
+		f32 ao = 1.0f;
 		LightPair light(getSmoothLightTransparent(blockpos_nodes + cur_node.p, light_dirs[k], data, ao));
 
 		cur_node.lframe.lightsDay[k] = light.lightDay;
@@ -270,7 +270,7 @@ LightInfo MapblockMeshGenerator::blendLight(const v3f &vertex_pos)
 	f32 lightDay = 0.0; // daylight
 	f32 lightNight = 0.0;
 	f32 lightBoosted = 0.0; // daylight + direct sunlight, if any
-	f32 ambientOcclusion = 0.0;
+	f32 ambientOcclusion = 1.0;
 	for (int k = 0; k < 8; ++k) {
 		f32 dx = (k & 4) ? x : 1 - x;
 		f32 dy = (k & 2) ? y : 1 - y;
@@ -280,7 +280,7 @@ LightInfo MapblockMeshGenerator::blendLight(const v3f &vertex_pos)
 		lightDay += dx * dy * dz * cur_node.lframe.lightsDay[k];
 		lightNight += dx * dy * dz * cur_node.lframe.lightsNight[k];
 		lightBoosted += dx * dy * dz * light_boosted;
-		ambientOcclusion += dx * dy * dz * ambientOcclusion;
+		ambientOcclusion += dx * dy * dz * cur_node.lframe.ambientOcclusion[k];
 	}
 	return LightInfo{lightDay, lightNight, lightBoosted, ambientOcclusion};
 }
@@ -458,7 +458,7 @@ void MapblockMeshGenerator::drawSolidNode()
 				continue;
 			for (int k = 0; k < 4; k++) {
 				v3s16 corner = light_dirs[light_indices[face][k]];
-				f32 ao = 0.0f;
+				f32 ao = 1.0f;
 				lights[face][k] = LightPair(getSmoothLightSolid(
 						blockpos_nodes + cur_node.p, tile_dirs[face], corner, data, ao));
 				lights[face][k].ambientOcclusion = ao;

@@ -292,7 +292,7 @@ private:
  * \param emissive_light amount of light the surface emits,
  * from 0 to LIGHT_SUN.
  */
-video::SColor encode_light(u16 light, u8 emissive_light, f32 ambient_occlusion);
+video::SColor encode_light(u16 light, u8 emissive_light, f32 ambient_occlusion=1.0f);
 
 // Compute light at node
 u16 getInteriorLight(MapNode n, s32 increment, const NodeDefManager *ndef);

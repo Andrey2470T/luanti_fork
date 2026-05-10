@@ -10,7 +10,8 @@ void main(void)
 
 	vec4 color = inColor;
 
-	color *= materialColor;
+	float avg_light = (materialColor.r + materialColor.g) / 2.0;
+	//color *= avg_light;
 	varColor = color;
 
 	eyeVec = -(mWorldView * vec4(inPosition, 1.0)).xyz;

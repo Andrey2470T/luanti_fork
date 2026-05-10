@@ -65,11 +65,11 @@ vec3 calculateLighting(float skyLight, float blockLight, float timeOfDay, float 
 	vec3 mixedColor = blockColor * blockLight + skyColor * skyLight;
 
 	// 3. Ambient light adding (hardcoded)
-	vec3 ambientColor = vec3(0.05);
+	vec3 ambientColor = vec3(0.02);
 	mixedColor += ambientColor;
 
 	// 4. Apply ambient occlusion
-	mixedColor *= (1.0 - ao);
+	mixedColor *= ao;
 
 	return mixedColor;
 }

@@ -3372,7 +3372,7 @@ PointedThing Game::updatePointedThing(
 				light_level = node_light;
 		}
 
-		video::SColor c = encode_light(light_level, 0, 0.0f);
+		video::SColor c = encode_light(light_level, 0, 1.0f);
 
 		// Set mesh final color
 		hud->setSelectionMeshColor(c);

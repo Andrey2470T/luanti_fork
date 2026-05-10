@@ -160,6 +160,7 @@ static u16 getSmoothLightCombined(const v3s16 &p,
 	u8 light_source_max = 0;
 	u16 light_day_max = 0;
 	u16 light_night_max = 0;
+	u8 light_night_p = 0;
 
 	auto add_node = [&] (u8 i, bool obstructed = false) -> bool {
 		if (obstructed) {
@@ -176,6 +177,9 @@ static u16 getSmoothLightCombined(const v3s16 &p,
 		if (f.param_type == CPT_LIGHT && f.solidness != 2) {
 			u8 light_level_day = n.getLight(LIGHTBANK_DAY, f.getLightingFlags());
 			u8 light_level_night = n.getLight(LIGHTBANK_NIGHT, f.getLightingFlags());
+
+			if (i == 0)
+				light_night_p = light_level_night;
 
 			light_day_max = std::max((u16)decode_light(light_level_day), light_day_max);
 			light_night_max = std::max((u16)decode_light(light_level_night), light_night_max);
@@ -202,6 +206,14 @@ static u16 getSmoothLightCombined(const v3s16 &p,
 			add_node(k + 4, !obstructed[k]);
 	}
 
+	bool skip_ambient_occlusion = false;
+
+	// Skip the AO entirely if the node at 'p' has the block light below the max light source
+	if ((u16)decode_light(light_source_max) > light_night_p)
+		skip_ambient_occlusion = true;
+
+	light_night_max = std::max(light_night_max, (u16)decode_light(light_source_max));
+
 	if (ambient_occlusion > 4) {
 		static thread_local const float ao_gamma = rangelim(
 			g_settings->getFloat("ambient_occlusion_gamma"), 0.25, 4.0);
@@ -216,11 +228,9 @@ static u16 getSmoothLightCombined(const v3s16 &p,
 		//calculate table index for gamma space multiplier
 		ambient_occlusion -= 5;
 
-		ambient_occlusion_f = light_amount[ambient_occlusion];
+		if (!skip_ambient_occlusion)
+			ambient_occlusion_f = light_amount[ambient_occlusion];
 	}
-
-	// Boost the night part with the max light source
-	light_night_max = std::max(light_night_max, (u16)decode_light(light_source_max));
 
 	return light_day_max | (light_night_max << 8);
 }
@@ -820,7 +830,7 @@ video::SColor encode_light(u16 light, u8 emissive_light, f32 ambient_occlusion)
 	blockLight += emissive_light * 2.5f;
 	blockLight = std::min<u16>(blockLight, 255);
 
-	return video::SColor(0, skyLight, blockLight, ambient_occlusion*255.0f);
+	return video::SColor(0, skyLight, blockLight, ambient_occlusion*255);
 }
 
 u8 get_solid_sides(MeshMakeData *data)
