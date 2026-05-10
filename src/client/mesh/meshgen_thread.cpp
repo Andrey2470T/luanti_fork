@@ -7,6 +7,7 @@
 #include "profiler.h"
 #include "client/core/client.h"
 #include "mapblock.h"
+#include "nodedef.h"
 #include "map.h"
 #include "util/directiontables.h"
 #include "porting.h"
@@ -30,6 +31,35 @@ static struct BlockPlaceholder {
 QueuedMeshUpdate::~QueuedMeshUpdate()
 {
 	delete data;
+}
+
+u8 QueuedMeshUpdate::get_solid_sides() const
+{
+	v3s16 blockpos_nodes = data->m_blockpos * MAP_BLOCKSIZE;
+	const NodeDefManager *ndef = data->m_nodedef;
+
+	const u16 side = data->m_side_length;
+	assert(data->m_vmanip.m_area.contains(blockpos_nodes + v3s16(side - 1)));
+
+	u8 result = 0x3F; // all sides solid
+	for (s16 i = 0; i < side && result != 0; i++)
+	for (s16 j = 0; j < side && result != 0; j++) {
+		v3s16 positions[6] = {
+			v3s16(0, i, j),
+			v3s16(side - 1, i, j),
+			v3s16(i, 0, j),
+			v3s16(i, side - 1, j),
+			v3s16(i, j, 0),
+			v3s16(i, j, side - 1)
+		};
+
+		for (u8 k = 0; k < 6; k++) {
+			const MapNode &top = data->m_vmanip.getNodeRefUnsafe(blockpos_nodes + positions[k]);
+			if (ndef->get(top).solidness != 2)
+				result &= ~(1 << k);
+		}
+	}
+	return result;
 }
 
 /*
@@ -224,7 +254,7 @@ void MeshUpdateWorkerThread::doUpdate()
 		MeshUpdateResult r;
 		r.p = q->p;
 		r.mesh = mesh_new;
-		r.solid_sides = get_solid_sides(q->data);
+		r.solid_sides = q->get_solid_sides();
 		r.ack_list = std::move(q->ack_list);
 		r.urgent = q->urgent;
 		r.map_blocks = q->map_blocks;

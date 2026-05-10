@@ -11,6 +11,7 @@
 #include "client/player/localplayer.h"
 #include "scripting_client.h"
 #include "client/mesh/mapblock_mesh.h"
+#include "client/mesh/lighting.h"
 #include "client/input/mtevent.h"
 #include "collision.h"
 #include "nodedef.h"

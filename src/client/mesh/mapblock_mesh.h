@@ -279,35 +279,3 @@ private:
 	// Is m_transparent_buffers currently in consolidated form?
 	bool m_transparent_buffers_consolidated = false;
 };
-
-/*!
- * Encodes light of a node.
- * The result is not the final color, but a
- * half-baked vertex color.
- * You have to multiply the resulting color
- * with the node's color.
- *
- * \param light the first 8 bits are day light,
- * the last 8 bits are night light
- * \param emissive_light amount of light the surface emits,
- * from 0 to LIGHT_SUN.
- */
-video::SColor encode_light(u16 light, u8 emissive_light, f32 ambient_occlusion=1.0f);
-
-// Compute light at node
-u16 getInteriorLight(MapNode n, s32 increment, const NodeDefManager *ndef);
-u16 getFaceLight(MapNode n, MapNode n2, const NodeDefManager *ndef);
-u16 getSmoothLightSolid(const v3s16 &p, const v3s16 &face_dir, const v3s16 &corner, MeshMakeData *data, f32 &ambient_occlusion_f);
-u16 getSmoothLightTransparent(const v3s16 &p, const v3s16 &corner, MeshMakeData *data, f32 &ambient_occlusion_f);
-
-// Retrieves the TileSpec of a face of a node
-// Adds MATERIAL_FLAG_CRACK if the node is cracked
-// TileSpec should be passed as reference due to the underlying TileFrame and its vector
-// TileFrame vector copy cost very much to client
-void getNodeTileN(MapNode mn, const v3s16 &p, u8 tileindex, MeshMakeData *data, TileSpec &tile);
-void getNodeTile(MapNode mn, const v3s16 &p, const v3s16 &dir, MeshMakeData *data, TileSpec &tile);
-
-/// Return bitset of the sides of the mesh that consist of solid nodes only
-/// Bits:
-/// 0 0 -Z +Z -X +X -Y +Y
-u8 get_solid_sides(MeshMakeData *data);

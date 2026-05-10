@@ -20,10 +20,6 @@
 #include <Mesh/SMesh.h>
 #include <Mesh/IMeshBuffer.h>
 
-// Distance of light extrapolation (for oversized nodes)
-// After this distance, it gives up and considers light level constant
-#define SMOOTH_LIGHTING_OVERSIZE 1.0
-
 // Node edge count (for glasslike-framed)
 #define FRAMED_EDGE_COUNT 12
 
@@ -31,18 +27,6 @@
 // (for glasslike-framed)
 // Corresponding offsets are listed in g_27dirs
 #define FRAMED_NEIGHBOR_COUNT 18
-
-// Maps light index to corner direction
-static const v3s16 light_dirs[8] = {
-	v3s16(-1, -1, -1),
-	v3s16(-1, -1,  1),
-	v3s16(-1,  1, -1),
-	v3s16(-1,  1,  1),
-	v3s16( 1, -1, -1),
-	v3s16( 1, -1,  1),
-	v3s16( 1,  1, -1),
-	v3s16( 1,  1,  1),
-};
 
 // Maps cuboid face and vertex indices to the corresponding light index
 static const u8 light_indices[6][4] = {
@@ -86,13 +70,92 @@ void MapblockMeshGenerator::useTile(TileSpec *tile_ret, int index, u8 set_flags,
 // Returns a tile, ready for use, non-rotated.
 void MapblockMeshGenerator::getTile(int index, TileSpec *tile_ret)
 {
-	getNodeTileN(cur_node.n, cur_node.p, index, data, *tile_ret);
+	getTileN(index, tile_ret);
 }
 
 // Returns a tile, ready for use, rotated according to the node facedir.
-void MapblockMeshGenerator::getTile(v3s16 direction, TileSpec *tile_ret)
+void MapblockMeshGenerator::getTile(v3s16 dir, TileSpec *tile_ret)
 {
-	getNodeTile(cur_node.n, cur_node.p, direction, data, *tile_ret);
+	const NodeDefManager *ndef = data->m_nodedef;
+
+	// Direction must be (1,0,0), (-1,0,0), (0,1,0), (0,-1,0),
+	// (0,0,1), (0,0,-1) or (0,0,0)
+	assert(dir.X * dir.X + dir.Y * dir.Y + dir.Z * dir.Z <= 1);
+
+	// Convert direction to single integer for table lookup
+	//  0 = (0,0,0)
+	//  1 = (1,0,0)
+	//  2 = (0,1,0)
+	//  3 = (0,0,1)
+	//  4 = invalid, treat as (0,0,0)
+	//  5 = (0,0,-1)
+	//  6 = (0,-1,0)
+	//  7 = (-1,0,0)
+	u8 dir_i = (dir.X + 2 * dir.Y + 3 * dir.Z) & 7;
+
+	// Get rotation for things like chests
+	u8 facedir = cur_node.n.getFaceDir(ndef, true);
+
+	static constexpr auto
+		R0 = TileRotation::None,
+		R1 = TileRotation::R90,
+		R2 = TileRotation::R180,
+		R3 = TileRotation::R270;
+	static const struct {
+		u8 tile;
+		TileRotation rotation;
+	} dir_to_tile[24][8] = {
+		//  0        +X      +Y      +Z                -Z      -Y      -X      ->   value=tile,rotation
+		   {{0,R0},  {2,R0}, {0,R0}, {4,R0},  {0,R0},  {5,R0}, {1,R0}, {3,R0}},  // rotate around y+ 0 - 3
+		   {{0,R0},  {4,R0}, {0,R3}, {3,R0},  {0,R0},  {2,R0}, {1,R1}, {5,R0}},
+		   {{0,R0},  {3,R0}, {0,R2}, {5,R0},  {0,R0},  {4,R0}, {1,R2}, {2,R0}},
+		   {{0,R0},  {5,R0}, {0,R1}, {2,R0},  {0,R0},  {3,R0}, {1,R3}, {4,R0}},
+
+		   {{0,R0},  {2,R3}, {5,R0}, {0,R2},  {0,R0},  {1,R0}, {4,R2}, {3,R1}},  // rotate around z+ 4 - 7
+		   {{0,R0},  {4,R3}, {2,R0}, {0,R1},  {0,R0},  {1,R1}, {3,R2}, {5,R1}},
+		   {{0,R0},  {3,R3}, {4,R0}, {0,R0},  {0,R0},  {1,R2}, {5,R2}, {2,R1}},
+		   {{0,R0},  {5,R3}, {3,R0}, {0,R3},  {0,R0},  {1,R3}, {2,R2}, {4,R1}},
+
+		   {{0,R0},  {2,R1}, {4,R2}, {1,R2},  {0,R0},  {0,R0}, {5,R0}, {3,R3}},  // rotate around z- 8 - 11
+		   {{0,R0},  {4,R1}, {3,R2}, {1,R3},  {0,R0},  {0,R3}, {2,R0}, {5,R3}},
+		   {{0,R0},  {3,R1}, {5,R2}, {1,R0},  {0,R0},  {0,R2}, {4,R0}, {2,R3}},
+		   {{0,R0},  {5,R1}, {2,R2}, {1,R1},  {0,R0},  {0,R1}, {3,R0}, {4,R3}},
+
+		   {{0,R0},  {0,R3}, {3,R3}, {4,R1},  {0,R0},  {5,R3}, {2,R3}, {1,R3}},  // rotate around x+ 12 - 15
+		   {{0,R0},  {0,R2}, {5,R3}, {3,R1},  {0,R0},  {2,R3}, {4,R3}, {1,R0}},
+		   {{0,R0},  {0,R1}, {2,R3}, {5,R1},  {0,R0},  {4,R3}, {3,R3}, {1,R1}},
+		   {{0,R0},  {0,R0}, {4,R3}, {2,R1},  {0,R0},  {3,R3}, {5,R3}, {1,R2}},
+
+		   {{0,R0},  {1,R1}, {2,R1}, {4,R3},  {0,R0},  {5,R1}, {3,R1}, {0,R1}},  // rotate around x- 16 - 19
+		   {{0,R0},  {1,R2}, {4,R1}, {3,R3},  {0,R0},  {2,R1}, {5,R1}, {0,R0}},
+		   {{0,R0},  {1,R3}, {3,R1}, {5,R3},  {0,R0},  {4,R1}, {2,R1}, {0,R3}},
+		   {{0,R0},  {1,R0}, {5,R1}, {2,R3},  {0,R0},  {3,R1}, {4,R1}, {0,R2}},
+
+		   {{0,R0},  {3,R2}, {1,R2}, {4,R2},  {0,R0},  {5,R2}, {0,R2}, {2,R2}},  // rotate around y- 20 - 23
+		   {{0,R0},  {5,R2}, {1,R3}, {3,R2},  {0,R0},  {2,R2}, {0,R1}, {4,R2}},
+		   {{0,R0},  {2,R2}, {1,R0}, {5,R2},  {0,R0},  {4,R2}, {0,R0}, {3,R2}},
+		   {{0,R0},  {4,R2}, {1,R1}, {2,R2},  {0,R0},  {3,R2}, {0,R3}, {5,R2}}
+	};
+	getTileN(dir_to_tile[facedir][dir_i].tile, tile_ret);
+	tile_ret->rotation = tile_ret->world_aligned ? TileRotation::None : dir_to_tile[facedir][dir_i].rotation;
+}
+
+// Gets nth node tile (0 <= n <= 5).
+void MapblockMeshGenerator::getTileN(int index, TileSpec *tile_ret)
+{
+	const NodeDefManager *ndef = data->m_nodedef;
+	const ContentFeatures &f = ndef->get(cur_node.n);
+	*tile_ret = f.tiles[index];
+	bool has_crack = cur_node.p == data->m_crack_pos_relative;
+	for (TileLayer &layer : tile_ret->layers) {
+		if (layer.empty())
+			continue;
+		if (!layer.has_color)
+			cur_node.n.getColor(f, &(layer.color));
+		// Apply temporary crack
+		if (has_crack)
+			layer.material_flags |= MATERIAL_FLAG_CRACK;
+	}
 }
 
 // Returns a special tile, ready for use, non-rotated.
@@ -126,7 +189,7 @@ void MapblockMeshGenerator::drawQuad(const TileSpec &tile, v3f *coords, const v3
 		vertices[j].Pos = coords[j] + cur_node.origin;
 		vertices[j].Normal = normal2;
 		if (data->m_smooth_lighting)
-			vertices[j].Color = blendLightColor(coords[j]);
+			vertices[j].Color = blendLightColor(cur_node.lframe, coords[j], cur_node.f->light_source);
 		else
 			vertices[j].Color = cur_node.lcolor;
 		if (shade_face)
@@ -236,74 +299,6 @@ void MapblockMeshGenerator::drawCuboid(const aabb3f &box,
 	}
 }
 
-// Gets the base lighting values for a node
-void MapblockMeshGenerator::getSmoothLightFrame()
-{
-	for (int k = 0; k < 8; ++k)
-		cur_node.lframe.sunlight[k] = false;
-	for (int k = 0; k < 8; ++k) {
-		f32 ao = 1.0f;
-		LightPair light(getSmoothLightTransparent(blockpos_nodes + cur_node.p, light_dirs[k], data, ao));
-
-		cur_node.lframe.lightsDay[k] = light.lightDay;
-		cur_node.lframe.lightsNight[k] = light.lightNight;
-		cur_node.lframe.ambientOcclusion[k] = ao;
-		// If there is direct sunlight and no ambient occlusion at some corner,
-		// mark the vertical edge (top and bottom corners) containing it.
-		if (light.lightDay == 255) {
-			cur_node.lframe.sunlight[k] = true;
-			cur_node.lframe.sunlight[k ^ 2] = true;
-		}
-	}
-}
-
-// Calculates vertex light level
-//  vertex_pos - vertex position in the node (coordinates are clamped to [0.0, 1.0] or so)
-LightInfo MapblockMeshGenerator::blendLight(const v3f &vertex_pos)
-{
-	// Light levels at (logical) node corners are known. Here,
-	// trilinear interpolation is used to calculate light level
-	// at a given point in the node.
-	f32 x = core::clamp(vertex_pos.X / BS + 0.5, 0.0 - SMOOTH_LIGHTING_OVERSIZE, 1.0 + SMOOTH_LIGHTING_OVERSIZE);
-	f32 y = core::clamp(vertex_pos.Y / BS + 0.5, 0.0 - SMOOTH_LIGHTING_OVERSIZE, 1.0 + SMOOTH_LIGHTING_OVERSIZE);
-	f32 z = core::clamp(vertex_pos.Z / BS + 0.5, 0.0 - SMOOTH_LIGHTING_OVERSIZE, 1.0 + SMOOTH_LIGHTING_OVERSIZE);
-	f32 lightDay = 0.0; // daylight
-	f32 lightNight = 0.0;
-	f32 lightBoosted = 0.0; // daylight + direct sunlight, if any
-	f32 ambientOcclusion = 1.0;
-	for (int k = 0; k < 8; ++k) {
-		f32 dx = (k & 4) ? x : 1 - x;
-		f32 dy = (k & 2) ? y : 1 - y;
-		f32 dz = (k & 1) ? z : 1 - z;
-		// Use direct sunlight (255), if any; use daylight otherwise.
-		f32 light_boosted = cur_node.lframe.sunlight[k] ? 255 : cur_node.lframe.lightsDay[k];
-		lightDay += dx * dy * dz * cur_node.lframe.lightsDay[k];
-		lightNight += dx * dy * dz * cur_node.lframe.lightsNight[k];
-		lightBoosted += dx * dy * dz * light_boosted;
-		ambientOcclusion += dx * dy * dz * cur_node.lframe.ambientOcclusion[k];
-	}
-	return LightInfo{lightDay, lightNight, lightBoosted, ambientOcclusion};
-}
-
-// Calculates vertex color to be used in mapblock mesh
-//  vertex_pos - vertex position in the node (coordinates are clamped to [0.0, 1.0] or so)
-video::SColor MapblockMeshGenerator::blendLightColor(const v3f &vertex_pos)
-{
-	LightInfo light = blendLight(vertex_pos);
-	return encode_light(light.getPair(), cur_node.f->light_source, light.ambient_occlusion);
-}
-
-video::SColor MapblockMeshGenerator::blendLightColor(const v3f &vertex_pos,
-	const v3f &vertex_normal)
-{
-	LightInfo light = blendLight(vertex_pos);
-	video::SColor color = encode_light(light.getPair(MYMAX(0.0f, vertex_normal.Y)),
-			cur_node.f->light_source, light.ambient_occlusion);
-	if (!cur_node.f->light_source)
-		applyFacesShading(color, vertex_normal);
-	return color;
-}
-
 void MapblockMeshGenerator::generateCuboidTextureCoords(const aabb3f &box, f32 *coords)
 {
 	f32 tx1 = (box.MinEdge.X / BS) + 0.5;
@@ -367,7 +362,7 @@ void MapblockMeshGenerator::drawAutoLightedCuboid(aabb3f box,
 			d.X = (j & 4) ? dx2 : dx1;
 			d.Y = (j & 2) ? dy2 : dy1;
 			d.Z = (j & 1) ? dz2 : dz1;
-			lights[j] = blendLight(d);
+			lights[j] = blendLight(cur_node.lframe, d);
 		}
 
 		drawCuboid(box, tiles, tile_count, txc, mask, [&] (int face, scene::Vertex3D vertices[4]) {
@@ -708,7 +703,7 @@ void MapblockMeshGenerator::drawLiquidSides()
 
 			video::SColor color;
 			if (data->m_smooth_lighting)
-				color = blendLightColor(pos);
+				color = blendLightColor(cur_node.lframe, pos, cur_node.f->light_source);
 			else
 				color = cur_node.lcolor;
 
@@ -755,7 +750,7 @@ void MapblockMeshGenerator::drawLiquidTop()
 
 		vertices[i].Pos.Y += cur_liquid.corner_levels[w][u] * BS;
 		if (data->m_smooth_lighting)
-			vertices[i].Color = blendLightColor(vertices[i].Pos);
+			vertices[i].Color = blendLightColor(cur_node.lframe, vertices[i].Pos, cur_node.f->light_source);
 		vertices[i].Pos += cur_node.origin;
 	}
 
@@ -814,7 +809,7 @@ void MapblockMeshGenerator::drawLiquidBottom()
 
 	for (int i = 0; i < 4; i++) {
 		if (data->m_smooth_lighting)
-			vertices[i].Color = blendLightColor(vertices[i].Pos);
+			vertices[i].Color = blendLightColor(cur_node.lframe, vertices[i].Pos, cur_node.f->light_source);
 		vertices[i].Pos += cur_node.origin;
 	}
 
@@ -1273,7 +1268,7 @@ void MapblockMeshGenerator::drawPlantlikeRootedNode()
 	cur_node.origin += v3f(0.0, BS, 0.0);
 	cur_node.p.Y++;
 	if (data->m_smooth_lighting) {
-		getSmoothLightFrame();
+		getSmoothLightFrame(cur_node.lframe, blockpos_nodes + cur_node.p, data);
 	} else {
 		MapNode ntop = data->m_vmanip.getNodeNoEx(blockpos_nodes + cur_node.p);
 		auto light = LightPair(getInteriorLight(ntop, 0, nodedef));
@@ -1548,7 +1543,7 @@ void MapblockMeshGenerator::drawAllfacesNode()
 	for (int face = 0; face < 6; face++)
 		getTile(nodebox_tile_dirs[face], &tiles[face]);
 	if (data->m_smooth_lighting)
-		getSmoothLightFrame();
+		getSmoothLightFrame(cur_node.lframe, blockpos_nodes + cur_node.p, data);
 	drawAutoLightedCuboid(box, tiles, 6);
 }
 
@@ -1714,7 +1709,7 @@ void MapblockMeshGenerator::drawMeshNode()
 		if (data->m_smooth_lighting) {
 			for (u32 k = 0; k < vertex_count; k++) {
 				scene::Vertex3D &vertex = vertices[k];
-				vertex.Color = blendLightColor(vertex.Pos, vertex.Normal);
+				vertex.Color = blendLightColor(cur_node.lframe, vertex.Pos, vertex.Normal, cur_node.f->light_source);
 				vertex.Pos += cur_node.origin;
 			}
 		} else {
@@ -1755,7 +1750,7 @@ void MapblockMeshGenerator::drawNode()
 	}
 	cur_node.origin = intToFloat(cur_node.p, BS);
 	if (data->m_smooth_lighting) {
-		getSmoothLightFrame();
+		getSmoothLightFrame(cur_node.lframe, blockpos_nodes + cur_node.p, data);
 	} else {
 		auto light = LightPair(getInteriorLight(cur_node.n, 0, nodedef));
 		cur_node.lcolor = encode_light(light, cur_node.f->light_source, light.ambientOcclusion);

@@ -16,6 +16,7 @@
 #include "client/input/keys.h"
 #include "client/input/joystick_controller.h"
 #include "client/mesh/mapblock_mesh.h"
+#include "client/mesh/lighting.h"
 #include "client/sound/sound.h"
 #include "client/render/clientmap.h"
 #include "client/media/clientmedia.h" // For clientMediaUpdateCacheCopy

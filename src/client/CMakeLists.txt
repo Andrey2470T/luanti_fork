@@ -52,6 +52,7 @@ set(media_SRCS
 )
 set(mesh_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/mesh/collector.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/mesh/lighting.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/mesh/mapblock_mesh.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/mesh/mesh.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/mesh/meshgen_thread.cpp

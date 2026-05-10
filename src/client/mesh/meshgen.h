@@ -5,45 +5,10 @@
 #pragma once
 
 #include "nodedef.h"
+#include "lighting.h"
 
 struct MeshMakeData;
 struct MeshCollector;
-
-struct LightPair {
-	u8 lightDay;
-	u8 lightNight;
-	f32 ambientOcclusion = 1.0f;
-
-	LightPair() = default;
-	explicit LightPair(u16 value) : lightDay(value & 0xff), lightNight(value >> 8) {}
-	LightPair(u8 valueA, u8 valueB) : lightDay(valueA), lightNight(valueB) {}
-	LightPair(float valueA, float valueB) :
-		lightDay(core::clamp(core::round32(valueA), 0, 255)),
-		lightNight(core::clamp(core::round32(valueB), 0, 255)) {}
-	operator u16() const { return lightDay | lightNight << 8; }
-};
-
-struct LightInfo {
-	f32 light_day;
-	f32 light_night;
-	f32 light_boosted;
-	f32 ambient_occlusion = 1.0f;
-
-	LightPair getPair(float sunlight_boost = 0.0) const
-	{
-		return LightPair(
-			(1 - sunlight_boost) * light_day
-			+ sunlight_boost * light_boosted,
-			light_night);
-	}
-};
-
-struct LightFrame {
-	f32 lightsDay[8];
-	f32 lightsNight[8];
-	f32 ambientOcclusion[8] = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
-	bool sunlight[8];
-};
 
 class MapblockMeshGenerator
 {
@@ -69,16 +34,11 @@ private:
 		video::SColor lcolor; // unsmooth lighting
 	} cur_node;
 
-// lighting
-	void getSmoothLightFrame();
-	LightInfo blendLight(const v3f &vertex_pos);
-	video::SColor blendLightColor(const v3f &vertex_pos);
-	video::SColor blendLightColor(const v3f &vertex_pos, const v3f &vertex_normal);
-
 	void useTile(TileSpec *tile_ret, int index = 0, u8 set_flags = MATERIAL_FLAG_CRACK_OVERLAY,
 		u8 reset_flags = 0, bool special = false);
 	void getTile(int index, TileSpec *tile_ret);
-	void getTile(v3s16 direction, TileSpec *tile_ret);
+	void getTile(v3s16 dir, TileSpec *tile_ret);
+	void getTileN(int index, TileSpec *tile_ret);
 	void getSpecialTile(int index, TileSpec *tile_ret, bool apply_crack = false);
 
 // face drawing

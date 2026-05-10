@@ -27,6 +27,8 @@ struct QueuedMeshUpdate
 
 	QueuedMeshUpdate() = default;
 	~QueuedMeshUpdate();
+
+	u8 get_solid_sides() const;
 };
 
 /*
