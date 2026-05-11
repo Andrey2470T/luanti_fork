@@ -73,11 +73,13 @@ struct MeshMakeData
 	void setCrack(int crack_level, v3s16 crack_pos);
 };
 
-// represents a triangle as indexes into the vertex buffer in SMeshBuffer
+using NodeMeshBuffer = scene::CMeshBuffer<scene::Vertex3DExt>;
+
+// represents a triangle as indexes into the vertex buffer in NodeMeshBuffer
 class MeshTriangle
 {
 public:
-	scene::SMeshBuffer *buffer;
+	NodeMeshBuffer *buffer;
 	u16 p1, p2, p3;
 	v3f centroid;
 	float areaSQ;
@@ -151,7 +153,7 @@ private:
 class PartialMeshBuffer
 {
 public:
-	PartialMeshBuffer(scene::SMeshBuffer *buffer, std::vector<u16> &&vertex_indices) :
+	PartialMeshBuffer(NodeMeshBuffer *buffer, std::vector<u16> &&vertex_indices) :
 			m_buffer(buffer), m_indices(make_irr<scene::SIndexBuffer>())
 	{
 		m_indices->Data = std::move(vertex_indices);
@@ -163,7 +165,7 @@ public:
 	void draw(video::VideoDriver *driver) const;
 
 private:
-	scene::SMeshBuffer *m_buffer;
+	NodeMeshBuffer *m_buffer;
 	irr_ptr<scene::SIndexBuffer> m_indices;
 };
 

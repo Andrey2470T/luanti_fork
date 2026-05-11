@@ -326,10 +326,10 @@ static scene::SMesh *createGenericNodeMesh(Client *client, MapNode n,
 				const FrameSpec &frame = (*p.layer.frames)[0];
 				p.layer.texture = frame.texture;
 			}
-			for (scene::Vertex3D &v : p.vertices)
+			for (scene::Vertex3DExt &v : p.vertices)
 				v.Color.setAlpha(255);
 
-			auto buf = make_irr<scene::SMeshBuffer>();
+			auto buf = make_irr<NodeMeshBuffer>();
 			buf->append(&p.vertices[0], p.vertices.size(),
 					&p.indices[0], p.indices.size());
 

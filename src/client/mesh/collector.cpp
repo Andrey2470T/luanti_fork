@@ -31,8 +31,9 @@ void MeshCollector::append(const TileLayer &layer, const scene::Vertex3D *vertic
 
 	u32 vertex_count = p.vertices.size();
 	for (u32 i = 0; i < numVertices; i++) {
-		p.vertices.push_back({vertices[i].Pos + offset, vertices[i].Normal,
-			vertices[i].Color, scale * vertices[i].TCoords});
+		v3f tile_color = {(f32)layer.color.getRed(), (f32)layer.color.getGreen(), (f32)layer.color.getBlue()};
+		p.vertices.push_back({{vertices[i].Pos + offset, vertices[i].Normal,
+			vertices[i].Color, scale * vertices[i].TCoords}, tile_color});
 		m_bounding_radius_sq = std::max(m_bounding_radius_sq,
 				(vertices[i].Pos - m_center_pos).getLengthSQ());
 	}

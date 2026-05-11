@@ -230,8 +230,6 @@ static scene::SMesh *generateNodeMesh(Client *client, MapNode n,
 			// since we do that ourselves via updateLight().
 			for (auto &v : p.vertices)
 				v.Color.set(0xFFFFFFFF);
-			// but still apply the tile color
-			p.applyTileColor();
 
 			if (p.layer.material_flags & MATERIAL_FLAG_ANIMATION) {
 				const FrameSpec &frame = (*p.layer.frames)[0];

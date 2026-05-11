@@ -310,8 +310,6 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data):
 		{
 			PreMeshBuffer &p = collector.prebuffers[layer][i];
 
-			p.applyTileColor();
-
 			// Generate animation data
 			// - Cracks
 			if (p.layer.material_flags & MATERIAL_FLAG_CRACK) {
@@ -353,8 +351,9 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data):
 				p.layer.applyMaterialOptions(material, layer);
 			}
 
-			scene::SMeshBuffer *buf = new scene::SMeshBuffer();
+			auto *buf = new NodeMeshBuffer();
 			buf->Material = material;
+
 			if (p.layer.isTransparent()) {
 				buf->append(&p.vertices[0], p.vertices.size(), nullptr, 0);
 
@@ -464,14 +463,14 @@ void MapBlockMesh::updateTransparentBuffers(v3f camera_pos, v3s16 block_pos,
 	m_transparent_buffers_consolidated = false;
 	m_transparent_buffers.clear();
 
-	std::vector<std::pair<scene::SMeshBuffer *, std::vector<u16>>> ordered_strains;
-	std::unordered_map<scene::SMeshBuffer *, size_t> strain_idxs;
+	std::vector<std::pair<NodeMeshBuffer *, std::vector<u16>>> ordered_strains;
+	std::unordered_map<NodeMeshBuffer *, size_t> strain_idxs;
 
 	if (group_by_buffers) {
 		// find (reversed) order for strains, by iterating front-to-back
 		// (if a buffer A has a triangle nearer than all triangles of another
 		// buffer B, A should be drawn in front of (=after) B)
-		scene::SMeshBuffer *current_buffer = nullptr;
+		NodeMeshBuffer *current_buffer = nullptr;
 		for (auto it = triangle_refs.rbegin(); it != triangle_refs.rend(); ++it) {
 			const auto &t = m_transparent_triangles[*it];
 			if (current_buffer == t.buffer)
@@ -485,7 +484,7 @@ void MapBlockMesh::updateTransparentBuffers(v3f camera_pos, v3s16 block_pos,
 	}
 
 	// find order for triangles, by iterating back-to-front
-	scene::SMeshBuffer *current_buffer = nullptr;
+	NodeMeshBuffer *current_buffer = nullptr;
 	std::vector<u16> *current_strain = nullptr;
 	for (auto i : triangle_refs) {
 		const auto &t = m_transparent_triangles[i];
@@ -522,7 +521,7 @@ void MapBlockMesh::consolidateTransparentBuffers()
 		return;
 	m_transparent_buffers.clear();
 
-	scene::SMeshBuffer *current_buffer = nullptr;
+	NodeMeshBuffer *current_buffer = nullptr;
 	std::vector<u16> current_strain;
 
 	// use the fact that m_transparent_triangles is already arranged by buffer

@@ -38,6 +38,8 @@ centroid out float nightRatio;
 #endif
 
 out highp vec3 eyeVec;
+out vec3 hwColor;
+
 const float e = 2.718281828459;
 const float BS = 10.0;
 
@@ -154,6 +156,8 @@ void main(void)
 	float sum = float(max(skyLight + blockLight, 0));
 	nightRatio = 1.0 - (skyLight / sum);
 	varColor = calculateLighting(skyLight, blockLight, timeOfDay, ao);
+
+	hwColor = inAux / 255.0;
 
 
 #ifdef ENABLE_DYNAMIC_SHADOWS

@@ -14,25 +14,10 @@ struct PreMeshBuffer
 {
 	TileLayer layer;
 	std::vector<u16> indices;
-	std::vector<scene::Vertex3D> vertices;
+	std::vector<scene::Vertex3DExt> vertices;
 
 	PreMeshBuffer() = default;
 	explicit PreMeshBuffer(const TileLayer &layer) : layer(layer) {}
-
-	/// @brief Colorizes vertices as indicated by tile layer
-	void applyTileColor()
-	{
-		video::SColor tc = layer.color;
-		if (tc == video::SColor(0xFFFFFFFF))
-			return;
-		for (auto &vertex : vertices) {
-			video::SColor *c = &vertex.Color;
-			c->set(c->getAlpha(),
-				c->getRed() * tc.getRed() / 255U,
-				c->getGreen() * tc.getGreen() / 255U,
-				c->getBlue() * tc.getBlue() / 255U);
-		}
-	}
 };
 
 struct MeshCollector

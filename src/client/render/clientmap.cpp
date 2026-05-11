@@ -93,13 +93,13 @@ namespace {
 
 	/// @brief Append vertices to a mesh buffer
 	/// @note does not update bounding box!
-	void appendToMeshBuffer(scene::SMeshBuffer *dst, const scene::IMeshBuffer *src, v3f translate)
+	void appendToMeshBuffer(NodeMeshBuffer *dst, const scene::IMeshBuffer *src, v3f translate)
 	{
 		const size_t vcount = dst->Vertices->Data.size();
 		const size_t icount = dst->Indices->Data.size();
 
-		assert(src->getVertexType() == scene::EVT_3D);
-		const auto vptr = static_cast<const scene::Vertex3D*>(src->getVertices());
+		assert(src->getVertexType() == scene::EVT_3D_EXT);
+		const auto vptr = static_cast<const scene::Vertex3DExt*>(src->getVertices());
 		dst->Vertices->Data.insert(dst->Vertices->Data.end(),
 			vptr, vptr + src->getVertexCount());
 		// apply translation
@@ -912,7 +912,7 @@ static u32 transformBuffersToDrawOrder(
 		buffer_transform_stats.increment(false);
 		// merge and save to cache
 		auto &put_buffers = dynamic_buffers[key];
-		scene::SMeshBuffer *tmp = nullptr;
+		NodeMeshBuffer *tmp = nullptr;
 		const auto &finish_buf = [&] () {
 			if (tmp) {
 				draw_order.emplace_back(v3f(0), tmp);
@@ -938,7 +938,7 @@ static u32 transformBuffersToDrawOrder(
 				new_buffer = true;
 			if (new_buffer) {
 				finish_buf();
-				tmp = new scene::SMeshBuffer();
+				tmp = new NodeMeshBuffer();
 				put_buffers.buf.push_back(tmp);
 				assert(tmp->getPrimitiveType() == buf->getPrimitiveType());
 				tmp->Material = buf->getMaterial();

@@ -7,7 +7,16 @@
 #include <map>
 #include <stdexcept>
 
-static std::vector<Triangle> expandMesh(const std::vector<scene::Vertex3D> &vertices, const std::vector<u16> &indices)
+bool operator==(const scene::Vertex3DExt &v1, const scene::Vertex3DExt &v2)
+{
+	return ((v1.Pos == v2.Pos) &&
+		(v1.Normal == v2.Normal) &&
+		(v1.Color == v2.Color) &&
+		(v1.TCoords == v2.TCoords) &&
+		(v1.Aux == v2.Aux));
+}
+
+static std::vector<Triangle> expandMesh(const std::vector<scene::Vertex3DExt> &vertices, const std::vector<u16> &indices)
 {
 	const int n_indices = indices.size();
 	const int n_triangles = n_indices / 3;
@@ -35,7 +44,7 @@ static Triangle sortTriangle(Triangle t)
 	throw std::invalid_argument("got bad triangle");
 }
 
-static std::vector<Triangle> canonicalizeMesh(const std::vector<scene::Vertex3D> &vertices, const std::vector<u16> &indices)
+static std::vector<Triangle> canonicalizeMesh(const std::vector<scene::Vertex3DExt> &vertices, const std::vector<u16> &indices)
 {
 	std::vector<Triangle> mesh = expandMesh(vertices, indices);
 	for (auto &triangle: mesh)
@@ -44,13 +53,13 @@ static std::vector<Triangle> canonicalizeMesh(const std::vector<scene::Vertex3D>
 	return mesh;
 }
 
-bool checkMeshEqual(const std::vector<scene::Vertex3D> &vertices, const std::vector<u16> &indices, const std::vector<Triangle> &expected)
+bool checkMeshEqual(const std::vector<scene::Vertex3DExt> &vertices, const std::vector<u16> &indices, const std::vector<Triangle> &expected)
 {
 	auto actual = canonicalizeMesh(vertices, indices);
 	return actual == expected;
 }
 
-bool checkMeshEqual(const std::vector<scene::Vertex3D> &vertices, const std::vector<u16> &indices, const std::vector<Quad> &expected)
+bool checkMeshEqual(const std::vector<scene::Vertex3DExt> &vertices, const std::vector<u16> &indices, const std::vector<Quad> &expected)
 {
 	using QuadRefCount = std::array<int, 4>;
 	struct QuadRef {
