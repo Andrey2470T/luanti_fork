@@ -17,6 +17,9 @@ Used by `core.register_node`.
     -- node "attaches". For the other drawtypes the image will be centered
     -- on the node.
 
+    materials = {material name 1, name2, name3, name4, name5, name6},
+    -- Assigns custom materials for each tile registered by `gfx.register_material`
+
     tiles = {tile definition 1, def2, def3, def4, def5, def6},
     -- Textures of node; +Y, -Y, +X, -X, +Z, -Z
     -- List can be shortened to needed length.

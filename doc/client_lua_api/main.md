@@ -70,3 +70,5 @@ Sections
 - [Representations Of Simple Things](representations_of_simple_things.md)
 - [Sounds](sounds.md)
 - [Spatial Vectors](spatial_vectors.md)
+- [SSCSM](sscsm.md)
+- [Graphics](graphics.md)
