@@ -18,3 +18,21 @@ vec3 ACESFilm(vec3 x) {
     float e = 0.14f;
     return clamp((x*(a*x+b))/(x*(c*x+d)+e), 0.0, 1.0);
 }
+
+const float e = 2.718281828459;
+const float BS = 10.0;
+
+float smoothCurve(float x)
+{
+	return x * x * (3.0 - 2.0 * x);
+}
+
+float triangleWave(float x)
+{
+	return abs(fract(x + 0.5) * 2.0 - 1.0);
+}
+
+float smoothTriangleWave(float x)
+{
+	return smoothCurve(triangleWave(x)) * 2.0 - 1.0;
+}

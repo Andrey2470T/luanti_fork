@@ -27,8 +27,6 @@ centroid out vec2 varTexCoord;
 out highp vec3 eyeVec;
 out float nightRatio;
 out float vIDiff;
-const float e = 2.718281828459;
-const float BS = 10.0;
 
 float directional_ambient(vec3 normal)
 {
