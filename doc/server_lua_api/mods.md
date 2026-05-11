@@ -61,6 +61,8 @@ Mod directory structure
     │   ├── sounds
     │   ├── media
     │   ├── locale
+    │   ├── shaders
+    │   ├── client
     │   └── <custom data>
     └── another
 
@@ -163,6 +165,10 @@ Only a subset of model file format features is supported:
 
 Simple textured meshes (with multiple textures), optionally with normals.
 The .x, .b3d and .gltf formats additionally support (a single) animation.
+
+### `shaders`, `client`
+
+See `client_lua_api/sscsm.md` and `client_lua_api/graphics.md`.
 
 #### glTF
 
