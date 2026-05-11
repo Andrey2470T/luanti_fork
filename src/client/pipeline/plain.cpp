@@ -12,6 +12,7 @@
 #include "client/ui/minimap.h"
 #include "client/shadows/dynamicshadowsrender.h"
 #include <GUI/IGUIEnvironment.h>
+#include <Device/Timer.h>
 
 /// Draw3D pipeline step
 void Draw3D::run(PipelineContext &context)

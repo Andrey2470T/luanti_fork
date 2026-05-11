@@ -17,7 +17,7 @@
 #include "Video/MaterialRenderer.h"
 #include "Video/VideoDriver.h"
 
-ShadowRenderer::ShadowRenderer(SDLDevice *device, Client *client) :
+ShadowRenderer::ShadowRenderer(ISDLDevice *device, Client *client) :
 		m_smgr(device->getSceneManager()), m_driver(device->getVideoDriver()),
 		m_client(client), m_shadow_strength(0.0f), m_shadow_tint(255, 0, 0, 0),
 		m_time_day(0.0f), m_force_update_shadow_map(false), m_current_frame(0),
@@ -684,7 +684,7 @@ std::string ShadowRenderer::readShaderFile(const std::string &path)
 	return prefix + content;
 }
 
-ShadowRenderer *createShadowRenderer(SDLDevice *device, Client *client)
+ShadowRenderer *createShadowRenderer(ISDLDevice *device, Client *client)
 {
 	if (!g_settings->getBool("enable_dynamic_shadows"))
 		return nullptr;

@@ -3,6 +3,7 @@
 // Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 // Copyright (C) 2017 nerzhul, Loic Blot <loic.blot@unix-experience.fr>
 
+#include "Device/ICursorControl.h"
 #include "settings.h"
 #include "util/numeric.h"
 #include "inputhandler.h"
@@ -139,7 +140,7 @@ bool MyEventReceiver::OnEvent(const SEvent &event)
 		KeyPress keyCode(event.KeyInput);
 		if (keyCode == getKeySetting("keymap_fullscreen")) {
 			if (event.KeyInput.PressedDown && !fullscreen_is_down) {
-				SDLDevice *device = RenderingEngine::get_raw_device();
+				ISDLDevice *device = RenderingEngine::get_raw_device();
 
 				bool new_fullscreen = !device->isFullscreen();
 				// Only update the setting if toggling succeeds - it always fails

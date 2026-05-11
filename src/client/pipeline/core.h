@@ -9,7 +9,7 @@
 #include <Image/SColor.h>
 
 
-class SDLDevice;
+class ISDLDevice;
 
 class ShadowRenderer;
 class Camera;
@@ -22,7 +22,7 @@ class RenderTarget;
 class RenderingCore
 {
 protected:
-	SDLDevice *device;
+	ISDLDevice *device;
 	Client *client;
 	Hud *hud;
 	ShadowRenderer *shadow_renderer;
@@ -33,7 +33,7 @@ protected:
 	v2u32 virtual_size { 0, 0 };
 
 public:
-	RenderingCore(SDLDevice *device, Client *client, Hud *hud,
+	RenderingCore(ISDLDevice *device, Client *client, Hud *hud,
 			ShadowRenderer *shadow_renderer, RenderPipeline *pipeline,
 			v2f virtual_size_scale);
 	RenderingCore(const RenderingCore &) = delete;

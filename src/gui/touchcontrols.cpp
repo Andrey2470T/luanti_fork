@@ -21,7 +21,7 @@
 #include "GUI/IGUIImage.h"
 #include "GUI/IGUIStaticText.h"
 #include "GUI/IGUIFont.h"
-#include <Device/SDLDevice.h>
+#include <Device/ISDLDevice.h>
 #include <Scene/ISceneCollisionManager.h>
 #include <GUI/IGUIElement.h>
 #include <GUI/IGUIEnvironment.h>
@@ -227,7 +227,7 @@ static const char *setting_names[] = {
 	"touch_layout",
 };
 
-TouchControls::TouchControls(SDLDevice *device, ISimpleTextureSource *tsrc):
+TouchControls::TouchControls(ISDLDevice *device, ISimpleTextureSource *tsrc):
 		m_device(device),
 		m_guienv(device->getGUIEnvironment()),
 		m_receiver(device->getEventReceiver()),

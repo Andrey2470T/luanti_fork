@@ -5,6 +5,7 @@
 #include "game.h"
 
 #include <cmath>
+#include "Device/ICursorControl.h"
 #include "client/render/renderingengine.h"
 #include "client/player/camera.h"
 #include "client.h"
@@ -796,7 +797,7 @@ private:
 	   This class does take ownership/responsibily for cleaning up etc of any of
 	   these items (e.g. device)
 	*/
-	SDLDevice *device;
+	ISDLDevice *device;
 	RenderingEngine *m_rendering_engine;
 	video::VideoDriver *driver;
 	scene::ISceneManager *smgr;

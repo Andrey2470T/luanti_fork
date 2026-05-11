@@ -39,7 +39,6 @@
 #include "GUI/IGUIEnvironment.h"
 #include "GUI/IGUIFont.h"
 #include "Video/VideoDriver.h"
-#include "Device/SDLDevice.h"
 #include "util/enriched_string.h"
 #include "util/basic_macros.h"
 

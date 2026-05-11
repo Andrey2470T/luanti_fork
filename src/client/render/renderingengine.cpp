@@ -4,7 +4,7 @@
 // Copyright (C) 2017 nerzhul, Loic Blot <loic.blot@unix-experience.fr>
 
 #include <optional>
-#include <Device/SDLDevice.h>
+#include <Device/ISDLDevice.h>
 #include "Mesh/IMeshCache.h"
 #include "client/ui/fontengine.h"
 #include "client/core/client.h"
@@ -34,7 +34,7 @@ void FpsControl::reset()
 	last_time = porting::getTimeUs();
 }
 
-void FpsControl::limit(SDLDevice *device, f32 *dtime)
+void FpsControl::limit(ISDLDevice *device, f32 *dtime)
 {
 	const float fps_limit = device->isWindowFocused()
 			? g_settings->getFloat("fps_max")
@@ -130,12 +130,12 @@ static inline auto getVideoDriverName(video::E_DRIVER_TYPE driver)
 	return RenderingEngine::getVideoDriverInfo(driver).friendly_name;
 }
 
-static SDLDevice *createDevice(SDLDeviceParameters params, std::optional<video::E_DRIVER_TYPE> requested_driver)
+static ISDLDevice *createDevice(SDLDeviceParameters params, std::optional<video::E_DRIVER_TYPE> requested_driver)
 {
 	if (requested_driver) {
 		params.DriverType = *requested_driver;
 		infostream << "Trying video driver " << getVideoDriverName(params.DriverType) << std::endl;
-		if (auto *device = SDLDevice::createDeviceEx(params))
+		if (auto *device = createDeviceEx(params))
 			return device;
 		errorstream << "Failed to initialize the " << getVideoDriverName(params.DriverType) << " video driver" << std::endl;
 	}
@@ -146,7 +146,7 @@ static SDLDevice *createDevice(SDLDeviceParameters params, std::optional<video::
 			continue;
 		params.DriverType = fallback_driver;
 		infostream << "Trying video driver " << getVideoDriverName(params.DriverType) << std::endl;
-		if (auto *device = SDLDevice::createDeviceEx(params))
+		if (auto *device = createDeviceEx(params))
 			return device;
 	}
 
@@ -233,7 +233,7 @@ RenderingEngine::~RenderingEngine()
 
 void RenderingEngine::settingChangedCallback(const std::string &name, void *data)
 {
-	SDLDevice *device = static_cast<RenderingEngine*>(data)->m_device;
+	ISDLDevice *device = static_cast<RenderingEngine*>(data)->m_device;
 	if (name == "fullscreen") {
 		device->setFullscreen(g_settings->getBool("fullscreen"));
 
