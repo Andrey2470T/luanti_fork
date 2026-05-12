@@ -192,6 +192,12 @@ class GameGlobalShaderUniformSetter : public IShaderUniformSetter
 {
 	Sky *m_sky;
 	Client *m_client;
+	CachedShaderSetting<f32, 3> m_night_skycolor{"nightSkyColor"};
+	CachedShaderSetting<f32, 3> m_sunrise_skycolor{"sunriseSkyColor"};
+	CachedShaderSetting<f32, 3> m_day_skycolor{"daySkyColor"};
+	CachedShaderSetting<f32, 3> m_sunset_skycolor{"sunsetSkyColor"};
+	CachedShaderSetting<f32, 3> m_ambient_color{"ambientColor"};
+
 	CachedShaderSetting<f32> m_animation_timer_vertex{"animationTimer"};
 	CachedShaderSetting<f32> m_animation_timer_pixel{"animationTimer"};
 	CachedShaderSetting<f32>
@@ -300,6 +306,12 @@ public:
 		m_texel_size0_pixel.set(m_texel_size0, renderer);
 
 		const auto &lighting = m_client->getEnv().getLocalPlayer()->getLighting();
+
+		m_night_skycolor.set(lighting.skycolors.night, renderer);
+		m_sunrise_skycolor.set(lighting.skycolors.sunrise, renderer);
+		m_day_skycolor.set(lighting.skycolors.day, renderer);
+		m_sunset_skycolor.set(lighting.skycolors.sunset, renderer);
+		m_ambient_color.set(lighting.ambient_color, renderer);
 
 		const AutoExposure &exposure_params = lighting.exposure;
 		std::array<f32, 7> exposure_buffer = {

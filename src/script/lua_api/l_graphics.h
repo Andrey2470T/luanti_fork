@@ -39,6 +39,9 @@ private:
 
 	static void read_constants(lua_State *L, ShaderConstants &constants);
 	static void read_shader_info(lua_State *L, ShaderInfo &info);
+
+	static int l_set_lighting(lua_State *L);
+	static int l_get_lighting(lua_State *L);
 public:
 	static void Initialize(lua_State *L, int top);
 };

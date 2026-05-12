@@ -1,10 +1,11 @@
+uniform vec3 nightSkyColor;
+uniform vec3 sunriseSkyColor;
+uniform vec3 daySkyColor;
+uniform vec3 sunsetSkyColor;
+uniform vec3 ambientColor;
+
 vec3 getSkyColor(float timeOfDay)
 {
-    vec3 night = vec3(0.04, 0.04, 0.12);
-    vec3 sunrise = vec3(0.80, 0.35, 0.20);
-    vec3 day = vec3(1.00, 0.98, 0.95);
-    vec3 sunset = vec3(0.85, 0.30, 0.15);
-
     // Handle night period (including wrap-around from 0.825 to 0.18)
     float isNight = step(0.825, timeOfDay) + step(timeOfDay, 0.18);
     isNight = clamp(isNight, 0.0, 1.0);
@@ -39,17 +40,17 @@ vec3 getSkyColor(float timeOfDay)
 
     // Apply smoothstep interpolation within sunrise and sunset periods
     // Sunrise peak at 0.23
-    vec3 sunriseColor = mix(night, sunrise, sunrise1) * (1.0 - step(0.23, t)) +
-                        mix(sunrise, day, 1.0 - sunrise2) * step(0.23, t);
+    vec3 sunriseColor = mix(nightSkyColor, sunriseSkyColor, sunrise1) * (1.0 - step(0.23, t)) +
+                        mix(sunriseSkyColor, daySkyColor, 1.0 - sunrise2) * step(0.23, t);
     sunriseColor = sunriseColor * isSunrise;
 
     // Sunset peak at 0.775 (was 0.75)
-    vec3 sunsetColor = mix(day, sunset, sunset1) * (1.0 - step(0.775, t)) +
-                       mix(sunset, night, 1.0 - sunset2) * step(0.775, t);
+    vec3 sunsetColor = mix(daySkyColor, sunsetSkyColor, sunset1) * (1.0 - step(0.775, t)) +
+                       mix(sunsetSkyColor, nightSkyColor, 1.0 - sunset2) * step(0.775, t);
     sunsetColor = sunsetColor * isSunset;
 
-    vec3 dayColor = day * isDay;
-    vec3 nightColor = night * isNight;
+    vec3 dayColor = daySkyColor * isDay;
+    vec3 nightColor = nightSkyColor * isNight;
 
     // Combine everything
     return nightColor + sunriseColor + dayColor + sunsetColor;
@@ -64,11 +65,10 @@ vec3 calculateLighting(float skyLight, float blockLight, float timeOfDay, float 
 	// 2. Blending the light colors
 	vec3 mixedColor = blockColor * blockLight + skyColor * skyLight;
 
-	// 3. Ambient light adding (hardcoded)
-	vec3 ambientColor = vec3(0.05);
+	// 3. Ambient light
 	mixedColor += ambientColor;
 
-	// 4. Apply ambient occlusion
+	// 4. Ambient occlusion
 	mixedColor *= ao;
 
 	return mixedColor;

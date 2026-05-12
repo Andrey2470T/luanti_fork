@@ -18,7 +18,22 @@ List of API functions:
 
 * `gfx.register_material(name, materialdef)`: registers a new material with unique `name` name
     and properties from `materialdef` (see `Material Definition`).
+* `gfx.set_lighting(lightdef)`: analogous to the PlayerRef's eponymous method
+    (see `server_lua_api/class_reference/object.md`).
+    Except the server lighting params, it reads also the following ones:
+    * `skycolors` is a table adjusting the sky light colors at the four timeofday points (or intervals):
+      * `night` is a color at [0.825;0.18]  (default: `{r=10, g=10, b=31}`).
+      * `sunrise` is a color at 0.23        (default: `{r=205, g=90, b=51}`).
+      * `day` is a color at [0.28:0.725]    (default: `{r=255, g=251, b=243}`).
+      * `sunset` is a color at 0.775        (default: `{r=218, g=77, b=38}`).
+      Colors at the night and day stay constant, at the sunrise and sunset they are being interpolated
+    * `ambient_color` is a color of ambient light (default: `{r=13, g=13, b=13}`).
+      This part of the light is added with the mixed shader light color.
+      Allows illuminating badly lit places like caves, nether, underground at the night.
 
+      All color parameters are ColorSpecs, alpha channel is ignored.
+* `gfx.get_lighting()`: analogous to the PlayerRef's eponymous method
+    (see `server_lua_api/class_reference/object.md`).
 
 Material Definition
 -------------------

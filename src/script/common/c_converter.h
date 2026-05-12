@@ -29,6 +29,8 @@ float getfloatfield_default(lua_State *L, int table,
 		const char *fieldname, float default_);
 int getintfield_default(lua_State *L, int table,
 		const char *fieldname, int default_);
+video::SColor getcolorfield_default(lua_State *L, int table,
+		const char *fieldname, video::SColor default_);
 
 bool check_field_or_nil(lua_State *L, int index, int type, const char *fieldname);
 
@@ -59,6 +61,8 @@ bool getboolfield(lua_State *L, int table,
 		const char *fieldname, bool &result);
 bool getfloatfield(lua_State *L, int table,
 		const char *fieldname, float &result);
+bool getcolorfield(lua_State *L, int table,
+		const char *fieldname, video::SColor &result);
 
 void setstringfield(lua_State *L, int table,
 		const char *fieldname, const std::string &value);

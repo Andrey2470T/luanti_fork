@@ -554,6 +554,16 @@ size_t getstringlistfield(lua_State *L, int table, const char *fieldname,
 	return num_strings_read;
 }
 
+bool getcolorfield(lua_State *L, int table,
+	const char *fieldname, video::SColor &result)
+{
+	lua_getfield(L, table, fieldname);
+	bool got = read_color(L, -1, &result);
+
+	lua_pop(L, 1);
+	return got;
+}
+
 std::string getstringfield_default(lua_State *L, int table,
 		const char *fieldname, const std::string &default_)
 {
@@ -590,6 +600,13 @@ v3s16 getv3s16field_default(lua_State *L, int table,
 		const char *fieldname, v3s16 default_)
 {
 	getv3intfield(L, table, fieldname, default_);
+	return default_;
+}
+
+video::SColor getcolorfield_default(lua_State *L, int table,
+		const char *fieldname, video::SColor default_)
+{
+	getcolorfield(L, table, fieldname, default_);
 	return default_;
 }
 

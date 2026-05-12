@@ -18,32 +18,34 @@
 struct AutoExposure
 {
 	/// @brief Minimum boundary for computed luminance
-	float luminance_min;
+	float luminance_min{-3.0f};
 	/// @brief Maximum boundary for computed luminance
-	float luminance_max;
+	float luminance_max{-3.0f};
 	/// @brief Luminance bias. Higher values make the scene darker, can be negative.
-	float exposure_correction;
+	float exposure_correction{0.0f};
 	/// @brief Speed of transition from dark to bright scenes
-	float speed_dark_bright;
+	float speed_dark_bright{1000.0f};
 	/// @brief Speed of transition from bright to dark scenes
-	float speed_bright_dark;
+	float speed_bright_dark{1000.0f};
 	/// @brief Power value for center-weighted metering. Value of 1.0 measures entire screen uniformly
-	float center_weight_power;
-
-	constexpr AutoExposure()
-		: luminance_min(-3.f),
-		luminance_max(-3.f),
-		exposure_correction(0.0f),
-		speed_dark_bright(1000.f),
-		speed_bright_dark(1000.f),
-		center_weight_power(1.f)
-	{}
+	float center_weight_power{1.0f};
 };
 
-/** Describes ambient light settings for a player
- */
+// Parameters for four day time points (night, sunrise, day, sunset)
+struct SkyColorTransitions
+{
+	video::SColor night {255, 10, 10, 31};
+	video::SColor sunrise {255, 205, 90, 51};
+	video::SColor day {255, 255, 251, 243};
+	video::SColor sunset {255, 218, 77, 38};
+};
+
+// Describes global lighting settings for a player
 struct Lighting
 {
+	SkyColorTransitions skycolors;
+	video::SColor ambient_color {255, 13, 13, 13};
+
 	AutoExposure exposure;
 	float shadow_intensity {0.0f};
 	float saturation {1.0f};

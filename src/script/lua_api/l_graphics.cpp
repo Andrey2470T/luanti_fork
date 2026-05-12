@@ -2,6 +2,7 @@
 #include "client/core/client.h"
 #include "client/media/shader.h"
 #include "client/media/texturesource.h"
+#include "client/player/localplayer.h"
 #include "nodedef.h"
 #include "common/c_converter.h"
 #include "l_internal.h"
@@ -321,9 +322,125 @@ int ModApiGraphics::l_register_material(lua_State *L)
 	return 1;
 }
 
+int ModApiGraphics::l_set_lighting(lua_State *L)
+{
+	if (!lua_istable(L, 1))
+		return 0;
+
+	auto &lighting = getClient(L)->getEnv().getLocalPlayer()->getLighting();
+
+	lua_getfield(L, 1, "skycolors");
+	if (lua_istable(L, -1)) {
+		getcolorfield(L, -1, "night", lighting.skycolors.night);
+		getcolorfield(L, -1, "sunrise", lighting.skycolors.sunrise);
+		getcolorfield(L, -1, "day", lighting.skycolors.day);
+		getcolorfield(L, -1, "sunset", lighting.skycolors.sunset);
+	}
+	lua_pop(L, 1);
+
+	getcolorfield(L, 1, "ambient_color", lighting.ambient_color);
+
+	lua_getfield(L, 1, "shadows");
+	if (lua_istable(L, -1)) {
+		getfloatfield(L, -1, "intensity", lighting.shadow_intensity);
+		getcolorfield(L, -1, "tint", lighting.shadow_tint);
+	}
+	lua_pop(L, 1); // shadows
+
+	getfloatfield(L, 1, "saturation", lighting.saturation);
+
+	lua_getfield(L, 1, "exposure");
+	if (lua_istable(L, -1)) {
+		lighting.exposure.luminance_min       = getfloatfield_default(L, -1, "luminance_min",       lighting.exposure.luminance_min);
+		lighting.exposure.luminance_max       = getfloatfield_default(L, -1, "luminance_max",       lighting.exposure.luminance_max);
+		lighting.exposure.exposure_correction = getfloatfield_default(L, -1, "exposure_correction", lighting.exposure.exposure_correction);
+		lighting.exposure.speed_dark_bright   = getfloatfield_default(L, -1, "speed_dark_bright",   lighting.exposure.speed_dark_bright);
+		lighting.exposure.speed_bright_dark   = getfloatfield_default(L, -1, "speed_bright_dark",   lighting.exposure.speed_bright_dark);
+		lighting.exposure.center_weight_power = getfloatfield_default(L, -1, "center_weight_power", lighting.exposure.center_weight_power);
+	}
+	lua_pop(L, 1); // exposure
+
+	lua_getfield(L, 1, "volumetric_light");
+	if (lua_istable(L, -1)) {
+		getfloatfield(L, -1, "strength", lighting.volumetric_light_strength);
+		lighting.volumetric_light_strength = rangelim(lighting.volumetric_light_strength, 0.0f, 1.0f);
+	}
+	lua_pop(L, 1); // volumetric_light
+
+	lua_getfield(L, 1, "bloom");
+	if (lua_istable(L, -1)) {
+		lighting.bloom_intensity       = getfloatfield_default(L, -1, "intensity",       lighting.bloom_intensity);
+		lighting.bloom_strength_factor = getfloatfield_default(L, -1, "strength_factor", lighting.bloom_strength_factor);
+		lighting.bloom_radius          = getfloatfield_default(L, -1, "radius",          lighting.bloom_radius);
+	}
+	lua_pop(L, 1); // bloom
+
+	return 1;
+}
+
+int ModApiGraphics::l_get_lighting(lua_State *L)
+{
+	const auto &lighting = getClient(L)->getEnv().getLocalPlayer()->getLighting();
+
+	lua_newtable(L); // result
+
+	lua_newtable(L); // "skycolors"
+	push_ARGB8(L, lighting.skycolors.night);
+	lua_setfield(L, -2, "night");
+	push_ARGB8(L, lighting.skycolors.sunrise);
+	lua_setfield(L, -2, "sunrise");
+	push_ARGB8(L, lighting.skycolors.day);
+	lua_setfield(L, -2, "day");
+	push_ARGB8(L, lighting.skycolors.sunset);
+	lua_setfield(L, -2, "sunset");
+	lua_setfield(L, -2, "skycolors");
+
+	push_ARGB8(L, lighting.ambient_color); // ambient color
+	lua_setfield(L, -2, "ambient_color");
+
+	lua_newtable(L); // "shadows"
+	lua_pushnumber(L, lighting.shadow_intensity);
+	lua_setfield(L, -2, "intensity");
+	push_ARGB8(L, lighting.shadow_tint);
+	lua_setfield(L, -2, "tint");
+	lua_setfield(L, -2, "shadows");
+	lua_pushnumber(L, lighting.saturation);
+	lua_setfield(L, -2, "saturation");
+	lua_newtable(L); // "exposure"
+	lua_pushnumber(L, lighting.exposure.luminance_min);
+	lua_setfield(L, -2, "luminance_min");
+	lua_pushnumber(L, lighting.exposure.luminance_max);
+	lua_setfield(L, -2, "luminance_max");
+	lua_pushnumber(L, lighting.exposure.exposure_correction);
+	lua_setfield(L, -2, "exposure_correction");
+	lua_pushnumber(L, lighting.exposure.speed_dark_bright);
+	lua_setfield(L, -2, "speed_dark_bright");
+	lua_pushnumber(L, lighting.exposure.speed_bright_dark);
+	lua_setfield(L, -2, "speed_bright_dark");
+	lua_pushnumber(L, lighting.exposure.center_weight_power);
+	lua_setfield(L, -2, "center_weight_power");
+	lua_setfield(L, -2, "exposure");
+	lua_newtable(L); // "volumetric_light"
+	lua_pushnumber(L, lighting.volumetric_light_strength);
+	lua_setfield(L, -2, "strength");
+	lua_setfield(L, -2, "volumetric_light");
+	lua_newtable(L); // "bloom"
+	lua_pushnumber(L, lighting.bloom_intensity);
+	lua_setfield(L, -2, "intensity");
+	lua_pushnumber(L, lighting.bloom_strength_factor);
+	lua_setfield(L, -2, "strength_factor");
+	lua_pushnumber(L, lighting.bloom_radius);
+	lua_setfield(L, -2, "radius");
+	lua_setfield(L, -2, "bloom");
+
+	return 1;
+}
+
 void ModApiGraphics::Initialize(lua_State *L, int top)
 {
 	API_FCT(register_material);
+	API_FCT(set_lighting);
+	API_FCT(get_lighting);
 
 	UniformSetter::Register(L);
 
