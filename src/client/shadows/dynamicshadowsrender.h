@@ -6,7 +6,7 @@
 
 #include <string>
 #include <vector>
-#include <Device/ISDLDevice.h>
+#include <Device/SDLDevice.h>
 #include "client/shadows/dynamicshadows.h"
 #include <Scene/ISceneNode.h>
 #include <Scene/ISceneManager.h>
@@ -42,7 +42,7 @@ class ShadowRenderer
 public:
 	static const int TEXTURE_LAYER_SHADOW = 3;
 
-	ShadowRenderer(ISDLDevice *device, Client *client);
+	ShadowRenderer(SDLDevice *device, Client *client);
 	~ShadowRenderer();
 
 	// Call before generating any shaders
@@ -165,4 +165,4 @@ private:
  * @param client Reference to the client context.
  * @return A new ShadowRenderer instance or nullptr if shadows are disabled or not supported.
  */
-ShadowRenderer *createShadowRenderer(ISDLDevice *device, Client *client);
+ShadowRenderer *createShadowRenderer(SDLDevice *device, Client *client);

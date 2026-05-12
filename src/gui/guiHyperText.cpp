@@ -3,7 +3,6 @@
 // Copyright (C) 2019 EvicenceBKidscode / Pierre-Yves Rollo <dev@pyrollo.com>
 
 #include "guiHyperText.h"
-#include "Device/ICursorControl.h"
 #include "guiScrollBar.h"
 #include "client/ui/fontengine.h"
 #include "client/ui/drawItemStack.h"
@@ -1062,7 +1061,7 @@ void GUIHyperText::checkHover(s32 X, s32 Y)
 		}
 	}
 
-	ICursorControl *cursor_control = RenderingEngine::get_raw_device()->getCursorControl();
+	CursorControl *cursor_control = RenderingEngine::get_raw_device()->getCursorControl();
 
 	if (cursor_control)
 		cursor_control->setActiveIcon(m_drawer.m_hovertag ? gui::ECI_HAND : gui::ECI_NORMAL);
@@ -1082,7 +1081,7 @@ bool GUIHyperText::OnEvent(const SEvent &event)
 			event.GUIEvent.EventType == EGET_ELEMENT_LEFT) {
 		m_drawer.m_hovertag = nullptr;
 
-		ICursorControl *cursor_control = RenderingEngine::get_raw_device()->getCursorControl();
+		CursorControl *cursor_control = RenderingEngine::get_raw_device()->getCursorControl();
 
 		if (cursor_control && cursor_control->isVisible())
 			cursor_control->setActiveIcon(gui::ECI_NORMAL);

@@ -3,7 +3,6 @@
 // Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "guiChatConsole.h"
-#include "Device/Clipboard.h"
 #include "chat.h"
 #include "client/core/client.h"
 #include "debug.h"

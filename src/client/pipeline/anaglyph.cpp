@@ -5,7 +5,7 @@
 
 #include "anaglyph.h"
 #include "client/player/camera.h"
-#include <Device/ISDLDevice.h>
+#include <Device/SDLDevice.h>
 #include <Scene/ISceneManager.h>
 #include <Video/DrawContext.h>
 

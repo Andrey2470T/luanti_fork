@@ -18,7 +18,7 @@
 #include "util/basic_macros.h"
 #include "client/input/keycode.h"
 
-class ISDLDevice;
+class SDLDevice;
 namespace gui
 {
 	class IGUIEnvironment;
@@ -73,7 +73,7 @@ struct button_info
 class TouchControls
 {
 public:
-	TouchControls(ISDLDevice *device, ISimpleTextureSource *tsrc);
+	TouchControls(SDLDevice *device, ISimpleTextureSource *tsrc);
 	~TouchControls();
 	DISABLE_CLASS_COPY(TouchControls);
 
@@ -125,7 +125,7 @@ public:
 	IGUIStaticText *getStatusText() { return m_status_text.get(); }
 
 private:
-	ISDLDevice *m_device = nullptr;
+	SDLDevice *m_device = nullptr;
 	IGUIEnvironment *m_guienv = nullptr;
 	IEventReceiver *m_receiver = nullptr;
 	ISimpleTextureSource *m_texturesource = nullptr;
