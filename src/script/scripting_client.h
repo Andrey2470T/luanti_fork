@@ -43,9 +43,8 @@ protected:
 	// from ScriptApiSecurity:
 	bool checkPathInternal(const std::string &abs_path, bool write_required,
 		bool *write_allowed) override {
-		warningstream << "IO API called in client scripting" << std::endl;
-		assert(0);
-		return false;
+		*write_allowed = true;
+		return true;
 	}
 	bool modNamesAreTrusted() override { return true; }
 

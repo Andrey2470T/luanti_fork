@@ -236,7 +236,7 @@ local function get_formspec(data)
 			",2=" .. core.formspec_escape(defaulttexturedir .. "error_icon_orange.png") ..
 			",3=" .. core.formspec_escape(defaulttexturedir .. "error_icon_red.png") .. ";text]" ..
 		"table[5.5,0.75;5.75,6;world_config_modlist;" ..
-		pkgmgr.render_packagelist(data.list, use_technical_names, with_error) .. ";" .. data.selected_mod .."]"
+		pkgmgr.render_packagelist(data.list, use_technical_names, with_error, true) .. ";" .. data.selected_mod .."]"
 end
 
 local function handle_buttons(this, fields)

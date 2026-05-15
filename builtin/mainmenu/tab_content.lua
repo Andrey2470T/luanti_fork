@@ -22,6 +22,7 @@ local function update_packages()
 	table.insert_all(packages_raw, pkgmgr.games)
 	table.insert_all(packages_raw, pkgmgr.texture_packs)
 	table.insert_all(packages_raw, pkgmgr.global_mods:get_list())
+	table.insert_all(packages_raw, pkgmgr.client_mods:get_list())
 
 	local function get_data()
 		return packages_raw
@@ -72,7 +73,7 @@ local function get_formspec(tabview, name, tabdata)
 			",4=", core.formspec_escape(defaulttexturedir .. "cdb_update_cropped.png"),
 			";text]",
 		"table[0.4,0.8;6.3,4.8;pkglist;",
-		pkgmgr.render_packagelist(packages, use_technical_names, update_icons),
+		pkgmgr.render_packagelist(packages, use_technical_names, update_icons, false),
 		";", tabdata.selected_pkg, "]",
 
 		"button[0.4,5.8;6.3,0.9;btn_contentdb;", contentdb_label, "]"

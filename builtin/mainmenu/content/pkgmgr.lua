@@ -198,6 +198,9 @@ function pkgmgr.get_all()
 	for _, mod in pairs(pkgmgr.global_mods:get_list()) do
 		result[#result + 1] = mod
 	end
+	for _, mod in pairs(pkgmgr.client_mods:get_list()) do
+		result[#result + 1] = mod
+	end
 	for _, game in pairs(pkgmgr.games) do
 		result[#result + 1] = game
 	end
@@ -276,7 +279,7 @@ end
 --- @param render_list filterlist
 --- @param use_technical_names boolean to show technical names instead of human-readable titles
 --- @param with_icon table or nil, from virtual path to icon object
-function pkgmgr.render_packagelist(render_list, use_technical_names, with_icon)
+function pkgmgr.render_packagelist(render_list, use_technical_names, with_icon, ignore_clientmods)
 	if not render_list then
 		if not pkgmgr.global_mods then
 			pkgmgr.reload_global_mods()
@@ -296,6 +299,10 @@ function pkgmgr.render_packagelist(render_list, use_technical_names, with_icon)
 			end
 		end
 
+		if ignore_clientmods and v.loc == "client" then
+			goto continue
+		end
+
 		if v.is_modpack then
 			local rawlist = render_list:get_raw_list()
 			color = mt_color_dark_green
@@ -310,7 +317,7 @@ function pkgmgr.render_packagelist(render_list, use_technical_names, with_icon)
 						icon = 1
 					else
 						-- Modpack not entirely enabled so showing as grey
-						color = mt_color_grey
+						color = v.loc == "client" and mt_color_aquamarine or mt_color_grey
 					end
 				end
 			end
@@ -329,6 +336,9 @@ function pkgmgr.render_packagelist(render_list, use_technical_names, with_icon)
 		elseif v.enabled or v.type == "txp" then
 			icon = 1
 			color = mt_color_green
+		elseif v.loc == "client" then
+			icon = 1
+			color = mt_color_aqua
 		end
 
 		if icon_info then
@@ -361,6 +371,8 @@ function pkgmgr.render_packagelist(render_list, use_technical_names, with_icon)
 		else
 			retval[#retval + 1] = core.formspec_escape(v.list_title or v.list_name or v.title or v.name)
 		end
+
+		::continue::
 	end
 
 	return table.concat(retval, ",")
@@ -698,6 +710,21 @@ function pkgmgr.preparemodlist(data)
 	return retval
 end
 
+function pkgmgr.prepare_clientmods_list(data)
+	local mods = {}
+
+	local modpath = core.get_clientmodpath()
+	pkgmgr.get_mods(modpath, "clientmods", mods)
+
+	for i=1,#mods,1 do
+		mods[i].type = "mod"
+		mods[i].loc = "client"
+		mods[i].enabled = false
+	end
+
+	return mods
+end
+
 function pkgmgr.compare_package(a, b)
 	return a and b and a.name == b.name and a.path == b.path
 end
@@ -741,6 +768,19 @@ function pkgmgr.reload_global_mods()
 end
 
 --------------------------------------------------------------------------------
+function pkgmgr.reload_client_mods()
+	local function is_equal(element,uid) --uid match
+		if element.name == uid then
+			return true
+		end
+	end
+	pkgmgr.client_mods = filterlist.create(pkgmgr.prepare_clientmods_list,
+			pkgmgr.comparemod, is_equal, nil, {})
+	pkgmgr.client_mods:add_sort_mechanism("alphabetic", sort_mod_list)
+	pkgmgr.client_mods:set_sortmode("alphabetic")
+end
+
+--------------------------------------------------------------------------------
 function pkgmgr.find_by_gameid(gameid)
 	for i, game in ipairs(pkgmgr.games) do
 		if game.id == gameid then
@@ -769,15 +809,21 @@ function pkgmgr.reload_games()
 end
 
 --------------------------------------------------------------------------------
-function pkgmgr.reload_by_type(type)
+function pkgmgr.reload_by_type(type, loc)
+	loc = loc or ""
+
 	if type == "game" then
 		pkgmgr.reload_games()
 	elseif type == "txp" then
 		pkgmgr.reload_texture_packs()
 	elseif type == "mod" or type == "modpack" then
-		pkgmgr.reload_global_mods()
+		if loc == "client" then
+			pkgmgr.reload_client_mods()
+		else
+			pkgmgr.reload_global_mods()
+		end
 	else
-		error("Unknown package type: " .. type)
+		error("Unknown package type: " .. type .. " and loc: " .. loc)
 	end
 end
 
@@ -785,6 +831,9 @@ end
 function pkgmgr.load_all()
 	if not pkgmgr.global_mods then
 		pkgmgr.reload_global_mods()
+	end
+	if not pkgmgr.client_mods then
+		pkgmgr.reload_client_mods()
 	end
 	if not pkgmgr.games then
 		pkgmgr.reload_games()
