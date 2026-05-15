@@ -415,7 +415,7 @@ void set_default_settings()
 #endif
 
 #if ENABLE_UPDATE_CHECKER
-	settings->setDefault("update_information_url", "https://www.luanti.org/release_info.json");
+	settings->setDefault("update_information_url", "https://api.github.com/repos/Andrey2470T/luanti_fork/releases/latest");
 #else
 	settings->setDefault("update_information_url", "");
 #endif

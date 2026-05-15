@@ -96,18 +96,27 @@ local function create_version_info_dlg(new_version, url)
 	return retval
 end
 
-local function get_current_version_code()
+local function get_version_code_from_string(version_str)
+	if type(version_str) ~= "string" then
+		core.log("error", "Retrieved version string is not string")
+		return
+	end
 	-- Format: Major.Minor.Patch
 	-- Convert to MMMNNNPPP
-	local cur_string = core.get_version().string
-	local cur_major, cur_minor, cur_patch = cur_string:match("^(%d+).(%d+).(%d+)")
+	local major, minor, patch = version_str:match("^(%d+).(%d+).(%d+)")
 
-	if not cur_patch then
+	if not patch then
 		core.log("error", "Failed to parse version numbers (invalid tag format?)")
 		return
 	end
 
-	return (cur_major * 1000 + cur_minor) * 1000 + cur_patch
+	return (major * 1000 + minor) * 1000 + patch
+end
+
+local function get_current_version_code()
+	-- Format: Major.Minor.Patch
+	-- Convert to MMMNNNPPP
+	return get_version_code_from_string(core.get_version().string)
 end
 
 local function on_version_info_received(json)
@@ -117,22 +126,12 @@ local function on_version_info_received(json)
 		return
 	end
 
-	local known_update = tonumber(cache_settings:get("update_last_known")) or 0
-
 	-- Format: MMNNPPP (Major, Minor, Patch)
-	local new_number = type(json.latest) == "table" and json.latest.version_code
-	if type(new_number) ~= "number" then
-		core.log("error", "Failed to read version number (invalid response?)")
-		return
-	end
+	local new_number = get_version_code_from_string(json.tag_name)
+	if not new_number then return end
 
 	local cur_number = get_current_version_code()
-	if new_number <= known_update or new_number < cur_number then
-		return
-	end
-
-	-- Also consider updating from 1.2.3-dev to 1.2.3
-	if new_number == cur_number and not core.get_version().is_dev then
+	if new_number == cur_number then
 		return
 	end
 
@@ -141,7 +140,8 @@ local function on_version_info_received(json)
 	-- Show version info dialog (once)
 	maintab:hide()
 
-	local version_info_dlg = create_version_info_dlg(json.latest.version, json.latest.url)
+	local version_info_dlg = create_version_info_dlg(
+		json.tag_name:match("^%d+.%d+.%d+"), json.url)
 	version_info_dlg:set_parent(maintab)
 	version_info_dlg:show()
 
@@ -170,7 +170,7 @@ function check_new_version()
 		return http.fetch_sync(params)
 	end, { url = url }, function(result)
 		local json = result.succeeded and core.parse_json(result.data)
-		if type(json) ~= "table" or not json.latest then
+		if type(json) ~= "table" or not json.tag_name then
 			core.log("error", "Failed to read JSON output from " .. url ..
 					", status code = " .. result.code)
 			return
