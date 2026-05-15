@@ -1,4 +1,4 @@
-Luanti Lua Client Modding API Reference 5.12.0
+Luanti Lua Client Modding API Reference
 ==============================================
 
 **WARNING**: if you're looking for the `minetest` namespace (e.g. `minetest.something`),
@@ -11,15 +11,14 @@ it's now called `core` due to the renaming of Luanti (formerly Minetest).
 Introduction
 ------------
 
-** WARNING: The client API is currently unstable, and may break/change without warning. **
-
 Content and functionality can be added to Luanti by using Lua
 scripting in run-time loaded mods.
 
 A mod is a self-contained bunch of scripts, textures and other related
 things that is loaded by and interfaces with Luanti.
 
-Transferring client-sided mods from the server to the client is planned, but not implemented yet.
+Starting from 1.3.0 client-side mods can be transferred from the server to clients,
+this feature is called `SSCSM` (see `client_lua_api/sscsm.md` for detail).
 
 If you see a deficiency in the API, feel free to attempt to add the
 functionality in the engine and API. You can send such improvements as
@@ -35,12 +34,9 @@ Startup
 Mods are loaded during client startup from the mod load paths by running
 the `init.lua` scripts in a shared environment.
 
-In order to load client-side mods, the following conditions need to be satisfied:
-
-1) `$path_user/minetest.conf` contains the setting `enable_client_modding = true`
-
-2) The client-side mod located in `$path_user/clientmods/<modname>` is added to
-    `$path_user/clientmods/mods.conf` as `load_mod_<modname> = true`.
+Client-side mod is located in `$path_user/clientmods/<modname>`. In order
+to enable that it is necessary to add `load_mod_<modname> = true` in
+`$path_user/clientmods/mods.conf`.
 
 Note: Depending on the remote server's settings, client-side mods might not
 be loaded or have limited functionality. See setting `csm_restriction_flags` for reference.
