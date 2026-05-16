@@ -48,39 +48,6 @@ vec4 applyBloom(vec4 color, vec2 uv)
 
 #endif
 
-#if ENABLE_TONE_MAPPING
-
-/* Hable's UC2 Tone mapping parameters
-	A = 0.22;
-	B = 0.30;
-	C = 0.10;
-	D = 0.20;
-	E = 0.01;
-	F = 0.30;
-	W = 11.2;
-	equation used:  ((x * (A * x + C * B) + D * E) / (x * (A * x + B) + D * F)) - E / F
-*/
-
-// highp for GLES, see <https://github.com/luanti-org/luanti/pull/14688>
-highp vec3 uncharted2Tonemap(highp vec3 x)
-{
-	return ((x * (0.22 * x + 0.03) + 0.002) / (x * (0.22 * x + 0.3) + 0.06)) - 0.03333;
-}
-
-vec4 applyToneMapping(vec4 color)
-{
-	color = vec4(pow(color.rgb, vec3(2.2)), color.a);
-	const float gamma = 1.6;
-	const float exposureBias = 5.5;
-	color.rgb = uncharted2Tonemap(exposureBias * color.rgb);
-	// Precalculated white_scale from
-	//vec3 whiteScale = 1.0 / uncharted2Tonemap(vec3(W));
-	vec3 whiteScale = vec3(1.036015346);
-	color.rgb *= whiteScale;
-	return vec4(pow(color.rgb, vec3(1.0 / gamma)), color.a);
-}
-#endif
-
 vec3 applySaturation(vec3 color, float factor)
 {
 	// Calculate the perceived luminosity from the RGB color.
@@ -124,6 +91,7 @@ void main(void)
 #endif
 	{
 		color.rgb *= exposureParams.compensationFactor;
+
 #ifdef ENABLE_AUTO_EXPOSURE
 		color.rgb *= exposure;
 #endif
@@ -133,18 +101,12 @@ void main(void)
 	color = applyBloom(color, uv);
 #endif
 
-
-	color.rgb = clamp(color.rgb, vec3(0.), vec3(1.));
-
-	// return to sRGB colorspace (approximate)
-	color.rgb = pow(color.rgb, vec3(1.0 / 2.2));
-
 #ifdef ENABLE_BLOOM_DEBUG
 	if (uv.x > 0.5 || uv.y > 0.5)
 #endif
 	{
 #if ENABLE_TONE_MAPPING
-		color = applyToneMapping(color);
+		color.rgb = ACESFilm(color.rgb);
 #endif
 
 		color.rgb = applySaturation(color.rgb, saturation);
@@ -154,6 +116,9 @@ void main(void)
 	// Apply dithering just before quantisation
 	color.rgb += screen_space_dither(gl_FragCoord.xy);
 #endif
+
+	// return to sRGB colorspace (approximate)
+	color.rgb = pow(color.rgb, vec3(1.0 / 2.2));
 
 	outColor0 = vec4(color.rgb, 1.0); // force full alpha to avoid holes in the image.
 }

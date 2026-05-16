@@ -54,7 +54,7 @@ void main(void)
 #endif
 
 	color = base.rgb;
-	vec4 col = vec4(ACESFilm(color.rgb * hwColor * varColor.rgb), 1.0);
+	vec4 col = vec4(color.rgb * hwColor * varColor.rgb, 1.0);
 
 #ifdef ENABLE_DYNAMIC_SHADOWS
 	// Fragment normal, can differ from vNormal which is derived from vertex normals.

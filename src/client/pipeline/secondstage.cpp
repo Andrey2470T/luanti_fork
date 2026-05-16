@@ -257,7 +257,7 @@ RenderStep *addPostProcessing(RenderPipeline *pipeline, RenderStep *previousStep
 	}
 
 	// final merge
-	shader_id = client->getShaderSource()->getShader({"second_stage"});
+	shader_id = client->getShaderSource()->getShader({"second_stage", {}, {"common"}});
 	PostProcessingStep *effect = pipeline->createOwned<PostProcessingStep>(shader_id, std::vector<u8> { final_stage_source, TEXTURE_SCALE_UP, TEXTURE_EXPOSURE_2 });
 	pipeline->addStep(effect);
 	if (enable_ssaa)
