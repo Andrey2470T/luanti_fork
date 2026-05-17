@@ -1,5 +1,4 @@
 uniform mat4 mWorld;
-uniform float dayNightRatio;
 uniform float timeOfDay;
 
 // The cameraOffset is the current center of the visible world.
@@ -96,6 +95,7 @@ void main(void)
 	float ao = color.b;
 	float sum = float(max(skyLight + blockLight, 0));
 	nightRatio = 1.0 - (skyLight / sum);
+	dayLight = getSkyColor(timeOfDay);
 	varColor = calculateLighting(skyLight, blockLight, timeOfDay, ao);
 
 	hwColor = inAux / 255.0;

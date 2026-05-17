@@ -1,5 +1,4 @@
 uniform mat4 mWorld;
-uniform float dayNightRatio;
 uniform float animationTimer;
 uniform lowp vec4 materialColor;
 uniform float timeOfDay;
@@ -65,6 +64,7 @@ void main(void)
 	float blockLight = color.g;
 	float sum = float(max(skyLight + blockLight, 0));
 	nightRatio = 1.0 - (skyLight / sum);
+	dayLight = getSkyColor(timeOfDay);
 	varColor = calculateLighting(skyLight, blockLight, timeOfDay, 1.0);
 
 #ifdef ENABLE_DYNAMIC_SHADOWS
