@@ -301,9 +301,6 @@ int ModApiGraphics::l_register_material(lua_State *L)
 		read_shader_info(L, info);
 
 		entry.ShaderID = getClient(L)->getShaderSource()->getShader(info, false);
-
-		// It is necessary, because Game::afterContentReceived() is called before the client scripting creation
-		const_cast<NodeDefManager *>(getClient(L)->getNodeDefManager())->overrideShaderMaterials(name, entry.ShaderID);
 	}
 
 	lua_pop(L, 1);

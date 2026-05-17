@@ -50,7 +50,6 @@ struct MaterialStorageEntry
 
 	PBRTextures PBR;
 
-	void applyToLayer(TileLayer *layer) const;
 	void applyToSMaterial(ShaderSource *shdsrc, video::SMaterial *mat);
 
 	bool operator==(const MaterialStorageEntry &other) const;

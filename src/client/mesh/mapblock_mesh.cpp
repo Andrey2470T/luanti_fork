@@ -5,6 +5,7 @@
 #include "mapblock_mesh.h"
 #include "Mesh/SMeshBuffer.h"
 #include "client/core/client.h"
+#include "client/render/material.h"
 #include "mapblock.h"
 #include "map.h"
 #include "noise.h"
@@ -297,6 +298,8 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data):
 		MapblockMeshGenerator(data, &collector).generate();
 	}
 
+	auto mat_storage = client->getMaterialStorage();
+
 	/*
 		Convert MeshCollector to SMesh
 	*/
@@ -350,6 +353,9 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data):
 						p.layer.shader_id).material;
 				p.layer.applyMaterialOptions(material, layer);
 			}
+
+			// Apply properties from custom material
+			mat_storage->applyToSMaterial(p.layer.override_material, &material);
 
 			auto *buf = new NodeMeshBuffer();
 			buf->Material = material;

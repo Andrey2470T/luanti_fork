@@ -670,7 +670,6 @@ public:
 	 */
 	void updateAliases(IItemDefManager *idef);
 
-	void overrideShaderMaterials(const std::string &materialName, u32 shaderId);
 	/*!
 	 * Replaces the textures of registered nodes with the ones specified in
 	 * the texturepack's override.txt file

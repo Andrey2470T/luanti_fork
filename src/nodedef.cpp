@@ -677,11 +677,12 @@ void ContentFeatures::deSerialize(std::istream &is, u16 protocol_version)
 static void fillTileAttribs(ITextureSource *tsrc, TileLayer *layer,
 		const TileSpec &tile, const TileDef &tiledef, video::SColor color,
 		MaterialType material_type, u32 shader_id, bool backface_culling,
-		const TextureSettings &tsettings)
+		const TextureSettings &tsettings, const std::string &override_material="")
 {
 	layer->shader_id     = shader_id;
 	layer->texture       = tsrc->getTextureForMesh(tiledef.name, &layer->texture_id);
 	layer->material_type = material_type;
+	layer->override_material = override_material;
 
 	bool has_scale = tiledef.scale > 0;
 	bool use_autoscale = tsettings.autoscale_mode == AUTOSCALE_FORCE ||
@@ -925,11 +926,11 @@ void ContentFeatures::updateTextures(ITextureSource *tsrc, ShaderSource *shdsrc,
 
 		fillTileAttribs(tsrc, &tiles[j].layers[0], tiles[j], tdef[j],
 				color, material_type, tile_shader,
-				tdef[j].backface_culling, tsettings);
+				tdef[j].backface_culling, tsettings, materials[j]);
 		if (!tdef_overlay[j].name.empty()) {
 			fillTileAttribs(tsrc, &tiles[j].layers[1], tiles[j], tdef_overlay[j],
 					color, overlay_material, overlay_shader,
-					tdef[j].backface_culling, tsettings);
+					tdef[j].backface_culling, tsettings, materials[j]);
 		}
 
 		tiles[j].layers[0].need_polygon_offset = !tiles[j].layers[1].empty();
@@ -961,7 +962,7 @@ void ContentFeatures::updateTextures(ITextureSource *tsrc, ShaderSource *shdsrc,
 	for (u16 j = 0; j < CF_SPECIAL_COUNT; j++) {
 		fillTileAttribs(tsrc, &special_tiles[j].layers[0], special_tiles[j], tdef_spec[j],
 				color, special_material, special_shader,
-				tdef_spec[j].backface_culling, tsettings);
+				tdef_spec[j].backface_culling, tsettings, materials[j]);
 	}
 
 	if (param_type_2 == CPT2_COLOR ||
@@ -1414,27 +1415,6 @@ void NodeDefManager::updateAliases(IItemDefManager *idef)
 				std::make_pair(name, id));
 		}
 	}
-}
-
-void NodeDefManager::overrideShaderMaterials(const std::string &materialName, u32 shaderId)
-{
-#if CHECK_CLIENT_BUILD()
-	actionstream << "NodeDefManager::overrideShaderMaterials(): Overrides "
-		"the shader with \'" << shaderId << "\' ID for all content features having \'"
-		<< materialName << "\' material" << std::endl;
-
-	for (auto &def : m_content_features) {
-		for (u8 i = 0; i < def.materials.size(); i++) {
-			if (def.materials[i] == materialName) {
-				def.tiles[i].layers[0].shader_id = shaderId;
-
-				if (def.tiles[i].layers[1].texture)
-					def.tiles[i].layers[1].shader_id = shaderId;
-				def.special_tiles[i].layers[0].shader_id = shaderId;
-			}
-		}
-	}
-#endif
 }
 
 void NodeDefManager::applyTextureOverrides(const std::vector<TextureOverride> &overrides)

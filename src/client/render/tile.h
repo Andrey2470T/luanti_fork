@@ -77,7 +77,8 @@ struct TileLayer
 			has_color == other.has_color &&
 			color == other.color &&
 			scale == other.scale &&
-			need_polygon_offset == other.need_polygon_offset;
+			need_polygon_offset == other.need_polygon_offset &&
+			override_material == other.override_material;
 	}
 
 	/*!
@@ -143,6 +144,9 @@ struct TileLayer
 
 	//! If true, the tile has its own color.
 	bool has_color = false;
+
+	// Name of custom material with which the mapblock meshes will be overrided
+	std::string override_material = "";
 };
 
 // Stores information for drawing an animated tile
