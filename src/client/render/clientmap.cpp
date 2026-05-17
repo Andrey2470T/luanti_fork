@@ -1473,7 +1473,7 @@ void ClientMap::renderMapShadows(video::VideoDriver *driver,
 		// this is the material leaves would use, compare to nodedef.cpp
 		auto* shdsrc = m_client->getShaderSource();
 		const u32 leaves_shader = shdsrc->getShader({
-			"nodes_shader", {"common", "lighting", "noise"}, {"common", "fog"}}, TILE_MATERIAL_WAVING_LEAVES, NDT_ALLFACES);
+			"nodes_shader", {"common", "lighting", "noise"}, {"common", "fog", "noise"}}, TILE_MATERIAL_WAVING_LEAVES, NDT_ALLFACES, true);
 		leaves_material = shdsrc->getShaderInfo(leaves_shader).material;
 	}
 
