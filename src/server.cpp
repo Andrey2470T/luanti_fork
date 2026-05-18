@@ -2565,7 +2565,7 @@ bool Server::addMediaFile(const std::string &filename,
 		// Fonts
 		".ttf", ".woff",
 		// Shaders
-		".glsl", ".vsh", ".fsh",
+		".glsl", ".vsh", ".gsh", ".fsh",
 		NULL
 	};
 	if (removeStringEnd(filename, supported_ext).empty()) {
