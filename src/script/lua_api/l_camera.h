@@ -22,6 +22,7 @@ private:
 	static int l_get_fov(lua_State *L);
 
 	static int l_get_pos(lua_State *L);
+	static int l_get_camera_offset(lua_State *L);
 	static int l_get_offset(lua_State *L);
 	static int l_get_look_dir(lua_State *L);
 	static int l_get_look_vertical(lua_State *L);

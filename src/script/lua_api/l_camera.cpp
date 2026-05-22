@@ -96,6 +96,16 @@ int LuaCamera::l_get_pos(lua_State *L)
 	return 1;
 }
 
+int LuaCamera::l_get_camera_offset(lua_State *L)
+{
+	Camera *camera = getobject(L, 1);
+	if (!camera)
+		return 0;
+
+	push_v3s16(L, camera->getOffset());
+	return 1;
+}
+
 // get_offset(self)
 int LuaCamera::l_get_offset(lua_State *L)
 {
@@ -184,6 +194,7 @@ const luaL_Reg LuaCamera::methods[] = {
 	luamethod(LuaCamera, get_camera_mode),
 	luamethod(LuaCamera, get_fov),
 	luamethod(LuaCamera, get_pos),
+	luamethod(LuaCamera, get_camera_offset),
 	luamethod(LuaCamera, get_offset),
 	luamethod(LuaCamera, get_look_dir),
 	luamethod(LuaCamera, get_look_vertical),
