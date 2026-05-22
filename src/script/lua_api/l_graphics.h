@@ -34,9 +34,6 @@ private:
 	static int l_register_material(lua_State *L);
 
 	static void read_basic_state(lua_State *L, MaterialStorageEntry &entry);
-	static void read_pbr(lua_State *L, PBRTextures &textures);
-	static void read_texture(lua_State *L, const std::string &name, video::GLTexture **tex);
-
 	static void read_constants(lua_State *L, ShaderConstants &constants);
 	static void read_shader_info(lua_State *L, ShaderInfo &info);
 

@@ -177,26 +177,6 @@ void ModApiGraphics::read_basic_state(lua_State *L, MaterialStorageEntry &entry)
 	lua_pop(L, 1);
 }
 
-void ModApiGraphics::read_pbr(lua_State *L, PBRTextures &textures)
-{
-	read_texture(L, "metallic", &textures.Metallic);
-	read_texture(L, "roughness", &textures.Roughness);
-	read_texture(L, "ambient_occlusion", &textures.AO);
-	read_texture(L, "normal", &textures.Normal);
-	read_texture(L, "emission", &textures.Emission);
-}
-
-void ModApiGraphics::read_texture(lua_State *L, const std::string &name, video::GLTexture **tex)
-{
-	std::string texname;
-	getstringfield(L, -1, name.c_str(), texname);
-
-	if (texname.empty())
-		return;
-
-	*tex = getClient(L)->getTextureSource()->getTexture(texname);
-}
-
 void ModApiGraphics::read_constants(lua_State *L, ShaderConstants &constants)
 {
 	lua_getfield(L, -1, "constants");
@@ -305,14 +285,15 @@ int ModApiGraphics::l_register_material(lua_State *L)
 
 	lua_pop(L, 1);
 
-	// PBR table
-	lua_getfield(L, 2, "pbr");
+	// Table with secondary textures
+	std::vector<std::string> textures;
+	getstringlistfield(L, 2, "samplers", &textures);
 
-	if (lua_istable(L, -1)) {
-		read_pbr(L, entry.PBR);
+	auto texSrc = getClient(L)->getTextureSource();
+	if (!textures.empty()) {
+		for (const auto &texName : textures)
+		entry.Samplers.emplace_back(texSrc->getTexture(texName));
 	}
-
-	lua_pop(L, 1);
 
 	mat_st->addMaterial(entry);
 

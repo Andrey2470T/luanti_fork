@@ -69,7 +69,7 @@ Used by `gfx.register_material`.
             mode = <Cull mode>
         },
         shader = <Shader subdefinition>,
-        pbr = <PBR subdefinition>
+        samplers = <Samplers subdefinition>
     },
     ... -- [1] layer, [2] layer and etc
 }
@@ -119,22 +119,21 @@ Defines properties for shader generation.
 }
 ```
 
-PBR subdefinition
+Samplers subdefinition
 -----------------
 
-Creates the additional set of textures from `textures` folder which would be used
-for the physically correct rendering pipeline (see `https://learnopengl.com/PBR/Theory`).
+Creates the additional set of textures from `textures` folder, could be used for PBR or anything else.
 All these textures are referred in a shader code as `texture<N>`, where `N` is starting from 1.
 So, e.g. `texture2D(texture1, uv)` will extract the pixel at `uv` coordinates from `texture1` texture sampler.
 
 ```lua
 {
-    -- "mapname" is texture file name
-    metallic = <mapname>,           -- "texture1"
-    roughness = <mapname>,          -- "texture2"
-    ambient_occlusion = <mapname>,  -- "texture3"
-    normal = <mapname>,             -- "texture4"
-    emission = <mapname>            -- "texture5"
+    -- "texname" is texture file name
+    <texname>,        -- "texture1"
+    <texname>,        -- "texture2"
+    <texname>,        -- "texture3"
+    <texname>,        -- "texture4"
+    <texname>         -- "texture5"
 }
 ```
 

@@ -7,17 +7,6 @@
 #include "irrlichttypes_bloated.h"
 #include <unordered_set>
 
-struct PBRTextures
-{
-	video::GLTexture *Metallic{nullptr};
-	video::GLTexture *Roughness{nullptr};
-	video::GLTexture *AO{nullptr};
-	video::GLTexture *Normal{nullptr};
-	video::GLTexture *Emission{nullptr};
-
-	std::vector<video::GLTexture *> getUsedTextures() const;
-};
-
 enum MaterialStateFlags : u8
 {
 	MF_NONE =	 0x00,
@@ -48,7 +37,7 @@ struct MaterialStorageEntry
 
 	u32 ShaderID{0};
 
-	PBRTextures PBR;
+	std::vector<video::GLTexture *> Samplers;
 
 	void applyToSMaterial(ShaderSource *shdsrc, video::SMaterial *mat);
 

@@ -1,24 +1,6 @@
 #include "material.h"
 #include "client/media/shader.h"
 
-std::vector<video::GLTexture *> PBRTextures::getUsedTextures() const
-{
-	std::vector<video::GLTexture *> textures;
-
-	if (Metallic)
-		textures.push_back(Metallic);
-	if (Roughness)
-		textures.push_back(Roughness);
-	if (AO)
-		textures.push_back(AO);
-	if (Normal)
-		textures.push_back(Normal);
-	if (Emission)
-		textures.push_back(Emission);
-
-	return textures;
-}
-
 void MaterialStorageEntry::applyToSMaterial(ShaderSource *shdsrc, video::SMaterial *mat)
 {
 	if (!mat)
@@ -45,15 +27,13 @@ void MaterialStorageEntry::applyToSMaterial(ShaderSource *shdsrc, video::SMateri
 		}
 	}
 
-	auto pbr_textures = PBR.getUsedTextures();
-
-	if (pbr_textures.empty())
+	if (Samplers.empty())
 		return;
 
 	u8 texToPut = 0;
 	mat->forEachTexture([&] (auto &tex) {
-		if (!tex.Texture && texToPut < pbr_textures.size())
-			tex.Texture = pbr_textures[texToPut++];
+		if (!tex.Texture && texToPut < Samplers.size())
+			tex.Texture = Samplers[texToPut++];
 	});
 }
 
