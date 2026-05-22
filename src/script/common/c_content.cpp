@@ -716,8 +716,15 @@ void read_content_features(lua_State *L, ContentFeatures &f, int index)
 	std::vector<std::string> materials_list;
 	u8 matnum = std::min<u8>(getstringlistfield(L, index, "materials", &materials_list), 6);
 
-	for (u8 mat_i = 0; mat_i < matnum; mat_i++)
+	u8 mat_i = 0;
+	for (;mat_i < matnum; mat_i++)
 		f.materials[mat_i] = materials_list[mat_i];
+
+	// Copy last value to all remaining materials
+	if (mat_i > 0) {
+		for (; mat_i < 6; mat_i++)
+			f.materials[mat_i] = f.materials[matnum-1];
+	}
 
 	// tiles = {}
 	lua_getfield(L, index, "tiles");
