@@ -238,7 +238,7 @@ public:
 	 * never overlap (u64)
 	 * @return new id
 	 */
-	u64 generateSpawnerId()
+	u32 generateSpawnerId()
 	{
 		return m_next_particle_spawner_id++;
 	}
@@ -263,13 +263,13 @@ private:
 	void clearAll();
 
 	std::vector<std::unique_ptr<Particle>> m_particles;
-	std::unordered_map<u64, std::unique_ptr<ParticleSpawner>> m_particle_spawners;
+	std::unordered_map<u32, std::unique_ptr<ParticleSpawner>> m_particle_spawners;
 	std::vector<std::unique_ptr<ParticleSpawner>> m_dying_particle_spawners;
 	std::vector<irr_ptr<ParticleBuffer>> m_particle_buffers;
 
-	// Start the particle spawner ids generated from here after u32_max.
-	// lower values are for server sent spawners.
-	u64 m_next_particle_spawner_id = static_cast<u64>(U32_MAX) + 1;
+	// Reserve the lower half of the u32 ids (<= 2147483647 maximum value)
+	// for the server particle spawners, the upper one is for the client particle ones
+	u32 m_next_particle_spawner_id = U32_MAX/2 + 1;
 
 	ClientEnvironment *m_env;
 	ShaderSource *m_shdsrc;

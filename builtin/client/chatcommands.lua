@@ -1,18 +1,11 @@
 core.register_on_sending_chat_message(function(message)
-	if message:sub(1,2) == ".." then
-		return false
+	if message:sub(1,1) ~= "/" then
+		return
 	end
 
-	local first_char = message:sub(1,1)
-	if first_char == "/" or first_char == "." then
-		core.display_chat_message(core.gettext("Issued command: ") .. message)
-	end
+	core.display_chat_message(core.gettext("Issued command: ") .. message)
 
-	if first_char ~= "." then
-		return false
-	end
-
-	local cmd, param = string.match(message, "^%.([^ ]+) *(.*)")
+	local cmd, param = string.match(message, "^/([^ ]+) *(.*)")
 	param = param or ""
 
 	if not cmd then

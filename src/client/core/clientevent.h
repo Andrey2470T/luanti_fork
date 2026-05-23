@@ -95,7 +95,7 @@ struct ClientEvent
 		{
 			ParticleSpawnerParameters *p;
 			u16 attached_id;
-			u64 id;
+			u32 id;
 		} add_particlespawner;
 		struct
 		{

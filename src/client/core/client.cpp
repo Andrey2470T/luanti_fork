@@ -1725,9 +1725,7 @@ void Client::typeChatMessage(const std::wstring &message)
 	auto message_utf8 = wide_to_utf8(message);
 	infostream << "Typed chat message: \"" << message_utf8 << "\"" << std::endl;
 
-	// If message was consumed by script API, don't send it to server
-	if (m_mods_loaded && m_script->on_sending_message(message_utf8))
-		return;
+	m_script->on_sending_message(message_utf8);
 
 	// Send to others
 	sendChatMessage(message);
