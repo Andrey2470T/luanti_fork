@@ -23,6 +23,8 @@
 #include "lua_api/l_camera.h"
 #include "lua_api/l_settings.h"
 #include "lua_api/l_client_sound.h"
+#include "lua_api/l_rotation.h"
+#include "lua_api/l_matrix4.h"
 
 ClientScripting::ClientScripting(Client *client):
 	ScriptApiBase(ScriptingType::Client)
@@ -69,6 +71,8 @@ void ClientScripting::InitializeModApi(lua_State *L, int top)
 	NodeMetaRef::RegisterClient(L);
 	LuaLocalPlayer::Register(L);
 	LuaCamera::Register(L);
+	LuaRotation::Register(L);
+	LuaMatrix4::Register(L);
 	ModChannelRef::Register(L);
 	LuaSettings::Register(L);
 	ClientSoundHandle::Register(L);
