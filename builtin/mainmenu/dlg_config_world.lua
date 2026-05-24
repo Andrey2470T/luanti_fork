@@ -240,31 +240,34 @@ local function get_formspec(data)
 end
 
 local function handle_buttons(this, fields)
+	local modlist = this.data.list:get_list()
+	local sel_mod = this.data.selected_mod
 	if fields.world_config_modlist then
 		local event = core.explode_table_event(fields.world_config_modlist)
 		this.data.selected_mod = event.row
+		sel_mod = this.data.selected_mod
 		core.settings:set("world_config_selected_mod", event.row)
 
 		if event.type == "DCL" then
-			pkgmgr.enable_mod(this)
+			pkgmgr.enable_mod(modlist, sel_mod)
 		end
 
 		return true
 	end
 
 	if fields.key_enter then
-		pkgmgr.enable_mod(this)
+		pkgmgr.enable_mod(modlist, sel_mod)
 		return true
 	end
 
 	if fields.cb_mod_enable ~= nil then
-		pkgmgr.enable_mod(this, core.is_yes(fields.cb_mod_enable))
+		pkgmgr.enable_mod(modlist, sel_mod, core.is_yes(fields.cb_mod_enable))
 		return true
 	end
 
 	if fields.btn_mp_enable ~= nil or
 			fields.btn_mp_disable then
-		pkgmgr.enable_mod(this, fields.btn_mp_enable ~= nil)
+		pkgmgr.enable_mod(modlist, sel_mod, fields.btn_mp_enable ~= nil)
 		return true
 	end
 

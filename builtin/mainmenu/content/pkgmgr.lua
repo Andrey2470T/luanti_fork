@@ -338,7 +338,7 @@ function pkgmgr.render_packagelist(render_list, use_technical_names, with_icon, 
 			color = mt_color_green
 		elseif v.loc == "client" then
 			icon = 1
-			color = mt_color_aqua
+			color = v.enabled and mt_color_aqua or mt_color_grey
 		end
 
 		if icon_info then
@@ -436,9 +436,9 @@ local function toggle_mod_or_modpack(list, toggled_mods, enabled_mods, toset, mo
 	end
 end
 
-function pkgmgr.enable_mod(this, toset)
-	local list = this.data.list:get_list()
-	local mod = list[this.data.selected_mod]
+function pkgmgr.enable_mod(list, selected_mod, toset)
+	--local list = this.data.list:get_list()
+	local mod = list[selected_mod]
 
 	-- Game mods can't be enabled or disabled
 	if mod.is_game_content then

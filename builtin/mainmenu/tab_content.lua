@@ -141,6 +141,14 @@ local function get_formspec(tabview, name, tabdata)
 						"\n" .. toadd_soft
 				end
 			end
+
+			if selected_pkg.loc == "client" then
+				local btn_str = selected_pkg.enabled and "Disable" or "Enable"
+				table.insert_all(retval, {
+					"button[11.3,5.8;3.8,0.9;btn_clientmod_enable;",
+					fgettext(btn_str), "]"
+				})
+			end
 		elseif selected_pkg.type == "txp" then
 			desc_height = 2.1
 
@@ -259,6 +267,37 @@ local function handle_buttons(tabview, fields, tabname, tabdata)
 
 		mm_game_theme.init()
 		mm_game_theme.set_engine()
+		return true
+	end
+
+	if fields.btn_clientmod_enable then
+		local pkglist = packages:get_list()
+		local enabled = pkglist[tabdata.selected_pkg].enabled
+
+		pkgmgr.enable_mod(pkglist, tabdata.selected_pkg)
+
+		local filename = core.get_clientmodpath() .. DIR_DELIM .. "mods.conf"
+
+		local modsfile = Settings(filename)
+		local mods = modsfile:to_table()
+
+		local cur_modstr = "load_mod_" .. pkglist[tabdata.selected_pkg].name
+		core.log("action", "mods: " .. core.serialize(mods))
+
+		local found_modstr = false
+		for modstr, bool in pairs(mods) do
+			if modstr:match(cur_modstr) then
+				modsfile:set_bool(cur_modstr, not enabled)
+				found_modstr = true
+				break
+			end
+		end
+
+		if not found_modstr then
+			modsfile:set_bool(cur_modstr, not enabled)
+		end
+
+		modsfile:write()
 		return true
 	end
 
