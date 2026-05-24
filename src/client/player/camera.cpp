@@ -318,8 +318,11 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 tool_reload_ratio)
 	// This is worse than `LocalPlayer::getPosition()` but
 	// mods expect the player head to be at the parent's position
 	// plus eye height.
-	if (player->getParent())
-		player_position = player->getParent()->getPosition();
+	if (player->getParent()) {
+		v3f attachment_position;
+		player->getCAO()->getAttachment(nullptr, nullptr, &attachment_position, nullptr, nullptr);
+		player_position = player->getParent()->getPosition() + attachment_position;
+	}
 
 	// Smooth the camera movement after the player instantly moves upward due to stepheight.
 	// The smoothing usually continues until the camera position reaches the player position.
@@ -448,11 +451,12 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 tool_reload_ratio)
 	}
 
 	// Set camera node transformation
-	m_cameranode->setPosition(m_camera_position - intToFloat(m_camera_offset, BS));
+	v3f cur_cam_offset = intToFloat(m_camera_offset, BS);
+	m_cameranode->setPosition(m_camera_position - cur_cam_offset);
 	m_cameranode->setUpVector(abs_cam_up);
 	m_cameranode->updateAbsolutePosition();
 	// *100 helps in large map coordinates
-	m_cameranode->setTarget(m_camera_position - intToFloat(m_camera_offset, BS)
+	m_cameranode->setTarget(m_camera_position - cur_cam_offset
 		+ 100 * m_camera_direction);
 
 	/*
