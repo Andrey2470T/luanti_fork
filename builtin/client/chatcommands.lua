@@ -1,3 +1,5 @@
+local S = core.get_translator("__builtin")
+
 core.register_on_sending_chat_message(function(message)
 	if message:sub(1,1) ~= "/" then
 		return
@@ -63,3 +65,21 @@ core.register_chatcommand("clear_chat_queue", {
 function core.run_server_chatcommand(cmd, param)
 	core.send_chat_message("/" .. cmd .. " " .. param)
 end
+
+local function do_help_cmd(param)
+	local opts, args = getopts("help", param)
+	if opts ~= "" or #args > 0 then
+		return false, args
+	end
+
+	core.show_general_help_formspec()
+	return true
+end
+
+core.register_chatcommand("help", {
+	params = core.gettext("[all | <cmd>] [-t]"),
+	description = core.gettext("Get help for commands (-t: output in chat)"),
+	func = function(param)
+		return do_help_cmd(param)
+	end
+})
