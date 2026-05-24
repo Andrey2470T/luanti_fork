@@ -286,7 +286,7 @@ local function handle_buttons(tabview, fields, tabname, tabdata)
 
 		local found_modstr = false
 		for modstr, bool in pairs(mods) do
-			if modstr:match(cur_modstr) then
+			if modstr == cur_modstr then
 				modsfile:set_bool(cur_modstr, not enabled)
 				found_modstr = true
 				break

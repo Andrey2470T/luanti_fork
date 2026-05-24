@@ -333,7 +333,7 @@ function pkgmgr.render_packagelist(render_list, use_technical_names, with_icon, 
 					end
 				end
 			end
-		elseif v.enabled or v.type == "txp" then
+		elseif (v.loc ~= "client" and v.enabled) or v.type == "txp" then
 			icon = 1
 			color = mt_color_green
 		elseif v.loc == "client" then
@@ -720,6 +720,20 @@ function pkgmgr.prepare_clientmods_list(data)
 		mods[i].type = "mod"
 		mods[i].loc = "client"
 		mods[i].enabled = false
+	end
+
+	--read clientmods configuration
+	local filename = core.get_clientmodpath() ..DIR_DELIM .. "mods.conf"
+
+	local modsfile = Settings(filename)
+	for key, value in pairs(modsfile:to_table()) do
+		for _, mod in ipairs(mods) do
+			local cur_modstr = "load_mod_" .. mod.name
+
+			if key == cur_modstr then
+				mod.enabled = core.is_yes(value)
+			end
+		end
 	end
 
 	return mods
