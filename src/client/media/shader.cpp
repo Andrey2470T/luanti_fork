@@ -304,6 +304,8 @@ u32 ShaderSource::getShader(const ShaderInfo &info, bool apply_shadows, bool for
 
 	ShaderInfo info_c = info;
 
+	info_c.fragment_includes.emplace_back("common");
+
 	if (apply_shadows && g_settings->getBool("enable_dynamic_shadows")) {
 		info_c.vertex_includes.insert(
 			info_c.vertex_includes.end(), {"shadow_uniforms", "shadow_vertex"});
@@ -313,11 +315,6 @@ u32 ShaderSource::getShader(const ShaderInfo &info, bool apply_shadows, bool for
 
 	if (info_c.basic_name.empty())
 		info_c.basic_name = info_c.name;
-
-	if (info_c.transparent)
-		info_c.constants["USE_DISCARD"] = 1;
-	else
-		info_c.constants["USE_DISCARD_REF"] = 1;
 
 	// Check if already have such instance
 	u32 i = 0;
@@ -458,9 +455,30 @@ std::string ShaderGenerator::generateMainHeader()
 
 
 	if (RenderingEngine::get_video_driver()->getDriverType() == video::EDT_OPENGL3) {
-		shaders_header << "#version 150\n";
+		shaders_header << "#version 150\n"
+			<< "#define CENTROID_ centroid\n";
 	} else {
-		shaders_header << "#version 100\n";
+		auto gl_version = RenderingEngine::get_video_driver()->getVersion();
+
+		if (gl_version.Major >= 3) {
+			shaders_header << "#version 300 es\n"
+				<< "#define CENTROID_ centroid\n";
+		}
+		else {
+			shaders_header << "#version 100\n"
+				<< "#define CENTROID_\n";
+		}
+
+		// Precision is only meaningful on GLES
+		shaders_header << R"(
+			#ifdef GL_FRAGMENT_PRECISION_HIGH
+			precision highp float;
+			precision highp sampler2D;
+			#else
+			precision mediump float;
+			precision mediump sampler2D;
+			#endif
+		)";
 	}
 
 	for (auto &it : info.constants) {
@@ -470,6 +488,16 @@ std::string ShaderGenerator::generateMainHeader()
 		putConstant(shaders_header, it.second);
 		shaders_header << '\n';
 	}
+
+	// Fragment discard based on the alpha threshold
+	shaders_header << "#define DISCARD_CHECK(base)";
+
+	if (info.transparent)
+		shaders_header << " if (base.a == 0.0)";
+	else
+		shaders_header << " if (base.a < 0.5)";
+	shaders_header << " discard;\n";
+
 
 	return shaders_header.str();
 }

@@ -1,4 +1,3 @@
-#include<common>
 #include<fog>
 #include<noise>
 
@@ -25,17 +24,12 @@ in vec3 vPosition;
 // cameraOffset + worldPosition (for large coordinates the limits of float
 // precision must be considered).
 in vec3 worldPosition;
-#ifdef GL_ES
-in lowp vec3 varColor;
-in lowp vec3 dayLight;
-in mediump vec2 varTexCoord;
-in float nightRatio;
-#else
-centroid in lowp vec3 varColor;
-centroid in lowp vec3 dayLight;
-centroid in vec2 varTexCoord;
-centroid in float nightRatio;
-#endif
+
+CENTROID_ in lowp vec3 varColor;
+CENTROID_ in lowp vec3 dayLight;
+CENTROID_ in mediump vec2 varTexCoord;
+CENTROID_ in float nightRatio;
+
 in highp vec3 eyeVec;
 in vec3 hwColor;
 
@@ -45,17 +39,8 @@ void main(void)
 	vec2 uv = varTexCoord.st;
 
 	vec4 base = texture2D(baseTexture, uv).rgba;
-	// If alpha is zero, we can just discard the pixel. This fixes transparency
-	// on GPUs like GC7000L, where GL_ALPHA_TEST is not implemented in mesa,
-	// and also on GLES 2, where GL_ALPHA_TEST is missing entirely.
-#ifdef USE_DISCARD
-	if (base.a == 0.0)
-		discard;
-#endif
-#ifdef USE_DISCARD_REF
-	if (base.a < 0.5)
-		discard;
-#endif
+
+	DISCARD_CHECK(base);
 
 	color = base.rgb;
 	vec4 col = vec4(color.rgb * hwColor * varColor.rgb, 1.0);

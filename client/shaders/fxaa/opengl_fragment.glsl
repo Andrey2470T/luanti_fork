@@ -8,11 +8,7 @@ in vec2 sampleNE;
 in vec2 sampleSW;
 in vec2 sampleSE;
 
-#ifdef GL_ES
-in mediump vec2 varTexCoord;
-#else
-centroid in vec2 varTexCoord;
-#endif
+CENTROID_ in mediump vec2 varTexCoord;
 
 /**
 Basic FXAA implementation based on the code on geeks3d.com with the

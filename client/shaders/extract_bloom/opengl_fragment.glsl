@@ -8,11 +8,7 @@ uniform sampler2D rendered;
 uniform mediump float bloomStrength;
 uniform ExposureParams exposureParams;
 
-#ifdef GL_ES
-in mediump vec2 varTexCoord;
-#else
-centroid in vec2 varTexCoord;
-#endif
+CENTROID_ in mediump vec2 varTexCoord;
 
 #ifdef ENABLE_AUTO_EXPOSURE
 in float exposure; // linear exposure factor, see vertex shader

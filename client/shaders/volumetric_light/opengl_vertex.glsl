@@ -1,9 +1,4 @@
-#ifdef GL_ES
-out mediump vec2 varTexCoord;
-#else
-centroid out vec2 varTexCoord;
-#endif
-
+CENTROID_ out mediump vec2 varTexCoord;
 
 void main(void)
 {

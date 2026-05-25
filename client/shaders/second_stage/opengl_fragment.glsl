@@ -1,5 +1,3 @@
-#include<common>
-
 #define rendered texture0
 #define bloom texture1
 
@@ -23,11 +21,7 @@ uniform ExposureParams exposureParams;
 uniform lowp float bloomIntensity;
 uniform lowp float saturation;
 
-#ifdef GL_ES
-in mediump vec2 varTexCoord;
-#else
-centroid in vec2 varTexCoord;
-#endif
+CENTROID_ in mediump vec2 varTexCoord;
 
 #ifdef ENABLE_AUTO_EXPOSURE
 in float exposure; // linear exposure factor, see vertex shader

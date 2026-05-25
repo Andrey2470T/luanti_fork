@@ -24,6 +24,7 @@ vec4 applyPerspectiveDistortion(in vec4 position)
 	return position;
 }
 
+// custom smoothstep implementation because it's not defined in glsl1.2
 float mtsmoothstep(in float edge0, in float edge1, in float x)
 {
 	float t = clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0);

@@ -4,7 +4,9 @@ uniform vec3 daySkyColor;
 uniform vec3 sunsetSkyColor;
 uniform vec3 ambientColor;
 
-vec3 getSkyColor(float timeOfDay)
+uniform float timeOfDay;
+
+vec3 getSkyColor()
 {
     // Handle night period (including wrap-around from 0.825 to 0.18)
     float isNight = step(0.825, timeOfDay) + step(timeOfDay, 0.18);
@@ -56,11 +58,11 @@ vec3 getSkyColor(float timeOfDay)
     return nightColor + sunriseColor + dayColor + sunsetColor;
 }
 
-vec3 calculateLighting(float skyLight, float blockLight, float timeOfDay, float ao)
+vec3 calculateLighting(float skyLight, float blockLight, float ao)
 {
 	// 1. Calculate the light colors (the block one is hardcoded)
 	vec3 blockColor = vec3(1.0, 0.65, 0.4);
-	vec3 skyColor = getSkyColor(timeOfDay);
+	vec3 skyColor = getSkyColor();
 
 	// 2. Blending the light colors
 	vec3 mixedColor = blockColor * blockLight + skyColor * skyLight;

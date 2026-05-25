@@ -2,9 +2,7 @@
 #include<lighting>
 
 uniform mat4 mWorld;
-uniform float animationTimer;
 uniform lowp vec4 materialColor;
-uniform float timeOfDay;
 
 out vec3 vNormal;
 out vec3 vPosition;
@@ -12,11 +10,7 @@ out vec3 worldPosition;
 out lowp vec3 varColor;
 out lowp vec3 dayLight;
 
-#ifdef GL_ES
-out mediump vec2 varTexCoord;
-#else
-centroid out vec2 varTexCoord;
-#endif
+CENTROID_ out mediump vec2 varTexCoord;
 
 #ifdef ENABLE_DYNAMIC_SHADOWS
 	out float cosLight;
@@ -60,15 +54,15 @@ void main(void)
 		: directional_ambient(normalize(inNormal));
 #endif
 
-	// Calculate color.
+	// Calculating the light color
 	vec4 color = inColor;
 	color *= materialColor;
 	float skyLight = color.r;
 	float blockLight = color.g;
 	float sum = float(max(skyLight + blockLight, 0));
 	nightRatio = 1.0 - (skyLight / sum);
-	dayLight = getSkyColor(timeOfDay);
-	varColor = calculateLighting(skyLight, blockLight, timeOfDay, 1.0);
+	dayLight = getSkyColor();
+	varColor = calculateLighting(skyLight, blockLight, 1.0);
 
 #ifdef ENABLE_DYNAMIC_SHADOWS
 	if (f_shadow_strength > 0.0) {

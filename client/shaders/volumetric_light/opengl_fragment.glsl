@@ -12,7 +12,6 @@ uniform vec3 moonPositionScreen;
 uniform float moonBrightness;
 
 uniform lowp float volumetricLightStrength;
-uniform float timeOfDay;
 
 #ifdef ENABLE_DYNAMIC_SHADOWS
 uniform vec3 v_LightDirection;
@@ -20,11 +19,7 @@ uniform vec3 v_LightDirection;
 const vec3 v_LightDirection = vec3(0.0, -1.0, 0.0);
 #endif
 
-#ifdef GL_ES
-in mediump vec2 varTexCoord;
-#else
-centroid in vec2 varTexCoord;
-#endif
+CENTROID_ in mediump vec2 varTexCoord;
 
 const float far = 1000.;
 float mapDepth(float depth)
@@ -90,7 +85,7 @@ vec3 applyVolumetricLight(vec3 color, vec2 uv, float rawDepth)
 	float lightFactor = brightness * sampleVolumetricLight(uv, sourcePosition, rawDepth) *
 			(0.05 * cameraDirectionFactor + 0.95 * viewAngleFactor);
 
-	color = mix(color, boost * getDirectLightScatteringAtGround(v_LightDirection) * getSkyColor(timeOfDay), lightFactor);
+	color = mix(color, boost * getDirectLightScatteringAtGround(v_LightDirection) * getSkyColor(), lightFactor);
 
 	// a factor of 5 tested well
 	color *= volumetricLightStrength * 5.0;

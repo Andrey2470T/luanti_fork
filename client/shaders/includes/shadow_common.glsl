@@ -9,13 +9,6 @@ vec3 getLightSpacePosition(vec3 shadow_pos)
 	return shadow_pos * 0.5 + 0.5;
 }
 
-// custom smoothstep implementation because it's not defined in glsl1.2
-float mtsmoothstep(in float edge0, in float edge1, in float x)
-{
-	float t = clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0);
-	return t * t * (3.0 - 2.0 * t);
-}
-
 #ifdef COLORED_SHADOWS
 // c_precision of 128 fits within 7 base-10 digits
 const float c_precision = 128.0;
@@ -37,3 +30,10 @@ vec3 unpackColor(float value)
 	return color;
 }
 #endif
+
+// custom smoothstep implementation because it's not defined in glsl1.2
+float mtsmoothstep(in float edge0, in float edge1, in float x)
+{
+	float t = clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0);
+	return t * t * (3.0 - 2.0 * t);
+}

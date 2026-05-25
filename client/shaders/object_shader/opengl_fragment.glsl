@@ -1,4 +1,3 @@
-#include<common>
 #include<fog>
 
 uniform sampler2D baseTexture;
@@ -26,11 +25,8 @@ in vec3 worldPosition;
 in lowp vec3 varColor;
 in lowp vec3 dayLight;
 
-#ifdef GL_ES
-in mediump vec2 varTexCoord;
-#else
-centroid in vec2 varTexCoord;
-#endif
+CENTROID_ in mediump vec2 varTexCoord;
+
 in highp vec3 eyeVec;
 in float nightRatio;
 
@@ -42,17 +38,8 @@ void main(void)
 	vec2 uv = varTexCoord.st;
 
 	vec4 base = texture2D(baseTexture, uv).rgba;
-	// If alpha is zero, we can just discard the pixel. This fixes transparency
-	// on GPUs like GC7000L, where GL_ALPHA_TEST is not implemented in mesa,
-	// and also on GLES 2, where GL_ALPHA_TEST is missing entirely.
-#ifdef USE_DISCARD
-	if (base.a == 0.0)
-		discard;
-#endif
-#ifdef USE_DISCARD_REF
-	if (base.a < 0.5)
-		discard;
-#endif
+
+	DISCARD_CHECK(base)
 
 	color = base.rgb;
 	vec4 col = vec4(color.rgb * varColor.rgb, 1.0);
