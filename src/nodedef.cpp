@@ -903,7 +903,7 @@ void ContentFeatures::updateTextures(ITextureSource *tsrc, ShaderSource *shdsrc,
 	}
 
 	u32 tile_shader = shdsrc->getShader({"nodes_shader", {}, {}, true,
-		"opengl_vertex.glsl", "opengl_geometry.glsl", "opengl_fragment.glsl", {}, scene::Vertex3DExt::FORMAT}, material_type, drawtype);
+		"opengl_vertex.glsl", "opengl_geometry.glsl", "opengl_fragment.glsl", {}, scene::Vertex3DExt::FORMAT}, material_type);
 
 	MaterialType overlay_material = material_type;
 	if (overlay_material == TILE_MATERIAL_OPAQUE)
@@ -912,7 +912,7 @@ void ContentFeatures::updateTextures(ITextureSource *tsrc, ShaderSource *shdsrc,
 		overlay_material = TILE_MATERIAL_LIQUID_TRANSPARENT;
 
 	u32 overlay_shader = shdsrc->getShader({"nodes_shader", {}, {}, true,
-		"opengl_vertex.glsl", "opengl_geometry.glsl", "opengl_fragment.glsl", {}, scene::Vertex3DExt::FORMAT}, overlay_material, drawtype);
+		"opengl_vertex.glsl", "opengl_geometry.glsl", "opengl_fragment.glsl", {}, scene::Vertex3DExt::FORMAT}, overlay_material);
 
 	// minimap pixel color = average color of top tile
 	if (tsettings.enable_minimap && !tdef[0].name.empty() && drawtype != NDT_AIRLIKE)
@@ -956,7 +956,7 @@ void ContentFeatures::updateTextures(ITextureSource *tsrc, ShaderSource *shdsrc,
 	}
 
 	u32 special_shader = shdsrc->getShader({"nodes_shader", {}, {}, true,
-		"opengl_vertex.glsl", "opengl_geometry.glsl", "opengl_fragment.glsl", {}, scene::Vertex3DExt::FORMAT}, special_material, drawtype);
+		"opengl_vertex.glsl", "opengl_geometry.glsl", "opengl_fragment.glsl", {}, scene::Vertex3DExt::FORMAT}, special_material);
 
 	// Special tiles (fill in f->special_tiles[])
 	for (u16 j = 0; j < CF_SPECIAL_COUNT; j++) {

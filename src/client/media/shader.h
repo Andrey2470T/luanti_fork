@@ -258,7 +258,7 @@ public:
 	/// @brief Helper: Generates or gets a shader suitable for nodes and entities
 	u32 getShader(
 		const ShaderInfo &info, MaterialType material_type,
-		NodeDrawType drawtype=NDT_NORMAL, bool apply_shadows=true, bool force_recompile=false);
+		bool apply_shadows=true, bool force_recompile=false);
 
 	void insertSourceShader(const std::string &name_of_shader,
 		const std::string &filename, const std::string &program);

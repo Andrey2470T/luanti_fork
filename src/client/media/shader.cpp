@@ -355,17 +355,14 @@ u32 ShaderSource::getShader(const ShaderInfo &info, bool apply_shadows, bool for
 
 u32 ShaderSource::getShader(
 	const ShaderInfo &info, MaterialType material_type,
-	NodeDrawType drawtype, bool apply_shadows, bool force_recompile)
+	bool apply_shadows, bool force_recompile)
 {
 	ShaderInfo info_c = info;
 	info_c.basic_name = info.name;
 	info_c.name += "_";
 	info_c.name += std::to_string((s32)material_type);
-	info_c.name += "_";
-	info_c.name += std::to_string((s32)drawtype);
 
 	info_c.constants["MATERIAL_TYPE"] = (s32)material_type;
-	info_c.constants["DRAWTYPE"] = (s32)drawtype;
 
 	info_c.transparent = isTransparentLayer(material_type);
 
