@@ -200,7 +200,7 @@ RenderStep *addPostProcessing(RenderPipeline *pipeline, RenderStep *previousStep
 		if (enable_volumetric_light) {
 			buffer->setTexture(TEXTURE_VOLUME, scale, "volume", bloom_format);
 
-			shader_id = client->getShaderSource()->getShader({"volumetric_light", {}, {"lighting"}});
+			shader_id = client->getShaderSource()->getShader({"volumetric_light"});
 			auto volume = pipeline->addStep<PostProcessingStep>(shader_id, std::vector<u8> { source, TEXTURE_DEPTH });
 			volume->setRenderSource(buffer);
 			volume->setRenderTarget(pipeline->createOwned<TextureBufferOutput>(buffer, TEXTURE_VOLUME));
@@ -257,7 +257,7 @@ RenderStep *addPostProcessing(RenderPipeline *pipeline, RenderStep *previousStep
 	}
 
 	// final merge
-	shader_id = client->getShaderSource()->getShader({"second_stage", {}, {"common"}});
+	shader_id = client->getShaderSource()->getShader({"second_stage"});
 	PostProcessingStep *effect = pipeline->createOwned<PostProcessingStep>(shader_id, std::vector<u8> { final_stage_source, TEXTURE_SCALE_UP, TEXTURE_EXPOSURE_2 });
 	pipeline->addStep(effect);
 	if (enable_ssaa)

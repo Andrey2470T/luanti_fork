@@ -1,3 +1,5 @@
+#include<common>
+
 #define rendered texture0
 #define bloom texture1
 

@@ -1,3 +1,5 @@
+#include<lighting>
+
 #define rendered texture0
 #define depthmap texture1
 

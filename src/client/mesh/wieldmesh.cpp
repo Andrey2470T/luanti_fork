@@ -357,7 +357,7 @@ void WieldMeshSceneNode::setItem(const ItemStack &item, Client *client, bool che
 
 	scene::SMesh *mesh = nullptr;
 
-	u32 shader_id = shdrsrc->getShader({"object_shader", {"common", "lighting"}, {"common", "fog", "noise"}}, TILE_MATERIAL_BASIC, NDT_NORMAL, true);
+	u32 shader_id = shdrsrc->getShader({"object_shader", {}, {}}, TILE_MATERIAL_BASIC, NDT_NORMAL, true);
 	m_material_type = shdrsrc->getShaderInfo(shader_id).material;
 
 	// Color-related
@@ -475,7 +475,6 @@ void WieldMeshSceneNode::setColor(video::SColor c)
 
 	u8 red = c.getRed();
 	u8 green = c.getGreen();
-	u8 blue = c.getBlue();
 
 	const u32 mc = mesh->getMeshBufferCount();
 	if (mc > m_buffer_info.size())
@@ -486,7 +485,7 @@ void WieldMeshSceneNode::setColor(video::SColor c)
 		video::SColor buffercolor(255,
 			bc.getRed() * red / 255,
 			bc.getGreen() * green / 255,
-			bc.getBlue() * blue / 255);
+			255);
 		scene::IMeshBuffer *buf = mesh->getMeshBuffer(j);
 
 		if (m_buffer_info[j].needColorize(buffercolor)) {

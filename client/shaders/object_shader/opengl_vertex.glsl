@@ -1,3 +1,6 @@
+#include<common>
+#include<lighting>
+
 uniform mat4 mWorld;
 uniform float animationTimer;
 uniform lowp vec4 materialColor;

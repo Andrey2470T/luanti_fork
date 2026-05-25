@@ -247,6 +247,7 @@ private:
 	std::string generateMainHeader();
 	std::string generateVertexHeader();
 	std::string generateFragmentHeader();
+	std::string generateShaderContent(video::E_SHADER_TYPE type);
 
 	/// @brief outputs a constant to an ostream
 	inline void putConstant(std::ostream &os, const ShaderConstants::mapped_type &it)
@@ -545,8 +546,6 @@ std::string ShaderGenerator::generateFragmentHeader()
 	// map legacy semantic texture names to texture identifiers
 	header += R"(
 		#define baseTexture texture0
-		#define normalTexture texture1
-		#define textureFlags texture2
 	)";
 
 	// Allow for multiple color outputs
@@ -573,6 +572,49 @@ std::string ShaderGenerator::generateFragmentHeader()
 	return header;
 }
 
+std::string ShaderGenerator::generateShaderContent(video::E_SHADER_TYPE type)
+{
+	std::string filename;
+
+	switch(type) {
+	case video::EST_VERTEX:
+		filename = info.vertex_shader;
+		break;
+	case video::EST_GEOMETRY:
+		filename = info.geometry_shader;
+		break;
+	case video::EST_FRAGMENT:
+		filename = info.fragment_shader;
+		break;
+	}
+
+	// Parse the shader content searching the includes and replacing their content with the include lines
+	std::string content = src->getOrLoadSource(info.name, info.basic_name, filename);
+	std::stringstream content_s(content);
+	std::string line, new_content;
+
+	while (std::getline(content_s, line, '\n')) {
+		if (!str_starts_with(line, "#include")) {
+			new_content += (line + "\n");
+			continue;
+		}
+
+		size_t start_s = line.find('<');
+		size_t end_s = line.find('>');
+
+		if (start_s == std::string::npos || end_s == std::string::npos)
+			continue;
+
+		std::string include_name = line.substr(start_s + 1, end_s - start_s - 1);
+		auto include_content = readIncludeShader(include_name);
+
+		if (!include_content.empty())
+			new_content += (include_content + "\n");
+	}
+
+	return new_content;
+}
+
 void ShaderGenerator::generate()
 {
 	auto main_header = generateMainHeader();
@@ -594,9 +636,9 @@ void ShaderGenerator::generate()
 
 	const char *final_header = "#line 0\n"; // reset the line counter for meaningful diagnostics
 
-	std::string vertex_shader = src->getOrLoadSource(info.name, info.basic_name, info.vertex_shader);
-	std::string fragment_shader = src->getOrLoadSource(info.name, info.basic_name, info.fragment_shader);
-	std::string geometry_shader = src->getOrLoadSource(info.name, info.basic_name, info.geometry_shader);
+	std::string vertex_shader = generateShaderContent(video::EST_VERTEX);
+	std::string geometry_shader = generateShaderContent(video::EST_GEOMETRY);
+	std::string fragment_shader = generateShaderContent(video::EST_FRAGMENT);
 
 	vertex_shader = main_header + vertex_header + final_header + vertex_shader;
 	fragment_shader = main_header + fragment_header + final_header + fragment_shader;

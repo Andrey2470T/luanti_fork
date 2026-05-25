@@ -1,3 +1,5 @@
+#include<fog>
+
 in highp vec3 eyeVec;
 
 in lowp vec4 varColor;

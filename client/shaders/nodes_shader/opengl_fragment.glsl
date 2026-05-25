@@ -1,3 +1,7 @@
+#include<common>
+#include<fog>
+#include<noise>
+
 uniform sampler2D baseTexture;
 
 // The cameraOffset is the current center of the visible world.

@@ -1,3 +1,7 @@
+#include<common>
+#include<lighting>
+#include<noise>
+
 uniform mat4 mWorld;
 uniform float timeOfDay;
 
