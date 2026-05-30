@@ -44,7 +44,7 @@ struct SkyColorTransitions
 struct Lighting
 {
 	SkyColorTransitions skycolors;
-	video::SColor ambient_color {255, 13, 13, 13};
+	video::SColor ambient_color {255, 38, 38, 38};
 
 	AutoExposure exposure;
 	float shadow_intensity {0.0f};

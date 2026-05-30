@@ -103,6 +103,8 @@ void main(void)
 	{
 #if ENABLE_TONE_MAPPING
 		color.rgb = ACESFilm(color.rgb);
+#else
+		color.rgb = min(color.rgb, vec3(1.0));
 #endif
 
 		color.rgb = applySaturation(color.rgb, saturation);

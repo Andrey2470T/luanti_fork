@@ -61,11 +61,11 @@ vec3 getSkyColor()
 vec3 calculateLighting(float skyLight, float blockLight, float ao)
 {
 	// 1. Calculate the light colors (the block one is hardcoded)
-	vec3 blockColor = vec3(1.0, 0.65, 0.4);
+	vec3 blockColor = vec3(1.0, 0.85, 0.7);
 	vec3 skyColor = getSkyColor();
 
 	// 2. Blending the light colors
-	vec3 mixedColor = blockColor * blockLight + skyColor * skyLight;
+	vec3 mixedColor = max(blockColor * blockLight, skyColor * skyLight);
 
 	// 3. Ambient light
 	mixedColor += ambientColor;
