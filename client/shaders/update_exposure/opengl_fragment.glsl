@@ -12,7 +12,6 @@ struct ExposureParams {
 	float compensationFactor;
 };
 
-uniform sampler2D exposure;
 uniform sampler2D screen;
 
 #ifdef ENABLE_BLOOM

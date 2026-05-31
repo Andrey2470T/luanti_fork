@@ -3,7 +3,6 @@
 #define rendered texture0
 #define depthmap texture1
 
-uniform sampler2D rendered;
 uniform sampler2D depthmap;
 
 uniform vec3 sunPositionScreen;

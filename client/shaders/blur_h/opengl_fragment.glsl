@@ -1,6 +1,5 @@
 #define rendered texture0
 
-uniform sampler2D rendered;
 uniform vec2 texelSize0;
 uniform mediump float bloomRadius;
 uniform mat3 bloomBlurWeights;

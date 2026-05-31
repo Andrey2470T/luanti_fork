@@ -12,7 +12,6 @@ struct ExposureParams {
 	float compensationFactor;
 };
 
-uniform sampler2D rendered;
 uniform sampler2D bloom;
 
 uniform vec2 texelSize0;

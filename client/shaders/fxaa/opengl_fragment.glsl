@@ -1,6 +1,5 @@
 #define rendered texture0
 
-uniform sampler2D rendered;
 uniform vec2 texelSize0;
 
 in vec2 sampleNW;

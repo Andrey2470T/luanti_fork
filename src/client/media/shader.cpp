@@ -572,6 +572,7 @@ std::string ShaderGenerator::generateFragmentHeader()
 	// map legacy semantic texture names to texture identifiers
 	header += R"(
 		#define baseTexture texture0
+		uniform sampler2D baseTexture;
 	)";
 
 	// Allow for multiple color outputs

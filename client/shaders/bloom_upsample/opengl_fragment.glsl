@@ -1,7 +1,6 @@
 #define current texture0
 #define previous texture1
 
-uniform sampler2D current;
 uniform sampler2D previous;
 uniform vec2 texelSize0;
 uniform mediump float bloomRadius;

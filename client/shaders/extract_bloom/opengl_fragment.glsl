@@ -4,7 +4,6 @@ struct ExposureParams {
 	float compensationFactor;
 };
 
-uniform sampler2D rendered;
 uniform mediump float bloomStrength;
 uniform ExposureParams exposureParams;
 

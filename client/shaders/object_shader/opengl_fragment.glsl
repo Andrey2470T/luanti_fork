@@ -1,10 +1,5 @@
 #include<fog>
 
-uniform sampler2D baseTexture;
-
-// The cameraOffset is the current center of the visible world.
-uniform highp vec3 cameraOffset;
-uniform float animationTimer;
 #ifdef ENABLE_DYNAMIC_SHADOWS
 	in float adj_shadow_strength;
 	in float cosLight;
@@ -15,13 +10,6 @@ uniform float animationTimer;
 
 
 in vec3 vNormal;
-in vec3 vPosition;
-// World position in the visible world (i.e. relative to the cameraOffset.)
-// This can be used for many shader effects without loss of precision.
-// If the absolute position is required it can be calculated with
-// cameraOffset + worldPosition (for large coordinates the limits of float
-// precision must be considered).
-in vec3 worldPosition;
 in lowp vec3 varColor;
 in lowp vec3 dayLight;
 

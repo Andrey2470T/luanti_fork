@@ -2,7 +2,6 @@
 // and ACM Siggraph talk in 2014 by Jorge Jimenez for Call of Duty: Advanced Warfare.
 #define rendered texture0
 
-uniform sampler2D rendered;
 uniform vec2 texelSize0;
 
 CENTROID_ in mediump vec2 varTexCoord;

@@ -1,5 +1,3 @@
-uniform sampler2D baseTexture;
-
 in lowp vec4 varColor;
 in mediump vec2 varTexCoord;
 
