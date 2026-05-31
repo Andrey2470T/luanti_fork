@@ -1,4 +1,4 @@
-Representations of simple things
+Math objects
 ================================
 
 ### Position/vector

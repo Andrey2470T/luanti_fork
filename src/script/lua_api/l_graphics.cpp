@@ -220,7 +220,7 @@ void ModApiGraphics::read_constants(lua_State *L, ShaderConstants &constants)
 	lua_pop(L, 2);
 }
 
-void ModApiGraphics::read_shader_info(lua_State *L, ShaderInfo &info)
+void ModApiGraphics::read_shader_info(lua_State *L, ShaderInfo &info, bool &applyShadows)
 {
 	info.vertex_shader = getstringfield_default(L, -1, "vertex", "opengl_vertex.glsl");
 	info.geometry_shader = getstringfield_default(L, -1, "geometry", "opengl_geometry.glsl");
@@ -239,6 +239,8 @@ void ModApiGraphics::read_shader_info(lua_State *L, ShaderInfo &info)
 		{"vertex3dext", scene::Vertex3DExt::FORMAT}
 	};
 	info.vertex_desc = mapNameToDesc[getstringfield_default(L, -1, "vertex_type", "vertex3d")];
+
+	applyShadows = getboolfield_default(L, -1, "apply_shadows", false);
 
 	lua_getfield(L, -1, "on_set_uniforms");
 
@@ -280,9 +282,10 @@ int ModApiGraphics::l_register_material(lua_State *L)
 	if (lua_istable(L, -1)) {
 		ShaderInfo info = {name};
 		info.transparent = entry.Blend == video::EBM_ALPHA; // enable/disable transparency, otherwise no alpha blending
-		read_shader_info(L, info);
+		bool apply_shadows;
+		read_shader_info(L, info, apply_shadows);
 
-		entry.ShaderID = getClient(L)->getShaderSource()->getShader(info, false);
+		entry.ShaderID = getClient(L)->getShaderSource()->getShader(info, apply_shadows);
 	}
 
 	lua_pop(L, 1);

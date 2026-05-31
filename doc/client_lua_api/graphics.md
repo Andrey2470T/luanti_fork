@@ -108,6 +108,9 @@ Defines properties for shader generation.
     --      "vertex3dext": derivative of "vertex3d", adds vec3
     vertex_type = "vertex3d",
 
+    -- Apply the builtin dynamic shadows adding necessary includes
+    apply_shadows = true/false,
+
     -- Callback which updates uniforms using "setter" object, called each frame
     on_set_uniforms = function(setter)
     {
