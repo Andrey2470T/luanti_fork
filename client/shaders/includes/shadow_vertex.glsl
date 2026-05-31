@@ -1,3 +1,6 @@
+#include<shadow_common>
+#include<shadow_uniforms>
+
 vec4 getRelativePosition(in vec4 position)
 {
 	vec2 l = position.xy - CameraPos.xy;
@@ -24,9 +27,57 @@ vec4 applyPerspectiveDistortion(in vec4 position)
 	return position;
 }
 
-// custom smoothstep implementation because it's not defined in glsl1.2
-float mtsmoothstep(in float edge0, in float edge1, in float x)
+void vertexStage(
+	in vec4 shadowPos, in vec3 normal,
+	out float normalLength,
+	out float cosLight,
+	out vec3 shadowPerspPos,
+	out float perspFactor,
+	out float adjShadowStrength
+)
 {
-	float t = clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0);
-	return t * t * (3.0 - 2.0 * t);
+	if (f_shadow_strength <= 0.0)
+		return;
+
+	vec3 nNormal;
+	normalLength = length(normal);
+
+	/* normalOffsetScale is in world coordinates (1/10th of a meter)
+		z_bias is in light space coordinates */
+	float normalOffsetScale, z_bias;
+	float pFactor = getPerspectiveFactor(getRelativePosition(m_ShadowViewProj * mWorld * shadowPos));
+	if (normalLength > 0.0) {
+		nNormal = normalize(normal);
+		cosLight = max(1e-5, dot(nNormal, -v_LightDirection));
+		float sinLight = pow(1.0 - pow(cosLight, 2.0), 0.5);
+		normalOffsetScale = 2.0 * pFactor * pFactor * sinLight * min(f_shadowfar, 500.0) /
+			xyPerspectiveBias1 / f_textureresolution;
+		z_bias = 1.0 * sinLight / cosLight;
+	}
+	else {
+		nNormal = vec3(0.0);
+		cosLight = clamp(dot(v_LightDirection, normalize(vec3(v_LightDirection.x, 0.0, v_LightDirection.z))), 1e-2, 1.0);
+		float sinLight = pow(1.0 - pow(cosLight, 2.0), 0.5);
+		normalOffsetScale = 0.0;
+		z_bias = 3.6e3 * sinLight / cosLight;
+	}
+	z_bias *= pFactor * pFactor / f_textureresolution / f_shadowfar;
+
+	shadowPerspPos = applyPerspectiveDistortion(m_ShadowViewProj * mWorld * (shadowPos + vec4(normalOffsetScale * nNormal, 0.0))).xyz;
+#if !defined(ENABLE_TRANSLUCENT_FOLIAGE) || MATERIAL_TYPE != TILE_MATERIAL_WAVING_LEAVES
+	shadowPerspPos.z -= z_bias;
+#endif
+	perspFactor = pFactor;
+
+	if (f_timeofday < 0.2) {
+		adjShadowStrength = f_shadow_strength * 0.5 *
+			(1.0 - mtsmoothstep(0.18, 0.2, f_timeofday));
+	} else if (f_timeofday >= 0.8) {
+		adjShadowStrength = f_shadow_strength * 0.5 *
+			mtsmoothstep(0.8, 0.83, f_timeofday);
+	} else {
+		adjShadowStrength = f_shadow_strength *
+			mtsmoothstep(0.20, 0.25, f_timeofday) *
+			(1.0 - mtsmoothstep(0.7, 0.8, f_timeofday));
+	}
 }

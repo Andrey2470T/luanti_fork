@@ -1,9 +1,3 @@
-// assuming near is always 1.0
-float getLinearDepth(float shadowfar)
-{
-	return 2.0 * shadowfar / (shadowfar + 1.0 - (2.0 * gl_FragCoord.z - 1.0) * (shadowfar - 1.0));
-}
-
 vec3 getLightSpacePosition(vec3 shadow_pos)
 {
 	return shadow_pos * 0.5 + 0.5;

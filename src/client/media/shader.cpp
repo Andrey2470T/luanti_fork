@@ -247,7 +247,11 @@ private:
 	std::string generateMainHeader();
 	std::string generateVertexHeader();
 	std::string generateFragmentHeader();
-	std::string generateShaderContent(video::E_SHADER_TYPE type);
+	std::string generateTypeShaderContent(video::E_SHADER_TYPE type);
+	std::string generateShaderContent(
+		const std::string &name_of_shader,
+		const std::string &rel_path,
+		const std::string &filename);
 
 	/// @brief outputs a constant to an ostream
 	inline void putConstant(std::ostream &os, const ShaderConstants::mapped_type &it)
@@ -304,11 +308,11 @@ u32 ShaderSource::getShader(const ShaderInfo &info, bool apply_shadows, bool for
 
 	ShaderInfo info_c = info;
 
+	info_c.vertex_includes.emplace_back("matrices");
 	info_c.fragment_includes.emplace_back("common");
 
 	if (apply_shadows && g_settings->getBool("enable_dynamic_shadows")) {
-		info_c.vertex_includes.insert(
-			info_c.vertex_includes.end(), {"shadow_uniforms", "shadow_vertex"});
+		info_c.vertex_includes.emplace_back("shadow_vertex");
 		info_c.fragment_includes.insert(
 			info_c.fragment_includes.end(), {"shadow_uniforms", "shadow_common", "shadow_depth", "shadow_filter"});
 	}
@@ -440,7 +444,7 @@ std::string ShaderSource::getShaderPath(
 
 std::string ShaderGenerator::readIncludeShader(const std::string &name)
 {
-	return src->getOrLoadSource("", "includes", name + ".glsl");
+	return generateShaderContent("", "includes", name + ".glsl");
 }
 
 std::string ShaderGenerator::generateMainHeader()
@@ -504,10 +508,6 @@ std::string ShaderGenerator::generateVertexHeader()
 	std::string header;
 	header = R"(
 		precision mediump float;
-
-		uniform highp mat4 mWorldView;
-		uniform highp mat4 mWorldViewProj;
-		uniform mediump mat4 mTexture;
 	)";
 
 	// Generate vertex inputs
@@ -597,7 +597,7 @@ std::string ShaderGenerator::generateFragmentHeader()
 	return header;
 }
 
-std::string ShaderGenerator::generateShaderContent(video::E_SHADER_TYPE type)
+std::string ShaderGenerator::generateTypeShaderContent(video::E_SHADER_TYPE type)
 {
 	std::string filename;
 
@@ -613,8 +613,16 @@ std::string ShaderGenerator::generateShaderContent(video::E_SHADER_TYPE type)
 		break;
 	}
 
+	return generateShaderContent(info.name, info.basic_name, filename);
+}
+
+std::string ShaderGenerator::generateShaderContent(
+	const std::string &name_of_shader,
+	const std::string &rel_path,
+	const std::string &filename)
+{
 	// Parse the shader content searching the includes and replacing their content with the include lines
-	std::string content = src->getOrLoadSource(info.name, info.basic_name, filename);
+	std::string content = src->getOrLoadSource(name_of_shader, rel_path, filename);
 	std::stringstream content_s(content);
 	std::string line, new_content;
 
@@ -661,9 +669,9 @@ void ShaderGenerator::generate()
 
 	const char *final_header = "#line 0\n"; // reset the line counter for meaningful diagnostics
 
-	std::string vertex_shader = generateShaderContent(video::EST_VERTEX);
-	std::string geometry_shader = generateShaderContent(video::EST_GEOMETRY);
-	std::string fragment_shader = generateShaderContent(video::EST_FRAGMENT);
+	std::string vertex_shader = generateTypeShaderContent(video::EST_VERTEX);
+	std::string geometry_shader = generateTypeShaderContent(video::EST_GEOMETRY);
+	std::string fragment_shader = generateTypeShaderContent(video::EST_FRAGMENT);
 
 	vertex_shader = main_header + vertex_header + final_header + vertex_shader;
 	fragment_shader = main_header + fragment_header + final_header + fragment_shader;

@@ -36,3 +36,10 @@ float smoothTriangleWave(float x)
 {
 	return smoothCurve(triangleWave(x)) * 2.0 - 1.0;
 }
+
+// assuming near is always 1.0
+// 'depth' should be gl_FragCoord.z (accessible only in fragment shader) or something else
+float getLinearDepth(float far, float depth)
+{
+	return 2.0 * far / (far + 1.0 - (2.0 * depth - 1.0) * (far - 1.0));
+}

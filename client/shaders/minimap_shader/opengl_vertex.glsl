@@ -1,5 +1,3 @@
-uniform mat4 mWorld;
-
 out lowp vec4 varColor;
 out mediump vec2 varTexCoord;
 
