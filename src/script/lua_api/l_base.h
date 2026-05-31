@@ -97,6 +97,11 @@ public:
 	{
 		return *reinterpret_cast<T**>(luaL_checkudata(L, narg, T::className));
 	}
+	template<typename T>
+	static inline T *getUData(lua_State *L, int narg)
+	{
+		return reinterpret_cast<T*>(luaL_checkudata(L, narg, T::className));
+	}
 
 	/**
 	 * A wrapper for deprecated functions.

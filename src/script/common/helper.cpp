@@ -15,6 +15,7 @@ extern "C" {
 #include <string_view>
 #include "c_converter.h"
 #include "c_types.h"
+#include "lua_api/l_matrix4.h"
 
 /*
  * Read template functions
@@ -93,6 +94,18 @@ template <>
 v3f LuaHelper::readParam(lua_State *L, int index)
 {
 	return check_v3f(L, index);
+}
+
+template <>
+core::matrix4 LuaHelper::readParam(lua_State *L, int index)
+{
+	core::matrix4 m;
+	bool got = LuaMatrix4::check(L, index, m);
+
+	if (!got)
+		throw LuaError(std::string("Invalid matrix at index=") + std::to_string(index));
+
+	return m;
 }
 
 template <>

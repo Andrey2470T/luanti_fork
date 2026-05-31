@@ -111,7 +111,7 @@ public:
 	/// @return a reference to a matrix that *must* be overwritten.
 	[[nodiscard]] static inline core::matrix4 &create(lua_State *L);
 
-	[[nodiscard]] static core::matrix4 &check(lua_State *L, int index);
+	static bool check(lua_State *L, int index, core::matrix4 &result);
 
 	static void Register(lua_State *L);
 

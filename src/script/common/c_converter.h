@@ -15,6 +15,7 @@
 #include <string>
 #include <string_view>
 
+#include "Utils/matrix4.h"
 #include "irrlichttypes_bloated.h"
 
 extern "C" {
@@ -63,6 +64,8 @@ bool getfloatfield(lua_State *L, int table,
 		const char *fieldname, float &result);
 bool getcolorfield(lua_State *L, int table,
 		const char *fieldname, video::SColor &result);
+bool getmatrixfield(lua_State *L, int table,
+		const char *fieldname, core::matrix4 &result);
 
 void setstringfield(lua_State *L, int table,
 		const char *fieldname, const std::string &value);

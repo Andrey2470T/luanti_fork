@@ -17,6 +17,7 @@ extern "C" {
 #include <set>
 #include <cmath>
 #include "common/c_types.h"
+#include "lua_api/l_matrix4.h"
 
 
 #define CHECK_TYPE(index, name, type) do { \
@@ -564,6 +565,16 @@ bool getcolorfield(lua_State *L, int table,
 	return got;
 }
 
+bool getmatrixfield(lua_State *L, int table,
+	const char *fieldname, core::matrix4 &result)
+{
+	lua_getfield(L, table, fieldname);
+	bool got = LuaMatrix4::check(L, -1, result);
+
+	lua_pop(L, 1);
+	return got;
+}
+
 std::string getstringfield_default(lua_State *L, int table,
 		const char *fieldname, const std::string &default_)
 {
@@ -607,6 +618,13 @@ video::SColor getcolorfield_default(lua_State *L, int table,
 		const char *fieldname, video::SColor default_)
 {
 	getcolorfield(L, table, fieldname, default_);
+	return default_;
+}
+
+core::matrix4 getmatrixfield_default(lua_State *L, int table,
+	const char *fieldname, core::matrix4 &default_)
+{
+	getmatrixfield(L, table, fieldname, default_);
 	return default_;
 }
 

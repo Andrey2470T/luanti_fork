@@ -51,7 +51,8 @@ int UniformSetter::l_set(lua_State *L)
 		ref->setUniform3Int(name, val);
 	}
 	else if (type == "mat4") {
-		// TODO
+		auto val = readParam<core::matrix4>(L, 4);
+		ref->setUniform4x4Matrix(name, val);
 	}
 
 	return 1;
@@ -278,6 +279,7 @@ int ModApiGraphics::l_register_material(lua_State *L)
 
 	if (lua_istable(L, -1)) {
 		ShaderInfo info = {name};
+		info.transparent = entry.Blend == video::EBM_ALPHA; // enable/disable transparency, otherwise no alpha blending
 		read_shader_info(L, info);
 
 		entry.ShaderID = getClient(L)->getShaderSource()->getShader(info, false);

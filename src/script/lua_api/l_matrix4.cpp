@@ -28,9 +28,15 @@ int LuaMatrix4::readIndex(lua_State *L, int index)
 	return static_cast<int>(value) - 1;
 }
 
-core::matrix4 &LuaMatrix4::check(lua_State *L, int index)
+bool LuaMatrix4::check(lua_State *L, int index, core::matrix4 &result)
 {
-	return static_cast<LuaMatrix4 *>(luaL_checkudata(L, index, LuaMatrix4::className))->matrix;
+	auto *lua_m = getUData<LuaMatrix4>(L, index);
+
+	if (!lua_m)
+		return false;
+
+	result = lua_m->matrix;
+	return true;
 }
 
 inline core::matrix4 &LuaMatrix4::create(lua_State *L)
@@ -141,7 +147,8 @@ int LuaMatrix4::l_reflection(lua_State *L)
 
 int LuaMatrix4::l_get(lua_State *L)
 {
-	const auto &matrix = check(L, 1);
+	core::matrix4 matrix;
+	check(L, 1, matrix);
 	int row = readIndex(L, 2);
 	int col = readIndex(L, 3);
 	lua_pushnumber(L, matrix(col, row));
@@ -150,7 +157,8 @@ int LuaMatrix4::l_get(lua_State *L)
 
 int LuaMatrix4::l_set(lua_State *L)
 {
-	auto &matrix = check(L, 1);
+	core::matrix4 matrix;
+	check(L, 1, matrix);
 	int row = readIndex(L, 2);
 	int col = readIndex(L, 3);
 	matrix(col, row) = readParamRaw<f32>(L, 4);
@@ -159,7 +167,8 @@ int LuaMatrix4::l_set(lua_State *L)
 
 int LuaMatrix4::l_get_row(lua_State *L)
 {
-	const auto &matrix = check(L, 1);
+	core::matrix4 matrix;
+	check(L, 1, matrix);
 	int row = readIndex(L, 2);
 	for (int col = 0; col < 4; ++col)
 		lua_pushnumber(L, matrix(col, row));
@@ -168,7 +177,8 @@ int LuaMatrix4::l_get_row(lua_State *L)
 
 int LuaMatrix4::l_set_row(lua_State *L)
 {
-	auto &matrix = check(L, 1);
+	core::matrix4 matrix;
+	check(L, 1, matrix);
 	int row = readIndex(L, 2);
 	f32 x = readParamRaw<f32>(L, 3);
 	f32 y = readParamRaw<f32>(L, 4);
@@ -183,7 +193,8 @@ int LuaMatrix4::l_set_row(lua_State *L)
 
 int LuaMatrix4::l_get_col(lua_State *L)
 {
-	const auto &matrix = check(L, 1);
+	core::matrix4 matrix;
+	check(L, 1, matrix);
 	int col = readIndex(L, 2);
 	for (int row = 0; row < 4; ++row)
 		lua_pushnumber(L, matrix(col, row));
@@ -192,7 +203,8 @@ int LuaMatrix4::l_get_col(lua_State *L)
 
 int LuaMatrix4::l_set_col(lua_State *L)
 {
-	auto &matrix = check(L, 1);
+	core::matrix4 matrix;
+	check(L, 1, matrix);
 	int col = readIndex(L, 2);
 	f32 x = readParamRaw<f32>(L, 3);
 	f32 y = readParamRaw<f32>(L, 4);
@@ -207,7 +219,8 @@ int LuaMatrix4::l_set_col(lua_State *L)
 
 int LuaMatrix4::l_unpack(lua_State *L)
 {
-	auto matrix = check(L, 1);
+	core::matrix4 matrix;
+	check(L, 1, matrix);
 	matrix = matrix.getTransposed();
 	lua_createtable(L, 16, 0);
 	for (int i = 0; i < 16; ++i)
@@ -217,7 +230,8 @@ int LuaMatrix4::l_unpack(lua_State *L)
 
 int LuaMatrix4::l_copy(lua_State *L)
 {
-	const auto &matrix = check(L, 1);
+	core::matrix4 matrix;
+	check(L, 1, matrix);
 	create(L) = matrix;
 	return 1;
 }
@@ -226,7 +240,8 @@ int LuaMatrix4::l_copy(lua_State *L)
 
 int LuaMatrix4::l_transform_4d(lua_State *L)
 {
-	const auto &matrix = check(L, 1);
+	core::matrix4 matrix;
+	check(L, 1, matrix);
 	f32 vec4[4];
 	for (int i = 0; i < 4; ++i)
 		vec4[i] = readParamRaw<f32>(L, i + 2);
@@ -239,7 +254,8 @@ int LuaMatrix4::l_transform_4d(lua_State *L)
 
 int LuaMatrix4::l_transform_pos(lua_State *L)
 {
-	const auto &matrix = check(L, 1);
+	core::matrix4 matrix;
+	check(L, 1, matrix);
 	v3f vec = readParamRaw<v3f>(L, 2);
 	matrix.transformVect(vec);
 	push_v3f(L, vec);
@@ -248,7 +264,8 @@ int LuaMatrix4::l_transform_pos(lua_State *L)
 
 int LuaMatrix4::l_transform_dir(lua_State *L)
 {
-	const auto &matrix = check(L, 1);
+	core::matrix4 matrix;
+	check(L, 1, matrix);
 	v3f vec = readParamRaw<v3f>(L, 2);
 	v3f res = matrix.rotateAndScaleVect(vec);
 	push_v3f(L, res);
@@ -260,32 +277,38 @@ int LuaMatrix4::l_compose(lua_State *L)
 	int n_args = lua_gettop(L);
 	if (n_args == 0)
 		return LuaMatrix4::l_identity(L);
-	const auto &first = check(L, 1);
+	core::matrix4 first;
+	check(L, 1, first);
 	auto &product = create(L);
 	product = first;
 	for (int i = 2; i <= n_args; ++i) {
-		product *= check(L, i);
+		core::matrix4 next;
+		check(L, i, next);
+		product *= next;
 	}
 	return 1;
 }
 
 int LuaMatrix4::l_transpose(lua_State *L)
 {
-	const auto &matrix = check(L, 1);
+	core::matrix4 matrix;
+	check(L, 1, matrix);
 	create(L) = matrix.getTransposed();
 	return 1;
 }
 
 int LuaMatrix4::l_determinant(lua_State *L)
 {
-	const auto &matrix = check(L, 1);
+	core::matrix4 matrix;
+	check(L, 1, matrix);
 	lua_pushnumber(L, matrix.determinant());
 	return 1;
 }
 
 int LuaMatrix4::l_invert(lua_State *L)
 {
-	const auto &matrix = check(L, 1);
+	core::matrix4 matrix;
+	check(L, 1, matrix);
 	core::matrix4 inverse;
 	if (!matrix.getInverse(inverse)) {
 		lua_pushnil(L);
@@ -297,8 +320,9 @@ int LuaMatrix4::l_invert(lua_State *L)
 
 int LuaMatrix4::l_equals(lua_State *L)
 {
-	const auto &a = check(L, 1);
-	const auto &b = check(L, 2);
+	core::matrix4 a, b;
+	check(L, 1, a);
+	check(L, 2, b);
 	f32 tol = luaL_optnumber(L, 3, 0.0);
 	lua_pushboolean(L, a.equals(b, tol));
 	return 1;
@@ -306,7 +330,8 @@ int LuaMatrix4::l_equals(lua_State *L)
 
 int LuaMatrix4::l_is_affine_transform(lua_State *L)
 {
-	const auto &matrix = check(L, 1);
+	core::matrix4 matrix;
+	check(L, 1, matrix);
 	f32 tol = luaL_optnumber(L, 3, 0.0);
 	lua_pushboolean(L, matrix.isAffine(tol));
 	return 1;
@@ -316,7 +341,8 @@ int LuaMatrix4::l_is_affine_transform(lua_State *L)
 
 int LuaMatrix4::l_get_translation(lua_State *L)
 {
-	const auto &matrix = check(L, 1);
+	core::matrix4 matrix;
+	check(L, 1, matrix);
 	push_v3f(L, matrix.getTranslation());
 	return 1;
 }
@@ -325,7 +351,8 @@ int LuaMatrix4::l_get_rs(lua_State *L)
 {
 	// TODO maybe check that it is, in fact, a rotation matrix;
 	// not a fake rotation (axis flip) or a shear matrix
-	auto matrix = check(L, 1);
+	core::matrix4 matrix;
+	check(L, 1, matrix);
 	v3f scale = matrix.getScale();
 	if (scale.X == 0.0f || scale.Y == 0.0f || scale.Z == 0.0f) {
 		LuaRotation::create(L, core::quaternion());
@@ -340,7 +367,8 @@ int LuaMatrix4::l_get_rs(lua_State *L)
 
 int LuaMatrix4::l_set_translation(lua_State *L)
 {
-	auto &matrix = check(L, 1);
+	core::matrix4 matrix;
+	check(L, 1, matrix);
 	v3f translation = readParamRaw<v3f>(L, 2);
 	matrix.setTranslation(translation);
 	return 0;
@@ -348,8 +376,9 @@ int LuaMatrix4::l_set_translation(lua_State *L)
 
 int LuaMatrix4::mt_add(lua_State *L)
 {
-	const auto &a = check(L, 1);
-	const auto &b = check(L, 2);
+	core::matrix4 a, b;
+	check(L, 1, a);
+	check(L, 2, b);
 	auto &res = create(L);
 	res = a;
 	res += b;
@@ -358,8 +387,9 @@ int LuaMatrix4::mt_add(lua_State *L)
 
 int LuaMatrix4::mt_sub(lua_State *L)
 {
-	const auto &a = check(L, 1);
-	const auto &b = check(L, 2);
+	core::matrix4 a, b;
+	check(L, 1, a);
+	check(L, 2, b);
 	auto &res = create(L);
 	res = a;
 	res -= b;
@@ -368,7 +398,8 @@ int LuaMatrix4::mt_sub(lua_State *L)
 
 int LuaMatrix4::mt_unm(lua_State *L)
 {
-	const auto &matrix = check(L, 1);
+	core::matrix4 matrix;
+	check(L, 1, matrix);
 	auto &res = create(L);
 	res = matrix;
 	res *= -1.0f;
@@ -379,10 +410,12 @@ int LuaMatrix4::mt_mul(lua_State *L)
 {
 	if (lua_isnumber(L, 1)) {
 		f32 scalar = readParamRaw<f32>(L, 1);
-		const auto &matrix = check(L, 2);
+		core::matrix4 matrix;
+		check(L, 2, matrix);
 		create(L) = scalar * matrix;
 	} else {
-		const auto &matrix = check(L, 1);
+		core::matrix4 matrix;
+		check(L, 1, matrix);
 		f32 scalar = readParamRaw<f32>(L, 2);
 		create(L) = matrix * scalar;
 	}
@@ -391,15 +424,17 @@ int LuaMatrix4::mt_mul(lua_State *L)
 
 int LuaMatrix4::mt_eq(lua_State *L)
 {
-	const auto &a = check(L, 1);
-	const auto &b = check(L, 2);
+	core::matrix4 a, b;
+	check(L, 1, a);
+	check(L, 2, b);
 	lua_pushboolean(L, a == b);
 	return 1;
 }
 
 int LuaMatrix4::mt_tostring(lua_State *L)
 {
-	const auto &matrix = check(L, 1);
+	core::matrix4 matrix;
+	check(L, 1, matrix);
 	std::ostringstream ss;
 	ss << matrix;
 	std::string str = ss.str();
@@ -409,7 +444,9 @@ int LuaMatrix4::mt_tostring(lua_State *L)
 
 void *LuaMatrix4::packIn(lua_State *L, int idx)
 {
-	return new core::matrix4(check(L, idx));
+	core::matrix4 matrix;
+	check(L, 1, matrix);
+	return new core::matrix4(matrix);
 }
 
 void LuaMatrix4::packOut(lua_State *L, void *ptr)
