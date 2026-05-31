@@ -43,3 +43,13 @@ float getLinearDepth(float far, float depth)
 {
 	return 2.0 * far / (far + 1.0 - (2.0 * depth - 1.0) * (far - 1.0));
 }
+
+#if __VERSION__ >= 130
+#define mtsmoothstep smoothstep
+#else
+float mtsmoothstep(in float edge0, in float edge1, in float x)
+{
+	float t = clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0);
+	return t * t * (3.0 - 2.0 * t);
+}
+#endif

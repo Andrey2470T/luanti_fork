@@ -308,6 +308,7 @@ u32 ShaderSource::getShader(const ShaderInfo &info, bool apply_shadows, bool for
 
 	ShaderInfo info_c = info;
 
+	info_c.vertex_includes.emplace_back("common");
 	info_c.vertex_includes.emplace_back("matrices");
 	info_c.fragment_includes.emplace_back("common");
 

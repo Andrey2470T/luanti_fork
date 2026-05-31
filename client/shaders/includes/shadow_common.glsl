@@ -24,10 +24,3 @@ vec3 unpackColor(float value)
 	return color;
 }
 #endif
-
-// custom smoothstep implementation because it's not defined in glsl1.2
-float mtsmoothstep(in float edge0, in float edge1, in float x)
-{
-	float t = clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0);
-	return t * t * (3.0 - 2.0 * t);
-}
