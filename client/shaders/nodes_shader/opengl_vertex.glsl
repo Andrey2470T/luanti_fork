@@ -74,7 +74,7 @@ void main(void)
 	vec4 shadow_pos = pos;
 #endif
 	vertexStage(
-	        shadow_pos, vNormal, f_normal_length, cosLight,
+	    shadow_pos, vNormal, f_normal_length, cosLight,
 		shadow_position, perspective_factor, adj_shadow_strength
 	);
 #endif

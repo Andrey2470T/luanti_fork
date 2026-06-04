@@ -314,8 +314,7 @@ u32 ShaderSource::getShader(const ShaderInfo &info, bool apply_shadows, bool for
 
 	if (apply_shadows && g_settings->getBool("enable_dynamic_shadows")) {
 		info_c.vertex_includes.emplace_back("shadow_vertex");
-		info_c.fragment_includes.insert(
-			info_c.fragment_includes.end(), {"shadow_uniforms", "shadow_common", "shadow_depth", "shadow_filter"});
+		info_c.fragment_includes.emplace_back("shadow_fragment");
 	}
 
 	if (info_c.basic_name.empty())
