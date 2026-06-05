@@ -79,7 +79,7 @@ void main(void)
 #endif
 
 	// translate to linear colorspace (approximate)
-	color.rgb = pow(color.rgb, vec3(2.2));
+	color.rgb = srgb_to_linear(color.rgb);
 
 #ifdef ENABLE_BLOOM_DEBUG
 	if (uv.x > 0.5 || uv.y > 0.5)
@@ -115,7 +115,7 @@ void main(void)
 #endif
 
 	// return to sRGB colorspace (approximate)
-	color.rgb = pow(color.rgb, vec3(1.0 / 2.2));
+	color.rgb = linear_to_srgb(color.rgb);
 
 	outColor0 = vec4(color.rgb, 1.0); // force full alpha to avoid holes in the image.
 }

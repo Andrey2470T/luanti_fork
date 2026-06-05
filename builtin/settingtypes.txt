@@ -508,6 +508,11 @@ fullscreen (Full screen) bool false
 #    Requires: desktop
 pause_on_lost_focus (Pause on lost window focus) bool false
 
+#    Set the gamma for correct graphics display (depends on the monitor gamma, usually is 2.2)
+#
+#    Requires: desktop
+monitor_gamma (Gamma set for specific monitor display) float 2.2 1.0 4.0
+
 [**FPS]
 
 #    If FPS would go higher than this, limit it by sleeping

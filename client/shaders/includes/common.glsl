@@ -1,13 +1,13 @@
-uniform float mGamma = 2.2;
+uniform float monitorGamma;
 
-vec4 srgb_to_linear(vec4 color, float gamma)
+vec3 srgb_to_linear(vec3 color)
 {
-	return pow(color, vec4(gamma));
+	return pow(color, vec3(monitorGamma));
 }
 
-vec4 linear_to_srgb(vec4 color, float gamma)
+vec3 linear_to_srgb(vec3 color)
 {
-	return pow(color, vec4(1.0/gamma));
+	return pow(color, vec3(1.0/monitorGamma));
 }
 
 vec3 ACESFilm(vec3 x) {

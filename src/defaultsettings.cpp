@@ -126,6 +126,7 @@ void set_default_settings()
 	settings->setDefault("occlusion_culler", "bfs");
 	settings->setDefault("enable_raytraced_culling", "true");
 	settings->setDefault("chat_weblink_color", "#8888FF");
+	settings->setDefault("monitor_gamma", "2.2");
 
 	// Keymap
 #if USE_SDL2

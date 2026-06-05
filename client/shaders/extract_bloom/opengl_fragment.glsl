@@ -20,9 +20,9 @@ void main(void)
 	// translate to linear colorspace (approximate)
 #ifdef GL_ES
 	// clamp color to [0,1] range in lieu of centroids
-	color = pow(clamp(color, 0.0, 1.0), vec3(2.2));
+	color = srgb_to_linear(clamp(color, 0.0, 1.0));
 #else
-	color = pow(color, vec3(2.2));
+	color = srgb_to_linear(color);
 #endif
 
 	color *= exposureParams.compensationFactor * bloomStrength;

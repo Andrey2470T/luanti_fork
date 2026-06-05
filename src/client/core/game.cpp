@@ -206,6 +206,8 @@ class GameGlobalShaderUniformSetter : public IShaderUniformSetter
 		m_animation_timer_delta_pixel{"animationTimerDelta"};
 	CachedShaderSetting<f32> m_daynight_ratio{"dayNightRatio"};
 	CachedShaderSetting<f32> m_timeofday{"timeOfDay"};
+	CachedShaderSetting<f32> m_monitor_gamma{"monitorGamma"};
+	f32 m_cache_monitor_gamma;
 	CachedShaderSetting<f32, 3> m_lightdir{"lightDir"};
 	CachedShaderSetting<f32, 3> m_minimap_yaw{"yawVec"};
 	CachedShaderSetting<f32, 3> m_camera_offset_pixel{"cameraOffset"};
@@ -247,6 +249,8 @@ public:
 	{
 		if (name == "exposure_compensation")
 			m_user_exposure_compensation = g_settings->getFloat("exposure_compensation", -1.0f, 1.0f);
+		if (name == "monitor_gamma")
+			m_cache_monitor_gamma = g_settings->getFloat("monitor_gamma", 1.0f, 4.0f);
 	}
 
 	static void settingsCallback(const std::string &name, void *userdata)
@@ -266,6 +270,7 @@ public:
 		m_user_exposure_compensation = g_settings->getFloat("exposure_compensation", -1.0f, 1.0f);
 		m_bloom_enabled = g_settings->getBool("enable_bloom");
 		m_volumetric_light_enabled = g_settings->getBool("enable_volumetric_lighting") && m_bloom_enabled;
+		m_cache_monitor_gamma = g_settings->getFloat("monitor_gamma", 1.0f, 4.0f);
 	}
 
 	~GameGlobalShaderUniformSetter()
@@ -280,6 +285,8 @@ public:
 
 		f32 timeofday = m_client->getEnv().getSmoothTimeOfDay();
 		m_timeofday.set(timeofday, renderer);
+
+		m_monitor_gamma.set(m_cache_monitor_gamma, renderer);
 
 		v3f lightdir = m_sky->getLightDirection();
 		m_lightdir.set(lightdir, renderer);
