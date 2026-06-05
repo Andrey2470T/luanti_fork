@@ -206,6 +206,7 @@ class GameGlobalShaderUniformSetter : public IShaderUniformSetter
 		m_animation_timer_delta_pixel{"animationTimerDelta"};
 	CachedShaderSetting<f32> m_daynight_ratio{"dayNightRatio"};
 	CachedShaderSetting<f32> m_timeofday{"timeOfDay"};
+	CachedShaderSetting<f32, 3> m_lightdir{"lightDir"};
 	CachedShaderSetting<f32, 3> m_minimap_yaw{"yawVec"};
 	CachedShaderSetting<f32, 3> m_camera_offset_pixel{"cameraOffset"};
 	CachedShaderSetting<f32, 3> m_camera_offset_vertex{"cameraOffset"};
@@ -277,8 +278,11 @@ public:
 		f32 daynight_ratio = (f32)m_client->getEnv().getDayNightRatio();
 		m_daynight_ratio.set(daynight_ratio, renderer);
 
-		f32 timeofday = m_client->getEnv().getTimeOfDayF();
+		f32 timeofday = m_client->getEnv().getSmoothTimeOfDay();
 		m_timeofday.set(timeofday, renderer);
+
+		v3f lightdir = m_sky->getLightDirection();
+		m_lightdir.set(lightdir, renderer);
 
 		u32 animation_timer = m_client->getEnv().getFrameTime() % 1000000;
 		f32 animation_timer_f = (f32)animation_timer / 100000.f;
@@ -380,6 +384,13 @@ public:
 			f32 volumetric_light_strength = lighting.volumetric_light_strength;
 			m_volumetric_light_strength_pixel.set(volumetric_light_strength, renderer);
 		}
+
+		ShadowRenderer *shadow = RenderingEngine::get_shadow_renderer();
+		if (!shadow)
+			return;
+
+		shadow->setShadowIntensity(lighting.shadow_intensity);
+		shadow->setShadowTint(lighting.shadow_tint);
 	}
 
 	void onSetMaterial(video::SMaterial &material) override
@@ -526,8 +537,6 @@ struct GameRunData {
 	f32 fog_range;
 
 	v3f update_draw_list_last_cam_dir;
-
-	float time_of_day_smooth;
 };
 
 class Game;
@@ -660,7 +669,6 @@ protected:
 	void updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 			const CameraOrientation &cam);
 	void updateClouds(float dtime);
-	void updateShadows();
 	void drawScene(ProfilerGraph *graph, RunStats *stats);
 
 	// Misc
@@ -1372,11 +1380,13 @@ bool Game::createClient(const GameStartData &start_data)
 	/* Clouds
 	 */
 	clouds = make_irr<Clouds>(smgr, shader_src, -1, myrand());
+	client->setClouds(clouds.get());
 
 	/* Skybox
 	 */
 	sky = make_irr<Sky>(-1, m_rendering_engine, texture_src, shader_src);
 	scsf->setSky(sky.get());
+	client->setSky(sky.get());
 
 	/* Pre-calculated values
 	 */
@@ -3889,29 +3899,10 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 				/ 255.0;
 	}
 
-	float time_of_day_smooth = runData.time_of_day_smooth;
-	float time_of_day = client->getEnv().getTimeOfDayF();
+	client->getEnv().updateSmoothTimeOfDay();
 
-	static const float maxsm = 0.05f;
-	static const float todsm = 0.05f;
-
-	if (std::fabs(time_of_day - time_of_day_smooth) > maxsm &&
-			std::fabs(time_of_day - time_of_day_smooth + 1.0) > maxsm &&
-			std::fabs(time_of_day - time_of_day_smooth - 1.0) > maxsm)
-		time_of_day_smooth = time_of_day;
-
-	if (time_of_day_smooth > 0.8 && time_of_day < 0.2)
-		time_of_day_smooth = time_of_day_smooth * (1.0 - todsm)
-				+ (time_of_day + 1.0) * todsm;
-	else
-		time_of_day_smooth = time_of_day_smooth * (1.0 - todsm)
-				+ time_of_day * todsm;
-
-	runData.time_of_day_smooth = time_of_day_smooth;
-
-	sky->update(time_of_day_smooth, time_brightness, direct_brightness,
-			sunlight_seen, camera->getCameraMode(), player->getYaw(),
-			player->getPitch());
+	sky->update(client->getEnv().getSmoothTimeOfDay(), time_brightness, direct_brightness,
+			sunlight_seen, camera->getCameraMode(), player->getYaw(), player->getPitch());
 
 	/*
 		Update clouds
@@ -3985,8 +3976,6 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 	} else if (runData.touch_blocks_timer > touch_mapblock_delta) {
 		client->getEnv().getClientMap().touchMapBlocks();
 		runData.touch_blocks_timer = 0;
-	} else if (RenderingEngine::get_shadow_renderer()) {
-		updateShadows();
 	}
 
 	m_game_ui->update(*stats, client, draw_control, cam, runData.pointed_old,
@@ -4045,36 +4034,6 @@ inline void Game::updateProfilerGraphs(ProfilerGraph *graph)
 	Profiler::GraphValues values;
 	g_profiler->graphPop(values);
 	graph->put(values);
-}
-
-/****************************************************************************
- * Shadows
- *****************************************************************************/
-void Game::updateShadows()
-{
-	ShadowRenderer *shadow = RenderingEngine::get_shadow_renderer();
-	if (!shadow)
-		return;
-
-	float in_timeofday = std::fmod(runData.time_of_day_smooth, 1.0f);
-
-	float timeoftheday = getWickedTimeOfDay(in_timeofday);
-	bool is_day = timeoftheday > 0.25 && timeoftheday < 0.75;
-	bool is_shadow_visible = is_day ? sky->getSunVisible() : sky->getMoonVisible();
-	const auto &lighting = client->getEnv().getLocalPlayer()->getLighting();
-	shadow->setShadowIntensity(is_shadow_visible ? lighting.shadow_intensity : 0.0f);
-	shadow->setShadowTint(lighting.shadow_tint);
-
-	timeoftheday = std::fmod(timeoftheday + 0.75f, 0.5f) + 0.25f;
-	const float offset_constant = 10000.0f;
-
-	v3f light = is_day ? sky->getSunDirection() : sky->getMoonDirection();
-
-	v3f sun_pos = light * offset_constant;
-	shadow->getDirectionalLight().setDirection(sun_pos);
-	shadow->setTimeOfDay(in_timeofday);
-
-	shadow->getDirectionalLight().updateFrustum(camera, client);
 }
 
 void Game::drawScene(ProfilerGraph *graph, RunStats *stats)

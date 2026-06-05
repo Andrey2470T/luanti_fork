@@ -869,12 +869,11 @@ enable_volumetric_lighting (Volumetric lighting) bool false
 
 #   Simulate translucency when looking at foliage in the sunlight.
 #
-#   Requires: enable_dynamic_shadows
 enable_translucent_foliage (Translucent foliage) bool false
 
 #   When enabled, liquid reflections are simulated.
 #
-#   Requires: enable_waving_water, enable_dynamic_shadows
+#   Requires: enable_waving_water
 enable_water_reflections (Liquid reflections) bool false
 
 [*Audio]

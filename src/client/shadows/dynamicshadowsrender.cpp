@@ -16,11 +16,12 @@
 #include "profiler.h"
 #include "Video/MaterialRenderer.h"
 #include "Video/VideoDriver.h"
+#include "client/render/sky.h"
 
 ShadowRenderer::ShadowRenderer(SDLDevice *device, Client *client) :
 		m_smgr(device->getSceneManager()), m_driver(device->getVideoDriver()),
 		m_client(client), m_shadow_strength(0.0f), m_shadow_tint(255, 0, 0, 0),
-		m_time_day(0.0f), m_force_update_shadow_map(false), m_current_frame(0),
+		m_force_update_shadow_map(false), m_current_frame(0),
 		m_perspective_bias_xy(0.8f), m_perspective_bias_z(0.5f)
 {
 	(void) m_client;
@@ -321,11 +322,15 @@ void ShadowRenderer::updateSMTextures()
 	}
 }
 
-void ShadowRenderer::update(video::GLTexture *outputTarget)
+void ShadowRenderer::update(Sky *sky, video::GLTexture *outputTarget)
 {
 	if (!m_shadows_enabled || m_smgr->getActiveCamera() == nullptr) {
 		return;
 	}
+
+	auto sunDir = sky->getLightDirection();
+	getDirectionalLight().setDirection(sunDir);
+	getDirectionalLight().updateFrustum(m_client->getCamera(), m_client);
 
 	updateSMTextures();
 

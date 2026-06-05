@@ -11,12 +11,8 @@ uniform vec3 moonPositionScreen;
 uniform float moonBrightness;
 
 uniform lowp float volumetricLightStrength;
-
-#ifdef ENABLE_DYNAMIC_SHADOWS
-uniform vec3 v_LightDirection;
-#else
-const vec3 v_LightDirection = vec3(0.0, -1.0, 0.0);
-#endif
+uniform vec3 lightDir;
+uniform float timeOfDay;
 
 CENTROID_ in mediump vec2 varTexCoord;
 
@@ -47,7 +43,7 @@ float sampleVolumetricLight(vec2 uv, vec3 lightVec, float rawDepth)
 	return result / samples * pow(texture2D(depthmap, uv).r, 128.0);
 }
 
-vec3 getDirectLightScatteringAtGround(vec3 v_LightDirection)
+vec3 getDirectLightScatteringAtGround()
 {
 	// Based on talk at 2002 Game Developers Conference by Naty Hoffman and Arcot J. Preetham
 	const float beta_r0 = 1e-5; // Rayleigh scattering beta
@@ -58,7 +54,7 @@ vec3 getDirectLightScatteringAtGround(vec3 v_LightDirection)
 
 	const float atmosphere_height = 15000.; // height of the atmosphere in meters
 	// sun/moon light at the ground level, after going through the atmosphere
-	return exp(-beta_r0_l * atmosphere_height / (1e-5 - dot(v_LightDirection, vec3(0., 1., 0.))));
+	return exp(-beta_r0_l * atmosphere_height / (1e-5 - dot(lightDir, vec3(0., 1., 0.))));
 }
 
 vec3 applyVolumetricLight(vec3 color, vec2 uv, float rawDepth)
@@ -84,7 +80,7 @@ vec3 applyVolumetricLight(vec3 color, vec2 uv, float rawDepth)
 	float lightFactor = brightness * sampleVolumetricLight(uv, sourcePosition, rawDepth) *
 			(0.05 * cameraDirectionFactor + 0.95 * viewAngleFactor);
 
-	color = mix(color, boost * getDirectLightScatteringAtGround(v_LightDirection) * getSkyColor(), lightFactor);
+	color = mix(color, boost * getDirectLightScatteringAtGround() * getSkyColor(timeOfDay), lightFactor);
 
 	// a factor of 5 tested well
 	color *= volumetricLightStrength * 5.0;

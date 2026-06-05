@@ -30,6 +30,8 @@
 #define CLIENT_CHAT_MESSAGE_LIMIT_PER_10S 10.0f
 
 class Camera;
+class Sky;
+class Clouds;
 class ClientMediaDownloader;
 class ISoundManager;
 class IWritableItemDefManager;
@@ -366,8 +368,12 @@ public:
 
 	Minimap* getMinimap() { return m_minimap; }
 	void setCamera(Camera* camera) { m_camera = camera; }
+	void setSky(Sky *sky) { m_sky = sky; }
+	void setClouds(Clouds *clouds) { m_clouds = clouds; }
 
-	Camera* getCamera () { return m_camera; }
+	Camera* getCamera() { return m_camera; }
+	Sky *getSky() { return m_sky; }
+	Clouds *getClouds() { return m_clouds; }
 	scene::ISceneManager *getSceneManager();
 
 	// IGameDef interface
@@ -501,6 +507,8 @@ private:
 	ELoginRegister m_allow_login_or_register = ELoginRegister::Any;
 	Camera *m_camera = nullptr;
 	Minimap *m_minimap = nullptr;
+	Sky *m_sky = nullptr;
+	Clouds *m_clouds = nullptr;
 
 	// Server serialization version
 	u8 m_server_ser_ver;

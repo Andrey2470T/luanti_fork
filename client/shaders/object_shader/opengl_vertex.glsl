@@ -1,5 +1,7 @@
 #include<lighting>
 
+uniform vec3 lightDir;
+uniform float timeOfDay;
 uniform lowp vec4 materialColor;
 
 out vec3 vNormal;
@@ -59,12 +61,12 @@ void main(void)
 	float blockLight = color.g;
 	float sum = float(max(skyLight + blockLight, 0));
 	nightRatio = 1.0 - (skyLight / sum);
-	dayLight = getSkyColor();
-	varColor = calculateLighting(skyLight, blockLight, 1.0);
+	dayLight = getSkyColor(timeOfDay);
+	varColor = calculateLighting(timeOfDay, skyLight, blockLight, 1.0);
 
 #ifdef ENABLE_DYNAMIC_SHADOWS
 	vertexStage(
-		vec4(inPosition, 1.0), vNormal, f_normal_length, cosLight,
+		vec4(inPosition, 1.0), vNormal, lightDir, timeOfDay, f_normal_length, cosLight,
 		shadow_position, perspective_factor, adj_shadow_strength
 	);
 #endif

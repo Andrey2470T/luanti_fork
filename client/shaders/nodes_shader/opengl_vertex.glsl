@@ -2,6 +2,9 @@
 #include<noise>
 #include<vertex_animations>
 
+uniform vec3 lightDir;
+uniform float timeOfDay;
+
 out vec3 vNormal;
 out vec3 vPosition;
 // World position in the visible world (i.e. relative to the cameraOffset.)
@@ -59,8 +62,8 @@ void main(void)
 	float ao = color.b;
 	float sum = float(max(skyLight + blockLight, 0));
 	nightRatio = 1.0 - (skyLight / sum);
-	dayLight = getSkyColor();
-	varColor = calculateLighting(skyLight, blockLight, ao);
+	dayLight = getSkyColor(timeOfDay);
+	varColor = calculateLighting(timeOfDay, skyLight, blockLight, ao);
 
 	hwColor = inAux / 255.0;
 
@@ -74,7 +77,7 @@ void main(void)
 	vec4 shadow_pos = pos;
 #endif
 	vertexStage(
-	    shadow_pos, vNormal, f_normal_length, cosLight,
+	    shadow_pos, vNormal, lightDir, timeOfDay, f_normal_length, cosLight,
 		shadow_position, perspective_factor, adj_shadow_strength
 	);
 #endif

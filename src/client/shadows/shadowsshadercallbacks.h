@@ -11,11 +11,9 @@
 class ShadowUniformSetter : public IShaderUniformSetter
 {
 	CachedShaderSetting<f32, 16> m_shadow_view_proj{"m_ShadowViewProj"};
-	CachedShaderSetting<f32, 3> m_light_direction{"v_LightDirection"};
 	CachedShaderSetting<f32> m_texture_res{"f_textureresolution"};
 	CachedShaderSetting<f32> m_shadow_strength{"f_shadow_strength"};
 	CachedShaderSetting<f32, 3> m_shadow_tint{ "shadow_tint" };
-	CachedShaderSetting<f32> m_time_of_day{"f_timeofday"};
 	CachedShaderSetting<f32> m_shadowfar{"f_shadowfar"};
 	CachedShaderSetting<f32, 4> m_camera_pos{"CameraPos"};
 	CachedShaderSetting<s32> m_shadow_texture{"ShadowMapSampler"};

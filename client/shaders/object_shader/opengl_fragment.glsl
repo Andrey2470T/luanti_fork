@@ -36,11 +36,11 @@ void main(void)
 	float f_adj_shadow_strength = 0.0;
 	float shadow_uncorrected = 0.0;
 #ifdef ENABLE_DYNAMIC_SHADOWS
-	f_adj_shadow_strength = adj_shadow_strength;
-	fragmentStage(
+	col = fragmentStage(
 		shadow_position, col, dayLight,
 		f_normal_length, cosLight, perspective_factor,
-		f_adj_shadow_strength, nightRatio, shadow_uncorrected
+		adj_shadow_strength, nightRatio,
+		f_adj_shadow_strength, shadow_uncorrected
 	);
 #endif
 

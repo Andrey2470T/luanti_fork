@@ -485,3 +485,15 @@ void ClientEnvironment::updateFrameTime(bool is_paused)
 		m_frame_time = new_frame_time;
 	}
 }
+
+void ClientEnvironment::updateSmoothTimeOfDay()
+{
+	float time_of_day_smooth = m_smooth_timeofday;
+	float time_of_day = getTimeOfDayF();
+
+	static const float todsm = 0.05f;
+
+	time_of_day_smooth = time_of_day_smooth * (1.0 - todsm) + time_of_day * todsm;
+
+	m_smooth_timeofday = time_of_day_smooth;
+}

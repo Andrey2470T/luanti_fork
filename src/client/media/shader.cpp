@@ -93,17 +93,6 @@ public:
 			if (g_settings->getBool("shadow_poisson_filter"))
 				constants["POISSON_FILTER"] = 1;
 
-			if (g_settings->getBool("enable_water_reflections"))
-				constants["ENABLE_WATER_REFLECTIONS"] = 1;
-
-			if (g_settings->getBool("enable_translucent_foliage"))
-				constants["ENABLE_TRANSLUCENT_FOLIAGE"] = 1;
-
-			// FIXME: The node specular effect is currently disabled due to mixed in-game
-			// results. This shader should not be applied to all nodes equally. See #15898
-			if (false)
-				constants["ENABLE_NODE_SPECULAR"] = 1;
-
 			s32 shadow_filter = g_settings->getS32("shadow_filters");
 			constants["SHADOW_FILTER"] = shadow_filter;
 
@@ -111,6 +100,17 @@ public:
 				g_settings->getFloat("shadow_soft_radius"));
 			constants["SOFTSHADOWRADIUS"] = shadow_soft_radius;
 		}
+
+		if (g_settings->getBool("enable_water_reflections"))
+			constants["ENABLE_WATER_REFLECTIONS"] = 1;
+
+		if (g_settings->getBool("enable_translucent_foliage"))
+			constants["ENABLE_TRANSLUCENT_FOLIAGE"] = 1;
+
+		// FIXME: The node specular effect is currently disabled due to mixed in-game
+		// results. This shader should not be applied to all nodes equally. See #15898
+		if (false)
+			constants["ENABLE_NODE_SPECULAR"] = 1;
 
 		if (g_settings->getBool("enable_bloom")) {
 			constants["ENABLE_BLOOM"] = 1;

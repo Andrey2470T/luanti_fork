@@ -128,8 +128,7 @@ void DirectionalLight::commitFrustum()
 
 void DirectionalLight::setDirection(v3f dir)
 {
-	direction = -dir;
-	direction.normalize();
+	direction = dir;
 }
 
 v3f DirectionalLight::getPosition() const

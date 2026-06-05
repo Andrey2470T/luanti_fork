@@ -17,8 +17,6 @@ void ShadowUniformSetter::onSetUniforms(video::MaterialRenderer *renderer)
 	shadowViewProj *= light.getViewMatrix();
 	m_shadow_view_proj.set(shadowViewProj, renderer);
 
-	m_light_direction.set(light.getDirection(), renderer);
-
 	f32 TextureResolution = light.getMapResolution();
 	m_texture_res.set(TextureResolution, renderer);
 
@@ -27,9 +25,6 @@ void ShadowUniformSetter::onSetUniforms(video::MaterialRenderer *renderer)
 
 	video::SColor ShadowTint = shadow->getShadowTint();
 	m_shadow_tint.set(ShadowTint, renderer);
-
-	f32 timeOfDay = shadow->getTimeOfDay();
-	m_time_of_day.set(timeOfDay, renderer);
 
 	f32 shadowFar = shadow->getMaxShadowFar();
 	m_shadowfar.set(shadowFar, renderer);

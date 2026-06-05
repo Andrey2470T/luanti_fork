@@ -15,6 +15,7 @@ class ShadowDepthShaderCB;
 class shadowScreenQuad;
 class shadowScreenQuadCB;
 class ShaderSource;
+class Sky;
 
 enum E_SHADOW_MODE : u8
 {
@@ -68,7 +69,7 @@ public:
 			E_SHADOW_MODE shadowMode = ESM_BOTH);
 	void removeNodeFromShadowList(scene::ISceneNode *node);
 
-	void update(video::GLTexture *outputTarget = nullptr);
+	void update(Sky *sky, video::GLTexture *outputTarget = nullptr);
 	/// Force shadow map to be re-drawn in one go next frame
 	void setForceUpdateShadowMap() { m_force_update_shadow_map = true; }
 	void drawDebug();
@@ -80,14 +81,12 @@ public:
 
 
 	bool is_active() const { return m_shadows_enabled && shadowMapTextureFinal != nullptr; }
-	void setTimeOfDay(float isDay) { m_time_day = isDay; };
 	void setShadowIntensity(float shadow_intensity);
 	void setShadowTint(video::SColor shadow_tint) { m_shadow_tint = shadow_tint; }
 
 	s32 getShadowSamples() const { return m_shadow_samples; }
 	float getShadowStrength() const { return m_shadows_enabled ? m_shadow_strength : 0.0f; }
 	video::SColor getShadowTint() const { return m_shadow_tint; }
-	float getTimeOfDay() const { return m_time_day; }
 
 	f32 getPerspectiveBiasXY() { return m_perspective_bias_xy; }
 	f32 getPerspectiveBiasZ() { return m_perspective_bias_z; }
@@ -125,7 +124,6 @@ private:
 	float m_shadow_strength_gamma;
 	float m_shadow_map_max_distance;
 	u32 m_shadow_map_texture_size;
-	float m_time_day;
 	int m_shadow_samples;
 	bool m_shadow_map_texture_32bit;
 	bool m_shadows_enabled;

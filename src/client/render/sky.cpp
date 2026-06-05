@@ -541,6 +541,17 @@ v3f Sky::getMoonDirection()
 	return getSkyBodyPosition(270, getWickedTimeOfDay(m_time_of_day) * 360 - 90, m_sky_params.body_orbit_tilt);
 }
 
+v3f Sky::getLightDirection()
+{
+	float timeoftheday = getWickedTimeOfDay(std::fmod(m_time_of_day, 1.0f));
+	bool is_day = timeoftheday > 0.25 && timeoftheday < 0.75;
+	v3f dir = is_day ? getSunDirection() : getMoonDirection();
+	dir *= -1;
+	dir.normalize();
+
+	return dir;
+}
+
 void Sky::draw_sun(video::VideoDriver *driver, const video::SColor &suncolor,
 	const video::SColor &suncolor2, float wicked_time_of_day)
 	/* Draw sun in the sky.

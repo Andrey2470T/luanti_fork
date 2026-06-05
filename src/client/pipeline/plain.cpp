@@ -71,7 +71,7 @@ void RenderShadowMapStep::run(PipelineContext &context)
 {
 	// This is necessary to render shadows for animations correctly
 	context.device->getSceneManager()->getRootSceneNode()->OnAnimate(os::Timer::getTime());
-	context.shadow_renderer->update();
+	context.shadow_renderer->update(context.client->getSky());
 }
 
 // class UpscaleStep

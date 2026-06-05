@@ -28,7 +28,10 @@ vec4 applyPerspectiveDistortion(in vec4 position)
 }
 
 void vertexStage(
-	in vec4 shadowPos, in vec3 normal,
+	in vec4 shadowPos,
+	in vec3 normal,
+	in vec3 lightDir,
+	in float timeOfDay,
 	out float normalLength,
 	out float cosLight,
 	out vec3 shadowPerspPos,
@@ -48,7 +51,7 @@ void vertexStage(
 	float pFactor = getPerspectiveFactor(getRelativePosition(m_ShadowViewProj * mWorld * shadowPos));
 	if (normalLength > 0.0) {
 		nNormal = normalize(normal);
-		cosLight = max(1e-5, dot(nNormal, -v_LightDirection));
+		cosLight = max(1e-5, dot(nNormal, -lightDir));
 		float sinLight = pow(1.0 - pow(cosLight, 2.0), 0.5);
 		normalOffsetScale = 2.0 * pFactor * pFactor * sinLight * min(f_shadowfar, 500.0) /
 			xyPerspectiveBias1 / f_textureresolution;
@@ -56,7 +59,7 @@ void vertexStage(
 	}
 	else {
 		nNormal = vec3(0.0);
-		cosLight = clamp(dot(v_LightDirection, normalize(vec3(v_LightDirection.x, 0.0, v_LightDirection.z))), 1e-2, 1.0);
+		cosLight = clamp(dot(lightDir, normalize(vec3(lightDir.x, 0.0, lightDir.z))), 1e-2, 1.0);
 		float sinLight = pow(1.0 - pow(cosLight, 2.0), 0.5);
 		normalOffsetScale = 0.0;
 		z_bias = 3.6e3 * sinLight / cosLight;
@@ -69,15 +72,15 @@ void vertexStage(
 #endif
 	perspFactor = pFactor;
 
-	if (f_timeofday < 0.2) {
+	if (timeOfDay < 0.2) {
 		adjShadowStrength = f_shadow_strength * 0.5 *
-			(1.0 - mtsmoothstep(0.18, 0.2, f_timeofday));
-	} else if (f_timeofday >= 0.8) {
+			(1.0 - mtsmoothstep(0.18, 0.2, timeOfDay));
+	} else if (timeOfDay >= 0.8) {
 		adjShadowStrength = f_shadow_strength * 0.5 *
-			mtsmoothstep(0.8, 0.83, f_timeofday);
+			mtsmoothstep(0.8, 0.83, timeOfDay);
 	} else {
 		adjShadowStrength = f_shadow_strength *
-			mtsmoothstep(0.20, 0.25, f_timeofday) *
-			(1.0 - mtsmoothstep(0.7, 0.8, f_timeofday));
+			mtsmoothstep(0.20, 0.25, timeOfDay) *
+			(1.0 - mtsmoothstep(0.7, 0.8, timeOfDay));
 	}
 }

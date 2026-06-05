@@ -1,6 +1,7 @@
 #include<fog>
 #include<noise>
 
+uniform vec3 lightDir;
 // The cameraOffset is the current center of the visible world.
 uniform highp vec3 cameraOffset;
 uniform vec3 cameraPosition;
@@ -33,30 +34,30 @@ in vec3 hwColor;
 
 void main(void)
 {
-	vec3 color;
 	vec2 uv = varTexCoord.st;
 
 	vec4 base = texture2D(baseTexture, uv).rgba;
 
 	DISCARD_CHECK(base);
 
-	color = base.rgb;
-	vec4 col = vec4(color.rgb * hwColor * varColor.rgb, 1.0);
+	vec4 col = vec4(base.rgb * hwColor * varColor.rgb, 1.0);
 
 	float f_adj_shadow_strength = 0.0;
+	float shadow_strength = 0.0;
 	float shadow_uncorrected = 0.0;
 #ifdef ENABLE_DYNAMIC_SHADOWS
-	f_adj_shadow_strength = adj_shadow_strength;
-	fragmentStage(
+	shadow_strength = f_shadow_strength;
+	col = fragmentStage(
 		shadow_position, col, dayLight,
 		f_normal_length, cosLight, perspective_factor,
-		f_adj_shadow_strength, nightRatio, shadow_uncorrected
+		adj_shadow_strength, nightRatio,
+		f_adj_shadow_strength, shadow_uncorrected
 	);
 #endif
 	// Fragment normal, can differ from vNormal which is derived from vertex normals.
 	vec3 fNormal = vNormal;
 
-	vec3 reflect_ray = -normalize(v_LightDirection - fNormal * dot(v_LightDirection, fNormal) * 2.0);
+	vec3 reflect_ray = -normalize(lightDir - fNormal * dot(lightDir, fNormal) * 2.0);
 
 	vec3 viewVec = normalize(worldPosition + cameraOffset - cameraPosition);
 
@@ -70,7 +71,7 @@ void main(void)
 		// This is an analogous method to the bumpmap, except we get the gradient information directly from gnoise.
 		vec2 gradient = wave_noise(wavePos, off);
 		fNormal = normalize(normalize(fNormal) + vec3(gradient.x, 0., gradient.y) * WATER_WAVE_HEIGHT * abs(fNormal.y) * 0.25);
-		reflect_ray = -normalize(v_LightDirection - fNormal * dot(v_LightDirection, fNormal) * 2.0);
+		reflect_ray = -normalize(lightDir - fNormal * dot(lightDir, fNormal) * 2.0);
 		float fresnel_factor = dot(fNormal, viewVec);
 
 		float adjusted_night_ratio = pow(max(0.0, nightRatio), 0.6);
@@ -79,7 +80,7 @@ void main(void)
 		// A little trig hack. We go from the dot product of viewVec and normal to the dot product of viewVec and tangent to apply a fresnel effect.
 		fresnel_factor = clamp(pow(1.0 - fresnel_factor * fresnel_factor, 8.0), 0.0, 1.0) * 0.8 + 0.2;
 		col.rgb *= 0.5;
-		vec3 reflection_color = mix(vec3(max(fogColor.r, max(fogColor.g, fogColor.b))), fogColor.rgb, f_shadow_strength);
+		vec3 reflection_color = mix(vec3(max(fogColor.r, max(fogColor.g, fogColor.b))), fogColor.rgb, shadow_strength);
 
 		// Sky reflection
 		col.rgb += reflection_color * pow(fresnel_factor, 2.0) * 0.5 * brightness_factor;
@@ -92,7 +93,7 @@ void main(void)
 
 #if (defined(ENABLE_NODE_SPECULAR) && !MATERIAL_WATER_REFLECTIONS)
 		// Apply specular to blocks.
-		if (dot(v_LightDirection, vNormal) < 0.0) {
+		if (dot(lightDir, vNormal) < 0.0) {
 			float intensity = 2.0 * (1.0 - (base.r * varColor.r));
 			const float specular_exponent = 5.0;
 			const float fresnel_exponent =  4.0;
@@ -105,7 +106,7 @@ void main(void)
 
 #if (MATERIAL_TYPE == TILE_MATERIAL_WAVING_PLANTS || MATERIAL_TYPE == TILE_MATERIAL_WAVING_LEAVES) && defined(ENABLE_TRANSLUCENT_FOLIAGE)
 		// Simulate translucent foliage.
-		col.rgb += 4.0 * dayLight * base.rgb * normalize(base.rgb * varColor.rgb * varColor.rgb) * f_adj_shadow_strength * pow(max(-dot(v_LightDirection, viewVec), 0.0), 4.0) * max(1.0 - shadow_uncorrected, 0.0);
+		col.rgb += 4.0 * dayLight * base.rgb * normalize(base.rgb * varColor.rgb * varColor.rgb) * f_adj_shadow_strength * pow(max(-dot(lightDir, viewVec), 0.0), 4.0) * max(1.0 - shadow_uncorrected, 0.0);
 #endif
 
 	col = mixColorWithFog(col, eyeVec);
