@@ -23,6 +23,7 @@
 #include <Image/SColor.h>
 #include <json/json.h>
 #include "mapgen/treegen.h"
+#include "lighting.h"
 
 struct EnumString es_TileAnimationType[] =
 {
@@ -2606,4 +2607,80 @@ void push_mod_spec(lua_State *L, const ModSpec &spec, bool include_unsatisfied)
 		lua_rawseti(L, -2, i++);
 	}
 	lua_setfield(L, -2, "unsatisfied_depends");
+}
+
+void read_lighting(lua_State *L, int index, Lighting &lighting)
+{
+	lua_getfield(L, index, "shadows");
+	if (lua_istable(L, -1)) {
+		getfloatfield(L, -1, "intensity", lighting.shadow_intensity);
+		getcolorfield(L, -1, "tint", lighting.shadow_tint);
+	}
+	lua_pop(L, 1); // shadows
+
+	getfloatfield(L, index, "saturation", lighting.saturation);
+
+	lua_getfield(L, index, "exposure");
+	if (lua_istable(L, -1)) {
+		lighting.exposure.luminance_min       = getfloatfield_default(L, -1, "luminance_min",       lighting.exposure.luminance_min);
+		lighting.exposure.luminance_max       = getfloatfield_default(L, -1, "luminance_max",       lighting.exposure.luminance_max);
+		lighting.exposure.exposure_correction = getfloatfield_default(L, -1, "exposure_correction", lighting.exposure.exposure_correction);
+		lighting.exposure.speed_dark_bright   = getfloatfield_default(L, -1, "speed_dark_bright",   lighting.exposure.speed_dark_bright);
+		lighting.exposure.speed_bright_dark   = getfloatfield_default(L, -1, "speed_bright_dark",   lighting.exposure.speed_bright_dark);
+		lighting.exposure.center_weight_power = getfloatfield_default(L, -1, "center_weight_power", lighting.exposure.center_weight_power);
+	}
+	lua_pop(L, 1); // exposure
+
+	lua_getfield(L, index, "volumetric_light");
+	if (lua_istable(L, -1)) {
+		getfloatfield(L, -1, "strength", lighting.volumetric_light_strength);
+		lighting.volumetric_light_strength = rangelim(lighting.volumetric_light_strength, 0.0f, 1.0f);
+	}
+	lua_pop(L, 1); // volumetric_light
+
+	lua_getfield(L, index, "bloom");
+	if (lua_istable(L, -1)) {
+		lighting.bloom_intensity       = getfloatfield_default(L, -1, "intensity",       lighting.bloom_intensity);
+		lighting.bloom_strength_factor = getfloatfield_default(L, -1, "strength_factor", lighting.bloom_strength_factor);
+		lighting.bloom_radius          = getfloatfield_default(L, -1, "radius",          lighting.bloom_radius);
+	}
+	lua_pop(L, 1); // bloom
+}
+
+void push_lighting(lua_State *L, const Lighting &lighting)
+{
+	lua_newtable(L); // "shadows"
+	lua_pushnumber(L, lighting.shadow_intensity);
+	lua_setfield(L, -2, "intensity");
+	push_ARGB8(L, lighting.shadow_tint);
+	lua_setfield(L, -2, "tint");
+	lua_setfield(L, -2, "shadows");
+	lua_pushnumber(L, lighting.saturation);
+	lua_setfield(L, -2, "saturation");
+	lua_newtable(L); // "exposure"
+	lua_pushnumber(L, lighting.exposure.luminance_min);
+	lua_setfield(L, -2, "luminance_min");
+	lua_pushnumber(L, lighting.exposure.luminance_max);
+	lua_setfield(L, -2, "luminance_max");
+	lua_pushnumber(L, lighting.exposure.exposure_correction);
+	lua_setfield(L, -2, "exposure_correction");
+	lua_pushnumber(L, lighting.exposure.speed_dark_bright);
+	lua_setfield(L, -2, "speed_dark_bright");
+	lua_pushnumber(L, lighting.exposure.speed_bright_dark);
+	lua_setfield(L, -2, "speed_bright_dark");
+	lua_pushnumber(L, lighting.exposure.center_weight_power);
+	lua_setfield(L, -2, "center_weight_power");
+	lua_setfield(L, -2, "exposure");
+	lua_newtable(L); // "volumetric_light"
+	lua_pushnumber(L, lighting.volumetric_light_strength);
+	lua_setfield(L, -2, "strength");
+	lua_setfield(L, -2, "volumetric_light");
+	lua_newtable(L); // "bloom"
+	lua_pushnumber(L, lighting.bloom_intensity);
+	lua_setfield(L, -2, "intensity");
+	lua_pushnumber(L, lighting.bloom_strength_factor);
+	lua_setfield(L, -2, "strength_factor");
+	lua_pushnumber(L, lighting.bloom_radius);
+	lua_setfield(L, -2, "radius");
+	lua_setfield(L, -2, "bloom");
 }

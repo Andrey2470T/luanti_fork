@@ -107,11 +107,6 @@ public:
 		if (g_settings->getBool("enable_translucent_foliage"))
 			constants["ENABLE_TRANSLUCENT_FOLIAGE"] = 1;
 
-		// FIXME: The node specular effect is currently disabled due to mixed in-game
-		// results. This shader should not be applied to all nodes equally. See #15898
-		if (false)
-			constants["ENABLE_NODE_SPECULAR"] = 1;
-
 		if (g_settings->getBool("enable_bloom")) {
 			constants["ENABLE_BLOOM"] = 1;
 			if (g_settings->getBool("enable_bloom_debug"))

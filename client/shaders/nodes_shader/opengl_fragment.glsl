@@ -91,19 +91,6 @@ void main(void)
 		col.rgb += water_reflect_color * f_adj_shadow_strength * brightness_factor;
 #endif
 
-#if (defined(ENABLE_NODE_SPECULAR) && !MATERIAL_WATER_REFLECTIONS)
-		// Apply specular to blocks.
-		if (dot(lightDir, vNormal) < 0.0) {
-			float intensity = 2.0 * (1.0 - (base.r * varColor.r));
-			const float specular_exponent = 5.0;
-			const float fresnel_exponent =  4.0;
-
-			col.rgb +=
-				intensity * dayLight * (1.0 - nightRatio) * (1.0 - shadow_uncorrected) * f_adj_shadow_strength *
-				pow(max(dot(reflect_ray, viewVec), 0.0), fresnel_exponent) * pow(1.0 - abs(dot(viewVec, fNormal)), specular_exponent);
-		}
-#endif
-
 #if (MATERIAL_TYPE == TILE_MATERIAL_WAVING_PLANTS || MATERIAL_TYPE == TILE_MATERIAL_WAVING_LEAVES) && defined(ENABLE_TRANSLUCENT_FOLIAGE)
 		// Simulate translucent foliage.
 		col.rgb += 4.0 * dayLight * base.rgb * normalize(base.rgb * varColor.rgb * varColor.rgb) * f_adj_shadow_strength * pow(max(-dot(lightDir, viewVec), 0.0), 4.0) * max(1.0 - shadow_uncorrected, 0.0);
