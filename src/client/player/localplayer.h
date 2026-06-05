@@ -7,7 +7,6 @@
 #include "player.h"
 #include "environment.h"
 #include "constants.h"
-#include "lighting.h"
 #include <string>
 
 class Client;
@@ -163,8 +162,6 @@ public:
 		m_added_velocity += vel;
 	}
 
-	inline Lighting& getLighting() { return m_lighting; }
-
 	inline PlayerSettings &getPlayerSettings() { return m_player_settings; }
 
 private:
@@ -220,5 +217,4 @@ private:
 	Client *m_client;
 
 	PlayerSettings m_player_settings;
-	Lighting m_lighting;
 };

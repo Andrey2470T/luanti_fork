@@ -10,42 +10,38 @@ extern "C" {
 #include <lua.h>
 }
 
-class LuaHelper
+/**
+ * Read a value using a template type T from Lua state L at index
+ *
+ * @tparam T type to read from Lua
+ * @param L Lua state
+ * @param index Lua index to read
+ * @return read value from Lua
+ */
+template <typename T>
+T readParam(lua_State *L, int index);
+
+/**
+ * @brief Read a value, but also allow NaN and +-Inf.
+ * @see readParam
+ */
+template <typename T>
+T readParamRaw(lua_State *L, int index);
+
+/**
+ * Read a value using a template type T from Lua state L at index
+ *
+ * @tparam T type to read from Lua
+ * @param L Lua state
+ * @param index Lua index to read
+ * @param default_value default value to apply if nil
+ * @return read value from Lua or default value if nil
+ */
+template <typename T>
+inline T readParam(lua_State *L, int index, const T &default_value)
 {
-protected:
-	/**
-	 * Read a value using a template type T from Lua state L at index
-	 *
-	 * @tparam T type to read from Lua
-	 * @param L Lua state
-	 * @param index Lua index to read
-	 * @return read value from Lua
-	 */
-	template <typename T>
-	static T readParam(lua_State *L, int index);
-
-	/**
-	 * @brief Read a value, but also allow NaN and +-Inf.
-	 * @see readParam
-	 */
-	template <typename T>
-	static T readParamRaw(lua_State *L, int index);
-
-	/**
-	 * Read a value using a template type T from Lua state L at index
-	 *
-	 * @tparam T type to read from Lua
-	 * @param L Lua state
-	 * @param index Lua index to read
-	 * @param default_value default value to apply if nil
-	 * @return read value from Lua or default value if nil
-	 */
-	template <typename T>
-	static inline T readParam(lua_State *L, int index, const T &default_value)
-	{
-		return lua_isnoneornil(L, index) ? default_value : readParam<T>(L, index);
-	}
-};
+	return lua_isnoneornil(L, index) ? default_value : readParam<T>(L, index);
+}
 
 // (only declared for documentation purposes:)
 
@@ -60,4 +56,4 @@ protected:
  * @return string view
  */
 template <>
-std::string_view LuaHelper::readParam(lua_State *L, int index);
+std::string_view readParam(lua_State *L, int index);

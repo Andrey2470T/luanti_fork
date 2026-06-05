@@ -61,7 +61,7 @@ class GUIEngine;
 class ServerActiveObject;
 struct PlayerHPChangeReason;
 
-class ScriptApiBase : protected LuaHelper {
+class ScriptApiBase {
 public:
 	ScriptApiBase(ScriptingType type);
 	// fake constructor to allow script API classes (e.g ScriptApiEnv) to virtually inherit from this one.

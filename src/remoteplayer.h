@@ -7,7 +7,6 @@
 
 #include "player.h"
 #include "skyparams.h"
-#include "lighting.h"
 #include "network/networkprotocol.h" // session_t
 
 class PlayerSAO;
@@ -42,18 +41,6 @@ public:
 
 	s32 getHotbarItemcount() const { return hud_hotbar_itemcount; }
 
-	void overrideDayNightRatio(bool do_override, float ratio)
-	{
-		m_day_night_ratio_do_override = do_override;
-		m_day_night_ratio = ratio;
-	}
-
-	void getDayNightRatio(bool *do_override, float *ratio)
-	{
-		*do_override = m_day_night_ratio_do_override;
-		*ratio = m_day_night_ratio;
-	}
-
 	void setHotbarImage(const std::string &name) { hud_hotbar_image = name; }
 
 	const std::string &getHotbarImage() const { return hud_hotbar_image; }
@@ -67,32 +54,6 @@ public:
 	{
 		return hud_hotbar_selected_image;
 	}
-
-	void setSky(const SkyboxParams &skybox_params)
-	{
-		m_skybox_params = skybox_params;
-	}
-
-	const SkyboxParams &getSkyParams() const { return m_skybox_params; }
-
-	void setSun(const SunParams &sun_params) { m_sun_params = sun_params; }
-
-	const SunParams &getSunParams() const { return m_sun_params; }
-
-	void setMoon(const MoonParams &moon_params) { m_moon_params = moon_params; }
-
-	const MoonParams &getMoonParams() const { return m_moon_params; }
-
-	void setStars(const StarParams &star_params) { m_star_params = star_params; }
-
-	const StarParams &getStarParams() const { return m_star_params; }
-
-	void setCloudParams(const CloudParams &cloud_params)
-	{
-		m_cloud_params = cloud_params;
-	}
-
-	const CloudParams &getCloudParams() const { return m_cloud_params; }
 
 	bool checkModified() const { return m_dirty || inventory.checkModified(); }
 
@@ -111,10 +72,6 @@ public:
 			frames[i] = local_animations[i];
 		*frame_speed = local_animation_speed;
 	}
-
-	void setLighting(const Lighting &lighting) { m_lighting = lighting; }
-
-	const Lighting& getLighting() const { return m_lighting; }
 
 	void setDirty(bool dirty) { m_dirty = true; }
 
@@ -140,19 +97,8 @@ private:
 	float m_chat_message_allowance = 5.0f;
 	u16 m_message_rate_overhead = 0;
 
-	bool m_day_night_ratio_do_override = false;
-	float m_day_night_ratio;
 	std::string hud_hotbar_image = "";
 	std::string hud_hotbar_selected_image = "";
-
-	CloudParams m_cloud_params;
-
-	SkyboxParams m_skybox_params;
-	SunParams m_sun_params;
-	MoonParams m_moon_params;
-	StarParams m_star_params;
-
-	Lighting m_lighting;
 
 	session_t m_peer_id = PEER_ID_INEXISTENT;
 };

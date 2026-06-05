@@ -54,7 +54,6 @@ struct NoiseParams;
 class Schematic;
 class ServerActiveObject;
 struct collisionMoveResult;
-struct Lighting;
 namespace treegen { struct TreeDef; }
 
 extern struct EnumString es_TileAnimationType[];
@@ -173,6 +172,3 @@ bool read_hud_change(lua_State *L, HudElementStat &stat, HudElement *elem, void 
 void push_collision_move_result(lua_State *L, const collisionMoveResult &res);
 
 void push_mod_spec(lua_State *L, const ModSpec &spec, bool include_unsatisfied);
-
-void read_lighting(lua_State *L, int index, Lighting &lighting);
-void push_lighting(lua_State *L, const Lighting &lighting);

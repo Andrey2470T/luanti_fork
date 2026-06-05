@@ -39,6 +39,24 @@ private:
 
 	static int l_set_lighting(lua_State *L);
 	static int l_get_lighting(lua_State *L);
+
+	static int l_set_sky(lua_State *L);
+	static int l_get_sky(lua_State *L);
+
+	static int l_set_sun(lua_State *L);
+	static int l_get_sun(lua_State *L);
+
+	static int l_set_moon(lua_State *L);
+	static int l_get_moon(lua_State *L);
+
+	static int l_set_stars(lua_State *L);
+	static int l_get_stars(lua_State *L);
+
+	static int l_set_clouds(lua_State *L);
+	static int l_get_clouds(lua_State *L);
+
+	static int l_override_day_night_ratio(lua_State *L);
+	static int l_get_day_night_ratio(lua_State *L);
 public:
 	static void Initialize(lua_State *L, int top);
 };

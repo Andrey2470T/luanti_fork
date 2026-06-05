@@ -374,16 +374,7 @@ public:
 			f32 frame_speed);
 	void setPlayerEyeOffset(RemotePlayer *player, v3f first, v3f third, v3f third_front);
 
-	void setSky(RemotePlayer *player, const SkyboxParams &params);
-	void setSun(RemotePlayer *player, const SunParams &params);
-	void setMoon(RemotePlayer *player, const MoonParams &params);
-	void setStars(RemotePlayer *player, const StarParams &params);
-
-	void setClouds(RemotePlayer *player, const CloudParams &params);
-
 	void overrideDayNightRatio(RemotePlayer *player, bool do_override, float brightness);
-
-	void setLighting(RemotePlayer *player, const Lighting &lighting);
 
 	/* con::PeerHandler implementation. */
 	void peerAdded(con::IPeer *peer);
@@ -417,6 +408,14 @@ public:
 			size_t wanted_mode);
 
 	void sendDetachedInventories(session_t peer_id, bool incremental);
+
+	void SendSetLighting(session_t peer_id, const Lighting &lighting);
+	void SendSetSky(session_t peer_id, const SkyboxParams &params);
+	void SendSetSun(session_t peer_id, const SunParams &params);
+	void SendSetMoon(session_t peer_id, const MoonParams &params);
+	void SendSetStars(session_t peer_id, const StarParams &params);
+	void SendCloudParams(session_t peer_id, const CloudParams &params);
+	void SendOverrideDayNightRatio(session_t peer_id, bool do_override, float ratio);
 
 	bool joinModChannel(const std::string &channel);
 	bool leaveModChannel(const std::string &channel);
@@ -541,13 +540,6 @@ private:
 	void SendHUDChange(session_t peer_id, u32 id, HudElementStat stat, void *value);
 	void SendHUDSetFlags(session_t peer_id, u32 flags, u32 mask);
 	void SendHUDSetParam(session_t peer_id, u16 param, std::string_view value);
-	void SendSetSky(session_t peer_id, const SkyboxParams &params);
-	void SendSetSun(session_t peer_id, const SunParams &params);
-	void SendSetMoon(session_t peer_id, const MoonParams &params);
-	void SendSetStars(session_t peer_id, const StarParams &params);
-	void SendCloudParams(session_t peer_id, const CloudParams &params);
-	void SendOverrideDayNightRatio(session_t peer_id, bool do_override, float ratio);
-	void SendSetLighting(session_t peer_id, const Lighting &lighting);
 
 	void broadcastModChannelMessage(const std::string &channel,
 			const std::string &message, session_t from_peer);

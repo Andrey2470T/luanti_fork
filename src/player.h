@@ -12,6 +12,8 @@
 #include <mutex>
 #include <functional>
 #include <string>
+#include "lighting.h"
+#include "skyparams.h"
 
 #define PLAYERNAME_SIZE 20
 
@@ -233,6 +235,25 @@ public:
 	// Get actual usable number of hotbar items (clamped to size of "main" list)
 	u16 getMaxHotbarItemcount();
 
+	Lighting& getLighting() { return m_lighting; }
+	CloudParams &getCloudParams() { return m_cloud_params; }
+	SkyboxParams &getSkyboxParams() { return m_skybox_params; }
+	SunParams &getSunParams() { return m_sun_params; }
+	MoonParams &getMoonParams() { return m_moon_params; }
+	StarParams &getStarParams() { return m_star_params; }
+
+	void overrideDayNightRatio(bool do_override, float ratio)
+	{
+		m_day_night_ratio_do_override = do_override;
+		m_day_night_ratio = ratio;
+	}
+
+	void getDayNightRatio(bool *do_override, float *ratio)
+	{
+		*do_override = m_day_night_ratio_do_override;
+		*ratio = m_day_night_ratio;
+	}
+
 protected:
 	std::string m_name;
 	v3f m_speed; // velocity; in BS-space
@@ -240,6 +261,17 @@ protected:
 	PlayerFovSpec m_fov_override_spec = { 0.0f, false, 0.0f };
 
 	std::vector<HudElement *> hud;
+
+	Lighting m_lighting;
+
+	CloudParams m_cloud_params = SkyboxDefaults::getCloudDefaults();
+	SkyboxParams m_skybox_params = SkyboxDefaults::getSkyDefaults();
+	SunParams m_sun_params = SkyboxDefaults::getSunDefaults();
+	MoonParams m_moon_params = SkyboxDefaults::getMoonDefaults();
+	StarParams m_star_params = SkyboxDefaults::getStarDefaults();
+
+	bool m_day_night_ratio_do_override = false;
+	float m_day_night_ratio;
 
 private:
 	// Protect some critical areas

@@ -21,25 +21,25 @@ extern "C" {
  * Read template functions
  */
 template <>
-bool LuaHelper::readParam(lua_State *L, int index)
+bool readParam(lua_State *L, int index)
 {
 	return lua_toboolean(L, index) != 0;
 }
 
 template <>
-s16 LuaHelper::readParam(lua_State *L, int index)
+s16 readParam(lua_State *L, int index)
 {
 	return luaL_checkinteger(L, index);
 }
 
 template <>
-int LuaHelper::readParam(lua_State *L, int index)
+int readParam(lua_State *L, int index)
 {
 	return luaL_checkinteger(L, index);
 }
 
 template <>
-f32 LuaHelper::readParam(lua_State *L, int index)
+f32 readParam(lua_State *L, int index)
 {
 	lua_Number v = luaL_checknumber(L, index);
 	if (std::isnan(v) && std::isinf(v))
@@ -49,55 +49,55 @@ f32 LuaHelper::readParam(lua_State *L, int index)
 }
 
 template <>
-f32 LuaHelper::readParamRaw(lua_State *L, int index)
+f32 readParamRaw(lua_State *L, int index)
 {
 	return static_cast<f32>(luaL_checknumber(L, index));
 }
 
 template <>
-f64 LuaHelper::readParamRaw(lua_State *L, int index)
+f64 readParamRaw(lua_State *L, int index)
 {
 	return luaL_checknumber(L, index);
 }
 
 template <>
-v2s16 LuaHelper::readParam(lua_State *L, int index)
+v2s16 readParam(lua_State *L, int index)
 {
 	return read_v2s16(L, index);
 }
 
 template <>
-v2s32 LuaHelper::readParam(lua_State *L, int index)
+v2s32 readParam(lua_State *L, int index)
 {
 	return read_v2s32(L, index);
 }
 
 template <>
-v3s32 LuaHelper::readParam(lua_State *L, int index)
+v3s32 readParam(lua_State *L, int index)
 {
 	return read_v3i(L, index);
 }
 
 template <>
-v2f LuaHelper::readParam(lua_State *L, int index)
+v2f readParam(lua_State *L, int index)
 {
 	return check_v2f(L, index);
 }
 
 template <>
-v3f LuaHelper::readParamRaw(lua_State *L, int index)
+v3f readParamRaw(lua_State *L, int index)
 {
 	return read_v3f(L, index);
 }
 
 template <>
-v3f LuaHelper::readParam(lua_State *L, int index)
+v3f readParam(lua_State *L, int index)
 {
 	return check_v3f(L, index);
 }
 
 template <>
-core::matrix4 LuaHelper::readParam(lua_State *L, int index)
+core::matrix4 readParam(lua_State *L, int index)
 {
 	core::matrix4 m;
 	bool got = LuaMatrix4::check(L, index, m);
@@ -109,7 +109,7 @@ core::matrix4 LuaHelper::readParam(lua_State *L, int index)
 }
 
 template <>
-std::string_view LuaHelper::readParam(lua_State *L, int index)
+std::string_view readParam(lua_State *L, int index)
 {
 	size_t length;
 	const char *str = luaL_checklstring(L, index, &length);
@@ -117,7 +117,7 @@ std::string_view LuaHelper::readParam(lua_State *L, int index)
 }
 
 template <>
-std::string LuaHelper::readParam(lua_State *L, int index)
+std::string readParam(lua_State *L, int index)
 {
 	auto sv = readParam<std::string_view>(L, index);
 	return std::string(sv); // a copy

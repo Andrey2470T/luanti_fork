@@ -3520,54 +3520,12 @@ void Server::setPlayerEyeOffset(RemotePlayer *player, v3f first, v3f third, v3f 
 	SendEyeOffset(player->getPeerId(), first, third, third_front);
 }
 
-void Server::setSky(RemotePlayer *player, const SkyboxParams &params)
-{
-	sanity_check(player);
-	player->setSky(params);
-	SendSetSky(player->getPeerId(), params);
-}
-
-void Server::setSun(RemotePlayer *player, const SunParams &params)
-{
-	sanity_check(player);
-	player->setSun(params);
-	SendSetSun(player->getPeerId(), params);
-}
-
-void Server::setMoon(RemotePlayer *player, const MoonParams &params)
-{
-	sanity_check(player);
-	player->setMoon(params);
-	SendSetMoon(player->getPeerId(), params);
-}
-
-void Server::setStars(RemotePlayer *player, const StarParams &params)
-{
-	sanity_check(player);
-	player->setStars(params);
-	SendSetStars(player->getPeerId(), params);
-}
-
-void Server::setClouds(RemotePlayer *player, const CloudParams &params)
-{
-	sanity_check(player);
-	player->setCloudParams(params);
-	SendCloudParams(player->getPeerId(), params);
-}
-
 void Server::overrideDayNightRatio(RemotePlayer *player, bool do_override,
 	float ratio)
 {
 	sanity_check(player);
 	player->overrideDayNightRatio(do_override, ratio);
 	SendOverrideDayNightRatio(player->getPeerId(), do_override, ratio);
-}
-
-void Server::setLighting(RemotePlayer *player, const Lighting &lighting)
-{
-	sanity_check(player);
-	player->setLighting(lighting);
-	SendSetLighting(player->getPeerId(), lighting);
 }
 
 void Server::notifyPlayers(const std::wstring &msg)

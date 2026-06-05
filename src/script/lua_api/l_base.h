@@ -25,7 +25,7 @@ class Server;
 class Environment;
 class ServerInventoryManager;
 
-class ModApiBase : protected LuaHelper {
+class ModApiBase {
 public:
 	static ScriptApiBase*   getScriptApiBase(lua_State *L);
 	static Server*          getServer(lua_State *L);

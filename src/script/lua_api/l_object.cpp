@@ -11,6 +11,7 @@
 #include "lua_api/l_playermeta.h"
 #include "common/c_converter.h"
 #include "common/c_content.h"
+#include "common/c_gfx_content.h"
 #include "log.h"
 #include "player.h"
 #include "server/serveractiveobject.h"
@@ -2041,115 +2042,21 @@ int ObjectRef::l_set_sky(lua_State *L)
 	if (player == nullptr)
 		return 0;
 
-	SkyboxParams sky_params = player->getSkyParams();
+	auto &sky_params = player->getSkyboxParams();
 
 	// reset if empty
 	if (lua_isnoneornil(L, 2) && lua_isnone(L, 3)) {
 		sky_params = SkyboxDefaults::getSkyDefaults();
 	} else if (lua_istable(L, 2) && !is_color_table(L, 2)) {
-		lua_getfield(L, 2, "base_color");
-		if (!lua_isnil(L, -1))
-			read_color(L, -1, &sky_params.bgcolor);
-		lua_pop(L, 1);
-
-		lua_getfield(L, 2, "body_orbit_tilt");
-		if (!lua_isnil(L, -1)) {
-			sky_params.body_orbit_tilt = rangelim(readParam<float>(L, -1), -60.0f, 60.0f);
-		}
-		lua_pop(L, 1);
-
-		lua_getfield(L, 2, "type");
-		if (!lua_isnil(L, -1))
-			sky_params.type = luaL_checkstring(L, -1);
-		lua_pop(L, 1);
-
-		lua_getfield(L, 2, "textures");
-		sky_params.textures.clear();
-		if (lua_istable(L, -1) && sky_params.type == "skybox") {
-			lua_pushnil(L);
-			while (lua_next(L, -2) != 0) {
-				// Key is at index -2 and value at index -1
-				sky_params.textures.emplace_back(readParam<std::string>(L, -1));
-				// Removes the value, but keeps the key for iteration
-				lua_pop(L, 1);
-			}
-		}
-		lua_pop(L, 1);
-
-		// Validate that we either have six or zero textures
-		if (sky_params.textures.size() != 6 && !sky_params.textures.empty())
-			throw LuaError("Skybox expects 6 textures!");
-
-		sky_params.clouds = getboolfield_default(L, 2, "clouds", sky_params.clouds);
-
-		lua_getfield(L, 2, "sky_color");
-		if (lua_istable(L, -1)) {
-			lua_getfield(L, -1, "day_sky");
-			read_color(L, -1, &sky_params.sky_color.day_sky);
-			lua_pop(L, 1);
-
-			lua_getfield(L, -1, "day_horizon");
-			read_color(L, -1, &sky_params.sky_color.day_horizon);
-			lua_pop(L, 1);
-
-			lua_getfield(L, -1, "dawn_sky");
-			read_color(L, -1, &sky_params.sky_color.dawn_sky);
-			lua_pop(L, 1);
-
-			lua_getfield(L, -1, "dawn_horizon");
-			read_color(L, -1, &sky_params.sky_color.dawn_horizon);
-			lua_pop(L, 1);
-
-			lua_getfield(L, -1, "night_sky");
-			read_color(L, -1, &sky_params.sky_color.night_sky);
-			lua_pop(L, 1);
-
-			lua_getfield(L, -1, "night_horizon");
-			read_color(L, -1, &sky_params.sky_color.night_horizon);
-			lua_pop(L, 1);
-
-			lua_getfield(L, -1, "indoors");
-			read_color(L, -1, &sky_params.sky_color.indoors);
-			lua_pop(L, 1);
-
-			// Prevent flickering clouds at dawn/dusk:
-			sky_params.fog_sun_tint = video::SColor(255, 255, 255, 255);
-			lua_getfield(L, -1, "fog_sun_tint");
-			read_color(L, -1, &sky_params.fog_sun_tint);
-			lua_pop(L, 1);
-
-			sky_params.fog_moon_tint = video::SColor(255, 255, 255, 255);
-			lua_getfield(L, -1, "fog_moon_tint");
-			read_color(L, -1, &sky_params.fog_moon_tint);
-			lua_pop(L, 1);
-
-			lua_getfield(L, -1, "fog_tint_type");
-			if (!lua_isnil(L, -1))
-				sky_params.fog_tint_type = luaL_checkstring(L, -1);
-			lua_pop(L, 1);
-		}
-		lua_pop(L, 1);
-
-		lua_getfield(L, 2, "fog");
-		if (lua_istable(L, -1)) {
-			sky_params.fog_distance = getintfield_default(L, -1,
-				"fog_distance", sky_params.fog_distance);
-			sky_params.fog_start = getfloatfield_default(L, -1,
-				"fog_start", sky_params.fog_start);
-
-			lua_getfield(L, -1, "fog_color");
-			read_color(L, -1, &sky_params.fog_color);
-			lua_pop(L, 1);
-		}
-		lua_pop(L, 1);
+		read_skyboxparams(L, 2, sky_params);
 	} else {
 		// Handle old set_sky calls, and log deprecated:
 		log_deprecated(L, "Deprecated call to set_sky, please check lua_api.md");
 
 		// Fix sun, moon and stars showing when classic textured skyboxes are used
-		SunParams sun_params = player->getSunParams();
-		MoonParams moon_params = player->getMoonParams();
-		StarParams star_params = player->getStarParams();
+		auto &sun_params = player->getSunParams();
+		auto &moon_params = player->getMoonParams();
+		auto &star_params = player->getStarParams();
 
 		// Prevent erroneous background colors
 		sky_params.bgcolor = video::SColor(255, 255, 255, 255);
@@ -2188,13 +2095,46 @@ int ObjectRef::l_set_sky(lua_State *L)
 		if (lua_isboolean(L, 5))
 			sky_params.clouds = readParam<bool>(L, 5);
 
-		getServer(L)->setSun(player, sun_params);
-		getServer(L)->setMoon(player, moon_params);
-		getServer(L)->setStars(player, star_params);
+		getServer(L)->SendSetSun(player->getPeerId(), sun_params);
+		getServer(L)->SendSetMoon(player->getPeerId(), moon_params);
+		getServer(L)->SendSetStars(player->getPeerId(), star_params);
 	}
 
-	getServer(L)->setSky(player, sky_params);
+	getServer(L)->SendSetSky(player->getPeerId(), sky_params);
 	return 0;
+}
+
+// get_sky(self, as_table)
+int ObjectRef::l_get_sky(lua_State *L)
+{
+	NO_MAP_LOCK_REQUIRED;
+	ObjectRef *ref = checkObject<ObjectRef>(L, 1);
+	RemotePlayer *player = getplayer(ref);
+	if (player == nullptr)
+		return 0;
+
+	const auto &skybox_params = player->getSkyboxParams();
+
+	// handle the deprecated version
+	if (!readParam<bool>(L, 2, false)) {
+		log_deprecated(L, "Deprecated call to get_sky, please check lua_api.md");
+
+		push_ARGB8(L, skybox_params.bgcolor);
+		lua_pushlstring(L, skybox_params.type.c_str(), skybox_params.type.size());
+
+		lua_newtable(L);
+		s16 i = 1;
+		for (const std::string &texture : skybox_params.textures) {
+			lua_pushlstring(L, texture.c_str(), texture.size());
+			lua_rawseti(L, -2, i++);
+		}
+		lua_pushboolean(L, skybox_params.clouds);
+		return 4;
+	}
+
+	push_skyboxparams(L, skybox_params);
+
+	return 1;
 }
 
 static void push_sky_color(lua_State *L, const SkyboxParams &params)
@@ -2224,67 +2164,6 @@ static void push_sky_color(lua_State *L, const SkyboxParams &params)
 	lua_setfield(L, -2, "fog_tint_type");
 }
 
-// get_sky(self, as_table)
-int ObjectRef::l_get_sky(lua_State *L)
-{
-	NO_MAP_LOCK_REQUIRED;
-	ObjectRef *ref = checkObject<ObjectRef>(L, 1);
-	RemotePlayer *player = getplayer(ref);
-	if (player == nullptr)
-		return 0;
-
-	const SkyboxParams &skybox_params = player->getSkyParams();
-
-	// handle the deprecated version
-	if (!readParam<bool>(L, 2, false)) {
-		log_deprecated(L, "Deprecated call to get_sky, please check lua_api.md");
-
-		push_ARGB8(L, skybox_params.bgcolor);
-		lua_pushlstring(L, skybox_params.type.c_str(), skybox_params.type.size());
-
-		lua_newtable(L);
-		s16 i = 1;
-		for (const std::string &texture : skybox_params.textures) {
-			lua_pushlstring(L, texture.c_str(), texture.size());
-			lua_rawseti(L, -2, i++);
-		}
-		lua_pushboolean(L, skybox_params.clouds);
-		return 4;
-	}
-
-	lua_newtable(L);
-	push_ARGB8(L, skybox_params.bgcolor);
-	lua_setfield(L, -2, "base_color");
-	lua_pushlstring(L, skybox_params.type.c_str(), skybox_params.type.size());
-	lua_setfield(L, -2, "type");
-
-	if (skybox_params.body_orbit_tilt != SkyboxParams::INVALID_SKYBOX_TILT) {
-		lua_pushnumber(L, skybox_params.body_orbit_tilt);
-		lua_setfield(L, -2, "body_orbit_tilt");
-	}
-	lua_newtable(L);
-	s16 i = 1;
-	for (const std::string &texture : skybox_params.textures) {
-		lua_pushlstring(L, texture.c_str(), texture.size());
-		lua_rawseti(L, -2, i++);
-	}
-	lua_setfield(L, -2, "textures");
-	lua_pushboolean(L, skybox_params.clouds);
-	lua_setfield(L, -2, "clouds");
-
-	push_sky_color(L, skybox_params);
-	lua_setfield(L, -2, "sky_color");
-
-	lua_newtable(L); // fog
-	lua_pushinteger(L, skybox_params.fog_distance >= 0 ? skybox_params.fog_distance : -1);
-	lua_setfield(L, -2, "fog_distance");
-	lua_pushnumber(L, skybox_params.fog_start >= 0 ? skybox_params.fog_start : -1.0f);
-	lua_setfield(L, -2, "fog_start");
-	lua_setfield(L, -2, "fog");
-
-	return 1;
-}
-
 // DEPRECATED
 // get_sky_color(self)
 int ObjectRef::l_get_sky_color(lua_State *L)
@@ -2298,7 +2177,7 @@ int ObjectRef::l_get_sky_color(lua_State *L)
 	if (player == nullptr)
 		return 0;
 
-	const SkyboxParams &skybox_params = player->getSkyParams();
+	const auto &skybox_params = player->getSkyboxParams();
 	push_sky_color(L, skybox_params);
 	return 1;
 }
@@ -2312,22 +2191,16 @@ int ObjectRef::l_set_sun(lua_State *L)
 	if (player == nullptr)
 		return 0;
 
-	SunParams sun_params = player->getSunParams();
+	auto &sun_params = player->getSunParams();
 
 	// reset if empty
 	if (lua_isnoneornil(L, 2)) {
 		sun_params = SkyboxDefaults::getSunDefaults();
 	} else {
-		luaL_checktype(L, 2, LUA_TTABLE);
-		sun_params.visible = getboolfield_default(L, 2,   "visible", sun_params.visible);
-		sun_params.texture = getstringfield_default(L, 2, "texture", sun_params.texture);
-		sun_params.tonemap = getstringfield_default(L, 2, "tonemap", sun_params.tonemap);
-		sun_params.sunrise = getstringfield_default(L, 2, "sunrise", sun_params.sunrise);
-		sun_params.sunrise_visible = getboolfield_default(L, 2, "sunrise_visible", sun_params.sunrise_visible);
-		sun_params.scale   = getfloatfield_default(L, 2,  "scale",   sun_params.scale);
+		read_sunparams(L, 2, sun_params);
 	}
 
-	getServer(L)->setSun(player, sun_params);
+	getServer(L)->SendSetSun(player->getPeerId(), sun_params);
 	return 0;
 }
 
@@ -2342,19 +2215,7 @@ int ObjectRef::l_get_sun(lua_State *L)
 
 	const SunParams &sun_params = player->getSunParams();
 
-	lua_newtable(L);
-	lua_pushboolean(L, sun_params.visible);
-	lua_setfield(L, -2, "visible");
-	lua_pushstring(L, sun_params.texture.c_str());
-	lua_setfield(L, -2, "texture");
-	lua_pushstring(L, sun_params.tonemap.c_str());
-	lua_setfield(L, -2, "tonemap");
-	lua_pushstring(L, sun_params.sunrise.c_str());
-	lua_setfield(L, -2, "sunrise");
-	lua_pushboolean(L, sun_params.sunrise_visible);
-	lua_setfield(L, -2, "sunrise_visible");
-	lua_pushnumber(L, sun_params.scale);
-	lua_setfield(L, -2, "scale");
+	push_sunparams(L, sun_params);
 	return 1;
 }
 
@@ -2367,20 +2228,16 @@ int ObjectRef::l_set_moon(lua_State *L)
 	if (player == nullptr)
 		return 0;
 
-	MoonParams moon_params = player->getMoonParams();
+	auto &moon_params = player->getMoonParams();
 
 	// reset if empty
 	if (lua_isnoneornil(L, 2)) {
 		moon_params = SkyboxDefaults::getMoonDefaults();
 	} else {
-		luaL_checktype(L, 2, LUA_TTABLE);
-		moon_params.visible = getboolfield_default(L, 2,   "visible", moon_params.visible);
-		moon_params.texture = getstringfield_default(L, 2, "texture", moon_params.texture);
-		moon_params.tonemap = getstringfield_default(L, 2, "tonemap", moon_params.tonemap);
-		moon_params.scale   = getfloatfield_default(L, 2,  "scale",   moon_params.scale);
+		read_moonparams(L, 2, moon_params);
 	}
 
-	getServer(L)->setMoon(player, moon_params);
+	getServer(L)->SendSetMoon(player->getPeerId(), moon_params);
 	return 0;
 }
 
@@ -2393,17 +2250,9 @@ int ObjectRef::l_get_moon(lua_State *L)
 	if (player == nullptr)
 		return 0;
 
-	const MoonParams &moon_params = player->getMoonParams();
+	const auto &moon_params = player->getMoonParams();
 
-	lua_newtable(L);
-	lua_pushboolean(L, moon_params.visible);
-	lua_setfield(L, -2, "visible");
-	lua_pushstring(L, moon_params.texture.c_str());
-	lua_setfield(L, -2, "texture");
-	lua_pushstring(L, moon_params.tonemap.c_str());
-	lua_setfield(L, -2, "tonemap");
-	lua_pushnumber(L, moon_params.scale);
-	lua_setfield(L, -2, "scale");
+	push_moonparams(L, moon_params);
 	return 1;
 }
 
@@ -2416,28 +2265,16 @@ int ObjectRef::l_set_stars(lua_State *L)
 	if (player == nullptr)
 		return 0;
 
-	StarParams star_params = player->getStarParams();
+	auto &star_params = player->getStarParams();
 
 	// reset if empty
 	if (lua_isnoneornil(L, 2)) {
 		star_params = SkyboxDefaults::getStarDefaults();
 	} else {
-		luaL_checktype(L, 2, LUA_TTABLE);
-		star_params.visible = getboolfield_default(L, 2, "visible", star_params.visible);
-		star_params.count   = getintfield_default(L, 2,  "count",   star_params.count);
-
-		lua_getfield(L, 2, "star_color");
-		if (!lua_isnil(L, -1))
-			read_color(L, -1, &star_params.starcolor);
-		lua_pop(L, 1);
-
-		star_params.scale = getfloatfield_default(L, 2,
-			"scale", star_params.scale);
-		star_params.day_opacity = getfloatfield_default(L, 2,
-			"day_opacity", star_params.day_opacity);
+		read_starparams(L, 2, star_params);
 	}
 
-	getServer(L)->setStars(player, star_params);
+	getServer(L)->SendSetStars(player->getPeerId(), star_params);
 	return 0;
 }
 
@@ -2450,19 +2287,9 @@ int ObjectRef::l_get_stars(lua_State *L)
 	if (player == nullptr)
 		return 0;
 
-	const StarParams &star_params = player->getStarParams();
+	const auto &star_params = player->getStarParams();
 
-	lua_newtable(L);
-	lua_pushboolean(L, star_params.visible);
-	lua_setfield(L, -2, "visible");
-	lua_pushnumber(L, star_params.count);
-	lua_setfield(L, -2, "count");
-	push_ARGB8(L, star_params.starcolor);
-	lua_setfield(L, -2, "star_color");
-	lua_pushnumber(L, star_params.scale);
-	lua_setfield(L, -2, "scale");
-	lua_pushnumber(L, star_params.day_opacity);
-	lua_setfield(L, -2, "day_opacity");
+	push_starparams(L, star_params);
 	return 1;
 }
 
@@ -2475,42 +2302,16 @@ int ObjectRef::l_set_clouds(lua_State *L)
 	if (player == nullptr)
 		return 0;
 
-	CloudParams cloud_params = player->getCloudParams();
+	auto &cloud_params = player->getCloudParams();
 
 	// reset if empty
 	if (lua_isnoneornil(L, 2)) {
 		cloud_params = SkyboxDefaults::getCloudDefaults();
 	} else {
-		luaL_checktype(L, 2, LUA_TTABLE);
-		cloud_params.density = getfloatfield_default(L, 2, "density", cloud_params.density);
-
-		lua_getfield(L, 2, "color");
-		if (!lua_isnil(L, -1))
-			read_color(L, -1, &cloud_params.color_bright);
-		lua_pop(L, 1);
-		lua_getfield(L, 2, "ambient");
-		if (!lua_isnil(L, -1))
-			read_color(L, -1, &cloud_params.color_ambient);
-		lua_pop(L, 1);
-		lua_getfield(L, 2, "shadow");
-		if (!lua_isnil(L, -1))
-			read_color(L, -1, &cloud_params.color_shadow);
-		lua_pop(L, 1);
-
-		cloud_params.height    = getfloatfield_default(L, 2, "height",    cloud_params.height);
-		cloud_params.thickness = getfloatfield_default(L, 2, "thickness", cloud_params.thickness);
-
-		lua_getfield(L, 2, "speed");
-		if (lua_istable(L, -1)) {
-			v2f new_speed;
-			new_speed.X = getfloatfield_default(L, -1, "x", 0);
-			new_speed.Y = getfloatfield_default(L, -1, "z", 0);
-			cloud_params.speed = new_speed;
-		}
-		lua_pop(L, 1);
+		read_cloudparams(L, 2, cloud_params);
 	}
 
-	getServer(L)->setClouds(player, cloud_params);
+	getServer(L)->SendCloudParams(player->getPeerId(), cloud_params);
 	return 0;
 }
 
@@ -2522,27 +2323,9 @@ int ObjectRef::l_get_clouds(lua_State *L)
 	if (player == nullptr)
 		return 0;
 
-	const CloudParams &cloud_params = player->getCloudParams();
+	const auto &cloud_params = player->getCloudParams();
 
-	lua_newtable(L);
-	lua_pushnumber(L, cloud_params.density);
-	lua_setfield(L, -2, "density");
-	push_ARGB8(L, cloud_params.color_bright);
-	lua_setfield(L, -2, "color");
-	push_ARGB8(L, cloud_params.color_ambient);
-	lua_setfield(L, -2, "ambient");
-	push_ARGB8(L, cloud_params.color_shadow);
-	lua_setfield(L, -2, "shadow");
-	lua_pushnumber(L, cloud_params.height);
-	lua_setfield(L, -2, "height");
-	lua_pushnumber(L, cloud_params.thickness);
-	lua_setfield(L, -2, "thickness");
-	lua_newtable(L);
-	lua_pushnumber(L, cloud_params.speed.X);
-	lua_setfield(L, -2, "x");
-	lua_pushnumber(L, cloud_params.speed.Y);
-	lua_setfield(L, -2, "y");
-	lua_setfield(L, -2, "speed");
+	push_cloudparams(L, cloud_params);
 	return 1;
 }
 
@@ -2653,16 +2436,15 @@ int ObjectRef::l_set_lighting(lua_State *L)
 	if (player == nullptr)
 		return 0;
 
-	Lighting lighting;
+	auto &lighting = player->getLighting();
 
 	if (!lua_isnoneornil(L, 2)) {
 		luaL_checktype(L, 2, LUA_TTABLE);
-		lighting = player->getLighting();
 
 		read_lighting(L, 2, lighting);
-}
+	}
 
-	getServer(L)->setLighting(player, lighting);
+	getServer(L)->SendSetLighting(player->getPeerId(), lighting);
 	return 0;
 }
 
