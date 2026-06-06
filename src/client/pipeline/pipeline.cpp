@@ -27,7 +27,9 @@ video::GLTexture *TextureBuffer::getTexture(u8 index)
 }
 
 
-void TextureBuffer::setTexture(u8 index, core::dimension2du size, const std::string &name, video::ECOLOR_FORMAT format, bool clear, u8 msaa)
+void TextureBuffer::setTexture(
+	u8 index, core::dimension2du size, const std::string &name, video::ECOLOR_FORMAT format,
+	bool clear, u8 msaa, bool cubemap)
 {
 	assert(index != NO_DEPTH_TEXTURE);
 
@@ -43,9 +45,12 @@ void TextureBuffer::setTexture(u8 index, core::dimension2du size, const std::str
 	definition.format = format;
 	definition.clear = clear;
 	definition.msaa = msaa;
+	definition.cubemap = cubemap;
 }
 
-void TextureBuffer::setTexture(u8 index, v2f scale_factor, const std::string &name, video::ECOLOR_FORMAT format, bool clear, u8 msaa)
+void TextureBuffer::setTexture(
+	u8 index, v2f scale_factor, const std::string &name, video::ECOLOR_FORMAT format,
+	bool clear, u8 msaa, bool cubemap)
 {
 	assert(index != NO_DEPTH_TEXTURE);
 
@@ -61,6 +66,7 @@ void TextureBuffer::setTexture(u8 index, v2f scale_factor, const std::string &na
 	definition.format = format;
 	definition.clear = clear;
 	definition.msaa = msaa;
+	definition.cubemap = cubemap;
 }
 
 void TextureBuffer::reset(PipelineContext &context)
@@ -150,7 +156,10 @@ bool TextureBuffer::ensureTexture(video::GLTexture **texture, const TextureDefin
 		} else if (definition.msaa > 0) {
 			*texture = m_driver->addRenderTargetTextureMs(size, definition.msaa, definition.name.c_str(), definition.format);
 		} else {
-			*texture = m_driver->addRenderTargetTexture(size, definition.name.c_str(), definition.format);
+			if (definition.cubemap)
+				*texture = m_driver->addRenderTargetTextureCubemap(size, definition.name.c_str(), definition.format);
+			else
+				*texture = m_driver->addRenderTargetTexture(size, definition.name.c_str(), definition.format);
 		}
 
 		if (!*texture) {
@@ -164,14 +173,21 @@ bool TextureBuffer::ensureTexture(video::GLTexture **texture, const TextureDefin
 }
 
 TextureBufferOutput::TextureBufferOutput(TextureBuffer *_buffer, u8 _texture_index)
-	: buffer(_buffer), texture_map({_texture_index})
-{}
-
-TextureBufferOutput::TextureBufferOutput(TextureBuffer *_buffer, const std::vector<u8> &_texture_map)
-	: buffer(_buffer), texture_map(_texture_map)
+	: buffer(_buffer), texture_map({{_texture_index, 0}})
 {}
 
 TextureBufferOutput::TextureBufferOutput(TextureBuffer *_buffer, const std::vector<u8> &_texture_map, u8 _depth_stencil)
+	: buffer(_buffer), depth_stencil(_depth_stencil, 0)
+{
+	for (auto &i : _texture_map)
+		texture_map.emplace(i, 0);
+}
+
+TextureBufferOutput::TextureBufferOutput(TextureBuffer *_buffer, const std::unordered_map<u8, u8> &_texture_map)
+	: buffer(_buffer), texture_map(_texture_map)
+{}
+
+TextureBufferOutput::TextureBufferOutput(TextureBuffer *_buffer, const std::unordered_map<u8, u8> &_texture_map, std::pair<u8, u8> _depth_stencil)
 	: buffer(_buffer), texture_map(_texture_map), depth_stencil(_depth_stencil)
 {}
 
@@ -190,19 +206,25 @@ void TextureBufferOutput::activate(PipelineContext &context)
 		render_target = new video::RenderTarget(driver);
 
 	std::vector<video::GLTexture *> textures;
+	std::vector<video::E_CUBEMAP_FACE> faces;
 	core::dimension2du size(0, 0);
-	for (size_t i = 0; i < texture_map.size(); i++) {
-		video::GLTexture *texture = buffer->getTexture(texture_map[i]);
+	for (auto &p :  texture_map) {
+		video::GLTexture *texture = buffer->getTexture(p.first);
 		textures.push_back(texture);
+		faces.push_back((video::E_CUBEMAP_FACE)p.second);
 		if (texture && size.Width == 0)
 			size = texture->getSize();
 	}
 
 	video::GLTexture *depth_texture = nullptr;
-	if (depth_stencil != NO_DEPTH_TEXTURE)
-		depth_texture = buffer->getTexture(depth_stencil);
+	video::E_CUBEMAP_FACE depth_face = video::ECMF_POS_X;
+	if (depth_stencil.first != NO_DEPTH_TEXTURE) {
+		depth_texture = buffer->getTexture(depth_stencil.first);
+		depth_face = (video::E_CUBEMAP_FACE)depth_stencil.second;
+	}
 
-	render_target->setTextures(textures, depth_texture);
+	render_target->setColorTextures(textures, faces);
+	render_target->setDepthStencilTexture(depth_texture, depth_face);
 
 	driver->setRenderTargetEx(render_target, m_clear ? video::ECBF_ALL : video::ECBF_NONE, context.clear_color);
 	driver->OnResize(size);

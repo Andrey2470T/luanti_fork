@@ -117,7 +117,9 @@ public:
 	 * @param name unique name of the texture
 	 * @param format color format
 	 */
-	void setTexture(u8 index, core::dimension2du size, const std::string& name, video::ECOLOR_FORMAT format, bool clear = false, u8 msaa = 0);
+	void setTexture(
+		u8 index, core::dimension2du size, const std::string& name, video::ECOLOR_FORMAT format,
+		bool clear = false, u8 msaa = 0, bool cubemap = false);
 
 	/**
 	 * Configure relative-size texture for the specific index
@@ -127,7 +129,9 @@ public:
 	 * @param name unique name of the texture
 	 * @param format color format
 	 */
-	void setTexture(u8 index, v2f scale_factor, const std::string& name, video::ECOLOR_FORMAT format, bool clear = false, u8 msaa = 0);
+	void setTexture(
+		u8 index, v2f scale_factor, const std::string& name, video::ECOLOR_FORMAT format,
+		bool clear = false, u8 msaa = 0, bool cubemap = false);
 
 	virtual u8 getTextureCount() override { return m_textures.size(); }
 	virtual video::GLTexture *getTexture(u8 index) override;
@@ -147,6 +151,7 @@ private:
 		std::string name;
 		video::ECOLOR_FORMAT format;
 		u8 msaa;
+		bool cubemap { false };
 	};
 
 	/**
@@ -171,19 +176,20 @@ class TextureBufferOutput : public RenderTarget
 {
 public:
 	TextureBufferOutput(TextureBuffer *buffer, u8 texture_index);
-	TextureBufferOutput(TextureBuffer *buffer, const std::vector<u8> &texture_map);
-	TextureBufferOutput(TextureBuffer *buffer, const std::vector<u8> &texture_map, u8 depth_stencil);
+	TextureBufferOutput(TextureBuffer *buffer, const std::vector<u8> &_texture_map, u8 depth_stencil=0);
+	TextureBufferOutput(TextureBuffer *buffer, const std::unordered_map<u8, u8> &_texture_map);
+	TextureBufferOutput(TextureBuffer *buffer, const std::unordered_map<u8, u8> &_texture_map, std::pair<u8, u8> depth_stencil);
 	virtual ~TextureBufferOutput() override;
 	void activate(PipelineContext &context) override;
 
 	video::RenderTarget *getIrrRenderTarget(PipelineContext &context);
 
 private:
-	static const u8 NO_DEPTH_TEXTURE = 255;
+	static inline const u8 NO_DEPTH_TEXTURE = 255;
 
 	TextureBuffer *buffer;
-	std::vector<u8> texture_map;
-	u8 depth_stencil { NO_DEPTH_TEXTURE };
+	std::unordered_map<u8, u8> texture_map;
+	std::pair<u8, u8> depth_stencil { NO_DEPTH_TEXTURE, 0 };
 	video::RenderTarget* render_target { nullptr };
 	video::VideoDriver* driver { nullptr };
 };
