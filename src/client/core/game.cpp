@@ -1369,8 +1369,8 @@ bool Game::createClient(const GameStartData &start_data)
 	auto *scsf = new GameGlobalShaderUniformSetterFactory(client);
 	shader_src->addShaderUniformSetterFactory(scsf);
 
-	shader_src->addShaderUniformSetterFactory(
-		new FogShaderUniformSetterFactory());
+	//shader_src->addShaderUniformSetterFactory(
+	//	new FogShaderUniformSetterFactory());
 
 	ShadowRenderer::preInit(shader_src);
 
@@ -1386,7 +1386,7 @@ bool Game::createClient(const GameStartData &start_data)
 
 	/* Clouds
 	 */
-	clouds = make_irr<Clouds>(smgr, shader_src, -1, myrand());
+	clouds = make_irr<Clouds>(smgr, shader_src, m_rendering_engine, -1, myrand());
 	client->setClouds(clouds.get());
 
 	/* Skybox
@@ -4054,25 +4054,10 @@ void Game::drawScene(ProfilerGraph *graph, RunStats *stats)
 		Fog
 	*/
 	if (this->fogEnabled()) {
-		this->driver->setFog(
-				fog_color,
-				video::EFT_FOG_LINEAR,
-				this->runData.fog_range * this->sky->getFogStart(),
-				this->runData.fog_range * 1.0f,
-				0.f, // unused
-				false, // pixel fog
-				true // range fog
-		);
+		m_rendering_engine->setFogParams(
+			fog_color, runData.fog_range * sky->getFogStart(), runData.fog_range * 1.0f);
 	} else {
-		this->driver->setFog(
-				fog_color,
-				video::EFT_FOG_LINEAR,
-				FOG_RANGE_ALL,
-				FOG_RANGE_ALL + 100 * BS,
-				0.f, // unused
-				false, // pixel fog
-				false // range fog
-		);
+		m_rendering_engine->setFogParams(fog_color, FOG_RANGE_ALL, FOG_RANGE_ALL + 100 * BS);
 	}
 
 	/*

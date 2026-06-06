@@ -14,6 +14,7 @@
 #include <Mesh/SMeshBuffer.h>
 
 class ShaderSource;
+class RenderingEngine;
 
 namespace scene
 {
@@ -30,9 +31,9 @@ extern Clouds *g_menuclouds;
 class Clouds : public scene::ISceneNode
 {
 public:
-	Clouds(scene::ISceneManager* mgr, ShaderSource *ssrc,
-			s32 id,
-			u32 seed
+	Clouds(
+		scene::ISceneManager* mgr, ShaderSource *ssrc,
+		RenderingEngine *rnd_engine, s32 id, u32 seed
 	);
 
 	~Clouds();
@@ -153,6 +154,8 @@ private:
 	inline bool is3D() const {
 		return m_enable_3d && m_params.thickness >= 0.01f;
 	}
+
+	RenderingEngine *m_rendering_engine;
 
 	video::SMaterial m_material;
 	irr_ptr<scene::SMeshBuffer> m_meshbuffer;

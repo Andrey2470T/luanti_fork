@@ -53,12 +53,61 @@ struct FpsControl {
 	u64 last_time, busy_time, sleep_time;
 };
 
-// Populates fogColor, fogDistance, fogShadingParameter with values from Irrlicht
-class FogShaderUniformSetterFactory : public IShaderUniformSetterFactory
+template <class T>
+class UniformBuffer
 {
+	video::HWBuffer hw;
+	T data;
 public:
-	FogShaderUniformSetterFactory() {};
-	virtual IShaderUniformSetter *create();
+	UniformBuffer(u32 bindingPoint, const T &data_)
+		: hw(video::HWBT_UNIFORM, bindingPoint), data(std::move(data_))
+	{}
+
+	video::HWBuffer &getHW()
+	{
+		return hw;
+	}
+
+	T &getData()
+	{
+		return data;
+	}
+
+	void upload()
+	{
+		hw.upload(&data, sizeof(data));
+	}
+	void upload(u32 size, u32 offset=0)
+	{
+		hw.upload(&data, size, offset);
+	}
+};
+
+struct Matrices
+{
+	core::matrix4 worldViewProj;
+	core::matrix4 worldView;
+	core::matrix4 world;
+	core::matrix4 texture;
+
+	bool operator==(const Matrices &other)
+	{
+		return (worldViewProj == other.worldViewProj &&
+			worldView == other.worldView && world == other.world &&
+			texture == other.texture);
+	}
+};
+
+struct FogParams
+{
+	video::SColorf color;
+	f32 distance;
+	f32 parameter;
+
+	bool operator==(const FogParams &other)
+	{
+		return (color == other.color && distance == other.distance && parameter == other.parameter);
+	}
 };
 
 /* Rendering engine class */
@@ -67,6 +116,8 @@ class RenderingEngine
 {
 public:
 	static const video::SColor MENU_SKY_COLOR;
+	static const u32 MATRICES_UBO_BINDING_POINT;
+	static const u32 FOGPARAMS_UBO_BINDING_POINT;
 
 	RenderingEngine(MyEventReceiver *eventReceiver);
 	~RenderingEngine();
@@ -159,9 +210,20 @@ public:
 		return s_singleton->m_receiver->getLastPointerType();
 	}
 
+	void createUBOs();
+
+	static void updateMatrices();
+	void getFogParams(video::SColor &color, f32 &start, f32 &end) const;
+	void setFogParams(const video::SColor &color={0, 255, 255, 255}, f32 start=50.0f, f32 end=100.0f);
+
+	static void setUBOs(video::MaterialRenderer *renderer);
+
 private:
 	static void settingChangedCallback(const std::string &name, void *data);
 	v2u32 _getWindowSize() const;
+
+	std::unique_ptr<UniformBuffer<Matrices>> matricesUBO;
+	std::unique_ptr<UniformBuffer<FogParams>> fogUBO;
 
 	std::unique_ptr<RenderingCore> core;
 	SDLDevice *m_device = nullptr;

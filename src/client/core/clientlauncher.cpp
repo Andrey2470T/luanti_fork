@@ -122,9 +122,13 @@ bool ClientLauncher::run(GameStartData &start_data, const Settings &cmd_args)
 	// This is only global so it can be used by RenderingEngine::draw_load_screen().
 	assert(!g_menucloudsmgr && !g_menuclouds);
 	std::unique_ptr<ShaderSource> ssrc(new ShaderSource());
-	ssrc->addShaderUniformSetterFactory(new FogShaderUniformSetterFactory());
+	//ssrc->addShaderUniformSetterFactory(new FogShaderUniformSetterFactory());
+
+	// Create all UBOs
+	m_rendering_engine->createUBOs();
+
 	g_menucloudsmgr = m_rendering_engine->get_scene_manager()->createNewSceneManager();
-	g_menuclouds = new Clouds(g_menucloudsmgr, ssrc.get(), -1, rand());
+	g_menuclouds = new Clouds(g_menucloudsmgr, ssrc.get(), m_rendering_engine, -1, rand());
 	g_menuclouds->setHeight(100.0f);
 	g_menuclouds->update(v3f(0, 0, 0), video::SColor(255, 240, 240, 255));
 	scene::ICameraSceneNode* camera;
@@ -547,6 +551,7 @@ void ClientLauncher::main_menu(MainMenuData *menudata)
 	while (m_rendering_engine->run() && !*kill) {
 		if (!isMenuActive())
 			break;
+
 		driver->beginScene(video::SColor(255, 128, 128, 128));
 		m_rendering_engine->get_gui_env()->drawAll();
 		driver->endScene();

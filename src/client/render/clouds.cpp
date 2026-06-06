@@ -25,12 +25,12 @@ static void cloud_3d_setting_changed(const std::string &settingname, void *data)
 	((Clouds *)data)->readSettings();
 }
 
-Clouds::Clouds(scene::ISceneManager* mgr, ShaderSource *ssrc,
-		s32 id,
-		u32 seed
+Clouds::Clouds(
+	scene::ISceneManager* mgr, ShaderSource *ssrc,
+	RenderingEngine *rnd_engine, s32 id, u32 seed
 ):
 	scene::ISceneNode(mgr->getRootSceneNode(), mgr, id),
-	m_seed(seed)
+	m_rendering_engine(rnd_engine), m_seed(seed)
 {
 	assert(ssrc);
 
@@ -407,26 +407,21 @@ void Clouds::render()
 
 	// Get fog parameters for setting them back later
 	video::SColor fog_color(0,0,0,0);
-	video::E_FOG_TYPE fog_type = video::EFT_FOG_LINEAR;
 	f32 fog_start = 0;
 	f32 fog_end = 0;
-	f32 fog_density = 0;
-	bool fog_pixelfog = false;
-	bool fog_rangefog = false;
-	driver->getFog(fog_color, fog_type, fog_start, fog_end, fog_density,
-			fog_pixelfog, fog_rangefog);
+
+	m_rendering_engine->getFogParams(fog_color, fog_start, fog_end);
 
 	// Set our own fog, unless it was already disabled
 	if (fog_start < FOG_RANGE_ALL) {
-		driver->setFog(fog_color, fog_type, cloud_full_radius * 0.5,
-				cloud_full_radius*1.2, fog_density, fog_pixelfog, fog_rangefog);
+		m_rendering_engine->setFogParams(fog_color, cloud_full_radius * 0.5,
+				cloud_full_radius*1.2);
 	}
 
 	driver->drawMeshBuffer(m_meshbuffer.get());
 
 	// Restore fog settings
-	driver->setFog(fog_color, fog_type, fog_start, fog_end, fog_density,
-			fog_pixelfog, fog_rangefog);
+	m_rendering_engine->setFogParams(fog_color, fog_start, fog_end);
 }
 
 void Clouds::step(float dtime)

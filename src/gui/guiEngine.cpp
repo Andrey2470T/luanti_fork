@@ -307,17 +307,11 @@ void GUIEngine::run()
 	// Reset fog color
 	{
 		video::SColor fog_color;
-		video::E_FOG_TYPE fog_type = video::EFT_FOG_LINEAR;
 		f32 fog_start = 0;
 		f32 fog_end = 0;
-		f32 fog_density = 0;
-		bool fog_pixelfog = false;
-		bool fog_rangefog = false;
-		driver->getFog(fog_color, fog_type, fog_start, fog_end, fog_density,
-				fog_pixelfog, fog_rangefog);
 
-		driver->setFog(RenderingEngine::MENU_SKY_COLOR, fog_type, fog_start,
-				fog_end, fog_density, fog_pixelfog, fog_rangefog);
+		m_rendering_engine->getFogParams(fog_color, fog_start, fog_end);
+		m_rendering_engine->setFogParams(RenderingEngine::MENU_SKY_COLOR, fog_start, fog_end);
 	}
 
 	const core::dimension2d<u32> initial_screen_size(

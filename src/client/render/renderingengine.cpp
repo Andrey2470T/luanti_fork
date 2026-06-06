@@ -26,6 +26,8 @@
 
 RenderingEngine *RenderingEngine::s_singleton = nullptr;
 const video::SColor RenderingEngine::MENU_SKY_COLOR = video::SColor(255, 140, 186, 250);
+const u32 RenderingEngine::MATRICES_UBO_BINDING_POINT = 0;
+const u32 RenderingEngine::FOGPARAMS_UBO_BINDING_POINT = 1;
 
 /* Helper classes */
 
@@ -65,45 +67,6 @@ void FpsControl::limit(SDLDevice *device, f32 *dtime)
 		*dtime = 0;
 
 	last_time = time;
-}
-
-class FogShaderUniformSetter : public IShaderUniformSetter
-{
-	CachedShaderSetting<float, 4> m_fog_color{"fogColor"};
-	CachedShaderSetting<float> m_fog_distance{"fogDistance"};
-	CachedShaderSetting<float> m_fog_shading_parameter{"fogShadingParameter"};
-
-public:
-	void onSetUniforms(video::MaterialRenderer *renderer) override
-	{
-		auto *driver = renderer->getVideoDriver();
-		assert(driver);
-
-		video::SColor fog_color(0);
-		video::E_FOG_TYPE fog_type = video::EFT_FOG_LINEAR;
-		f32 fog_start = 0;
-		f32 fog_end = 0;
-		f32 fog_density = 0;
-		bool fog_pixelfog = false;
-		bool fog_rangefog = false;
-		driver->getFog(fog_color, fog_type, fog_start, fog_end, fog_density,
-				fog_pixelfog, fog_rangefog);
-
-		video::SColorf fog_colorf(fog_color);
-		m_fog_color.set(fog_colorf, renderer);
-
-		m_fog_distance.set(fog_end, renderer);
-
-		float parameter = 0;
-		if (fog_end > 0)
-			parameter = 1.0f / (1.0f - fog_start / fog_end);
-		m_fog_shading_parameter.set(parameter, renderer);
-	}
-};
-
-IShaderUniformSetter *FogShaderUniformSetterFactory::create()
-{
-	return new FogShaderUniformSetter();
 }
 
 /* Other helpers */
@@ -308,7 +271,8 @@ void RenderingEngine::draw_load_screen(const std::wstring &text,
 
 	auto *driver = get_video_driver();
 
-	driver->setFog(RenderingEngine::MENU_SKY_COLOR);
+	setFogParams(RenderingEngine::MENU_SKY_COLOR);
+
 	driver->beginScene(RenderingEngine::MENU_SKY_COLOR);
 	if (g_settings->getBool("menu_clouds")) {
 		g_menuclouds->step(dtime * 3);
@@ -443,4 +407,74 @@ void RenderingEngine::autosaveScreensizeAndCo(
 			->isWindowMaximized();
 	if (is_window_maximized != initial_window_maximized)
 		g_settings->setBool("window_maximized", is_window_maximized);
+}
+
+void RenderingEngine::createUBOs()
+{
+	matricesUBO = std::make_unique<UniformBuffer<Matrices>>(MATRICES_UBO_BINDING_POINT, Matrices());
+	fogUBO = std::make_unique<UniformBuffer<FogParams>>(FOGPARAMS_UBO_BINDING_POINT, FogParams());
+}
+
+void RenderingEngine::updateMatrices()
+{
+	sanity_check(s_singleton);
+	auto driver = s_singleton->getVideoDriver();
+
+	Matrices newData;
+
+	newData.world = driver->getTransform(video::ETS_WORLD);
+
+	core::matrix4 worldView;
+	worldView = driver->getTransform(video::ETS_VIEW);
+	worldView *= newData.world;
+	newData.worldView = worldView;
+
+	core::matrix4 worldViewProj;
+	worldViewProj = driver->getTransform(video::ETS_PROJECTION);
+	worldViewProj *= worldView;
+	newData.worldViewProj = worldViewProj;
+
+	newData.texture = driver->getTransform(video::ETS_TEXTURE_0);
+
+	auto &curData = s_singleton->matricesUBO->getData();
+
+	if (!(curData == newData)) {
+		curData = newData;
+		s_singleton->matricesUBO->upload();
+	}
+}
+
+void RenderingEngine::getFogParams(video::SColor &color, f32 &start, f32 &end) const
+{
+	video::E_FOG_TYPE fog_type = video::EFT_FOG_LINEAR;
+	f32 fog_density = 0;
+	bool fog_pixelfog = false;
+	bool fog_rangefog = false;
+	driver->getFog(color, fog_type, start, end, fog_density, fog_pixelfog, fog_rangefog);
+}
+
+void RenderingEngine::setFogParams(const video::SColor &color, f32 start, f32 end)
+{
+	FogParams newData;
+
+	newData.color = color;
+
+	if (end > 0)
+		newData.parameter = 1.0f / (1.0f - start / end);
+	newData.distance = end;
+
+	auto &curData = fogUBO->getData();
+
+	if (!(curData == newData)) {
+		driver->setFog(color, video::EFT_FOG_LINEAR, start, end);
+		curData = newData;
+		fogUBO->upload();
+	}
+}
+
+void RenderingEngine::setUBOs(video::MaterialRenderer *renderer)
+{
+	sanity_check(s_singleton);
+	renderer->setUniformBlock("matrices", s_singleton->matricesUBO->getHW());
+	renderer->setUniformBlock("fogParams", s_singleton->fogUBO->getHW());
 }

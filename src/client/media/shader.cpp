@@ -35,6 +35,7 @@ class ShaderCallback : public video::IShaderConstantSetCallBack
 	std::vector<std::unique_ptr<IShaderUniformSetter>> m_setters;
 	ShaderSource *m_src = nullptr;
 	ShaderInfo m_info;
+	bool m_ubos_set = false;
 public:
 	template <typename Factories>
 	ShaderCallback(ShaderSource *src, const ShaderInfo &info, const Factories &factories)
@@ -54,6 +55,11 @@ public:
 
 		if (m_src->m_script)
 			m_src->m_script->on_set_uniforms(m_info, renderer);
+
+		if (!m_ubos_set) {
+			m_ubos_set = true;
+			RenderingEngine::setUBOs(renderer);
+		}
 	}
 
 	virtual void OnSetMaterial(video::SMaterial& material) override
@@ -139,14 +145,6 @@ class MainShaderUniformSetter : public IShaderUniformSetter
 {
 	using SamplerLayer_t = s32;
 
-	CachedShaderSetting<f32, 16> m_world_view_proj{"mWorldViewProj"};
-	CachedShaderSetting<f32, 16> m_world{"mWorld"};
-
-	// Modelview matrix
-	CachedShaderSetting<f32, 16> m_world_view{"mWorldView"};
-	// Texture matrix
-	CachedShaderSetting<f32, 16> m_texture{"mTexture"};
-
 	CachedShaderSetting<SamplerLayer_t> m_texture0{"texture0"};
 	CachedShaderSetting<SamplerLayer_t> m_texture1{"texture1"};
 	CachedShaderSetting<SamplerLayer_t> m_texture2{"texture2"};
@@ -171,26 +169,7 @@ public:
 
 	virtual void onSetUniforms(video::MaterialRenderer *renderer) override
 	{
-		video::VideoDriver *driver = renderer->getVideoDriver();
-		assert(driver);
-
-		// Set world matrix
-		core::matrix4 world = driver->getTransform(video::ETS_WORLD);
-		m_world.set(world, renderer);
-
-		// Set clip matrix
-		core::matrix4 worldView;
-		worldView = driver->getTransform(video::ETS_VIEW);
-		worldView *= world;
-
-		core::matrix4 worldViewProj;
-		worldViewProj = driver->getTransform(video::ETS_PROJECTION);
-		worldViewProj *= worldView;
-		m_world_view_proj.set(worldViewProj, renderer);
-
-		auto &texture = driver->getTransform(video::ETS_TEXTURE_0);
-		m_world_view.set(worldView, renderer);
-		m_texture.set(texture, renderer);
+		RenderingEngine::updateMatrices();
 
 		SamplerLayer_t tex_id;
 		tex_id = 0;

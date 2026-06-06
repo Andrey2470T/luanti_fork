@@ -1,6 +1,8 @@
-uniform lowp vec4 fogColor;
-uniform float fogDistance;
-uniform float fogShadingParameter;
+layout (std140) uniform fogParams {
+	lowp vec4 fogColor;
+	float fogDistance;
+	float fogShadingParameter;
+};
 
 vec4 mixColorWithFog(vec4 color, vec3 eyeVec)
 {
