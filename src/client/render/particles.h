@@ -205,7 +205,7 @@ private:
 	mutable bool m_bounding_box_dirty = true;
 };
 
-class ShaderSource;
+class MaterialStorage;
 
 /**
  * Class doing particle as well as their spawners handling
@@ -214,7 +214,7 @@ class ParticleManager
 {
 	friend class ParticleSpawner;
 public:
-	ParticleManager(ClientEnvironment* env, ShaderSource *shdsrc);
+	ParticleManager(ClientEnvironment* env, MaterialStorage *matst);
 	DISABLE_CLASS_COPY(ParticleManager)
 	~ParticleManager();
 
@@ -248,7 +248,7 @@ protected:
 		ParticleParameters &p, video::GLTexture **texture, v2f &texpos,
 		v2f &texsize, video::SColor *color, u8 tilenum = 0);
 
-	static video::SMaterial getMaterialForParticle(ShaderSource *shdsrc, const Particle *texture);
+	static video::SMaterial getMaterialForParticle(MaterialStorage *matst, const Particle *texture);
 
 	bool addParticle(std::unique_ptr<Particle> toadd);
 
@@ -272,7 +272,7 @@ private:
 	u32 m_next_particle_spawner_id = U32_MAX/2 + 1;
 
 	ClientEnvironment *m_env;
-	ShaderSource *m_shdsrc;
+	MaterialStorage *m_matst;
 
 	IntervalLimiter m_buffer_gc;
 

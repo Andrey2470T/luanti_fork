@@ -21,7 +21,7 @@
 #include "client/core/client.h"
 #include "settings.h"
 #include "profiler.h"
-
+#include "material.h"
 #include "Mesh/SMeshBuffer.h"
 
 using BlendMode = ParticleParamTypes::BlendMode;
@@ -665,8 +665,8 @@ void ParticleBuffer::render()
 	ParticleManager
 */
 
-ParticleManager::ParticleManager(ClientEnvironment *env, ShaderSource *shdsrc) :
-	m_env(env), m_shdsrc(shdsrc)
+ParticleManager::ParticleManager(ClientEnvironment *env, MaterialStorage *matst) :
+	m_env(env), m_matst(matst)
 {}
 
 ParticleManager::~ParticleManager()
@@ -981,43 +981,9 @@ static void setBlendMode(video::SMaterial &material, BlendMode blendmode)
 	}
 
 	material.AlphaSource = video::EAS_TEXTURE | video::EAS_VERTEX_COLOR;
-
-	/*video::E_BLEND_FACTOR bfsrc, bfdst;
-	video::E_BLEND_OPERATION blendop;
-	switch (blendmode) {
-		case BlendMode::add:
-			bfsrc = video::EBF_SRC_ALPHA;
-			bfdst = video::EBF_DST_ALPHA;
-			blendop = video::EBO_ADD;
-		break;
-
-		case BlendMode::sub:
-			bfsrc = video::EBF_SRC_ALPHA;
-			bfdst = video::EBF_DST_ALPHA;
-			blendop = video::EBO_REVSUBTRACT;
-		break;
-
-		case BlendMode::screen:
-			bfsrc = video::EBF_ONE;
-			bfdst = video::EBF_ONE_MINUS_SRC_COLOR;
-			blendop = video::EBO_ADD;
-		break;
-
-		default: // includes BlendMode::alpha
-			bfsrc = video::EBF_SRC_ALPHA;
-			bfdst = video::EBF_ONE_MINUS_SRC_ALPHA;
-			blendop = video::EBO_ADD;
-		break;
-	}
-
-	material.MaterialTypeParam = video::pack_textureBlendFunc(
-			bfsrc, bfdst,
-			video::EMFN_MODULATE_1X,
-			video::EAS_TEXTURE | video::EAS_VERTEX_COLOR);
-	material.BlendOperation = blendop;*/
 }
 
-video::SMaterial ParticleManager::getMaterialForParticle(ShaderSource *shdsrc, const Particle *particle)
+video::SMaterial ParticleManager::getMaterialForParticle(MaterialStorage *matst, const Particle *particle)
 {
 	const ClientParticleTexRef &texture = particle->getTextureRef();
 
@@ -1036,7 +1002,6 @@ video::SMaterial ParticleManager::getMaterialForParticle(ShaderSource *shdsrc, c
 		material.ZWriteEnable = video::EZW_ON;
 		material.MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL_REF;
 		material.BlendMode = video::EBM_NONE;
-		//material.MaterialTypeParam = 0.5f;
 	} else {
 		// We don't have working transparency sorting. Disable Z-Write for
 		// correct results for clipped-alpha at least.
@@ -1045,10 +1010,11 @@ video::SMaterial ParticleManager::getMaterialForParticle(ShaderSource *shdsrc, c
 		setBlendMode(material, blendmode);
 	}
 
+	material.setTexture(0, texture.ref);
+
 	auto server_tex = dynamic_cast<ServerParticleTexture *>(texture.tex);
 	if (server_tex && !server_tex->material.empty())
-		material.MaterialType = shdsrc->getShaderInfo(shdsrc->getShader({server_tex->material})).material;
-	material.setTexture(0, texture.ref);
+		matst->applyToSMaterial(server_tex->material, &material);
 
 	return material;
 }
@@ -1057,7 +1023,7 @@ bool ParticleManager::addParticle(std::unique_ptr<Particle> toadd)
 {
 	MutexAutoLock lock(m_particle_list_lock);
 
-	auto material = getMaterialForParticle(m_shdsrc, toadd.get());
+	auto material = getMaterialForParticle(m_matst, toadd.get());
 
 	ParticleBuffer *found = nullptr;
 	// simple shortcut when multiple particles of the same type get added
