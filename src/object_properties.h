@@ -92,5 +92,5 @@ struct ObjectProperties
 	bool validate();
 
 	void serialize(std::ostream &os) const;
-	void deSerialize(std::istream &is);
+	void deSerialize(std::istream &is, u16 protocol_version);
 };

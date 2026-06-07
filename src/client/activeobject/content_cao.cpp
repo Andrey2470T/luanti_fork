@@ -1541,7 +1541,7 @@ void GenericCAO::processMessage(const std::string &data)
 		ObjectProperties newprops;
 		newprops.show_on_minimap = m_is_player; // default
 
-		newprops.deSerialize(is);
+		newprops.deSerialize(is, m_client->getProtoVersion());
 
 		// Check what exactly changed
 		bool expire_visuals = visualExpiryRequired(newprops);

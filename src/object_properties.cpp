@@ -233,7 +233,7 @@ namespace {
 	}
 }
 
-void ObjectProperties::deSerialize(std::istream &is)
+void ObjectProperties::deSerialize(std::istream &is, u16 protocol_version)
 {
 	int version = readU8(is);
 	if (version != 4)
@@ -256,10 +256,13 @@ void ObjectProperties::deSerialize(std::istream &is)
 	}
 
 	visual_size = readV3F32(is);
-	materials.clear();
-	u32 mat_count = readU16(is);
-	for (u32 i = 0; i < mat_count; i++){
-		materials.push_back(deSerializeString16(is));
+
+	if (protocol_version >= 1000) {
+		materials.clear();
+		u32 mat_count = readU16(is);
+		for (u32 i = 0; i < mat_count; i++){
+			materials.push_back(deSerializeString16(is));
+		}
 	}
 	textures.clear();
 	u32 texture_count = readU16(is);

@@ -65,10 +65,15 @@
 	PROTOCOL VERSION 48
 		Add compression to some existing packets
 		[scheduled bump for 5.12.0]
+
+	-----------LuantiFork's protocol versions (starting from 1000 number to prevent conflicts in future)
+	PROTOCOL_VERSION 1000
+		Add materials field in ContentFeatures
+		[bump for 1.3.0]
 */
 
 // Note: Also update core.protocol_versions in builtin when bumping
-const u16 LATEST_PROTOCOL_VERSION = 48;
+const u16 LATEST_PROTOCOL_VERSION = 1000;
 
 // See also formspec [Version History] in doc/lua_api.md
 const u16 FORMSPEC_API_VERSION = 9;

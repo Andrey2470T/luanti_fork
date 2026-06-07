@@ -231,7 +231,7 @@ void ServerParticleTexture::deSerialize(std::istream &is, u16 protocol_ver,
 	if (!skipAnimation && animated)
 		animation.deSerialize(is, protocol_ver);
 
-	if (!newPropertiesOnly)
+	if (protocol_ver >= 1000 && !newPropertiesOnly)
 		material = deSerializeString32(is);
 }
 

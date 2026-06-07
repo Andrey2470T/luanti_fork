@@ -580,8 +580,11 @@ void ContentFeatures::deSerialize(std::istream &is, u16 protocol_version)
 	for (TileDef &td : tiledef_special)
 		td.deSerialize(is, drawtype, protocol_version);
 	setAlphaFromLegacy(readU8(is));
-	for (std::string &m : materials)
-		m = deSerializeString16(is);
+
+	if (protocol_version >= 1000) {
+		for (std::string &m : materials)
+			m = deSerializeString16(is);
+	}
 	color.setRed(readU8(is));
 	color.setGreen(readU8(is));
 	color.setBlue(readU8(is));
