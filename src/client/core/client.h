@@ -385,6 +385,7 @@ public:
 	{
 		return m_matst.get();
 	}
+	RenderingEngine *getRenderingEngine() { return m_rendering_engine; }
 	virtual ShaderSource* getShaderSource();
 	u16 allocateUnknownNodeId(const std::string &name) override;
 	virtual ISoundManager* getSoundManager();

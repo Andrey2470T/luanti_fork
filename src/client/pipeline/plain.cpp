@@ -122,7 +122,7 @@ RenderStep* addUpscaling(RenderPipeline *pipeline, RenderStep *previousStep, v2f
 	video::ECOLOR_FORMAT depth_format = selectDepthFormat(driver);
 
 	// Initialize buffer
-	TextureBuffer *buffer = pipeline->createOwned<TextureBuffer>();
+	TextureBuffer *buffer = pipeline->createTextureBuffer("Plain");
 	buffer->setTexture(TEXTURE_LOWRES_COLOR, downscale_factor, "lowres_color", color_format);
 	buffer->setTexture(TEXTURE_LOWRES_DEPTH, downscale_factor, "lowres_depth", depth_format);
 

@@ -108,7 +108,7 @@ void TextureBuffer::swapTextures(u8 texture_a, u8 texture_b)
 }
 
 
-bool TextureBuffer::ensureTexture(video::GLTexture **texture, const TextureDefinition& definition, PipelineContext &context)
+bool TextureBuffer::ensureTexture(video::GLTexture **texture, const TextureBufferDefinition &definition, PipelineContext &context)
 {
 	bool modify;
 	core::dimension2du size;
@@ -289,6 +289,16 @@ SwapTexturesStep::SwapTexturesStep(TextureBuffer *_buffer, u8 _texture_a, u8 _te
 void SwapTexturesStep::run(PipelineContext &context)
 {
 	buffer->swapTextures(texture_a, texture_b);
+}
+
+TextureBuffer *RenderPipeline::getTextureBuffer(const std::string &name)
+{
+	auto found = std::find_if(m_texture_buffers.begin(), m_texture_buffers.end(),
+		[name](auto buffer) { return name == buffer->getName(); });
+
+	if (found != m_texture_buffers.end())
+		return *found;
+	return nullptr;
 }
 
 RenderSource *RenderPipeline::getInput()

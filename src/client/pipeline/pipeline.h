@@ -98,6 +98,20 @@ protected:
 	bool m_clear {true};
 };
 
+struct TextureBufferDefinition
+{
+	bool valid { false };
+	bool fixed_size { false };
+	bool dirty { false };
+	bool clear { false };
+	v2f scale_factor;
+	core::dimension2du size;
+	std::string name;
+	video::ECOLOR_FORMAT format;
+	u8 msaa;
+	bool cubemap { false };
+};
+
 /**
  * Texture buffer represents a framebuffer with a multiple attached textures.
  *
@@ -106,7 +120,15 @@ protected:
 class TextureBuffer : public RenderSource
 {
 public:
+	TextureBuffer(const std::string &name)
+		: m_name(name)
+	{}
 	virtual ~TextureBuffer() override;
+
+	const std::string &getName() const
+	{
+		return m_name;
+	}
 
 	/**
 	 * Configure fixed-size texture for the specific index
@@ -140,20 +162,6 @@ public:
 private:
 	static const u8 NO_DEPTH_TEXTURE = 255;
 
-	struct TextureDefinition
-	{
-		bool valid { false };
-		bool fixed_size { false };
-		bool dirty { false };
-		bool clear { false };
-		v2f scale_factor;
-		core::dimension2du size;
-		std::string name;
-		video::ECOLOR_FORMAT format;
-		u8 msaa;
-		bool cubemap { false };
-	};
-
 	/**
 	 * Make sure the texture in the given slot matches the texture definition given the current context.
 	 * @param textureSlot address of the texture pointer to verify and populate.
@@ -162,10 +170,11 @@ private:
 	 * @return true if a new texture was created and put into the slot
 	 * @return false if the slot was not modified
 	 */
-	bool ensureTexture(video::GLTexture **textureSlot, const TextureDefinition& definition, PipelineContext &context);
+	bool ensureTexture(video::GLTexture **textureSlot, const TextureBufferDefinition& definition, PipelineContext &context);
 
+	std::string m_name;
 	video::VideoDriver *m_driver { nullptr };
-	std::vector<TextureDefinition> m_definitions;
+	std::vector<TextureBufferDefinition> m_definitions;
 	core::array<video::GLTexture *> m_textures;
 };
 
@@ -414,6 +423,15 @@ public:
 		return result;
 	}
 
+	TextureBuffer *createTextureBuffer(const std::string &name)
+	{
+		auto tbuf = createOwned<TextureBuffer>(name);
+		m_texture_buffers.push_back(tbuf);
+		return tbuf;
+	}
+
+	TextureBuffer *getTextureBuffer(const std::string &name);
+
 	RenderSource *getInput();
 	RenderTarget *getOutput();
 
@@ -427,6 +445,7 @@ public:
 	virtual void setRenderTarget(RenderTarget *target) override;
 private:
 	std::vector<RenderStep *> m_pipeline;
+	std::vector<TextureBuffer *> m_texture_buffers;
 	std::vector< std::unique_ptr<RenderPipelineObject> > m_objects;
 	DynamicSource m_input;
 	DynamicTarget m_output;

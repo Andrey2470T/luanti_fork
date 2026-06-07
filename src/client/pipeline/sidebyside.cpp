@@ -53,7 +53,7 @@ void populateSideBySidePipeline(RenderPipeline *pipeline, Client *client, bool h
 		offset = v2f(0.5f, 0.0f);
 	}
 
-	TextureBuffer *buffer = pipeline->createOwned<TextureBuffer>();
+	TextureBuffer *buffer = pipeline->createTextureBuffer("SideBySide");
 	buffer->setTexture(TEXTURE_LEFT, virtual_size_scale, "3d_render_left", color_format);
 	buffer->setTexture(TEXTURE_RIGHT, virtual_size_scale, "3d_render_right", color_format);
 	buffer->setTexture(TEXTURE_DEPTH, virtual_size_scale, "3d_depthmap_sidebyside", depth_format);

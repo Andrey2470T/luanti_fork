@@ -34,6 +34,8 @@ List of API functions:
       All color parameters are ColorSpecs, alpha channel is ignored.
 * `gfx.get_lighting()`: analogous to the PlayerRef's eponymous method
     (see `server_lua_api/class_reference/object.md`).
+* `gfx.create_texture_buffer(name, texturedefs)`: create TextureBuffer for the pipeline.
+    Necessary for setting shaders inputs (samplers) and outputs (render targets) (see `Texture Definition`).
 
 Material Definition
 -------------------
@@ -123,7 +125,7 @@ Defines properties for shader generation.
 ```
 
 Samplers subdefinition
------------------
+----------------------
 
 Creates the additional set of textures from `textures` folder, could be used for PBR or anything else.
 All these textures are referred in a shader code as `texture<N>`, where `N` is starting from 1.
@@ -137,6 +139,26 @@ So, e.g. `texture2D(texture1, uv)` will extract the pixel at `uv` coordinates fr
     <texname>,        -- "texture3"
     <texname>,        -- "texture4"
     <texname>         -- "texture5"
+}
+```
+
+Texture Definition
+------------------
+
+Defines parameters of creating OpenGL texture for the pipeline
+
+```lua
+{
+    -- Type of texture (default is "2d")
+    type = "2d"/"cubemap",
+    -- Name of texture
+    name = <string>,
+    -- Resolution of texture in pixels
+    resolution = {x=<number>, y=<number>},
+    -- Pixel format of texture data (default is "argb8")
+    -- Supported pixel formats: "argb8"/"rgb8"/"d16"/"d32"/"d24s8"
+    format = <Pixel format>,
+    msaa = <number>
 }
 ```
 

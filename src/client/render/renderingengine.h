@@ -210,6 +210,11 @@ public:
 		return s_singleton->m_receiver->getLastPointerType();
 	}
 
+	RenderPipeline *getPipeline()
+	{
+		return core->getPipeline();
+	}
+
 	void createUBOs();
 
 	static void updateMatrices();

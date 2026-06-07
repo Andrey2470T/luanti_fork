@@ -3,6 +3,7 @@
 #include "l_base.h"
 #include "client/media/shader.h"
 #include "client/render/material.h"
+#include "client/pipeline/pipeline.h"
 
 class UniformSetter : public ModApiBase
 {
@@ -57,6 +58,9 @@ private:
 
 	static int l_override_day_night_ratio(lua_State *L);
 	static int l_get_day_night_ratio(lua_State *L);
+
+	static void read_texture_def(lua_State *L, TextureBufferDefinition &texdef);
+	static int l_create_texture_buffer(lua_State *L);
 public:
 	static void Initialize(lua_State *L, int top);
 };

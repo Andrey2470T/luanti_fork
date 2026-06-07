@@ -86,7 +86,7 @@ void PostProcessingStep::setBilinearFilter(u8 index, bool value)
 
 RenderStep *addPostProcessing(RenderPipeline *pipeline, RenderStep *previousStep, v2f scale, Client *client)
 {
-	auto buffer = pipeline->createOwned<TextureBuffer>();
+	auto buffer = pipeline->createTextureBuffer("PostProcessing");
 	auto driver = client->getSceneManager()->getVideoDriver();
 
 	// configure texture formats

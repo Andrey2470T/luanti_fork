@@ -2,6 +2,7 @@
 #include "client/core/client.h"
 #include "client/media/shader.h"
 #include "client/media/texturesource.h"
+#include "client/render/renderingengine.h"
 #include "client/player/localplayer.h"
 #include "nodedef.h"
 #include "common/c_converter.h"
@@ -500,6 +501,64 @@ int ModApiGraphics::l_get_day_night_ratio(lua_State *L)
 	return 1;
 }
 
+void ModApiGraphics::read_texture_def(lua_State *L, TextureBufferDefinition &texdef)
+{
+	std::string type = getstringfield_default(L, -1, "type", "2d");
+	texdef.cubemap = type == "cubemap";
+
+	getstringfield(L, -1, "name", texdef.name);
+
+	lua_getfield(L, -1, "resolution");
+
+	if (lua_istable(L, -1)) {
+		s32 w, h;
+		getintfield(L, -1, "x", w);
+		getintfield(L, -1, "y", h);
+		texdef.size = {w, h};
+	}
+	lua_pop(L, 1);
+
+	std::unordered_map<std::string, video::ECOLOR_FORMAT> mapStrToEnumFormat = {
+		{"argb8", video::ECF_A8R8G8B8}, {"rgb8", video::ECF_R8G8B8},
+		{"d16", video::ECF_D16}, {"d32", video::ECF_D32}, {"d24s32", video::ECF_D24S8}
+	};
+
+	texdef.format = mapStrToEnumFormat[getstringfield_default(L, -1, "format", "argb8")];
+	texdef.msaa = getintfield_default(L, -1, "msaa", 0);
+}
+
+int ModApiGraphics::l_create_texture_buffer(lua_State *L)
+{
+	if (!lua_isstring(L, 1) || !lua_istable(L, 2))
+		return 0;
+
+	std::string name = readParam<std::string>(L, 1);
+
+	std::vector<TextureBufferDefinition> definitions;
+
+	int t = lua_gettop(L);
+
+	lua_pushnil(L);
+	while (lua_next(L, t)) {
+		if (lua_istable(L, -1)) {
+			TextureBufferDefinition newDef;
+			read_texture_def(L, newDef);
+			definitions.push_back(newDef);
+		}
+		lua_pop(L, 1);
+	}
+	lua_pop(L, 1);
+
+	auto tbuf = getClient(L)->getRenderingEngine()->getPipeline()->createTextureBuffer(name);
+
+	for (u32 i = 0; i < definitions.size(); i++) {
+		auto &def = definitions.at(i);
+		tbuf->setTexture(i, def.size, def.name, def.format, false, def.msaa, def.cubemap);
+	}
+
+	return 1;
+}
+
 void ModApiGraphics::Initialize(lua_State *L, int top)
 {
 	API_FCT(register_material);
@@ -517,6 +576,7 @@ void ModApiGraphics::Initialize(lua_State *L, int top)
 	API_FCT(get_clouds);
 	API_FCT(override_day_night_ratio);
 	API_FCT(get_day_night_ratio);
+	API_FCT(create_texture_buffer);
 
 	UniformSetter::Register(L);
 
