@@ -511,7 +511,7 @@ void ModApiGraphics::read_texture_def(lua_State *L, TextureBufferDefinition &tex
 	lua_getfield(L, -1, "resolution");
 
 	if (lua_istable(L, -1)) {
-		s32 w, h;
+		u32 w, h;
 		getintfield(L, -1, "x", w);
 		getintfield(L, -1, "y", h);
 		texdef.size = {w, h};
