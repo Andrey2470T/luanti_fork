@@ -597,7 +597,7 @@ int ModApiGraphics::l_get_texture_params(lua_State *L)
 	}
 
 	std::string name = readParam<std::string>(L, 1);
-	u8 tex_index = readParam<u8>(L, 2);
+	u8 tex_index = readParam<s16>(L, 2);
 
 	auto tbuf = getClient(L)->getRenderingEngine()->getPipeline()->getTextureBuffer(name);
 
