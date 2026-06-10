@@ -527,6 +527,36 @@ void ModApiGraphics::read_texture_def(lua_State *L, TextureBufferDefinition &tex
 	texdef.msaa = getintfield_default(L, -1, "msaa", 0);
 }
 
+void ModApiGraphics::push_texture_def(lua_State *L, const TextureBufferDefinition &texdef)
+{
+	lua_newtable(L);
+
+	std::string type = texdef.cubemap ? "cubemap" : "2d";
+	lua_pushlstring(L, type.c_str(), type.size());
+	lua_setfield(L, -2, "type");
+
+	lua_pushlstring(L, texdef.name.c_str(), texdef.name.size());
+	lua_setfield(L, -2, "name");
+
+	lua_newtable(L);
+	lua_pushnumber(L, texdef.size.Width);
+	lua_setfield(L, -2, "x");
+	lua_pushnumber(L, texdef.size.Height);
+	lua_setfield(L, -2, "y");
+	lua_setfield(L, -2, "resolution");
+
+	std::unordered_map<video::ECOLOR_FORMAT, std::string> mapEnumToStrFormat = {
+		{video::ECF_A8R8G8B8, "argb8"}, {video::ECF_R8G8B8, "rgb8"},
+		{video::ECF_D16, "d16"}, {video::ECF_D32, "d32"}, {video::ECF_D24S8, "d24s32"}
+	};
+
+	lua_pushlstring(L, mapEnumToStrFormat[texdef.format].c_str(), mapEnumToStrFormat[texdef.format].size());
+	lua_setfield(L, -2, "format");
+
+	lua_pushnumber(L, texdef.msaa);
+	lua_setfield(L, -2, "msaa");
+}
+
 int ModApiGraphics::l_create_texture_buffer(lua_State *L)
 {
 	if (!lua_isstring(L, 1) || !lua_istable(L, 2))
@@ -559,6 +589,29 @@ int ModApiGraphics::l_create_texture_buffer(lua_State *L)
 	return 1;
 }
 
+int ModApiGraphics::l_get_texture_params(lua_State *L)
+{
+	if (!lua_isstring(L, 1) || !lua_isnumber(L, 2)){
+		lua_pushnil(L);
+		return 0;
+	}
+
+	std::string name = readParam<std::string>(L, 1);
+	u8 tex_index = readParam<u8>(L, 2);
+
+	auto tbuf = getClient(L)->getRenderingEngine()->getPipeline()->getTextureBuffer(name);
+
+	if (not tbuf) {
+		lua_pushnil(L);
+		return 0;
+	}
+
+	auto &tex_def = tbuf->getTextureDef(tex_index);
+	push_texture_def(L, tex_def);
+
+	return 1;
+}
+
 void ModApiGraphics::Initialize(lua_State *L, int top)
 {
 	API_FCT(register_material);
@@ -577,6 +630,7 @@ void ModApiGraphics::Initialize(lua_State *L, int top)
 	API_FCT(override_day_night_ratio);
 	API_FCT(get_day_night_ratio);
 	API_FCT(create_texture_buffer);
+	API_FCT(get_texture_params);
 
 	UniformSetter::Register(L);
 

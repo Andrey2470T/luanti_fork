@@ -157,6 +157,7 @@ public:
 
 	virtual u8 getTextureCount() override { return m_textures.size(); }
 	virtual video::GLTexture *getTexture(u8 index) override;
+	const TextureBufferDefinition &getTextureDef(u8 index);
 	virtual void reset(PipelineContext &context) override;
 	void swapTextures(u8 texture_a, u8 texture_b);
 private:

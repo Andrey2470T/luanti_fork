@@ -26,6 +26,14 @@ video::GLTexture *TextureBuffer::getTexture(u8 index)
 	return m_textures[index];
 }
 
+const TextureBufferDefinition &TextureBuffer::getTextureDef(u8 index)
+{
+	static TextureBufferDefinition default_;
+	if (index >= m_definitions.size())
+		return default_;
+	return m_definitions[index];
+}
+
 
 void TextureBuffer::setTexture(
 	u8 index, core::dimension2du size, const std::string &name, video::ECOLOR_FORMAT format,
