@@ -186,8 +186,8 @@ class TextureBufferOutput : public RenderTarget
 public:
 	TextureBufferOutput(TextureBuffer *buffer, u8 texture_index);
 	TextureBufferOutput(TextureBuffer *buffer, const std::vector<u8> &_texture_map, u8 depth_stencil=0);
-	TextureBufferOutput(TextureBuffer *buffer, const std::unordered_map<u8, u8> &_texture_map);
-	TextureBufferOutput(TextureBuffer *buffer, const std::unordered_map<u8, u8> &_texture_map, std::pair<u8, u8> depth_stencil);
+	TextureBufferOutput(TextureBuffer *buffer, const std::vector<std::pair<u8, u8>> &_texture_map);
+	TextureBufferOutput(TextureBuffer *buffer, const std::vector<std::pair<u8, u8>> &_texture_map, std::pair<u8, u8> depth_stencil);
 	virtual ~TextureBufferOutput() override;
 	void activate(PipelineContext &context) override;
 
@@ -197,7 +197,7 @@ private:
 	static inline const u8 NO_DEPTH_TEXTURE = 255;
 
 	TextureBuffer *buffer;
-	std::unordered_map<u8, u8> texture_map;
+	std::vector<std::pair<u8, u8>> texture_map;
 	std::pair<u8, u8> depth_stencil { NO_DEPTH_TEXTURE, 0 };
 	video::RenderTarget* render_target { nullptr };
 	video::VideoDriver* driver { nullptr };

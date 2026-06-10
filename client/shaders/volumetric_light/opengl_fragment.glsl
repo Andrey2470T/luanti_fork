@@ -105,5 +105,5 @@ void main(void)
 		color = applyVolumetricLight(color, uv, rawDepth);
 	}
 
-	outColor0 = vec4(color, 1.0); // force full alpha to avoid holes in the image.
+	output(vec4(color, 1.0)); // force full alpha to avoid holes in the image.
 }

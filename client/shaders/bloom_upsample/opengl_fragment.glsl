@@ -23,8 +23,8 @@ void main(void)
 
 	vec3 base = texture2D(current, varTexCoord.st).rgb;
 
-	outColor0 = max(vec4(base +
+	output(max(vec4(base +
 			(a + c + g + i) * 0.0625 +
 			(b + d + f + h) * 0.125 +
-			e * 0.25, 1.), 1e-4);
+			e * 0.25, 1.), 1e-4));
 }

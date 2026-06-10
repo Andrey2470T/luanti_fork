@@ -551,11 +551,24 @@ std::string ShaderGenerator::generateFragmentHeader()
 	// Allow for multiple color outputs
 
 	u8 colorAttachments = RenderingEngine::get_video_driver()->getFeatures().ColorAttachment;
-	for (u8 k = 0; k < colorAttachments; k++) {
-		std::string outColor = "out vec4 outColor";
-		outColor += std::to_string(k);
-		outColor += ";\n";
-		header += outColor;
+	header += "out vec4 outColor[" + std::to_string(colorAttachments) + "];\n";
+
+	for (u8 k = 1; k <= colorAttachments; k++) {
+		header += "void output(\n";
+
+		for (u8 i = 0; i < k; i++) {
+			if ((k-i) == 1)
+				header += "	vec4 color" + std::to_string(i) + ") {\n";
+			else
+				header += "	vec4 color" + std::to_string(i) + ",\n";
+		}
+
+		for (u8 i = 0; i < k; i++)
+			header += "	outColor[" + std::to_string(i) + "] = color" + std::to_string(i) + ";\n";
+
+		for (u8 j = k; j < colorAttachments; j++)
+			header += "	outColor[" + std::to_string(j) + "] = vec4(0.0);\n";
+		header += "}\n\n";
 	}
 
 	// Append the files contents from /include shader subpath

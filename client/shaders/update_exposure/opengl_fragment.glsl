@@ -70,5 +70,5 @@ void main(void)
 	else
 		wantedExposure = mix(wantedExposure, previousExposure, exp(-animationTimerDelta * exposureParams.speedBrightDark)); // bright -> dark
 
-	outColor0 = vec4(vec3(wantedExposure), 1.);
+	output(vec4(vec3(wantedExposure), 1.));
 }

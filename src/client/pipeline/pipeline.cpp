@@ -180,14 +180,14 @@ TextureBufferOutput::TextureBufferOutput(TextureBuffer *_buffer, const std::vect
 	: buffer(_buffer), depth_stencil(_depth_stencil, 0)
 {
 	for (auto &i : _texture_map)
-		texture_map.emplace(i, 0);
+		texture_map.emplace_back(i, 0);
 }
 
-TextureBufferOutput::TextureBufferOutput(TextureBuffer *_buffer, const std::unordered_map<u8, u8> &_texture_map)
+TextureBufferOutput::TextureBufferOutput(TextureBuffer *_buffer, const std::vector<std::pair<u8, u8> > &_texture_map)
 	: buffer(_buffer), texture_map(_texture_map)
 {}
 
-TextureBufferOutput::TextureBufferOutput(TextureBuffer *_buffer, const std::unordered_map<u8, u8> &_texture_map, std::pair<u8, u8> _depth_stencil)
+TextureBufferOutput::TextureBufferOutput(TextureBuffer *_buffer, const std::vector<std::pair<u8, u8> > &_texture_map, std::pair<u8, u8> _depth_stencil)
 	: buffer(_buffer), texture_map(_texture_map), depth_stencil(_depth_stencil)
 {}
 

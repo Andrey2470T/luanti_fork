@@ -100,17 +100,19 @@ RenderStep *addPostProcessing(RenderPipeline *pipeline, RenderStep *previousStep
 	// init post-processing buffer
 	static const u8 TEXTURE_COLOR = 0;
 	static const u8 TEXTURE_DEPTH = 1;
-	static const u8 TEXTURE_BLOOM = 2;
-	static const u8 TEXTURE_EXPOSURE_1 = 3;
-	static const u8 TEXTURE_EXPOSURE_2 = 4;
-	static const u8 TEXTURE_FXAA = 5;
-	static const u8 TEXTURE_VOLUME = 6;
+	static const u8 TEXTURE_BLOOM_MASK = 2;
+	static const u8 TEXTURE_BLOOM = 3;
+	static const u8 TEXTURE_EXPOSURE_1 = 4;
+	static const u8 TEXTURE_EXPOSURE_2 = 5;
+	static const u8 TEXTURE_FXAA = 6;
+	static const u8 TEXTURE_VOLUME = 7;
 
-	static const u8 TEXTURE_MSAA_COLOR = 7;
-	static const u8 TEXTURE_MSAA_DEPTH = 8;
+	static const u8 TEXTURE_MSAA_COLOR = 8;
+	static const u8 TEXTURE_MSAA_DEPTH = 9;
+	static const u8 TEXTURE_MSAA_BLOOM_MASK = 10;
 
-	static const u8 TEXTURE_SCALE_DOWN = 10;
-	static const u8 TEXTURE_SCALE_UP = 20;
+	static const u8 TEXTURE_SCALE_DOWN = 11;
+	static const u8 TEXTURE_SCALE_UP = 15;
 
 	const bool enable_bloom = g_settings->getBool("enable_bloom");
 	const bool enable_volumetric_light = g_settings->getBool("enable_volumetric_lighting") && enable_bloom;
@@ -141,9 +143,19 @@ RenderStep *addPostProcessing(RenderPipeline *pipeline, RenderStep *previousStep
 		scale *= antialiasing_scale;
 	}
 
+	// color_format can be a normalized integer format, but bloom requires
+	// values outside of [0,1] so this needs to be a different one.
+	const auto bloom_format = video::ECF_A16B16G16R16F;
+
+	if (enable_bloom)
+		buffer->setTexture(TEXTURE_BLOOM_MASK, scale, "bloom_mask", bloom_format);
+
 	if (enable_msaa) {
 		buffer->setTexture(TEXTURE_MSAA_COLOR, scale, "3d_render_msaa", color_format, false, antialiasing_scale);
 		buffer->setTexture(TEXTURE_MSAA_DEPTH, scale, "3d_depthmap_msaa", depth_format, false, antialiasing_scale);
+
+		if (enable_bloom)
+			buffer->setTexture(TEXTURE_MSAA_BLOOM_MASK, scale, "bloom_mask_msaa", bloom_format, false, antialiasing_scale);
 	}
 
 	buffer->setTexture(TEXTURE_COLOR, scale, "3d_render", color_format);
@@ -153,12 +165,12 @@ RenderStep *addPostProcessing(RenderPipeline *pipeline, RenderStep *previousStep
 
 	// attach buffer to the previous step
 	if (enable_msaa) {
-		TextureBufferOutput *msaa = pipeline->createOwned<TextureBufferOutput>(buffer, std::vector<u8> { TEXTURE_MSAA_COLOR }, TEXTURE_MSAA_DEPTH);
+		TextureBufferOutput *msaa = pipeline->createOwned<TextureBufferOutput>(buffer, std::vector<u8> { TEXTURE_MSAA_COLOR, TEXTURE_MSAA_BLOOM_MASK }, TEXTURE_MSAA_DEPTH);
 		previousStep->setRenderTarget(msaa);
-		TextureBufferOutput *normal = pipeline->createOwned<TextureBufferOutput>(buffer, std::vector<u8> { TEXTURE_COLOR }, TEXTURE_DEPTH);
+		TextureBufferOutput *normal = pipeline->createOwned<TextureBufferOutput>(buffer, std::vector<u8> { TEXTURE_COLOR, TEXTURE_BLOOM_MASK }, TEXTURE_DEPTH);
 		pipeline->addStep<ResolveMSAAStep>(msaa, normal);
 	} else {
-		previousStep->setRenderTarget(pipeline->createOwned<TextureBufferOutput>(buffer, std::vector<u8> { TEXTURE_COLOR }, TEXTURE_DEPTH));
+		previousStep->setRenderTarget(pipeline->createOwned<TextureBufferOutput>(buffer, std::vector<u8> { TEXTURE_COLOR, TEXTURE_BLOOM_MASK }, TEXTURE_DEPTH));
 	}
 
 	// shared variables
@@ -166,10 +178,6 @@ RenderStep *addPostProcessing(RenderPipeline *pipeline, RenderStep *previousStep
 
 	// Number of mipmap levels of the bloom downsampling texture
 	const u8 MIPMAP_LEVELS = 4;
-
-	// color_format can be a normalized integer format, but bloom requires
-	// values outside of [0,1] so this needs to be a different one.
-	const auto bloom_format = video::ECF_A16B16G16R16F;
 
 	// post-processing stage
 
@@ -191,7 +199,7 @@ RenderStep *addPostProcessing(RenderPipeline *pipeline, RenderStep *previousStep
 
 			// get bright spots
 			u32 shader_id = client->getShaderSource()->getShader({"extract_bloom"});
-			RenderStep *extract_bloom = pipeline->addStep<PostProcessingStep>(shader_id, std::vector<u8> { source, TEXTURE_EXPOSURE_1 });
+			RenderStep *extract_bloom = pipeline->addStep<PostProcessingStep>(shader_id, std::vector<u8> { TEXTURE_BLOOM_MASK, TEXTURE_EXPOSURE_1 });
 			extract_bloom->setRenderSource(buffer);
 			extract_bloom->setRenderTarget(pipeline->createOwned<TextureBufferOutput>(buffer, TEXTURE_BLOOM));
 			source = TEXTURE_BLOOM;

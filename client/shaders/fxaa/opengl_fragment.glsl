@@ -106,6 +106,6 @@ void main(void)
 {
 	vec2 uv = varTexCoord.st;
 
-	outColor0 = fxaa(rendered, uv, texelSize0,
-		sampleNW, sampleNE, sampleSW, sampleSE, uv);
+	output(fxaa(rendered, uv, texelSize0,
+		sampleNW, sampleNE, sampleSW, sampleSE, uv));
 }

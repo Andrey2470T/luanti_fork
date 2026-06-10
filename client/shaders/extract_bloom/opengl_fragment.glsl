@@ -1,4 +1,4 @@
-#define rendered texture0
+#define bloomMask texture0
 
 struct ExposureParams {
 	float compensationFactor;
@@ -16,7 +16,7 @@ in float exposure; // linear exposure factor, see vertex shader
 void main(void)
 {
 	vec2 uv = varTexCoord.st;
-	vec3 color = texture2D(rendered, uv).rgb;
+	vec3 color = texture2D(bloomMask, uv).rgb;
 	// translate to linear colorspace (approximate)
 #ifdef GL_ES
 	// clamp color to [0,1] range in lieu of centroids
@@ -31,5 +31,5 @@ void main(void)
 	color *= exposure;
 #endif
 
-	outColor0 = vec4(color, 1.0); // force full alpha to avoid holes in the image.
+	output(vec4(color, 1.0)); // force full alpha to avoid holes in the image.
 }

@@ -37,7 +37,7 @@ vec4 applyBloom(vec4 color, vec2 uv)
 	if (uv.x < 0.5)
 		return color;
 #endif
-	color.rgb = mix(color.rgb, light, bloomIntensity);
+	color.rgb += light;
 	return color;
 }
 
@@ -117,5 +117,5 @@ void main(void)
 	// return to sRGB colorspace (approximate)
 	color.rgb = linear_to_srgb(color.rgb);
 
-	outColor0 = vec4(color.rgb, 1.0); // force full alpha to avoid holes in the image.
+	output(vec4(color.rgb, 1.0)); // force full alpha to avoid holes in the image.
 }
