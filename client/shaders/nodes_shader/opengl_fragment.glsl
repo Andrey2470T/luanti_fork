@@ -24,6 +24,7 @@ in vec3 vPosition;
 // precision must be considered).
 in vec3 worldPosition;
 
+CENTROID_ in lowp float emissionLight;
 CENTROID_ in lowp vec3 varColor;
 CENTROID_ in lowp vec3 dayLight;
 CENTROID_ in mediump vec2 varTexCoord;
@@ -99,5 +100,9 @@ void main(void)
 	col = mixColorWithFog(col, eyeVec);
 	col = vec4(col.rgb, base.a);
 
+#ifndef ENABLE_BLOOM
 	output(col);
+#else
+	output(col, vec4(col.rgb * emissionLight, 1.0));
+#endif
 }

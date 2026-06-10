@@ -19,6 +19,11 @@ vec3 ACESFilm(vec3 x) {
 	return clamp((x*(a*x+b))/(x*(c*x+d)+e), 0.0, 1.0);
 }
 
+float luminance(vec3 color)
+{
+	return (color.r + color.g + color.b) / 3.0;
+}
+
 const float e = 2.718281828459;
 const float BS = 10.0;
 

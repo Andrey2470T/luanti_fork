@@ -16,6 +16,7 @@ out vec3 worldPosition;
 // The centroid keyword ensures that after interpolation the texture coordinates
 // lie within the same bounds when MSAA is en- and disabled.
 // This fixes the stripes problem with nearest-neighbor textures and MSAA.
+CENTROID_ out lowp float emissionLight;
 CENTROID_ out lowp vec3 varColor;
 CENTROID_ out lowp vec3 dayLight;
 CENTROID_ out mediump vec2 varTexCoord;
@@ -63,7 +64,10 @@ void main(void)
 	float sum = float(max(skyLight + blockLight, 0));
 	nightRatio = 1.0 - (skyLight / sum);
 	dayLight = getSkyColor(timeOfDay);
+
 	varColor = calculateLighting(timeOfDay, skyLight, blockLight, ao);
+
+	emissionLight = step(0.001, color.a) * (1.0 - luminance(dayLight));
 
 	hwColor = inAux / 255.0;
 
