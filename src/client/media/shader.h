@@ -223,6 +223,7 @@ struct ShaderInfo {
 	// Material ID the shader has received from Irrlicht
 	video::E_MATERIAL_TYPE material = video::EMT_SOLID;
 	std::string basic_name = "";
+	IShaderUniformSetter *setter = nullptr;
 };
 
 class ClientScripting;
@@ -253,7 +254,9 @@ public:
 	 * @param input_const primary key constants for this shader
 	 * @return shader ID
 	 */
-	u32 getShader(const ShaderInfo &info, bool apply_shadows=false, bool force_recompile=false);
+	u32 getShader(
+		const ShaderInfo &info, bool apply_shadows=false,
+		IShaderUniformSetter *setter=nullptr, bool force_recompile=false);
 
 	/// @brief Helper: Generates or gets a shader suitable for nodes and entities
 	u32 getShader(

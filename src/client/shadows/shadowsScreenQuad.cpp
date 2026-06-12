@@ -5,7 +5,7 @@
 #include "shadowsScreenQuad.h"
 #include <Video/VideoDriver.h>
 
-shadowScreenQuad::shadowScreenQuad()
+ShadowScreenQuad::ShadowScreenQuad()
 {
 	Material.Wireframe = false;
 
@@ -18,7 +18,7 @@ shadowScreenQuad::shadowScreenQuad()
 	Vertices[5] = {{1.0f, 1.0f, 0.0f}, {0, 0, 1}, color, {1.0f, 0.0f}};
 }
 
-void shadowScreenQuad::render(video::VideoDriver *driver)
+void ShadowScreenQuad::render(video::VideoDriver *driver)
 {
 	u16 indices[6] = {0, 1, 2, 3, 4, 5};
 	driver->setMaterial(Material);
@@ -26,7 +26,7 @@ void shadowScreenQuad::render(video::VideoDriver *driver)
 	driver->drawIndexedTriangleList(&Vertices[0], 6, &indices[0], 2);
 }
 
-void shadowScreenQuadCB::OnSetUniforms(video::MaterialRenderer *renderer)
+void ShadowScreenQuadUniformSetter::onSetUniforms(video::MaterialRenderer *renderer)
 {
 	s32 TextureId = 0;
 	m_sm_client_map_setting.set(TextureId, renderer);

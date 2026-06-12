@@ -3,13 +3,12 @@
 // Copyright (C) 2021 Liso <anlismon@gmail.com>
 
 #pragma once
-#include <Video/IShaderConstantSetCallBack.h>
 #include "client/media/shader.h"
 
-class shadowScreenQuad
+class ShadowScreenQuad
 {
 public:
-	shadowScreenQuad();
+	ShadowScreenQuad();
 
 	void render(video::VideoDriver *driver);
 	video::SMaterial &getMaterial() { return Material; }
@@ -19,14 +18,22 @@ private:
 	video::SMaterial Material;
 };
 
-class shadowScreenQuadCB : public video::IShaderConstantSetCallBack
+class ShadowScreenQuadUniformSetter : public IShaderUniformSetter
 {
 public:
-	virtual void OnSetUniforms(video::MaterialRenderer *renderer);
+	void onSetUniforms(video::MaterialRenderer *renderer) override;
 private:
 	CachedShaderSetting<s32> m_sm_client_map_setting{"ShadowMapClientMap"};
 	CachedShaderSetting<s32>
 		m_sm_client_map_trans_setting{"ShadowMapClientMapTraslucent"};
 	CachedShaderSetting<s32>
 		m_sm_dynamic_sampler_setting{"ShadowMapSamplerdynamic"};
+};
+
+class ShadowScreenQuadUniformSetterFactory : public IShaderUniformSetterFactory
+{
+public:
+	virtual IShaderUniformSetter *create() {
+		return new ShadowScreenQuadUniformSetter();
+	}
 };

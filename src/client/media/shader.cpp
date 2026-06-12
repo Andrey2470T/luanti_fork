@@ -38,7 +38,8 @@ class ShaderCallback : public video::IShaderConstantSetCallBack
 	bool m_ubos_set = false;
 public:
 	template <typename Factories>
-	ShaderCallback(ShaderSource *src, const ShaderInfo &info, const Factories &factories)
+	ShaderCallback(
+		ShaderSource *src, const ShaderInfo &info, const Factories &factories, IShaderUniformSetter *add_setter=nullptr)
 		: m_src(src), m_info(info)
 	{
 		for (auto &&factory : factories) {
@@ -46,6 +47,9 @@ public:
 			if (setter)
 				m_setters.emplace_back(setter);
 		}
+
+		if (add_setter)
+			m_setters.emplace_back(add_setter);
 	}
 
 	virtual void OnSetUniforms(video::MaterialRenderer *renderer) override
@@ -272,7 +276,9 @@ const ShaderInfo& ShaderSource::getShaderInfo(u32 id) {
 	return m_shaders[id];
 }
 
-u32 ShaderSource::getShader(const ShaderInfo &info, bool apply_shadows, bool force_recompile)
+u32 ShaderSource::getShader(
+	const ShaderInfo &info, bool apply_shadows,
+	IShaderUniformSetter *setter, bool force_recompile)
 {
 	// Empty name means shader 0
 	if (info.name.empty()) {
@@ -281,6 +287,8 @@ u32 ShaderSource::getShader(const ShaderInfo &info, bool apply_shadows, bool for
 	}
 
 	ShaderInfo info_c = info;
+
+	info_c.setter = setter;
 
 	info_c.vertex_includes.emplace_back("common");
 	info_c.vertex_includes.emplace_back("matrices");
@@ -344,7 +352,7 @@ u32 ShaderSource::getShader(
 
 	info_c.transparent = isTransparentLayer(material_type);
 
-	return getShader(info_c, apply_shadows, force_recompile);
+	return getShader(info_c, apply_shadows, nullptr, force_recompile);
 }
 
 // Shaders loaded from remote media know only the files names, not the shaders ones themselves
@@ -668,7 +676,7 @@ void ShaderGenerator::generate()
 		geometry_shader = main_header + geometry_header + final_header + geometry_shader;
 	}
 
-	auto cb = make_irr<ShaderCallback>(src, info, src->m_uniform_factories);
+	auto cb = make_irr<ShaderCallback>(src, info, src->m_uniform_factories, info.setter);
 	infostream << "Compiling high level shaders for " << log_name << std::endl;
 	s32 shadermat = RenderingEngine::get_video_driver()->addHighLevelShaderMaterial(
 		vertex_shader, fragment_shader, geometry_shader,

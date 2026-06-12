@@ -11,9 +11,9 @@
 #include <Scene/ISceneNode.h>
 #include <Scene/ISceneManager.h>
 
-class ShadowDepthShaderCB;
-class shadowScreenQuad;
-class shadowScreenQuadCB;
+class ShadowDepthUniformSetter;
+class ShadowScreenQuad;
+class ShadowScreenQuadUniformSetter;
 class ShaderSource;
 class Sky;
 
@@ -88,6 +88,9 @@ public:
 	float getShadowStrength() const { return m_shadows_enabled ? m_shadow_strength : 0.0f; }
 	video::SColor getShadowTint() const { return m_shadow_tint; }
 
+	u32 getShadowMapSize() const { return m_shadow_map_texture_size; }
+	f32 getShadowMapMaxDistance() const { return m_shadow_map_max_distance * BS; }
+
 	f32 getPerspectiveBiasXY() { return m_perspective_bias_xy; }
 	f32 getPerspectiveBiasZ() { return m_perspective_bias_z; }
 
@@ -100,7 +103,6 @@ private:
 			scene::E_SCENE_NODE_RENDER_PASS pass =
 					scene::ESNRP_SOLID);
 	void renderShadowObjects(video::GLTexture *target, DirectionalLight &light);
-	void mixShadowsQuad();
 	void updateSMTextures();
 
 	void disable();
@@ -141,19 +143,13 @@ private:
 	// Shadow Shader stuff
 
 	void createShaders();
-	std::string readShaderFile(const std::string &path);
 
-	s32 depth_shader{-1};
-	s32 depth_shader_entities{-1};
-	s32 depth_shader_trans{-1};
-	s32 mixcsm_shader{-1};
+	video::E_MATERIAL_TYPE depth_shader, depth_shader_trans;
 
-	ShadowDepthShaderCB *m_shadow_depth_cb{nullptr};
-	ShadowDepthShaderCB *m_shadow_depth_entity_cb{nullptr};
-	ShadowDepthShaderCB *m_shadow_depth_trans_cb{nullptr};
+	ShadowDepthUniformSetter *m_shadow_depth_cb{nullptr};
+	ShadowDepthUniformSetter *m_shadow_depth_trans_cb{nullptr};
 
-	shadowScreenQuad *m_screen_quad{nullptr};
-	shadowScreenQuadCB *m_shadow_mix_cb{nullptr};
+	ShadowScreenQuad *m_screen_quad{nullptr};
 };
 
 /**

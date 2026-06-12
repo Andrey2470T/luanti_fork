@@ -3,8 +3,8 @@
 // Copyright (C) 2021 Liso <anlismon@gmail.com>
 
 #pragma once
-#include <Video/IShaderConstantSetCallBack.h>
 #include "client/media/shader.h"
+#include "util/string.h"
 
 // Used by main game rendering
 
@@ -46,12 +46,10 @@ public:
 
 // Used by depth shader
 
-class ShadowDepthShaderCB : public video::IShaderConstantSetCallBack
+class ShadowDepthUniformSetter : public IShaderUniformSetter
 {
 public:
-	void OnSetMaterial(video::SMaterial &material) override {}
-
-	void OnSetUniforms(video::MaterialRenderer *renderer) override;
+	void onSetUniforms(video::MaterialRenderer *renderer) override;
 
 	f32 MaxFar{2048.0f}, MapRes{1024.0f};
 	f32 PerspectiveBiasXY {0.9f}, PerspectiveBiasZ {0.5f};
@@ -67,4 +65,12 @@ private:
 	CachedShaderSetting<f32> m_perspective_bias1{"xyPerspectiveBias1"};
 	CachedShaderSetting<f32> m_perspective_zbias{"zPerspectiveBias"};
 	CachedShaderSetting<f32, 4> m_cam_pos_setting{"CameraPos"};
+};
+
+class ShadowDepthUniformSetterFactory : public IShaderUniformSetterFactory
+{
+public:
+	virtual IShaderUniformSetter *create() {
+		return new ShadowDepthUniformSetter();
+	}
 };
