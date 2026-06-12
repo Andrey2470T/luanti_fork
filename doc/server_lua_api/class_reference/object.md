@@ -716,6 +716,7 @@ child will follow movement and rotation of that bone.
           * The default value is to be changed from 0.05 to 0 in the future.
             If you wish to keep the current default value, you should set it
             explicitly.
+          * Deleted in 1.4.0 (since the bloom pixels are just added with the rendererd image)
         * `strength_factor` defines the magnitude of bloom overexposure.
           * Recommended range: from 0.1 to 10.0, default: 1.0
         * `radius` is a logical value that controls how far the bloom effect

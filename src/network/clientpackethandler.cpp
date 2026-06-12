@@ -1790,7 +1790,9 @@ void Client::handleCommand_SetLighting(NetworkPacket *pkt)
 	if (pkt->getRemainingBytes() >= 4)
 		*pkt >> lighting.shadow_tint;
 	if (pkt->getRemainingBytes() >= 12) {
-		*pkt >> lighting.bloom_intensity
+		// NOTE: this param was deleted in 1.4.0
+		f32 bloom_intensity;
+		*pkt >> bloom_intensity
 				>> lighting.bloom_strength_factor
 				>> lighting.bloom_radius;
 	}

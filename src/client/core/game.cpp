@@ -226,7 +226,6 @@ class GameGlobalShaderUniformSetter : public IShaderUniformSetter
 		}};
 	f32 m_user_exposure_compensation;
 	bool m_bloom_enabled;
-	CachedShaderSetting<f32> m_bloom_intensity_pixel{"bloomIntensity"};
 	CachedShaderSetting<f32> m_bloom_strength_pixel{"bloomStrength"};
 	CachedShaderSetting<f32> m_bloom_radius_pixel{"bloomRadius"};
 	CachedShaderSetting<f32> m_saturation_pixel{"saturation"};
@@ -337,8 +336,6 @@ public:
 		m_exposure_params_pixel.set(exposure_buffer.data(), renderer);
 
 		if (m_bloom_enabled) {
-			f32 intensity = std::max(lighting.bloom_intensity, 0.0f);
-			m_bloom_intensity_pixel.set(intensity, renderer);
 			f32 strength_factor = std::max(lighting.bloom_strength_factor, 0.0f);
 			m_bloom_strength_pixel.set(strength_factor, renderer);
 			f32 radius = std::max(lighting.bloom_radius, 0.0f);

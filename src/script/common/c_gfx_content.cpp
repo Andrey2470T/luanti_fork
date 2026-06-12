@@ -40,7 +40,6 @@ void read_lighting(lua_State *L, int index, Lighting &lighting)
 
 	lua_getfield(L, index, "bloom");
 	if (lua_istable(L, -1)) {
-		lighting.bloom_intensity       = getfloatfield_default(L, -1, "intensity",       lighting.bloom_intensity);
 		lighting.bloom_strength_factor = getfloatfield_default(L, -1, "strength_factor", lighting.bloom_strength_factor);
 		lighting.bloom_radius          = getfloatfield_default(L, -1, "radius",          lighting.bloom_radius);
 	}
@@ -76,7 +75,8 @@ void push_lighting(lua_State *L, const Lighting &lighting)
 	lua_setfield(L, -2, "strength");
 	lua_setfield(L, -2, "volumetric_light");
 	lua_newtable(L); // "bloom"
-	lua_pushnumber(L, lighting.bloom_intensity);
+	// NOTE: 'intensity' param was deleted in 1.4.0
+	lua_pushnumber(L, 0.0f);
 	lua_setfield(L, -2, "intensity");
 	lua_pushnumber(L, lighting.bloom_strength_factor);
 	lua_setfield(L, -2, "strength_factor");
