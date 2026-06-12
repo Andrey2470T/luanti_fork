@@ -3,6 +3,7 @@ uniform float animationTimer;
 // The cameraOffset is the current center of the visible world.
 uniform highp vec3 cameraOffset;
 
+#if ENABLE_WAVING_LEAVES
 void animateLeavesVertex(in vec3 worldPos, inout vec4 localPos)
 {
 	float tOffset = (worldPos.x + worldPos.y) * 0.001 + worldPos.z * 0.002;
@@ -16,7 +17,9 @@ void animateLeavesVertex(in vec3 worldPos, inout vec4 localPos)
 	localPos.y += disp_z * 0.1;
 	localPos.z += disp_z;
 }
+#endif
 
+#if ENABLE_WAVING_PLANTS
 void animatePlantVertex(in vec3 worldPos, inout vec4 localPos, in vec2 texCoord)
 {
 	float tOffset = (worldPos.x + worldPos.y) * 0.001 + worldPos.z * 0.002;
@@ -31,7 +34,9 @@ void animatePlantVertex(in vec3 worldPos, inout vec4 localPos, in vec2 texCoord)
 		localPos.z += disp_z;
 	}
 }
+#endif
 
+#if ENABLE_WAVING_WATER
 void animateWaterVertex(in vec3 worldPos, inout vec4 localPos)
 {
 	// Generate waves with Perlin-type noise.
@@ -45,3 +50,4 @@ void animateWaterVertex(in vec3 worldPos, inout vec4 localPos)
 	wavePos.z += animationTimer * WATER_WAVE_SPEED * 10.0;
 	localPos.y += (snoise(wavePos) - 1.0) * WATER_WAVE_HEIGHT * 5.0;
 }
+#endif
