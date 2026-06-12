@@ -18,5 +18,5 @@ void main(void)
 		color = right;
 	else
 		color = left;
-	output(color);
+	outputColor(color);
 }

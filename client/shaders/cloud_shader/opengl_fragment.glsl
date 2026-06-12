@@ -10,5 +10,5 @@ void main(void)
 
 	col = mixColorWithFog(col, eyeVec);
 
-	output(col);
+	outputColor(col);
 }

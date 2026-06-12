@@ -30,5 +30,5 @@ void main (void)
 	vec3 color = (1.1 * diffuse + 0.05 * height + 0.5 * specular) * base.rgb;
 	vec4 col = vec4(color.rgb, base.a);
 	col *= varColor;
-	output(vec4(col.rgb, base.a));
+	outputColor(vec4(col.rgb, base.a));
 }

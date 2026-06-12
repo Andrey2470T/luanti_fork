@@ -554,7 +554,7 @@ std::string ShaderGenerator::generateFragmentHeader()
 	header += "out vec4 outColor[" + std::to_string(colorAttachments) + "];\n";
 
 	for (u8 k = 1; k <= colorAttachments; k++) {
-		header += "void output(\n";
+		header += "void outputColor(\n";
 
 		for (u8 i = 0; i < k; i++) {
 			if ((k-i) == 1)

@@ -28,5 +28,5 @@ void main(void)
 		uv += vec2(0., texelSize0.y);
 	}
 	color /= sum;
-	output(vec4(color.rgb, 1.0)); // force full alpha to avoid holes in the image.
+	outputColor(vec4(color.rgb, 1.0)); // force full alpha to avoid holes in the image.
 }

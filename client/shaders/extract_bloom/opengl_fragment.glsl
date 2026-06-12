@@ -31,5 +31,5 @@ void main(void)
 	color *= exposure;
 #endif
 
-	output(vec4(color, 1.0)); // force full alpha to avoid holes in the image.
+	outputColor(vec4(color, 1.0)); // force full alpha to avoid holes in the image.
 }

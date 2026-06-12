@@ -47,5 +47,5 @@ void main(void)
 	col = mixColorWithFog(col, eyeVec);
 	col = vec4(col.rgb, base.a);
 
-	output(col);
+	outputColor(col);
 }

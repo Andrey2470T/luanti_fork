@@ -117,5 +117,5 @@ void main(void)
 	// return to sRGB colorspace (approximate)
 	color.rgb = linear_to_srgb(color.rgb);
 
-	output(vec4(color.rgb, 1.0)); // force full alpha to avoid holes in the image.
+	outputColor(vec4(color.rgb, 1.0)); // force full alpha to avoid holes in the image.
 }

@@ -28,5 +28,5 @@ void main(void)
 		(b + d + f + h) * 0.0625 +
 		(e + j + k + l + m) * 0.125;
 
-	output(max(vec4(color, 1.0), 1e-4));
+	outputColor(max(vec4(color, 1.0), 1e-4));
 }
