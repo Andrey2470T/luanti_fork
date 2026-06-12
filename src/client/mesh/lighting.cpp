@@ -93,11 +93,11 @@ video::SColor encode_light(u16 light, u8 emissive_light, f32 ambient_occlusion)
 {
 	u16 skyLight = light & 0xff;
 	u16 blockLight = (light >> 8);
-	emissive_light *= 2.5f;
+	emissive_light = decode_light(emissive_light);
 	blockLight += emissive_light;
 	blockLight = std::min<u16>(blockLight, 255);
 
-	return video::SColor(emissive_light*16, skyLight, blockLight, ambient_occlusion*255);
+	return video::SColor(emissive_light, skyLight, blockLight, ambient_occlusion*255);
 }
 
 /*

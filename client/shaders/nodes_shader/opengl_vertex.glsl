@@ -67,7 +67,8 @@ void main(void)
 
 	varColor = calculateLighting(timeOfDay, skyLight, blockLight, ao);
 
-	emissionLight = step(0.001, color.a) * (1.0 - luminance(dayLight));
+	vec3 lightColor = (max(dayLight * skyLight, blockColor * blockLight - vec3(color.a*2.0)) + ambientColor) * ao;
+	emissionLight = step(0.001, color.a) * (1.0 - luminance(lightColor));
 
 	hwColor = inAux / 255.0;
 
