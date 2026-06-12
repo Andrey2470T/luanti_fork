@@ -23,9 +23,8 @@ CENTROID_ out mediump vec2 varTexCoord;
 CENTROID_ out float nightRatio;
 
 #ifdef ENABLE_DYNAMIC_SHADOWS
-	out float cosLight;
-	out float normalOffsetScale;
 	out float adj_shadow_strength;
+	out float cosLight;
 	out float f_normal_length;
 	out vec3 shadow_position;
 	out float perspective_factor;
@@ -67,7 +66,7 @@ void main(void)
 
 	varColor = calculateLighting(timeOfDay, skyLight, blockLight, ao);
 
-	vec3 lightColor = (max(dayLight * skyLight, blockColor * blockLight - vec3(color.a*2.0)) + ambientColor) * ao;
+	vec3 lightColor = (max(dayLight * skyLight, blockColor * (blockLight-color.a)) + ambientColor) * ao;
 	emissionLight = step(0.001, color.a) * (1.0 - luminance(lightColor));
 
 	hwColor = inAux / 255.0;

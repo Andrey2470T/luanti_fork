@@ -10,8 +10,11 @@ vec4 fragmentStage(
 	out float adjShadowStrengthCorrected, out float shadowUncorrected
 )
 {
-	if (f_shadow_strength <= 0.0)
+	if (f_shadow_strength <= 0.0) {
+		adjShadowStrengthCorrected = 1.0;
+		shadowUncorrected = 0.0;
 		return color;
+	}
 
 	float shadow_int = 0.0;
 	vec3 shadow_color = vec3(0.0, 0.0, 0.0);
