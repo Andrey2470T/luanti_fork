@@ -1,8 +1,8 @@
 #include "atlas.h"
 
-rectf AtlasTile::toUV(u32 atlasSize) const
+core::rectf AtlasTile::toUV(u32 atlasSize) const
 {
-	return rectf(
+	return core::rectf(
 		(f32)pos.X / atlasSize,
 		(f32)(pos.Y + size.Y) / atlasSize,
 		(f32)(pos.X + size.X) / atlasSize,
