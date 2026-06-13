@@ -13,8 +13,8 @@ Shaders are sent over network from `shaders` server mod subfolder
 supporting `vsh`, `fsh` and `glsl` shader formats and cached on clients like all builtin ones.
 
 
-List of API functions:
-----------------------
+GFX API functions
+-----------------
 
 * `gfx.register_material(name, materialdef)`: registers a new material with unique `name` name
     and properties from `materialdef` (see `Material Definition`).
@@ -34,8 +34,27 @@ List of API functions:
       All color parameters are ColorSpecs, alpha channel is ignored.
 * `gfx.get_lighting()`: analogous to the PlayerRef's eponymous method
     (see `server_lua_api/class_reference/object.md`).
+
+The following set/get methods are analogous to the PlayerRef's eponymous methods
+(see `server_lua_api/class_reference/object.md`):
+* `gfx.set_sky(sky_parameters)`
+* `gfx.get_sky(as_table)`
+* `gfx.set_sun(sun_parameters)`
+* `gfx.get_sun()`
+* `gfx.set_moon(moon_parameters)`
+* `gfx.get_moon()`
+* `gfx.set_stars(star_parameters)`
+* `gfx.get_stars()`
+* `gfx.set_clouds(cloud_parameters)`
+* `gfx.get_clouds()`
+* `gfx.override_day_night_ratio(ratio or nil)`
+* `gfx.get_day_night_ratio()`
+
+Texture buffer API:
 * `gfx.create_texture_buffer(name, texturedefs)`: create TextureBuffer for the pipeline.
     Necessary for setting shaders inputs (samplers) and outputs (render targets) (see `Texture Definition`).
+* `gfx.get_texture_params(name, index)`: returns `Texture Definition` for the texture at `index` position in the `name` buffer
+* `gfx.get_texture_count(name)`: returns the textures count in the `name` buffer
 
 Material Definition
 -------------------

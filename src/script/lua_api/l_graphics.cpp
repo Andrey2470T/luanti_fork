@@ -601,13 +601,33 @@ int ModApiGraphics::l_get_texture_params(lua_State *L)
 
 	auto tbuf = getClient(L)->getRenderingEngine()->getPipeline()->getTextureBuffer(name);
 
-	if (not tbuf) {
+	if (!tbuf) {
 		lua_pushnil(L);
 		return 0;
 	}
 
 	auto &tex_def = tbuf->getTextureDef(tex_index);
 	push_texture_def(L, tex_def);
+
+	return 1;
+}
+
+int ModApiGraphics::l_get_texture_count(lua_State *L)
+{
+	if (!lua_isstring(L, 1)) {
+		lua_pushnumber(L, 0);
+		return 0;
+	}
+
+	std::string name = readParam<std::string>(L, 1);
+	auto tbuf = getClient(L)->getRenderingEngine()->getPipeline()->getTextureBuffer(name);
+
+	if (!tbuf) {
+		lua_pushnumber(L, 0);
+		return 0;
+	}
+
+	lua_pushnumber(L, tbuf->getTextureCount());
 
 	return 1;
 }
@@ -631,6 +651,7 @@ void ModApiGraphics::Initialize(lua_State *L, int top)
 	API_FCT(get_day_night_ratio);
 	API_FCT(create_texture_buffer);
 	API_FCT(get_texture_params);
+	API_FCT(get_texture_count);
 
 	UniformSetter::Register(L);
 
