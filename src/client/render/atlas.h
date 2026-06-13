@@ -2,15 +2,17 @@
 
 #include "irrlichttypes_bloated.h"
 #include <Image/Image.h>
+#include <Video/Texture.h>
 #include <list>
+#include <memory>
 #include <optional>
 #include <unordered_map>
 
 struct AtlasTile
 {
     // Left lower corner
-	v2u pos;
-	v2u size{0, 0};
+	v2u32 pos;
+	v2u32 size{0, 0};
 
 	video::Image *image = nullptr;
 
@@ -31,7 +33,7 @@ struct AtlasTile
 	{
 		if (!image)
 			return 0;
-		return std::hash<img::Image*>{}(image);
+		return std::hash<video::Image*>{}(image);
 	}
 };
 
@@ -43,10 +45,10 @@ struct AnimatedAtlasTile : public AtlasTile
 
 	u32 cur_frame = 0;
 
-	AnimatedAtlasTile(video::Image *img, u32 num, u32 length, u32 count)
-		: AtlasTile(img, num), frame_length_ms(length), frame_count(count)
+	AnimatedAtlasTile(u32 num, video::Image *img, u32 length, u32 count)
+		: AtlasTile(num, img), frame_length_ms(length), frame_count(count)
 	{}
-	core::rectu getFrameCoords(u32 frame_num) const;
+	core::rect<u32> getFrameCoords(u32 frame_num) const;
 	void updateFrame(f32 time); // in sec
 };
 
@@ -58,7 +60,7 @@ protected:
 	video::GLTexture *texture = nullptr;
 
 	std::vector<AtlasTile> tiles;
-	std::unordered_map<img::Image *, u32> mapImgToTileIndex;
+	std::unordered_map<video::Image *, u32> mapImgToTileIndex;
 
 	std::list<u32> dirtyTiles;
 public:
@@ -75,7 +77,7 @@ public:
 
 	u32 getTextureSize() const
 	{
-		return texture->getSize().X;
+		return texture->getSize().Width;
 	}
 
 	u32 getTilesCount() const
@@ -90,7 +92,7 @@ public:
 
 	void markDirty(u32 i);
 
-	bool canFit(const core::rectu &area, const core::rectu &tile) const
+	bool canFit(const core::rect<u32> &area, const core::rect<u32> &tile) const
 	{
 		return area.isRectInside(tile);
 	}
@@ -139,17 +141,17 @@ public:
 	void addTile(video::Image *img);
 	void addAnimatedTile(video::Image *img, AtlasTileAnim anim);
 
-	rectf getTileRect(video::Image *tile, bool toUV=false, bool force_add=false, std::optional<AtlasTileAnim> anim=std::nullopt);
+	core::rectf getTileRect(video::Image *tile, bool toUV=false, bool force_add=false, std::optional<AtlasTileAnim> anim=std::nullopt);
 
 	// Recursively create and fill new atlases with tiles while the internal image counter doesn't reach some limit
 	void build();
 
 	void updateAnimatedTiles(f32 time);
 
-	void updateMeshUVs(scene::IMeshBuffer *buffer, u32 start_index, u32 index_count, video::Image *tile,
+	/*void updateMeshUVs(scene::IMeshBuffer *buffer, u32 start_index, u32 index_count, video::Image *tile,
 		video::Image* oldTile=nullptr, bool toUV=true, bool force_add=false, std::optional<AtlasTileAnim> anim=std::nullopt);
 	void updateAllMeshUVs(scene::IMeshBuffer *buffer, video::Image *tile,
-		video::Image* oldTile=nullptr, bool toUV=true, bool force_add=false, std::optional<AtlasTileAnim> anim=std::nullopt);
+		video::Image* oldTile=nullptr, bool toUV=true, bool force_add=false, std::optional<AtlasTileAnim> anim=std::nullopt);*/
 private:
 	void forceAddTile(video::Image *img, std::optional<AtlasTileAnim> anim=std::nullopt);
 };
