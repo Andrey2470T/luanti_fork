@@ -75,6 +75,7 @@ set(player_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/player/localplayer.cpp
 )
 set(render_SRCS
+	${CMAKE_CURRENT_SOURCE_DIR}/render/atlas.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/clientmap.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/clouds.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/render/item_visuals_manager.cpp
