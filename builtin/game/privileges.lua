@@ -39,66 +39,20 @@ core.register_privilege("basic_privs", basic_privs_desc)
 
 core.register_privilege("privs", S("Can modify privileges"))
 
-core.register_privilege("teleport", {
-	description = S("Can teleport self"),
-	give_to_singleplayer = false,
-})
-core.register_privilege("bring", {
-	description = S("Can teleport other players"),
-	give_to_singleplayer = false,
-})
-core.register_privilege("settime", {
-	description = S("Can set the time of day using /time"),
-	give_to_singleplayer = false,
-})
-core.register_privilege("server", {
-	description = S("Can do server maintenance stuff"),
-	give_to_singleplayer = false,
-	give_to_admin = true,
-})
-core.register_privilege("protection_bypass", {
-	description = S("Can bypass node protection in the world"),
-	give_to_singleplayer = false,
-})
-core.register_privilege("ban", {
-	description = S("Can ban and unban players"),
-	give_to_singleplayer = false,
-	give_to_admin = true,
-})
-core.register_privilege("kick", {
-	description = S("Can kick players"),
-	give_to_singleplayer = false,
-	give_to_admin = true,
-})
-core.register_privilege("give", {
-	description = S("Can use /give and /giveme"),
-	give_to_singleplayer = false,
-})
-core.register_privilege("password", {
-	description = S("Can use /setpassword and /clearpassword"),
-	give_to_singleplayer = false,
-	give_to_admin = true,
-})
-core.register_privilege("fly", {
-	description = S("Can use fly mode"),
-	give_to_singleplayer = false,
-})
-core.register_privilege("fast", {
-	description = S("Can use fast mode"),
-	give_to_singleplayer = false,
-})
-core.register_privilege("noclip", {
-	description = S("Can fly through solid nodes using noclip mode"),
-	give_to_singleplayer = false,
-})
-core.register_privilege("rollback", {
-	description = S("Can use the rollback functionality"),
-	give_to_singleplayer = false,
-})
-core.register_privilege("debug", {
-	description = S("Can enable wireframe"),
-	give_to_singleplayer = false,
-})
+core.register_privilege("teleport", S("Can teleport self"))
+core.register_privilege("bring", S("Can teleport other players"))
+core.register_privilege("settime", S("Can set the time of day using /time"))
+core.register_privilege("server", S("Can do server maintenance stuff"))
+core.register_privilege("protection_bypass", S("Can bypass node protection in the world"))
+core.register_privilege("ban", S("Can ban and unban players"))
+core.register_privilege("kick", S("Can kick players"))
+core.register_privilege("give", S("Can use /give and /giveme"))
+core.register_privilege("password", S("Can use /setpassword and /clearpassword"))
+core.register_privilege("fly", S("Can use fly mode"))
+core.register_privilege("fast", S("Can use fast mode"))
+core.register_privilege("noclip", S("Can fly through solid nodes using noclip mode"))
+core.register_privilege("rollback", S("Can use the rollback functionality"))
+core.register_privilege("debug", S("Can enable wireframe"))
 
 core.register_can_bypass_userlimit(function(name, ip)
 	local privs = core.get_player_privs(name)

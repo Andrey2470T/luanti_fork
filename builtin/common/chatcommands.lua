@@ -89,7 +89,7 @@ if INIT == "client" then
 	end)
 
 	core.register_on_modchannel_message(function(channel_name, sender, message)
-		if channel_name ~= "send_cmds_to_client" or not sender or message == "" then
+		if channel_name ~= "send_cmds_to_client" or not sender or message == "" or message == "0" then
 			return
 		end
 
