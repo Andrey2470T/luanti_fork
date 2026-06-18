@@ -36,6 +36,10 @@ ClientScripting::ClientScripting(Client *client):
 	// Security is mandatory client side
 	initializeSecurityClient();
 
+	// Set "gfx" global and push it to the stack
+	lua_newtable(L);
+	lua_setglobal(L, "gfx");
+
 	lua_getglobal(L, "core");
 	int top = lua_gettop(L);
 
@@ -48,10 +52,6 @@ ClientScripting::ClientScripting(Client *client):
 	// Push builtin initialization type
 	lua_pushstring(L, "client");
 	lua_setglobal(L, "INIT");
-
-	// Set "gfx" global and push it to the stack
-	lua_newtable(L);
-	lua_setglobal(L, "gfx");
 
 	lua_getglobal(L, "gfx");
 	top = lua_gettop(L);

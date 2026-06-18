@@ -59,6 +59,17 @@ jobs:
         run: |
           ./util/test_error_cases.sh
 
+      - name: Upload artifacts
+        run: |
+          source ./util/ci/upload.sh
+          upload_linux "gcc_9"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Luantifork-linux-gcc_9
+          path: luantifork-linux-gcc_9.tar.gz
+          if-no-files-found: error
+
   # Current gcc version
   gcc_14:
     runs-on: ubuntu-24.04
@@ -85,6 +96,17 @@ jobs:
           cd nowrite
           ../bin/luanti --run-unittests
 
+      - name: Upload artifacts
+        run: |
+          source ./util/ci/upload.sh
+          upload_linux "gcc_14"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Luantifork-linux-gcc_14
+          path: luantifork-linux-gcc_14.tar.gz
+          if-no-files-found: error
+
   # Older clang version (should be close to our minimum supported version)
   clang_11:
     runs-on: ubuntu-22.04
@@ -110,6 +132,17 @@ jobs:
         run: |
           ./bin/luanti --run-unittests
 
+      - name: Upload artifacts
+        run: |
+          source ./util/ci/upload.sh
+          upload_linux "clang_11"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Luantifork-linux-clang_11
+          path: luantifork-linux-clang_11.tar.gz
+          if-no-files-found: error
+
   # Current clang version
   clang_18:
     runs-on: ubuntu-24.04
@@ -132,6 +165,17 @@ jobs:
       - name: Test
         run: |
           ./bin/luanti --run-unittests
+
+      - name: Upload artifacts
+        run: |
+          source ./util/ci/upload.sh
+          upload_linux "clang_18"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Luantifork-linux-clang_18
+          path: luantifork-linux-clang_18.tar.gz
+          if-no-files-found: error
 
   # Build with prometheus-cpp (server-only)
   clang_11_prometheus:
@@ -160,3 +204,14 @@ jobs:
       - name: Test
         run: |
           ./bin/luantiserver --run-unittests
+
+      - name: Upload artifacts
+        run: |
+          source ./util/ci/upload.sh
+          upload_linux_server
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Luantifork-linux-server
+          path: luantifork-linux-server.tar.gz
+          if-no-files-found: error

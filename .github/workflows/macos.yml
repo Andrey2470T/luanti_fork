@@ -68,3 +68,14 @@ jobs:
         run: |
           diff -rd ./build/macos/luanti.app/Contents/Resources ./build_xcode/build/Release/luanti.app/Contents/Resources || exit 1
           diff -rd ./build/macos/luanti.app/Contents/Resources ./build_xcode/luanti.xcarchive/Products/Applications/luanti.app/Contents/Resources || exit 1
+
+      - name: Upload artifacts
+        run: |
+          source ./util/ci/upload.sh
+          upload_macos
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Luantifork-macos
+          path: luantifork-macos.dmg
+          if-no-files-found: error

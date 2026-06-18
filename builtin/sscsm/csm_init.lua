@@ -46,10 +46,6 @@ allowed.math = table.copy_with_metatables(math)
 allowed.table = table.copy_with_metatables(table)
 -- vector
 allowed.vector = table.copy_with_metatables(vector)
--- io
---allowed.io = {}
---allowed.io.read = io.read
---allowed.io.type = io.type
 -- os
 allowed.os = {}
 allowed.os.clock = os.clock
