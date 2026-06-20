@@ -1,106 +1,111 @@
 #include "atlas.h"
+#include "Video/VideoDriver.h"
 
-core::rectf AtlasTile::toUV(u32 atlasSize) const
+bool AtlasTile::draw(f32 time)
 {
-	return core::rectf(
-		(f32)pos.X / atlasSize,
-		(f32)(pos.Y + size.Y) / atlasSize,
-		(f32)(pos.X + size.X) / atlasSize,
-		(f32)pos.Y / atlasSize
-		);
+	auto tex = atlas->getTexture();
+
+	if (!image || !tex)
+		return false;
+
+	 tex->uploadTexture(0, image, pos.X, pos.Y);
+
+	 return true;
 }
 
-
-/*void Atlas::createTexture(const std::string &name, u32 size)
+bool AnimatedAtlasTile::draw(f32 time)
 {
-    texture = std::make_unique<render::Texture2D>(
-        name, size, size, img::PF_RGBA8, 0);
+	auto tex = atlas->getTexture();
+
+	if (!image || !tex)
+		return false;
+
+	if (!info.updateFrame(time))
+		return false;
+
+	image->getClipRect() = info.getCurrentFrameRect();
+
+	tex->uploadTexture(0, image, pos.X, pos.Y);
+
+	return true;
+}
+
+Atlas::~Atlas()
+{
+	if (texture)
+		driver->removeTexture(texture);
+}
+
+void Atlas::createTexture(const std::string &prefixName, u32 num, u32 size)
+{
+	std::string name = prefixName;
+	name += "_";
+	name += std::to_string(num);
+	name += "_";
+	name += std::to_string(size) + "x" + std::to_string(size);
+
+	texture = driver->addTexture(core::dimension2du(size, size), name, video::ECF_A8R8G8B8);
 }
 
 bool Atlas::addTile(AtlasTile *tile)
 {
-    auto foundTile = getTileByImage(tile->image);
+	auto foundTile = getTileByImage(tile->image);
 
-    if (foundTile)
-        return false;
+	if (foundTile)
+		return false;
 
-    tiles.emplace_back(tile);
-    images_to_tile_mapping[tile->image] = tile;
-    markDirty(tiles.size() - 1);
+	tiles.emplace_back(tile);
+	mapImgToTileIndex[tile->image] = tile;
 
-    return true;
+	return true;
 }
 
 AtlasTile *Atlas::getTile(u32 i) const
 {
-    if (i > tiles.size()-1)
-        return nullptr;
+	if (i > tiles.size()-1)
+		return nullptr;
 
-    return tiles.at(i).get();
+	return tiles.at(i).get();
 }
 
-AtlasTile *Atlas::getTileByImage(img::Image *img)
+AtlasTile *Atlas::getTileByImage(video::Image *img)
 {
-    auto foundTile = images_to_tile_mapping[img];
-
-    if (!foundTile)
-        return nullptr;
-
-    return foundTile;
+	return mapImgToTileIndex[img];
 }
 
-void Atlas::markDirty(u32 i)
+void Atlas::drawTiles(f32 time)
 {
-    auto it = std::find(dirty_tiles.begin(), dirty_tiles.end(), i);
-
-    if (it != dirty_tiles.end())
-        return;
-
-    dirty_tiles.push_back(i);
-}
-
-void Atlas::drawTiles()
-{
-	if (!texture || dirty_tiles.empty())
+	if (!texture || tiles.empty())
 		return;
 
-	for (u32 dirty_i : dirty_tiles) {
-		auto tile = getTile(dirty_i);
+	bool wasDraw = false;
 
-		if (!tile)
-			continue;
+	if (firstDraw) {
+		firstDraw = false;
 
-		if (!tile->image)
-			continue;
-
-		texture->uploadSubData(tile->pos.X, tile->pos.Y, tile->image);
+		for (auto &tile : tiles)
+			wasDraw = tile->draw(time);
+	}
+	else {
+		for (u32 anim_i : animatedTiles) {
+			auto tile = getTile(anim_i);
+			wasDraw = tile->draw(time);
+		}
 	}
 
-	if (texture->hasMipMaps())
+	if (wasDraw && texture->hasMipMaps())
 		texture->regenerateMipMaps();
-
-	dirty_tiles.clear();
 }
 
 bool Atlas::operator==(const Atlas *other) const
 {
-    if (getTilesCount() != other->getTilesCount())
-        return false;
-
-    bool equal = true;
-
-    for (u32 i = 0; i < tiles.size(); i++) {
-        if (tiles[i].get() != other->getTile(i)) {
-            equal = false;
-            break;
-        }
-    }
-
-    return equal;
+	if (!texture || !other->texture)
+		return false;
+	return texture->getName().getInternalName() == other->texture->getName().getInternalName();
 }
 
 
-AtlasPool::~AtlasPool()
+/*AtlasPool::~AtlasPool()
 {
     u32 atlasCounter = 0;
     for (auto &atlas : atlases) {

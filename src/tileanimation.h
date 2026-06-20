@@ -5,6 +5,7 @@
 #pragma once
 
 #include <iostream>
+#include "Utils/rect.h"
 #include "irrlichttypes_bloated.h"
 
 enum TileAnimationType : u8
@@ -37,8 +38,9 @@ struct TileAnimationParams
 
 	void serialize(std::ostream &os, u16 protocol_ver) const;
 	void deSerialize(std::istream &is, u16 protocol_ver);
-	void determineParams(v2u32 texture_size, int *frame_count, int *frame_length_ms,
-			v2u32 *frame_size) const;
+	void determineParams(
+		v2u32 texture_size, u16 *frame_count,
+		u16 *frame_length_ms, v2u32 *frame_size) const;
 	void getTextureModifer(std::ostream &os, v2u32 texture_size, int frame) const;
-	v2f getTextureCoords(v2u32 texture_size, int frame) const;
+	void getFrames(std::vector<core::rect<u32>> *frames_rects, u16 *frame_length_ms, v2u32 texture_size) const;
 };

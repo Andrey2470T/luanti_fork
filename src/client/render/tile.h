@@ -4,7 +4,9 @@
 
 #pragma once
 
+#include "irr_v2d.h"
 #include "irrlichttypes.h"
+#include "tileanimation.h"
 #include <Video/Texture.h>
 #include <vector>
 #include <Video/SMaterial.h>
@@ -40,16 +42,34 @@ bool isTransparentLayer(MaterialType type);
 #define MATERIAL_FLAG_TILEABLE_HORIZONTAL 0x20
 #define MATERIAL_FLAG_TILEABLE_VERTICAL 0x40
 
-/*
-	This fully defines the looks of a tile.
-	The SMaterial of a tile is constructed according to this.
-*/
-struct FrameSpec
+// Stores information for drawing an animated tile
+struct AnimationInfo
 {
-	FrameSpec() = default;
+	AnimationInfo() = default;
+	AnimationInfo(const TileAnimationParams &params, v2u32 img_size)
+	{
+		params.getFrames(&m_frames_rects, &m_frame_length_ms, img_size);
+	};
+	AnimationInfo(const AnimationInfo &other)
+	{
+		m_frames_rects = other.m_frames_rects;
+		m_frame_length_ms = other.m_frame_length_ms;
+	}
 
-	u32 texture_id = 0;
-	video::GLTexture *texture = nullptr;
+	bool operator==(const AnimationInfo &other) const
+	{
+		return (m_frame_length_ms == other.m_frame_length_ms &&
+			m_frames_rects.size() == other.m_frames_rects.size());
+	}
+	bool updateFrame(f32 animation_time);
+	core::rect<u32> getCurrentFrameRect() const
+	{
+		return m_frames_rects.at(m_frame);
+	}
+private:
+	u16 m_frame = 0; // last animation frame
+	u16 m_frame_length_ms = 0;
+	std::vector<core::rect<u32>> m_frames_rects;
 };
 
 /**
@@ -72,6 +92,7 @@ struct TileLayer
 		return
 			texture_id == other.texture_id &&
 			shader_id == other.shader_id &&
+			anim_info == other.anim_info &&
 			material_type == other.material_type &&
 			material_flags == other.material_flags &&
 			has_color == other.has_color &&
@@ -117,8 +138,7 @@ struct TileLayer
 
 	u32 texture_id = 0;
 
-	u16 animation_frame_length_ms = 0;
-	u16 animation_frame_count = 1;
+	AnimationInfo anim_info;
 
 	MaterialType material_type = TILE_MATERIAL_BASIC;
 	u8 material_flags =
@@ -133,9 +153,6 @@ struct TileLayer
 	/// @see TileLayer::applyMaterialOptions
 	bool need_polygon_offset = false;
 
-	/// @note not owned by this struct
-	std::vector<FrameSpec> *frames = nullptr;
-
 	/*!
 	 * The color of the tile, or if the tile does not own
 	 * a color then the color of the node owning this tile.
@@ -147,28 +164,6 @@ struct TileLayer
 
 	// Name of custom material with which the mapblock meshes will be overrided
 	std::string override_material = "";
-};
-
-// Stores information for drawing an animated tile
-struct AnimationInfo {
-
-	AnimationInfo() = default;
-
-	AnimationInfo(const TileLayer &tile) :
-			m_frame_length_ms(tile.animation_frame_length_ms),
-			m_frame_count(tile.animation_frame_count),
-			m_frames(tile.frames)
-	{};
-
-	void updateTexture(video::SMaterial &material, float animation_time);
-
-private:
-	u16 m_frame = 0; // last animation frame
-	u16 m_frame_length_ms = 0;
-	u16 m_frame_count = 1;
-
-	/// @note not owned by this struct
-	std::vector<FrameSpec> *m_frames = nullptr;
 };
 
 enum class TileRotation: u8 {

@@ -46,14 +46,15 @@ void TileAnimationParams::deSerialize(std::istream &is, u16 protocol_ver)
 	}
 }
 
-void TileAnimationParams::determineParams(v2u32 texture_size, int *frame_count,
-		int *frame_length_ms, v2u32 *frame_size) const
+void TileAnimationParams::determineParams(
+	v2u32 texture_size, u16 *frame_count,
+	u16 *frame_length_ms, v2u32 *frame_size) const
 {
 	if (type == TAT_VERTICAL_FRAMES) {
-		int frame_height = (float)texture_size.X /
-				(float)vertical_frames.aspect_w *
-				(float)vertical_frames.aspect_h;
-		int _frame_count = texture_size.Y / frame_height;
+		u32 frame_height = (f32)texture_size.X /
+				(f32)vertical_frames.aspect_w *
+				(f32)vertical_frames.aspect_h;
+		u16 _frame_count = texture_size.Y / (f32)frame_height;
 		if (frame_count)
 			*frame_count = _frame_count;
 		if (frame_length_ms)
@@ -76,7 +77,7 @@ void TileAnimationParams::getTextureModifer(std::ostream &os, v2u32 texture_size
 	if (type == TAT_NONE)
 		return;
 	if (type == TAT_VERTICAL_FRAMES) {
-		int frame_count;
+		u16 frame_count;
 		determineParams(texture_size, &frame_count, NULL, NULL);
 		os << "^[verticalframe:" << frame_count << ":" << frame;
 	} else if (type == TAT_SHEET_2D) {
@@ -88,21 +89,29 @@ void TileAnimationParams::getTextureModifer(std::ostream &os, v2u32 texture_size
 	}
 }
 
-v2f TileAnimationParams::getTextureCoords(v2u32 texture_size, int frame) const
+void TileAnimationParams::getFrames(std::vector<core::rect<u32> > *frames_rects, u16 *frame_length_ms, v2u32 texture_size) const
 {
-	v2u32 ret(0, 0);
+	u16 frame_count;
+	v2u32 frame_size;
+	determineParams(texture_size, &frame_count, frame_length_ms, &frame_size);
+
 	if (type == TAT_VERTICAL_FRAMES) {
-		int frame_height = (float)texture_size.X /
-				(float)vertical_frames.aspect_w *
-				(float)vertical_frames.aspect_h;
-		ret = v2u32(0, frame_height * frame);
+		for (u16 k = 0; k < frame_count; k++) {
+			frames_rects->emplace_back(
+				v2u32(0, frame_size.Y * k),
+				v2u32(frame_size.X, frame_size.Y)
+			);
+		}
 	} else if (type == TAT_SHEET_2D) {
-		v2u32 frame_size;
-		determineParams(texture_size, NULL, NULL, &frame_size);
-		int q, r;
-		q = frame / sheet_2d.frames_w;
-		r = frame % sheet_2d.frames_w;
-		ret = v2u32(r * frame_size.X, q * frame_size.Y);
+		s32 q, r;
+
+		for (u16 k = 0; k < frame_count; k++) {
+			q = k / sheet_2d.frames_w;
+			r = k % sheet_2d.frames_w;
+			frames_rects->emplace_back(
+				v2u32(r * frame_size.X, q * frame_size.Y),
+				v2u32(frame_size.X, frame_size.Y)
+			);
+		}
 	}
-	return v2f::from(ret) / v2f::from(texture_size);
 }
