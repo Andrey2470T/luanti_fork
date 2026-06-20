@@ -3,30 +3,35 @@
 #include "irrlichttypes_bloated.h"
 #include <Image/Image.h>
 #include <Video/Texture.h>
+#include <rectpack2D/finders_interface.h>
+#include "client/render/tile.h"
 #include <list>
 #include <memory>
 #include <optional>
 #include <unordered_map>
 
+class Atlas;
+
 struct AtlasTile
 {
-    // Left lower corner
+	// Left lower corner (in pixel units)
 	v2u32 pos;
+	// Width, height (in pixel units)
 	v2u32 size{0, 0};
 
 	video::Image *image = nullptr;
 
-	u32 atlasNum;
+	Atlas *atlas = nullptr;
 
-	AtlasTile(u32 num, video::Image *img=nullptr)
-		: image(img), atlasNum(num)
+	AtlasTile(Atlas *_atlas, video::Image *_image=nullptr)
+		: image(_image), atlas(_atlas)
 	{}
 
-	core::rectf toUV(u32 atlasSize) const;
+	virtual bool draw(f32 time);
 
 	bool operator==(const AtlasTile *other)
 	{
-		return image == other->image;
+		return (pos == other->pos && size == other->size);
 	}
 
 	size_t hash() const
@@ -39,36 +44,42 @@ struct AtlasTile
 
 struct AnimatedAtlasTile : public AtlasTile
 {
-	u32 frame_length_ms;
-	u32 frame_count = 1;
-	u32 frame_offset = 0;
+	AnimationInfo info;
 
-	u32 cur_frame = 0;
-
-	AnimatedAtlasTile(u32 num, video::Image *img, u32 length, u32 count)
-		: AtlasTile(num, img), frame_length_ms(length), frame_count(count)
+	AnimatedAtlasTile(Atlas *atlas, video::Image *image, AnimationInfo anim)
+		: AtlasTile(atlas, image), info(std::move(anim))
 	{}
-	core::rect<u32> getFrameCoords(u32 frame_num) const;
-	void updateFrame(f32 time); // in sec
+
+	bool draw(f32 time) override;
 };
 
 typedef std::pair<u32, u32> AtlasTileAnim;
 
+class Rectpack2DPacker
+{
+	std::vector<rectpack2D::rect_xywh> rects;
+	std::vector<core::rect<u32>> freeSpaces;
+};
+
 class Atlas
 {
 protected:
+	video::VideoDriver *driver;
 	video::GLTexture *texture = nullptr;
 
-	std::vector<AtlasTile> tiles;
-	std::unordered_map<video::Image *, u32> mapImgToTileIndex;
+	std::vector<std::unique_ptr<AtlasTile>> tiles;
+	std::unordered_map<video::Image *, AtlasTile *> mapImgToTileIndex;
+	std::vector<u32> animatedTiles;
 
-	std::list<u32> dirtyTiles;
+	bool firstDraw{true};
 public:
-	Atlas() = default;
+	Atlas(video::VideoDriver *_driver)
+		: driver(_driver)
+	{}
 
-	void createTexture(const std::string &name, u32 size);
+	~Atlas();
 
-	std::string getName(u32 size, u32 num) const;
+	void createTexture(const std::string &prefixName, u32 num, u32 size);
 
 	video::GLTexture *getTexture() const
 	{
@@ -90,8 +101,6 @@ public:
 	AtlasTile *getTile(u32 i) const;
 	AtlasTile *getTileByImage(video::Image *img);
 
-	void markDirty(u32 i);
-
 	bool canFit(const core::rect<u32> &area, const core::rect<u32> &tile) const
 	{
 		return area.isRectInside(tile);
@@ -99,7 +108,7 @@ public:
 
 	void packTiles();
 
-	void drawTiles();
+	void drawTiles(f32 time);
 
 	bool operator==(const Atlas *other) const;
 };

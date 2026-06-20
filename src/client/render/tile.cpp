@@ -18,16 +18,19 @@ bool isTransparentLayer(MaterialType type)
 	}
 }
 
-void AnimationInfo::updateTexture(video::SMaterial &material, float animation_time)
+bool AnimationInfo::updateFrame(f32 animation_time)
 {
 	// Figure out current frame
-	u16 frame = (u16)(animation_time * 1000 / m_frame_length_ms) % m_frame_count;
+	u16 frames_count = m_frames_rects.size();
+	u16 frame = (u16)(animation_time * 1000 / m_frame_length_ms) % frames_count;
 	// Only adjust if frame changed
-	if (frame != m_frame) {
-		m_frame = frame;
-		assert(m_frame < m_frames->size());
-		material.setTexture(0, (*m_frames)[m_frame].texture);
-	}
+	if (frame == m_frame)
+		return false;
+
+	m_frame = frame;
+	assert(m_frame < frames_count);
+
+	return true;
 };
 
 void TileLayer::applyMaterialOptions(video::SMaterial &material, int layer) const
