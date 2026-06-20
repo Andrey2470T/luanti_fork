@@ -1,5 +1,6 @@
 #include "atlas.h"
 #include "Video/VideoDriver.h"
+#include "settings.h"
 
 bool AtlasTile::draw(f32 time)
 {
@@ -104,29 +105,25 @@ bool Atlas::operator==(const Atlas *other) const
 	return texture->getName().getInternalName() == other->texture->getName().getInternalName();
 }
 
-
-/*AtlasPool::~AtlasPool()
+AtlasPool::AtlasPool(video::VideoDriver *_driver, const std::string &_name)
+	: driver(_driver), prefixName(_name), maxTextureSize(driver->getMaxTextureSize().Width),
+	  filtered(g_settings->getBool("bilinear_filter") || g_settings->getBool("trilinear_filter") ||
+	  g_settings->getBool("anisotropic_filter"))
 {
-    u32 atlasCounter = 0;
-    for (auto &atlas : atlases) {
-        auto atlasImg = atlas->getTexture()->downloadData().at(0);
-        img::ImageLoader::save(atlasImg,
-            "/home/andrey/minetests/luanti_fork/cache/atlases/" + atlas->getName(atlas->getTextureSize(), atlasCounter++) + ".png");
-        cache->clearResource<Atlas>(ResourceType::ATLAS, atlas, true);
-    }
 
-    for (auto &tile : images)
-        cache->clearResource<img::Image>(ResourceType::IMAGE, tile, true);
 }
 
-Atlas *AtlasPool::getAtlas(u32 i) const
+void AtlasPool::addTile(video::Image *img)
 {
-    if (i > atlases.size()-1)
-        return nullptr;
-
-    return atlases.at(i);
+	images.emplace(img, AnimationInfo());
 }
 
+void AtlasPool::addAnimatedTile(video::Image *img, const AnimationInfo &anim)
+{
+	images.emplace(img, anim);
+}
+
+/*
 Atlas *AtlasPool::getAtlasByTile(img::Image *tile, bool force_add, std::optional<AtlasTileAnim> anim)
 {
     for (u32 i = 0; i < atlases.size(); i++) {
@@ -141,22 +138,6 @@ Atlas *AtlasPool::getAtlasByTile(img::Image *tile, bool force_add, std::optional
         forceAddTile(tile, anim);
         return atlases.back();
     }
-    return nullptr;
-}
-
-GlyphAtlas *AtlasPool::getAtlasByChar(wchar_t ch)
-{
-    if (type != AtlasType::GLYPH)
-        return nullptr;
-
-    for (u32 i = 0; i < atlases.size(); i++) {
-        auto atlas = dynamic_cast<GlyphAtlas *>(atlases.at(i));
-        auto atlasTile = atlas->getGlyphByChar(ch);
-
-        if (atlasTile)
-            return atlas;
-    }
-
     return nullptr;
 }
 
@@ -178,29 +159,6 @@ AnimatedAtlasTile *AtlasPool::getAnimatedTileByImage(img::Image *tile)
         return nullptr;
 
     return dynamic_cast<AnimatedAtlasTile *>(atlas_tile);
-}
-
-void AtlasPool::addTile(img::Image *img)
-{
-    if (type != AtlasType::RECTPACK2D)
-        return;
-
-    auto imgIt = std::find(images.begin(), images.end(), img);
-
-    // Add only unique tiles
-    if (imgIt != images.end())
-        return;
-
-    images.emplace_back(img);
-}
-
-void AtlasPool::addAnimatedTile(img::Image *img, AtlasTileAnim anim)
-{
-    if (type != AtlasType::RECTPACK2D)
-        return;
-    addTile(img);
-
-    animatedImages[images.size()-1] = anim;
 }
 
 rectf AtlasPool::getTileRect(img::Image *tile, bool toUV, bool force_add, std::optional<AtlasTileAnim> anim)
@@ -262,39 +220,6 @@ void AtlasPool::buildRectpack2DAtlas()
     startImg = 0;
 }
 
-void AtlasPool::buildGlyphAtlas(render::TTFont *ttfont)
-{
-    if (type != AtlasType::GLYPH)
-        return;
-
-    static u32 atlasNum = 0;
-    static u32 glyphOffset = 0;
-
-    GlyphAtlas *atlas = new GlyphAtlas(atlasNum, ttfont, glyphOffset);
-    cache->cacheResource<Atlas>(ResourceType::ATLAS, atlas, atlas->getName(atlas->getTextureSize(), atlasNum));
-
-    atlases.push_back(atlas);
-
-    if (glyphOffset < ttfont->getGlyphsNum()) {
-        ++atlasNum;
-        buildGlyphAtlas(ttfont);
-    }
-
-    atlasNum = 0;
-    glyphOffset = 0;
-}
-
-void AtlasPool::updateAnimatedTiles(f32 time)
-{
-    if (type != AtlasType::RECTPACK2D)
-        return;
-
-    for (u32 i = 0; i < atlases.size(); i++) {
-        auto atlas = dynamic_cast<Rectpack2DAtlas*>(atlases.at(i));
-        atlas->updateAnimatedTiles(time);
-    }
-}
-
 void AtlasPool::updateMeshUVs(MeshBuffer *buffer, u32 start_index, u32 index_count, img::Image *tile,
     img::Image* oldTile, bool toUV, bool force_add, std::optional<AtlasTileAnim> anim)
 {
@@ -341,3 +266,9 @@ void AtlasPool::forceAddTile(img::Image *img, std::optional<AtlasTileAnim> anim)
 
     }
 }*/
+
+void AtlasPool::drawTiles(f32 time)
+{
+	for (auto &atlas : atlases)
+		atlas->drawTiles(time);
+}

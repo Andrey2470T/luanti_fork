@@ -89,7 +89,8 @@ void TileAnimationParams::getTextureModifer(std::ostream &os, v2u32 texture_size
 	}
 }
 
-void TileAnimationParams::getFrames(std::vector<core::rect<u32> > *frames_rects, u16 *frame_length_ms, v2u32 texture_size) const
+void TileAnimationParams::getFrames(
+	std::vector<core::rect<u32>> *frames_rects, u16 *frame_length_ms, v2u32 texture_size) const
 {
 	u16 frame_count;
 	v2u32 frame_size;

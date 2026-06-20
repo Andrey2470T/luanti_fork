@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Video/VideoDriver.h"
 #include "irrlichttypes_bloated.h"
 #include <Image/Image.h>
 #include <Video/Texture.h>
@@ -9,6 +10,7 @@
 #include <memory>
 #include <optional>
 #include <unordered_map>
+#include <unordered_set>
 
 class Atlas;
 
@@ -46,7 +48,7 @@ struct AnimatedAtlasTile : public AtlasTile
 {
 	AnimationInfo info;
 
-	AnimatedAtlasTile(Atlas *atlas, video::Image *image, AnimationInfo anim)
+	AnimatedAtlasTile(Atlas *atlas, video::Image *image, const AnimationInfo &anim)
 		: AtlasTile(atlas, image), info(std::move(anim))
 	{}
 
@@ -59,6 +61,15 @@ class Rectpack2DPacker
 {
 	std::vector<rectpack2D::rect_xywh> rects;
 	std::vector<core::rect<u32>> freeSpaces;
+
+	u8 frameThickness{0};
+
+public:
+	Rectpack2DPacker(u8 _frameThickness)
+		: frameThickness(_frameThickness)
+	{}
+
+
 };
 
 class Atlas
@@ -113,7 +124,23 @@ public:
 	bool operator==(const Atlas *other) const;
 };
 
-struct AnimatedAtlasTile;
+typedef std::pair<video::Image *, AnimationInfo> TilePair;
+
+struct TilePairHash {
+	size_t operator()(const TilePair& entry) const {
+		size_t seed = 0;
+		seed ^= std::hash<video::Image*>{}(entry.first) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+		seed ^= entry.second.hash() + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+
+		return seed;
+	}
+};
+
+struct TilePairEqual {
+	bool operator()(const TilePair& a, const TilePair& b) const {
+		return a.first == b.first && a.second == b.second;
+	}
+};
 
 // Interface saving and handling sets of atlases
 // Note: 'addTile' and 'addAnimatedTile' calls and atlases building
@@ -121,41 +148,34 @@ struct AnimatedAtlasTile;
 // Otherwise those objects' meshes will get invalid atlases tiles UVs!
 class AtlasPool
 {
-	std::string prefixName;
+	video::VideoDriver *driver;
 
+	std::string prefixName;
 	u32 maxTextureSize;
 	bool filtered;
+	u8 maxMipLevel{0};
+
+	std::unique_ptr<Rectpack2DPacker> packer;
 
 	std::vector<std::unique_ptr<Atlas>> atlases;
-	std::vector<video::Image *> images;
-	std::unordered_map<u32, AtlasTileAnim> animatedImages;
+	std::unordered_set<TilePair, TilePairHash, TilePairEqual> images;
 public:
-	AtlasPool(const std::string &_name, u32 _maxTextureSize, bool _filtered)
-		: prefixName(_name), maxTextureSize(_maxTextureSize), filtered(_filtered)
-	{}
+	AtlasPool(video::VideoDriver *_driver, const std::string &_name);
 
-	~AtlasPool();
-
-	Atlas *getAtlas(u32 i) const;
 	Atlas *getAtlasByTile(video::Image *tile, bool force_add=false, std::optional<AtlasTileAnim> anim=std::nullopt);
 
 	AtlasTile *getTileByImage(video::Image *tile);
 	AnimatedAtlasTile *getAnimatedTileByImage(video::Image *tile);
 
-	u32 getAtlasCount() const
-	{
-		return atlases.size();
-	}
-
 	void addTile(video::Image *img);
-	void addAnimatedTile(video::Image *img, AtlasTileAnim anim);
+	void addAnimatedTile(video::Image *img, const AnimationInfo &anim);
 
 	core::rectf getTileRect(video::Image *tile, bool toUV=false, bool force_add=false, std::optional<AtlasTileAnim> anim=std::nullopt);
 
 	// Recursively create and fill new atlases with tiles while the internal image counter doesn't reach some limit
 	void build();
 
-	void updateAnimatedTiles(f32 time);
+	void drawTiles(f32 time);
 
 	/*void updateMeshUVs(scene::IMeshBuffer *buffer, u32 start_index, u32 index_count, video::Image *tile,
 		video::Image* oldTile=nullptr, bool toUV=true, bool force_add=false, std::optional<AtlasTileAnim> anim=std::nullopt);

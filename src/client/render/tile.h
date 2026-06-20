@@ -66,6 +66,13 @@ struct AnimationInfo
 	{
 		return m_frames_rects.at(m_frame);
 	}
+
+	size_t hash() const {
+		size_t seed = 0;
+		seed ^= std::hash<u16>{}(m_frame_length_ms) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+		seed ^= std::hash<size_t>{}(m_frames_rects.size()) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+		return seed;
+	}
 private:
 	u16 m_frame = 0; // last animation frame
 	u16 m_frame_length_ms = 0;
