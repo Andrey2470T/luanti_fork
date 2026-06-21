@@ -6,6 +6,8 @@
 `Планы в Luanti Fork`
 ---------------------
 
+* Создать шейдер для скайбокса рендеряющий туман, рассвет на гранях куба
+
 * Расширение GFX (CSM графический API):
     * Добавить поддержку материалов для ItemDef и HudDef
     * (?) Удалить `vertex_type` параметр из `materials` таблицы
@@ -54,6 +56,21 @@
                 }
             }
             ```
+
+        * `gfx.add_sky_body(def)`: adds a new sky body with cyclic orbit transition:
+          ```lua
+          {
+              name = <string>,
+              visible = true/false,
+              texture = <string>,
+              scale = <float> (analogous to the "scale" for set_sun/set_moon)
+              orbit_tilt = <degrees> (analogous to the "body_orbit_tilt" for set_sky)
+              start_pos = <degrees> (zenith angle)
+              speed = <degrees/s>, (speed of zenith rotating)
+              directional_light = true/false (may be non-trivial to implement)
+              light_color = <ColorSpec>
+          }
+          ```
 
         * `gfx.add_custom_step(name, function(context))`
           * Adds "custom" type step doing the manual render configuration (transforms, viewports, materials, draw calls...)
