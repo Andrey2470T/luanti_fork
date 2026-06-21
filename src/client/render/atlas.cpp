@@ -1,5 +1,6 @@
 #include "atlas.h"
 #include "Video/VideoDriver.h"
+#include <rectpack2D/finders_interface.h>
 #include "settings.h"
 
 bool AtlasTile::draw(f32 time)
@@ -105,13 +106,61 @@ bool Atlas::operator==(const Atlas *other) const
 	return texture->getName().getInternalName() == other->texture->getName().getInternalName();
 }
 
+using namespace rectpack2D;
+using empty_rects = empty_spaces<false>;
+
+void Rectpack2DPacker::pack(
+	const ImagesSet &images, ImagesSet::iterator &curImg,
+	u32 &atlasSize, std::vector<core::rect<u32>> &output)
+{
+	u32 atlasArea = 0;
+	u32 maxArea = maxTextureSize * maxTextureSize;
+
+	std::vector<rectpack2D::rect_xywh> rects;
+
+	for (; curImg != images.end(); curImg++) {
+		auto img = curImg->first;
+		auto anim = curImg->second;
+
+		if (!img)
+			continue;
+
+		v2u32 imgSize = img->getClipRect().getSize() + v2u32(2*frameThickness);
+		u32 imgArea = imgSize.X	* imgSize.Y;
+
+		// Double the atlas area for the cracks space
+		if ((atlasArea + imgArea) * 2 > maxArea)
+			break;
+
+		rects.emplace_back(0, 0, imgSize.X, imgSize.Y);
+
+		atlasArea += imgArea;
+	}
+
+	atlasSize = std::pow(2u, (u32)std::ceil(std::log2(std::sqrt((f32)atlasArea))));
+
+	auto report_successful = [](rect_xywh&) {
+		return callback_result::CONTINUE_PACKING;
+	};
+	auto report_unsuccessful = [](rect_xywh&) {
+		return callback_result::ABORT_PACKING;
+	};
+
+	auto res_size = find_best_packing<empty_rects>(rects,
+		make_finder_input(atlasSize, 1, report_successful, report_unsuccessful, flipping_option::DISABLED));
+	atlasSize = std::max(res_size.w, res_size.h);
+
+	for (u32 i = 0; i < rects.size(); i++) {
+		auto rect = rects.at(i);
+		output.emplace_back(rect.x, rect.y, rect.w, rect.h);
+	}
+}
+
 AtlasPool::AtlasPool(video::VideoDriver *_driver, const std::string &_name)
 	: driver(_driver), prefixName(_name), maxTextureSize(driver->getMaxTextureSize().Width),
 	  filtered(g_settings->getBool("bilinear_filter") || g_settings->getBool("trilinear_filter") ||
 	  g_settings->getBool("anisotropic_filter"))
-{
-
-}
+{}
 
 void AtlasPool::addTile(video::Image *img)
 {

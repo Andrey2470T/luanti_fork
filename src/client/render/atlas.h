@@ -4,7 +4,6 @@
 #include "irrlichttypes_bloated.h"
 #include <Image/Image.h>
 #include <Video/Texture.h>
-#include <rectpack2D/finders_interface.h>
 #include "client/render/tile.h"
 #include <list>
 #include <memory>
@@ -53,23 +52,6 @@ struct AnimatedAtlasTile : public AtlasTile
 	{}
 
 	bool draw(f32 time) override;
-};
-
-typedef std::pair<u32, u32> AtlasTileAnim;
-
-class Rectpack2DPacker
-{
-	std::vector<rectpack2D::rect_xywh> rects;
-	std::vector<core::rect<u32>> freeSpaces;
-
-	u8 frameThickness{0};
-
-public:
-	Rectpack2DPacker(u8 _frameThickness)
-		: frameThickness(_frameThickness)
-	{}
-
-
 };
 
 class Atlas
@@ -124,10 +106,10 @@ public:
 	bool operator==(const Atlas *other) const;
 };
 
-typedef std::pair<video::Image *, AnimationInfo> TilePair;
+typedef std::pair<video::Image *, AnimationInfo> ImagePair;
 
-struct TilePairHash {
-	size_t operator()(const TilePair& entry) const {
+struct ImagePairHash {
+	size_t operator()(const ImagePair& entry) const {
 		size_t seed = 0;
 		seed ^= std::hash<video::Image*>{}(entry.first) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 		seed ^= entry.second.hash() + 0x9e3779b9 + (seed << 6) + (seed >> 2);
@@ -136,10 +118,29 @@ struct TilePairHash {
 	}
 };
 
-struct TilePairEqual {
-	bool operator()(const TilePair& a, const TilePair& b) const {
+struct ImagePairEqual {
+	bool operator()(const ImagePair& a, const ImagePair& b) const {
 		return a.first == b.first && a.second == b.second;
 	}
+};
+
+typedef std::unordered_set<ImagePair, ImagePairHash, ImagePairEqual> ImagesSet;
+
+class Rectpack2DPacker
+{
+	std::vector<core::rect<u32>> freeSpaces;
+
+	u8 frameThickness{0};
+	u32 maxTextureSize;
+
+public:
+	Rectpack2DPacker(u8 _frameThickness, u32 _maxTextureSize)
+		: frameThickness(_frameThickness), maxTextureSize(_maxTextureSize)
+	{}
+
+	void pack(
+		const ImagesSet &images, ImagesSet::iterator &curImg,
+		u32 &atlasSize, std::vector<core::rect<u32>> &output);
 };
 
 // Interface saving and handling sets of atlases
@@ -158,7 +159,7 @@ class AtlasPool
 	std::unique_ptr<Rectpack2DPacker> packer;
 
 	std::vector<std::unique_ptr<Atlas>> atlases;
-	std::unordered_set<TilePair, TilePairHash, TilePairEqual> images;
+	ImagesSet images;
 public:
 	AtlasPool(video::VideoDriver *_driver, const std::string &_name);
 
