@@ -51,29 +51,30 @@ void populateInterlacedPipeline(RenderPipeline *pipeline, Client *client)
 	buffer->setTexture(TEXTURE_RIGHT, v2f(1.0f, 0.5f), "3d_render_right", video::ECF_A8R8G8B8);
 	buffer->setTexture(TEXTURE_MASK, v2f(1.0f, 1.0f), "3d_render_mask", video::ECF_A8R8G8B8);
 
-	pipeline->addStep<InitInterlacedMaskStep>(buffer, TEXTURE_MASK);
+	pipeline->addStep<InitInterlacedMaskStep>("InitInterlacedMask", buffer, TEXTURE_MASK);
 
 	auto step3D = pipeline->own(create3DStage(client, v2f(1.0f, 0.5f)));
 
 	// eyes
 	for (bool right : { false, true }) {
-		pipeline->addStep<OffsetCameraStep>(right);
+		std::string dir = right ? "Right" : "Left";
+		pipeline->addStep<OffsetCameraStep>("OffsetCamera" + dir, right);
 		auto output = pipeline->createOwned<TextureBufferOutput>(buffer, right ? TEXTURE_RIGHT : TEXTURE_LEFT);
-		pipeline->addStep<SetRenderTargetStep>(step3D, output);
-		pipeline->addStep(step3D);
-		pipeline->addStep<DrawWield>();
-		pipeline->addStep<MapPostFxStep>();
+		pipeline->addStep<SetRenderTargetStep>("SetRenderTarget" + dir, step3D, output);
+		pipeline->addStep("Draw3D" + dir, step3D);
+		pipeline->addStep<DrawWield>("DrawWield" + dir);
+		pipeline->addStep<MapPostFxStep>("MapPostFx" + dir);
 	}
 
-	pipeline->addStep<OffsetCameraStep>(0.0f);
+	pipeline->addStep<OffsetCameraStep>("OffsetCamera", 0.0f);
 
 	ShaderSource *s = client->getShaderSource();
 	auto shader = s->getShader({"3d_interlaced_merge"});
 	video::E_MATERIAL_TYPE material = s->getShaderInfo(shader).material;
 	auto texture_map = { TEXTURE_LEFT, TEXTURE_RIGHT, TEXTURE_MASK };
 
-	auto merge = pipeline->addStep<PostProcessingStep>(material, texture_map);
+	auto merge = pipeline->addStep<PostProcessingStep>("PostProcessing", material, texture_map);
 	merge->setRenderSource(buffer);
 	merge->setRenderTarget(pipeline->createOwned<ScreenTarget>());
-	pipeline->addStep<DrawHUD>();
+	pipeline->addStep<DrawHUD>("DrawHUD");
 }

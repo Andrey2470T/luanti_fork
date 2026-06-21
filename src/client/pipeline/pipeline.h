@@ -120,15 +120,7 @@ struct TextureBufferDefinition
 class TextureBuffer : public RenderSource
 {
 public:
-	TextureBuffer(const std::string &name)
-		: m_name(name)
-	{}
 	virtual ~TextureBuffer() override;
-
-	const std::string &getName() const
-	{
-		return m_name;
-	}
 
 	/**
 	 * Configure fixed-size texture for the specific index
@@ -173,7 +165,6 @@ private:
 	 */
 	bool ensureTexture(video::GLTexture **textureSlot, const TextureBufferDefinition& definition, PipelineContext &context);
 
-	std::string m_name;
 	video::VideoDriver *m_driver { nullptr };
 	std::vector<TextureBufferDefinition> m_definitions;
 	core::array<video::GLTexture *> m_textures;
@@ -193,6 +184,11 @@ public:
 	void activate(PipelineContext &context) override;
 
 	video::RenderTarget *getIrrRenderTarget(PipelineContext &context);
+
+	void addOutput(u8 texture_index, u8 cubemap_face=0)
+	{
+		texture_map.emplace_back(texture_index, cubemap_face);
+	}
 
 private:
 	static inline const u8 NO_DEPTH_TEXTURE = 255;
@@ -299,6 +295,8 @@ private:
 class RenderStep : virtual public RenderPipelineObject
 {
 public:
+	virtual RenderSource *getRenderSource() = 0;
+	virtual RenderTarget *getRenderTarget() = 0;
 	/**
 	 * Assigns render source to this step.
 	 *
@@ -325,6 +323,8 @@ public:
 class TrivialRenderStep : public RenderStep
 {
 public:
+	virtual RenderSource *getRenderSource() override { return nullptr; }
+	virtual RenderTarget *getRenderTarget() override { return nullptr; }
 	virtual void setRenderSource(RenderSource *source) override {}
 	virtual void setRenderTarget(RenderTarget *target) override {}
 	virtual void reset(PipelineContext &) override {}
@@ -339,6 +339,7 @@ class SetRenderTargetStep : public TrivialRenderStep
 {
 public:
 	SetRenderTargetStep(RenderStep *step, RenderTarget *target);
+	virtual RenderTarget *getRenderTarget() override { return target; }
 	virtual void run(PipelineContext &context) override;
 private:
 	RenderStep *step;
@@ -353,6 +354,7 @@ class SwapTexturesStep : public TrivialRenderStep
 {
 public:
 	SwapTexturesStep(TextureBuffer *buffer, u8 texture_a, u8 texture_b);
+	virtual RenderSource *getRenderSource() override { return buffer; }
 	virtual void run(PipelineContext &context) override;
 private:
 	TextureBuffer *buffer;
@@ -373,9 +375,9 @@ public:
 	 *
 	 * @param step reference to a @see RenderStep implementation.
 	 */
-	RenderStep *addStep(RenderStep *step)
+	RenderStep *addStep(const std::string &name, RenderStep *step)
 	{
-		m_pipeline.push_back(step);
+		m_pipeline.emplace_back(name, step);
 		return step;
 	}
 
@@ -418,18 +420,18 @@ public:
 	 * @return RenderStep* Pointer to the created step for further configuration.
 	 */
 	template<typename T, typename... Args>
-	T *addStep(Args&&... args) {
+	T *addStep(const std::string &name, Args&&... args) {
 		T* result = own(std::make_unique<T>(std::forward<Args>(args)...));
-		addStep(result);
+		addStep(name, result);
 		return result;
 	}
 
-	TextureBuffer *createTextureBuffer(const std::string &name)
-	{
-		auto tbuf = createOwned<TextureBuffer>(name);
-		m_texture_buffers.push_back(tbuf);
-		return tbuf;
-	}
+	virtual RenderSource *getRenderSource() override { return &m_input; }
+	virtual RenderTarget *getRenderTarget() override { return &m_output; }
+
+	RenderStep *getStep(const std::string &name);
+
+	TextureBuffer *createTextureBuffer(const std::string &name);
 
 	TextureBuffer *getTextureBuffer(const std::string &name);
 
@@ -445,8 +447,8 @@ public:
 	virtual void setRenderSource(RenderSource *source) override;
 	virtual void setRenderTarget(RenderTarget *target) override;
 private:
-	std::vector<RenderStep *> m_pipeline;
-	std::vector<TextureBuffer *> m_texture_buffers;
+	std::vector<std::pair<std::string, RenderStep *>> m_pipeline;
+	std::unordered_map<std::string, TextureBuffer *> m_texture_buffers;
 	std::vector< std::unique_ptr<RenderPipelineObject> > m_objects;
 	DynamicSource m_input;
 	DynamicTarget m_output;

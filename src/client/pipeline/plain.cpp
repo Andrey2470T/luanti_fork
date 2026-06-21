@@ -90,7 +90,7 @@ std::unique_ptr<RenderStep> create3DStage(Client *client, v2f scale)
 	RenderStep *step = new Draw3D();
 	if (g_settings->getBool("enable_post_processing")) {
 		RenderPipeline *pipeline = new RenderPipeline();
-		pipeline->addStep(pipeline->own(std::unique_ptr<RenderStep>(step)));
+		pipeline->addStep("Draw3D", pipeline->own(std::unique_ptr<RenderStep>(step)));
 
 		auto effect = addPostProcessing(pipeline, step, scale, client);
 		effect->setRenderTarget(pipeline->getOutput());
@@ -134,7 +134,7 @@ RenderStep* addUpscaling(RenderPipeline *pipeline, RenderStep *previousStep, v2f
 	// Add upscaling step
 	RenderStep *upscale = pipeline->createOwned<UpscaleStep>();
 	upscale->setRenderSource(buffer);
-	pipeline->addStep(upscale);
+	pipeline->addStep("Upscaling", upscale);
 
 	return upscale;
 }
@@ -143,15 +143,15 @@ void populatePlainPipeline(RenderPipeline *pipeline, Client *client)
 {
 	auto downscale_factor = getDownscaleFactor();
 	auto step3D = pipeline->own(create3DStage(client, downscale_factor));
-	pipeline->addStep(step3D);
-	pipeline->addStep<DrawWield>();
-	pipeline->addStep<MapPostFxStep>();
+	pipeline->addStep("Main", step3D);
+	pipeline->addStep<DrawWield>("DrawWield");
+	pipeline->addStep<MapPostFxStep>("MapPostFx");
 
 	step3D = addUpscaling(pipeline, step3D, downscale_factor, client);
 
 	step3D->setRenderTarget(pipeline->createOwned<ScreenTarget>());
 
-	pipeline->addStep<DrawHUD>();
+	pipeline->addStep<DrawHUD>("DrawHUD");
 }
 
 video::ECOLOR_FORMAT selectColorFormat(video::VideoDriver *driver)

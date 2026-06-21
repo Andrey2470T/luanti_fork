@@ -10,6 +10,7 @@ class InitInterlacedMaskStep : public TrivialRenderStep
 {
 public:
 	InitInterlacedMaskStep(TextureBuffer *buffer, u8 index);
+	virtual RenderSource *getRenderSource() override { return buffer; }
 	void run(PipelineContext &context);
 private:
 	TextureBuffer *buffer;

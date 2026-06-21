@@ -13,6 +13,8 @@
 class Draw3D : public RenderStep
 {
 public:
+	virtual RenderSource *getRenderSource() override { return nullptr; }
+	virtual RenderTarget *getRenderTarget() override { return m_target; }
 	virtual void setRenderSource(RenderSource *) override {}
 	virtual void setRenderTarget(RenderTarget *target) override { m_target = target; }
 
@@ -26,6 +28,8 @@ private:
 class DrawWield : public RenderStep
 {
 public:
+	virtual RenderSource *getRenderSource() override { return nullptr; }
+	virtual RenderTarget *getRenderTarget() override { return m_target; }
 	virtual void setRenderSource(RenderSource *) override {}
 	virtual void setRenderTarget(RenderTarget *target) override { m_target = target; }
 
@@ -42,6 +46,8 @@ private:
 class DrawHUD : public RenderStep
 {
 public:
+	virtual RenderSource *getRenderSource() override { return nullptr; }
+	virtual RenderTarget *getRenderTarget() override { return nullptr; }
 	virtual void setRenderSource(RenderSource *) override {}
 	virtual void setRenderTarget(RenderTarget *) override {}
 
@@ -52,6 +58,7 @@ public:
 class MapPostFxStep : public TrivialRenderStep
 {
 public:
+	virtual RenderTarget *getRenderTarget() override { return target; }
 	virtual void setRenderTarget(RenderTarget *) override;
 	virtual void run(PipelineContext &context) override;
 private:
@@ -71,7 +78,8 @@ public:
 class UpscaleStep : public RenderStep
 {
 public:
-
+	virtual RenderSource *getRenderSource() override { return m_source; }
+	virtual RenderTarget *getRenderTarget() override { return m_target; }
 	virtual void setRenderSource(RenderSource *source) override { m_source = source; }
 	virtual void setRenderTarget(RenderTarget *target) override { m_target = target; }
 	virtual void reset(PipelineContext &context) override {};

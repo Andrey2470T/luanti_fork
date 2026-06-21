@@ -59,20 +59,20 @@ void populateAnaglyphPipeline(RenderPipeline *pipeline, Client *client)
 	step3D->setRenderTarget(enable_override_material);
 
 	// left eye
-	pipeline->addStep<OffsetCameraStep>(false);
-	pipeline->addStep<SetColorMaskStep>(video::ECP_RED);
-	pipeline->addStep(step3D);
+	pipeline->addStep<OffsetCameraStep>("OffsetCameraLeft", false);
+	pipeline->addStep<SetColorMaskStep>("SetColorMaskLeft", video::ECP_RED);
+	pipeline->addStep("Draw3DLeft", step3D);
 
 	// right eye
-	pipeline->addStep<OffsetCameraStep>(true);
-	pipeline->addStep<SetColorMaskStep>(video::ECP_GREEN | video::ECP_BLUE);
-	pipeline->addStep(step3D);
+	pipeline->addStep<OffsetCameraStep>("OffsetCameraRight", true);
+	pipeline->addStep<SetColorMaskStep>("SetColorMaskRight", video::ECP_GREEN | video::ECP_BLUE);
+	pipeline->addStep("Draw3DRight", step3D);
 
 	// reset
-	pipeline->addStep<OffsetCameraStep>(0.0f);
-	pipeline->addStep<SetColorMaskStep>(video::ECP_ALL);
+	pipeline->addStep<OffsetCameraStep>("OffsetCameraReset", 0.0f);
+	pipeline->addStep<SetColorMaskStep>("SetColorMaskReset", video::ECP_ALL);
 
-	pipeline->addStep<DrawWield>();
-	pipeline->addStep<MapPostFxStep>();
-	pipeline->addStep<DrawHUD>();
+	pipeline->addStep<DrawWield>("DrawWield");
+	pipeline->addStep<MapPostFxStep>("MapPostFx");
+	pipeline->addStep<DrawHUD>("DrawHUD");
 }

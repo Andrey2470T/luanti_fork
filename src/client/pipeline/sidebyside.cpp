@@ -62,22 +62,25 @@ void populateSideBySidePipeline(RenderPipeline *pipeline, Client *client, bool h
 
 	// eyes
 	for (bool right : { false, true }) {
-		pipeline->addStep<OffsetCameraStep>(flipped ? !right : right);
+		std::string dir = right ? "Right" : "Left";
+		pipeline->addStep<OffsetCameraStep>("OffsetCamera" + dir, flipped ? !right : right);
 		auto output = pipeline->createOwned<TextureBufferOutput>(
 				buffer, std::vector<u8> {right ? TEXTURE_RIGHT : TEXTURE_LEFT}, TEXTURE_DEPTH);
-		pipeline->addStep<SetRenderTargetStep>(step3D, output);
-		pipeline->addStep(step3D);
-		pipeline->addStep<DrawWield>();
-		pipeline->addStep<MapPostFxStep>();
-		pipeline->addStep<DrawHUD>();
+		pipeline->addStep<SetRenderTargetStep>("SetRenderTarget" + dir, step3D, output);
+		pipeline->addStep("Main" + dir, step3D);
+		pipeline->addStep<DrawWield>("DrawWield" + dir);
+		pipeline->addStep<MapPostFxStep>("MapPostFx" + dir);
+		pipeline->addStep<DrawHUD>("DrawHUD" + dir);
 	}
 
-	pipeline->addStep<OffsetCameraStep>(0.0f);
+	pipeline->addStep<OffsetCameraStep>("OffsetCamera", 0.0f);
 
 	auto screen = pipeline->createOwned<ScreenTarget>();
 
 	for (bool right : { false, true }) {
+		std::string dir = right ? "Right" : "Left";
 		auto step = pipeline->addStep<DrawImageStep>(
+				"DrawImage" + dir,
 				right ? TEXTURE_RIGHT : TEXTURE_LEFT,
 				right ? offset : v2f());
 		step->setRenderSource(buffer);

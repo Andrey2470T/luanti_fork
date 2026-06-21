@@ -21,7 +21,8 @@ public:
 	 */
 	PostProcessingStep(u32 shader_id, const std::vector<u8> &texture_map, bool alpha_blend=false);
 
-
+	virtual RenderSource *getRenderSource() override { return source; }
+	virtual RenderTarget *getRenderTarget() override { return target; }
 	void setRenderSource(RenderSource *source) override;
 	void setRenderTarget(RenderTarget *target) override;
 	void reset(PipelineContext &context) override;

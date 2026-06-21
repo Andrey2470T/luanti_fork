@@ -11,6 +11,8 @@ class DrawImageStep : public RenderStep
 public:
 	DrawImageStep(u8 texture_index, v2f offset);
 
+	virtual RenderSource *getRenderSource() override { return source; }
+	virtual RenderTarget *getRenderTarget() override {return target; }
 	void setRenderSource(RenderSource *_source) override;
 	void setRenderTarget(RenderTarget *_target) override;
 

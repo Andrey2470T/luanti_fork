@@ -508,15 +508,24 @@ void ModApiGraphics::read_texture_def(lua_State *L, TextureBufferDefinition &tex
 
 	getstringfield(L, -1, "name", texdef.name);
 
-	lua_getfield(L, -1, "resolution");
+	lua_getfield(L, -1, "size");
 
-	if (lua_istable(L, -1)) {
+	bool size_present = lua_istable(L, -1);
+	if (size_present) {
 		u32 w, h;
 		getintfield(L, -1, "x", w);
 		getintfield(L, -1, "y", h);
 		texdef.size = {w, h};
+		texdef.fixed_size = true;
 	}
 	lua_pop(L, 1);
+
+	if (!size_present) {
+		lua_getfield(L, -1, "scale");
+		texdef.scale_factor = check_v2f(L, -1);
+		texdef.fixed_size = false;
+		lua_pop(L, 1);
+	}
 
 	std::unordered_map<std::string, video::ECOLOR_FORMAT> mapStrToEnumFormat = {
 		{"argb8", video::ECF_A8R8G8B8}, {"rgb8", video::ECF_R8G8B8},
@@ -539,11 +548,21 @@ void ModApiGraphics::push_texture_def(lua_State *L, const TextureBufferDefinitio
 	lua_setfield(L, -2, "name");
 
 	lua_newtable(L);
-	lua_pushnumber(L, texdef.size.Width);
-	lua_setfield(L, -2, "x");
-	lua_pushnumber(L, texdef.size.Height);
-	lua_setfield(L, -2, "y");
-	lua_setfield(L, -2, "resolution");
+
+	if (texdef.fixed_size) {
+		lua_pushnumber(L, texdef.size.Width);
+		lua_setfield(L, -2, "x");
+		lua_pushnumber(L, texdef.size.Height);
+		lua_setfield(L, -2, "y");
+		lua_setfield(L, -2, "size");
+	}
+	else {
+		lua_pushnumber(L, texdef.scale_factor.X);
+		lua_setfield(L, -2, "x");
+		lua_pushnumber(L, texdef.scale_factor.Y);
+		lua_setfield(L, -2, "y");
+		lua_setfield(L, -2, "scale");
+	}
 
 	std::unordered_map<video::ECOLOR_FORMAT, std::string> mapEnumToStrFormat = {
 		{video::ECF_A8R8G8B8, "argb8"}, {video::ECF_R8G8B8, "rgb8"},
@@ -583,7 +602,11 @@ int ModApiGraphics::l_create_texture_buffer(lua_State *L)
 
 	for (u32 i = 0; i < definitions.size(); i++) {
 		auto &def = definitions.at(i);
-		tbuf->setTexture(i, def.size, def.name, def.format, false, def.msaa, def.cubemap);
+
+		if (def.fixed_size)
+			tbuf->setTexture(i, def.size, def.name, def.format, false, def.msaa, def.cubemap);
+		else
+			tbuf->setTexture(i, def.scale_factor, def.name, def.format, false, def.msaa, def.cubemap);
 	}
 
 	return 1;
@@ -632,6 +655,59 @@ int ModApiGraphics::l_get_texture_count(lua_State *L)
 	return 1;
 }
 
+int ModApiGraphics::l_override_draw3d_outputs(lua_State *L)
+{
+	if (!lua_istable(L, 1))
+		return 0;
+
+	auto pipeline = getClient(L)->getRenderingEngine()->getPipeline();
+	auto tbuf = pipeline->getTextureBuffer("PostProcessing");
+
+	if (!tbuf)
+		return 0;
+
+	std::unordered_map<u8, TextureBufferDefinition> definitions;
+	std::vector<std::pair<u8, u8>> mapTexToCubemapFace;
+
+	int t = lua_gettop(L);
+
+	lua_pushnil(L);
+	while (lua_next(L, t)) {
+		if (lua_istable(L, -1)) {
+			TextureBufferDefinition newDef;
+
+			s32 index, face;
+			getintfield(L, -1, "index", index);
+			getintfield(L, -1, "face", face);
+
+			read_texture_def(L, newDef);
+
+			definitions.emplace(index, newDef);
+			mapTexToCubemapFace.emplace_back(index, face);
+		}
+		lua_pop(L, 1);
+	}
+	lua_pop(L, 1);
+
+	for (auto &def_p : definitions) {
+		auto &def = def_p.second;
+		if (def.fixed_size)
+			tbuf->setTexture(def_p.first, def.size, def.name, def.format, false, def.msaa, def.cubemap);
+		else
+			tbuf->setTexture(def_p.first, def.scale_factor, def.name, def.format, false, def.msaa, def.cubemap);
+	}
+
+	auto toutput = (TextureBufferOutput *)pipeline->getStep("Draw3D")->getRenderTarget();
+
+	if (!toutput)
+		return 0;
+
+	for (auto &tex_to_face : mapTexToCubemapFace)
+		toutput->addOutput(tex_to_face.first, tex_to_face.second);
+
+	return 1;
+}
+
 void ModApiGraphics::Initialize(lua_State *L, int top)
 {
 	API_FCT(register_material);
@@ -652,6 +728,7 @@ void ModApiGraphics::Initialize(lua_State *L, int top)
 	API_FCT(create_texture_buffer);
 	API_FCT(get_texture_params);
 	API_FCT(get_texture_count);
+	API_FCT(override_draw3d_outputs);
 
 	UniformSetter::Register(L);
 

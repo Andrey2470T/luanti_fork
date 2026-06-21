@@ -37,7 +37,7 @@ void createPipeline(const std::string &stereo_mode, SDLDevice *device, Client *c
 	result.pipeline = new RenderPipeline();
 
 	if (result.shadow_renderer)
-		result.pipeline->addStep<RenderShadowMapStep>();
+		result.pipeline->addStep<RenderShadowMapStep>("RenderShadowMap");
 
 	if (stereo_mode == "none") {
 		populatePlainPipeline(result.pipeline, client);
