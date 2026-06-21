@@ -1,126 +1,45 @@
 `Планы в IrrlichtRedo`
 ----------------------
 
-* Перенести /src/GUI в luanti_fork/src/gui
-* Перенести систему материалов с коллбэками в luanti_fork
 * Заменить меш загрузчики на Assimp
-* Удалить абстрактные классы из /include, объединив их с классами реализаций
 
 `Планы в Luanti Fork`
 ---------------------
 
-* Добавить API матриц и кватернионов в builtin (#8515)
-
-* Добавить графический CSM API:
-   * Поддержка материалов через таблицы.
-      * Возможность задавать базовые параметры (глубина, смешивание, трафарет, шейдеры и тд) и PBR (roughness, metallic, specular, AO, emission и тд):
-
-         ```lua
-         materials = {
-            {  -- первый слот
-                blend = {
-                    enable = true/false,
-                    -- Blend modes: "alpha", "add", "subtract", "revsubtract", "multiply", "screen"
-                    mode = <Blend modes>
-                },
-                depth = {
-                    enable = true/false,
-                    -- Compare functions: "less", "equal", "greater"...
-                    func = = <Compare functions>
-                },
-                stencil = {
-                    enable = true/false,
-                    func = = <Compare functions>,
-                },
-                cull = {
-                    enable = true/false,
-                    mode = "back"/"front"/"front_and_back"
-                },
-                shader = <Shader table>,
-                pbr = {
-                    metallic = <number>/<mapname>,
-                    roughness = <number>/<mapname>,
-                    ambient_occlusion = <number>/<mapname>,
-                    normal = <mapname>,
-                    emission = <number>/<mapname>
-                }
-            },
-            ...
-         }
-         ```
-
-      * Таблица `materials` будет доступна в NodeDef, ItemDef, EntityDef, ParticleSpawnerDef, HudDef
-      * Подтаблица `shader`, задающая вершинный, геометрический, фрагментный шейдеры:
-
-         ```lua
-         shader = {
-            vertex = "block_vertex.glsl"/"block.vsh"/"<код>",
-            geometry = "block_geometry.glsl"/"block.gsh"/"<код>",
-            fragment = "block_fragment.glsl"/"block.fsh"/"<код>",
-            constants = {
-                {"ENABLE_NODE_SPECULAR", "1"},
-                {"USE_DISCARD", "0"},
-                ...
-            },
-            vertex_includes = {"matrices"},
-            fragment_includes = {"fog", "blending"},
-            outputs = { -- map the texture buffer indices to the correponding target
-                {               -- [0] output
-                    texture_buffer = <name>, -- name of used texture buffer
-                    index = <integer>,
-                    cubemap_face = "posx"/"posy"/"posz"/"negx"/"negy"/"negz", -- for type="cubemap"
-                },
-                ...
-            },
-            vertex_type = "vertex3d",
-            on_set_uniforms = function(setter)
-            {
-                -- Set uniforms using the uniform setter
-                local pos = core.localplayer:get_pos()
-                setter.set("cameraPos", "v3f", {x=pos.x, y+pos.y+1.5, z=pos.z})
-                setter.set("animationTimer", "f32", core.get_us_time())
-            }
-         }
-         ```
-
-      * Коллбэк `shader` таблицы (`on_set_uniforms = function(self, setter)`) дает возможность обновлять юниформы через сеттер каждый кадр
-   * Поддержка кастомных шейдеров (через `materials` и `pipeline`)
-   * Поддержка кастомных рендер проходов и постэффектов
+* Расширение GFX (CSM графический API):
+    * Добавить поддержку материалов для ItemDef и HudDef
+    * (?) Удалить `vertex_type` параметр из `materials` таблицы
+    * Поддержка кастомных рендер проходов и постэффектов
         * Три типа:
           * `custom`: кастомный проход делающий ручную настройку контекста и рендер через коллбэк в `gfx.add_custom_step`
           * `postprocess`: проход рендера в пространстве экрана, принимает только фрагментный шейдер
           * `builtin`: один из встроенных проходов в движке (draw3D, drawHud, postprocess, ...)
-        * `gfx.get_render_pass_chain()`
-          * Returns the ordered table of all current render passes chain of the pipeline in the format:
+    * Добавить новые функции:
+        * `gfx.get_render_step_chain()`
+          * Returns the ordered table of all current render steps chain of the pipeline in the format:
 
             ```lua
             {
                 {   -- [n] where 'n' is the order number
                     type = "custom"/"postprocess"/"builtin",
-                    name = <string>, -- <modname:name> for "custom" and "postprocess" or <name> ("draw3D", "drawHud"...) for "builtin"
-                    enable = true/false, -- enable or disable the given pass?
+                    name = <string>, -- name for the step (for "builtin" type these are "draw3D", "drawHud"...)
+                    enable = true/false, -- enable or disable the given step?
                 },
                 ...
             }
             ```
 
-        * `gfx.set_render_pass_order(name, order)`
-          * Sets the order number for "name" pass
-          * If there is already some pass with the given order, shift that and following passes forward by the unit in the render pass chain
-        * `gfx.enable_render_pass(name, bool)`
-          * Enable or disable the given render pass
-          * Each builtin and custom passes are enabled by default
+        * `gfx.set_render_step_order(name, order)`
+          * Sets the order number for "name" step
+          * If there is already some step with the given order, shift that and following steps forward by the unit in the render step chain
+        * `gfx.enable_render_step(name, bool)`
+          * Enable or disable the given render step
+          * Each builtin and custom steps are enabled by default
         * `gfx.add_texture_buffer(name, list)`
-          * Creates new textures definitions and GPU textures themselves
-          * Each texture def looks like:
+          * Already present. Support `settings` field:
 
             ```lua
             {
-                type = "2d"/"cubemap",
-                name = <string>, -- texture name
-                -- Resolution in pixels
-                resolution = {x=<number>, y=<number>},
-                format = "argb8"/"rgb8"/"d16"/"d32"/"d24s8", -- texture pixel format
                 settings = {
                     -- Wrapping: "repeat", "clamp_to_edge", "clamp_to_border", "mirrored_repeat", "mirror_clamp_to_edge"
                     wrap_u = <Wrapping>,
@@ -132,8 +51,7 @@
                     mag_filter = <Magnification filters>,
                     generate_mipmaps = true/false,
                     max_mip_level = <integer>
-                },
-                msaa = <number>
+                }
             }
             ```
 
@@ -156,13 +74,17 @@
                           ...
                       },
                       includes = {"filters"},
-                      on_set_uniforms = function(self, setter)
+                      on_set_uniforms = function(setter)
                       {
                           -- Set uniforms using the uniform setter
                           local pos = core.localplayer:get_pos()
                           setter.set("blurWeights", {0.05, 0.1, 0.3, 0.7, 1.0})
                       }
                   },
+                  texture_buffer = <name>,
+                  input = {"3d_render", "bloom_mask"},
+                  -- Map the textures names to the cubmeap faces (if they are cubemaps)
+                  output = {{"extract_bloom", 0}},
                   viewport = {x1=..., y1=..., x2=..., y2=...},
                   cliprect = {x1=..., y1=..., x2=..., y2=...},
                   blend = {<Blend table>},
@@ -250,9 +172,8 @@
     * Возможность настраивать загрузку моделей через Mesh table
         * Будет пропускаться в `context.draw_mesh(self, <Mesh table>)`, в поле `mesh` NodeDef, EntityDef
 
-* Использовать aux1 аттрибут для хранения hardware цвета для блоков colorwallmounted, colorfacedir, color и тд.
-
 * Адаптировать поддержку атласов из old ветки
+    * Вернуть отрисовку пиксельных рамок вокруг тайлов (для решения проблем фильтрации)
 	* Добавить предзагрузку тайлов, которые будут упакованы в атлас, через atlas.json файл в модах
 
 * Рендерить отдельную копию блока с крэками через режим overlay (#15287)
@@ -261,7 +182,9 @@
    1. Lua API для скелета и анимаций сущностей
    2. Другие виды интерполяций кадров (constant, sine, cubic)
 
-* Добавить поддержку цветного воксельного освещения с добавлением u16 param3 (R, G, B по 4 бита)
+* Добавить поддержку цветного освещения нод:
+    * Клиентская карта цветов света блоков каждого чанка (ClientMapBlock)
+    * Запекание цветов света в два последних канала "inAux" аттрибута
 
 * Прямая работа с изображениями в модах (замена текстурных модификаторов)
 	* Прямой доступ к пикселям и их модификация
