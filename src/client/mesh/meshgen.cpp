@@ -369,7 +369,9 @@ void MapblockMeshGenerator::drawAutoLightedCuboid(aabb3f box,
 			LightPair final_lights[4];
 			for (int j = 0; j < 4; j++) {
 				scene::Vertex3D &vertex = vertices[j];
-				final_lights[j] = lights[light_indices[face][j]].getPair(MYMAX(0.0f, vertex.Normal.Y));
+				f32 boost_f = MYMAX(0.0f, vertex.Normal.Y);
+				final_lights[j] = lights[light_indices[face][j]].getPair(boost_f);
+				final_lights[j].ambientOcclusion = (1.0f - boost_f) * final_lights[j].ambientOcclusion + boost_f * lights[light_indices[face][j]].light_boosted;
 				vertex.Color = encode_light(final_lights[j], cur_node.f->light_source, final_lights[j].ambientOcclusion);
 				if (!cur_node.f->light_source)
 					applyFacesShading(vertex.Color, vertex.Normal);
@@ -1542,8 +1544,6 @@ void MapblockMeshGenerator::drawAllfacesNode()
 	TileSpec tiles[6];
 	for (int face = 0; face < 6; face++)
 		getTile(nodebox_tile_dirs[face], &tiles[face]);
-	if (data->m_smooth_lighting)
-		getSmoothLightFrame(cur_node.lframe, blockpos_nodes + cur_node.p, data);
 	drawAutoLightedCuboid(box, tiles, 6);
 }
 

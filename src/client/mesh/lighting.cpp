@@ -82,8 +82,9 @@ video::SColor blendLightColor(const LightFrame &lframe, const v3f &vertex_pos,
 							  const v3f &vertex_normal, u8 light_source)
 {
 	LightInfo light = blendLight(lframe, vertex_pos);
-	video::SColor color = encode_light(light.getPair(MYMAX(0.0f, vertex_normal.Y)),
-			light_source, light.ambient_occlusion);
+	f32 boost_f = MYMAX(0.0f, vertex_normal.Y);
+	light.ambient_occlusion = (1.0f - boost_f) * light.ambient_occlusion + boost_f * light.light_boosted;
+	video::SColor color = encode_light(light.getPair(boost_f), light_source, light.ambient_occlusion);
 	if (!light_source)
 		applyFacesShading(color, vertex_normal);
 	return color;
@@ -218,12 +219,11 @@ static u16 getSmoothLightCombined(const v3s16 &p,
 			add_node(k + 4, !obstructed[k]);
 	}
 
-	bool skip_ambient_occlusion = false;
-
 	// Skip the AO entirely if the node at 'p' has the block light below the max light source
-	if ((u16)decode_light(light_source_max) > light_night_p)
-		skip_ambient_occlusion = true;
+	bool skip_ambient_occlusion_day = (u16)decode_light(light_source_max) > light_day_max;
+	bool skip_ambient_occlusion_night = (u16)decode_light(light_source_max) > light_night_max;
 
+	light_day_max = std::max(light_day_max, (u16)decode_light(light_source_max));
 	light_night_max = std::max(light_night_max, (u16)decode_light(light_source_max));
 
 	if (ambient_occlusion > 4) {
@@ -240,8 +240,11 @@ static u16 getSmoothLightCombined(const v3s16 &p,
 		//calculate table index for gamma space multiplier
 		ambient_occlusion -= 5;
 
-		if (!skip_ambient_occlusion)
+		if (!skip_ambient_occlusion_day) {
 			ambient_occlusion_f = light_amount[ambient_occlusion];
+		}
+		if (!skip_ambient_occlusion_night)
+			light_night_max *= light_amount[ambient_occlusion];
 	}
 
 	return light_day_max | (light_night_max << 8);

@@ -61,10 +61,8 @@ vec3 getSkyColor(float timeOfDay)
 vec3 calculateLighting(float timeOfDay, float skyLight, float blockLight, float ao)
 {
 	vec3 skyColor = getSkyColor(timeOfDay);
-	vec3 mixedColor = max(blockColor * blockLight, skyColor * skyLight);
-
-	mixedColor += ambientColor;
-	mixedColor *= ao;
+    vec3 mixedSkyColor = (skyColor * skyLight + ambientColor) * ao;
+	vec3 mixedColor = max(blockColor * blockLight, mixedSkyColor);
 
 	return mixedColor;
 }
