@@ -55,17 +55,18 @@ LightInfo blendLight(const LightFrame &lframe, const v3f &vertex_pos)
 	f32 lightDay = 0.0; // daylight
 	f32 lightNight = 0.0;
 	f32 lightBoosted = 0.0; // daylight + direct sunlight, if any
-	f32 ambientOcclusion = 1.0;
+	f32 ambientOcclusion = 0.0;
 	for (int k = 0; k < 8; ++k) {
 		f32 dx = (k & 4) ? x : 1 - x;
 		f32 dy = (k & 2) ? y : 1 - y;
 		f32 dz = (k & 1) ? z : 1 - z;
 		// Use direct sunlight (255), if any; use daylight otherwise.
 		f32 light_boosted = lframe.sunlight[k] ? 255 : lframe.lightsDay[k];
+		f32 ambientOcclusion_k = lframe.sunlight[k] ? 1.0 : lframe.ambientOcclusion[k];
 		lightDay += dx * dy * dz * lframe.lightsDay[k];
 		lightNight += dx * dy * dz * lframe.lightsNight[k];
 		lightBoosted += dx * dy * dz * light_boosted;
-		ambientOcclusion += dx * dy * dz * lframe.ambientOcclusion[k];
+		ambientOcclusion += dx * dy * dz * ambientOcclusion_k;
 	}
 	return LightInfo{lightDay, lightNight, lightBoosted, ambientOcclusion};
 }
@@ -82,9 +83,8 @@ video::SColor blendLightColor(const LightFrame &lframe, const v3f &vertex_pos,
 							  const v3f &vertex_normal, u8 light_source)
 {
 	LightInfo light = blendLight(lframe, vertex_pos);
-	f32 boost_f = MYMAX(0.0f, vertex_normal.Y);
-	light.ambient_occlusion = (1.0f - boost_f) * light.ambient_occlusion + boost_f * light.light_boosted;
-	video::SColor color = encode_light(light.getPair(boost_f), light_source, light.ambient_occlusion);
+	video::SColor color = encode_light(light.getPair(MYMAX(0.0f, vertex_normal.Y)),
+		light_source, light.ambient_occlusion);
 	if (!light_source)
 		applyFacesShading(color, vertex_normal);
 	return color;
@@ -220,8 +220,8 @@ static u16 getSmoothLightCombined(const v3s16 &p,
 	}
 
 	// Skip the AO entirely if the node at 'p' has the block light below the max light source
-	bool skip_ambient_occlusion_day = (u16)decode_light(light_source_max) > light_day_max;
-	bool skip_ambient_occlusion_night = (u16)decode_light(light_source_max) > light_night_max;
+	u16 light_max = std::max(light_day_max, light_night_max);
+	bool skip_ambient_occlusion = (u16)decode_light(light_source_max) > light_max;
 
 	light_day_max = std::max(light_day_max, (u16)decode_light(light_source_max));
 	light_night_max = std::max(light_night_max, (u16)decode_light(light_source_max));
@@ -240,11 +240,8 @@ static u16 getSmoothLightCombined(const v3s16 &p,
 		//calculate table index for gamma space multiplier
 		ambient_occlusion -= 5;
 
-		if (!skip_ambient_occlusion_day) {
+		if (!skip_ambient_occlusion)
 			ambient_occlusion_f = light_amount[ambient_occlusion];
-		}
-		if (!skip_ambient_occlusion_night)
-			light_night_max *= light_amount[ambient_occlusion];
 	}
 
 	return light_day_max | (light_night_max << 8);

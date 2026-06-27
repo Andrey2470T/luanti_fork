@@ -369,9 +369,7 @@ void MapblockMeshGenerator::drawAutoLightedCuboid(aabb3f box,
 			LightPair final_lights[4];
 			for (int j = 0; j < 4; j++) {
 				scene::Vertex3D &vertex = vertices[j];
-				f32 boost_f = MYMAX(0.0f, vertex.Normal.Y);
-				final_lights[j] = lights[light_indices[face][j]].getPair(boost_f);
-				final_lights[j].ambientOcclusion = (1.0f - boost_f) * final_lights[j].ambientOcclusion + boost_f * lights[light_indices[face][j]].light_boosted;
+				final_lights[j] = lights[light_indices[face][j]].getPair(MYMAX(0.0f, vertex.Normal.Y));
 				vertex.Color = encode_light(final_lights[j], cur_node.f->light_source, final_lights[j].ambientOcclusion);
 				if (!cur_node.f->light_source)
 					applyFacesShading(vertex.Color, vertex.Normal);
