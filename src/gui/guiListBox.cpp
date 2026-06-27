@@ -32,7 +32,7 @@ CGUIListBox::CGUIListBox(IGUIEnvironment *environment, IGUIElement *parent,
 {
 	IGUISkin *skin = Environment->getSkin();
 
-	ScrollBar = new GUIScrollBar(Environment, (IGUIElement *)Environment, -1,
+	ScrollBar = new GUIScrollBar(Environment, this, -1,
 			core::recti(0, 0, 1, 1), false, true, tsrc);
 	ScrollBar->setSubElement(true);
 	ScrollBar->setTabStop(false);
