@@ -255,7 +255,7 @@ void set_default_settings()
 	settings->setDefault("tooltip_append_itemname", "false");
 	settings->setDefault("fps_max", "60");
 	settings->setDefault("fps_max_unfocused", "10");
-	settings->setDefault("viewing_range", "190");
+	settings->setDefault("viewing_range", "12");
 	settings->setDefault("client_mesh_chunk", "1");
 	settings->setDefault("screen_w", "1024");
 	settings->setDefault("screen_h", "600");
@@ -567,7 +567,7 @@ void set_default_settings()
 	settings->setDefault("server_map_save_interval", "15");
 	settings->setDefault("client_mapblock_limit", "1500");
 	settings->setDefault("active_block_range", "2");
-	settings->setDefault("viewing_range", "70");
+	settings->setDefault("viewing_range", "5");
 	settings->setDefault("leaves_style", "simple");
 	// Note: OpenGL ES 2.0 is not guaranteed to provide depth textures,
 	// which we would need for PP.

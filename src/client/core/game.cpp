@@ -2363,11 +2363,11 @@ void Game::toggleUpdateCamera()
 void Game::increaseViewRange()
 {
 	s16 range = g_settings->getS16("viewing_range");
-	s16 range_new = range + 10;
-	s16 server_limit = sky->getFogDistance();
+	s16 range_new = range + 1;
+	s16 server_limit = sky->getFogDistance() / MAP_BLOCKSIZE;
 
-	if (range_new >= 4000) {
-		range_new = 4000;
+	if (range_new >= 250) {
+		range_new = 250;
 		std::wstring msg = server_limit >= 0 && range_new > server_limit ?
 				fwgettext("Viewing range changed to %d (the maximum), but limited to %d by game or mod", range_new, server_limit) :
 				fwgettext("Viewing range changed to %d (the maximum)", range_new);
@@ -2385,11 +2385,11 @@ void Game::increaseViewRange()
 void Game::decreaseViewRange()
 {
 	s16 range = g_settings->getS16("viewing_range");
-	s16 range_new = range - 10;
-	s16 server_limit = sky->getFogDistance();
+	s16 range_new = range - 1;
+	s16 server_limit = sky->getFogDistance() / MAP_BLOCKSIZE;
 
-	if (range_new <= 20) {
-		range_new = 20;
+	if (range_new <= 2) {
+		range_new = 2;
 		std::wstring msg = server_limit >= 0 && range_new > server_limit ?
 				fwgettext("Viewing changed to %d (the minimum), but limited to %d by game or mod", range_new, server_limit) :
 				fwgettext("Viewing changed to %d (the minimum)", range_new);
@@ -3873,12 +3873,12 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 	*/
 
 	if (sky->getFogDistance() >= 0) {
-		draw_control->wanted_range = MYMIN(draw_control->wanted_range, sky->getFogDistance());
+		draw_control->wanted_range = MYMIN(draw_control->wanted_range, sky->getFogDistance() / MAP_BLOCKSIZE);
 	}
 	if (draw_control->range_all && sky->getFogDistance() < 0) {
 		runData.fog_range = FOG_RANGE_ALL;
 	} else {
-		runData.fog_range = draw_control->wanted_range * BS;
+		runData.fog_range = draw_control->wanted_range * MAP_BLOCKSIZE * BS;
 	}
 
 	/*

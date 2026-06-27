@@ -101,7 +101,7 @@ void DirectionalLight::updateFrustum(const Camera *cam, Client *client)
 	float zNear = cam->getCameraNode()->getNearValue();
 	float zFar = getMaxFarValue();
 	if (!client->getEnv().getClientMap().getControl().range_all)
-		zFar = MYMIN(zFar, client->getEnv().getClientMap().getControl().wanted_range * BS);
+		zFar = MYMIN(zFar, client->getEnv().getClientMap().getControl().wanted_range * MAP_BLOCKSIZE * BS);
 
 	///////////////////////////////////
 	// update splits near and fars

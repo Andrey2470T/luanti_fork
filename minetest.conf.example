@@ -567,9 +567,9 @@
 #    type: int min: 1 max: 4294967295
 # fps_max_unfocused = 10
 
-#    View distance in nodes.
-#    type: int min: 20 max: 4000
-# viewing_range = 190
+#    View distance in mapblocks.
+#    type: int min: 2 max: 250
+# viewing_range = 12
 
 #    Undersampling is similar to using a lower screen resolution, but it applies
 #    to the game world only, keeping the GUI intact.

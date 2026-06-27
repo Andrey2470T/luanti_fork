@@ -273,34 +273,24 @@ void ClientMap::render()
 	renderMap(driver, SceneManager->getSceneNodeRenderPass());
 }
 
-void ClientMap::getBlocksInViewRange(v3s16 cam_pos_nodes,
+void ClientMap::getBlocksInViewRange(v3s16 cam_pos_blocks,
 		v3s16 *p_blocks_min, v3s16 *p_blocks_max, float range)
 {
 	if (range <= 0.0f)
 		range = m_control.wanted_range;
 
-	v3s16 box_nodes_d = range * v3s16(1, 1, 1);
+	v3s16 box_blocks_d = range * v3s16(1, 1, 1);
 	// Define p_nodes_min/max as v3s32 because 'cam_pos_nodes -/+ box_nodes_d'
 	// can exceed the range of v3s16 when a large view range is used near the
 	// world edges.
-	v3s32 p_nodes_min(
-		cam_pos_nodes.X - box_nodes_d.X,
-		cam_pos_nodes.Y - box_nodes_d.Y,
-		cam_pos_nodes.Z - box_nodes_d.Z);
-	v3s32 p_nodes_max(
-		cam_pos_nodes.X + box_nodes_d.X,
-		cam_pos_nodes.Y + box_nodes_d.Y,
-		cam_pos_nodes.Z + box_nodes_d.Z);
-	// Take a fair amount as we will be dropping more out later
-	// Umm... these additions are a bit strange but they are needed.
 	*p_blocks_min = v3s16(
-			p_nodes_min.X / MAP_BLOCKSIZE - 3,
-			p_nodes_min.Y / MAP_BLOCKSIZE - 3,
-			p_nodes_min.Z / MAP_BLOCKSIZE - 3);
+		cam_pos_blocks.X - box_blocks_d.X - 3,
+		cam_pos_blocks.Y - box_blocks_d.Y - 3,
+		cam_pos_blocks.Z - box_blocks_d.Z - 3);
 	*p_blocks_max = v3s16(
-			p_nodes_max.X / MAP_BLOCKSIZE + 1,
-			p_nodes_max.Y / MAP_BLOCKSIZE + 1,
-			p_nodes_max.Z / MAP_BLOCKSIZE + 1);
+		cam_pos_blocks.X + box_blocks_d.X + 1,
+		cam_pos_blocks.Y + box_blocks_d.Y + 1,
+		cam_pos_blocks.Z + box_blocks_d.Z + 1);
 }
 
 class MapBlockFlags
@@ -372,7 +362,7 @@ void ClientMap::updateDrawList()
 
 	v3s16 p_blocks_min;
 	v3s16 p_blocks_max;
-	getBlocksInViewRange(cam_pos_nodes, &p_blocks_min, &p_blocks_max);
+	getBlocksInViewRange(cam_pos_nodes / MAP_BLOCKSIZE, &p_blocks_min, &p_blocks_max);
 
 	// Number of blocks occlusion culled
 	u32 blocks_occlusion_culled = 0;
@@ -449,9 +439,9 @@ void ClientMap::updateDrawList()
 				}
 
 				// First, perform a simple distance check.
+				f32 max_dist = m_control.wanted_range * MAP_BLOCKSIZE * BS + mesh_sphere_radius;
 				if (!m_control.range_all &&
-					mesh_sphere_center.getDistanceFrom(m_camera_position) >
-						m_control.wanted_range * BS + mesh_sphere_radius)
+					mesh_sphere_center.getDistanceFrom(m_camera_position) > max_dist)
 					continue; // Out of range, skip.
 
 				// Keep the block alive as long as it is in range.
@@ -552,9 +542,9 @@ void ClientMap::updateDrawList()
 			}
 
 			// First, perform a simple distance check.
+			f32 max_dist = m_control.wanted_range * MAP_BLOCKSIZE * BS + mesh_sphere_radius;
 			if (!m_control.range_all &&
-				mesh_sphere_center.getDistanceFrom(intToFloat(cam_pos_nodes, BS)) >
-					m_control.wanted_range * BS + mesh_sphere_radius)
+				mesh_sphere_center.getDistanceFrom(intToFloat(cam_pos_nodes, BS)) > max_dist)
 				continue; // Out of range, skip.
 
 			// Frustum culling
@@ -770,9 +760,9 @@ void ClientMap::touchMapBlocks()
 			}
 
 			// First, perform a simple distance check.
+			f32 max_dist = m_control.wanted_range * MAP_BLOCKSIZE * BS + mesh_sphere_radius;
 			if (!m_control.range_all &&
-				mesh_sphere_center.getDistanceFrom(m_camera_position) >
-					m_control.wanted_range * BS + mesh_sphere_radius)
+				mesh_sphere_center.getDistanceFrom(m_camera_position) > max_dist)
 				continue; // Out of range, skip.
 
 			// Keep the block alive as long as it is in range.

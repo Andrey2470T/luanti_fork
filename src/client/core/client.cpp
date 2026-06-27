@@ -452,7 +452,7 @@ void Client::step(float dtime)
 		Run Map's timers and unload unused data
 	*/
 	constexpr float map_timer_and_unload_dtime = 5.25f;
-	constexpr s32 mapblock_limit_enforce_distance = 200;
+	constexpr s32 mapblock_limit_enforce_distance = 13; // in mapblocks
 	if(m_map_timer_and_unload_interval.step(dtime, map_timer_and_unload_dtime)) {
 		std::vector<v3s16> deleted_blocks;
 
@@ -468,8 +468,7 @@ void Client::step(float dtime)
 			// the players back.
 			// We use a sphere volume to approximate this. In practice far less
 			// blocks will be needed due to occlusion/culling.
-			float blocks_range = ceilf(std::min(mapblock_limit_enforce_distance, view_range)
-				/ (float) MAP_BLOCKSIZE);
+			float blocks_range = ceilf(std::min(mapblock_limit_enforce_distance, view_range));
 			mapblock_limit = (4.f/3.f) * M_PI * powf(blocks_range, 3);
 			assert(mapblock_limit > 0);
 			mapblock_limit = std::max(mapblock_limit, configured_limit);
@@ -1056,8 +1055,7 @@ void writePlayerPos(LocalPlayer *myplayer, ClientMap *clientMap, NetworkPacket *
 	u32 keyPressed   = myplayer->control.getKeysPressed();
 	// scaled by 80, so that pi can fit into a u8
 	u8 fov           = std::fmin(255.0f, clientMap->getCameraFov() * 80.0f);
-	u8 wanted_range  = std::fmin(255.0f,
-			std::ceil(clientMap->getWantedRange() * (1.0f / MAP_BLOCKSIZE)));
+	u8 wanted_range  = std::fmin(255.0f, clientMap->getWantedRange());
 	f32 movement_speed = myplayer->control.movement_speed;
 	f32 movement_dir = myplayer->control.movement_direction;
 
@@ -1406,8 +1404,7 @@ void Client::sendPlayerPos()
 
 	ClientMap &map = m_env.getClientMap();
 	u8 camera_fov   = std::fmin(255.0f, map.getCameraFov() * 80.0f);
-	u8 wanted_range = std::fmin(255.0f,
-			std::ceil(map.getWantedRange() * (1.0f / MAP_BLOCKSIZE)));
+	u8 wanted_range = std::fmin(255.0f, map.getWantedRange());
 
 	u32 keyPressed = player->control.getKeysPressed();
 	bool camera_inverted = m_camera->getCameraMode() == CAMERA_MODE_THIRD_FRONT;

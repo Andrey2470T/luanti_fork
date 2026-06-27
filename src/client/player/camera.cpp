@@ -578,12 +578,13 @@ void Camera::updateViewingRange()
 
 	m_cameranode->setNearValue(0.1f * BS);
 
-	m_draw_control.wanted_range = std::fmin(adjustDist(viewing_range, getFovMax()), 4000);
+	m_draw_control.wanted_range = std::fmin(adjustDist(viewing_range, getFovMax()), 250);
 	if (m_draw_control.range_all) {
 		m_cameranode->setFarValue(100000.0);
 		return;
 	}
-	m_cameranode->setFarValue((viewing_range < 2000) ? 2000 * BS : viewing_range * BS);
+	f32 far = ((viewing_range < 250) ? 250 * BS : viewing_range * BS) * MAP_BLOCKSIZE;
+	m_cameranode->setFarValue(far);
 }
 
 void Camera::setDigging(s32 button)

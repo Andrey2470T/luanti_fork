@@ -12,7 +12,7 @@
 
 struct MapDrawControl
 {
-	// Wanted drawing range
+	// Wanted drawing range (in mapblocks)
 	float wanted_range = 0.0f;
 	// Overrides limits by drawing everything
 	bool range_all = false;
@@ -87,7 +87,7 @@ public:
 		return m_box;
 	}
 
-	void getBlocksInViewRange(v3s16 cam_pos_nodes,
+	void getBlocksInViewRange(v3s16 cam_pos_blocks,
 		v3s16 *p_blocks_min, v3s16 *p_blocks_max, float range=-1.0f);
 	void updateDrawList();
 	// @brief Calculate statistics about the map and keep the blocks alive

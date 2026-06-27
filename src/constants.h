@@ -47,7 +47,7 @@
     Map-related things
 */
 
-// The absolute working limit is (2^15 - viewing_range).
+// The absolute working limit is (2^15 - viewing_range * MAP_BLOCKSIZE).
 // I really don't want to make every algorithm to check if it's going near
 // the limit or not, so this is lower.
 // This is the maximum value the setting map_generation_limit can be
