@@ -100,7 +100,7 @@ void TileAnimationParams::getFrames(
 		for (u16 k = 0; k < frame_count; k++) {
 			frames_rects->emplace_back(
 				v2u32(0, frame_size.Y * k),
-				v2u32(frame_size.X, frame_size.Y)
+				core::dimension2d<u32>(frame_size.X, frame_size.Y)
 			);
 		}
 	} else if (type == TAT_SHEET_2D) {
@@ -111,7 +111,7 @@ void TileAnimationParams::getFrames(
 			r = k % sheet_2d.frames_w;
 			frames_rects->emplace_back(
 				v2u32(r * frame_size.X, q * frame_size.Y),
-				v2u32(frame_size.X, frame_size.Y)
+				core::dimension2d<u32>(frame_size.X, frame_size.Y)
 			);
 		}
 	}
