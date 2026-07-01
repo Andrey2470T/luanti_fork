@@ -1,16 +1,73 @@
 #include "atlas.h"
 #include "Video/VideoDriver.h"
-#include <rectpack2D/finders_interface.h>
 #include "settings.h"
+
+struct FrameEdge
+{
+	core::recti source;
+	core::position2di pos;
+	v2s32 dir;
+};
+
+video::Image *AtlasTile::createFramedImage() const
+{
+	u8 frameThickness = atlas->getFrameThickness();
+
+	if (!image || frameThickness == 0)
+		return image;
+
+	auto frameRect = image->getClipRect();
+	auto frameSize = frameRect.getSize();
+
+	auto framedImage = new video::Image(image->getColorFormat(), size);
+
+	auto framedImgOffset = frameThickness * image->getPitch() + frameThickness * image->getBytesPerPixel();
+	image->copyToNoScaling(
+		(u8 *)(framedImage->getData()) + framedImgOffset,
+		frameRect.getWidth(), frameRect.getHeight(), image->getColorFormat(), image->getPitch());
+
+	std::array<FrameEdge, 4> edges = {
+		// source is right, pos is left, dir is left
+		FrameEdge{
+			{size.X-frameThickness-1, frameThickness, size.X-frameThickness, size.Y-frameThickness},
+			{frameThickness, frameThickness}, {-1, 0}},
+		// source is left, pos is right, dir is right
+		FrameEdge{
+			{frameThickness, frameThickness, frameThickness + 1, size.Y - frameThickness},
+			{size.X - frameThickness, frameThickness}, {0, 1}},
+		// source is bottom, pos is top, dir is up
+		FrameEdge{
+			{frameThickness, size.Y - frameThickness, size.X - frameThickness, size.Y - frameThickness + 1},
+			{frameThickness, frameThickness}, {0, 1}},
+		// source is top, pos is bottom, dir is down
+		FrameEdge{
+			{frameThickness, frameThickness, size.X - frameThickness, frameThickness + 1},
+			{frameThickness, size.Y - frameThickness}, {0, -1}}
+	};
+
+	for (const auto &edge : edges) {
+		auto &sourceRect = edge.source;
+		auto pos = edge.pos;
+
+		for (u8 k = 0; k < frameThickness; k++) {
+			pos += edge.dir * k;
+			image->copyTo(framedImage, pos, sourceRect);
+		}
+	}
+
+	return framedImage;
+}
 
 bool AtlasTile::draw(f32 time)
 {
 	auto tex = atlas->getTexture();
 
-	if (!image || !tex)
+	auto actualImage = createFramedImage();
+
+	if (!actualImage || !tex)
 		return false;
 
-	 tex->uploadTexture(0, image, pos.X, pos.Y);
+	 tex->uploadTexture(0, actualImage, pos.X, pos.Y);
 
 	 return true;
 }
@@ -27,26 +84,57 @@ bool AnimatedAtlasTile::draw(f32 time)
 
 	image->getClipRect() = info.getCurrentFrameRect();
 
-	tex->uploadTexture(0, image, pos.X, pos.Y);
+	auto actualImage = createFramedImage();
+
+	tex->uploadTexture(0, actualImage, pos.X, pos.Y);
 
 	return true;
+}
+
+Atlas::Atlas(
+	video::VideoDriver *_driver, const std::string &_prefixName,
+	u32 _atlasNum, Rectpack2DPackerOutput &output)
+	: driver(_driver), frameThickness(output.frameThickness)
+{
+	assert(output.images.size() == output.rects.size());
+
+	std::string name = _prefixName;
+	name += "_";
+	name += std::to_string(_atlasNum);
+	name += "_";
+	name += std::to_string(output.atlasSize) + "x" + std::to_string(output.atlasSize);
+
+	texture = new video::GLTexture(
+		name, {output.atlasSize, output.atlasSize}, video::ETT_2D, video::ECF_A8R8G8B8,
+		driver, 0, output.frameThickness, false);
+	driver->addTexture(texture);
+
+	for (u32 i = 0; i < output.images.size(); i++) {
+		auto &imgEntry = output.images.at(i);
+		auto &rect = output.rects.at(i);
+
+		AtlasTile *tile = nullptr;
+
+		if (imgEntry.anim.hasAnimation()) {
+			tile = new AnimatedAtlasTile(this, imgEntry.image, imgEntry.anim);
+			addAnimatedTile(static_cast<AnimatedAtlasTile *>(tile));
+		}
+		else {
+			tile = new AtlasTile(this, imgEntry.image);
+			addTile(tile);
+		}
+
+		tile->pos = {static_cast<u32>(rect.x), static_cast<u32>(rect.y)};
+		tile->size = {static_cast<u32>(rect.w), static_cast<u32>(rect.h)};
+	}
+
+	drawTiles(0.0f);
 }
 
 Atlas::~Atlas()
 {
 	if (texture)
 		driver->removeTexture(texture);
-}
-
-void Atlas::createTexture(const std::string &prefixName, u32 num, u32 size)
-{
-	std::string name = prefixName;
-	name += "_";
-	name += std::to_string(num);
-	name += "_";
-	name += std::to_string(size) + "x" + std::to_string(size);
-
-	texture = driver->addTexture(core::dimension2du(size, size), name, video::ECF_A8R8G8B8);
 }
 
 bool Atlas::addTile(AtlasTile *tile)
@@ -58,6 +146,15 @@ bool Atlas::addTile(AtlasTile *tile)
 
 	tiles.emplace_back(tile);
 	mapImgToTileIndex[tile->image] = tile;
+
+	return true;
+}
+
+bool Atlas::addAnimatedTile(AnimatedAtlasTile *tile)
+{
+	if (!addTile(tile))
+    	return false;
+	animatedTiles.emplace_back(tiles.size() - 1);
 
 	return true;
 }
@@ -106,39 +203,10 @@ bool Atlas::operator==(const Atlas *other) const
 	return texture->getName().getInternalName() == other->texture->getName().getInternalName();
 }
 
-using namespace rectpack2D;
 using empty_rects = empty_spaces<false>;
 
-void Rectpack2DPacker::pack(
-	const ImagesSet &images, ImagesSet::iterator &curImg,
-	u32 &atlasSize, std::vector<core::rect<u32>> &output)
+void Rectpack2DPacker::rectPackFunc()
 {
-	u32 atlasArea = 0;
-	u32 maxArea = maxTextureSize * maxTextureSize;
-
-	std::vector<rectpack2D::rect_xywh> rects;
-
-	for (; curImg != images.end(); curImg++) {
-		auto img = curImg->first;
-		auto anim = curImg->second;
-
-		if (!img)
-			continue;
-
-		v2u32 imgSize = img->getClipRect().getSize() + v2u32(2*frameThickness);
-		u32 imgArea = imgSize.X	* imgSize.Y;
-
-		// Double the atlas area for the cracks space
-		if ((atlasArea + imgArea) * 2 > maxArea)
-			break;
-
-		rects.emplace_back(0, 0, imgSize.X, imgSize.Y);
-
-		atlasArea += imgArea;
-	}
-
-	atlasSize = std::pow(2u, (u32)std::ceil(std::log2(std::sqrt((f32)atlasArea))));
-
 	auto report_successful = [](rect_xywh&) {
 		return callback_result::CONTINUE_PACKING;
 	};
@@ -146,30 +214,60 @@ void Rectpack2DPacker::pack(
 		return callback_result::ABORT_PACKING;
 	};
 
-	auto res_size = find_best_packing<empty_rects>(rects,
-		make_finder_input(atlasSize, 1, report_successful, report_unsuccessful, flipping_option::DISABLED));
-	atlasSize = std::max(res_size.w, res_size.h);
+	auto res_size = find_best_packing<empty_rects>(output.rects,
+		make_finder_input(output.atlasSize, 1, report_successful, report_unsuccessful, flipping_option::DISABLED));
+	output.atlasSize = std::max(res_size.w, res_size.h);
+}
 
-	for (u32 i = 0; i < rects.size(); i++) {
-		auto rect = rects.at(i);
-		output.emplace_back(rect.x, rect.y, rect.w, rect.h);
+Rectpack2DPackerOutput &Rectpack2DPacker::pack(std::vector<ImageEntry> &images, u32 &curImg)
+{
+	output.clear();
+
+	u32 atlasArea = 0;
+	u32 maxArea = maxTextureSize * maxTextureSize;
+
+	if (filtering) {
+		// The image at 'curImg' is considered to have minimal size (sorting is done from smallest to largest)
+		auto minImgRect = images.at(curImg).image->getClipRect();
+		output.frameThickness = core::u32_log2(std::min(minImgRect.getWidth(), minImgRect.getHeight()));
 	}
+
+	for (; curImg != images.size(); curImg++) {
+		auto &entry = images.at(curImg);
+
+		if (!entry.image)
+			continue;
+
+		v2u32 imgSize = entry.image->getClipRect().getSize();
+		u32 newRW = imgSize.X + 2 * output.frameThickness;
+		u32 newRH = imgSize.Y + 2 * output.frameThickness;
+		u32 imgArea = newRW	* newRH;
+
+		if ((atlasArea + imgArea) > maxArea)
+			break;
+
+		output.images.emplace_back(entry.image, entry.anim);
+		output.rects.emplace_back(0, 0, newRW, newRH);
+
+		atlasArea += imgArea;
+	}
+
+	output.atlasSize = std::pow(2u, (u32)std::ceil(std::log2(std::sqrt((f32)atlasArea))));
+
+	rectPackFunc();
+
+	return output;
 }
 
 AtlasPool::AtlasPool(video::VideoDriver *_driver, const std::string &_name)
-	: driver(_driver), prefixName(_name), maxTextureSize(driver->getMaxTextureSize().Width),
-	  filtered(g_settings->getBool("bilinear_filter") || g_settings->getBool("trilinear_filter") ||
+	: driver(_driver), prefixName(_name), packer(driver->getMaxTextureSize().Width,
+	  g_settings->getBool("bilinear_filter") || g_settings->getBool("trilinear_filter") ||
 	  g_settings->getBool("anisotropic_filter"))
 {}
 
-void AtlasPool::addTile(video::Image *img)
+void AtlasPool::addTile(const ImageEntry &image)
 {
-	images.emplace(img, AnimationInfo());
-}
-
-void AtlasPool::addAnimatedTile(video::Image *img, const AnimationInfo &anim)
-{
-	images.emplace(img, anim);
+	images.insert(image);
 }
 
 /*
@@ -247,28 +345,6 @@ rectf AtlasPool::getTileRect(img::Image *tile, bool toUV, bool force_add, std::o
     return rectf();
 }
 
-void AtlasPool::buildRectpack2DAtlas()
-{
-    if (type != AtlasType::RECTPACK2D || images.empty())
-        return;
-
-    static u32 atlasNum = 0;
-    static u32 startImg = 0;
-
-    Rectpack2DAtlas *atlas = new Rectpack2DAtlas(cache, prefixName, atlasNum, maxTextureSize, filtered, images, animatedImages, startImg);
-    cache->cacheResource<Atlas>(ResourceType::ATLAS, atlas, atlas->getName(atlas->getTextureSize(), atlasNum));
-
-    atlases.push_back(atlas);
-
-    if (startImg <= images.size()-1) {
-        ++atlasNum;
-        buildRectpack2DAtlas();
-    }
-
-    atlasNum = 0;
-    startImg = 0;
-}
-
 void AtlasPool::updateMeshUVs(MeshBuffer *buffer, u32 start_index, u32 index_count, img::Image *tile,
     img::Image* oldTile, bool toUV, bool force_add, std::optional<AtlasTileAnim> anim)
 {
@@ -315,6 +391,34 @@ void AtlasPool::forceAddTile(img::Image *img, std::optional<AtlasTileAnim> anim)
 
     }
 }*/
+
+void AtlasPool::build()
+{
+	if (images.empty())
+		return;
+
+	if (sortedImages.empty()) {
+		sortedImages.reserve(images.size());
+		for (auto &img : images)
+			sortedImages.emplace_back(img);
+		std::sort(sortedImages.begin(), sortedImages.end(),
+			[](const ImageEntry &a, const ImageEntry &b) {
+				auto aSize = a.image->getClipRect().getArea();
+				auto bSize = b.image->getClipRect().getArea();
+				return aSize < bSize;
+			});
+	}
+
+	static u32 curImg = 0;
+
+	auto res = packer.pack(sortedImages, curImg);
+
+	auto atlas = std::make_unique<Atlas>(driver, prefixName, atlases.size(), res);
+	atlases.emplace_back(atlas.release());
+
+	if (curImg != images.size())
+		build();
+}
 
 void AtlasPool::drawTiles(f32 time)
 {

@@ -5,6 +5,7 @@
 #include <Image/Image.h>
 #include <Video/Texture.h>
 #include "client/render/tile.h"
+#include <rectpack2D/finders_interface.h>
 #include <list>
 #include <memory>
 #include <optional>
@@ -27,19 +28,15 @@ struct AtlasTile
 	AtlasTile(Atlas *_atlas, video::Image *_image=nullptr)
 		: image(_image), atlas(_atlas)
 	{}
+	virtual ~AtlasTile() = default;
+
+	video::Image *createFramedImage() const;
 
 	virtual bool draw(f32 time);
 
-	bool operator==(const AtlasTile *other)
+	bool operator==(const AtlasTile *other) const
 	{
 		return (pos == other->pos && size == other->size);
-	}
-
-	size_t hash() const
-	{
-		if (!image)
-			return 0;
-		return std::hash<video::Image*>{}(image);
 	}
 };
 
@@ -54,6 +51,8 @@ struct AnimatedAtlasTile : public AtlasTile
 	bool draw(f32 time) override;
 };
 
+struct Rectpack2DPackerOutput;
+
 class Atlas
 {
 protected:
@@ -64,15 +63,15 @@ protected:
 	std::unordered_map<video::Image *, AtlasTile *> mapImgToTileIndex;
 	std::vector<u32> animatedTiles;
 
+	u8 frameThickness;
+
 	bool firstDraw{true};
 public:
-	Atlas(video::VideoDriver *_driver)
-		: driver(_driver)
-	{}
+	Atlas(
+		video::VideoDriver *_driver, const std::string &_prefixName,
+		u32 _atlasNum, Rectpack2DPackerOutput &output);
 
 	~Atlas();
-
-	void createTexture(const std::string &prefixName, u32 num, u32 size);
 
 	video::GLTexture *getTexture() const
 	{
@@ -89,58 +88,86 @@ public:
 		return tiles.size();
 	}
 
+	u8 getFrameThickness() const
+	{
+		return frameThickness;
+	}
+
 	bool addTile(AtlasTile *tile);
+	bool addAnimatedTile(AnimatedAtlasTile *tile);
 
 	AtlasTile *getTile(u32 i) const;
 	AtlasTile *getTileByImage(video::Image *img);
-
-	bool canFit(const core::rect<u32> &area, const core::rect<u32> &tile) const
-	{
-		return area.isRectInside(tile);
-	}
-
-	void packTiles();
 
 	void drawTiles(f32 time);
 
 	bool operator==(const Atlas *other) const;
 };
 
-typedef std::pair<video::Image *, AnimationInfo> ImagePair;
+struct ImageEntry {
+	video::Image *image{nullptr};
+	AnimationInfo anim;
 
-struct ImagePairHash {
-	size_t operator()(const ImagePair& entry) const {
+	ImageEntry(video::Image* _image, const AnimationInfo &_anim={})
+		: image(_image), anim(_anim)
+	{}
+
+	bool operator==(const ImageEntry &other)
+	{
+		return image == other.image && anim == other.anim;
+	}
+};
+
+struct ImageEntryHash {
+	size_t operator()(const ImageEntry& entry) const {
 		size_t seed = 0;
-		seed ^= std::hash<video::Image*>{}(entry.first) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-		seed ^= entry.second.hash() + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+		seed ^= std::hash<video::Image*>{}(entry.image) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+		seed ^= entry.anim.hash() + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 
 		return seed;
 	}
 };
 
-struct ImagePairEqual {
-	bool operator()(const ImagePair& a, const ImagePair& b) const {
-		return a.first == b.first && a.second == b.second;
+typedef std::unordered_set<ImageEntry, ImageEntryHash> ImagesSet;
+using namespace rectpack2D;
+
+struct Rectpack2DPackerOutput
+{
+	u32 atlasSize;
+	u8 frameThickness;
+	std::vector<ImageEntry> images;
+	std::vector<rectpack2D::rect_xywh> rects;
+
+	void clear()
+	{
+		atlasSize = 0;
+		frameThickness = 0;
+		images.clear();
+		rects.clear();
 	}
 };
-
-typedef std::unordered_set<ImagePair, ImagePairHash, ImagePairEqual> ImagesSet;
 
 class Rectpack2DPacker
 {
 	std::vector<core::rect<u32>> freeSpaces;
 
-	u8 frameThickness{0};
 	u32 maxTextureSize;
+	bool filtering{false};
+
+	Rectpack2DPackerOutput output;
 
 public:
-	Rectpack2DPacker(u8 _frameThickness, u32 _maxTextureSize)
-		: frameThickness(_frameThickness), maxTextureSize(_maxTextureSize)
+	Rectpack2DPacker(u32 _maxTextureSize, bool _filtering)
+		: maxTextureSize(_maxTextureSize), filtering(_filtering)
 	{}
 
-	void pack(
-		const ImagesSet &images, ImagesSet::iterator &curImg,
-		u32 &atlasSize, std::vector<core::rect<u32>> &output);
+	Rectpack2DPackerOutput &getOutput()
+	{
+		return output;
+	}
+
+	void rectPackFunc();
+	Rectpack2DPackerOutput &pack(std::vector<ImageEntry> &images, u32 &curImg);
 };
 
 // Interface saving and handling sets of atlases
@@ -152,26 +179,22 @@ class AtlasPool
 	video::VideoDriver *driver;
 
 	std::string prefixName;
-	u32 maxTextureSize;
-	bool filtered;
-	u8 maxMipLevel{0};
 
-	std::unique_ptr<Rectpack2DPacker> packer;
+	Rectpack2DPacker packer;
 
 	std::vector<std::unique_ptr<Atlas>> atlases;
 	ImagesSet images;
+	std::vector<ImageEntry> sortedImages;
 public:
 	AtlasPool(video::VideoDriver *_driver, const std::string &_name);
 
-	Atlas *getAtlasByTile(video::Image *tile, bool force_add=false, std::optional<AtlasTileAnim> anim=std::nullopt);
+	Atlas *getAtlasByImage(const ImageEntry &image, bool force_add=false);
 
-	AtlasTile *getTileByImage(video::Image *tile);
-	AnimatedAtlasTile *getAnimatedTileByImage(video::Image *tile);
+	AtlasTile *getTileByImage(const ImageEntry &image);
 
-	void addTile(video::Image *img);
-	void addAnimatedTile(video::Image *img, const AnimationInfo &anim);
+	void addTile(const ImageEntry &image);
 
-	core::rectf getTileRect(video::Image *tile, bool toUV=false, bool force_add=false, std::optional<AtlasTileAnim> anim=std::nullopt);
+	core::rectf getTileRect(const ImageEntry &image, bool force_add=false);
 
 	// Recursively create and fill new atlases with tiles while the internal image counter doesn't reach some limit
 	void build();
@@ -183,5 +206,5 @@ public:
 	void updateAllMeshUVs(scene::IMeshBuffer *buffer, video::Image *tile,
 		video::Image* oldTile=nullptr, bool toUV=true, bool force_add=false, std::optional<AtlasTileAnim> anim=std::nullopt);*/
 private:
-	void forceAddTile(video::Image *img, std::optional<AtlasTileAnim> anim=std::nullopt);
+	void forceAddTile(const ImageEntry &image);
 };
