@@ -35,7 +35,7 @@ void getSmoothLightFrame(LightFrame &lframe, const v3s16 &p, MeshMakeData *data)
 		lframe.ambientOcclusion[k] = ao;
 		// If there is direct sunlight and no ambient occlusion at some corner,
 		// mark the vertical edge (top and bottom corners) containing it.
-		if (light.lightDay == 255) {
+		if (light.lightDay * ao == 255) {
 			lframe.sunlight[k] = true;
 			lframe.sunlight[k ^ 2] = true;
 		}
@@ -62,13 +62,15 @@ LightInfo blendLight(const LightFrame &lframe, const v3f &vertex_pos)
 		f32 dz = (k & 1) ? z : 1 - z;
 		// Use direct sunlight (255), if any; use daylight otherwise.
 		f32 light_boosted = lframe.sunlight[k] ? 255 : lframe.lightsDay[k];
-		f32 ambientOcclusion_k = lframe.sunlight[k] ? 1.0 : lframe.ambientOcclusion[k];
 		lightDay += dx * dy * dz * lframe.lightsDay[k];
 		lightNight += dx * dy * dz * lframe.lightsNight[k];
 		lightBoosted += dx * dy * dz * light_boosted;
-		ambientOcclusion += dx * dy * dz * ambientOcclusion_k;
+		ambientOcclusion += dx * dy * dz * lframe.ambientOcclusion[k];
 	}
-	return LightInfo{lightDay, lightNight, lightBoosted, ambientOcclusion};
+	return LightInfo{
+		std::min({lightDay, 255.0f}), std::min({lightNight, 255.0f}),
+		std::min({lightBoosted, 255.0f}), std::min({ambientOcclusion, 1.0f})
+	};
 }
 
 // Calculates vertex color to be used in mapblock mesh
@@ -220,13 +222,11 @@ static u16 getSmoothLightCombined(const v3s16 &p,
 	}
 
 	// Skip the AO entirely if the node at 'p' has the block light below the max light source
-	u16 light_max = std::max(light_day_max, light_night_max);
-	bool skip_ambient_occlusion = (u16)decode_light(light_source_max) > light_max;
+	bool skip_ambient_occlusion = (u16)decode_light(light_source_max) > light_night_max;
 
-	light_day_max = std::max(light_day_max, (u16)decode_light(light_source_max));
 	light_night_max = std::max(light_night_max, (u16)decode_light(light_source_max));
 
-	if (ambient_occlusion > 4) {
+	if (!skip_ambient_occlusion && ambient_occlusion > 4) {
 		static thread_local const float ao_gamma = rangelim(
 			g_settings->getFloat("ambient_occlusion_gamma"), 0.25, 4.0);
 
@@ -238,10 +238,7 @@ static u16 getSmoothLightCombined(const v3s16 &p,
 		};
 
 		//calculate table index for gamma space multiplier
-		ambient_occlusion -= 5;
-
-		if (!skip_ambient_occlusion)
-			ambient_occlusion_f = light_amount[ambient_occlusion];
+		ambient_occlusion_f = light_amount[ambient_occlusion-5];
 	}
 
 	return light_day_max | (light_night_max << 8);
