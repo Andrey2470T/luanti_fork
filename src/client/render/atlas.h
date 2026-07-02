@@ -205,6 +205,6 @@ public:
 		video::Image* oldTile=nullptr, bool toUV=true, bool force_add=false, std::optional<AtlasTileAnim> anim=std::nullopt);
 	void updateAllMeshUVs(scene::IMeshBuffer *buffer, video::Image *tile,
 		video::Image* oldTile=nullptr, bool toUV=true, bool force_add=false, std::optional<AtlasTileAnim> anim=std::nullopt);*/
-private:
-	void forceAddTile(const ImageEntry &image);
+//private:
+//	void forceAddTile(const ImageEntry &image);
 };
