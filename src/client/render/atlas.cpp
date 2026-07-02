@@ -21,36 +21,37 @@ video::Image *AtlasTile::createFramedImage() const
 
 	auto framedImage = new video::Image(image->getColorFormat(), size);
 
+	// Draw the base image in the center
 	auto framedImgOffset = frameThickness * image->getPitch() + frameThickness * image->getBytesPerPixel();
 	image->copyToNoScaling(
 		(u8 *)(framedImage->getData()) + framedImgOffset,
-		frameRect.getWidth(), frameRect.getHeight(), image->getColorFormat(), image->getPitch());
+		frameSize.Width, frameSize.Height, image->getColorFormat(), image->getPitch());
 
+	// Draw the four frame edges with some pixel thickness
 	std::array<FrameEdge, 4> edges = {
 		// source is right, pos is left, dir is left
 		FrameEdge{
-			{size.X-frameThickness-1, frameThickness, size.X-frameThickness, size.Y-frameThickness},
-			{frameThickness, frameThickness}, {-1, 0}},
+			{size.X-frameThickness, frameThickness, size.X-frameThickness, size.Y-frameThickness},
+			{frameThickness - 1, frameThickness}, {-1, 0}},
 		// source is left, pos is right, dir is right
 		FrameEdge{
-			{frameThickness, frameThickness, frameThickness + 1, size.Y - frameThickness},
-			{size.X - frameThickness, frameThickness}, {0, 1}},
+			{frameThickness, frameThickness, frameThickness, size.Y - frameThickness},
+			{size.X - frameThickness + 1, frameThickness}, {0, 1}},
 		// source is bottom, pos is top, dir is up
 		FrameEdge{
-			{frameThickness, size.Y - frameThickness, size.X - frameThickness, size.Y - frameThickness + 1},
-			{frameThickness, frameThickness}, {0, 1}},
+			{frameThickness, size.Y - frameThickness, size.X - frameThickness, size.Y - frameThickness},
+			{frameThickness, frameThickness - 1}, {0, 1}},
 		// source is top, pos is bottom, dir is down
 		FrameEdge{
-			{frameThickness, frameThickness, size.X - frameThickness, frameThickness + 1},
-			{frameThickness, size.Y - frameThickness}, {0, -1}}
+			{frameThickness, frameThickness, size.X - frameThickness, frameThickness},
+			{frameThickness, size.Y - frameThickness + 1}, {0, -1}}
 	};
 
 	for (const auto &edge : edges) {
 		auto &sourceRect = edge.source;
-		auto pos = edge.pos;
 
 		for (u8 k = 0; k < frameThickness; k++) {
-			pos += edge.dir * k;
+			auto pos = edge.pos + edge.dir * k;
 			image->copyTo(framedImage, pos, sourceRect);
 		}
 	}
@@ -265,86 +266,55 @@ AtlasPool::AtlasPool(video::VideoDriver *_driver, const std::string &_name)
 	  g_settings->getBool("anisotropic_filter"))
 {}
 
+Atlas *AtlasPool::getAtlasByImage(const ImageEntry &image, bool force_add)
+{
+    for (auto &atlas : atlases) {
+        auto atlasTile = atlas->getTileByImage(image.image);
+
+        if (atlasTile)
+            return atlas.get();
+    }
+
+	/*if (force_add) {
+        forceAddTile(image);
+        return atlases.back().get();
+    }*/
+    return nullptr;
+}
+
+AtlasTile *AtlasPool::getTileByImage(const ImageEntry &image)
+{
+    auto atlas = getAtlasByImage(image);
+
+    if (!atlas)
+        return nullptr;
+
+    return atlas->getTileByImage(image.image);
+}
+
 void AtlasPool::addTile(const ImageEntry &image)
 {
 	images.insert(image);
 }
 
+core::rectf AtlasPool::getTileRect(const ImageEntry &image, bool force_add)
+{
+	auto tile = getTileByImage(image);
+
+    if (!tile) {
+		/*if (force_add) {
+			forceAddTile(image);
+			tile = getTileByImage(image);
+		}*/
+    	return core::rectf();
+	}
+	
+	return core::rectf(
+		static_cast<f32>(tile->pos.X), static_cast<f32>(tile->pos.Y + tile->size.Y),
+		static_cast<f32>(tile->pos.X + tile->size.X), static_cast<f32>(tile->pos.Y));
+}
+
 /*
-Atlas *AtlasPool::getAtlasByTile(img::Image *tile, bool force_add, std::optional<AtlasTileAnim> anim)
-{
-    for (u32 i = 0; i < atlases.size(); i++) {
-        auto atlas = atlases.at(i);
-        auto atlasTile = atlas->getTileByImage(tile);
-
-        if (atlasTile)
-            return atlas;
-    }
-
-    if (force_add) {
-        forceAddTile(tile, anim);
-        return atlases.back();
-    }
-    return nullptr;
-}
-
-AtlasTile *AtlasPool::getTileByImage(img::Image *tile)
-{
-    auto atlas = getAtlasByTile(tile);
-
-    if (!atlas)
-        return nullptr;
-
-    return atlas->getTileByImage(tile);
-}
-
-AnimatedAtlasTile *AtlasPool::getAnimatedTileByImage(img::Image *tile)
-{
-    auto atlas_tile = getTileByImage(tile);
-
-    if (!atlas_tile)
-        return nullptr;
-
-    return dynamic_cast<AnimatedAtlasTile *>(atlas_tile);
-}
-
-rectf AtlasPool::getTileRect(img::Image *tile, bool toUV, bool force_add, std::optional<AtlasTileAnim> anim)
-{
-    if (type != AtlasType::RECTPACK2D)
-        return rectf();
-
-    for (u32 i = 0; i < atlases.size(); i++) {
-        auto atlas = atlases.at(i);
-        auto atlasTile = atlas->getTileByImage(tile);
-
-        if (!atlasTile)
-            continue;
-
-        if (toUV)
-            return atlasTile->toUV(atlas->getTextureSize());
-        else {
-            v2f ulc_f(atlasTile->pos.X, atlasTile->pos.Y + atlasTile->size.Y);
-            v2f lrc_f(atlasTile->pos.X + atlasTile->size.X, atlasTile->pos.Y);
-            return rectf(ulc_f, lrc_f);
-        }
-    }
-
-    if (force_add) {
-        forceAddTile(tile, anim);
-        auto lastAtlas = atlases.back();
-
-        auto lastTile = lastAtlas->getTile(lastAtlas->getTilesCount()-1);
-        if (toUV)
-            return lastTile->toUV(lastAtlas->getTextureSize());
-        else {
-            v2f ulc_f(lastTile->pos.X, lastTile->pos.Y + lastTile->size.Y);
-            v2f lrc_f(lastTile->pos.X + lastTile->size.X, lastTile->pos.Y);
-            return rectf(ulc_f, lrc_f);
-        }
-    }
-    return rectf();
-}
-
 void AtlasPool::updateMeshUVs(MeshBuffer *buffer, u32 start_index, u32 index_count, img::Image *tile,
     img::Image* oldTile, bool toUV, bool force_add, std::optional<AtlasTileAnim> anim)
 {
