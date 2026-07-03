@@ -23,6 +23,7 @@
 #include "filesys.h"
 #include "irrlicht_changes/static_text.h"
 #include "Utils/irr_ptr.h"
+#include "atlas.h"
 
 RenderingEngine *RenderingEngine::s_singleton = nullptr;
 const video::SColor RenderingEngine::MENU_SKY_COLOR = video::SColor(255, 140, 186, 250);
@@ -342,6 +343,8 @@ void RenderingEngine::initialize(Client *client, Hud *hud)
 {
 	const std::string &draw_mode = g_settings->get("3d_mode");
 	core.reset(createRenderingCore(draw_mode, m_device, client, hud));
+
+	mainPool.reset(new AtlasPool(driver, "Main"));
 }
 
 void RenderingEngine::finalize()

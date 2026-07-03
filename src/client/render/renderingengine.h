@@ -32,6 +32,7 @@ class Client;
 class LocalPlayer;
 class Hud;
 class Minimap;
+class AtlasPool;
 
 class RenderingCore;
 
@@ -210,6 +211,11 @@ public:
 		return s_singleton->m_receiver->getLastPointerType();
 	}
 
+	AtlasPool *getAtlasPool()
+	{
+		return mainPool.get();
+	}
+
 	RenderPipeline *getPipeline()
 	{
 		return core->getPipeline();
@@ -226,6 +232,8 @@ public:
 private:
 	static void settingChangedCallback(const std::string &name, void *data);
 	v2u32 _getWindowSize() const;
+
+	std::unique_ptr<AtlasPool> mainPool;
 
 	std::unique_ptr<UniformBuffer<Matrices>> matricesUBO;
 	std::unique_ptr<UniformBuffer<FogParams>> fogUBO;

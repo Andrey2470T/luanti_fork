@@ -55,6 +55,7 @@
 #include "content/mod_configuration.h"
 #include "mapnode.h"
 #include "client/render/item_visuals_manager.h"
+#include "client/render/atlas.h"
 
 extern gui::IGUIEnvironment* guienv;
 
@@ -787,6 +788,8 @@ void Client::step(float dtime)
 		m_localdb->endSave();
 		m_localdb->beginSave();
 	}
+
+	m_rendering_engine->getAtlasPool()->drawTiles(m_animation_time);
 }
 
 bool Client::loadMedia(const std::string &data, const std::string &filename,

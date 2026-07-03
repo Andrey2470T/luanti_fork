@@ -388,6 +388,9 @@ void AtlasPool::build()
 
 	if (curImg != images.size())
 		build();
+
+	images.clear();
+	sortedImages.clear();
 }
 
 void AtlasPool::drawTiles(f32 time)
