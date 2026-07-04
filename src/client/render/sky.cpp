@@ -171,37 +171,37 @@ void Sky::render()
 			return;
 
 		// Draw the six sided skybox,
-		if (m_sky_params.textures.size() == 6) {
-			for (u32 j = 5; j < 11; j++) {
-				video::SColor c(255, 255, 255, 255);
-				driver->setMaterial(m_materials[j]);
-				// Use 1.05 rather than 1.0 to avoid colliding with the
-				// sun, moon and stars, as this is a background skybox.
-				vertices[0] = {{-1.05, -1.05, -1.05}, {0, 0, 1}, c, {t, t}};
-				vertices[1] = {{1.05, -1.05, -1.05}, {0, 0, 1}, c, {o, t}};
-				vertices[2] = {{1.05,  1.05, -1.05}, {0, 0, 1}, c, {o, o}};
-				vertices[3] = {{-1.05,  1.05, -1.05}, {0, 0, 1}, c, {t, o}};
-				for (scene::Vertex3D &vertex : vertices) {
-					if (j == 5) { // Top texture
-						vertex.Pos.rotateYZBy(90);
-						vertex.Pos.rotateXZBy(90);
-					} else if (j == 6) { // Bottom texture
-						vertex.Pos.rotateYZBy(-90);
-						vertex.Pos.rotateXZBy(90);
-					} else if (j == 7) { // Left texture
-						vertex.Pos.rotateXZBy(90);
-					} else if (j == 8) { // Right texture
-						vertex.Pos.rotateXZBy(-90);
-					} else if (j == 9) { // Front texture, do nothing
-						// Irrlicht doesn't like it when vertexes are left
-						// alone and not rotated for some reason.
-						vertex.Pos.rotateXZBy(0);
-					} else {// Back texture
-						vertex.Pos.rotateXZBy(180);
-					}
+		const video::SColor sc = m_sky_params.textures.size() == 6 ?
+			video::SColor(255, 255, 255, 255) : getSkyColor();
+
+		for (u32 j = 5; j < 11; j++) {
+			driver->setMaterial(m_materials[j]);
+			// Use 1.05 rather than 1.0 to avoid colliding with the
+			// sun, moon and stars, as this is a background skybox.
+			vertices[0] = {{-1.05, -1.05, -1.05}, {0, 0, 1}, sc, {t, t}};
+			vertices[1] = {{1.05, -1.05, -1.05}, {0, 0, 1}, sc, {o, t}};
+			vertices[2] = {{1.05,  1.05, -1.05}, {0, 0, 1}, sc, {o, o}};
+			vertices[3] = {{-1.05,  1.05, -1.05}, {0, 0, 1}, sc, {t, o}};
+			for (scene::Vertex3D &vertex : vertices) {
+				if (j == 5) { // Top texture
+					vertex.Pos.rotateYZBy(90);
+					vertex.Pos.rotateXZBy(90);
+				} else if (j == 6) { // Bottom texture
+					vertex.Pos.rotateYZBy(-90);
+					vertex.Pos.rotateXZBy(90);
+				} else if (j == 7) { // Left texture
+					vertex.Pos.rotateXZBy(90);
+				} else if (j == 8) { // Right texture
+					vertex.Pos.rotateXZBy(-90);
+				} else if (j == 9) { // Front texture, do nothing
+					// Irrlicht doesn't like it when vertexes are left
+					// alone and not rotated for some reason.
+					vertex.Pos.rotateXZBy(0);
+				} else {// Back texture
+					vertex.Pos.rotateXZBy(180);
 				}
-				driver->drawIndexedTriangleList(&vertices[0], 4, indices, 2);
 			}
+			driver->drawIndexedTriangleList(&vertices[0], 4, indices, 2);
 		}
 
 		// Draw far cloudy fog thing blended with skycolor

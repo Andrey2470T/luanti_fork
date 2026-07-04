@@ -4044,12 +4044,10 @@ void Game::drawScene(ProfilerGraph *graph, RunStats *stats)
 {
 	ZoneScoped;
 
-	const video::SColor fog_color = this->sky->getFogColor();
-	const video::SColor sky_color = this->sky->getSkyColor();
-
 	/*
 		Fog
 	*/
+	const video::SColor fog_color = this->sky->getFogColor();
 	if (this->fogEnabled()) {
 		m_rendering_engine->setFogParams(
 			fog_color, runData.fog_range * sky->getFogStart(), runData.fog_range * 1.0f);
@@ -4061,7 +4059,7 @@ void Game::drawScene(ProfilerGraph *graph, RunStats *stats)
 		Drawing
 	*/
 	TimeTaker tt_draw("Draw scene", nullptr, PRECISION_MICRO);
-	this->driver->beginScene(sky_color);
+	this->driver->beginScene(video::SColor());
 
 	const LocalPlayer *player = this->client->getEnv().getLocalPlayer();
 	bool draw_wield_tool = (this->m_game_ui->m_flags.show_hud &&
@@ -4074,7 +4072,7 @@ void Game::drawScene(ProfilerGraph *graph, RunStats *stats)
 	if (isTouchShootlineUsed())
 		draw_crosshair = false;
 
-	this->m_rendering_engine->draw_scene(sky_color, this->m_game_ui->m_flags.show_hud,
+	this->m_rendering_engine->draw_scene(video::SColor(), this->m_game_ui->m_flags.show_hud,
 			draw_wield_tool, draw_crosshair);
 
 	/*
