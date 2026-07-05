@@ -42,6 +42,8 @@ bool isTransparentLayer(MaterialType type);
 #define MATERIAL_FLAG_TILEABLE_HORIZONTAL 0x20
 #define MATERIAL_FLAG_TILEABLE_VERTICAL 0x40
 
+#define CRACK_FRAME_SIZE 16
+
 // Stores information for drawing an animated tile
 struct AnimationInfo
 {
@@ -54,6 +56,13 @@ struct AnimationInfo
 	{
 		m_frames_rects = other.m_frames_rects;
 		m_frame_length_ms = other.m_frame_length_ms;
+	}
+
+	AnimationInfo &operator=(const AnimationInfo &other)
+	{
+		m_frames_rects = other.m_frames_rects;
+		m_frame_length_ms = other.m_frame_length_ms;
+		return *this;
 	}
 
 	bool operator==(const AnimationInfo &other) const
@@ -102,14 +111,9 @@ struct TileLayer
 	bool operator==(const TileLayer &other) const
 	{
 		return
-			texture_id == other.texture_id &&
+			texture == other.texture &&
 			shader_id == other.shader_id &&
-			anim_info == other.anim_info &&
-			material_type == other.material_type &&
 			material_flags == other.material_flags &&
-			has_color == other.has_color &&
-			color == other.color &&
-			scale == other.scale &&
 			need_polygon_offset == other.need_polygon_offset &&
 			override_material == other.override_material;
 	}
@@ -133,7 +137,7 @@ struct TileLayer
 	/// @return is this layer uninitalized?
 	bool empty() const
 	{
-		return !shader_id && !texture_id;
+		return !shader_id && !image;
 	}
 
 	/// @return is this layer semi-transparent?
@@ -148,8 +152,7 @@ struct TileLayer
 
 	u32 shader_id = 0;
 
-	u32 texture_id = 0;
-
+	video::Image *image = nullptr;
 	AnimationInfo anim_info;
 
 	MaterialType material_type = TILE_MATERIAL_BASIC;

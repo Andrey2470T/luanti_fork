@@ -98,7 +98,6 @@ private:
 	bool m_visuals_expired = false;
 	video::SColor m_last_light = video::SColor(0xFFFFFFFF);
 	bool m_is_visible = false;
-	std::vector<MeshAnimationInfo> m_meshnode_animation;
 
 	// Material
 	video::E_MATERIAL_TYPE m_material_type = EMT_INVALID;

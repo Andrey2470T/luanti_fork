@@ -436,21 +436,28 @@ std::string ShaderGenerator::generateMainHeader()
 		<< std::noboolalpha
 		<< std::showpoint; // for GLSL ES
 
+	bool is_opengl3 = RenderingEngine::get_video_driver()->getDriverType() == video::EDT_OPENGL3;
+	auto gl_version = RenderingEngine::get_video_driver()->getVersion();
 
-	if (RenderingEngine::get_video_driver()->getDriverType() == video::EDT_OPENGL3) {
-		shaders_header << "#version 150\n"
-			<< "#define CENTROID_ centroid\n";
-	} else {
-		auto gl_version = RenderingEngine::get_video_driver()->getVersion();
+	if (is_opengl3)
+		shaders_header << "#version 150\n";
+	else {
+		if (gl_version.Major >= 3)
+			shaders_header << "#version 300 es\n";
+		else
+			shaders_header << "#version 100\n";
+	}
 
-		if (gl_version.Major >= 3) {
-			shaders_header << "#version 300 es\n"
-				<< "#define CENTROID_ centroid\n";
-		}
-		else {
-			shaders_header << "#version 100\n"
-				<< "#define CENTROID_\n";
-		}
+	for (auto &ext : info.extensions)
+		shaders_header << "#extension " << ext << " : enable\n";
+
+	if (is_opengl3)
+		shaders_header << "#define CENTROID_ centroid\n";
+	else {
+		if (gl_version.Major >= 3)
+			shaders_header << "#define CENTROID_ centroid\n";
+		else
+			shaders_header << "#define CENTROID_\n";
 
 		// Precision is only meaningful on GLES
 		shaders_header << R"(

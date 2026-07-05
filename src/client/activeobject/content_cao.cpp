@@ -208,13 +208,13 @@ static void setColorParam(scene::ISceneNode *node, video::SColor color)
 		node->getMaterial(i).ColorParam = color;
 }
 
-static scene::SMesh *generateNodeMesh(Client *client, MapNode n,
-	std::vector<MeshAnimationInfo> &animation)
+static scene::SMesh *generateNodeMesh(Client *client, MapNode n)
 {
 	auto *ndef = client->ndef();
 	auto *shdsrc = client->getShaderSource();
+	auto *pool = client->getRenderingEngine()->getAtlasPool();
 
-	MeshCollector collector(v3f(0), v3f());
+	MeshCollector collector(pool, v3f(0), v3f());
 	{
 		MeshMakeData mmd(ndef, 1, MeshGrid{1});
 		n.setParam1(0xff);
@@ -223,20 +223,12 @@ static scene::SMesh *generateNodeMesh(Client *client, MapNode n,
 	}
 
 	auto mesh = make_irr<scene::SMesh>();
-	animation.clear();
 	for (int layer = 0; layer < MAX_TILE_LAYERS; layer++) {
 		for (PreMeshBuffer &p : collector.prebuffers[layer]) {
 			// reset the pre-computed light data stored in the vertex color,
 			// since we do that ourselves via updateLight().
 			for (auto &v : p.vertices)
 				v.Color.set(0xFFFFFFFF);
-
-			if (p.layer.material_flags & MATERIAL_FLAG_ANIMATION) {
-				const FrameSpec &frame = (*p.layer.frames)[0];
-				p.layer.texture = frame.texture;
-
-				animation.emplace_back(MeshAnimationInfo{mesh->getMeshBufferCount(), 0, p.layer});
-			}
 
 			auto buf = make_irr<scene::SMeshBuffer>();
 			buf->append(&p.vertices[0], p.vertices.size(),
@@ -546,8 +538,6 @@ void GenericCAO::removeFromScene(bool permanent)
 		m_spritenode = nullptr;
 	}
 
-	m_meshnode_animation.clear();
-
 	if (m_matrixnode) {
 		m_matrixnode->remove();
 		m_matrixnode->drop();
@@ -726,7 +716,7 @@ void GenericCAO::addToScene(ITextureSource *tsrc, scene::ISceneManager *smgr)
 		m_wield_meshnode->setScale(m_prop.visual_size / 2.0f);
 		break;
 	} case OBJECTVISUAL_NODE: {
-		auto *mesh = generateNodeMesh(m_client, m_prop.node, m_meshnode_animation);
+		auto *mesh = generateNodeMesh(m_client, m_prop.node);
 		assert(mesh);
 
 		m_meshnode = m_smgr->addMeshSceneNode(mesh, m_matrixnode);
@@ -1267,23 +1257,6 @@ void GenericCAO::updateTextureAnim()
 			auto mesh = m_meshnode->getMesh();
 			setMeshBufferTextureCoords(mesh->getMeshBuffer(0), t, 4);
 			setMeshBufferTextureCoords(mesh->getMeshBuffer(1), t, 4);
-		} else if (m_prop.visual == OBJECTVISUAL_NODE) {
-			// same calculation as MapBlockMesh::animate() with a global timer
-			const float time = m_client->getAnimationTime();
-			for (auto &it : m_meshnode_animation) {
-				const TileLayer &tile = it.tile;
-				int frameno = (int)(time * 1000 / tile.animation_frame_length_ms)
-					% tile.animation_frame_count;
-
-				if (frameno == it.frame)
-					continue;
-				it.frame = frameno;
-
-				auto *buf = m_meshnode->getMesh()->getMeshBuffer(it.i);
-
-				const FrameSpec &frame = (*tile.frames)[frameno];
-				buf->getMaterial().setTexture(0, frame.texture);
-			}
 		}
 	}
 }

@@ -38,14 +38,15 @@ void TileLayer::applyMaterialOptions(video::SMaterial &material, int layer) cons
 	material.setTexture(0, texture);
 
 	material.BackfaceCulling = (material_flags & MATERIAL_FLAG_BACKFACE_CULLING) != 0;
-	if (!(material_flags & MATERIAL_FLAG_TILEABLE_HORIZONTAL)) {
+	// The following code will be useless for the atlas texture
+	/*if (!(material_flags & MATERIAL_FLAG_TILEABLE_HORIZONTAL)) {
 		material.TextureLayers[0].TextureWrapU = video::ETC_CLAMP_TO_EDGE;
 		material.TextureLayers[1].TextureWrapU = video::ETC_CLAMP_TO_EDGE;
 	}
 	if (!(material_flags & MATERIAL_FLAG_TILEABLE_VERTICAL)) {
 		material.TextureLayers[0].TextureWrapV = video::ETC_CLAMP_TO_EDGE;
 		material.TextureLayers[1].TextureWrapV = video::ETC_CLAMP_TO_EDGE;
-	}
+	}*/
 
 	/*
 	 * The second layer is for overlays, but uses the same vertex positions

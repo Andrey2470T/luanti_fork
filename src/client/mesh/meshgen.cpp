@@ -177,7 +177,7 @@ void MapblockMeshGenerator::getSpecialTile(int index, TileSpec *tile_ret, bool a
 		top_layer->material_flags |= MATERIAL_FLAG_CRACK;
 }
 
-void MapblockMeshGenerator::drawQuad(const TileSpec &tile, v3f *coords, const v3s16 &normal,
+void MapblockMeshGenerator::drawQuad(TileSpec &tile, v3f *coords, const v3s16 &normal,
 	float vertical_tiling)
 {
 	const v2f tcoords[4] = {v2f(0.0, 0.0), v2f(1.0, 0.0),
@@ -283,7 +283,7 @@ enum class QuadDiagonal {
 //              and to choose diagonal to split the quad at.
 template <typename Fn>
 void MapblockMeshGenerator::drawCuboid(const aabb3f &box,
-		const TileSpec *tiles, int tilecount, const f32 *txc, u8 mask, Fn &&face_lighter)
+		TileSpec *tiles, int tilecount, const f32 *txc, u8 mask, Fn &&face_lighter)
 {
 	assert(tilecount >= 1 && tilecount <= 6); // pre-condition
 
@@ -324,14 +324,14 @@ static inline int lightDiff(LightPair a, LightPair b)
 	return abs(a.lightDay - b.lightDay) + abs(a.lightNight - b.lightNight);
 }
 
-void MapblockMeshGenerator::drawAutoLightedCuboid(aabb3f box, const TileSpec &tile,
+void MapblockMeshGenerator::drawAutoLightedCuboid(aabb3f box, TileSpec &tile,
 		const f32 *txc, u8 mask)
 {
 	drawAutoLightedCuboid(box, &tile, 1, txc, mask);
 }
 
 void MapblockMeshGenerator::drawAutoLightedCuboid(aabb3f box,
-		const TileSpec *tiles, int tile_count, const f32 *txc, u8 mask)
+		TileSpec *tiles, int tile_count, const f32 *txc, u8 mask)
 {
 	bool scale = std::fabs(cur_node.f->visual_scale - 1.0f) > 1e-3f;
 	f32 texture_coord_buf[24];
@@ -1111,7 +1111,7 @@ void MapblockMeshGenerator::drawSignlikeNode()
 	drawQuad(tile, vertices);
 }
 
-void MapblockMeshGenerator::drawPlantlikeQuad(const TileSpec &tile,
+void MapblockMeshGenerator::drawPlantlikeQuad(TileSpec &tile,
 		float rotation, float quad_offset, bool offset_top_only)
 {
 	const f32 scale = cur_plant.scale;
@@ -1167,7 +1167,7 @@ void MapblockMeshGenerator::drawPlantlikeQuad(const TileSpec &tile,
 	drawQuad(tile, vertices, v3s16(0, 0, 0), cur_plant.plant_height);
 }
 
-void MapblockMeshGenerator::drawPlantlike(const TileSpec &tile, bool is_rooted)
+void MapblockMeshGenerator::drawPlantlike(TileSpec &tile, bool is_rooted)
 {
 	cur_plant.draw_style = PLANT_STYLE_CROSS;
 	cur_plant.offset = v3f(0, 0, 0);
@@ -1278,7 +1278,7 @@ void MapblockMeshGenerator::drawPlantlikeRootedNode()
 	cur_node.p.Y--;
 }
 
-void MapblockMeshGenerator::drawFirelikeQuad(const TileSpec &tile, float rotation,
+void MapblockMeshGenerator::drawFirelikeQuad(TileSpec &tile, float rotation,
 		float opening_angle, float offset_h, float offset_v)
 {
 	const f32 scale = BS / 2 * cur_node.f->visual_scale;

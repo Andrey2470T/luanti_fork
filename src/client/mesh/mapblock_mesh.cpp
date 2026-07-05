@@ -257,9 +257,7 @@ void PartialMeshBuffer::draw(video::VideoDriver *driver) const
 MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data):
 	m_tsrc(client->getTextureSource()),
 	m_shdrsrc(client->getShaderSource()),
-	m_bounding_sphere_center((data->m_side_length * 0.5f - 0.5f) * BS),
-	m_animation_force_timer(0), // force initial animation
-	m_last_crack(-1)
+	m_bounding_sphere_center((data->m_side_length * 0.5f - 0.5f) * BS)
 {
 	ZoneScoped;
 
@@ -291,7 +289,8 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data):
 	// algin vertices to mesh grid, not meshgen area
 	v3f offset = intToFloat((data->m_blockpos - mesh_grid.getMeshPos(data->m_blockpos)) * MAP_BLOCKSIZE, BS);
 
-	MeshCollector collector(m_bounding_sphere_center, offset);
+	MeshCollector collector(client->getRenderingEngine()->getAtlasPool(),
+		 m_bounding_sphere_center, offset);
 
 	{
 		// Generate everything
@@ -304,7 +303,7 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data):
 		Convert MeshCollector to SMesh
 	*/
 
-	m_bounding_radius = std::sqrt(collector.m_bounding_radius_sq);
+	m_bounding_radius = std::sqrt(collector.bounding_radius_sq);
 
 	for (int layer = 0; layer < MAX_TILE_LAYERS; layer++) {
 		scene::SMesh *mesh = static_cast<scene::SMesh *>(m_mesh[layer].get());
@@ -312,33 +311,6 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data):
 		for(u32 i = 0; i < collector.prebuffers[layer].size(); i++)
 		{
 			PreMeshBuffer &p = collector.prebuffers[layer][i];
-
-			// Generate animation data
-			// - Cracks
-			if (p.layer.material_flags & MATERIAL_FLAG_CRACK) {
-				// Find the texture name plus ^[crack:N:
-				std::ostringstream os(std::ios::binary);
-				os << m_tsrc->getTextureName(p.layer.texture_id) << "^[crack";
-				if (p.layer.material_flags & MATERIAL_FLAG_CRACK_OVERLAY)
-					os << "o";  // use ^[cracko
-				u8 tiles = p.layer.scale;
-				if (tiles > 1)
-					os << ":" << (u32)tiles;
-				os << ":" << (u32)p.layer.animation_frame_count << ":";
-				m_crack_materials.insert(std::make_pair(
-						std::pair<u8, u32>(layer, i), os.str()));
-				// Replace tile texture with the cracked one
-				p.layer.texture = m_tsrc->getTextureForMesh(
-						os.str() + "0",
-						&p.layer.texture_id);
-			}
-			// - Texture animation
-			if (p.layer.material_flags & MATERIAL_FLAG_ANIMATION) {
-				// Add to MapBlockMesh in order to animate these tiles
-				m_animation_info.emplace(std::make_pair(layer, i), AnimationInfo(p.layer));
-				// Replace tile texture with the first animation frame
-				p.layer.texture = (*p.layer.frames)[0].texture;
-			}
 
 			// Create material
 			video::SMaterial material;
@@ -352,6 +324,13 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data):
 				material.MaterialType = m_shdrsrc->getShaderInfo(
 						p.layer.shader_id).material;
 				p.layer.applyMaterialOptions(material, layer);
+			}
+
+			// Bind the cracks texture if the buffer was cracked
+			if (p.layer.material_flags & MATERIAL_FLAG_CRACK) {
+				material.setTexture(1, client->getCrackTexture());
+				material.TextureLayers[1].TextureWrapU = video::ETC_REPEAT;
+				material.TextureLayers[1].TextureWrapV = video::ETC_REPEAT;
 			}
 
 			// Apply properties from custom material
@@ -388,11 +367,6 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data):
 	}
 
 	m_bsp_tree.buildTree(&m_transparent_triangles, data->m_side_length);
-
-	// Check if animation is required for this mesh
-	m_has_animation =
-		!m_crack_materials.empty() ||
-		!m_animation_info.empty();
 }
 
 MapBlockMesh::~MapBlockMesh()
@@ -407,49 +381,6 @@ MapBlockMesh::~MapBlockMesh()
 		delete block;
 
 	porting::TrackFreedMemory(sz);
-}
-
-bool MapBlockMesh::animate(bool faraway, float time, int crack,
-	u32 daynight_ratio)
-{
-	if (!m_has_animation) {
-		m_animation_force_timer = 100000;
-		return false;
-	}
-
-	m_animation_force_timer = myrand_range(5, 100);
-
-	// Cracks
-	if (crack != m_last_crack) {
-		for (auto &crack_material : m_crack_materials) {
-
-			// TODO crack on animated tiles does not work
-			auto anim_it = m_animation_info.find(crack_material.first);
-			if (anim_it != m_animation_info.end())
-				continue;
-
-			scene::IMeshBuffer *buf = m_mesh[crack_material.first.first]->
-				getMeshBuffer(crack_material.first.second);
-
-			// Create new texture name from original
-			std::string s = crack_material.second + itos(crack);
-			u32 new_texture_id = 0;
-			video::GLTexture *new_texture =
-					m_tsrc->getTextureForMesh(s, &new_texture_id);
-			buf->getMaterial().setTexture(0, new_texture);
-		}
-
-		m_last_crack = crack;
-	}
-
-	// Texture animation
-	for (auto &it : m_animation_info) {
-		scene::IMeshBuffer *buf = m_mesh[it.first.first]->getMeshBuffer(it.first.second);
-		video::SMaterial &material = buf->getMaterial();
-		it.second.updateTexture(material, time);
-	}
-
-	return true;
 }
 
 void MapBlockMesh::updateTransparentBuffers(v3f camera_pos, v3s16 block_pos,

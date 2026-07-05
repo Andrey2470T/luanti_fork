@@ -139,6 +139,10 @@ Client::Client(
 
 	m_cache_save_interval = g_settings->getU16("server_map_save_interval");
 	m_mesh_grid = { g_settings->getU16("client_mesh_chunk") };
+
+	m_crack_texture = m_rendering_engine->getVideoDriver()->addTexture(
+		{CRACK_FRAME_SIZE, CRACK_FRAME_SIZE},
+		"CrackTexture", video::ECF_A8R8G8B8);
 }
 
 void Client::migrateModStorage()
@@ -1648,16 +1652,6 @@ void Client::inventoryAction(InventoryAction *a)
 	delete a;
 }
 
-int Client::getCrackLevel()
-{
-	return m_crack_level;
-}
-
-v3s16 Client::getCrackPos()
-{
-	return m_crack_pos;
-}
-
 void Client::setCrack(int level, v3s16 pos)
 {
 	int old_crack_level = m_crack_level;
@@ -1675,6 +1669,21 @@ void Client::setCrack(int level, v3s16 pos)
 	{
 		// add new crack
 		addUpdateMeshTaskForNode(pos, false, true);
+	}
+
+	// Update the cracks frame texture
+	if (m_crack_texture && old_crack_level != m_crack_level) {
+		auto cracks_image = m_tsrc->getImageForMesh("crack_anylength.png");
+		auto curClipRect = cracks_image->getClipRect();
+
+		core::rect<u32> clipRect(0, 0, CRACK_FRAME_SIZE, CRACK_FRAME_SIZE);
+		clipRect.UpperLeftCorner.Y += CRACK_FRAME_SIZE * m_crack_level;
+		clipRect.LowerRightCorner.Y += CRACK_FRAME_SIZE * m_crack_level;
+		cracks_image->getClipRect() = clipRect;
+
+		m_crack_texture->uploadTexture(0, cracks_image);
+
+		cracks_image->getClipRect() = curClipRect;
 	}
 }
 

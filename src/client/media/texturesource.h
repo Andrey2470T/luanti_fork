@@ -56,6 +56,9 @@ public:
 	 */
 	virtual video::GLTexture *getTextureForMesh(
 			const std::string &name, u32 *id = nullptr) = 0;
+
+	virtual video::Image *getImage(const std::string &name) = 0;
+	virtual video::Image *getImageForMesh(const std::string &name) = 0;
 	/**
 	 * Returns a palette from the given texture name.
 	 * The pointer is valid until the texture source is

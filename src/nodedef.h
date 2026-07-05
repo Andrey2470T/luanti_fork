@@ -15,6 +15,7 @@
 #include "client/render/tile.h"
 #include <Mesh/MeshManipulator.h>
 class Client;
+class AtlasPool;
 #endif
 #include "itemgroup.h"
 #include "sound.h" // SoundSpec
@@ -453,7 +454,6 @@ struct ContentFeatures
 	*/
 
 	ContentFeatures();
-	~ContentFeatures();
 	void reset();
 	void serialize(std::ostream &os, u16 protocol_version) const;
 	void deSerialize(std::istream &is, u16 protocol_version);
@@ -508,7 +508,7 @@ struct ContentFeatures
 	}
 
 #if CHECK_CLIENT_BUILD()
-	void updateTextures(ITextureSource *tsrc, ShaderSource *shdsrc,
+	void updateTextures(AtlasPool *pool, ITextureSource *tsrc, ShaderSource *shdsrc,
 		scene::MeshManipulator *meshmanip, Client *client, const TextureSettings &tsettings);
 #endif
 

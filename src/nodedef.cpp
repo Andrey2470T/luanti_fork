@@ -11,6 +11,7 @@
 #include "client/media/shader.h"
 #include "client/core/client.h"
 #include "client/render/renderingengine.h"
+#include "client/render/atlas.h"
 #include "client/media/texturesource.h"
 #include "client/render/tile.h"
 #include <Mesh/MeshManipulator.h>
@@ -312,18 +313,6 @@ void TextureSettings::readSettings()
 ContentFeatures::ContentFeatures()
 {
 	reset();
-}
-
-ContentFeatures::~ContentFeatures()
-{
-#if CHECK_CLIENT_BUILD()
-	for (u16 j = 0; j < 6; j++) {
-		delete tiles[j].layers[0].frames;
-		delete tiles[j].layers[1].frames;
-	}
-	for (u16 j = 0; j < CF_SPECIAL_COUNT; j++)
-		delete special_tiles[j].layers[0].frames;
-#endif
 }
 
 void ContentFeatures::reset()
@@ -677,13 +666,13 @@ void ContentFeatures::deSerialize(std::istream &is, u16 protocol_version)
 }
 
 #if CHECK_CLIENT_BUILD()
-static void fillTileAttribs(ITextureSource *tsrc, TileLayer *layer,
+static void fillTileAttribs(AtlasPool *pool, ITextureSource *tsrc, TileLayer *layer,
 		const TileSpec &tile, const TileDef &tiledef, video::SColor color,
 		MaterialType material_type, u32 shader_id, bool backface_culling,
 		const TextureSettings &tsettings, const std::string &override_material="")
 {
 	layer->shader_id     = shader_id;
-	layer->texture       = tsrc->getTextureForMesh(tiledef.name, &layer->texture_id);
+	layer->image       = tsrc->getImageForMesh(tiledef.name);
 	layer->material_type = material_type;
 	layer->override_material = override_material;
 
@@ -722,35 +711,17 @@ static void fillTileAttribs(ITextureSource *tsrc, TileLayer *layer,
 		layer->color = color;
 
 	// Animation parameters
-	int frame_count = 1;
 	if (layer->material_flags & MATERIAL_FLAG_ANIMATION) {
-		assert(layer->texture);
-		int frame_length_ms = 0;
-		tiledef.animation.determineParams(layer->texture->getOriginalSize(),
-				&frame_count, &frame_length_ms, NULL);
-		layer->animation_frame_count = frame_count;
-		layer->animation_frame_length_ms = frame_length_ms;
+		assert(layer->image);
+
+		layer->anim_info = AnimationInfo(tiledef.animation, layer->image->getDimension());
+		layer->image->getClipRect() = layer->anim_info.getCurrentFrameRect();
 	}
 
-	if (frame_count == 1) {
+	if (!layer->anim_info.hasAnimation())
 		layer->material_flags &= ~MATERIAL_FLAG_ANIMATION;
-	} else {
-		assert(layer->texture);
-		if (!layer->frames)
-			layer->frames = new std::vector<FrameSpec>();
-		layer->frames->resize(frame_count);
 
-		std::ostringstream os(std::ios::binary);
-		for (int i = 0; i < frame_count; i++) {
-			os.str("");
-			os << tiledef.name;
-			tiledef.animation.getTextureModifer(os,
-					layer->texture->getOriginalSize(), i);
-
-			FrameSpec &frame = (*layer->frames)[i];
-			frame.texture = tsrc->getTextureForMesh(os.str(), &frame.texture_id);
-		}
-	}
+	pool->addTile({layer->image, layer->anim_info});
 }
 
 static bool isWorldAligned(AlignStyle style, WorldAlignMode mode, NodeDrawType drawtype)
@@ -768,7 +739,7 @@ static bool isWorldAligned(AlignStyle style, WorldAlignMode mode, NodeDrawType d
 	return false;
 }
 
-void ContentFeatures::updateTextures(ITextureSource *tsrc, ShaderSource *shdsrc,
+void ContentFeatures::updateTextures(AtlasPool *pool, ITextureSource *tsrc, ShaderSource *shdsrc,
 	scene::MeshManipulator *meshmanip, Client *client, const TextureSettings &tsettings)
 {
 	// Figure out the actual tiles to use
@@ -906,7 +877,8 @@ void ContentFeatures::updateTextures(ITextureSource *tsrc, ShaderSource *shdsrc,
 	}
 
 	u32 tile_shader = shdsrc->getShader({"nodes_shader", {}, {}, true,
-		"opengl_vertex.glsl", "opengl_geometry.glsl", "opengl_fragment.glsl", {}, scene::Vertex3DExt::FORMAT}, material_type);
+		"opengl_vertex.glsl", "opengl_geometry.glsl", "opengl_fragment.glsl", {},
+		scene::Vertex3DExt::FORMAT, {"GL_EXT_gpu_shader4"}}, material_type);
 
 	MaterialType overlay_material = material_type;
 	if (overlay_material == TILE_MATERIAL_OPAQUE)
@@ -915,7 +887,8 @@ void ContentFeatures::updateTextures(ITextureSource *tsrc, ShaderSource *shdsrc,
 		overlay_material = TILE_MATERIAL_LIQUID_TRANSPARENT;
 
 	u32 overlay_shader = shdsrc->getShader({"nodes_shader", {}, {}, true,
-		"opengl_vertex.glsl", "opengl_geometry.glsl", "opengl_fragment.glsl", {}, scene::Vertex3DExt::FORMAT}, overlay_material);
+		"opengl_vertex.glsl", "opengl_geometry.glsl", "opengl_fragment.glsl", {},
+		scene::Vertex3DExt::FORMAT, {"GL_EXT_gpu_shader4"}}, overlay_material);
 
 	// minimap pixel color = average color of top tile
 	if (tsettings.enable_minimap && !tdef[0].name.empty() && drawtype != NDT_AIRLIKE)
@@ -927,11 +900,11 @@ void ContentFeatures::updateTextures(ITextureSource *tsrc, ShaderSource *shdsrc,
 		tiles[j].world_aligned = isWorldAligned(tdef[j].align_style,
 				tsettings.world_aligned_mode, drawtype);
 
-		fillTileAttribs(tsrc, &tiles[j].layers[0], tiles[j], tdef[j],
+		fillTileAttribs(pool, tsrc, &tiles[j].layers[0], tiles[j], tdef[j],
 				color, material_type, tile_shader,
 				tdef[j].backface_culling, tsettings, materials[j]);
 		if (!tdef_overlay[j].name.empty()) {
-			fillTileAttribs(tsrc, &tiles[j].layers[1], tiles[j], tdef_overlay[j],
+			fillTileAttribs(pool, tsrc, &tiles[j].layers[1], tiles[j], tdef_overlay[j],
 					color, overlay_material, overlay_shader,
 					tdef[j].backface_culling, tsettings, materials[j]);
 		}
@@ -959,11 +932,12 @@ void ContentFeatures::updateTextures(ITextureSource *tsrc, ShaderSource *shdsrc,
 	}
 
 	u32 special_shader = shdsrc->getShader({"nodes_shader", {}, {}, true,
-		"opengl_vertex.glsl", "opengl_geometry.glsl", "opengl_fragment.glsl", {}, scene::Vertex3DExt::FORMAT}, special_material);
+		"opengl_vertex.glsl", "opengl_geometry.glsl", "opengl_fragment.glsl", {},
+		scene::Vertex3DExt::FORMAT, {"GL_EXT_gpu_shader4"}}, special_material);
 
 	// Special tiles (fill in f->special_tiles[])
 	for (u16 j = 0; j < CF_SPECIAL_COUNT; j++) {
-		fillTileAttribs(tsrc, &special_tiles[j].layers[0], special_tiles[j], tdef_spec[j],
+		fillTileAttribs(pool, tsrc, &special_tiles[j].layers[0], special_tiles[j], tdef_spec[j],
 				color, special_material, special_shader,
 				tdef_spec[j].backface_culling, tsettings, materials[j]);
 	}
@@ -1490,6 +1464,7 @@ void NodeDefManager::updateTextures(IGameDef *gamedef, void *progress_callback_a
 	Client *client = (Client *)gamedef;
 	ITextureSource *tsrc = client->tsrc();
 	ShaderSource *shdsrc = client->getShaderSource();
+	AtlasPool *pool = client->getRenderingEngine()->getAtlasPool();
 	auto smgr = client->getSceneManager();
 	scene::MeshManipulator *meshmanip = smgr->getMeshManipulator();
 	TextureSettings tsettings;
@@ -1500,11 +1475,12 @@ void NodeDefManager::updateTextures(IGameDef *gamedef, void *progress_callback_a
 	u32 size = m_content_features.size();
 	for (u32 i = 0; i < size; i++) {
 		ContentFeatures *f = &(m_content_features[i]);
-		f->updateTextures(tsrc, shdsrc, meshmanip, client, tsettings);
+		f->updateTextures(pool, tsrc, shdsrc, meshmanip, client, tsettings);
 		client->showUpdateProgressTexture(progress_callback_args, i, size);
 	}
 
 	tsrc->setImageCaching(false);
+	pool->build();
 #endif
 }
 

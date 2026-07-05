@@ -42,16 +42,16 @@ private:
 	void getSpecialTile(int index, TileSpec *tile_ret, bool apply_crack = false);
 
 // face drawing
-	void drawQuad(const TileSpec &tile, v3f *vertices, const v3s16 &normal = v3s16(0, 0, 0),
+	void drawQuad(TileSpec &tile, v3f *vertices, const v3s16 &normal = v3s16(0, 0, 0),
 		float vertical_tiling = 1.0);
 
 // cuboid drawing!
 	template <typename Fn>
-	void drawCuboid(const aabb3f &box, const TileSpec *tiles, int tilecount,
+	void drawCuboid(const aabb3f &box, TileSpec *tiles, int tilecount,
 			const f32 *txc, u8 mask, Fn &&face_lighter);
 	void generateCuboidTextureCoords(aabb3f const &box, f32 *coords);
-	void drawAutoLightedCuboid(aabb3f box, const TileSpec &tile, f32 const *txc	= nullptr, u8 mask = 0);
-	void drawAutoLightedCuboid(aabb3f box, const TileSpec *tiles, int tile_count, f32 const *txc = nullptr, u8 mask = 0);
+	void drawAutoLightedCuboid(aabb3f box, TileSpec &tile, f32 const *txc	= nullptr, u8 mask = 0);
+	void drawAutoLightedCuboid(aabb3f box, TileSpec *tiles, int tile_count, f32 const *txc = nullptr, u8 mask = 0);
 	u8 getNodeBoxMask(aabb3f box, u8 solid_neighbors, u8 sametype_neighbors) const;
 
 // liquid-specific
@@ -104,12 +104,12 @@ private:
 	};
 	PlantlikeData cur_plant;
 
-	void drawPlantlikeQuad(const TileSpec &tile, float rotation, float quad_offset = 0,
+	void drawPlantlikeQuad(TileSpec &tile, float rotation, float quad_offset = 0,
 		bool offset_top_only = false);
-	void drawPlantlike(const TileSpec &tile, bool is_rooted = false);
+	void drawPlantlike(TileSpec &tile, bool is_rooted = false);
 
 // firelike-specific
-	void drawFirelikeQuad(const TileSpec &tile, float rotation, float opening_angle,
+	void drawFirelikeQuad(TileSpec &tile, float rotation, float opening_angle,
 		float offset_h, float offset_v = 0.0);
 
 // drawtypes

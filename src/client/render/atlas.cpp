@@ -13,8 +13,10 @@ video::Image *AtlasTile::createFramedImage() const
 {
 	u8 frameThickness = atlas->getFrameThickness();
 
-	if (!image || frameThickness == 0)
+	if (!image || frameThickness == 0) {
+		image->grab();
 		return image;
+	}
 
 	auto frameRect = image->getClipRect();
 	auto frameSize = frameRect.getSize();
@@ -68,9 +70,11 @@ bool AtlasTile::draw(f32 time)
 	if (!actualImage || !tex)
 		return false;
 
-	 tex->uploadTexture(0, actualImage, pos.X, pos.Y);
+	tex->uploadTexture(0, actualImage, pos.X, pos.Y);
 
-	 return true;
+	actualImage->drop();
+
+	return true;
 }
 
 bool AnimatedAtlasTile::draw(f32 time)
@@ -88,6 +92,8 @@ bool AnimatedAtlasTile::draw(f32 time)
 	auto actualImage = createFramedImage();
 
 	tex->uploadTexture(0, actualImage, pos.X, pos.Y);
+
+	actualImage->drop();
 
 	return true;
 }

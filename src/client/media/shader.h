@@ -217,9 +217,10 @@ struct ShaderInfo {
 	std::string fragment_shader = "opengl_fragment.glsl";
 	// Input constants
 	ShaderConstants constants = {};
-	// Vertex includes
 	// Vertex Type Descriptor
 	scene::VertexDescriptor vertex_desc = scene::Vertex3D::FORMAT;
+	// GLSL extensions
+	std::vector<std::string> extensions = {};
 	// Material ID the shader has received from Irrlicht
 	video::E_MATERIAL_TYPE material = video::EMT_SOLID;
 	std::string basic_name = "";

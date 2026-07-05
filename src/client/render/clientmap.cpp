@@ -961,13 +961,6 @@ void ClientMap::renderMap(video::VideoDriver* driver, s32 pass)
 	else
 		prefix = "renderMap(TRANS): ";
 
-	/*
-		Get animation parameters
-	*/
-	const float animation_time = m_client->getAnimationTime();
-	const int crack = m_client->getCrackLevel();
-	const u32 daynight_ratio = m_client->getEnv().getDayNightRatio();
-
 	const v3f camera_position = m_camera_position;
 
 	const auto mesh_grid = m_client->getMeshGrid();
@@ -977,9 +970,6 @@ void ClientMap::renderMap(video::VideoDriver* driver, s32 pass)
 	};
 
 	u32 merged_count = 0;
-
-	// For limiting number of mesh animations per frame
-	u32 mesh_animate_count = 0;
 
 	/*
 		Update transparent meshes
@@ -1015,24 +1005,6 @@ void ClientMap::renderMap(video::VideoDriver* driver, s32 pass)
 		f32 mesh_sphere_radius = block_mesh->getBoundingRadius();
 		if (is_frustum_culled(mesh_sphere_center, mesh_sphere_radius))
 			continue;
-
-		// Mesh animation
-		if (pass == scene::ESNRP_SOLID) {
-			// 50 nodes is pretty arbitrary but it should work somewhat nicely
-			float distance_sq = camera_position.getDistanceFromSQ(mesh_sphere_center);
-			bool faraway = distance_sq >= std::pow(BS * 50 + mesh_sphere_radius, 2.0f);
-
-			if (block_mesh->isAnimationForced() || !faraway ||
-					mesh_animate_count < (m_control.range_all ? 200 : 50)) {
-
-				bool animated = block_mesh->animate(faraway, animation_time,
-					crack, daynight_ratio);
-				if (animated)
-					mesh_animate_count++;
-			} else {
-				block_mesh->decreaseAnimationForceTimer();
-			}
-		}
 
 		/*
 			Get the meshbuffers of the block
@@ -1107,7 +1079,6 @@ void ClientMap::renderMap(video::VideoDriver* driver, s32 pass)
 	g_profiler->avg(prefix + "draw meshes [ms]", tt_draw.stop(true));
 
 	if (pass == scene::ESNRP_SOLID) {
-		g_profiler->avg("renderMap(): animated meshes [#]", mesh_animate_count);
 		g_profiler->avg(prefix + "merged buffers [#]", merged_count);
 
 		u32 cached_count = 0;
@@ -1462,8 +1433,9 @@ void ClientMap::renderMapShadows(video::VideoDriver *driver,
 	if (translucent_foliage) {
 		// this is the material leaves would use, compare to nodedef.cpp
 		auto* shdsrc = m_client->getShaderSource();
-		const u32 leaves_shader = shdsrc->getShader({
-			"nodes_shader", {}, {}}, TILE_MATERIAL_WAVING_LEAVES, true);
+		ShaderInfo info = {"nodes_shader", {}, {}};
+		info.extensions = {"GL_EXT_gpu_shader4"};
+		const u32 leaves_shader = shdsrc->getShader(info, TILE_MATERIAL_WAVING_LEAVES, true);
 		leaves_material = shdsrc->getShaderInfo(leaves_shader).material;
 	}
 

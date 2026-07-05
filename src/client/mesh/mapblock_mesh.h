@@ -185,14 +185,6 @@ public:
 	MapBlockMesh(Client *client, MeshMakeData *data);
 	~MapBlockMesh();
 
-	// Main animation function, parameters:
-	//   faraway: whether the block is far away from the camera (~50 nodes)
-	//   time: the global animation time, 0 .. 60 (repeats every minute)
-	//   daynight_ratio: 0 .. 1000
-	//   crack: -1 .. CRACK_ANIMATION_LENGTH-1 (-1 for off)
-	// Returns true if anything has been changed.
-	bool animate(bool faraway, float time, int crack, u32 daynight_ratio);
-
 	/// @warning ClientMap requires that the vertex and index data is not modified
 	scene::IMesh *getMesh()
 	{
@@ -212,17 +204,6 @@ public:
 		std::vector<MinimapMapblock*> minimap_mapblocks;
 		minimap_mapblocks.swap(m_minimap_mapblocks);
 		return minimap_mapblocks;
-	}
-
-	bool isAnimationForced() const
-	{
-		return m_animation_force_timer == 0;
-	}
-
-	void decreaseAnimationForceTimer()
-	{
-		if(m_animation_force_timer > 0)
-			m_animation_force_timer--;
 	}
 
 	/// Radius of the bounding-sphere, in BS-space.
@@ -256,21 +237,6 @@ private:
 
 	f32 m_bounding_radius;
 	v3f m_bounding_sphere_center;
-
-	// Must animate() be called before rendering?
-	bool m_has_animation;
-	int m_animation_force_timer;
-
-	// Animation info: cracks
-	// Last crack value passed to animate()
-	int m_last_crack;
-	// Maps mesh and mesh buffer (i.e. material) indices to base texture names
-	std::map<std::pair<u8, u32>, std::string> m_crack_materials;
-
-	// Animation info: texture animation
-	// Maps mesh and mesh buffer indices to TileSpecs
-	// Keys are pairs of (mesh index, buffer index in the mesh)
-	std::map<std::pair<u8, u32>, AnimationInfo> m_animation_info;
 
 	// list of all semitransparent triangles in the mapblock
 	std::vector<MeshTriangle> m_transparent_triangles;

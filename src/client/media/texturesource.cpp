@@ -102,6 +102,9 @@ public:
 	*/
 	video::GLTexture* getTextureForMesh(const std::string &name, u32 *id);
 
+	video::Image *getImage(const std::string &name);
+	video::Image *getImageForMesh(const std::string &name);
+
 	virtual Palette* getPalette(const std::string &name);
 
 	bool isKnownSourceImage(const std::string &name)
@@ -384,6 +387,20 @@ video::GLTexture* TextureSource::getTextureForMesh(const std::string &name, u32 
 	if (mesh_filter_needed && !name.empty())
 		return getTexture(name + "^[applyfiltersformesh", id);
 	return getTexture(name, id);
+}
+
+video::Image *TextureSource::getImage(const std::string &name)
+{
+	std::set<std::string> source_images;
+	return getOrGenerateImage(name, source_images);
+}
+
+video::Image *TextureSource::getImageForMesh(const std::string &name)
+{
+	// Avoid duplicating texture if it won't actually change
+	std::string meshfilter = mesh_filter_needed && !name.empty() ?
+		"^[applyfiltersformesh" : "";
+	return getImage(name + meshfilter);
 }
 
 Palette* TextureSource::getPalette(const std::string &name)

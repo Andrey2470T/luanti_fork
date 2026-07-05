@@ -1,3 +1,14 @@
+#define NO_BLEND_MODE 0
+#define ALPHA_BLEND_MODE 1
+#define ADD_BLEND_MODE 2
+#define SUBTRACT_BLEND_MODE 3
+#define REVSUBTRACT_BLEND_MODE 4
+#define MULTIPLY_BLEND_MODE 5
+#define SCREEN_BLEND_MODE 6
+#define OVERLAY_BLEND_MODE 7
+#define MIN_BLEND_MODE 8
+#define MAX_BLEND_MODE 9
+
 // All functions below use the same blending for rgb and alpha (separated one is not supported)
 
 vec4 AlphaBlend(vec4 src, vec4 dst)

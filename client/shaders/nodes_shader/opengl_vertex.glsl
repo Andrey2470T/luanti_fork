@@ -2,6 +2,8 @@
 #include<noise>
 #include<vertex_animations>
 
+#define CRACK_FRAME_SIZE 16
+
 uniform vec3 lightDir;
 uniform float timeOfDay;
 
@@ -32,6 +34,7 @@ CENTROID_ out float nightRatio;
 
 out highp vec3 eyeVec;
 out vec3 hwColor;
+out vec2 crackTexCoord;
 
 void main(void)
 {
@@ -44,7 +47,7 @@ void main(void)
 #if (MATERIAL_TYPE == TILE_MATERIAL_WAVING_LEAVES && ENABLE_WAVING_LEAVES)
 	animateLeavesVertex(worldPosition, pos);
 #elif (MATERIAL_TYPE == TILE_MATERIAL_WAVING_PLANTS && ENABLE_WAVING_PLANTS)
-	animatePlantVertex(worldPosition, pos, varTexCoord);
+	animatePlantVertex(worldPosition, pos);
 #elif MATERIAL_WAVING_LIQUID && ENABLE_WAVING_WATER
 	animateWaterVertex(worldPosition, pos);
 #endif
@@ -55,7 +58,7 @@ void main(void)
 	eyeVec = -(mWorldView * pos).xyz;
 	vNormal = inNormal;
 
-	// Calculating the light color
+	// Calculate the light color
 	vec4 color = inColor;
 	float skyLight = color.r;
 	float blockLight = color.g;
@@ -63,13 +66,30 @@ void main(void)
 	float sum = float(max(skyLight + blockLight, 0));
 	nightRatio = 1.0 - (skyLight / sum);
 	dayLight = getSkyColor(timeOfDay);
-
 	varColor = calculateLighting(timeOfDay, skyLight, blockLight, ao);
 
+	// Calculate the emission factor for the bloom mask
 	vec3 lightColor = (max(dayLight * skyLight, blockColor * (blockLight-color.a)) + ambientColor) * ao;
 	emissionLight = color.a * (1.0 - luminance(lightColor));
 
-	hwColor = inAux / 255.0;
+	// inAux structure:
+	// Channel | Bits count | Value
+	// red     |     8      | hwColor.r
+	// red     |     8      | hwColor.g
+	// red     |     8      | hwColor.b
+	// red     |     8      |    -
+	// green   |    16      | crackTexCoord.x
+	// green   |    16      | crackTexCoord.y
+	// blue    |    32      |    -
+
+	// Extract the hw color
+	hwColor.r = (int(inAux.r) >> 24) / 255.0;
+	hwColor.g = ((int(inAux.r) >> 16) & 0xff) / 255.0;
+	hwColor.b = ((int(inAux.r) >> 80) & 0xff) / 255.0;
+
+	// Extract the crack texcoords in UV space
+	crackTexCoord.x = float(int(inAux.g) >> 16) / CRACK_FRAME_SIZE;
+	crackTexCoord.y = float(int(inAux.g) & 0xffff) / CRACK_FRAME_SIZE;
 
 
 #ifdef ENABLE_DYNAMIC_SHADOWS

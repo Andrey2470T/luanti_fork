@@ -6,6 +6,7 @@
 
 #include "clientenvironment.h"
 #include "irrlichttypes.h"
+#include <Video/Texture.h>
 #include <ostream>
 #include <map>
 #include <memory>
@@ -286,8 +287,9 @@ public:
 		return m_animation_time;
 	}
 
-	int getCrackLevel();
-	v3s16 getCrackPos();
+	int getCrackLevel() { return m_crack_level; }
+	v3s16 getCrackPos() { return m_crack_pos; }
+	video::GLTexture *getCrackTexture() { return m_crack_texture; }
 	void setCrack(int level, v3s16 pos);
 
 	u16 getHP();
@@ -527,6 +529,7 @@ private:
 	float m_animation_time = 0.0f;
 	int m_crack_level = -1;
 	v3s16 m_crack_pos;
+	video::GLTexture *m_crack_texture = nullptr;
 	std::queue<std::wstring> m_out_chat_queue;
 	u32 m_last_chat_message_sent;
 	float m_chat_message_allowance = 5.0f;

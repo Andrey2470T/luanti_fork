@@ -310,7 +310,8 @@ static scene::SMesh *createGenericNodeMesh(Client *client, MapNode n,
 		n.setParam2(1);
 	}
 
-	MeshCollector collector(v3f(0), v3f());
+	auto pool = client->getRenderingEngine()->getAtlasPool();
+	MeshCollector collector(pool, v3f(0), v3f());
 	{
 		MeshMakeData mmd(client->ndef(), 1, MeshGrid{1});
 		mmd.fillSingleNode(n);

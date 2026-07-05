@@ -20,7 +20,7 @@ void animateLeavesVertex(in vec3 worldPos, inout vec4 localPos)
 #endif
 
 #if ENABLE_WAVING_PLANTS
-void animatePlantVertex(in vec3 worldPos, inout vec4 localPos, in vec2 texCoord)
+void animatePlantVertex(in vec3 worldPos, inout vec4 localPos)
 {
 	float tOffset = (worldPos.x + worldPos.y) * 0.001 + worldPos.z * 0.002;
 	float disp_x = (smoothTriangleWave(animationTimer * 23.0 + tOffset) +
@@ -29,10 +29,10 @@ void animatePlantVertex(in vec3 worldPos, inout vec4 localPos, in vec2 texCoord)
 		smoothTriangleWave(animationTimer * 29.0 + tOffset) +
 		smoothTriangleWave(animationTimer * 13.0 + tOffset)) * 0.5;
 
-	if (texCoord.y < 0.05) {
+	//if (texCoord.y < 0.05) {
 		localPos.x += disp_x;
 		localPos.z += disp_z;
-	}
+	//}
 }
 #endif
 
