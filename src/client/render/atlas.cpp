@@ -162,7 +162,7 @@ bool Atlas::addTile(AtlasTile *tile)
 bool Atlas::addAnimatedTile(AnimatedAtlasTile *tile)
 {
 	if (!addTile(tile))
-    	return false;
+		return false;
 	animatedTiles.emplace_back(tiles.size() - 1);
 
 	return true;
@@ -286,33 +286,33 @@ AtlasPool::AtlasPool(video::VideoDriver *_driver, const std::string &_name)
 
 Atlas *AtlasPool::getAtlas(u8 num)
 {
-    return atlases.at(num).get();
+	return atlases.at(num).get();
 }
 
 Atlas *AtlasPool::getAtlasByImage(const ImageEntry &image, bool force_add)
 {
-    for (auto &atlas : atlases) {
-        auto atlasTile = atlas->getTileByImage(image.image);
+	for (auto &atlas : atlases) {
+    	auto atlasTile = atlas->getTileByImage(image.image);
 
-        if (atlasTile)
-            return atlas.get();
-    }
+    	if (atlasTile)
+        	return atlas.get();
+	}
 
 	/*if (force_add) {
-        forceAddTile(image);
-        return atlases.back().get();
-    }*/
-    return nullptr;
+	    forceAddTile(image);
+	    return atlases.back().get();
+	}*/
+	return nullptr;
 }
 
 AtlasTile *AtlasPool::getTileByImage(const ImageEntry &image)
 {
-    auto atlas = getAtlasByImage(image);
+	auto atlas = getAtlasByImage(image);
 
-    if (!atlas)
-        return nullptr;
+	if (!atlas)
+    	return nullptr;
 
-    return atlas->getTileByImage(image.image);
+	return atlas->getTileByImage(image.image);
 }
 
 void AtlasPool::addTile(const ImageEntry &image)
@@ -324,14 +324,14 @@ core::rectf AtlasPool::getTileRect(const ImageEntry &image, bool force_add)
 {
 	auto tile = getTileByImage(image);
 
-    if (!tile) {
+	if (!tile) {
 		/*if (force_add) {
 			forceAddTile(image);
 			tile = getTileByImage(image);
 		}*/
-    	return core::rectf();
+		return core::rectf();
 	}
-	
+
 	return core::rectf(
 		static_cast<f32>(tile->pos.X), static_cast<f32>(tile->pos.Y + tile->size.Y),
 		static_cast<f32>(tile->pos.X + tile->size.X), static_cast<f32>(tile->pos.Y));
