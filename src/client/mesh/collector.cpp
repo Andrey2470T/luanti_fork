@@ -24,9 +24,9 @@ void MeshCollector::append(TileLayer &layer, const scene::Vertex3D *vertices,
 		u32 numVertices, const u16 *indices, u32 numIndices, u8 layernum,
 		bool use_scale)
 {
-	auto atlas = pool->getAtlasByImage({layer.image, layer.anim_info});
 	v2u32 tilePos, tileSize;
 
+	auto atlas = pool ? pool->getAtlasByImage({layer.image, layer.anim_info}) : nullptr;
 	if (atlas) {
 		if (!layer.texture)
 			layer.texture = atlas->getTexture();
@@ -41,7 +41,6 @@ void MeshCollector::append(TileLayer &layer, const scene::Vertex3D *vertices,
 	f32 scale = 1.0f;
 	if (use_scale)
 		scale = 1.0f / layer.scale;
-
 
 	u32 vertex_count = p.vertices.size();
 	for (u32 i = 0; i < numVertices; i++) {

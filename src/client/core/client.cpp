@@ -793,7 +793,9 @@ void Client::step(float dtime)
 		m_localdb->beginSave();
 	}
 
-	m_rendering_engine->getAtlasPool()->drawTiles(m_animation_time);
+	auto atlas_pool = m_rendering_engine->getAtlasPool();
+	if (atlas_pool)
+		atlas_pool->drawTiles(m_animation_time);
 }
 
 bool Client::loadMedia(const std::string &data, const std::string &filename,

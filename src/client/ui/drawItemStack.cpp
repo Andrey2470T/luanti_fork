@@ -139,12 +139,6 @@ void drawItemStack(
 			}
 
 			video::SMaterial &material = buf->getMaterial();
-
-			// Texture animation
-			if (p.animation_info) {
-				p.animation_info->updateTexture(material, client->getAnimationTime());
-			}
-
 			material.MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL;
 			driver->setMaterial(material);
 			driver->drawMeshBuffer(buf);

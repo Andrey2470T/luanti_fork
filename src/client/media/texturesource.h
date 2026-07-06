@@ -57,6 +57,7 @@ public:
 	virtual video::GLTexture *getTextureForMesh(
 			const std::string &name, u32 *id = nullptr) = 0;
 
+	virtual std::string getImageName(video::Image *image) = 0;
 	virtual video::Image *getImage(const std::string &name) = 0;
 	virtual video::Image *getImageForMesh(const std::string &name) = 0;
 	/**

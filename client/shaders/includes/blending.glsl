@@ -46,7 +46,7 @@ vec4 ScreenBlend(vec4 src, vec4 dst)
 
 vec4 OverlayBlend(vec4 src, vec4 dst)
 {
-	vec3 res = src;
+	vec4 res = src;
 	res.r = OVERLAY_CHANNEL(src.r, dst.r);
 	res.g = OVERLAY_CHANNEL(src.g, dst.g);
 	res.b = OVERLAY_CHANNEL(src.b, dst.b);

@@ -42,5 +42,6 @@ struct TileAnimationParams
 		v2u32 texture_size, u16 *frame_count,
 		u16 *frame_length_ms, v2u32 *frame_size) const;
 	void getTextureModifer(std::ostream &os, v2u32 texture_size, int frame) const;
+	v2f getTextureCoords(v2u32 texture_size, u16 frame) const;
 	void getFrames(std::vector<core::rect<u32>> *frames_rects, u16 *frame_length_ms, v2u32 texture_size) const;
 };

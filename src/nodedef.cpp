@@ -696,12 +696,10 @@ static void fillTileAttribs(AtlasPool *pool, ITextureSource *tsrc, TileLayer *la
 	layer->material_flags = 0;
 	if (backface_culling)
 		layer->material_flags |= MATERIAL_FLAG_BACKFACE_CULLING;
-	if (tiledef.animation.type != TAT_NONE)
-		layer->material_flags |= MATERIAL_FLAG_ANIMATION;
-	if (tiledef.tileable_horizontal)
+	/*if (tiledef.tileable_horizontal)
 		layer->material_flags |= MATERIAL_FLAG_TILEABLE_HORIZONTAL;
 	if (tiledef.tileable_vertical)
-		layer->material_flags |= MATERIAL_FLAG_TILEABLE_VERTICAL;
+		layer->material_flags |= MATERIAL_FLAG_TILEABLE_VERTICAL;*/
 
 	// Color
 	layer->has_color = tiledef.has_color;
@@ -711,15 +709,12 @@ static void fillTileAttribs(AtlasPool *pool, ITextureSource *tsrc, TileLayer *la
 		layer->color = color;
 
 	// Animation parameters
-	if (layer->material_flags & MATERIAL_FLAG_ANIMATION) {
+	if (tiledef.animation.type != TAT_NONE) {
 		assert(layer->image);
 
 		layer->anim_info = AnimationInfo(tiledef.animation, layer->image->getDimension());
 		layer->image->getClipRect() = layer->anim_info.getCurrentFrameRect();
 	}
-
-	if (!layer->anim_info.hasAnimation())
-		layer->material_flags &= ~MATERIAL_FLAG_ANIMATION;
 
 	pool->addTile({layer->image, layer->anim_info});
 }

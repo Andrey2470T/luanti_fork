@@ -179,6 +179,8 @@ RenderingEngine::RenderingEngine(MyEventReceiver *receiver)
 
 	s_singleton = this;
 
+	mainPool.reset(new AtlasPool(driver, "Main"));
+
 	g_settings->registerChangedCallback("fullscreen", settingChangedCallback, this);
 	g_settings->registerChangedCallback("window_maximized", settingChangedCallback, this);
 }
@@ -343,8 +345,6 @@ void RenderingEngine::initialize(Client *client, Hud *hud)
 {
 	const std::string &draw_mode = g_settings->get("3d_mode");
 	core.reset(createRenderingCore(draw_mode, m_device, client, hud));
-
-	mainPool.reset(new AtlasPool(driver, "Main"));
 }
 
 void RenderingEngine::finalize()

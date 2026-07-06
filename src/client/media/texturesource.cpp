@@ -102,6 +102,7 @@ public:
 	*/
 	video::GLTexture* getTextureForMesh(const std::string &name, u32 *id);
 
+	std::string getImageName(video::Image *image);
 	video::Image *getImage(const std::string &name);
 	video::Image *getImageForMesh(const std::string &name);
 
@@ -389,8 +390,22 @@ video::GLTexture* TextureSource::getTextureForMesh(const std::string &name, u32 
 	return getTexture(name, id);
 }
 
+std::string TextureSource::getImageName(video::Image *image)
+{
+	auto it = std::find_if(m_image_cache.begin(), m_image_cache.end(), 
+		[image](const auto &cached_image) {
+			return cached_image.second.image == image;
+		});
+	if (it != m_image_cache.end()) {
+		return it->first;
+	}
+	return "";
+}
+
 video::Image *TextureSource::getImage(const std::string &name)
 {
+	if (name.empty())
+		return nullptr;
 	std::set<std::string> source_images;
 	return getOrGenerateImage(name, source_images);
 }

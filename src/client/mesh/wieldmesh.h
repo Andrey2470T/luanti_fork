@@ -70,9 +70,6 @@ public:
 		last_colorized = target;
 		return true;
 	}
-
-	// Null for no animated parts
-	std::unique_ptr<AnimationInfo> animation_info;
 };
 
 struct ItemMesh

@@ -33,10 +33,7 @@
 
 ItemMeshBufferInfo::ItemMeshBufferInfo(const TileLayer &layer) :
 		override_color(layer.color),
-		override_color_set(layer.has_color),
-		animation_info((layer.material_flags & MATERIAL_FLAG_ANIMATION) ?
-			std::make_unique<AnimationInfo>(layer) :
-			nullptr)
+		override_color_set(layer.has_color)
 {}
 
 static scene::IMesh *createExtrusionMesh(int resolution_x, int resolution_y)
@@ -323,10 +320,6 @@ static scene::SMesh *createGenericNodeMesh(Client *client, MapNode n,
 	for (int layer = 0; layer < MAX_TILE_LAYERS; layer++) {
 		auto &prebuffers = collector.prebuffers[layer];
 		for (PreMeshBuffer &p : prebuffers) {
-			if (p.layer.material_flags & MATERIAL_FLAG_ANIMATION) {
-				const FrameSpec &frame = (*p.layer.frames)[0];
-				p.layer.texture = frame.texture;
-			}
 			for (scene::Vertex3DExt &v : p.vertices)
 				v.Color.setAlpha(255);
 
@@ -398,10 +391,10 @@ void WieldMeshSceneNode::setItem(const ItemStack &item, Client *client, bool che
 				wscale.Z *= 0.1f;
 			const TileLayer &l0 = f.tiles[0].layers[0];
 			const TileLayer &l1 = f.tiles[0].layers[1];
-			setExtruded(tsrc->getTextureName(l0.texture_id),
-				tsrc->getTextureName(l1.texture_id),
+			setExtruded(tsrc->getImageName(l0.image),
+				tsrc->getImageName(l1.image),
 				wscale, tsrc,
-				l0.animation_frame_count);
+				l0.anim_info.getFrameCount());
 			// Add color
 			m_buffer_info.emplace_back(l0.has_color, l0.color);
 			m_buffer_info.emplace_back(l1.has_color, l1.color);
@@ -410,9 +403,9 @@ void WieldMeshSceneNode::setItem(const ItemStack &item, Client *client, bool che
 		case NDT_PLANTLIKE_ROOTED: {
 			// use the plant tile
 			const TileLayer &l0 = f.special_tiles[0].layers[0];
-			setExtruded(tsrc->getTextureName(l0.texture_id),
+			setExtruded(tsrc->getImageName(l0.image),
 				"", wield_scale, tsrc,
-				l0.animation_frame_count);
+				l0.anim_info.getFrameCount());
 			m_buffer_info.emplace_back(l0.has_color, l0.color);
 			break;
 		}
@@ -505,12 +498,6 @@ void WieldMeshSceneNode::setLightColorAndAnimation(video::SColor color, float an
 		// Color
 		video::SMaterial &material = m_meshnode->getMaterial(i);
 		material.ColorParam = color;
-
-		// Animation
-		const ItemMeshBufferInfo &buf_info = m_buffer_info[i];
-		if (buf_info.animation_info) {
-			buf_info.animation_info->updateTexture(material, animation_time);
-		}
 	}
 }
 
@@ -571,8 +558,8 @@ void getItemMesh(Client *client, const ItemStack &item, ItemMesh *result)
 			const TileLayer &l0 = f.tiles[0].layers[0];
 			const TileLayer &l1 = f.tiles[0].layers[1];
 			mesh = getExtrudedMesh(tsrc,
-				tsrc->getTextureName(l0.texture_id),
-				tsrc->getTextureName(l1.texture_id));
+				tsrc->getImageName(l0.image),
+				tsrc->getImageName(l1.image));
 			// Add color
 			result->buffer_info.emplace_back(l0.has_color, l0.color);
 			result->buffer_info.emplace_back(l1.has_color, l1.color);
@@ -582,7 +569,7 @@ void getItemMesh(Client *client, const ItemStack &item, ItemMesh *result)
 			// Use the plant tile
 			const TileLayer &l0 = f.special_tiles[0].layers[0];
 			mesh = getExtrudedMesh(tsrc,
-				tsrc->getTextureName(l0.texture_id), "");
+				tsrc->getImageName(l0.image), "");
 			result->buffer_info.emplace_back(l0.has_color, l0.color);
 			break;
 		}

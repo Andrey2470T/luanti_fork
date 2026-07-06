@@ -134,7 +134,7 @@ void Particle::step(float dtime, ClientEnvironment *env)
 
 	if (m_p.animation.type != TAT_NONE) {
 		m_animation_time += dtime;
-		int frame_length_i = 0;
+		u16 frame_length_i = 0;
 		m_p.animation.determineParams(
 				m_texture.ref->getSize(),
 				NULL, &frame_length_i, NULL);
@@ -875,11 +875,7 @@ bool ParticleManager::getNodeParticleParams(const MapNode &n,
 	const TileLayer &tile = f.tiles[texid].layers[0];
 	p.animation.type = TAT_NONE;
 
-	// Only use first frame of animated texture
-	if (tile.material_flags & MATERIAL_FLAG_ANIMATION)
-		*texture = (*tile.frames)[0].texture;
-	else
-		*texture = tile.texture;
+	*texture = tile.texture;
 
 	float size = (myrand_range(0,8)) / 64.0f;
 	p.size = BS * size;

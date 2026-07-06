@@ -430,8 +430,6 @@ void MapblockMeshGenerator::drawSolidNode()
 		for (auto &layer : tiles[face].layers) {
 			if (backface_culling)
 				layer.material_flags |= MATERIAL_FLAG_BACKFACE_CULLING;
-			layer.material_flags |= MATERIAL_FLAG_TILEABLE_HORIZONTAL;
-			layer.material_flags |= MATERIAL_FLAG_TILEABLE_VERTICAL;
 		}
 		if (!data->m_smooth_lighting) {
 			lights[face] = getFaceLight(cur_node.n, neighbor, nodedef);
@@ -1023,7 +1021,7 @@ void MapblockMeshGenerator::drawTorchlikeNode()
 		default: tileindex = 2; // side (or invalid, shouldn't happen)
 	}
 	TileSpec tile;
-	useTile(&tile, tileindex, MATERIAL_FLAG_CRACK_OVERLAY, MATERIAL_FLAG_BACKFACE_CULLING);
+	useTile(&tile, tileindex, 0, MATERIAL_FLAG_BACKFACE_CULLING);
 
 	float size = BS / 2 * cur_node.f->visual_scale;
 	v3f vertices[4] = {
@@ -1077,7 +1075,7 @@ void MapblockMeshGenerator::drawSignlikeNode()
 {
 	u8 wall = cur_node.n.getWallMounted(nodedef);
 	TileSpec tile;
-	useTile(&tile, 0, MATERIAL_FLAG_CRACK_OVERLAY, MATERIAL_FLAG_BACKFACE_CULLING);
+	useTile(&tile, 0, 0, MATERIAL_FLAG_BACKFACE_CULLING);
 	static const float offset = BS / 16;
 	float size = BS / 2 * cur_node.f->visual_scale;
 	// Wall at X+ of node
@@ -1264,7 +1262,7 @@ void MapblockMeshGenerator::drawPlantlikeRootedNode()
 {
 	drawSolidNode();
 	TileSpec tile;
-	useTile(&tile, 0, MATERIAL_FLAG_CRACK_OVERLAY, 0, true);
+	useTile(&tile, 0, 0, 0, true);
 	cur_node.origin += v3f(0.0, BS, 0.0);
 	cur_node.p.Y++;
 	if (data->m_smooth_lighting) {
@@ -1498,7 +1496,7 @@ void MapblockMeshGenerator::drawRaillikeNode()
 	}
 
 	TileSpec tile;
-	useTile(&tile, tile_index, MATERIAL_FLAG_CRACK_OVERLAY, MATERIAL_FLAG_BACKFACE_CULLING);
+	useTile(&tile, tile_index, 0, MATERIAL_FLAG_BACKFACE_CULLING);
 
 	static const float offset = BS / 64;
 	static const float size   = BS / 2;

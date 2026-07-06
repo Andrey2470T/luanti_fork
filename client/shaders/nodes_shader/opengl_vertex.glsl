@@ -83,9 +83,9 @@ void main(void)
 	// blue    |    32      |    -
 
 	// Extract the hw color
-	hwColor.r = (int(inAux.r) >> 24) / 255.0;
-	hwColor.g = ((int(inAux.r) >> 16) & 0xff) / 255.0;
-	hwColor.b = ((int(inAux.r) >> 80) & 0xff) / 255.0;
+	hwColor.r = float(int(inAux.r) >> 24) / 255.0;
+	hwColor.g = float(int(inAux.r) >> 16 & 0xff) / 255.0;
+	hwColor.b = float(int(inAux.r) >> 8 & 0xff) / 255.0;
 
 	// Extract the crack texcoords in UV space
 	crackTexCoord.x = float(int(inAux.g) >> 16) / CRACK_FRAME_SIZE;

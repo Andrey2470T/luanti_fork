@@ -50,7 +50,7 @@ public:
 		return data;
 	}
 
-	content_t addSimpleNode(std::string name, u32 texture)
+	content_t addSimpleNode(std::string name)
 	{
 		ItemDefinition itemdef;
 		itemdef.type = ITEM_NODE;
@@ -64,13 +64,11 @@ public:
 		f.alpha = ALPHAMODE_OPAQUE;
 		for (TileDef &tiledef : f.tiledef)
 			tiledef.name = name + ".png";
-		for (TileSpec &tile : f.tiles)
-			tile.layers[0].texture_id = texture;
 
 		return registerNode(itemdef, f);
 	}
 
-	content_t addLiquidSource(std::string name, u32 texture)
+	content_t addLiquidSource(std::string name)
 	{
 		ItemDefinition itemdef;
 		itemdef.type = ITEM_NODE;
@@ -91,13 +89,11 @@ public:
 		f.liquid_alternative_flowing = "test:" + name + "_flowing";
 		for (TileDef &tiledef : f.tiledef)
 			tiledef.name = name + ".png";
-		for (TileSpec &tile : f.tiles)
-			tile.layers[0].texture_id = texture;
 
 		return registerNode(itemdef, f);
 	}
 
-	content_t addLiquidFlowing(std::string name, u32 texture_top, u32 texture_side)
+	content_t addLiquidFlowing(std::string name)
 	{
 		ItemDefinition itemdef;
 		itemdef.type = ITEM_NODE;
@@ -118,8 +114,6 @@ public:
 		f.liquid_alternative_flowing = "test:" + name + "_flowing";
 		f.tiledef_special[0].name = name + "_top.png";
 		f.tiledef_special[1].name = name + "_side.png";
-		f.special_tiles[0].layers[0].texture_id = texture_top;
-		f.special_tiles[1].layers[0].texture_id = texture_side;
 
 		return registerNode(itemdef, f);
 	}
@@ -170,56 +164,54 @@ const Quad zp{{{{{-h, -h, h}, {0, 0, 1}, 0, {1, 1}}, HW}, {{{h, -h, h}, {0, 0, 1
 void TestMapblockMeshGenerator::testSimpleNode()
 {
 	MockGameDef gamedef;
-	content_t stone = gamedef.addSimpleNode("stone", 42);
+	content_t stone = gamedef.addSimpleNode("stone");
 	gamedef.finalize();
 
 	MeshMakeData data = gamedef.makeSingleNodeMMD();
 	data.m_vmanip.setNode({0, 0, 0}, {stone, 0, 0});
 
-	MeshCollector col{{}};
+	MeshCollector col{nullptr, v3f(0, 0, 0)};
 	MapblockMeshGenerator mg{&data, &col};
 	mg.generate();
 	UASSERTEQ(std::size_t, col.prebuffers[0].size(), 1);
 	UASSERTEQ(std::size_t, col.prebuffers[1].size(), 0);
 
 	auto &&buf = col.prebuffers[0][0];
-	UASSERTEQ(u32, buf.layer.texture_id, 42);
 	UASSERT(checkMeshEqual(buf.vertices, buf.indices, {quad::xn, quad::xp, quad::yn, quad::yp, quad::zn, quad::zp}));
 }
 
 void TestMapblockMeshGenerator::testSurroundedNode()
 {
 	MockGameDef gamedef;
-	content_t stone = gamedef.addSimpleNode("stone", 42);
-	content_t wood = gamedef.addSimpleNode("wood", 13);
+	content_t stone = gamedef.addSimpleNode("stone");
+	content_t wood = gamedef.addSimpleNode("wood");
 	gamedef.finalize();
 
 	MeshMakeData data = gamedef.makeSingleNodeMMD();
 	data.m_vmanip.setNode({0, 0, 0}, {stone, 0, 0});
 	data.m_vmanip.setNode({1, 0, 0}, {wood, 0, 0});
 
-	MeshCollector col{{}};
+	MeshCollector col{nullptr, v3f(0, 0, 0)};
 	MapblockMeshGenerator mg{&data, &col};
 	mg.generate();
 	UASSERTEQ(std::size_t, col.prebuffers[0].size(), 1);
 	UASSERTEQ(std::size_t, col.prebuffers[1].size(), 0);
 
 	auto &&buf = col.prebuffers[0][0];
-	UASSERTEQ(u32, buf.layer.texture_id, 42);
 	UASSERT(checkMeshEqual(buf.vertices, buf.indices, {quad::xn, quad::yn, quad::yp, quad::zn, quad::zp}));
 }
 
 void TestMapblockMeshGenerator::testInterliquidSame()
 {
 	MockGameDef gamedef;
-	auto water = gamedef.addLiquidSource("water", 42);
+	auto water = gamedef.addLiquidSource("water");
 	gamedef.finalize();
 
 	MeshMakeData data = gamedef.makeSingleNodeMMD();
 	data.m_vmanip.setNode({0, 0, 0}, {water, 0, 0});
 	data.m_vmanip.setNode({1, 0, 0}, {water, 0, 0});
 
-	MeshCollector col{{}};
+	MeshCollector col{nullptr, v3f(0, 0, 0)};
 	MapblockMeshGenerator mg{&data, &col};
 	mg.generate();
 	UASSERTEQ(std::size_t, col.prebuffers[0].size(), 1);
@@ -229,22 +221,21 @@ void TestMapblockMeshGenerator::testInterliquidSame()
 
 	for (auto &v : buf.vertices)
 		v.Color = 0;
-	UASSERTEQ(u32, buf.layer.texture_id, 42);
 	UASSERT(checkMeshEqual(buf.vertices, buf.indices, {quad::xn, quad::yn, quad::yp, quad::zn, quad::zp}));
 }
 
 void TestMapblockMeshGenerator::testInterliquidDifferent()
 {
 	MockGameDef gamedef;
-	auto water = gamedef.addLiquidSource("water", 42);
-	auto lava = gamedef.addLiquidSource("lava", 13);
+	auto water = gamedef.addLiquidSource("water");
+	auto lava = gamedef.addLiquidSource("lava");
 	gamedef.finalize();
 
 	MeshMakeData data = gamedef.makeSingleNodeMMD();
 	data.m_vmanip.setNode({0, 0, 0}, {water, 0, 0});
 	data.m_vmanip.setNode({0, 0, 1}, {lava, 0, 0});
 
-	MeshCollector col{{}};
+	MeshCollector col{nullptr, v3f(0, 0, 0)};
 	MapblockMeshGenerator mg{&data, &col};
 	mg.generate();
 	UASSERTEQ(std::size_t, col.prebuffers[0].size(), 1);
@@ -254,7 +245,6 @@ void TestMapblockMeshGenerator::testInterliquidDifferent()
 
 	for (auto &v : buf.vertices)
 		v.Color = 0;
-	UASSERTEQ(u32, buf.layer.texture_id, 42);
 	UASSERT(checkMeshEqual(buf.vertices, buf.indices, {quad::xn, quad::xp, quad::yn, quad::yp, quad::zn, quad::zp}));
 }
 

@@ -34,13 +34,6 @@ bool isTransparentLayer(MaterialType type);
 #define MATERIAL_FLAG_BACKFACE_CULLING 0x01
 // Should a crack be drawn?
 #define MATERIAL_FLAG_CRACK 0x02
-// Should the crack be drawn on transparent pixels (unset) or not (set)?
-// Ignored if MATERIAL_FLAG_CRACK is not set.
-#define MATERIAL_FLAG_CRACK_OVERLAY 0x04
-#define MATERIAL_FLAG_ANIMATION 0x08
-//#define MATERIAL_FLAG_HIGHLIGHTED 0x10
-#define MATERIAL_FLAG_TILEABLE_HORIZONTAL 0x20
-#define MATERIAL_FLAG_TILEABLE_VERTICAL 0x40
 
 #define CRACK_FRAME_SIZE 16
 
@@ -74,6 +67,10 @@ struct AnimationInfo
 	core::rect<u32> getCurrentFrameRect() const
 	{
 		return m_frames_rects.at(m_frame);
+	}
+	u16 getFrameCount() const
+	{
+		return m_frames_rects.size();
 	}
 
 	bool hasAnimation() const
@@ -158,9 +155,7 @@ struct TileLayer
 	MaterialType material_type = TILE_MATERIAL_BASIC;
 	u8 material_flags =
 		//0 // <- DEBUG, Use the one below
-		MATERIAL_FLAG_BACKFACE_CULLING |
-		MATERIAL_FLAG_TILEABLE_HORIZONTAL|
-		MATERIAL_FLAG_TILEABLE_VERTICAL;
+		MATERIAL_FLAG_BACKFACE_CULLING;
 
 	u8 scale = 1;
 

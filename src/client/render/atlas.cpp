@@ -33,27 +33,27 @@ video::Image *AtlasTile::createFramedImage() const
 	std::array<FrameEdge, 4> edges = {
 		// source is right, pos is left, dir is left
 		FrameEdge{
-			{size.X-frameThickness, frameThickness, size.X-frameThickness, size.Y-frameThickness},
-			{frameThickness - 1, frameThickness}, {-1, 0}},
+			{(s32)(size.X-frameThickness), (s32)(frameThickness), (s32)(size.X-frameThickness), (s32)(size.Y-frameThickness)},
+			{(s32)(frameThickness - 1), (s32)(frameThickness)}, {(s32)(-1), (s32)(0)}},
 		// source is left, pos is right, dir is right
 		FrameEdge{
-			{frameThickness, frameThickness, frameThickness, size.Y - frameThickness},
-			{size.X - frameThickness + 1, frameThickness}, {0, 1}},
+			{(s32)(frameThickness), (s32)(frameThickness), (s32)(frameThickness), (s32)(size.Y - frameThickness)},
+			{(s32)(size.X - frameThickness + 1), (s32)(frameThickness)}, {(s32)(0), (s32)(1)}},
 		// source is bottom, pos is top, dir is up
 		FrameEdge{
-			{frameThickness, size.Y - frameThickness, size.X - frameThickness, size.Y - frameThickness},
-			{frameThickness, frameThickness - 1}, {0, 1}},
+			{(s32)(frameThickness), (s32)(size.Y - frameThickness), (s32)(size.X - frameThickness), (s32)(size.Y - frameThickness)},
+			{(s32)(frameThickness), (s32)(frameThickness - 1)}, {(s32)(0), (s32)(1)}},
 		// source is top, pos is bottom, dir is down
 		FrameEdge{
-			{frameThickness, frameThickness, size.X - frameThickness, frameThickness},
-			{frameThickness, size.Y - frameThickness + 1}, {0, -1}}
+			{(s32)(frameThickness), (s32)(frameThickness), (s32)(size.X - frameThickness), (s32)(frameThickness)},
+			{(s32)(frameThickness), (s32)(size.Y - frameThickness + 1)}, {(s32)(0), (s32)(-1)}}
 	};
 
 	for (const auto &edge : edges) {
 		auto &sourceRect = edge.source;
 
 		for (u8 k = 0; k < frameThickness; k++) {
-			auto pos = edge.pos + edge.dir * k;
+			v2s32 pos = edge.pos + edge.dir * (s8)k;
 			image->copyTo(framedImage, pos, sourceRect);
 		}
 	}
@@ -131,8 +131,8 @@ Atlas::Atlas(
 			addTile(tile);
 		}
 
-		tile->pos = {static_cast<u32>(rect.x), static_cast<u32>(rect.y)};
-		tile->size = {static_cast<u32>(rect.w), static_cast<u32>(rect.h)};
+		tile->pos = v2u32(static_cast<u32>(rect.x), static_cast<u32>(rect.y));
+		tile->size = v2u32(static_cast<u32>(rect.w), static_cast<u32>(rect.h));
 	}
 
 	drawTiles(0.0f);
@@ -379,8 +379,8 @@ void AtlasPool::build()
 			sortedImages.emplace_back(img);
 		std::sort(sortedImages.begin(), sortedImages.end(),
 			[](const ImageEntry &a, const ImageEntry &b) {
-				auto aSize = a.image->getClipRect().getArea();
-				auto bSize = b.image->getClipRect().getArea();
+				auto aSize = a.image ? a.image->getClipRect().getArea() : 0;
+				auto bSize = b.image ? b.image->getClipRect().getArea() : 0;
 				return aSize < bSize;
 			});
 	}

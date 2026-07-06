@@ -89,6 +89,27 @@ void TileAnimationParams::getTextureModifer(std::ostream &os, v2u32 texture_size
 	}
 }
 
+v2f TileAnimationParams::getTextureCoords(v2u32 texture_size, u16 frame) const
+{
+	v2u32 ret(0, 0);
+
+	if (type == TAT_VERTICAL_FRAMES) {
+		u32 frame_height = (float)texture_size.X /
+				(float)vertical_frames.aspect_w *
+				(float)vertical_frames.aspect_h;
+		ret = v2u32(0, frame_height * frame);
+	} else if (type == TAT_SHEET_2D) {
+		v2u32 frame_size;
+		determineParams(texture_size, NULL, NULL, &frame_size);
+		s32 q, r;
+		q = frame / sheet_2d.frames_w;
+		r = frame % sheet_2d.frames_w;
+		ret = v2u32(r * frame_size.X, q * frame_size.Y);
+	}
+
+	return v2f::from(ret) / v2f::from(texture_size);
+}
+
 void TileAnimationParams::getFrames(
 	std::vector<core::rect<u32>> *frames_rects, u16 *frame_length_ms, v2u32 texture_size) const
 {

@@ -112,7 +112,7 @@ struct ImageEntry {
 		: image(_image), anim(_anim)
 	{}
 
-	bool operator==(const ImageEntry &other)
+	bool operator==(const ImageEntry &other) const
 	{
 		return image == other.image && anim == other.anim;
 	}
