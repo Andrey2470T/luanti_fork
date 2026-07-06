@@ -1675,15 +1675,18 @@ void Client::setCrack(int level, v3s16 pos)
 
 	// Update the cracks frame texture
 	if (m_crack_texture && old_crack_level != m_crack_level) {
+		u8 crack_level = m_crack_level == -1 ? 0 : m_crack_level;
 		auto cracks_image = m_tsrc->getImageForMesh("crack_anylength.png");
 		auto curClipRect = cracks_image->getClipRect();
 
 		core::rect<u32> clipRect(0, 0, CRACK_FRAME_SIZE, CRACK_FRAME_SIZE);
-		clipRect.UpperLeftCorner.Y += CRACK_FRAME_SIZE * m_crack_level;
-		clipRect.LowerRightCorner.Y += CRACK_FRAME_SIZE * m_crack_level;
+		clipRect.UpperLeftCorner.Y += CRACK_FRAME_SIZE * crack_level;
+		clipRect.LowerRightCorner.Y += CRACK_FRAME_SIZE * crack_level;
 		cracks_image->getClipRect() = clipRect;
 
+		m_crack_texture->bind();
 		m_crack_texture->uploadTexture(0, cracks_image);
+		m_crack_texture->unbind();
 
 		cracks_image->getClipRect() = curClipRect;
 	}

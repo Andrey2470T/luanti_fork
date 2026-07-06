@@ -1371,6 +1371,8 @@ bool Game::createClient(const GameStartData &start_data)
 
 	ShadowRenderer::preInit(shader_src);
 
+	m_rendering_engine->initializeAtlases();
+
 	// Update cached textures, meshes and materials
 	client->afterContentReceived();
 

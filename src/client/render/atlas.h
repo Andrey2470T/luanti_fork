@@ -185,9 +185,12 @@ class AtlasPool
 	std::vector<std::unique_ptr<Atlas>> atlases;
 	ImagesSet images;
 	std::vector<ImageEntry> sortedImages;
+
+	u32 curImg{0};
 public:
 	AtlasPool(video::VideoDriver *_driver, const std::string &_name);
 
+	Atlas *getAtlas(u8 num);
 	Atlas *getAtlasByImage(const ImageEntry &image, bool force_add=false);
 
 	AtlasTile *getTileByImage(const ImageEntry &image);

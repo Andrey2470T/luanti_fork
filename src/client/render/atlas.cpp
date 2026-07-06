@@ -70,6 +70,7 @@ bool AtlasTile::draw(f32 time)
 	if (!actualImage || !tex)
 		return false;
 
+	tex->bind();
 	tex->uploadTexture(0, actualImage, pos.X, pos.Y);
 
 	actualImage->drop();
@@ -91,6 +92,7 @@ bool AnimatedAtlasTile::draw(f32 time)
 
 	auto actualImage = createFramedImage();
 
+	tex->bind();
 	tex->uploadTexture(0, actualImage, pos.X, pos.Y);
 
 	actualImage->drop();
@@ -189,18 +191,25 @@ void Atlas::drawTiles(f32 time)
 	if (firstDraw) {
 		firstDraw = false;
 
-		for (auto &tile : tiles)
-			wasDraw = tile->draw(time);
+		for (auto &tile : tiles) {
+			if (tile->draw(time))
+				wasDraw = true;
+		}
 	}
 	else {
 		for (u32 anim_i : animatedTiles) {
 			auto tile = getTile(anim_i);
-			wasDraw = tile->draw(time);
+
+			if (tile->draw(time))
+				wasDraw = true;
 		}
 	}
 
-	if (wasDraw && texture->hasMipMaps())
-		texture->regenerateMipMaps();
+	if (wasDraw) {
+		if (texture->hasMipMaps())
+			texture->regenerateMipMaps();
+		texture->unbind();
+	}
 }
 
 bool Atlas::operator==(const Atlas *other) const
@@ -211,6 +220,9 @@ bool Atlas::operator==(const Atlas *other) const
 }
 
 using empty_rects = empty_spaces<false>;
+
+#define CALC_LARGEST_POT_SIDE(side) \
+	std::pow(2u, (u32)std::ceil(std::log2(side)))
 
 void Rectpack2DPacker::rectPackFunc()
 {
@@ -223,7 +235,7 @@ void Rectpack2DPacker::rectPackFunc()
 
 	auto res_size = find_best_packing<empty_rects>(output.rects,
 		make_finder_input(output.atlasSize, 1, report_successful, report_unsuccessful, flipping_option::DISABLED));
-	output.atlasSize = std::max(res_size.w, res_size.h);
+	output.atlasSize = CALC_LARGEST_POT_SIDE(std::max(res_size.w, res_size.h));
 }
 
 Rectpack2DPackerOutput &Rectpack2DPacker::pack(std::vector<ImageEntry> &images, u32 &curImg)
@@ -259,7 +271,7 @@ Rectpack2DPackerOutput &Rectpack2DPacker::pack(std::vector<ImageEntry> &images, 
 		atlasArea += imgArea;
 	}
 
-	output.atlasSize = std::pow(2u, (u32)std::ceil(std::log2(std::sqrt((f32)atlasArea))));
+	output.atlasSize = CALC_LARGEST_POT_SIDE(std::sqrt((f32)atlasArea));
 
 	rectPackFunc();
 
@@ -271,6 +283,11 @@ AtlasPool::AtlasPool(video::VideoDriver *_driver, const std::string &_name)
 	  g_settings->getBool("bilinear_filter") || g_settings->getBool("trilinear_filter") ||
 	  g_settings->getBool("anisotropic_filter"))
 {}
+
+Atlas *AtlasPool::getAtlas(u8 num)
+{
+    return atlases.at(num).get();
+}
 
 Atlas *AtlasPool::getAtlasByImage(const ImageEntry &image, bool force_add)
 {
@@ -384,8 +401,6 @@ void AtlasPool::build()
 				return aSize < bSize;
 			});
 	}
-
-	static u32 curImg = 0;
 
 	auto res = packer.pack(sortedImages, curImg);
 

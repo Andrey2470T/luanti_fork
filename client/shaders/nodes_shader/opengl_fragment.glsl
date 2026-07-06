@@ -37,13 +37,17 @@ CENTROID_ in float nightRatio;
 in highp vec3 eyeVec;
 in vec3 hwColor;
 in vec2 crackTexCoord;
+in float hasCrack;
 
 void main(void)
 {
 	vec2 uv = varTexCoord.st;
 	vec4 base = texelFetch(baseTexture, ivec2(uv.x, uv.y), 0);
-	vec4 crack = texture(crackFrameTexture, crackTexCoord);
-	base = DoBlend(OVERLAY_BLEND_MODE, base, crack);
+
+	if (bool(hasCrack)) {
+		vec4 crack = texture(crackFrameTexture, crackTexCoord);
+		base = DoBlend(OVERLAY_BLEND_MODE, base, crack);
+	}
 
 	DISCARD_CHECK(base);
 

@@ -179,8 +179,6 @@ RenderingEngine::RenderingEngine(MyEventReceiver *receiver)
 
 	s_singleton = this;
 
-	mainPool.reset(new AtlasPool(driver, "Main"));
-
 	g_settings->registerChangedCallback("fullscreen", settingChangedCallback, this);
 	g_settings->registerChangedCallback("window_maximized", settingChangedCallback, this);
 }
@@ -339,6 +337,11 @@ void RenderingEngine::draw_load_screen(const std::wstring &text,
 std::vector<video::E_DRIVER_TYPE> RenderingEngine::getSupportedVideoDrivers()
 {
 	return {video::EDT_OPENGL3, video::EDT_OGLES2};
+}
+
+void RenderingEngine::initializeAtlases()
+{
+	mainPool.reset(new AtlasPool(driver, "Main"));
 }
 
 void RenderingEngine::initialize(Client *client, Hud *hud)

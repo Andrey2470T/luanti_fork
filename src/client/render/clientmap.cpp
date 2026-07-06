@@ -1434,7 +1434,7 @@ void ClientMap::renderMapShadows(video::VideoDriver *driver,
 		// this is the material leaves would use, compare to nodedef.cpp
 		auto* shdsrc = m_client->getShaderSource();
 		ShaderInfo info = {"nodes_shader", {}, {}};
-		info.extensions = {"GL_EXT_gpu_shader4"};
+		info.extensions = {"GL_EXT_gpu_shader4", "GL_ARB_shader_bit_encoding"};
 		const u32 leaves_shader = shdsrc->getShader(info, TILE_MATERIAL_WAVING_LEAVES, true);
 		leaves_material = shdsrc->getShaderInfo(leaves_shader).material;
 	}

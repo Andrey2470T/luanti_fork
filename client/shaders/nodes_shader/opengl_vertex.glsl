@@ -35,6 +35,7 @@ CENTROID_ out float nightRatio;
 out highp vec3 eyeVec;
 out vec3 hwColor;
 out vec2 crackTexCoord;
+out float hasCrack;
 
 void main(void)
 {
@@ -83,14 +84,17 @@ void main(void)
 	// blue    |    32      |    -
 
 	// Extract the hw color
-	hwColor.r = float(int(inAux.r) >> 24) / 255.0;
-	hwColor.g = float(int(inAux.r) >> 16 & 0xff) / 255.0;
-	hwColor.b = float(int(inAux.r) >> 8 & 0xff) / 255.0;
+	uint packedHWColor = floatBitsToUint(inAux.x);
+	hwColor.r = float(packedHWColor >> 24) / 255.0;
+	hwColor.g = float(packedHWColor >> 16 & 0xffu) / 255.0;
+	hwColor.b = float(packedHWColor >> 8 & 0xffu) / 255.0;
 
 	// Extract the crack texcoords in UV space
-	crackTexCoord.x = float(int(inAux.g) >> 16) / CRACK_FRAME_SIZE;
-	crackTexCoord.y = float(int(inAux.g) & 0xffff) / CRACK_FRAME_SIZE;
+	uint packedCoords = floatBitsToUint(inAux.y);
+	crackTexCoord.x = float(packedCoords >> 16) / CRACK_FRAME_SIZE;
+	crackTexCoord.y = float(packedCoords & 0xffffu) / CRACK_FRAME_SIZE;
 
+	hasCrack = inAux.z;
 
 #ifdef ENABLE_DYNAMIC_SHADOWS
 #if MATERIAL_TYPE == TILE_MATERIAL_WAVING_PLANTS && ENABLE_WAVING_PLANTS

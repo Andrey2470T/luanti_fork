@@ -64,14 +64,16 @@ void MeshCollector::append(TileLayer &layer, const scene::Vertex3D *vertices,
 		wh_u |= (relPosX << 16);
 		wh_u |= (u16)relPosY;
 
-		float tc_f, wh_f;
+		f32 crack_f = layer.material_flags & MATERIAL_FLAG_CRACK;
+
+		f32 tc_f, wh_f;
 		std::memcpy(&tc_f, &tc_u, sizeof(tc_f));
 		std::memcpy(&wh_f, &wh_u, sizeof(wh_f));
 
-		v3f hw_color = {tc_f, wh_f, 0.0f};
+		v3f inAux = {tc_f, wh_f, crack_f};
 
 		p.vertices.push_back({{vertices[i].Pos + offset, vertices[i].Normal,
-			vertices[i].Color, uv}, hw_color});
+			vertices[i].Color, uv}, inAux});
 		bounding_radius_sq = std::max(bounding_radius_sq,
 				(vertices[i].Pos - center_pos).getLengthSQ());
 	}

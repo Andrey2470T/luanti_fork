@@ -181,7 +181,7 @@ void MapblockMeshGenerator::drawQuad(TileSpec &tile, v3f *coords, const v3s16 &n
 	float vertical_tiling)
 {
 	const v2f tcoords[4] = {v2f(0.0, 0.0), v2f(1.0, 0.0),
-		v2f(1.0, vertical_tiling), v2f(0.0, vertical_tiling)};
+		v2f(1.0, 1.0), v2f(0.0, 1.0)};
 	scene::Vertex3D vertices[4];
 	bool shade_face = !cur_node.f->light_source && (normal != v3s16(0, 0, 0));
 	v3f normal2 = v3f::from(normal);
@@ -248,13 +248,13 @@ static std::array<scene::Vertex3D, 24> setupCuboidVertices(const aabb3f &box,
 			case TileRotation::None:
 				break;
 			case TileRotation::R90:
-				tcoords.set(-tcoords.Y, tcoords.X);
+				tcoords.rotateBy(90.0f, v2f(0.5f, 0.5f));
 				break;
 			case TileRotation::R180:
-				tcoords.set(-tcoords.X, -tcoords.Y);
+				tcoords.rotateBy(180.0f, v2f(0.5f, 0.5f));
 				break;
 			case TileRotation::R270:
-				tcoords.set(tcoords.Y, -tcoords.X);
+				tcoords.rotateBy(270.0f, v2f(0.5f, 0.5f));
 				break;
 			}
 		}
@@ -301,21 +301,47 @@ void MapblockMeshGenerator::drawCuboid(const aabb3f &box,
 
 void MapblockMeshGenerator::generateCuboidTextureCoords(const aabb3f &box, f32 *coords)
 {
-	f32 tx1 = (box.MinEdge.X / BS) + 0.5;
-	f32 ty1 = (box.MinEdge.Y / BS) + 0.5;
-	f32 tz1 = (box.MinEdge.Z / BS) + 0.5;
-	f32 tx2 = (box.MaxEdge.X / BS) + 0.5;
-	f32 ty2 = (box.MaxEdge.Y / BS) + 0.5;
-	f32 tz2 = (box.MaxEdge.Z / BS) + 0.5;
-	f32 txc[24] = {
-		    tx1, 1 - tz2,     tx2, 1 - tz1, // up
-		    tx1,     tz1,     tx2,     tz2, // down
-		    tz1, 1 - ty2,     tz2, 1 - ty1, // right
-		1 - tz2, 1 - ty2, 1 - tz1, 1 - ty1, // left
-		1 - tx2, 1 - ty2, 1 - tx1, 1 - ty1, // back
-		    tx1, 1 - ty2,     tx2, 1 - ty1, // front
+	v3f box_min_f(
+		(box.MinEdge.X / BS) + 0.5,
+		(box.MinEdge.Y / BS) + 0.5,
+		(box.MinEdge.Z / BS) + 0.5
+	);
+	v3f box_max_f(
+		(box.MaxEdge.X / BS) + 0.5,
+		(box.MaxEdge.Y / BS) + 0.5,
+		(box.MaxEdge.Z / BS) + 0.5
+	);
+
+	auto clamp_min_coord = [] (f32 min_c)
+	{
+		return min_c - std::floor(min_c);
 	};
-	for (int i = 0; i != 24; ++i)
+
+	auto clamp_max_coord = [] (f32 max_c)
+	{
+		return max_c - std::ceil(max_c - 1);
+	};
+
+	v3f tc1(
+		clamp_min_coord(box_min_f.X),
+		clamp_min_coord(box_min_f.Y),
+		clamp_min_coord(box_min_f.Z)
+	);
+	v3f tc2 (
+		clamp_max_coord(box_max_f.X),
+		clamp_max_coord(box_max_f.Y),
+		clamp_max_coord(box_max_f.Z)
+	);
+
+	f32 txc[24] = {
+		   tc1.X, 1 - tc2.Z,     tc2.X, 1 - tc1.Z, // up
+		    tc1.X,     tc1.Z,     tc2.X,     tc2.Z, // down
+		    tc1.Z, 1 - tc2.Y,     tc2.Z, 1 - tc1.Y, // right
+		1 - tc2.Z, 1 - tc2.Y, 1 - tc1.Z, 1 - tc1.Y, // left
+		1 - tc2.X, 1 - tc2.Y, 1 - tc1.X, 1 - tc1.Y, // back
+		    tc1.X, 1 - tc2.Y,     tc2.X, 1 - tc1.Y, // front
+	};
+	for (int i = 0; i != 24; i++)
 		coords[i] = txc[i];
 }
 
@@ -1113,9 +1139,14 @@ void MapblockMeshGenerator::drawPlantlikeQuad(TileSpec &tile,
 		float rotation, float quad_offset, bool offset_top_only)
 {
 	const f32 scale = cur_plant.scale;
+	const f32 dscale = 2.0f * scale;
+
+	int plant_height_int = (int)cur_plant.plant_height;
+	f32 lower_quad_height = plant_height_int > 0 ? 1.0f : cur_plant.plant_height;
+
 	v3f vertices[4] = {
-		v3f(-scale, -BS / 2 + 2.0 * scale * cur_plant.plant_height, 0),
-		v3f( scale, -BS / 2 + 2.0 * scale * cur_plant.plant_height, 0),
+		v3f(-scale, -BS / 2 + dscale * lower_quad_height, 0),
+		v3f( scale, -BS / 2 + dscale * lower_quad_height, 0),
 		v3f( scale, -BS / 2, 0),
 		v3f(-scale, -BS / 2, 0),
 	};
@@ -1162,7 +1193,27 @@ void MapblockMeshGenerator::drawPlantlikeQuad(TileSpec &tile,
 		}
 	}
 
-	drawQuad(tile, vertices, v3s16(0, 0, 0), cur_plant.plant_height);
+	for (int quad_i = 0; quad_i < plant_height_int; quad_i++) {
+		v3f vertices_c[4];
+
+		for (int v_i = 0; v_i < 4; v_i++)
+			vertices_c[v_i] = vertices[v_i] + v3f(0, dscale * quad_i, 0);
+
+		drawQuad(tile, vertices_c, v3s16(0, 0, 0));
+	}
+
+	f32 height_remain = cur_plant.plant_height - plant_height_int;
+
+	if (height_remain > 0.0f) {
+		v3f vertices_c[4] = {
+			vertices[0] + v3f(0, dscale * cur_plant.plant_height, 0),
+			vertices[1] + v3f(0, dscale * cur_plant.plant_height, 0),
+			vertices[2] + v3f(0, dscale * plant_height_int, 0),
+			vertices[3] + v3f(0, dscale * plant_height_int, 0)
+		};
+
+		drawQuad(tile, vertices_c, v3s16(0, 0, 0));
+	}
 }
 
 void MapblockMeshGenerator::drawPlantlike(TileSpec &tile, bool is_rooted)
