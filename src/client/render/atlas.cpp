@@ -247,7 +247,16 @@ Rectpack2DPackerOutput &Rectpack2DPacker::pack(std::vector<ImageEntry> &images, 
 
 	if (filtering) {
 		// The image at 'curImg' is considered to have minimal size (sorting is done from smallest to largest)
-		auto minImgRect = images.at(curImg).image->getClipRect();
+		core::rect<u32> minImgRect;
+
+		for (u32 i = curImg; i < images.size(); i++) {
+			auto img = images.at(i).image;
+
+			if (img) {
+				minImgRect = img->getClipRect();
+				break;
+			}
+		}
 		output.frameThickness = core::u32_log2(std::min(minImgRect.getWidth(), minImgRect.getHeight()));
 	}
 
@@ -292,15 +301,15 @@ Atlas *AtlasPool::getAtlas(u8 num)
 Atlas *AtlasPool::getAtlasByImage(const ImageEntry &image, bool force_add)
 {
 	for (auto &atlas : atlases) {
-    	auto atlasTile = atlas->getTileByImage(image.image);
+		auto atlasTile = atlas->getTileByImage(image.image);
 
-    	if (atlasTile)
-        	return atlas.get();
+	if (atlasTile)
+		return atlas.get();
 	}
 
 	/*if (force_add) {
-	    forceAddTile(image);
-	    return atlases.back().get();
+		forceAddTile(image);
+		return atlases.back().get();
 	}*/
 	return nullptr;
 }
