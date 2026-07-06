@@ -319,7 +319,7 @@ AtlasTile *AtlasPool::getTileByImage(const ImageEntry &image)
 	auto atlas = getAtlasByImage(image);
 
 	if (!atlas)
-    	return nullptr;
+		return nullptr;
 
 	return atlas->getTileByImage(image.image);
 }

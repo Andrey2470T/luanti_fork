@@ -392,7 +392,7 @@ video::GLTexture* TextureSource::getTextureForMesh(const std::string &name, u32 
 
 std::string TextureSource::getImageName(video::Image *image)
 {
-	auto it = std::find_if(m_image_cache.begin(), m_image_cache.end(), 
+	auto it = std::find_if(m_image_cache.begin(), m_image_cache.end(),
 		[image](const auto &cached_image) {
 			return cached_image.second.image == image;
 		});
