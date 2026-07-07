@@ -328,9 +328,10 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data):
 
 			// Bind the cracks texture if the buffer was cracked
 			if (p.layer.material_flags & MATERIAL_FLAG_CRACK) {
-				material.setTexture(1, client->getCrackTexture());
-				material.TextureLayers[1].TextureWrapU = video::ETC_REPEAT;
-				material.TextureLayers[1].TextureWrapV = video::ETC_REPEAT;
+				u8 crackTexIndex = video::MATERIAL_MAX_TEXTURES - 1;
+				material.setTexture(crackTexIndex, client->getCrackTexture());
+				material.TextureLayers[crackTexIndex].TextureWrapU = video::ETC_REPEAT;
+				material.TextureLayers[crackTexIndex].TextureWrapV = video::ETC_REPEAT;
 			}
 
 			// Apply properties from custom material

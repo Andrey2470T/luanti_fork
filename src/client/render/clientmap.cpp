@@ -961,8 +961,6 @@ void ClientMap::renderMap(video::VideoDriver* driver, s32 pass)
 	else
 		prefix = "renderMap(TRANS): ";
 
-	const v3f camera_position = m_camera_position;
-
 	const auto mesh_grid = m_client->getMeshGrid();
 	// Gets world position from block map position
 	const auto get_block_wpos = [&] (v3s16 pos) -> v3f {
@@ -1433,9 +1431,7 @@ void ClientMap::renderMapShadows(video::VideoDriver *driver,
 	if (translucent_foliage) {
 		// this is the material leaves would use, compare to nodedef.cpp
 		auto* shdsrc = m_client->getShaderSource();
-		ShaderInfo info = {"nodes_shader", {}, {}};
-		info.extensions = {"GL_EXT_gpu_shader4", "GL_ARB_shader_bit_encoding"};
-		const u32 leaves_shader = shdsrc->getShader(info, TILE_MATERIAL_WAVING_LEAVES, true);
+		const u32 leaves_shader = shdsrc->getShader({"nodes_shader"}, TILE_MATERIAL_WAVING_LEAVES, true);
 		leaves_material = shdsrc->getShaderInfo(leaves_shader).material;
 	}
 

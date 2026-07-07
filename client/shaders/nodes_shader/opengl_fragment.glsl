@@ -1,10 +1,6 @@
 #include<fog>
 #include<noise>
-#include<blending>
-
-// The texture saving the current single crack frame updated externally
-#define crackFrameTexture texture1
-uniform sampler2D crackFrameTexture;
+#include<cracks>
 
 uniform vec3 lightDir;
 // The cameraOffset is the current center of the visible world.
@@ -42,12 +38,7 @@ in float hasCrack;
 void main(void)
 {
 	vec2 uv = varTexCoord.st;
-	vec4 base = texelFetch(baseTexture, ivec2(uv.x, uv.y), 0);
-
-	if (bool(hasCrack)) {
-		vec4 crack = texture(crackFrameTexture, crackTexCoord);
-		base = DoBlend(OVERLAY_BLEND_MODE, base, crack);
-	}
+	vec4 base = getNodeColor(uv, 1, hasCrack, crackTexCoord);
 
 	DISCARD_CHECK(base);
 

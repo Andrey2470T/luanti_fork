@@ -36,6 +36,7 @@ bool isTransparentLayer(MaterialType type);
 #define MATERIAL_FLAG_CRACK 0x02
 
 #define CRACK_FRAME_SIZE 16
+#define CRACK_TEXTURE_INDEX 7
 
 // Stores information for drawing an animated tile
 struct AnimationInfo

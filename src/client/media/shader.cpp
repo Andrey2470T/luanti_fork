@@ -299,6 +299,9 @@ u32 ShaderSource::getShader(
 		info_c.fragment_includes.emplace_back("shadow_fragment");
 	}
 
+	info_c.constants["CRACK_FRAME_SIZE"] = 16;
+	info_c.extensions = {"GL_EXT_gpu_shader4", "GL_ARB_shader_bit_encoding"};
+
 	if (info_c.basic_name.empty())
 		info_c.basic_name = info_c.name;
 
