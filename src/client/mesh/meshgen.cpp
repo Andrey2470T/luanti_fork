@@ -778,45 +778,63 @@ void MapblockMeshGenerator::drawLiquidTop()
 		vertices[i].Pos += cur_node.origin;
 	}
 
-	// Default downwards-flowing texture animation goes from
-	// -Z towards +Z, thus the direction is +Z.
-	// Rotate texture to make animation go in flow direction
-	// Positive if liquid moves towards +Z
-	f32 dz = (cur_liquid.corner_levels[0][0] + cur_liquid.corner_levels[0][1]) -
-	         (cur_liquid.corner_levels[1][0] + cur_liquid.corner_levels[1][1]);
-	// Positive if liquid moves towards +X
-	f32 dx = (cur_liquid.corner_levels[0][0] + cur_liquid.corner_levels[1][0]) -
-	         (cur_liquid.corner_levels[0][1] + cur_liquid.corner_levels[1][1]);
+	// Определяем направление потока на основе разницы уровней
+	// Положительное направление потока: вода течет в сторону более низкого уровня
+	f32 dz = (cur_liquid.corner_levels[1][0] + cur_liquid.corner_levels[1][1]) -
+	         (cur_liquid.corner_levels[0][0] + cur_liquid.corner_levels[0][1]); // +Z направление потока
+	f32 dx = (cur_liquid.corner_levels[0][1] + cur_liquid.corner_levels[1][1]) -
+	         (cur_liquid.corner_levels[0][0] + cur_liquid.corner_levels[1][0]); // +X направление потока
+	
 	v2f tcoord_center(0.5, 0.5);
 	v2f tcoord_translate(blockpos_nodes.Z + cur_node.p.Z,
 			blockpos_nodes.X + cur_node.p.X);
-	v2f dir = v2f(dx, dz).normalize();
-	if (dir == v2f{0.0f, 0.0f}) // if corners are symmetrical
-		dir = v2f{1.0f, 0.0f};
-
-	// Rotate tcoord_translate around the origin. The X axis turns to dir.
-	tcoord_translate.set(
-		dir.X * tcoord_translate.X - dir.Y * tcoord_translate.Y,
-		dir.Y * tcoord_translate.X + dir.X * tcoord_translate.Y);
-
-	tcoord_translate.X -= floor(tcoord_translate.X);
-	tcoord_translate.Y -= floor(tcoord_translate.Y);
-
-	for (scene::Vertex3D &vertex : vertices) {
-		// Rotate vertex.TCoords around tcoord_center. The X axis turns to dir.
-		vertex.TCoords -= tcoord_center;
-		vertex.TCoords.set(
-			dir.X * vertex.TCoords.X - dir.Y * vertex.TCoords.Y,
-			dir.Y * vertex.TCoords.X + dir.X * vertex.TCoords.Y);
-		vertex.TCoords += tcoord_center;
-
-		vertex.TCoords += tcoord_translate;
-
-		if (!data->m_enable_water_reflections) {
-			vertex.Normal = v3f(dx, 1., dz).normalize();
+	
+	// Если есть значительный наклон, используем его для направления потока
+	f32 magnitude = sqrtf(dx*dx + dz*dz);
+	if (magnitude > 0.01f) {
+		// Вода течет вниз по склону - используем градиент как направление
+		v2f dir = v2f(dx, dz).normalize();
+		
+		// Поворачиваем текстурные координаты так, чтобы поток был направлен вниз по склону
+		// Для этого поворачиваем ось X текстуры в направлении потока
+		for (scene::Vertex3D &vertex : vertices) {
+			vertex.TCoords -= tcoord_center;
+			v2f rotated;
+			rotated.set(
+				dir.X * vertex.TCoords.X - dir.Y * vertex.TCoords.Y,
+				dir.Y * vertex.TCoords.X + dir.X * vertex.TCoords.Y);
+			vertex.TCoords = rotated + tcoord_center;
+			
+			// Добавляем смещение на основе позиции блока
+			vertex.TCoords.X += tcoord_translate.X;
+			vertex.TCoords.Y += tcoord_translate.Y;
+			
+			// Нормализуем координаты
+			vertex.TCoords.X -= std::floor(vertex.TCoords.X);
+			vertex.TCoords.Y -= std::floor(vertex.TCoords.Y);
+		}
+	} else {
+		// Нет наклона - стандартная ориентация (поток вниз по Z)
+		for (scene::Vertex3D &vertex : vertices) {
+			vertex.TCoords.X += tcoord_translate.X;
+			vertex.TCoords.Y += tcoord_translate.Y;
+			
+			// Нормализуем координаты
+			vertex.TCoords.X -= std::floor(vertex.TCoords.X);
+			vertex.TCoords.Y -= std::floor(vertex.TCoords.Y);
 		}
 	}
 
+	// Обновляем нормали для непрозрачной воды
+	if (!data->m_enable_water_reflections) {
+		// Нормаль направлена вверх, но с учетом наклона поверхности воды
+		v3f normal = v3f(dx, 1.0f, dz).normalize();
+		for (scene::Vertex3D &vertex : vertices) {
+			vertex.Normal = normal;
+		}
+	}
+
+	// Меняем местами текстурные координаты для правильной ориентации
 	std::swap(vertices[0].TCoords, vertices[2].TCoords);
 
 	collector->append(cur_liquid.tile_top, vertices, 4, quad_indices, 6);
