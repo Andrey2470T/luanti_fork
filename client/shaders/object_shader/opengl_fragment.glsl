@@ -22,15 +22,18 @@ in float vIDiff;
 
 void main(void)
 {
-	vec3 color;
 	vec2 uv = varTexCoord.st;
 
-	vec4 base = texture2D(baseTexture, uv).rgba;
+#ifdef USE_ATLAS
+	vec4 base = texelFetch(baseTexture, ivec2(uv.x, uv.y), 0);
+#else
+	vec4 base = texture2D(baseTexture, uv);
+#endif
 
 	DISCARD_CHECK(base)
 
-	color = base.rgb;
-	vec4 col = vec4(color.rgb * varColor.rgb, 1.0);
+	vec4 col = vec4(base.rgb * varColor.rgb, 1.0);
+#ifndef NO_LIGHTING
 	col.rgb *= vIDiff;
 
 	float f_adj_shadow_strength = 0.0;
@@ -46,6 +49,7 @@ void main(void)
 
 	col = mixColorWithFog(col, eyeVec);
 	col = vec4(col.rgb, base.a);
+#endif
 
 	outputColor(col);
 }

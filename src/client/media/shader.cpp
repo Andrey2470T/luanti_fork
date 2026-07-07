@@ -344,7 +344,7 @@ u32 ShaderSource::getShader(
 	bool apply_shadows, bool force_recompile)
 {
 	ShaderInfo info_c = info;
-	info_c.basic_name = info.name;
+	info_c.basic_name = info_c.basic_name.empty() ? info_c.name : info_c.basic_name;
 	info_c.name += "_";
 	info_c.name += std::to_string((s32)material_type);
 

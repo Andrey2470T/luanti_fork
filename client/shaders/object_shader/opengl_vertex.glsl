@@ -54,6 +54,8 @@ void main(void)
 		: directional_ambient(normalize(inNormal));
 #endif
 
+// The itemstack meshes don't need in the lighting
+#ifndef NO_LIGHTING
 	// Calculating the light color
 	vec4 color = inColor;
 	color *= materialColor;
@@ -69,5 +71,8 @@ void main(void)
 		vec4(inPosition, 1.0), vNormal, lightDir, timeOfDay, f_normal_length, cosLight,
 		shadow_position, perspective_factor, adj_shadow_strength
 	);
+#endif
+#else
+	varColor = inColor.rgb;
 #endif
 }

@@ -119,7 +119,6 @@ private:
 
 	// Child scene node with the current wield mesh
 	scene::IMeshSceneNode *m_meshnode = nullptr;
-	video::E_MATERIAL_TYPE m_material_type;
 
 	bool m_anisotropic_filter;
 	bool m_bilinear_filter;

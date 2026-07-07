@@ -189,8 +189,7 @@ static ExtrusionMeshCache *g_extrusion_mesh_cache = nullptr;
 
 
 WieldMeshSceneNode::WieldMeshSceneNode(scene::ISceneManager *mgr, s32 id):
-	scene::ISceneNode(mgr->getRootSceneNode(), mgr, id),
-	m_material_type(video::EMT_TRANSPARENT_ALPHA_CHANNEL_REF)
+	scene::ISceneNode(mgr->getRootSceneNode(), mgr, id)
 {
 	m_anisotropic_filter = g_settings->getBool("anisotropic_filter");
 	m_bilinear_filter = g_settings->getBool("bilinear_filter");
@@ -255,8 +254,7 @@ void WieldMeshSceneNode::setExtruded(const std::string &imagename,
 	scene::SMesh *mesh = cloneStaticMesh(original);
 	original->drop();
 	//set texture
-	mesh->getMeshBuffer(0)->getMaterial().setTexture(0,
-		tsrc->getTexture(imagename));
+	mesh->getMeshBuffer(0)->getMaterial().setTexture(0, texture);
 	if (overlay_texture) {
 		// duplicate the extruded mesh for the overlay
 		scene::IMeshBuffer *copy = cloneMeshBuffer(mesh->getMeshBuffer(0));
@@ -275,7 +273,7 @@ void WieldMeshSceneNode::setExtruded(const std::string &imagename,
 		video::SMaterial &material = m_meshnode->getMaterial(layer);
 		material.TextureLayers[0].TextureWrapU = video::ETC_CLAMP_TO_EDGE;
 		material.TextureLayers[0].TextureWrapV = video::ETC_CLAMP_TO_EDGE;
-		material.MaterialType = m_material_type;
+		material.MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL;
 		material.BlendMode = video::EBM_ALPHA;
 		material.BackfaceCulling = true;
 		// don't filter low-res textures, makes them look blurry
@@ -290,7 +288,7 @@ void WieldMeshSceneNode::setExtruded(const std::string &imagename,
 }
 
 static scene::SMesh *createGenericNodeMesh(Client *client, MapNode n,
-	std::vector<ItemMeshBufferInfo> *buffer_info, const ContentFeatures &f)
+	std::vector<ItemMeshBufferInfo> *buffer_info, const ContentFeatures &f, bool has_lighting=true)
 {
 	n.setParam1(0xff);
 	if (n.getParam2()) {
@@ -315,6 +313,19 @@ static scene::SMesh *createGenericNodeMesh(Client *client, MapNode n,
 		MapblockMeshGenerator(&mmd, &collector).generate();
 	}
 
+	ShaderSource *shdrsrc = client->getShaderSource();
+
+	ShaderInfo info = {"object_shader_atlas"};
+	info.basic_name = "object_shader";
+	info.constants["USE_ATLAS"] = 1;
+
+	if (!has_lighting) {
+		info.constants["NO_LIGHTING"] = 1;
+		info.name += "_nolighting";
+	}
+	u32 shader_id = shdrsrc->getShader(info, TILE_MATERIAL_BASIC, true);
+	auto material_type = shdrsrc->getShaderInfo(shader_id).material;
+
 	buffer_info->clear();
 	scene::SMesh *mesh = new scene::SMesh();
 	for (int layer = 0; layer < MAX_TILE_LAYERS; layer++) {
@@ -327,6 +338,7 @@ static scene::SMesh *createGenericNodeMesh(Client *client, MapNode n,
 			buf->append(&p.vertices[0], p.vertices.size(),
 					&p.indices[0], p.indices.size());
 
+			buf->Material.MaterialType = material_type;
 			// note: material type is left unset, overriden later
 			p.layer.applyMaterialOptions(buf->Material, layer);
 
@@ -343,16 +355,12 @@ void WieldMeshSceneNode::setItem(const ItemStack &item, Client *client, bool che
 	ITextureSource *tsrc = client->getTextureSource();
 	IItemDefManager *idef = client->getItemDefManager();
 	ItemVisualsManager *item_visuals = client->getItemVisualsManager();
-	ShaderSource *shdrsrc = client->getShaderSource();
 	const NodeDefManager *ndef = client->getNodeDefManager();
 	const ItemDefinition &def = item.getDefinition(idef);
 	const ContentFeatures &f = ndef->get(def.name);
 	content_t id = ndef->getId(def.name);
 
 	scene::SMesh *mesh = nullptr;
-
-	u32 shader_id = shdrsrc->getShader({"object_shader", {}, {}}, TILE_MATERIAL_BASIC, true);
-	m_material_type = shdrsrc->getShaderInfo(shader_id).material;
 
 	// Color-related
 	m_buffer_info.clear();
@@ -429,7 +437,6 @@ void WieldMeshSceneNode::setItem(const ItemStack &item, Client *client, bool che
 		for (u32 i = 0; i < material_count; ++i) {
 			video::SMaterial &material = m_meshnode->getMaterial(i);
 			// FIXME: we should take different alpha modes of the mesh into account here
-			material.MaterialType = m_material_type;
 			material.forEachTexture([this] (auto &tex) {
 				setMaterialFilters(tex, m_bilinear_filter, m_trilinear_filter,
 						m_anisotropic_filter);
@@ -579,7 +586,7 @@ void getItemMesh(Client *client, const ItemStack &item, ItemMesh *result)
 			if (def.place_param2)
 				n.setParam2(*def.place_param2);
 
-			mesh = createGenericNodeMesh(client, n, &result->buffer_info, f);
+			mesh = createGenericNodeMesh(client, n, &result->buffer_info, f, false);
 			scaleMesh(mesh, v3f(0.12, 0.12, 0.12));
 			break;
 		}
@@ -589,7 +596,6 @@ void getItemMesh(Client *client, const ItemStack &item, ItemMesh *result)
 			scene::IMeshBuffer *buf = mesh->getMeshBuffer(i);
 			video::SMaterial &material = buf->getMaterial();
 			// FIXME: overriding this breaks different alpha modes the mesh may have
-			material.MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL;
 			material.forEachTexture([] (auto &tex) {
 				tex.MinFilter = video::ETMINF_NEAREST_MIPMAP_NEAREST;
 				tex.MagFilter = video::ETMAGF_NEAREST;
