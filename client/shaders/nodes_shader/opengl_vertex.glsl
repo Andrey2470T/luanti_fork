@@ -44,11 +44,18 @@ void main(void)
 	vec4 pos = vec4(inPosition, 1.0);
 	worldPosition = (mWorld * pos).xyz;
 
+	uint packedR = floatBitsToUint(inAux.x);
+	uint packedG = floatBitsToUint(inAux.y);
+	uint packedB = floatBitsToUint(inAux.z);
+
 	// Vertex animations depending on the material type
 #if (MATERIAL_TYPE == TILE_MATERIAL_WAVING_LEAVES && ENABLE_WAVING_LEAVES)
 	animateLeavesVertex(worldPosition, pos);
 #elif (MATERIAL_TYPE == TILE_MATERIAL_WAVING_PLANTS && ENABLE_WAVING_PLANTS)
-	animatePlantVertex(worldPosition, pos, varTexCoord);
+	vec2 tileCoords = vec2(packedG >> 16, packedG & 0xffffu);
+	// Extract the tile dimensions (width and height)
+	vec2 tileSize = vec2(packedB >> 24, packedB >> 16 & 0xffu);
+	animatePlantVertex(worldPosition, pos, tileCoords / tileSize);
 #elif MATERIAL_WAVING_LIQUID && ENABLE_WAVING_WATER
 	animateWaterVertex(worldPosition, pos);
 #endif
@@ -78,23 +85,24 @@ void main(void)
 	// red     |     8      | hwColor.r
 	// red     |     8      | hwColor.g
 	// red     |     8      | hwColor.b
-	// red     |     8      |    -
+	// red     |     1      | hasCrack
+	// red     |     7      |   -
 	// green   |    16      | crackTexCoord.x
 	// green   |    16      | crackTexCoord.y
-	// blue    |    32      |    -
+	// blue    |     8      | width
+	// blue    |     8      | height
+	// blue    |    16      |   -
 
-	// Extract the hw color
-	uint packedHWColor = floatBitsToUint(inAux.x);
-	hwColor.r = float(packedHWColor >> 24) / 255.0;
-	hwColor.g = float(packedHWColor >> 16 & 0xffu) / 255.0;
-	hwColor.b = float(packedHWColor >> 8 & 0xffu) / 255.0;
+	// Extract the hw color and crack flag
+	hwColor.r = float(packedR >> 24) / 255.0;
+	hwColor.g = float(packedR >> 16 & 0xffu) / 255.0;
+	hwColor.b = float(packedR >> 8 & 0xffu) / 255.0;
+
+	hasCrack = packedR & 0x1u;
 
 	// Extract the crack texcoords in UV space
-	uint packedCoords = floatBitsToUint(inAux.y);
-	crackTexCoord.x = float(packedCoords >> 16) / CRACK_FRAME_SIZE;
-	crackTexCoord.y = float(packedCoords & 0xffffu) / CRACK_FRAME_SIZE;
-
-	hasCrack = inAux.z;
+	crackTexCoord.x = float(packedG >> 16) / CRACK_FRAME_SIZE;
+	crackTexCoord.y = float(packedG & 0xffffu) / CRACK_FRAME_SIZE;
 
 #ifdef ENABLE_DYNAMIC_SHADOWS
 #if MATERIAL_TYPE == TILE_MATERIAL_WAVING_PLANTS && ENABLE_WAVING_PLANTS

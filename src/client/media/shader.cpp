@@ -557,12 +557,6 @@ std::string ShaderGenerator::generateFragmentHeader()
 		precision mediump float;
 	)";
 
-	// map legacy semantic texture names to texture identifiers
-	header += R"(
-		#define baseTexture texture0
-		uniform sampler2D baseTexture;
-	)";
-
 	// Allow for multiple color outputs
 
 	u8 colorAttachments = RenderingEngine::get_video_driver()->getFeatures().ColorAttachment;

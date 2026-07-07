@@ -1,3 +1,5 @@
+#define baseTexture texture0
+uniform sampler2D baseTexture;
 uniform float monitorGamma;
 
 vec3 srgb_to_linear(vec3 color)
