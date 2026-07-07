@@ -48,7 +48,7 @@ void main(void)
 #if (MATERIAL_TYPE == TILE_MATERIAL_WAVING_LEAVES && ENABLE_WAVING_LEAVES)
 	animateLeavesVertex(worldPosition, pos);
 #elif (MATERIAL_TYPE == TILE_MATERIAL_WAVING_PLANTS && ENABLE_WAVING_PLANTS)
-	animatePlantVertex(worldPosition, pos);
+	animatePlantVertex(worldPosition, pos, varTexCoord);
 #elif MATERIAL_WAVING_LIQUID && ENABLE_WAVING_WATER
 	animateWaterVertex(worldPosition, pos);
 #endif

@@ -20,6 +20,7 @@ inline static void applyShadeFactor(video::SColor& color, float factor)
 {
 	color.setRed(core::clamp(core::round32(color.getRed()*factor), 0, 255));
 	color.setGreen(core::clamp(core::round32(color.getGreen()*factor), 0, 255));
+	color.setBlue(core::clamp(core::round32(color.getBlue()*factor), 0, 255));
 }
 
 void applyFacesShading(video::SColor &color, const v3f normal)
