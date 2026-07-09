@@ -8,7 +8,11 @@
 #include <irrlichttypes.h>
 #include <Mesh/VertexTypes.h>
 
+<<<<<<< HEAD
 #define HW {-NAN, 0, 0}
+=======
+#define HW {0xffffff00, 0, 0}
+>>>>>>> 6807e913e (Fixed TestMapblockMeshGenerator)
 
 /// Represents a triangle as three vertices.
 /// “Smallest” (according to <) vertex is expected to be first, others should follow in the counter-clockwise order.
