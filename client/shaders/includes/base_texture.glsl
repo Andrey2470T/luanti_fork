@@ -4,7 +4,7 @@
 #define crackFrameTexture texture7
 uniform sampler2D crackFrameTexture;
 
-vec4 getNodeColor(in vec2 uv, in int pixelUV, in float hasCrack, in vec2 crackTexCoord)
+vec4 getTextureColor(in vec2 uv, in int pixelUV, in float hasCrack, in vec2 crackTexCoord)
 {
 	vec4 color;
 	if (bool(pixelUV))

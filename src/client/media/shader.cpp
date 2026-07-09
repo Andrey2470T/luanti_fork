@@ -320,8 +320,8 @@ u32 ShaderSource::getShader(
 
 	if (std::this_thread::get_id() == m_main_thread) {
 		/* Let the constant setters do their job and emit constants */
-		for (auto &setter : m_constant_setters)
-			setter->onGenerate(info_c.name, info_c.constants);
+		for (auto &c_setter : m_constant_setters)
+			c_setter->onGenerate(info_c.name, info_c.constants);
 
 		ShaderGenerator gen(this, info_c);
 		gen.generate();

@@ -1,11 +1,16 @@
-uniform sampler2D ColorMapSampler;
+#include<base_texture>
+
 in vec4 tPos;
 
 CENTROID_ in mediump vec2 varTexCoord;
 
 void main()
 {
-	vec4 col = texture2D(ColorMapSampler, varTexCoord);
+#ifdef USE_ATLAS
+	vec4 col = getTextureColor(varTexCoord, 1, 0, vec2(0.0));
+#else
+	vec4 col = getTextureColor(varTexCoord, 0, 0, vec2(0.0));
+#endif
 
 	if (col.a < 0.70)
 		discard;

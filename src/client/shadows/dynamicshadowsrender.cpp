@@ -106,7 +106,6 @@ void ShadowRenderer::initialize()
 {
 	createShaders();
 
-
 	m_texture_format = m_shadow_map_texture_32bit
 					   ? video::ECOLOR_FORMAT::ECF_R32F
 					   : video::ECOLOR_FORMAT::ECF_R16F;
@@ -261,7 +260,7 @@ void ShadowRenderer::updateSMTextures()
 
 		// Update SM incrementally:
 		for (DirectionalLight &light : m_light_list) {
-			for (auto *cb : {m_shadow_depth_cb, m_shadow_depth_trans_cb}) {
+			for (auto *cb : {m_shadow_depth_cb_a, m_shadow_depth_cb, m_shadow_depth_trans_cb_a}) {
 				if (cb) {
 					cb->MapRes = (u32)m_shadow_map_texture_size;
 					cb->MaxFar = (f32)m_shadow_map_max_distance * BS;
@@ -323,10 +322,8 @@ void ShadowRenderer::update(Sky *sky, video::GLTexture *outputTarget)
 
 	updateSMTextures();
 
-	if (shadowMapTextureFinal == nullptr) {
+	if (shadowMapTextureFinal == nullptr)
 		return;
-	}
-
 
 	if (!m_shadow_node_array.empty()) {
 
@@ -335,6 +332,7 @@ void ShadowRenderer::update(Sky *sky, video::GLTexture *outputTarget)
 			// SM texture for entities is not updated incrementally and
 			// must by updated using current player position.
 			// render shadows for the non-map objects.
+			m_shadow_depth_cb_a->CameraPos = light.getPlayerPos();
 			m_shadow_depth_cb->CameraPos = light.getPlayerPos();
 
 			m_driver->setRenderTarget(shadowMapTextureDynamicObjects, true,
@@ -424,9 +422,9 @@ void ShadowRenderer::renderShadowMap(video::GLTexture *target,
 	material.FrontfaceCulling = true;
 
 	if (m_shadow_map_colored && pass != scene::ESNRP_SOLID)
-		material.MaterialType = depth_shader_trans;
+		material.MaterialType = depth_shader_trans_a;
 	else
-		material.MaterialType = depth_shader;
+		material.MaterialType = depth_shader_a;
 
 	m_driver->setTransform(video::ETS_WORLD,
 			map_node.getAbsoluteTransformation());
@@ -492,22 +490,37 @@ void ShadowRenderer::renderShadowObjects(
 void ShadowRenderer::createShaders()
 {
 	auto *shdsrc = m_client->getShaderSource();
-	assert(!m_shadow_depth_cb);
 
+	m_shadow_depth_cb_a = new ShadowDepthUniformSetter();
 	m_shadow_depth_cb = new ShadowDepthUniformSetter();
-	u32 shader_id = shdsrc->getShader({"shadow/pass1"}, false, m_shadow_depth_cb);
-	depth_shader = shdsrc->getShaderInfo(shader_id).material;
+
+	ShaderInfo info = {"pass1_atlas"};
+	info.basic_name = "shadow/pass1";
+	info.constants["USE_ATLAS"] = 1;
+
+	depth_shader_a = shdsrc->getShaderInfo(shdsrc->getShader(info, false, m_shadow_depth_cb_a)).material;
+
+	info.name = "pass1";
+	info.constants.clear();
+	depth_shader = shdsrc->getShaderInfo(shdsrc->getShader(info, false, m_shadow_depth_cb)).material;
 
 	if (m_shadow_map_colored) {
-		m_shadow_depth_trans_cb = new ShadowDepthUniformSetter();
-		shader_id = shdsrc->getShader({"shadow/pass1_trans"}, false, m_shadow_depth_trans_cb);
-		depth_shader_trans = shdsrc->getShaderInfo(shader_id).material;
+		m_shadow_depth_trans_cb_a = new ShadowDepthUniformSetter();
+
+		info.name = "pass1_trans_atlas";
+		info.basic_name = "shadow/pass1_trans";
+		info.constants["USE_ATLAS"] = 1;
+
+		depth_shader_trans_a = shdsrc->getShaderInfo(shdsrc->getShader(info,
+			false, m_shadow_depth_trans_cb_a)).material;
 	}
 
 	auto *shadow_mix_cb = new ShadowScreenQuadUniformSetter();
-	shader_id = shdsrc->getShader({"shadow/pass2"}, false, shadow_mix_cb);
+
+	info.name = "pass2";
+	info.basic_name = "shadow/pass2";
 	m_screen_quad->getMaterial().MaterialType =
-		shdsrc->getShaderInfo(shader_id).material;
+		shdsrc->getShaderInfo(shdsrc->getShader(info, false, shadow_mix_cb)).material;
 }
 
 ShadowRenderer *createShadowRenderer(SDLDevice *device, Client *client)

@@ -144,10 +144,10 @@ private:
 
 	void createShaders();
 
-	video::E_MATERIAL_TYPE depth_shader, depth_shader_trans;
+	video::E_MATERIAL_TYPE depth_shader_a, depth_shader, depth_shader_trans_a;
 
-	ShadowDepthUniformSetter *m_shadow_depth_cb{nullptr};
-	ShadowDepthUniformSetter *m_shadow_depth_trans_cb{nullptr};
+	ShadowDepthUniformSetter *m_shadow_depth_cb_a{nullptr}, *m_shadow_depth_cb{nullptr};
+	ShadowDepthUniformSetter *m_shadow_depth_trans_cb_a{nullptr};
 
 	ShadowScreenQuad *m_screen_quad{nullptr};
 };

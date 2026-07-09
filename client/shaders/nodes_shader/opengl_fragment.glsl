@@ -1,6 +1,6 @@
 #include<fog>
 #include<noise>
-#include<cracks>
+#include<base_texture>
 
 uniform vec3 lightDir;
 // The cameraOffset is the current center of the visible world.
@@ -38,7 +38,7 @@ in float hasCrack;
 void main(void)
 {
 	vec2 uv = varTexCoord.st;
-	vec4 base = getNodeColor(uv, 1, hasCrack, crackTexCoord);
+	vec4 base = getTextureColor(uv, 1, hasCrack, crackTexCoord);
 
 	DISCARD_CHECK(base);
 
