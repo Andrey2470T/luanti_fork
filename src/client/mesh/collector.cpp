@@ -44,6 +44,8 @@ void MeshCollector::append(TileLayer &layer, const scene::Vertex3D *vertices,
 
 	u32 vertex_count = p.vertices.size();
 	for (u32 i = 0; i < numVertices; i++) {
+		f32 pack_r_f, pack_g_f, pack_b_f;
+
 		// Pack the tile color as 24 bits in the red channel
 		u32 pack_r = 0;
 		pack_r |= ((u32)layer.color.getRed() << 24);
@@ -51,6 +53,8 @@ void MeshCollector::append(TileLayer &layer, const scene::Vertex3D *vertices,
 		pack_r |= ((u32)layer.color.getBlue() << 8);
 
 		pack_r |= ((u32)(layer.material_flags & MATERIAL_FLAG_CRACK) ? 1u : 0u);
+
+		std::memcpy(&pack_r_f, &pack_r, sizeof(pack_r_f));
 
 		auto uv = scale * vertices[i].TCoords;
 
@@ -61,20 +65,20 @@ void MeshCollector::append(TileLayer &layer, const scene::Vertex3D *vertices,
 		uv.X = tilePos.X + relPosX;
 		uv.Y = tilePos.Y + relPosY;
 
-		// Pack the crack frame pixel coords and crack flag in the green channel
-		u32 pack_g = 0;
-		pack_g |= (relPosX << 16);
-		pack_g |= (u16)relPosY;
+		if (atlas) {
+			// Pack the crack frame pixel coords and crack flag in the green channel
+			u32 pack_g = 0;
+			pack_g |= (relPosX << 16);
+			pack_g |= (u16)relPosY;
 
-		// Pack the tile width and height as 8-bit in the blue channel
-		u32 pack_b = 0;
-		pack_b |= (tileSize.X << 24);
-		pack_b |= (tileSize.Y << 16 & 0xff0000u);
+			// Pack the tile width and height as 8-bit in the blue channel
+			u32 pack_b = 0;
+			pack_b |= (tileSize.X << 24);
+			pack_b |= (tileSize.Y << 16 & 0xff0000u);
 
-		f32 pack_r_f, pack_g_f, pack_b_f;
-		std::memcpy(&pack_r_f, &pack_r, sizeof(pack_r_f));
-		std::memcpy(&pack_g_f, &pack_g, sizeof(pack_g_f));
-		std::memcpy(&pack_b_f, &pack_b, sizeof(pack_b_f));
+			std::memcpy(&pack_g_f, &pack_g, sizeof(pack_g_f));
+			std::memcpy(&pack_b_f, &pack_b, sizeof(pack_b_f));
+		}
 
 		v3f inAux = {pack_r_f, pack_g_f, pack_b_f};
 

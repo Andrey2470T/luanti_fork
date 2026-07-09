@@ -8,7 +8,7 @@
 #include <irrlichttypes.h>
 #include <Mesh/VertexTypes.h>
 
-#define HW {255, 255, 255}
+#define HW {-NAN, 0, 0}
 
 /// Represents a triangle as three vertices.
 /// “Smallest” (according to <) vertex is expected to be first, others should follow in the counter-clockwise order.
