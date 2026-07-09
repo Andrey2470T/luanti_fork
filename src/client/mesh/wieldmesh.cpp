@@ -366,8 +366,8 @@ void WieldMeshSceneNode::setItem(const ItemStack &item, Client *client, bool che
 	m_buffer_info.clear();
 	m_base_color = item_visuals->getItemstackColor(item, client);
 
-	const std::string wield_image = item.getWieldImage(idef);
-	const std::string wield_overlay = item.getWieldOverlay(idef);
+	const std::string wield_image = item.getWieldImage(idef).name;
+	const std::string wield_overlay = item.getWieldOverlay(idef).name;
 	const v3f wield_scale = item.getWieldScale(idef);
 
 	// If wield_image needs to be checked and is defined, it overrides everything else
@@ -447,9 +447,9 @@ void WieldMeshSceneNode::setItem(const ItemStack &item, Client *client, bool che
 		setColor(video::SColor(0xFFFFFFFF));
 		return;
 	} else {
-		const std::string inventory_image = item.getInventoryImage(idef);
+		const std::string inventory_image = item.getInventoryImage(idef).name;
 		if (!inventory_image.empty()) {
-			const std::string inventory_overlay = item.getInventoryOverlay(idef);
+			const std::string inventory_overlay = item.getInventoryOverlay(idef).name;
 			setExtruded(inventory_image, inventory_overlay, def.wield_scale, tsrc, 1);
 		} else {
 			setExtruded("no_texture.png", "", def.wield_scale, tsrc, 1);
@@ -546,8 +546,8 @@ void getItemMesh(Client *client, const ItemStack &item, ItemMesh *result)
 	result->needs_shading = true;
 
 	// If inventory_image is defined, it overrides everything else
-	const std::string inventory_image = item.getInventoryImage(idef);
-	const std::string inventory_overlay = item.getInventoryOverlay(idef);
+	const std::string inventory_image = item.getInventoryImage(idef).name;
+	const std::string inventory_overlay = item.getInventoryOverlay(idef).name;
 	if (!inventory_image.empty()) {
 		mesh = getExtrudedMesh(tsrc, inventory_image, inventory_overlay);
 		result->buffer_info.emplace_back();
@@ -592,18 +592,20 @@ void getItemMesh(Client *client, const ItemStack &item, ItemMesh *result)
 		}
 		}
 
-		for (u32 i = 0; i < mesh->getMeshBufferCount(); ++i) {
-			scene::IMeshBuffer *buf = mesh->getMeshBuffer(i);
-			video::SMaterial &material = buf->getMaterial();
-			// FIXME: overriding this breaks different alpha modes the mesh may have
-			material.forEachTexture([] (auto &tex) {
-				tex.MinFilter = video::ETMINF_NEAREST_MIPMAP_NEAREST;
-				tex.MagFilter = video::ETMAGF_NEAREST;
-			});
-		}
+		if (mesh) {
+			for (u32 i = 0; i < mesh->getMeshBufferCount(); ++i) {
+				scene::IMeshBuffer *buf = mesh->getMeshBuffer(i);
+				video::SMaterial &material = buf->getMaterial();
+				// FIXME: overriding this breaks different alpha modes the mesh may have
+				material.forEachTexture([] (auto &tex) {
+					tex.MinFilter = video::ETMINF_NEAREST_MIPMAP_NEAREST;
+					tex.MagFilter = video::ETMAGF_NEAREST;
+				});
+			}
 
-		rotateMeshXZby(mesh, -45);
-		rotateMeshYZby(mesh, -30);
+			rotateMeshXZby(mesh, -45);
+			rotateMeshYZby(mesh, -30);
+		}
 	}
 
 	// might need to be re-colorized, this is done only when needed

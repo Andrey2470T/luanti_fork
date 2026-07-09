@@ -44,4 +44,7 @@ struct TileAnimationParams
 	void getTextureModifer(std::ostream &os, v2u32 texture_size, int frame) const;
 	v2f getTextureCoords(v2u32 texture_size, u16 frame) const;
 	void getFrames(std::vector<core::rect<u32>> *frames_rects, u16 *frame_length_ms, v2u32 texture_size) const;
+	// Modifies the texture name such that it only contains the first frame
+	// If the texture_size is know (client code), getTextureModifer should be used instead
+	void extractFirstFrame(std::string &name) const;
 };

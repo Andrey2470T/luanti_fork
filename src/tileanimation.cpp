@@ -3,6 +3,7 @@
 // Copyright (C) 2016 sfan5 <sfan5@live.de>
 #include "tileanimation.h"
 #include "util/serialize.h"
+#include "util/string.h"
 
 void TileAnimationParams::serialize(std::ostream &os, u16 protocol_ver) const
 {
@@ -135,5 +136,34 @@ void TileAnimationParams::getFrames(
 				core::dimension2d<u32>(frame_size.X, frame_size.Y)
 			);
 		}
+	}
+}
+
+void TileAnimationParams::extractFirstFrame(std::string &name) const
+{
+	if (name.empty())
+		return;
+
+	switch(type) {
+	case TAT_VERTICAL_FRAMES: {
+		// Can't use "[verticalframe", since the the server doesn't know the texture size.
+		std::ostringstream oss;
+		str_texture_modifiers_escape(name);
+		oss << "[combine:" <<
+				vertical_frames.aspect_w << "x" <<
+				vertical_frames.aspect_h <<
+				":0,0=" << name;
+		name = oss.str();
+		break;
+	} case TAT_SHEET_2D: {
+		std::ostringstream oss;
+		oss << name << "^[sheet:" <<
+				sheet_2d.frames_w << "x" <<
+				sheet_2d.frames_h << ":0,0";
+		name = oss.str();
+		break;
+	} case TAT_NONE:
+	default:
+		break;
 	}
 }

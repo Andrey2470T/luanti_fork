@@ -49,8 +49,8 @@ void drawItemStack(
 
 	bool draw_overlay = false;
 
-	const std::string inventory_image = item.getInventoryImage(idef);
-	const std::string inventory_overlay = item.getInventoryOverlay(idef);
+	const std::string inventory_image = item.getInventoryImage(idef).name;
+	const std::string inventory_overlay = item.getInventoryOverlay(idef).name;
 
 	bool has_mesh = false;
 	ItemMesh *imesh;
