@@ -723,6 +723,7 @@ void MapblockMeshGenerator::drawLiquidSides()
 			} else {
 				pos.Y = cur_liquid.corner_levels[base.Z][base.X] * BS;
 				v += 0.5f - cur_liquid.corner_levels[base.Z][base.X];
+				v *= 0.98f; // hack scaling down the UVs a bit to prevent adjacent atlas tiles visibility at sides
 			}
 
 			video::SColor color;
@@ -788,19 +789,10 @@ void MapblockMeshGenerator::drawLiquidTop()
 	f32 dx = (cur_liquid.corner_levels[0][0] + cur_liquid.corner_levels[1][0]) -
 	         (cur_liquid.corner_levels[0][1] + cur_liquid.corner_levels[1][1]);
 	v2f tcoord_center(0.5, 0.5);
-	v2f tcoord_translate(blockpos_nodes.Z + cur_node.p.Z,
-			blockpos_nodes.X + cur_node.p.X);
+
 	v2f dir = v2f(dx, dz).normalize();
 	if (dir == v2f{0.0f, 0.0f}) // if corners are symmetrical
 		dir = v2f{1.0f, 0.0f};
-
-	// Rotate tcoord_translate around the origin. The X axis turns to dir.
-	tcoord_translate.set(
-		dir.X * tcoord_translate.X - dir.Y * tcoord_translate.Y,
-		dir.Y * tcoord_translate.X + dir.X * tcoord_translate.Y);
-
-	tcoord_translate.X -= floor(tcoord_translate.X);
-	tcoord_translate.Y -= floor(tcoord_translate.Y);
 
 	for (scene::Vertex3D &vertex : vertices) {
 		// Rotate vertex.TCoords around tcoord_center. The X axis turns to dir.
@@ -808,9 +800,8 @@ void MapblockMeshGenerator::drawLiquidTop()
 		vertex.TCoords.set(
 			dir.X * vertex.TCoords.X - dir.Y * vertex.TCoords.Y,
 			dir.Y * vertex.TCoords.X + dir.X * vertex.TCoords.Y);
+		vertex.TCoords *= 0.75f; // hack scaling down the UVs a bit to prevent adjacent atlas tiles visibility at corners
 		vertex.TCoords += tcoord_center;
-
-		vertex.TCoords += tcoord_translate;
 
 		if (!data->m_enable_water_reflections) {
 			vertex.Normal = v3f(dx, 1., dz).normalize();
