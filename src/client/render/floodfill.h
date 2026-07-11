@@ -5,32 +5,40 @@
 #include "constants.h"
 #include <queue>
 
-class ClientMapLightFloodFill
+class BlockLightFloodFill
 {
-    struct MapBlockLightInfo
-    {
-        MapBlock *block = nullptr;
-        std::array<u16, MapBlock::nodecount> light={};
-    };
+	struct MapBlockLightInfo
+	{
+		MapBlock *block = nullptr;
+		std::array<u16, MapBlock::nodecount> light={};
 
-    struct LightNodeEntry
-    {
-        v3s16 mapblockPos;
-        v3s16 nodePos;
-    };
+		u16 getLight(v3s16 nodePos);
+		video::SColor getLightColor(v3s16 nodePos);
 
-    const NodeDefManager *m_nodedef;
-    std::unordered_map<v3s16, MapBlockLightInfo> m_mapblocks_light;
-    std::queue<LightNodeEntry> m_light_propagation_queue;
-    std::queue<LightNodeEntry> m_light_removal_queue;
+		bool lightFalloff(v3s16 nodePos, video::SColor &color);
+	};
+
+	struct LightNodeEntry
+	{
+		v3s16 mapblockPos;
+		v3s16 nodePos;
+		video::SColor lightColor;
+	};
+
+	const NodeDefManager *m_nodedef;
+	std::unordered_map<v3s16, MapBlockLightInfo> m_mapblocks_light;
+	std::queue<LightNodeEntry> m_light_propagation_queue;
+	std::queue<LightNodeEntry> m_light_removal_queue;
 
 public:
-    ClientMapLightFloodFill(const NodeDefManager *nodedef) : m_nodedef(nodedef) {}
+	BlockLightFloodFill(const NodeDefManager *nodedef) : m_nodedef(nodedef) {}
 
-    void addMapBlock(v3s16 blockpos, MapBlock *block);
-    void removeMapBlock(v3s16 blockpos);
+	void addMapBlock(v3s16 blockpos, MapBlock *block);
+	void removeMapBlock(v3s16 blockpos);
 
-    void addLightNodesInQueue(MapBlock *block, bool propagate=true);
+	void updateFill();
 
-    void updateFill();
+private:
+	void addLightNodesInQueue(MapBlock *block, bool propagate=true);
+	void recurseFill(const LightNodeEntry &cur_lightnode, std::unordered_map<v3s16, bool> &passed_lightnodes);
 };

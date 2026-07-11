@@ -7,6 +7,7 @@
 #include "irrlichttypes_bloated.h"
 #include "map.h"
 #include "client/player/camera.h"
+#include "floodfill.h"
 #include <set>
 #include <map>
 
@@ -151,6 +152,8 @@ private:
 		BS * 1000000, BS * 1000000, BS * 1000000);
 
 	MapDrawControl &m_control;
+
+	BlockLightFloodFill m_blocklight_fill;
 
 	v3f m_camera_position = v3f(0,0,0);
 	v3f m_camera_direction = v3f(0,0,1);

@@ -164,6 +164,7 @@ ClientMap::ClientMap(
 		rendering_engine->get_scene_manager(), id),
 	m_client(client),
 	m_rendering_engine(rendering_engine),
+	m_blocklight_fill(client->getNodeDefManager()),
 	m_control(control),
 	m_drawlist(MapBlockComparer(v3s16(0,0,0)))
 {
