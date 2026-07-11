@@ -289,8 +289,6 @@ fake_function() {
 	gettext("Anti-aliasing scale");
 	gettext("Defines the size of the sampling grid for FSAA and SSAA antialiasing methods.\nValue of 2 means taking 2x2 = 4 samples.");
 	gettext("Occlusion Culling");
-	gettext("Occlusion Culler");
-	gettext("Type of occlusion_culler\n\n\"loops\" is the legacy algorithm with nested loops and O(n³) complexity\n\"bfs\" is the new algorithm based on breadth-first-search and side culling\n\nThis setting should only be changed if you have performance problems.");
 	gettext("Enable Raytraced Culling");
 	gettext("Use raytraced occlusion culling in the new culler.\nThis flag enables use of raytraced occlusion culling test for\nclient mesh sizes smaller than 4x4x4 map blocks.");
 	gettext("Effects");

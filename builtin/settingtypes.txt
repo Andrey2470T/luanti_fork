@@ -693,14 +693,6 @@ fsaa (Anti-aliasing scale) enum 2 2,4,8,16
 
 [**Occlusion Culling]
 
-#    Type of occlusion_culler
-#
-#    "loops" is the legacy algorithm with nested loops and O(n³) complexity
-#    "bfs" is the new algorithm based on breadth-first-search and side culling
-#
-#    This setting should only be changed if you have performance problems.
-occlusion_culler (Occlusion Culler) enum bfs bfs,loops
-
 #    Use raytraced occlusion culling in the new culler.
 #	 This flag enables use of raytraced occlusion culling test for
 #    client mesh sizes smaller than 4x4x4 map blocks.
