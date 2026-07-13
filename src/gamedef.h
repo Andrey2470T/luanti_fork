@@ -11,6 +11,7 @@
 class IItemDefManager;
 class NodeDefManager;
 class ICraftDefManager;
+class BlockLightFloodFill;
 class ITextureSource;
 class ShaderSource;
 class IRollbackManager;

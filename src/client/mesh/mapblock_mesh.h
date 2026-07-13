@@ -24,6 +24,7 @@ class Client;
 class NodeDefManager;
 class ShaderSource;
 class ITextureSource;
+class BlockLightFloodFill;
 
 /*
 	Mesh making stuff
@@ -35,6 +36,7 @@ struct MinimapMapblock;
 
 struct MeshMakeData
 {
+	const BlockLightFloodFill *m_blocklight_fill = nullptr;
 	VoxelManipulator m_vmanip;
 
 	// base pos of meshgen area, in blocks
@@ -54,7 +56,9 @@ struct MeshMakeData
 
 	const NodeDefManager *m_nodedef;
 
-	MeshMakeData(const NodeDefManager *ndef, u16 side_lingth, MeshGrid mesh_grid);
+	MeshMakeData(
+		const BlockLightFloodFill *blocklight_fill, const NodeDefManager *ndef,
+		u16 side_lingth, MeshGrid mesh_grid);
 
 	/*
 		Copy block data manually (to allow optimizations by the caller)

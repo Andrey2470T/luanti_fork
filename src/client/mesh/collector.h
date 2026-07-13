@@ -38,12 +38,12 @@ struct MeshCollector
 		: pool(_pool), center_pos(_center_pos), offset(_offset) {}
 
 	void append(TileSpec &material,
-			const scene::Vertex3D *vertices, u32 numVertices,
+			const scene::Vertex3DExt *vertices, u32 numVertices,
 			const u16 *indices, u32 numIndices);
 
 private:
 	void append(TileLayer &material,
-			const scene::Vertex3D *vertices, u32 numVertices,
+			const scene::Vertex3DExt *vertices, u32 numVertices,
 			const u16 *indices, u32 numIndices,
 			u8 layernum, bool use_scale = false);
 

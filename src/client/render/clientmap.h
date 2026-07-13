@@ -74,6 +74,7 @@ public:
 		Forcefully get a sector from somewhere
 	*/
 	MapSector * emergeSector(v2s16 p) override;
+	MapBlock * createBlock(MapSector *sector, s16 y);
 
 	/*
 		ISceneNode methods
@@ -100,6 +101,10 @@ public:
 
 	void renderMapShadows(video::VideoDriver *driver,
 			const video::SMaterial &material, s32 pass, int frame, int total_frames);
+
+	void updateBlockLightFill() { m_blocklight_fill.updateFill(); }
+
+	const BlockLightFloodFill *getBlockLightFill() const { return &m_blocklight_fill; }
 
 	int getBackgroundBrightness(float max_d, u32 daylight_factor,
 			int oldvalue, bool *sunlight_seen_result);

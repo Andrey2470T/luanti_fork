@@ -10,10 +10,10 @@ class BlockLightFloodFill
 	struct MapBlockLightInfo
 	{
 		MapBlock *block = nullptr;
-		std::array<u16, MapBlock::nodecount> light={};
+		std::array<u16, MapBlock::nodecount> light = {};
 
-		u16 getLight(v3s16 nodePos);
-		video::SColor getLightColor(v3s16 nodePos);
+		u16 getLight(v3s16 nodePos) const;
+		video::SColor getLightColor(v3s16 nodePos) const;
 
 		bool lightFalloff(v3s16 nodePos, video::SColor &color);
 	};
@@ -35,6 +35,10 @@ public:
 
 	void addMapBlock(v3s16 blockpos, MapBlock *block);
 	void removeMapBlock(v3s16 blockpos);
+
+	u16 getLight(v3s16 nodePos) const;
+	video::SColor getLightColor(v3s16 nodePos) const;
+	static u16 maxLight(u16 light1, u16 light2);
 
 	void updateFill();
 

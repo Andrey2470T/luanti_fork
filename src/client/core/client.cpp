@@ -581,6 +581,10 @@ void Client::step(float dtime)
 		}
 	}
 
+	// Update the block colored lighting grid 
+	ClientMap &map = m_env.getClientMap();
+	map.updateBlockLightFill();
+
 	/*
 		Replace updated meshes
 	*/
@@ -596,7 +600,6 @@ void Client::step(float dtime)
 			std::vector<MinimapMapblock*> minimap_mapblocks;
 			bool do_mapper_update = true;
 
-			ClientMap &map = m_env.getClientMap();
 			MapSector *sector = map.emergeSector(v2s16(r.p.X, r.p.Z));
 
 			MapBlock *block = sector->getBlockNoCreateNoEx(r.p.Y);
@@ -605,7 +608,7 @@ void Client::step(float dtime)
 			// create a blank block just to hold the chunk's mesh.
 			// If the block becomes visible later it will replace the blank block.
 			if (!block && r.mesh)
-				block = sector->createBlankBlock(r.p.Y);
+				block = map.createBlock(sector, r.p.Y);
 
 			if (block) {
 				// Delete the old mesh

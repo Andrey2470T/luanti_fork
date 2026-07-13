@@ -25,7 +25,7 @@
 #include "environment.h"
 #include "itemdef.h"
 #include "client/player/localplayer.h"
-#include "map.h"
+#include "client/render/clientmap.h"
 #include "client/mesh/mesh.h"
 #include "nodedef.h"
 #include "settings.h"
@@ -216,7 +216,7 @@ static scene::SMesh *generateNodeMesh(Client *client, MapNode n)
 
 	MeshCollector collector(pool, v3f(0), v3f());
 	{
-		MeshMakeData mmd(ndef, 1, MeshGrid{1});
+		MeshMakeData mmd(client->getEnv().getClientMap().getBlockLightFill(), ndef, 1, MeshGrid{1});
 		n.setParam1(0xff);
 		mmd.fillSingleNode(n);
 		MapblockMeshGenerator(&mmd, &collector).generate();
@@ -819,9 +819,12 @@ void GenericCAO::updateLight(u32 day_night_ratio)
 	if (m_prop.glow < 0)
 		return;
 
+	auto block_light_fill = m_env->getClientMap().getBlockLightFill();
+
 	u16 light_at_pos = 0;
 	u8 light_at_pos_intensity = 0;
 	bool pos_ok = false;
+	u16 block_light = 0;
 
 	v3s16 pos[3];
 	u16 npos = getLightPosition(pos);
@@ -836,6 +839,7 @@ void GenericCAO::updateLight(u32 day_night_ratio)
 				light_at_pos = this_light;
 				light_at_pos_intensity = this_light_intensity;
 			}
+			block_light = block_light_fill->maxLight(block_light_fill->getLight(pos[i]), block_light);
 			pos_ok = true;
 		}
 	}
@@ -844,7 +848,7 @@ void GenericCAO::updateLight(u32 day_night_ratio)
 
 	// Encode light into color, adding a small boost
 	// based on the entity glow.
-	video::SColor light = encode_light(light_at_pos, m_prop.glow, 1.0f);
+	video::SColor light = encode_material_light(light_at_pos & 0xff, block_light, m_prop.glow);
 
 	if (light != m_last_light) {
 		m_last_light = light;

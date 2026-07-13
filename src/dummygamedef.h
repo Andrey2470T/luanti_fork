@@ -11,6 +11,7 @@
 #include "craftdef.h"
 #include "content/mods.h"
 #include "database/database-dummy.h"
+#include "client/render/floodfill.h"
 
 class DummyGameDef : public IGameDef {
 public:
@@ -18,6 +19,7 @@ public:
 		m_itemdef(createItemDefManager()),
 		m_nodedef(createNodeDefManager()),
 		m_craftdef(createCraftDefManager()),
+		m_blocklight_fill(new BlockLightFloodFill(m_nodedef)),
 		m_mod_storage_database(new Database_Dummy())
 	{
 	}
@@ -28,12 +30,14 @@ public:
 		delete m_craftdef;
 		delete m_nodedef;
 		delete m_itemdef;
+		delete m_blocklight_fill;
 	}
 
 	IItemDefManager *getItemDefManager() override { return m_itemdef; }
 	const NodeDefManager *getNodeDefManager() override { return m_nodedef; }
 	NodeDefManager* getWritableNodeDefManager() { return m_nodedef; }
 	ICraftDefManager *getCraftDefManager() override { return m_craftdef; }
+	BlockLightFloodFill *getBlockLightFill() { return m_blocklight_fill; }
 
 	u16 allocateUnknownNodeId(const std::string &name) override
 	{
@@ -60,5 +64,6 @@ protected:
 	IItemDefManager *m_itemdef = nullptr;
 	NodeDefManager *m_nodedef = nullptr;
 	ICraftDefManager *m_craftdef = nullptr;
+	BlockLightFloodFill *m_blocklight_fill = nullptr;
 	ModStorageDatabase *m_mod_storage_database = nullptr;
 };

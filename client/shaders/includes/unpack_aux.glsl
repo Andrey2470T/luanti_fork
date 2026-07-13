@@ -9,7 +9,10 @@
 	// green   |    16      | crackTexCoord.y
 	// blue    |     8      | width
 	// blue    |     8      | height
-	// blue    |    16      |   -
+	// blue    |     1      |         -
+	// blue    |     5      | blockLightColor.r
+	// blue    |     5      | blockLightColor.g
+	// blue    |     5      | blockLightColor.b
 
 void unpackHWColor(in vec3 auxAttr, out vec3 color)
 {
@@ -47,4 +50,16 @@ vec2 unpackTileUV(in vec3 auxAttr)
 	vec2 tileSize = vec2(packedB >> 24, packedB >> 16 & 0xffu);
 
 	return tileCoords / tileSize;
+}
+
+vec3 unpackBlockLightColor(in vec3 auxAttr)
+{
+	uint packedB = floatBitsToUint(inAux.z);
+
+	vec3 color;
+	color.r = packedB >> 10 & 0x1fu;
+	color.g = packedB >> 5 & 0x1fu;
+	color.b = packedB & 0x1fu;
+
+	return color;
 }

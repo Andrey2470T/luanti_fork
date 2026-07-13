@@ -59,12 +59,12 @@ void main(void)
 	// Calculating the light color
 	vec4 color = inColor;
 	color *= materialColor;
-	float skyLight = color.r;
-	float blockLight = color.g;
-	float sum = float(max(skyLight + blockLight, 0));
+	float skyLight = color.a;
+	vec3 blockLightColor = color.rgb;
+	float sum = float(max(skyLight + luminance(blockLightColor), 0));
 	nightRatio = 1.0 - (skyLight / sum);
 	dayLight = getSkyColor(timeOfDay);
-	varColor = calculateLighting(timeOfDay, skyLight, blockLight, 1.0);
+	varColor = calculateLighting(timeOfDay, skyLight, blockLightColor, 1.0);
 
 #ifdef ENABLE_DYNAMIC_SHADOWS
 	vertexStage(

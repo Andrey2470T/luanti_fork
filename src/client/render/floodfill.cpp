@@ -5,9 +5,9 @@
 u16 getLightFromColor(const video::SColor &color)
 {
 	u16 light = 0;
-	light |= (u32)color.getRed() << 10;
-	light |= (u32)color.getGreen() << 5;
-	light |= (u32)color.getBlue();
+	light |= ((u16)color.getRed() & 0x1f) << 10;
+	light |= ((u16)color.getGreen() & 0x1f) << 5;
+	light |= ((u16)color.getBlue() & 0x1f);
 	return light;
 }
 
@@ -16,12 +16,12 @@ video::SColor getColorFromLight(u16 light)
 	return video::SColor(255, light >> 10, light >> 5 & 0x1f, light & 0x1f);
 }
 
-u16 BlockLightFloodFill::MapBlockLightInfo::getLight(v3s16 nodePos)
+u16 BlockLightFloodFill::MapBlockLightInfo::getLight(v3s16 nodePos) const
 {
 	return light[nodePos.Z * MapBlock::zstride + nodePos.Y * MapBlock::ystride + nodePos.X];
 }
 
-video::SColor BlockLightFloodFill::MapBlockLightInfo::getLightColor(v3s16 nodePos)
+video::SColor BlockLightFloodFill::MapBlockLightInfo::getLightColor(v3s16 nodePos) const
 {
 	return getColorFromLight(getLight(nodePos));
 }
@@ -35,7 +35,7 @@ u16 channelFalloff(u16 ch)
 
 bool BlockLightFloodFill::MapBlockLightInfo::lightFalloff(v3s16 nodePos, video::SColor &color)
 {
-	u16 color_light_v = getLightFromColor(color) ;
+	u16 color_light_v = getLightFromColor(color);
 	if (color_light_v == 0)
 		return false;
 
@@ -70,6 +70,37 @@ void BlockLightFloodFill::removeMapBlock(v3s16 blockpos)
 			it->second.block->refDrop();
 		m_mapblocks_light.erase(it);*/
 	}
+}
+
+u16 BlockLightFloodFill::getLight(v3s16 nodePos) const
+{
+	v3s16 mapblock_pos = getContainerPos(nodePos, MAP_BLOCKSIZE);
+	auto it = m_mapblocks_light.find(mapblock_pos);
+
+	if (it == m_mapblocks_light.end())
+		return 0;
+	
+	v3s16 rel_nodepos = nodePos - mapblock_pos * MAP_BLOCKSIZE;
+	return it->second.getLight(rel_nodepos);
+}
+
+video::SColor BlockLightFloodFill::getLightColor(v3s16 nodePos) const
+{
+    return getColorFromLight(getLight(nodePos));
+}
+
+u16 BlockLightFloodFill::maxLight(u16 light1, u16 light2)
+{
+    auto color1 = getColorFromLight(light1);
+	auto color2 = getColorFromLight(light2);
+
+	video::SColor max_color(
+		std::max(color1.getAlpha(), color2.getAlpha()),
+		std::max(color1.getRed(), color2.getRed()),
+		std::max(color1.getGreen(), color2.getGreen()),
+		std::max(color1.getBlue(), color2.getBlue()));
+	
+	return getLightFromColor(max_color);
 }
 
 void BlockLightFloodFill::addLightNodesInQueue(MapBlock *block, bool propagate)
@@ -116,11 +147,11 @@ void BlockLightFloodFill::updateFill()
 
 void BlockLightFloodFill::recurseFill(const LightNodeEntry &cur_lightnode, std::unordered_map<v3s16, bool> &passed_lightnodes)
 {
-	auto mapblock = m_mapblocks_light[cur_lightnode.mapblockPos];
+	auto &mapblock = m_mapblocks_light[cur_lightnode.mapblockPos];
 
 	if (!mapblock.block)
 		return;
-	
+
 	for (u8 side = 0; side < 6; ++side) {
 		v3s16 neighbor_node_pos = cur_lightnode.mapblockPos * MAP_BLOCKSIZE + cur_lightnode.nodePos + g_6dirs[side];
 
@@ -143,11 +174,11 @@ void BlockLightFloodFill::recurseFill(const LightNodeEntry &cur_lightnode, std::
 
 		if (!cf.light_propagates || cf.solidness == 2)
 			continue;
-		
+
 		video::SColor new_lightcolor = cur_lightnode.lightColor;
 		if (!neighbor_mapblock.lightFalloff(neighbor_rel_node_pos, new_lightcolor))
 			continue;
-		
+
 		passed_lightnodes.emplace(neighbor_node_pos, true);
 
 		recurseFill({

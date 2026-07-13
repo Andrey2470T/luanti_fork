@@ -30,8 +30,9 @@
 	MeshMakeData
 */
 
-MeshMakeData::MeshMakeData(const NodeDefManager *ndef,
-		u16 side_length, MeshGrid mesh_grid) :
+MeshMakeData::MeshMakeData(const BlockLightFloodFill *blocklight_fill,
+		const NodeDefManager *ndef, u16 side_length, MeshGrid mesh_grid) :
+	m_blocklight_fill(blocklight_fill),
 	m_side_length(side_length),
 	m_mesh_grid(mesh_grid),
 	m_nodedef(ndef)

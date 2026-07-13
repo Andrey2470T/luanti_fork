@@ -3361,6 +3361,8 @@ PointedThing Game::updatePointedThing(
 		hud->setSelectedFaceNormal(result.intersection_normal);
 	}
 
+	auto block_light_fill = map.getBlockLightFill();
+
 	// Update selection mesh light level and vertex colors
 	if (!selectionboxes->empty()) {
 		v3f pf = hud->getSelectionPos();
@@ -3370,15 +3372,18 @@ PointedThing Game::updatePointedThing(
 		MapNode n = map.getNode(p);
 		u16 node_light = getInteriorLight(n, -1, nodedef);
 		u16 light_level = node_light;
+		u16 block_light = block_light_fill->getLight(p);
 
 		for (const v3s16 &dir : g_6dirs) {
 			n = map.getNode(p + dir);
 			node_light = getInteriorLight(n, -1, nodedef);
 			if (node_light > light_level)
 				light_level = node_light;
+			
+			block_light = block_light_fill->maxLight(block_light_fill->getLight(p + dir), block_light);
 		}
 
-		video::SColor c = encode_light(light_level, 0, 1.0f);
+		video::SColor c = encode_material_light(light_level, block_light, 0);
 
 		// Set mesh final color
 		hud->setSelectionMeshColor(c);

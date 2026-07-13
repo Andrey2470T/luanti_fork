@@ -4,8 +4,6 @@ uniform vec3 daySkyColor;
 uniform vec3 sunsetSkyColor;
 uniform vec3 ambientColor;
 
-const vec3 blockColor = vec3(1.0, 0.85, 0.7);
-
 vec3 getSkyColor(float timeOfDay)
 {
     // Handle night period (including wrap-around from 0.825 to 0.18)
@@ -58,12 +56,12 @@ vec3 getSkyColor(float timeOfDay)
     return nightColor + sunriseColor + dayColor + sunsetColor;
 }
 
-vec3 calculateLighting(float timeOfDay, float skyLight, float blockLight, float ao)
+vec3 calculateLighting(float timeOfDay, float skyLight, vec3 blockLightColor, float ao)
 {
 	vec3 skyColor = getSkyColor(timeOfDay);
-	vec3 mixedColor = max(blockColor * blockLight, skyColor * skyLight);
-    mixedColor += ambientColor;
-    mixedColor *= ao;
+	vec3 mixedColor = max(blockLightColor, skyColor * skyLight);
+	mixedColor += ambientColor;
+	mixedColor *= ao;
 
 	return mixedColor;
 }

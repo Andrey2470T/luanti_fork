@@ -33,6 +33,7 @@
 #include "gettext.h"
 #include "skyparams.h"
 #include "particles.h"
+#include "client/render/clientmap.h"
 #include <memory>
 
 const char *accessDeniedStrings[SERVER_ACCESSDENIED_MAX] = {
@@ -305,7 +306,7 @@ void Client::handleCommand_BlockData(NetworkPacket* pkt)
 		/*
 			Create a new block
 		*/
-		block = sector->createBlankBlock(p.Y);
+		block = m_env.getClientMap().createBlock(sector, p.Y);
 		block->deSerialize(istr, m_server_ser_ver, false);
 		block->deSerializeNetworkSpecific(istr);
 	}

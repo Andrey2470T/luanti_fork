@@ -164,8 +164,8 @@ ClientMap::ClientMap(
 		rendering_engine->get_scene_manager(), id),
 	m_client(client),
 	m_rendering_engine(rendering_engine),
-	m_blocklight_fill(client->getNodeDefManager()),
 	m_control(control),
+	m_blocklight_fill(client->getNodeDefManager()),
 	m_drawlist(MapBlockComparer(v3s16(0,0,0)))
 {
 
@@ -252,6 +252,19 @@ MapSector * ClientMap::emergeSector(v2s16 p2d)
 	}
 
 	return sector;
+}
+
+MapBlock *ClientMap::createBlock(MapSector *sector, s16 y)
+{
+	auto block = sector->createBlankBlock(y);
+
+	if (!block)
+		return nullptr;
+
+	v3s16 pos(sector->getPos().X, y, sector->getPos().Y);
+	m_blocklight_fill.addMapBlock(pos, block);
+
+	return block;
 }
 
 void ClientMap::OnRegisterSceneNode()

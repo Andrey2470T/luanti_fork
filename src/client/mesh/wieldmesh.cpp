@@ -20,6 +20,7 @@
 #include <map>
 #include <Mesh/MeshManipulator.h>
 #include "client/render/renderingengine.h"
+#include "client/render/clientmap.h"
 #include <Mesh/SMesh.h>
 #include <Mesh/IMeshBuffer.h>
 #include <Mesh/SMeshBuffer.h>
@@ -308,7 +309,9 @@ static scene::SMesh *createGenericNodeMesh(Client *client, MapNode n,
 	auto pool = client->getRenderingEngine()->getAtlasPool();
 	MeshCollector collector(pool, v3f(0), v3f());
 	{
-		MeshMakeData mmd(client->ndef(), 1, MeshGrid{1});
+		MeshMakeData mmd(
+			client->getEnv().getClientMap().getBlockLightFill(),
+			client->ndef(), 1, MeshGrid{1});
 		mmd.fillSingleNode(n);
 		MapblockMeshGenerator(&mmd, &collector).generate();
 	}

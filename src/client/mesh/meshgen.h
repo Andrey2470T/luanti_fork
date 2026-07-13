@@ -32,6 +32,7 @@ private:
 		const ContentFeatures *f;
 		LightFrame lframe; // smooth lighting
 		video::SColor lcolor; // unsmooth lighting
+		f32 lblock;
 	} cur_node;
 
 	void useTile(TileSpec *tile_ret, int index = 0, u8 set_flags = 0,
@@ -70,6 +71,7 @@ private:
 		content_t c_flowing;
 		content_t c_source;
 		video::SColor color_top;
+		f32 block_light;
 		NeighborData neighbors[3][3];
 		f32 corner_levels[2][2];
 	};

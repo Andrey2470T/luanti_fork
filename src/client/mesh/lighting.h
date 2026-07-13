@@ -10,6 +10,7 @@ extern const v3s16 light_dirs[8];
 struct LightPair {
 	u8 lightDay;
 	u8 lightNight;
+	u16 blockLight;
 	f32 ambientOcclusion = 1.0f;
 
 	LightPair() = default;
@@ -25,6 +26,7 @@ struct LightInfo {
 	f32 light_day;
 	f32 light_night;
 	f32 light_boosted;
+	u16 block_light;
 	f32 ambient_occlusion = 1.0f;
 
 	LightPair getPair(float sunlight_boost = 0.0) const
@@ -39,14 +41,18 @@ struct LightInfo {
 struct LightFrame {
 	f32 lightsDay[8];
 	f32 lightsNight[8];
+	u16 blockLights[8];
 	f32 ambientOcclusion[8] = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
 	bool sunlight[8];
 };
 
 void getSmoothLightFrame(LightFrame &lframe, const v3s16 &p, MeshMakeData *data);
 LightInfo blendLight(const LightFrame &lframe, const v3f &vertex_pos);
-video::SColor blendLightColor(const LightFrame &lframe, const v3f &vertex_pos, u8 light_source);
-video::SColor blendLightColor(const LightFrame &lframe, const v3f &vertex_pos, const v3f &vertex_normal, u8 light_source);
+video::SColor blendLightColor(
+	const LightFrame &lframe, const v3f &vertex_pos, u8 light_source, u16 &block_light);
+video::SColor blendLightColor(
+	const LightFrame &lframe, const v3f &vertex_pos,
+	const v3f &vertex_normal, u8 light_source, u16 &block_light);
 
 /*!
  * Encodes light of a node.
@@ -61,9 +67,11 @@ video::SColor blendLightColor(const LightFrame &lframe, const v3f &vertex_pos, c
  * from 0 to LIGHT_SUN.
  */
 video::SColor encode_light(u16 light, u8 emissive_light, f32 ambient_occlusion=1.0f);
+void encode_block_light(f32 &light_f, u16 light);
+video::SColor encode_material_light(u8 skyLight, u16 blockLight, u8 emissive_light);
 
 // Compute light at node
 u16 getInteriorLight(MapNode n, s32 increment, const NodeDefManager *ndef);
 u16 getFaceLight(MapNode n, MapNode n2, const NodeDefManager *ndef);
-u16 getSmoothLightSolid(const v3s16 &p, const v3s16 &face_dir, const v3s16 &corner, MeshMakeData *data, f32 &ambient_occlusion_f);
-u16 getSmoothLightTransparent(const v3s16 &p, const v3s16 &corner, MeshMakeData *data, f32 &ambient_occlusion_f);
+LightPair getSmoothLightSolid(const v3s16 &p, const v3s16 &face_dir, const v3s16 &corner, MeshMakeData *data);
+LightPair getSmoothLightTransparent(const v3s16 &p, const v3s16 &corner, MeshMakeData *data);

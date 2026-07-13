@@ -68,10 +68,11 @@ void main(void)
 	float sum = float(max(skyLight + blockLight, 0));
 	nightRatio = 1.0 - (skyLight / sum);
 	dayLight = getSkyColor(timeOfDay);
-	varColor = calculateLighting(timeOfDay, skyLight, blockLight, ao);
+	vec3 blockLightColor = unpackBlockLightColor(inAux);
+	varColor = calculateLighting(timeOfDay, skyLight, blockLightColor, ao);
 
 	// Calculate the emission factor for the bloom mask
-	vec3 lightColor = (max(dayLight * skyLight, blockColor * (blockLight-color.a)) + ambientColor) * ao;
+	vec3 lightColor = (max(dayLight * skyLight, blockLightColor * (blockLight-color.a)) + ambientColor) * ao;
 	emissionLight = color.a * (1.0 - luminance(lightColor));
 
 	unpackAuxRed(inAux, hwColor, hasCrack);

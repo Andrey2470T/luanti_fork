@@ -8,7 +8,7 @@
 #include "client/mesh/mesh.h"
 #include "client/render/atlas.h"
 
-void MeshCollector::append(TileSpec &tile, const scene::Vertex3D *vertices,
+void MeshCollector::append(TileSpec &tile, const scene::Vertex3DExt *vertices,
 		u32 numVertices, const u16 *indices, u32 numIndices)
 {
 	for (int layernum = 0; layernum < MAX_TILE_LAYERS; layernum++) {
@@ -20,7 +20,7 @@ void MeshCollector::append(TileSpec &tile, const scene::Vertex3D *vertices,
 	}
 }
 
-void MeshCollector::append(TileLayer &layer, const scene::Vertex3D *vertices,
+void MeshCollector::append(TileLayer &layer, const scene::Vertex3DExt *vertices,
 		u32 numVertices, const u16 *indices, u32 numIndices, u8 layernum,
 		bool use_scale)
 {
@@ -65,6 +65,9 @@ void MeshCollector::append(TileLayer &layer, const scene::Vertex3D *vertices,
 		uv.X = tilePos.X + relPosX;
 		uv.Y = tilePos.Y + relPosY;
 
+		u32 pack_b = 0;
+		std::memcpy(&pack_b, &vertices[i].Aux.Z, sizeof(pack_b));
+
 		if (atlas) {
 			// Pack the crack frame pixel coords and crack flag in the green channel
 			u32 pack_g = 0;
@@ -72,13 +75,13 @@ void MeshCollector::append(TileLayer &layer, const scene::Vertex3D *vertices,
 			pack_g |= (u16)relPosY;
 
 			// Pack the tile width and height as 8-bit in the blue channel
-			u32 pack_b = 0;
 			pack_b |= (tileSize.X << 24);
 			pack_b |= (tileSize.Y << 16 & 0xff0000u);
 
 			std::memcpy(&pack_g_f, &pack_g, sizeof(pack_g_f));
-			std::memcpy(&pack_b_f, &pack_b, sizeof(pack_b_f));
 		}
+
+		std::memcpy(&pack_b_f, &pack_b, sizeof(pack_b_f));
 
 		v3f inAux = {pack_r_f, pack_g_f, pack_b_f};
 

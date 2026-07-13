@@ -6,6 +6,7 @@
 #include "settings.h"
 #include "profiler.h"
 #include "client/core/client.h"
+#include "client/render/clientmap.h"
 #include "mapblock.h"
 #include "nodedef.h"
 #include "map.h"
@@ -206,8 +207,9 @@ void MeshUpdateQueue::done(v3s16 pos)
 void MeshUpdateQueue::fillDataFromMapBlocks(QueuedMeshUpdate *q)
 {
 	auto mesh_grid = m_client->getMeshGrid();
-	MeshMakeData *data = new MeshMakeData(m_client->ndef(),
-			MAP_BLOCKSIZE * mesh_grid.cell_size, mesh_grid);
+	MeshMakeData *data = new MeshMakeData(
+		m_client->getEnv().getClientMap().getBlockLightFill(), m_client->ndef(),
+		MAP_BLOCKSIZE * mesh_grid.cell_size, mesh_grid);
 	q->data = data;
 
 	data->fillBlockDataBegin(q->p);
