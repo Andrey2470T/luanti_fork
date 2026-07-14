@@ -57,9 +57,9 @@ vec3 unpackBlockLightColor(in vec3 auxAttr)
 	uint packedB = floatBitsToUint(auxAttr.z);
 
 	vec3 color;
-	color.r = packedB >> 10 & 0x1fu;
-	color.g = packedB >> 5 & 0x1fu;
-	color.b = packedB & 0x1fu;
+	color.r = float(packedB >> 10 & 0x1fu) / 31.0;
+	color.g = float(packedB >> 5 & 0x1fu) / 31.0;
+	color.b = float(packedB & 0x1fu) / 31.0;
 
 	return color;
 }

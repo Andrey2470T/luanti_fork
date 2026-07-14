@@ -34,9 +34,9 @@ video::SColor BlockLightFloodFill::MapBlockLightInfo::getLightColor(v3s16 nodePo
 
 u16 channelFalloff(u16 ch)
 {
-	if (ch == 0)
-		return ch;
-	return ch-1;
+	if (ch <= 2)
+		return 0;
+	return ch-2;
 }
 
 bool BlockLightFloodFill::MapBlockLightInfo::lightFalloff(v3s16 nodePos, video::SColor &color)
@@ -124,9 +124,14 @@ void BlockLightFloodFill::addLightNodesInQueue(MapBlock *block)
 
 				if (cf.light_source > 0) {
 					auto light_emission = cf.light_color;
-					light_emission.setRed((light_emission.getRed() & 0x1fu) * cf.light_source / 15.0f);
-					light_emission.setGreen((light_emission.getGreen() & 0x1fu) * cf.light_source / 15.0f);
-					light_emission.setBlue((light_emission.getBlue() & 0x1fu) * cf.light_source / 15.0f);
+					f32 delim = cf.light_source / 15.0f;
+
+					u8 red = (u8)(light_emission.getRed() * delim) / 8 & 0x1fu;
+					u8 green = (u8)(light_emission.getGreen() * delim) / 8 & 0x1fu;
+					u8 blue = (u8)(light_emission.getBlue() * delim) / 8 & 0x1fu;
+					light_emission.setRed(red);
+					light_emission.setGreen(green);
+					light_emission.setBlue(blue);
 
 					LightNodeEntry light_node = {block->getPos(), pos, light_emission};
 					m_light_propagation_queue.push(light_node);
@@ -144,12 +149,15 @@ void BlockLightFloodFill::updateFill()
 
 		std::unordered_map<v3s16, bool> passed_nodes;
 		passed_nodes.emplace(light_node.mapblockPos * MAP_BLOCKSIZE + light_node.nodePos, true);
-		recurseFill(light_node, passed_nodes);
+		recurseFill(light_node, passed_nodes, 0);
     }
 }
 
-void BlockLightFloodFill::recurseFill(const LightNodeEntry &cur_lightnode, std::unordered_map<v3s16, bool> &passed_lightnodes)
+void BlockLightFloodFill::recurseFill(const LightNodeEntry &cur_lightnode, std::unordered_map<v3s16, bool> &passed_lightnodes, u8 level)
 {
+	if (level == 5)
+		return;
+
 	auto &mapblock = m_mapblocks_light[cur_lightnode.mapblockPos];
 
 	if (!mapblock.block)
@@ -182,10 +190,10 @@ void BlockLightFloodFill::recurseFill(const LightNodeEntry &cur_lightnode, std::
         if (!neighbor_mapblock.lightFalloff(neighbor_rel_node_pos, new_lightcolor))
             continue;
 
-		passed_lightnodes.emplace(neighbor_node_pos, true);
+		passed_lightnodes[neighbor_node_pos] = true;
 
-		/*recurseFill({
+		recurseFill({
 			neighbor_mapblock_pos, neighbor_rel_node_pos,
-			new_lightcolor}, passed_lightnodes);*/
+			new_lightcolor}, passed_lightnodes, level+1);
     }
 }

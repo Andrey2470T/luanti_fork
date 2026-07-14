@@ -43,5 +43,5 @@ public:
 
 private:
 	void addLightNodesInQueue(MapBlock *block);
-	void recurseFill(const LightNodeEntry &cur_lightnode, std::unordered_map<v3s16, bool> &passed_lightnodes);
+	void recurseFill(const LightNodeEntry &cur_lightnode, std::unordered_map<v3s16, bool> &passed_lightnodes, u8 level);
 };

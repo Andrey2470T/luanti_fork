@@ -127,9 +127,9 @@ void encode_block_light(f32 &light_f, u16 light)
 video::SColor encode_material_light(u8 skyLight, u16 blockLight, u8 emissive_light)
 {
     emissive_light = decode_light(emissive_light);
-	u8 blockLightRed = ((blockLight >> 10) + emissive_light) & 0x1f;
-	u8 blockLightGreen = ((blockLight >> 5 & 0x1f) + emissive_light) & 0x1f;
-	u8 blockLightBlue = ((blockLight & 0x1f) + emissive_light) & 0x1f;
+	u8 blockLightRed = (blockLight >> 10)*8 + emissive_light;
+	u8 blockLightGreen = (blockLight >> 5 & 0x1f)*8 + emissive_light;
+	u8 blockLightBlue = (blockLight & 0x1f)*8 + emissive_light;
 
 	return video::SColor(skyLight, blockLightRed, blockLightGreen, blockLightBlue);
 }
