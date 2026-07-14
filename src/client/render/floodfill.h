@@ -28,13 +28,12 @@ class BlockLightFloodFill
 	const NodeDefManager *m_nodedef;
 	std::unordered_map<v3s16, MapBlockLightInfo> m_mapblocks_light;
 	std::queue<LightNodeEntry> m_light_propagation_queue;
-	std::queue<LightNodeEntry> m_light_removal_queue;
 
 public:
 	BlockLightFloodFill(const NodeDefManager *nodedef) : m_nodedef(nodedef) {}
 
 	void addMapBlock(v3s16 blockpos, MapBlock *block);
-	void removeMapBlock(v3s16 blockpos);
+	void removeMapBlocks(const std::vector<v3s16> &blocks_positions);
 
 	u16 getLight(v3s16 nodePos) const;
 	video::SColor getLightColor(v3s16 nodePos) const;
@@ -43,6 +42,6 @@ public:
 	void updateFill();
 
 private:
-	void addLightNodesInQueue(MapBlock *block, bool propagate=true);
+	void addLightNodesInQueue(MapBlock *block);
 	void recurseFill(const LightNodeEntry &cur_lightnode, std::unordered_map<v3s16, bool> &passed_lightnodes);
 };

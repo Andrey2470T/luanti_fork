@@ -306,9 +306,10 @@ void Client::handleCommand_BlockData(NetworkPacket* pkt)
 		/*
 			Create a new block
 		*/
-		block = m_env.getClientMap().createBlock(sector, p.Y);
+		block = sector->createBlankBlock(p.Y);
 		block->deSerialize(istr, m_server_ser_ver, false);
 		block->deSerializeNetworkSpecific(istr);
+		m_env.getClientMap().addBlockInLightFillGrid(block);
 	}
 
 	if (m_localdb) {

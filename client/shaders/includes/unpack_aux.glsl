@@ -54,7 +54,7 @@ vec2 unpackTileUV(in vec3 auxAttr)
 
 vec3 unpackBlockLightColor(in vec3 auxAttr)
 {
-	uint packedB = floatBitsToUint(inAux.z);
+	uint packedB = floatBitsToUint(auxAttr.z);
 
 	vec3 color;
 	color.r = packedB >> 10 & 0x1fu;

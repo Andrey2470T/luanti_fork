@@ -254,17 +254,14 @@ MapSector * ClientMap::emergeSector(v2s16 p2d)
 	return sector;
 }
 
-MapBlock *ClientMap::createBlock(MapSector *sector, s16 y)
+void ClientMap::addNodeAndUpdate(v3s16 p, MapNode n,
+		std::map<v3s16, MapBlock*> &modified_blocks,
+		bool remove_metadata)
 {
-	auto block = sector->createBlankBlock(y);
+	Map::addNodeAndUpdate(p, n, modified_blocks, remove_metadata);
 
-	if (!block)
-		return nullptr;
-
-	v3s16 pos(sector->getPos().X, y, sector->getPos().Y);
-	m_blocklight_fill.addMapBlock(pos, block);
-
-	return block;
+	for (auto &md : modified_blocks)
+		m_blocklight_fill.addMapBlock(md.first, md.second);
 }
 
 void ClientMap::OnRegisterSceneNode()

@@ -449,6 +449,8 @@ void Client::step(float dtime)
 		return;
 	}
 
+	ClientMap &map = m_env.getClientMap();
+
 	/*
 		Do stuff if connected
 	*/
@@ -488,6 +490,9 @@ void Client::step(float dtime)
 		m_env.getMap().timerUpdate(map_timer_and_unload_dtime,
 			std::max(g_settings->getFloat("client_unload_unused_data_timeout"), 0.0f),
 			mapblock_limit, &deleted_blocks);
+
+		// Remove the blocks from the block colored lighting grid
+		map.removeBlocksFromLightFillGrid(deleted_blocks);
 
 		// Send info to server
 
@@ -581,8 +586,7 @@ void Client::step(float dtime)
 		}
 	}
 
-	// Update the block colored lighting grid 
-	ClientMap &map = m_env.getClientMap();
+	// Update the block colored lighting grid
 	map.updateBlockLightFill();
 
 	/*
@@ -608,7 +612,7 @@ void Client::step(float dtime)
 			// create a blank block just to hold the chunk's mesh.
 			// If the block becomes visible later it will replace the blank block.
 			if (!block && r.mesh)
-				block = map.createBlock(sector, r.p.Y);
+				block = sector->createBlankBlock(r.p.Y);
 
 			if (block) {
 				// Delete the old mesh
@@ -1546,7 +1550,7 @@ void Client::addNode(v3s16 p, MapNode n, bool remove_metadata)
 
 	try {
 		//TimeTaker timer3("Client::addNode(): addNodeAndUpdate");
-		m_env.getMap().addNodeAndUpdate(p, n, modified_blocks, remove_metadata);
+		m_env.getClientMap().addNodeAndUpdate(p, n, modified_blocks, remove_metadata);
 	}
 	catch(InvalidPositionException &e) {
 	}

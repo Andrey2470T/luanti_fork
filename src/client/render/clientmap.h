@@ -74,7 +74,20 @@ public:
 		Forcefully get a sector from somewhere
 	*/
 	MapSector * emergeSector(v2s16 p) override;
-	MapBlock * createBlock(MapSector *sector, s16 y);
+
+	void addBlockInLightFillGrid(MapBlock *block)
+	{
+		m_blocklight_fill.addMapBlock(block->getPos(), block);
+	}
+
+	void removeBlocksFromLightFillGrid(const std::vector<v3s16> &positions)
+	{ 
+		m_blocklight_fill.removeMapBlocks(positions);
+	}
+
+	void addNodeAndUpdate(v3s16 p, MapNode n,
+		std::map<v3s16, MapBlock*> &modified_blocks,
+		bool remove_metadata = true);
 
 	/*
 		ISceneNode methods
