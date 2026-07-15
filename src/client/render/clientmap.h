@@ -115,9 +115,9 @@ public:
 	void renderMapShadows(video::VideoDriver *driver,
 			const video::SMaterial &material, s32 pass, int frame, int total_frames);
 
-	void updateBlockLightFill() { m_blocklight_fill.updateFill(); }
+	void updateBlockLightFill() { m_blocklight_fill.propagateLight(); }
 
-	const BlockLightFloodFill *getBlockLightFill() const { return &m_blocklight_fill; }
+	const BlockLightPropagator *getBlockLightPropagator() const { return &m_blocklight_fill; }
 
 	int getBackgroundBrightness(float max_d, u32 daylight_factor,
 			int oldvalue, bool *sunlight_seen_result);
@@ -171,7 +171,7 @@ private:
 
 	MapDrawControl &m_control;
 
-	BlockLightFloodFill m_blocklight_fill;
+	BlockLightPropagator m_blocklight_fill;
 
 	v3f m_camera_position = v3f(0,0,0);
 	v3f m_camera_direction = v3f(0,0,1);

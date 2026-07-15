@@ -216,7 +216,7 @@ static scene::SMesh *generateNodeMesh(Client *client, MapNode n)
 
 	MeshCollector collector(pool, v3f(0), v3f());
 	{
-		MeshMakeData mmd(client->getEnv().getClientMap().getBlockLightFill(), ndef, 1, MeshGrid{1});
+		MeshMakeData mmd(client->getEnv().getClientMap().getBlockLightPropagator(), ndef, 1, MeshGrid{1});
 		n.setParam1(0xff);
 		mmd.fillSingleNode(n);
 		MapblockMeshGenerator(&mmd, &collector).generate();
@@ -819,7 +819,7 @@ void GenericCAO::updateLight(u32 day_night_ratio)
 	if (m_prop.glow < 0)
 		return;
 
-	auto block_light_fill = m_env->getClientMap().getBlockLightFill();
+	auto block_light_fill = m_env->getClientMap().getBlockLightPropagator();
 
 	u16 light_at_pos = 0;
 	u8 light_at_pos_intensity = 0;

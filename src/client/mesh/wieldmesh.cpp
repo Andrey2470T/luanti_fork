@@ -310,7 +310,7 @@ static scene::SMesh *createGenericNodeMesh(Client *client, MapNode n,
 	MeshCollector collector(pool, v3f(0), v3f());
 	{
 		MeshMakeData mmd(
-			client->getEnv().getClientMap().getBlockLightFill(),
+			client->getEnv().getClientMap().getBlockLightPropagator(),
 			client->ndef(), 1, MeshGrid{1});
 		mmd.fillSingleNode(n);
 		MapblockMeshGenerator(&mmd, &collector).generate();

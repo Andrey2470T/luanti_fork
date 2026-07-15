@@ -19,7 +19,7 @@ public:
 		m_itemdef(createItemDefManager()),
 		m_nodedef(createNodeDefManager()),
 		m_craftdef(createCraftDefManager()),
-		m_blocklight_fill(new BlockLightFloodFill(m_nodedef)),
+		m_blocklight_fill(new BlockLightPropagator(m_nodedef)),
 		m_mod_storage_database(new Database_Dummy())
 	{
 	}
@@ -37,7 +37,7 @@ public:
 	const NodeDefManager *getNodeDefManager() override { return m_nodedef; }
 	NodeDefManager* getWritableNodeDefManager() { return m_nodedef; }
 	ICraftDefManager *getCraftDefManager() override { return m_craftdef; }
-	BlockLightFloodFill *getBlockLightFill() { return m_blocklight_fill; }
+	BlockLightPropagator *getBlockLightPropagator() { return m_blocklight_fill; }
 
 	u16 allocateUnknownNodeId(const std::string &name) override
 	{
@@ -64,6 +64,6 @@ protected:
 	IItemDefManager *m_itemdef = nullptr;
 	NodeDefManager *m_nodedef = nullptr;
 	ICraftDefManager *m_craftdef = nullptr;
-	BlockLightFloodFill *m_blocklight_fill = nullptr;
+	BlockLightPropagator *m_blocklight_fill = nullptr;
 	ModStorageDatabase *m_mod_storage_database = nullptr;
 };

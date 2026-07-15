@@ -3361,7 +3361,7 @@ PointedThing Game::updatePointedThing(
 		hud->setSelectedFaceNormal(result.intersection_normal);
 	}
 
-	auto block_light_fill = map.getBlockLightFill();
+	auto block_light_fill = map.getBlockLightPropagator();
 
 	// Update selection mesh light level and vertex colors
 	if (!selectionboxes->empty()) {

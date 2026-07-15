@@ -208,7 +208,7 @@ void MeshUpdateQueue::fillDataFromMapBlocks(QueuedMeshUpdate *q)
 {
 	auto mesh_grid = m_client->getMeshGrid();
 	MeshMakeData *data = new MeshMakeData(
-		m_client->getEnv().getClientMap().getBlockLightFill(), m_client->ndef(),
+		m_client->getEnv().getClientMap().getBlockLightPropagator(), m_client->ndef(),
 		MAP_BLOCKSIZE * mesh_grid.cell_size, mesh_grid);
 	q->data = data;
 
