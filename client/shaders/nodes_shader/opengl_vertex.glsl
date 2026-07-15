@@ -19,7 +19,7 @@ out vec3 worldPosition;
 // The centroid keyword ensures that after interpolation the texture coordinates
 // lie within the same bounds when MSAA is en- and disabled.
 // This fixes the stripes problem with nearest-neighbor textures and MSAA.
-CENTROID_ out lowp float emissionLight;
+CENTROID_ out lowp vec3 emissionLight;
 CENTROID_ out lowp vec3 varColor;
 CENTROID_ out lowp vec3 dayLight;
 CENTROID_ out mediump vec2 varTexCoord;
@@ -73,7 +73,7 @@ void main(void)
 
 	// Calculate the emission factor for the bloom mask
 	vec3 lightColor = (max(dayLight * skyLight, blockLightColor * (blockLight-color.a)) + ambientColor) * ao;
-	emissionLight = color.a * (1.0 - luminance(lightColor));
+	emissionLight = color.a * (vec3(1.0) - lightColor);
 
 	unpackAuxRed(inAux, hwColor, hasCrack);
 	unpackCrackUV(inAux, crackTexCoord);

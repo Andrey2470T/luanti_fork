@@ -117,7 +117,7 @@ public:
 
 	void updateBlockLightFill() { m_blocklight_fill.propagateLight(); }
 
-	const BlockLightPropagator *getBlockLightPropagator() const { return &m_blocklight_fill; }
+	BlockLightPropagator *getBlockLightPropagator() { return &m_blocklight_fill; }
 
 	int getBackgroundBrightness(float max_d, u32 daylight_factor,
 			int oldvalue, bool *sunlight_seen_result);

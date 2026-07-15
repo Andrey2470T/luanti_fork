@@ -44,8 +44,9 @@ void BlockLightPropagator::removeMapBlocks(const std::vector<v3s16> &blocks_posi
 	}
 }
 
-u16 BlockLightPropagator::getLight(v3s16 nodePos) const
+u16 BlockLightPropagator::getLight(v3s16 nodePos)
 {
+	MutexAutoLock lock(mapblocks_light_grid_mutex);
     v3s16 mapblock_pos = getContainerPos(nodePos, MAP_BLOCKSIZE);
 	auto it = mapblocks_light_grid.find(mapblock_pos);
 
@@ -56,7 +57,7 @@ u16 BlockLightPropagator::getLight(v3s16 nodePos) const
 	return (u16)(it->second.getLight(rel_nodepos));
 }
 
-video::SColor BlockLightPropagator::getLightColor(v3s16 nodePos) const
+video::SColor BlockLightPropagator::getLightColor(v3s16 nodePos)
 {
 	u16 light = getLight(nodePos);
     return video::SColor(0, light >> 10 & 0x1fu, light >> 5 & 0x1fu, light & 0x1fu);
@@ -81,11 +82,12 @@ void BlockLightPropagator::propagateLight()
 		auto light_node = light_propagation_queue.front();
 		light_propagation_queue.pop();
 
-		auto &mapblock = mapblocks_light_grid[light_node.mapblockPos];
+		auto mapblock_it = mapblocks_light_grid.find(light_node.mapblockPos);
 
-		if (!mapblock.block)
+		if (mapblock_it == mapblocks_light_grid.end())
 			continue;
 
+		auto &mapblock = mapblock_it->second;
 		auto &current_light = mapblock.getLight(light_node.nodePos);
 
 		for (u8 side = 0; side < 6; ++side) {
@@ -97,12 +99,13 @@ void BlockLightPropagator::propagateLight()
         	v3s16 next_mapblock_pos = getContainerPos(next_node_pos, MAP_BLOCKSIZE);
         	v3s16 next_rel_node_pos = next_node_pos - next_mapblock_pos * MAP_BLOCKSIZE;
 
-			auto &neighbor_mapblock = mapblocks_light_grid[next_mapblock_pos];
+			auto next_mapblock_it = mapblocks_light_grid.find(next_mapblock_pos);
 
-			if (!neighbor_mapblock.block)
+			if (next_mapblock_it == mapblocks_light_grid.end())
             	continue;
 
-        	u16 content = neighbor_mapblock.block->getNodeNoCheck(next_rel_node_pos).getContent();
+			auto &next_mapblock = next_mapblock_it->second;
+        	u16 content = next_mapblock.block->getNodeNoCheck(next_rel_node_pos).getContent();
 
         	if (content == CONTENT_IGNORE)
             	continue;
@@ -111,7 +114,7 @@ void BlockLightPropagator::propagateLight()
        		if (!cf.light_propagates || cf.solidness == 2)
             	continue;
 
-			auto &next_light = neighbor_mapblock.getLight(next_rel_node_pos);
+			auto &next_light = next_mapblock.getLight(next_rel_node_pos);
         	if (!next_light.lightFalloff(current_light))
             	continue;
 			

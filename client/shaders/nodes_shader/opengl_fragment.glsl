@@ -24,7 +24,7 @@ in vec3 vPosition;
 // precision must be considered).
 in vec3 worldPosition;
 
-CENTROID_ in lowp float emissionLight;
+CENTROID_ in lowp vec3 emissionLight;
 CENTROID_ in lowp vec3 varColor;
 CENTROID_ in lowp vec3 dayLight;
 CENTROID_ in mediump vec2 varTexCoord;

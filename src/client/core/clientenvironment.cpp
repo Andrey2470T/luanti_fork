@@ -247,7 +247,7 @@ void ClientEnvironment::step(float dtime)
 
 		u16 light = getInteriorLight(node_at_lplayer, 0, m_client->ndef());
 		u16 block_light = block_light_fill->getLight(p);
-		lplayer->light_color = encode_material_light(light, block_light, 0); // this transfers light.alpha
+		lplayer->light_color = encode_material_light(light & 0xff, block_light, 0); // this transfers light.alpha
 	}
 
 	/*

@@ -36,7 +36,7 @@ struct MinimapMapblock;
 
 struct MeshMakeData
 {
-	const BlockLightPropagator *m_blocklight_fill = nullptr;
+	BlockLightPropagator *m_blocklight_fill = nullptr;
 	VoxelManipulator m_vmanip;
 
 	// base pos of meshgen area, in blocks
@@ -57,7 +57,7 @@ struct MeshMakeData
 	const NodeDefManager *m_nodedef;
 
 	MeshMakeData(
-		const BlockLightPropagator *blocklight_fill, const NodeDefManager *ndef,
+		BlockLightPropagator *blocklight_fill, const NodeDefManager *ndef,
 		u16 side_lingth, MeshGrid mesh_grid);
 
 	/*

@@ -76,8 +76,8 @@ public:
 	void addMapBlock(v3s16 blockpos, MapBlock *block);
 	void removeMapBlocks(const std::vector<v3s16> &blocks_positions);
 
-	u16 getLight(v3s16 nodePos) const;
-	video::SColor getLightColor(v3s16 nodePos) const;
+	u16 getLight(v3s16 nodePos);
+	video::SColor getLightColor(v3s16 nodePos);
 	static u16 maxLight(u16 light1, u16 light2);
 	
 	void propagateLight();

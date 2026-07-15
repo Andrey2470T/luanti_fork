@@ -379,7 +379,7 @@ void ContentFeatures::reset()
 	liquid_range = LIQUID_LEVEL_MAX+1;
 	drowning = 0;
 	light_source = 0;
-	light_color = video::SColor(0, 255, 136, 105); // (1.0, 0.85, 0.7)
+	light_color = video::SColor(0, 255, 200, 180); // (1.0, 0.85, 0.7)
 	damage_per_second = 0;
 	node_box.reset();
 	selection_box.reset();
