@@ -56,7 +56,7 @@ allowed.os.time = os.time
 allowed.core = core
 allowed.minetest = allowed.core
 
-if rawget(_G, "gfx") then
+if gfx then
 	allowed.gfx = gfx
 end
 

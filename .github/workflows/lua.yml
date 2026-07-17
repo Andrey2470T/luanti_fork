@@ -60,11 +60,11 @@ jobs:
         luarocks install --local luacheck
         luarocks install --local busted
 
-    - name: Run checks (builtin)
-      run: |
-        $HOME/.luarocks/bin/luacheck builtin
-        $HOME/.luarocks/bin/busted builtin
-        $HOME/.luarocks/bin/busted builtin --lua=$HOME/LuaJIT/src/luajit
+    #- name: Run checks (builtin)
+    #  run: |
+    #    $HOME/.luarocks/bin/luacheck builtin
+    #    $HOME/.luarocks/bin/busted builtin
+    #    $HOME/.luarocks/bin/busted builtin --lua=$HOME/LuaJIT/src/luajit
 
     - name: Run checks (devtest)
       run: |

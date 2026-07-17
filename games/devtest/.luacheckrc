@@ -39,6 +39,7 @@ globals = {
 	"aborted",
 	"minetest",
 	"core",
+	"gfx",
 	os = { fields = { "tempfolder" } },
 	"_",
 }
