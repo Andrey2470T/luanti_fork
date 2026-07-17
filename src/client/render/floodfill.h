@@ -3,14 +3,6 @@
 #include "irr_v3d.h"
 #include "mapblock.h"
 #include "constants.h"
-#include <queue>
-
-enum class BlockLightChannel : u8
-{
-	RED,
-	GREEN,
-	BLUE
-};
 
 struct NodeLightChannel
 {
@@ -27,6 +19,7 @@ struct NodeLight
 	NodeLightChannel b;
 
 	bool lightFalloff(const NodeLight &propagateLight);
+	void mixLight(const NodeLight &propagateLight);
 
 	operator u16() const
 	{
@@ -49,7 +42,7 @@ public:
 	}
 
 	const NodeLight &getLight(v3s16 absSourcePos, v3s16 absNodePos) const;
-	std::vector<v3s16> getCoveringMapblocks(v3s16 absSourcePos) const;
+	std::vector<v3s16> getCoveringMapblocks(v3s16 absSourcePos, bool self_include=true) const;
 
 	void propagateLight();
 
@@ -102,13 +95,6 @@ class BlockLightPropagator
 		}
 
 		void propagateLight(BlockLightPropagator *propagator);
-	};
-
-	struct LightNodeEntry
-	{
-		v3s16 mapblockPos;
-		v3s16 nodePos;
-		NodeLight lightColor;
 	};
 
 	typedef std::unordered_map<v3s16, MapBlockLightInfo> MapBlockLightGrid;

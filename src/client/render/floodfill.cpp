@@ -3,6 +3,7 @@
 #include "util/directiontables.h"
 #include "threading/mutex_auto_lock.h"
 #include "map.h"
+#include <queue>
 
 bool NodeLightChannel::lightFalloff(u8 propagateLight)
 {
@@ -13,7 +14,7 @@ bool NodeLightChannel::lightFalloff(u8 propagateLight)
 	else
 		propagateLight -= 2;
 
-	ch = std::max(ch, propagateLight);
+	ch = propagateLight;
 	return true;
 }
 
@@ -23,6 +24,13 @@ bool NodeLight::lightFalloff(const NodeLight &propagateLight)
 	bool falloff_g = g.lightFalloff(propagateLight.g);
 	bool falloff_b = b.lightFalloff(propagateLight.b);
 	return falloff_r || falloff_g || falloff_b;
+}
+
+void NodeLight::mixLight(const NodeLight &propagateLight)
+{
+	r.ch = std::max(propagateLight.r.ch, r.ch);
+	g.ch = std::max(propagateLight.g.ch, g.ch);
+	b.ch = std::max(propagateLight.b.ch, b.ch);
 }
 
 LightSourceGrid::LightSourceGrid(u32 r, u32 g, u32 b)
@@ -51,18 +59,23 @@ const NodeLight &LightSourceGrid::getLight(v3s16 absSourcePos, v3s16 absNodePos)
 	return light[pos];
 }
 
-std::vector<v3s16> LightSourceGrid::getCoveringMapblocks(v3s16 absSourcePos) const
+std::vector<v3s16> LightSourceGrid::getCoveringMapblocks(v3s16 absSourcePos, bool self_include) const
 {
 	std::vector<v3s16> positions;
 
+	v3s16 source_blocks_pos = getContainerPos(absSourcePos, MAP_BLOCKSIZE);
 	v3s16 corner_nodes = absSourcePos - v3s16((cube_size - 1) / 2);
 	v3s16 corner_block_pos1 = getContainerPos(corner_nodes, MAP_BLOCKSIZE);
 	v3s16 corner_block_pos2 = getContainerPos(corner_nodes + v3s16(cube_size), MAP_BLOCKSIZE);
 
 	for (s16 x = corner_block_pos1.X; x <= corner_block_pos2.X; ++x)
 		for (s16 y = corner_block_pos1.Y; y <= corner_block_pos2.Y; ++y)
-			for (s16 z = corner_block_pos1.Z; z <= corner_block_pos2.Z; ++z)
+			for (s16 z = corner_block_pos1.Z; z <= corner_block_pos2.Z; ++z) {
+				v3s16 cur_pos(x, y, z);
+				if (!self_include && cur_pos == source_blocks_pos)
+					continue;
 				positions.emplace_back(x, y, z);
+			}
 
 	return positions;
 }
@@ -119,15 +132,14 @@ void BlockLightPropagator::LeveledNodeLight::mixLight(
 	const std::vector<v3s16> &sources_positions)
 {
 	for (auto &pos : sources_positions) {
-		auto it = propagator->light_sources.find(pos);
-		if (it == propagator->light_sources.end())
+		auto light_grid = propagator->light_sources[pos];
+
+		if (!light_grid) {
+			propagator->light_sources.erase(pos);
 			continue;
-
-		auto source_light = it->second->getLight(pos, absNodePos);
-
-		actualLight.r.ch = std::max(source_light.r.ch, actualLight.r.ch);
-		actualLight.g.ch = std::max(source_light.g.ch, actualLight.g.ch);
-		actualLight.b.ch = std::max(source_light.b.ch, actualLight.b.ch);
+		}
+		auto &source_light = light_grid->getLight(pos, absNodePos);
+		actualLight.mixLight(source_light);
 	}
 }
 
@@ -199,16 +211,36 @@ u16 BlockLightPropagator::maxLight(u16 light1, u16 light2)
 
 void BlockLightPropagator::propagateLight()
 {
-	for (auto &light_mb : pending_mapblocks_lights) {
-		if (light_mb.second.second)
-			light_mb.second.first.propagateLight(this);
-	}
+	for (auto &light_mb_p : pending_mapblocks_lights) {
+		auto &mb = mapblocks_light_grid[light_mb_p.first];
 
-	for (auto &light_mb : pending_mapblocks_lights) {
-		if (light_mb.second.second)
-			mapblocks_light_grid[light_mb.first] = std::move(light_mb.second.first);
-		else
-			mapblocks_light_grid.erase(light_mb.first);
+		if (light_mb_p.second.second) {
+			auto &pending_mb = light_mb_p.second.first;
+			mb.block = pending_mb.block;
+			mb.light_sources = pending_mb.light_sources;
+
+			mb.propagateLight(this);
+		}
+		else {
+			std::set<v3s16> update_mapblocks;
+			for (auto &source_pos : mb.light_sources) {
+				auto light_grid = light_sources[source_pos];
+
+				if (light_grid) {
+					auto update_cover_mapblocks = light_grid->getCoveringMapblocks(source_pos, false);
+
+					for (auto &update_mb : update_cover_mapblocks) {
+						if (map->getBlockNoCreateNoEx(update_mb))
+							update_mapblocks.emplace(update_mb);
+					}
+				}
+				light_sources.erase(source_pos);
+			}
+			mapblocks_light_grid.erase(light_mb_p.first);
+
+			for (auto &update_mb : update_mapblocks)
+				mapblocks_light_grid[update_mb].propagateLight(this);
+		}
 	}
 
 	pending_mapblocks_lights.clear();
@@ -241,15 +273,15 @@ void BlockLightPropagator::scanForLightSources(MapBlock *block)
 					auto update_mapblocks = inserted->getCoveringMapblocks(source_pos);
 
 					for (auto &pos : update_mapblocks) {
-						auto block = map->getBlockNoCreateNoEx(pos);
+						auto update_block = map->getBlockNoCreateNoEx(pos);
 
-						if (!block)
+						if (!update_block)
 							continue;
 
 						if (pending_mapblocks_lights[pos].first.block)
 							pending_mapblocks_lights[pos].first.light_sources.emplace_back(source_pos);
 						else
-							pending_mapblocks_lights[pos] = {MapBlockLightInfo{block, {source_pos}}, true};
+							pending_mapblocks_lights[pos] = {MapBlockLightInfo{update_block, {source_pos}}, true};
 					}
 				}
 			}
