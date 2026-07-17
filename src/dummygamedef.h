@@ -19,7 +19,7 @@ public:
 		m_itemdef(createItemDefManager()),
 		m_nodedef(createNodeDefManager()),
 		m_craftdef(createCraftDefManager()),
-		m_blocklight_fill(new BlockLightPropagator(m_nodedef)),
+		m_blocklight_fill(new BlockLightPropagator(m_nodedef, nullptr)),
 		m_mod_storage_database(new Database_Dummy())
 	{
 	}

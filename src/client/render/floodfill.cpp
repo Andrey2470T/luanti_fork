@@ -2,6 +2,7 @@
 #include "nodedef.h"
 #include "util/directiontables.h"
 #include "threading/mutex_auto_lock.h"
+#include "map.h"
 
 bool NodeLightChannel::lightFalloff(u8 propagateLight)
 {
@@ -12,7 +13,7 @@ bool NodeLightChannel::lightFalloff(u8 propagateLight)
 	else
 		propagateLight -= 2;
 
-	ch = std::max(propagateLight, ch);
+	ch = std::max(ch, propagateLight);
 	return true;
 }
 
@@ -24,37 +25,160 @@ bool NodeLight::lightFalloff(const NodeLight &propagateLight)
 	return falloff_r || falloff_g || falloff_b;
 }
 
+LightSourceGrid::LightSourceGrid(u32 r, u32 g, u32 b)
+{
+	source_color.r.ch = r;
+	source_color.g.ch = g;
+	source_color.b.ch = b;
+
+	cube_size = std::max(std::max(r / 2 + 1, g / 2 + 1), b / 2 + 1) * 2 + 1;
+	light.resize(cube_size * cube_size * cube_size);
+
+	propagateLight();
+}
+
+const NodeLight &LightSourceGrid::getLight(v3s16 absSourcePos, v3s16 absNodePos) const
+{
+	v3s16 rel_source_pos((cube_size - 1) / 2);
+	v3s16 node_pos = absNodePos - absSourcePos + rel_source_pos;
+    u32 pos = node_pos.Z * cube_size * cube_size + node_pos.Y * cube_size + node_pos.X;
+
+	if (pos >= light.size()) {
+		static NodeLight fallback;
+		return fallback;
+	}
+
+	return light[pos];
+}
+
+std::vector<v3s16> LightSourceGrid::getCoveringMapblocks(v3s16 absSourcePos) const
+{
+	std::vector<v3s16> positions;
+
+	v3s16 corner_nodes = absSourcePos - v3s16((cube_size - 1) / 2);
+	v3s16 corner_block_pos1 = getContainerPos(corner_nodes, MAP_BLOCKSIZE);
+	v3s16 corner_block_pos2 = getContainerPos(corner_nodes + v3s16(cube_size), MAP_BLOCKSIZE);
+
+	for (s16 x = corner_block_pos1.X; x <= corner_block_pos2.X; ++x)
+		for (s16 y = corner_block_pos1.Y; y <= corner_block_pos2.Y; ++y)
+			for (s16 z = corner_block_pos1.Z; z <= corner_block_pos2.Z; ++z)
+				positions.emplace_back(x, y, z);
+
+	return positions;
+}
+
+void LightSourceGrid::propagateLight()
+{
+	std::queue<std::pair<v3s16, NodeLight>> nodes_queue;
+	v3s16 source_pos((cube_size - 1) / 2);
+	
+	auto &source_light = getLight(source_pos);
+	source_light = source_color;
+	nodes_queue.push({source_pos, source_color});
+
+	std::unordered_map<v3s16, bool> visited_nodes;
+    visited_nodes.reserve(4096);
+	visited_nodes[source_pos] = true;
+
+	while (!nodes_queue.empty()) {
+		auto light_p = nodes_queue.front();
+		nodes_queue.pop();
+
+		auto &current_light = getLight(light_p.first);
+
+		for (u8 side = 0; side < 6; ++side) {
+			v3s16 next_pos = light_p.first + g_6dirs[side];
+
+			if (visited_nodes[next_pos])
+				continue;
+			auto &next_light = getLight(next_pos);
+
+        	if (!next_light.lightFalloff(current_light))
+            	continue;
+			
+			visited_nodes[next_pos] = true;
+
+			nodes_queue.push({next_pos, next_light});
+		}
+	}
+}
+
+NodeLight &LightSourceGrid::getLight(v3s16 relNodePos)
+{
+	u32 pos = relNodePos.Z * cube_size * cube_size + relNodePos.Y * cube_size + relNodePos.X;
+
+	if (pos >= light.size()) {
+		static NodeLight fallback;
+		return fallback;
+	}
+	return light[pos];
+}
+
+void BlockLightPropagator::LeveledNodeLight::mixLight(
+	BlockLightPropagator *propagator, v3s16 absNodePos,
+	const std::vector<v3s16> &sources_positions)
+{
+	for (auto &pos : sources_positions) {
+		auto it = propagator->light_sources.find(pos);
+		if (it == propagator->light_sources.end())
+			continue;
+
+		auto source_light = it->second->getLight(pos, absNodePos);
+
+		actualLight.r.ch = std::max(source_light.r.ch, actualLight.r.ch);
+		actualLight.g.ch = std::max(source_light.g.ch, actualLight.g.ch);
+		actualLight.b.ch = std::max(source_light.b.ch, actualLight.b.ch);
+	}
+}
+
+void BlockLightPropagator::MapBlockLightInfo::propagateLight(BlockLightPropagator *propagator)
+{
+	for (s16 z = 0; z < MAP_BLOCKSIZE; ++z) {
+		for (s16 y = 0; y < MAP_BLOCKSIZE; ++y) {
+			for (s16 x = 0; x < MAP_BLOCKSIZE; ++x) {
+				v3s16 pos(x, y, z);
+				auto &light = getLight(pos);
+
+				u16 content = block->getNodeNoCheck(pos).getContent();
+
+        		if (content == CONTENT_IGNORE)
+            		continue;
+        		auto &cf = propagator->nodedef->get(content);
+
+       			if (!cf.light_propagates || cf.solidness == 2)
+            		continue;
+
+				v3s16 abs_pos = block->getPosRelative() + pos;
+				light.mixLight(propagator, abs_pos, light_sources);
+			}
+		}
+	}
+}
+
 void BlockLightPropagator::addMapBlock(v3s16 blockpos, MapBlock *block)
 {
 	if (!block)
 		return;
-	
-	MutexAutoLock lock(mapblocks_light_grid_mutex);
-	mapblocks_light_grid.insert_or_assign(blockpos, MapBlockLightInfo{block});
-	addLightNodesInQueue(block);
+
+	scanForLightSources(block);
 }
 
 void BlockLightPropagator::removeMapBlocks(const std::vector<v3s16> &blocks_positions)
 {
-	MutexAutoLock lock(mapblocks_light_grid_mutex);
-	for (auto &pos : blocks_positions) {
-		auto it = mapblocks_light_grid.find(pos);
-		if (it != mapblocks_light_grid.end())
-			mapblocks_light_grid.erase(it);
-	}
+	for (auto &pos : blocks_positions)
+		pending_mapblocks_lights[pos] = {MapBlockLightInfo{nullptr}, false};
 }
 
 u16 BlockLightPropagator::getLight(v3s16 nodePos)
 {
-	MutexAutoLock lock(mapblocks_light_grid_mutex);
     v3s16 mapblock_pos = getContainerPos(nodePos, MAP_BLOCKSIZE);
-	auto it = mapblocks_light_grid.find(mapblock_pos);
+	auto &mapblock = mapblocks_light_grid[mapblock_pos];
 
-	if (it == mapblocks_light_grid.end())
+	if (!mapblock.block)
 		return 0;
 	
 	v3s16 rel_nodepos = nodePos - mapblock_pos * MAP_BLOCKSIZE;
-	return (u16)(it->second.getLight(rel_nodepos));
+	return (u16)(mapblock.getLight(rel_nodepos).actualLight);
 }
 
 video::SColor BlockLightPropagator::getLightColor(v3s16 nodePos)
@@ -75,58 +199,22 @@ u16 BlockLightPropagator::maxLight(u16 light1, u16 light2)
 
 void BlockLightPropagator::propagateLight()
 {
-	std::unordered_map<v3s16, bool> visited_nodes;
-    visited_nodes.reserve(4096);
-
-	while (!light_propagation_queue.empty()) {
-		auto light_node = light_propagation_queue.front();
-		light_propagation_queue.pop();
-
-		auto mapblock_it = mapblocks_light_grid.find(light_node.mapblockPos);
-
-		if (mapblock_it == mapblocks_light_grid.end())
-			continue;
-
-		auto &mapblock = mapblock_it->second;
-		auto &current_light = mapblock.getLight(light_node.nodePos);
-
-		for (u8 side = 0; side < 6; ++side) {
-			v3s16 next_node_pos = light_node.mapblockPos * MAP_BLOCKSIZE + light_node.nodePos + g_6dirs[side];
-
-			if (visited_nodes[next_node_pos])
-				continue;
-
-        	v3s16 next_mapblock_pos = getContainerPos(next_node_pos, MAP_BLOCKSIZE);
-        	v3s16 next_rel_node_pos = next_node_pos - next_mapblock_pos * MAP_BLOCKSIZE;
-
-			auto next_mapblock_it = mapblocks_light_grid.find(next_mapblock_pos);
-
-			if (next_mapblock_it == mapblocks_light_grid.end())
-            	continue;
-
-			auto &next_mapblock = next_mapblock_it->second;
-        	u16 content = next_mapblock.block->getNodeNoCheck(next_rel_node_pos).getContent();
-
-        	if (content == CONTENT_IGNORE)
-            	continue;
-        	auto &cf = nodedef->get(content);
-
-       		if (!cf.light_propagates || cf.solidness == 2)
-            	continue;
-
-			auto &next_light = next_mapblock.getLight(next_rel_node_pos);
-        	if (!next_light.lightFalloff(current_light))
-            	continue;
-			
-			visited_nodes[next_node_pos] = true;
-
-			LightNodeEntry next_light_node = {next_mapblock_pos, next_rel_node_pos, next_light};
-			light_propagation_queue.push(next_light_node);
-		}
+	for (auto &light_mb : pending_mapblocks_lights) {
+		if (light_mb.second.second)
+			light_mb.second.first.propagateLight(this);
 	}
+
+	for (auto &light_mb : pending_mapblocks_lights) {
+		if (light_mb.second.second)
+			mapblocks_light_grid[light_mb.first] = std::move(light_mb.second.first);
+		else
+			mapblocks_light_grid.erase(light_mb.first);
+	}
+
+	pending_mapblocks_lights.clear();
 }
 
-void BlockLightPropagator::addLightNodesInQueue(MapBlock *block)
+void BlockLightPropagator::scanForLightSources(MapBlock *block)
 {
 	for (s16 z = 0; z < MAP_BLOCKSIZE; ++z) {
 		for (s16 y = 0; y < MAP_BLOCKSIZE; ++y) {
@@ -146,14 +234,23 @@ void BlockLightPropagator::addLightNodesInQueue(MapBlock *block)
 					u8 green = light_emission.getGreen() / 8;
 					u8 blue = light_emission.getBlue() / 8;
 
-					auto &mapblock = mapblocks_light_grid[block->getPos()];
-					auto &light = mapblock.getLight(pos);
-					light.r.ch = red;
-					light.g.ch = green;
-					light.b.ch = blue;
+					auto *inserted = &*(light_sources_grids.emplace(red, green, blue).first);
+					v3s16 source_pos = block->getPosRelative() + pos;
 
-					LightNodeEntry light_node = {block->getPos(), pos, {red, green, blue}};
-					light_propagation_queue.push(light_node);
+					light_sources[source_pos] = inserted;
+					auto update_mapblocks = inserted->getCoveringMapblocks(source_pos);
+
+					for (auto &pos : update_mapblocks) {
+						auto block = map->getBlockNoCreateNoEx(pos);
+
+						if (!block)
+							continue;
+
+						if (pending_mapblocks_lights[pos].first.block)
+							pending_mapblocks_lights[pos].first.light_sources.emplace_back(source_pos);
+						else
+							pending_mapblocks_lights[pos] = {MapBlockLightInfo{block, {source_pos}}, true};
+					}
 				}
 			}
 		}

@@ -34,23 +34,74 @@ struct NodeLight
 	}
 };
 
+class LightSourceGrid
+{
+	NodeLight source_color;
+	u32 cube_size;
+	std::vector<NodeLight> light;
+
+public:
+	LightSourceGrid(u32 r, u32 g, u32 b);
+
+	bool operator==(const LightSourceGrid &other) const
+	{
+		return source_color == other.source_color;
+	}
+
+	const NodeLight &getLight(v3s16 absSourcePos, v3s16 absNodePos) const;
+	std::vector<v3s16> getCoveringMapblocks(v3s16 absSourcePos) const;
+
+	void propagateLight();
+
+	size_t hash() const
+	{
+		return std::hash<u16>{}((u16)source_color);
+	}
+private:
+	NodeLight &getLight(v3s16 relNodePos);
+};
+
+namespace std 
+{
+    template <>
+    struct hash<LightSourceGrid> 
+    {
+        std::size_t operator()(const LightSourceGrid& n) const noexcept 
+        {
+            return n.hash();
+        }
+    };
+}
+
 class BlockLightPropagator
 {
+	struct LeveledNodeLight
+	{
+		NodeLight actualLight;
+
+		void mixLight(
+			BlockLightPropagator *propagator, v3s16 absNodePos,
+			const std::vector<v3s16> &sources_positions);
+	};
+
 	struct MapBlockLightInfo
 	{
 		MapBlock *block = nullptr;
-		std::array<NodeLight, MapBlock::nodecount> light = {};
+		std::vector<v3s16> light_sources = {}; // all light sources propagating over this mapblock
+		std::array<LeveledNodeLight, MapBlock::nodecount> light = {};
 
-		NodeLight &getLight(v3s16 pos)
+		LeveledNodeLight &getLight(v3s16 pos)
 		{
 			u32 pos_n = pos.Z * MapBlock::zstride + pos.Y * MapBlock::ystride + pos.X;
 			return light[pos_n];
 		}
-		const NodeLight &getLight(v3s16 pos) const
+		const LeveledNodeLight &getLight(v3s16 pos) const
 		{
 			u32 pos_n = pos.Z * MapBlock::zstride + pos.Y * MapBlock::ystride + pos.X;
 			return light[pos_n];
 		}
+
+		void propagateLight(BlockLightPropagator *propagator);
 	};
 
 	struct LightNodeEntry
@@ -61,17 +112,19 @@ class BlockLightPropagator
 	};
 
 	typedef std::unordered_map<v3s16, MapBlockLightInfo> MapBlockLightGrid;
-	typedef std::queue<LightNodeEntry> LightNodeEntryQueue;
 
 	const NodeDefManager *nodedef;
+	Map *map;
 	MapBlockLightGrid mapblocks_light_grid;
-	LightNodeEntryQueue light_propagation_queue;
 
-	std::mutex mapblocks_light_grid_mutex;
+	std::unordered_set<LightSourceGrid> light_sources_grids;
+	std::unordered_map<v3s16, const LightSourceGrid*> light_sources;
+
+	std::unordered_map<v3s16, std::pair<MapBlockLightInfo, bool>> pending_mapblocks_lights;
 
 public:
-	BlockLightPropagator(const NodeDefManager *_nodedef)
-		: nodedef(_nodedef) {}
+	BlockLightPropagator(const NodeDefManager *_nodedef, Map *_map)
+		: nodedef(_nodedef), map(_map) {}
 	
 	void addMapBlock(v3s16 blockpos, MapBlock *block);
 	void removeMapBlocks(const std::vector<v3s16> &blocks_positions);
@@ -82,5 +135,5 @@ public:
 	
 	void propagateLight();
 private:
-	void addLightNodesInQueue(MapBlock *block);
+	void scanForLightSources(MapBlock *block);
 };
