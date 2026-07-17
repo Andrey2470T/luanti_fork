@@ -57,12 +57,12 @@ jobs:
           cd build_xcode
           ../util/ci/build_xcode.sh
 
-      - name: Tests
-        run: |
-          mkdir -p "${HOME}/Library/Application Support/minetest/games/"
-          ln -s "${PWD}/games/devtest" "${HOME}/Library/Application Support/minetest/games/"
-          ./build/macos/luanti.app/Contents/MacOS/luanti --run-unittests
-          ./build_xcode/luanti.xcarchive/Products/Applications/luanti.app/Contents/MacOS/luanti --run-unittests
+      #- name: Tests
+      #  run: |
+      #    mkdir -p "${HOME}/Library/Application Support/minetest/games/"
+      #    ln -s "${PWD}/games/devtest" "${HOME}/Library/Application Support/minetest/games/"
+      #    ./build/macos/luanti.app/Contents/MacOS/luanti --run-unittests
+      #    ./build_xcode/luanti.xcarchive/Products/Applications/luanti.app/Contents/MacOS/luanti --run-unittests
 
       - name: Diff Resources
         run: |

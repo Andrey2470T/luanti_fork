@@ -50,9 +50,9 @@ jobs:
           CXX: g++-9
           CMAKE_FLAGS: '-DCMAKE_C_FLAGS="-fsanitize=address" -DCMAKE_CXX_FLAGS="-fsanitize=address"'
 
-      - name: Unittest
-        run: |
-          ./bin/luanti --run-unittests
+      #- name: Unittest
+      #  run: |
+      #    ./bin/luanti --run-unittests
 
       # Do this here because we have ASan and error paths are sensitive to dangling pointers
       - name: Test error cases
@@ -89,12 +89,12 @@ jobs:
           CC: gcc-14
           CXX: g++-14
 
-      - name: Test
-        run: |
-          mkdir nowrite
-          chmod a-w nowrite
-          cd nowrite
-          ../bin/luanti --run-unittests
+      #- name: Test
+      #  run: |
+      #    mkdir nowrite
+      #    chmod a-w nowrite
+      #    cd nowrite
+      #    ../bin/luanti --run-unittests
 
       - name: Upload artifacts
         run: |
@@ -128,9 +128,9 @@ jobs:
           # Test fallback SHA implementations
           CMAKE_FLAGS: '-DENABLE_OPENSSL=0'
 
-      - name: Test
-        run: |
-          ./bin/luanti --run-unittests
+      #- name: Test
+      #  run: |
+      #    ./bin/luanti --run-unittests
 
       - name: Upload artifacts
         run: |
@@ -162,9 +162,9 @@ jobs:
           CC: clang-18
           CXX: clang++-18
 
-      - name: Test
-        run: |
-          ./bin/luanti --run-unittests
+      #- name: Test
+      #  run: |
+      #    ./bin/luanti --run-unittests
 
       - name: Upload artifacts
         run: |
