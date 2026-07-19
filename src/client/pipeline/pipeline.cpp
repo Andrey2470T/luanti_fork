@@ -299,6 +299,12 @@ void SwapTexturesStep::run(PipelineContext &context)
 	buffer->swapTextures(texture_a, texture_b);
 }
 
+RenderStep *RenderPipeline::addStep(const std::string &name, RenderStep *step)
+{
+	m_pipeline.emplace_back(name, step);
+	return step;
+}
+
 RenderStep *RenderPipeline::getStep(const std::string &name)
 {
 	auto found = std::find_if(m_pipeline.begin(), m_pipeline.end(),
@@ -319,16 +325,6 @@ TextureBuffer *RenderPipeline::createTextureBuffer(const std::string &name)
 TextureBuffer *RenderPipeline::getTextureBuffer(const std::string &name)
 {
 	return m_texture_buffers[name];
-}
-
-RenderSource *RenderPipeline::getInput()
-{
-	return &m_input;
-}
-
-RenderTarget *RenderPipeline::getOutput()
-{
-	return &m_output;
 }
 
 void RenderPipeline::run(PipelineContext &context)

@@ -362,6 +362,8 @@ private:
 	u8 texture_b;
 };
 
+class PostProcessingStep;
+
 /**
  * Render Pipeline provides a flexible way to execute rendering steps in the engine.
  *
@@ -375,11 +377,7 @@ public:
 	 *
 	 * @param step reference to a @see RenderStep implementation.
 	 */
-	RenderStep *addStep(const std::string &name, RenderStep *step)
-	{
-		m_pipeline.emplace_back(name, step);
-		return step;
-	}
+	RenderStep *addStep(const std::string &name, RenderStep *step);
 
 	/**
 	 * Capture ownership of a dynamically created @see RenderStep instance.
@@ -435,9 +433,6 @@ public:
 
 	TextureBuffer *getTextureBuffer(const std::string &name);
 
-	RenderSource *getInput();
-	RenderTarget *getOutput();
-
 	v2f getScale() { return scale; }
 	void setScale(v2f value) { scale = value; }
 
@@ -446,7 +441,7 @@ public:
 
 	virtual void setRenderSource(RenderSource *source) override;
 	virtual void setRenderTarget(RenderTarget *target) override;
-private:
+protected:
 	std::vector<std::pair<std::string, RenderStep *>> m_pipeline;
 	std::unordered_map<std::string, TextureBuffer *> m_texture_buffers;
 	std::vector< std::unique_ptr<RenderPipelineObject> > m_objects;
