@@ -12,8 +12,8 @@
 #include <Scene/ISceneManager.h>
 #include <Video/RenderTarget.h>
 
-PostProcessingStep::PostProcessingStep(u32 _shader_id, const std::vector<u8> &_texture_map, bool _alpha_blend) :
-	shader_id(_shader_id), alpha_blend(_alpha_blend), texture_map(_texture_map)
+PostProcessingStep::PostProcessingStep(u32 _shader_id, const std::vector<u8> &_texture_map, video::E_BLEND_MODE _blend_mode) :
+	shader_id(_shader_id), blend_mode(_blend_mode), texture_map(_texture_map)
 {
 	assert(texture_map.size() <= video::MATERIAL_MAX_TEXTURES);
 	configureMaterial();
@@ -24,7 +24,7 @@ void PostProcessingStep::configureMaterial()
 	material.UseMipMaps = false;
 	material.ZBuffer = video::ECFN_LESSEQUAL;
 	material.ZWriteEnable = video::EZW_ON;
-	material.BlendMode = alpha_blend ? video::EBM_ALPHA : video::EBM_NONE;
+	material.BlendMode = blend_mode;
 	for (u32 k = 0; k < texture_map.size(); ++k) {
 		material.TextureLayers[k].AnisotropicFilter = 0;
 		material.TextureLayers[k].MinFilter = video::ETMINF_NEAREST_MIPMAP_NEAREST;
@@ -88,8 +88,23 @@ std::vector<std::string> PostProcessingPipeline::m_special_steps = {"Draw3D", "R
 
 PostProcessingStep *PostProcessingPipeline::addPostprocessStep(const std::string &name, u32 shader_id, const std::vector<u8> &texture_map, bool alpha_blend)
 {
-	auto step = addStep<PostProcessingStep>(name, shader_id, texture_map, alpha_blend);
+	auto step = addStep<PostProcessingStep>(
+		name, shader_id, texture_map, alpha_blend ? video::EBM_ALPHA : video::EBM_NONE);
+
+	PostProcessingStepDefinition def = {
+		name, shader_id, "PostProcessing", {}, {}, {0.0f, 0.0f, 1.0f, 1.0f}, {},
+		 alpha_blend ? video::EBM_ALPHA : video::EBM_NONE, 1.0f
+	};
+	m_steps_defs.push_back(def);
 	m_steps_state.push_back({step, name});
+	return step;
+}
+
+PostProcessingStep *PostProcessingPipeline::addPostProcessStep(const PostProcessingStepDefinition &def)
+{
+	auto step = addStep<PostProcessingStep>(def.name, def.shader_id, def.inputs, def.blend_mode);
+	m_steps_defs.push_back(def);
+	m_steps_state.push_back({step, def.name});
 	return step;
 }
 
@@ -123,6 +138,18 @@ PostProcessingStep *PostProcessingPipeline::getPostprocessStep(const std::string
 	return nullptr;
 }
 
+const PostProcessingStepDefinition &PostProcessingPipeline::getPostProcessStepDef(const std::string &name)
+{
+	auto found = std::find_if(m_steps_defs.begin(), m_steps_defs.end(),
+		[name] (const auto &def) { return def.name == name; });
+	
+	if (found == m_steps_defs.end()) {
+		static PostProcessingStepDefinition fallback;
+		return fallback;
+	}
+	return *found;
+}
+
 void PostProcessingPipeline::run(PipelineContext &context)
 {
 	v2u32 original_size = context.target_size;
@@ -141,6 +168,9 @@ void PostProcessingPipeline::run(PipelineContext &context)
 		if (step_state.enabled)
 			step_state.step->run(context);
 	}
+
+	if (m_swap_textures)
+		m_swap_textures->run(context);
 
 	context.target_size = original_size;
 }

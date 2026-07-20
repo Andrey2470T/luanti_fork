@@ -388,8 +388,14 @@ std::string ShaderSource::getOrLoadSource(
 		return it->second;
 
 	std::string path = getShaderPath(rel_path, filename);
-	if (path.empty())
-		return "";
+
+	const char *extensions[] = {".glsl", ".vsh", ".gsh", ".fsh"};
+	if (path.empty()) {
+		if (removeStringEnd(filename, extensions).empty())
+			return filename; // Assume "filename" is a code itself
+		else
+			return "";
+	}
 
 	std::string content;
 	fs::ReadFile(path, content, true);

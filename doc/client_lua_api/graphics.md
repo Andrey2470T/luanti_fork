@@ -53,9 +53,10 @@ The following set/get methods are analogous to the PlayerRef's eponymous methods
 Texture buffer API:
 * `gfx.create_texture_buffer(name, texturedefs)`: create TextureBuffer for the pipeline.
     Necessary for setting shaders inputs (samplers) and outputs (render targets) (see `Texture Definition`).
+* `gfx.add_buffer_texture(name, index, texturedef)`: create and add to the `name` buffer a new texture at `index` position.
 * `gfx.get_texture_params(name, index)`: returns `Texture Definition` for the texture at `index` position in the `name` buffer.
 * `gfx.get_texture_count(name)`: returns the textures count in the `name` buffer
-* `gfx.override_draw3d_outputs(outputdefs)`: create textures and outputs for the `Draw3D` step (see `Texture Output Definition`).
+* `gfx.override_draw3d_outputs(outputdefs)`: assign textures to the target outputs for the `Draw3D` step (see `Texture Output Definition`).
 
 Material Definition
 -------------------
@@ -187,7 +188,8 @@ Defines parameters of creating OpenGL texture for the pipeline
 Texture Output Definition
 -------------------------
 
-Defines parameters of creating OpenGL texture (if not present) and attaching them to outputs for the pipeline
+Defines parameters of attaching them to outputs for the pipeline.
+The textures must be already created through `gfx.create_texture_buffer` or `gfx.add_buffer_texture`.
 
 ```lua
 {
@@ -196,7 +198,5 @@ Defines parameters of creating OpenGL texture (if not present) and attaching the
     -- Mapping index of the "index" to some cubemap face (valid for type="cubemap")
     -- Mapping pairs (number - face dir): [0] - "pos_x"; [1] - "pos_y"; [2] - "pos_z"; [3] - "neg_x"; [4] - "neg_y"; [5] - "neg_z"
     face = <number>
-
-    -- [Texture Definition parameters]
 }
 ```

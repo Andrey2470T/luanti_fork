@@ -4,6 +4,7 @@
 #include "client/media/shader.h"
 #include "client/render/material.h"
 #include "client/pipeline/pipeline.h"
+#include "client/pipeline/secondstage.h"
 
 class UniformSetter : public ModApiBase
 {
@@ -34,6 +35,7 @@ private:
 	// gfx.register_material
 	static int l_register_material(lua_State *L);
 
+	static void read_blend_state(lua_State *L, video::E_BLEND_MODE &blend_mode);
 	static void read_basic_state(lua_State *L, MaterialStorageEntry &entry);
 	static void read_constants(lua_State *L, ShaderConstants &constants);
 	static void read_shader_info(lua_State *L, ShaderInfo &info, bool &applyShadows);
@@ -61,10 +63,20 @@ private:
 
 	static void read_texture_def(lua_State *L, TextureBufferDefinition &texdef);
 	static void push_texture_def(lua_State *L, const TextureBufferDefinition &texdef);
+	static void read_texture_outputs(
+		lua_State *L, std::vector<std::pair<u8, u8>> &tex_to_face_map);
 	static int l_create_texture_buffer(lua_State *L);
+	static int l_add_buffer_texture(lua_State *L);
 	static int l_get_texture_params(lua_State *L);
 	static int l_get_texture_count(lua_State *L);
 	static int l_override_draw3d_outputs(lua_State *L);
+
+	static void read_posteffect_def(
+		lua_State *L, PostProcessingStepDefinition &stepdef, ShaderInfo &shader);
+	static int l_add_posteffect(lua_State *L);
+	static int l_get_posteffects_def(lua_State *L);
+	static int l_set_posteffects_order(lua_State *L);
+	static int l_get_posteffects_order(lua_State *L);
 public:
 	static void Initialize(lua_State *L, int top);
 };

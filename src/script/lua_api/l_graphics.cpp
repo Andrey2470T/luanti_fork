@@ -91,6 +91,23 @@ void UniformSetter::Register(lua_State *L)
 
 const char UniformSetter::className[] = "Setter";
 
+void ModApiGraphics::read_blend_state(lua_State *L, video::E_BLEND_MODE &blend_mode)
+{
+	bool enable = getboolfield_default(L, -1, "enable", false);
+
+	std::unordered_map<std::string, video::E_BLEND_MODE> mapNameToBM = {
+		{"alpha", video::EBM_ALPHA}, {"add", video::EBM_ADD},
+		{"subtract", video::EBM_SUBTRACT}, {"revsubtract", video::EBM_REVSUBTRACT},
+		{"multiply", video::EBM_MULTIPLY}, {"screen", video::EBM_SCREEN}
+	};
+	if (!enable)
+		blend_mode = video::EBM_NONE;
+	else {
+		std::string mode = getstringfield_default(L, -1, "mode", "alpha");
+		blend_mode = mapNameToBM[mode];
+	}
+}
+
 void ModApiGraphics::read_basic_state(lua_State *L, MaterialStorageEntry &entry)
 {
 	// Blend
@@ -98,20 +115,7 @@ void ModApiGraphics::read_basic_state(lua_State *L, MaterialStorageEntry &entry)
 
 	if (lua_istable(L, -1)) {
 		entry.StateFlags |= MF_BLEND;
-
-		bool enable = getboolfield_default(L, -1, "enable", false);
-
-		std::unordered_map<std::string, video::E_BLEND_MODE> mapNameToBM = {
-			{"alpha", video::EBM_ALPHA}, {"add", video::EBM_ADD},
-			{"subtract", video::EBM_SUBTRACT}, {"revsubtract", video::EBM_REVSUBTRACT},
-			{"multiply", video::EBM_MULTIPLY}, {"screen", video::EBM_SCREEN}
-		};
-		if (!enable)
-			entry.Blend = video::EBM_NONE;
-		else {
-			std::string mode = getstringfield_default(L, -1, "mode", "alpha");
-			entry.Blend = mapNameToBM[mode];
-		}
+		read_blend_state(L, entry.Blend);
 	}
 
 	lua_pop(L, 1);
@@ -477,7 +481,7 @@ int ModApiGraphics::l_override_day_night_ratio(lua_State *L)
 
 	if (!lua_isnoneornil(L, 2)) {
 		do_override = true;
-		ratio = readParam<float>(L, 2);
+		ratio = readParam<f32>(L, 2);
 		luaL_argcheck(L, ratio >= 0.0f && ratio <= 1.0f, 1,
 			"value must be between 0 and 1");
 	}
@@ -576,6 +580,24 @@ void ModApiGraphics::push_texture_def(lua_State *L, const TextureBufferDefinitio
 	lua_setfield(L, -2, "msaa");
 }
 
+void ModApiGraphics::read_texture_outputs(lua_State *L, std::vector<std::pair<u8, u8>> &tex_to_face_map)
+{
+	int t = lua_gettop(L);
+
+	lua_pushnil(L);
+	while (lua_next(L, t)) {
+		if (lua_istable(L, -1)) {
+			s32 index, face;
+			getintfield(L, -1, "index", index);
+			getintfield(L, -1, "face", face);
+
+			tex_to_face_map.emplace_back(index, face);
+		}
+		lua_pop(L, 1);
+	}
+	lua_pop(L, 1);
+}
+
 int ModApiGraphics::l_create_texture_buffer(lua_State *L)
 {
 	if (!lua_isstring(L, 1) || !lua_istable(L, 2))
@@ -600,6 +622,9 @@ int ModApiGraphics::l_create_texture_buffer(lua_State *L)
 
 	auto tbuf = getClient(L)->getRenderingEngine()->getPipeline()->createTextureBuffer(name);
 
+	if (!tbuf)
+		return 0;
+
 	for (u32 i = 0; i < definitions.size(); i++) {
 		auto &def = definitions.at(i);
 
@@ -612,6 +637,30 @@ int ModApiGraphics::l_create_texture_buffer(lua_State *L)
 	return 1;
 }
 
+int ModApiGraphics::l_add_buffer_texture(lua_State *L)
+{
+	if (!lua_isstring(L, 1) || !lua_isnumber(L, 2))
+		return 0;
+
+	std::string name = readParam<std::string>(L, 1);
+	u8 index = readParam<s16>(L, 2);
+
+	TextureBufferDefinition def;
+	read_texture_def(L, def);
+
+	auto tbuf = getClient(L)->getRenderingEngine()->getPipeline()->getTextureBuffer(name, true);
+
+	if (!tbuf)
+		return 0;
+	
+	if (def.fixed_size)
+		tbuf->setTexture(index, def.size, def.name, def.format, false, def.msaa, def.cubemap);
+	else
+		tbuf->setTexture(index, def.scale_factor, def.name, def.format, false, def.msaa, def.cubemap);
+
+	return 1;
+}
+
 int ModApiGraphics::l_get_texture_params(lua_State *L)
 {
 	if (!lua_isstring(L, 1) || !lua_isnumber(L, 2)){
@@ -620,7 +669,7 @@ int ModApiGraphics::l_get_texture_params(lua_State *L)
 	}
 
 	std::string name = readParam<std::string>(L, 1);
-	u8 tex_index = readParam<s16>(L, 2);
+	u8 index = readParam<s16>(L, 2);
 
 	auto tbuf = getClient(L)->getRenderingEngine()->getPipeline()->getTextureBuffer(name);
 
@@ -629,7 +678,7 @@ int ModApiGraphics::l_get_texture_params(lua_State *L)
 		return 0;
 	}
 
-	auto &tex_def = tbuf->getTextureDef(tex_index);
+	auto &tex_def = tbuf->getTextureDef(index);
 	push_texture_def(L, tex_def);
 
 	return 1;
@@ -661,49 +710,122 @@ int ModApiGraphics::l_override_draw3d_outputs(lua_State *L)
 		return 0;
 
 	auto pipeline = getClient(L)->getRenderingEngine()->getPipeline();
-	auto tbuf = pipeline->getTextureBuffer("PostProcessing");
+	auto tbuf = pipeline->getTextureBuffer("PostProcessing", true);
 
 	if (!tbuf)
 		return 0;
 
-	std::unordered_map<u8, TextureBufferDefinition> definitions;
 	std::vector<std::pair<u8, u8>> mapTexToCubemapFace;
+	read_texture_outputs(L, mapTexToCubemapFace);
 
-	int t = lua_gettop(L);
-
-	lua_pushnil(L);
-	while (lua_next(L, t)) {
-		if (lua_istable(L, -1)) {
-			TextureBufferDefinition newDef;
-
-			s32 index, face;
-			getintfield(L, -1, "index", index);
-			getintfield(L, -1, "face", face);
-
-			read_texture_def(L, newDef);
-
-			definitions.emplace(index, newDef);
-			mapTexToCubemapFace.emplace_back(index, face);
-		}
-		lua_pop(L, 1);
-	}
-	lua_pop(L, 1);
-
-	for (auto &def_p : definitions) {
-		auto &def = def_p.second;
-		if (def.fixed_size)
-			tbuf->setTexture(def_p.first, def.size, def.name, def.format, false, def.msaa, def.cubemap);
-		else
-			tbuf->setTexture(def_p.first, def.scale_factor, def.name, def.format, false, def.msaa, def.cubemap);
-	}
-
-	auto toutput = (TextureBufferOutput *)pipeline->getStep("Draw3D")->getRenderTarget();
+	auto toutput = (TextureBufferOutput *)pipeline->getStep("Draw3D", true)->getRenderTarget();
 
 	if (!toutput)
 		return 0;
 
 	for (auto &tex_to_face : mapTexToCubemapFace)
 		toutput->addOutput(tex_to_face.first, tex_to_face.second);
+
+	return 1;
+}
+
+void ModApiGraphics::read_posteffect_def(
+	lua_State *L, PostProcessingStepDefinition &stepdef, ShaderInfo &shader)
+{
+	getstringfield(L, -1, "name", stepdef.name);
+
+	lua_getfield(L, -1, "shader");
+
+	if (lua_istable(L, -1)) {
+		shader.name = stepdef.name;
+		shader.vertex_shader = R"(
+			CENTROID_ out mediump vec2 varTexCoord;
+
+			void main(void)
+			{
+				varTexCoord.st = inTexCoord0.st;
+				gl_Position = vec4(inPosition, 1.0);
+			})";
+		bool apply_shadows;
+		read_shader_info(L, shader, apply_shadows);
+
+		shader.geometry_shader = ""; // this kind of the shader is not allowed for the posteffect
+		shader.vertex_includes = {};
+	}
+	lua_pop(L, 1);
+
+	stepdef.texture_buffer_name = getstringfield_default(L, -1, "texture_buffer", "PostProcessing");
+
+	lua_getfield(L, -1, "inputs");
+	int t = lua_gettop(L);
+
+	lua_pushnil(L);
+	while (lua_next(L, t)) {
+		if (lua_isnumber(L, -1))
+			stepdef.inputs.emplace_back(readParam<s16>(L, -1));
+		lua_pop(L, 1);
+	}
+	lua_pop(L, 2);
+
+	lua_getfield(L, -1, "outputs");
+	read_texture_outputs(L, stepdef.outputs);
+	lua_pop(L, 1);
+
+	lua_getfield(L, -1, "viewport");
+
+	if (lua_istable(L, -1)) {
+		stepdef.viewport.UpperLeftCorner.X = getfloatfield_default(L, -1, "x1", 0.0f);
+		stepdef.viewport.UpperLeftCorner.Y = getfloatfield_default(L, -1, "y1", 0.0f);
+		stepdef.viewport.LowerRightCorner.X = getfloatfield_default(L, -1, "x2", 1.0f);
+		stepdef.viewport.LowerRightCorner.X = getfloatfield_default(L, -1, "y2", 1.0f);
+	}
+	lua_pop(L, 1);
+
+	lua_getfield(L, -1, "cliprect");
+
+	if (lua_istable(L, -1)) {
+		stepdef.cliprect.UpperLeftCorner.X = getfloatfield_default(L, -1, "x1", 0.0f);
+		stepdef.cliprect.UpperLeftCorner.Y = getfloatfield_default(L, -1, "y1", 0.0f);
+		stepdef.cliprect.LowerRightCorner.X = getfloatfield_default(L, -1, "x2", 0.0f);
+		stepdef.cliprect.LowerRightCorner.X = getfloatfield_default(L, -1, "y2", 0.0f);
+	}
+	lua_pop(L, 1);
+
+	lua_getfield(L, -1, "blend");
+
+	if (lua_istable(L, -1))
+		read_blend_state(L, stepdef.blend_mode);
+	lua_pop(L, -1);
+
+	stepdef.line_width = getfloatfield_default(L, -1, "line_width", 1.0f);
+}
+
+int ModApiGraphics::l_add_posteffect(lua_State *L)
+{
+	if (!lua_istable(L, 1))
+		return 0;
+	
+	PostProcessingStepDefinition def;
+	ShaderInfo shader;
+	read_posteffect_def(L, def, shader);
+
+	def.shader_id = getClient(L)->getShaderSource()->getShader(shader);
+
+	auto pipeline = getClient(L)->getRenderingEngine()->getPipeline();
+	auto tbuf = pipeline->getTextureBuffer(def.texture_buffer_name, true);
+
+	if (!tbuf)
+		return 0;
+	
+	auto postprocess_pipeline = dynamic_cast<PostProcessingPipeline *>(pipeline->getStep("Draw3D"));
+
+	if (!postprocess_pipeline)
+		return 0;
+
+	RenderStep *step = postprocess_pipeline->addPostProcessStep(def);
+	step->setRenderSource(tbuf);
+	step->setRenderTarget(pipeline->createOwned<TextureBufferOutput>(
+		tbuf, def.outputs));
 
 	return 1;
 }
@@ -726,9 +848,11 @@ void ModApiGraphics::Initialize(lua_State *L, int top)
 	API_FCT(override_day_night_ratio);
 	API_FCT(get_day_night_ratio);
 	API_FCT(create_texture_buffer);
+	API_FCT(add_buffer_texture);
 	API_FCT(get_texture_params);
 	API_FCT(get_texture_count);
 	API_FCT(override_draw3d_outputs);
+	API_FCT(add_posteffect);
 
 	UniformSetter::Register(L);
 
