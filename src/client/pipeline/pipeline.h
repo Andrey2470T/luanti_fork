@@ -427,11 +427,11 @@ public:
 	virtual RenderSource *getRenderSource() override { return &m_input; }
 	virtual RenderTarget *getRenderTarget() override { return &m_output; }
 
-	RenderStep *getStep(const std::string &name);
+	RenderStep *getStep(const std::string &name, bool recursive=false);
 
 	TextureBuffer *createTextureBuffer(const std::string &name);
 
-	TextureBuffer *getTextureBuffer(const std::string &name);
+	TextureBuffer *getTextureBuffer(const std::string &name, bool recursive=false);
 
 	v2f getScale() { return scale; }
 	void setScale(v2f value) { scale = value; }

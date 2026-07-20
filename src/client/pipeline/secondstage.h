@@ -19,7 +19,7 @@ public:
 	 * @param shader_id ID of the shader in ShaderSource
 	 * @param texture_map Map of textures to be chosen from the render source
 	 */
-	PostProcessingStep(u32 shader_id, const std::vector<u8> &texture_map, bool alpha_blend=false);
+	PostProcessingStep(u32 shader_id, const std::vector<u8> &texture_map, video::E_BLEND_MODE blend_mode=video::EBM_NONE);
 
 	virtual RenderSource *getRenderSource() override { return source; }
 	virtual RenderTarget *getRenderTarget() override { return target; }
@@ -37,7 +37,7 @@ public:
 	void setBilinearFilter(u8 index, bool value);
 private:
 	u32 shader_id;
-	bool alpha_blend {false};
+	video::E_BLEND_MODE blend_mode{video::EBM_NONE};
 	std::vector<u8> texture_map;
 	RenderSource *source { nullptr };
 	RenderTarget *target { nullptr };
@@ -56,6 +56,19 @@ struct PostProcessingStepState
 class ResolveMSAAStep;
 class SwapTexturesStep;
 
+struct PostProcessingStepDefinition
+{
+	std::string name;
+	u32 shader_id;
+	std::string texture_buffer_name;
+	std::vector<u8> inputs;
+	std::vector<std::pair<u8, u8>> outputs;
+	core::rectf viewport;
+	core::rectf cliprect;
+	video::E_BLEND_MODE blend_mode;
+	f32 line_width;
+};
+
 class PostProcessingPipeline : public RenderPipeline
 {
 public:
@@ -64,11 +77,14 @@ public:
 		const std::vector<u8> &texture_map, bool alpha_blend=false
 	);
 
+	PostProcessingStep *addPostProcessStep(const PostProcessingStepDefinition &def);
+
 	void addDraw3DStep(Draw3D *step);
 	ResolveMSAAStep *addResolveMSAAStep(TextureBufferOutput *msaa, TextureBufferOutput *normal);
 	SwapTexturesStep *addSwapTexturesStep(TextureBuffer *buffer, u8 texture_a, u8 texture_b);
 
 	PostProcessingStep *getPostprocessStep(const std::string &name);
+	const PostProcessingStepDefinition &getPostProcessStepDef(const std::string &name);
 
 	const std::vector<PostProcessingStepState> &getStepsState() const { return m_steps_state; }
 	void setStepsState(const std::vector<PostProcessingStepState> &state) { m_steps_state = state; }
@@ -76,11 +92,15 @@ public:
 	void run(PipelineContext &context) override;
 private:
 	enum class SpecialSteps { DRAW3D, RESOLVE_MSAA, SWAP_TEXTURES };
+
 	static std::vector<std::string> m_special_steps;
+
 	Draw3D *m_draw3d {nullptr};
 	ResolveMSAAStep *m_resolve_msaa {nullptr};
 	SwapTexturesStep *m_swap_textures {nullptr};
+
 	std::vector<PostProcessingStepState> m_steps_state;
+	std::vector<PostProcessingStepDefinition> m_steps_defs;
 };
 
 

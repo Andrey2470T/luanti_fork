@@ -305,14 +305,30 @@ RenderStep *RenderPipeline::addStep(const std::string &name, RenderStep *step)
 	return step;
 }
 
-RenderStep *RenderPipeline::getStep(const std::string &name)
+RenderStep *RenderPipeline::getStep(const std::string &name, bool recursive)
 {
-	auto found = std::find_if(m_pipeline.begin(), m_pipeline.end(),
-		[name] (const auto &p) { return name == p.first; });
+	RenderStep *found = nullptr;
 
-	if (found == m_pipeline.end())
-		return nullptr;
-	return found->second;
+	for (auto &step_p : m_pipeline) {
+		if (step_p.first == name) {
+			found = step_p.second;
+			break;
+		}
+
+		if (!recursive)
+			continue;
+		auto to_pipeline = dynamic_cast<RenderPipeline *>(step_p.second);
+
+		if (to_pipeline) {
+			auto nested_found = to_pipeline->getStep(name);
+
+			if (nested_found) {
+				found = nested_found;
+				break;
+			}
+		}
+	}
+	return found;
 }
 
 TextureBuffer *RenderPipeline::createTextureBuffer(const std::string &name)
@@ -322,9 +338,27 @@ TextureBuffer *RenderPipeline::createTextureBuffer(const std::string &name)
 	return tbuf;
 }
 
-TextureBuffer *RenderPipeline::getTextureBuffer(const std::string &name)
+TextureBuffer *RenderPipeline::getTextureBuffer(const std::string &name, bool recursive)
 {
-	return m_texture_buffers[name];
+	auto found_it = m_texture_buffers.find(name);
+
+	if (found_it != m_texture_buffers.end())
+		return found_it->second;
+	
+	if (!recursive)
+		return nullptr;
+	for (auto &step_p : m_pipeline) {
+		auto to_pipeline = dynamic_cast<RenderPipeline *>(step_p.second);
+
+		if (to_pipeline) {
+			auto nested_found = to_pipeline->getTextureBuffer(name);
+
+			if (nested_found)
+				return nested_found;
+		}
+	}
+
+	return nullptr;
 }
 
 void RenderPipeline::run(PipelineContext &context)
