@@ -1023,7 +1023,7 @@ int ModApiGraphics::l_set_posteffects_order(lua_State *L)
 			getboolfield(L, -1, "enable", enabled);
 
 			auto step = postprocess_pipeline->getPostprocessStep(name);
-			order.emplace_back(step, name, enabled);
+			order.push_back({step, name, enabled});
 		}
 		lua_pop(L, 1);
 	}
