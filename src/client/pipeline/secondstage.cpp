@@ -92,8 +92,8 @@ PostProcessingStep *PostProcessingPipeline::addPostprocessStep(const std::string
 		name, shader_id, texture_map, alpha_blend ? video::EBM_ALPHA : video::EBM_NONE);
 
 	PostProcessingStepDefinition def = {
-		name, shader_id, "PostProcessing", {}, {}, {0.0f, 0.0f, 1.0f, 1.0f}, {},
-		 alpha_blend ? video::EBM_ALPHA : video::EBM_NONE, 1.0f
+		name, shader_id, "PostProcessing", texture_map, {}, {0.0f, 0.0f, 1.0f, 1.0f}, {},
+		alpha_blend ? video::EBM_ALPHA : video::EBM_NONE, 1.0f
 	};
 	m_steps_defs.push_back(def);
 	m_steps_state.push_back({step, name});
@@ -142,7 +142,7 @@ const PostProcessingStepDefinition &PostProcessingPipeline::getPostProcessStepDe
 {
 	auto found = std::find_if(m_steps_defs.begin(), m_steps_defs.end(),
 		[name] (const auto &def) { return def.name == name; });
-	
+
 	if (found == m_steps_defs.end()) {
 		static PostProcessingStepDefinition fallback;
 		return fallback;

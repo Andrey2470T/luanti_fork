@@ -36,9 +36,12 @@ private:
 	static int l_register_material(lua_State *L);
 
 	static void read_blend_state(lua_State *L, video::E_BLEND_MODE &blend_mode);
+	static void push_blend_state(lua_State *L, video::E_BLEND_MODE blend_mode);
 	static void read_basic_state(lua_State *L, MaterialStorageEntry &entry);
 	static void read_constants(lua_State *L, ShaderConstants &constants);
+	static void push_constants(lua_State *L, const ShaderConstants &constants);
 	static void read_shader_info(lua_State *L, ShaderInfo &info, bool &applyShadows);
+	static void push_shader_info(lua_State *L, const ShaderInfo &info);
 
 	static int l_set_lighting(lua_State *L);
 	static int l_get_lighting(lua_State *L);
@@ -65,16 +68,22 @@ private:
 	static void push_texture_def(lua_State *L, const TextureBufferDefinition &texdef);
 	static void read_texture_outputs(
 		lua_State *L, std::vector<std::pair<u8, u8>> &tex_to_face_map);
+	static void push_texture_outputs(
+		lua_State *L, const std::vector<std::pair<u8, u8>> &tex_to_face_map);
 	static int l_create_texture_buffer(lua_State *L);
 	static int l_add_buffer_texture(lua_State *L);
 	static int l_get_texture_params(lua_State *L);
 	static int l_get_texture_count(lua_State *L);
 	static int l_override_draw3d_outputs(lua_State *L);
 
+	static void read_rect(lua_State *L, core::rectf &r, const core::rectf &default_r);
+	static void push_rect(lua_State *L, const core::rectf &r);
 	static void read_posteffect_def(
 		lua_State *L, PostProcessingStepDefinition &stepdef, ShaderInfo &shader);
+	static void push_posteffect_def(
+		lua_State *L, const PostProcessingStepDefinition &stepdef, const ShaderInfo &shader);
 	static int l_add_posteffect(lua_State *L);
-	static int l_get_posteffects_def(lua_State *L);
+	static int l_get_posteffect_def(lua_State *L);
 	static int l_set_posteffects_order(lua_State *L);
 	static int l_get_posteffects_order(lua_State *L);
 public:

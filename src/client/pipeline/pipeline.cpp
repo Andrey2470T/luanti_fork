@@ -344,7 +344,7 @@ TextureBuffer *RenderPipeline::getTextureBuffer(const std::string &name, bool re
 
 	if (found_it != m_texture_buffers.end())
 		return found_it->second;
-	
+
 	if (!recursive)
 		return nullptr;
 	for (auto &step_p : m_pipeline) {
