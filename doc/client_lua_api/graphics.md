@@ -51,12 +51,23 @@ The following set/get methods are analogous to the PlayerRef's eponymous methods
 * `gfx.get_day_night_ratio()`
 
 Texture buffer API:
-* `gfx.create_texture_buffer(name, texturedefs)`: create TextureBuffer for the pipeline.
+* `gfx.create_texture_buffer(name, texturedefs)`: creates TextureBuffer for the pipeline.
     Necessary for setting shaders inputs (samplers) and outputs (render targets) (see `Texture Definition`).
-* `gfx.add_buffer_texture(name, index, texturedef)`: create and add to the `name` buffer a new texture at `index` position.
+* `gfx.add_buffer_texture(name, index, texturedef)`: creates and add to the `name` buffer a new texture at `index` position.
 * `gfx.get_texture_params(name, index)`: returns `Texture Definition` for the texture at `index` position in the `name` buffer.
 * `gfx.get_texture_count(name)`: returns the textures count in the `name` buffer
-* `gfx.override_draw3d_outputs(outputdefs)`: assign textures to the target outputs for the `Draw3D` step (see `Texture Output Definition`).
+* `gfx.override_draw3d_outputs(outputdefs)`: assigns textures to the target outputs for the `Draw3D` step
+    (see `Texture Output Definition`).
+
+Posteffects API:
+* `gfx.add_posteffect(posteffectdef)`: registers a new posteffect as a postprocessing step with params
+    defined by `posteffectdef` table (see `Posteffect Definition`).
+* `gfx.get_posteffect_def(name)`: returns `Posteffect Definition` for the `name` posteffect.
+* `gfx.set_posteffects_order(order)`: replaces the current posteffect order table with the new `order` one.
+    This defines the consequence in which the posteffects are rendered on the screen and which of them are enabled/disabled.
+    The table content is represented in the format `{{"effect1", false}, {"effect2", true}, ...}`
+    where the subtable first value is a posteffect name, the second one defines that is enabled/disabled.
+* `gfx.get_posteffects_order()`: returns the current posteffects order table.
 
 Material Definition
 -------------------
@@ -166,7 +177,7 @@ So, e.g. `texture2D(texture1, uv)` will extract the pixel at `uv` coordinates fr
 Texture Definition
 ------------------
 
-Defines parameters of creating OpenGL texture for the pipeline
+Defines parameters of creating OpenGL texture for the pipeline.
 
 ```lua
 {
@@ -198,5 +209,40 @@ The textures must be already created through `gfx.create_texture_buffer` or `gfx
     -- Mapping index of the "index" to some cubemap face (valid for type="cubemap")
     -- Mapping pairs (number - face dir): [0] - "pos_x"; [1] - "pos_y"; [2] - "pos_z"; [3] - "neg_x"; [4] - "neg_y"; [5] - "neg_z"
     face = <number>
+}
+```
+
+Posteffect Definition
+---------------------
+
+Used by `gfx.add_posteffect`.
+Defines parameters of registering `name` posteffect in the postprocessing pipeline.
+
+```lua
+{
+    name = <string>,
+    shader = {
+        src = "bloom.glsl"/"bloom.fsh"/"<код>",
+        constants = {
+            {"BLOOM_RADIUS", "4"},
+            {"BLOOM_STRENGTH", "1.5"},
+            ...
+        },
+        includes = {"filters"},
+        on_set_uniforms = function(setter)
+        {
+            -- Set uniforms using the uniform setter
+            local pos = core.localplayer:get_pos()
+            setter.set("projViewInv", Matrix4.identity())
+        }
+    },
+    texture_buffer = <name>,
+    -- Indexes of textures inside the <name> texture buffer
+    inputs = {<number, <number>, ...},
+    outputs = {<Texture Output Definition>, ...},
+    viewport = {x1=..., y1=..., x2=..., y2=...},
+    cliprect = {x1=..., y1=..., x2=..., y2=...},
+    blend = {<Blend table>},
+    line_width = <number>
 }
 ```
