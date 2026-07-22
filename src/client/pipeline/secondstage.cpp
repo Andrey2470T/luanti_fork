@@ -150,6 +150,11 @@ const PostProcessingStepDefinition &PostProcessingPipeline::getPostProcessStepDe
 	return *found;
 }
 
+void PostProcessingPipeline::overridePostProcessStepDef(const PostProcessingStepDefinition &def)
+{
+
+}
+
 void PostProcessingPipeline::run(PipelineContext &context)
 {
 	v2u32 original_size = context.target_size;
@@ -204,6 +209,7 @@ RenderStep *addPostProcessing(PostProcessingPipeline *pipeline, RenderStep *prev
 
 	static const u8 TEXTURE_SCALE_DOWN = 11;
 	static const u8 TEXTURE_SCALE_UP = 15;
+	static const u8 TEXTURE_NORMAL = 19;
 
 	const bool enable_bloom = g_settings->getBool("enable_bloom");
 	const bool enable_volumetric_light = g_settings->getBool("enable_volumetric_lighting") && enable_bloom;
@@ -250,18 +256,23 @@ RenderStep *addPostProcessing(PostProcessingPipeline *pipeline, RenderStep *prev
 	}
 
 	buffer->setTexture(TEXTURE_COLOR, scale, "3d_render", color_format);
+	buffer->setTexture(TEXTURE_NORMAL, scale, "3d_normalmap", color_format);
 	buffer->setTexture(TEXTURE_EXPOSURE_1, core::dimension2du(1,1), "exposure_1", color_format, /*clear:*/ true);
 	buffer->setTexture(TEXTURE_EXPOSURE_2, core::dimension2du(1,1), "exposure_2", color_format, /*clear:*/ true);
 	buffer->setTexture(TEXTURE_DEPTH, scale, "3d_depthmap", depth_format);
+
+	std::vector<u8> outputs_draw3d = { TEXTURE_COLOR, TEXTURE_NORMAL };
+	if (enable_bloom)
+		outputs_draw3d.emplace_back(TEXTURE_BLOOM_MASK);
 
 	// attach buffer to the previous step
 	if (enable_msaa) {
 		TextureBufferOutput *msaa = pipeline->createOwned<TextureBufferOutput>(buffer, std::vector<u8> { TEXTURE_MSAA_COLOR, TEXTURE_MSAA_BLOOM_MASK }, TEXTURE_MSAA_DEPTH);
 		previousStep->setRenderTarget(msaa);
-		TextureBufferOutput *normal = pipeline->createOwned<TextureBufferOutput>(buffer, std::vector<u8> { TEXTURE_COLOR, TEXTURE_BLOOM_MASK }, TEXTURE_DEPTH);
+		TextureBufferOutput *normal = pipeline->createOwned<TextureBufferOutput>(buffer, outputs_draw3d, TEXTURE_DEPTH);
 		pipeline->addResolveMSAAStep(msaa, normal);
 	} else {
-		previousStep->setRenderTarget(pipeline->createOwned<TextureBufferOutput>(buffer, std::vector<u8> { TEXTURE_COLOR, TEXTURE_BLOOM_MASK }, TEXTURE_DEPTH));
+		previousStep->setRenderTarget(pipeline->createOwned<TextureBufferOutput>(buffer, outputs_draw3d, TEXTURE_DEPTH));
 	}
 
 	// shared variables
@@ -272,7 +283,7 @@ RenderStep *addPostProcessing(PostProcessingPipeline *pipeline, RenderStep *prev
 
 	// post-processing stage
 
-	u8 source = TEXTURE_COLOR;
+	u8 source = 21;
 
 	// common downsampling step for bloom or autoexposure
 	if (enable_bloom || enable_auto_exposure) {
@@ -345,7 +356,7 @@ RenderStep *addPostProcessing(PostProcessingPipeline *pipeline, RenderStep *prev
 	}
 
 	// FXAA
-	u8 final_stage_source = TEXTURE_COLOR;
+	u8 final_stage_source = 21;
 
 	if (enable_fxaa) {
 		final_stage_source = TEXTURE_FXAA;

@@ -102,8 +102,8 @@ void main(void)
 	col = vec4(col.rgb, base.a);
 
 #ifndef ENABLE_BLOOM
-	outputColor(col);
+	outputColor(col, vec4(fNormal, 1.0));
 #else
-	outputColor(col, vec4(col.rgb * emissionLight, 1.0));
+	outputColor(col, vec4(fNormal, 1.0), vec4(col.rgb * emissionLight, 1.0));
 #endif
 }

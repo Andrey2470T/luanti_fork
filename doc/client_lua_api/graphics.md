@@ -57,7 +57,7 @@ Texture buffer API:
 * `gfx.get_texture_params(name, index)`: returns `Texture Definition` for the texture at `index` position in the `name` buffer.
 * `gfx.get_texture_count(name)`: returns the textures count in the `name` buffer
 * `gfx.override_draw3d_outputs(outputdefs)`: assigns textures to the target outputs for the `Draw3D` step
-    (see `Texture Output Definition`).
+    (see `Texture Output Definition`). Note it can not override the outputs map entirely, it only adds new outputs at the end.
 
 Posteffects API:
 * `gfx.add_posteffect(posteffectdef)`: registers a new posteffect as a postprocessing step with params
