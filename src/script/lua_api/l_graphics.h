@@ -29,6 +29,18 @@ public:
 	static const char className[];
 };
 
+enum class PostProcessingStepDefProperties
+{
+	SHADER = 0x01,
+	TEXTURE_BUFFER = 0x02,
+	INPUTS = 0x04,
+	OUTPUTS = 0x08,
+	VIEWPORT = 0x10,
+	CLIPRECT = 0x20,
+	BLEND = 0x40,
+	LINE_WIDTH = 0x80
+};
+
 class ModApiGraphics : public ModApiBase
 {
 private:
@@ -79,13 +91,14 @@ private:
 	static void read_rect(lua_State *L, core::rectf &r, const core::rectf &default_r);
 	static void push_rect(lua_State *L, const core::rectf &r);
 	static void read_posteffect_def(
-		lua_State *L, PostProcessingStepDefinition &stepdef, ShaderInfo &shader);
+		lua_State *L, PostProcessingStepDefinition &stepdef, ShaderInfo &shader, u8 &flags);
 	static void push_posteffect_def(
 		lua_State *L, const PostProcessingStepDefinition &stepdef, const ShaderInfo &shader);
 	static int l_add_posteffect(lua_State *L);
 	static int l_get_posteffect_def(lua_State *L);
 	static int l_set_posteffects_order(lua_State *L);
 	static int l_get_posteffects_order(lua_State *L);
+	static int l_override_posteffect_def(lua_State *L);
 public:
 	static void Initialize(lua_State *L, int top);
 };

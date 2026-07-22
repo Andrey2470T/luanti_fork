@@ -6,6 +6,7 @@
 #include <cmath>
 #include "script/common/c_converter.h"
 #include "l_internal.h"
+#include "l_matrix4.h"
 #include "client/activeobject/content_cao.h"
 #include "client/player/camera.h"
 #include "client/core/client.h"
@@ -160,6 +161,28 @@ int LuaCamera::l_get_aspect_ratio(lua_State *L)
 	return 1;
 }
 
+int LuaCamera::l_get_projection_matrix(lua_State *L)
+{
+	Camera *camera = getobject(L, 1);
+	if (!camera)
+		return 0;
+	
+	core::matrix4 proj = camera->getCameraNode()->getProjectionMatrix();
+	LuaMatrix4::create(L) = proj;
+	return 1;
+}
+
+int LuaCamera::l_get_view_matrix(lua_State *L)
+{
+	Camera *camera = getobject(L, 1);
+	if (!camera)
+		return 0;
+	
+	core::matrix4 view = camera->getCameraNode()->getViewMatrix();
+	LuaMatrix4::create(L) = view;
+	return 1;
+}
+
 Camera *LuaCamera::getobject(LuaCamera *ref)
 {
 	return ref->m_camera;
@@ -200,6 +223,8 @@ const luaL_Reg LuaCamera::methods[] = {
 	luamethod(LuaCamera, get_look_vertical),
 	luamethod(LuaCamera, get_look_horizontal),
 	luamethod(LuaCamera, get_aspect_ratio),
+	luamethod(LuaCamera, get_projection_matrix),
+	luamethod(LuaCamera, get_view_matrix),
 
 	{0, 0}
 };

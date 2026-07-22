@@ -10,33 +10,12 @@
 
 * Расширение GFX (CSM графический API):
     * Добавить поддержку материалов для ItemDef и HudDef
-    * (?) Удалить `vertex_type` параметр из `materials` таблицы
     * Поддержка кастомных рендер проходов и постэффектов
         * Три типа:
           * `custom`: кастомный проход делающий ручную настройку контекста и рендер через коллбэк в `gfx.add_custom_step`
           * `postprocess`: проход рендера в пространстве экрана, принимает только фрагментный шейдер
           * `builtin`: один из встроенных проходов в движке (draw3D, drawHud, postprocess, ...)
     * Добавить новые функции:
-        * `gfx.get_render_step_chain()`
-          * Returns the ordered table of all current render steps chain of the pipeline in the format:
-
-            ```lua
-            {
-                {   -- [n] where 'n' is the order number
-                    type = "custom"/"postprocess"/"builtin",
-                    name = <string>, -- name for the step (for "builtin" type these are "draw3D", "drawHud"...)
-                    enable = true/false, -- enable or disable the given step?
-                },
-                ...
-            }
-            ```
-
-        * `gfx.set_render_step_order(name, order)`
-          * Sets the order number for "name" step
-          * If there is already some step with the given order, shift that and following steps forward by the unit in the render step chain
-        * `gfx.enable_render_step(name, bool)`
-          * Enable or disable the given render step
-          * Each builtin and custom steps are enabled by default
         * `gfx.add_texture_buffer(name, list)`
           * Already present. Support `settings` field:
 
@@ -76,41 +55,6 @@
           * Adds "custom" type step doing the manual render configuration (transforms, viewports, materials, draw calls...)
           * `context` is the userdata accessing the render context
 
-        * `gfx.get_posteffects()`
-          * Returns the consequent list of all screen effects (bloom, distance-of-field, reflections and etc):
-
-          ```lua
-          {
-              {
-                  name = <string>,
-                  shader = {
-                      src = "bloom.glsl"/"bloom.fsh"/"<код>",
-                      constants = {
-                          {"BLOOM_RADIUS", "4"},
-                          {"BLOOM_STRENGTH", "1.5"},
-                          ...
-                      },
-                      includes = {"filters"},
-                      on_set_uniforms = function(setter)
-                      {
-                          -- Set uniforms using the uniform setter
-                          local pos = core.localplayer:get_pos()
-                          setter.set("blurWeights", {0.05, 0.1, 0.3, 0.7, 1.0})
-                      }
-                  },
-                  texture_buffer = <name>,
-                  input = {"3d_render", "bloom_mask"},
-                  -- Map the textures names to the cubmeap faces (if they are cubemaps)
-                  output = {{"extract_bloom", 0}},
-                  viewport = {x1=..., y1=..., x2=..., y2=...},
-                  cliprect = {x1=..., y1=..., x2=..., y2=...},
-                  blend = {<Blend table>},
-                  line_width = <number>
-              }
-          }
-          ```
-
-        * `gfx.add_posteffect(<Posteffect table>)` -- adds a new post effect
         * `gfx.override_builtin_posteffect(<Posteffect table>)` -- overrides the builtin effects like bloom, godrays, fsaa and etc
 
     * Прямой доступ к рендер контексту (пропускается как `context` параметр в коллбэк `gfx.add_custom_step`):

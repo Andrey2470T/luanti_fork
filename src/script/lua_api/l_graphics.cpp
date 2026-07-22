@@ -7,6 +7,7 @@
 #include "nodedef.h"
 #include "common/c_converter.h"
 #include "l_internal.h"
+#include "l_matrix4.h"
 #include "common/c_content.h"
 #include "common/c_gfx_content.h"
 
@@ -54,7 +55,8 @@ int UniformSetter::l_set(lua_State *L)
 		ref->setUniform3Int(name, val);
 	}
 	else if (type == "mat4") {
-		auto val = readParam<core::matrix4>(L, 4);
+		core::matrix4 val;
+		LuaMatrix4::check(L, 4, val);
 		ref->setUniform4x4Matrix(name, val);
 	}
 
@@ -610,6 +612,7 @@ void ModApiGraphics::read_texture_def(lua_State *L, TextureBufferDefinition &tex
 
 	std::unordered_map<std::string, video::ECOLOR_FORMAT> mapStrToEnumFormat = {
 		{"argb8", video::ECF_A8R8G8B8}, {"rgb8", video::ECF_R8G8B8},
+		{"abgr16f", video::ECF_A16B16G16R16F}, {"a2rgb10", video::ECF_A2R10G10B10},
 		{"d16", video::ECF_D16}, {"d32", video::ECF_D32}, {"d24s32", video::ECF_D24S8}
 	};
 
@@ -647,6 +650,7 @@ void ModApiGraphics::push_texture_def(lua_State *L, const TextureBufferDefinitio
 
 	std::unordered_map<video::ECOLOR_FORMAT, std::string> mapEnumToStrFormat = {
 		{video::ECF_A8R8G8B8, "argb8"}, {video::ECF_R8G8B8, "rgb8"},
+		{video::ECF_A16B16G16R16F, "abgr16f"}, {video::ECF_A2R10G10B10, "a2rgb10"},
 		{video::ECF_D16, "d16"}, {video::ECF_D32, "d32"}, {video::ECF_D24S8, "d24s32"}
 	};
 
@@ -849,13 +853,14 @@ void ModApiGraphics::push_rect(lua_State *L, const core::rectf &r)
 }
 
 void ModApiGraphics::read_posteffect_def(
-	lua_State *L, PostProcessingStepDefinition &stepdef, ShaderInfo &shader)
+	lua_State *L, PostProcessingStepDefinition &stepdef, ShaderInfo &shader, u8 &flags)
 {
 	getstringfield(L, -1, "name", stepdef.name);
 
 	lua_getfield(L, -1, "shader");
 
 	if (lua_istable(L, -1)) {
+		flags |= (u8)PostProcessingStepDefProperties::SHADER;
 		shader.name = stepdef.name;
 		shader.vertex_shader = R"(
 			CENTROID_ out mediump vec2 varTexCoord;
@@ -876,18 +881,24 @@ void ModApiGraphics::read_posteffect_def(
 	stepdef.texture_buffer_name = getstringfield_default(L, -1, "texture_buffer", "PostProcessing");
 
 	lua_getfield(L, -1, "inputs");
-	int t = lua_gettop(L);
 
-	lua_pushnil(L);
-	while (lua_next(L, t)) {
-		if (lua_isnumber(L, -1))
-			stepdef.inputs.emplace_back(readParam<s16>(L, -1));
+	if (lua_istable(L, -1)) {
+		int t = lua_gettop(L);
+
+		lua_pushnil(L);
+		while (lua_next(L, t)) {
+			if (lua_isnumber(L, -1))
+				stepdef.inputs.emplace_back(readParam<s16>(L, -1));
+			lua_pop(L, 1);
+		}
 		lua_pop(L, 1);
 	}
-	lua_pop(L, 2);
+	lua_pop(L, 1);
 
 	lua_getfield(L, -1, "outputs");
-	read_texture_outputs(L, stepdef.outputs);
+
+	if (lua_istable(L, -1))
+		read_texture_outputs(L, stepdef.outputs);
 	lua_pop(L, 1);
 
 	lua_getfield(L, -1, "viewport");
@@ -906,7 +917,7 @@ void ModApiGraphics::read_posteffect_def(
 
 	if (lua_istable(L, -1))
 		read_blend_state(L, stepdef.blend_mode);
-	lua_pop(L, -1);
+	lua_pop(L, 1);
 
 	stepdef.line_width = getfloatfield_default(L, -1, "line_width", 1.0f);
 }
@@ -958,9 +969,10 @@ int ModApiGraphics::l_add_posteffect(lua_State *L)
 
 	PostProcessingStepDefinition def;
 	ShaderInfo shader;
-	read_posteffect_def(L, def, shader);
+	u8 flags;
+	read_posteffect_def(L, def, shader, flags);
 
-	def.shader_id = getClient(L)->getShaderSource()->getShader(shader);
+	/*def.shader_id = getClient(L)->getShaderSource()->getShader(shader);
 
 	auto pipeline = getClient(L)->getRenderingEngine()->getPipeline();
 	auto tbuf = pipeline->getTextureBuffer(def.texture_buffer_name, true);
@@ -976,7 +988,7 @@ int ModApiGraphics::l_add_posteffect(lua_State *L)
 	RenderStep *step = postprocess_pipeline->addPostProcessStep(def);
 	step->setRenderSource(tbuf);
 	step->setRenderTarget(pipeline->createOwned<TextureBufferOutput>(
-		tbuf, def.outputs));
+		tbuf, def.outputs));*/
 
 	return 1;
 }
@@ -1058,6 +1070,31 @@ int ModApiGraphics::l_get_posteffects_order(lua_State *L)
 	}
 
 	return 1;
+}
+
+int ModApiGraphics::l_override_posteffect_def(lua_State *L)
+{
+	if (!lua_istable(L, 1))
+		return 0;
+
+	PostProcessingStepDefinition def;
+	ShaderInfo shader;
+	u8 flags;
+	read_posteffect_def(L, def, shader, flags);
+
+	def.shader_id = getClient(L)->getShaderSource()->getShader(shader);
+
+	auto pipeline = getClient(L)->getRenderingEngine()->getPipeline();
+	auto tbuf = pipeline->getTextureBuffer(def.texture_buffer_name, true);
+
+	if (!tbuf)
+		return 0;
+
+	auto postprocess_pipeline = dynamic_cast<PostProcessingPipeline *>(pipeline->getStep("Draw3D"));
+
+	if (!postprocess_pipeline)
+		return 0;
+    return 1;
 }
 
 void ModApiGraphics::Initialize(lua_State *L, int top)

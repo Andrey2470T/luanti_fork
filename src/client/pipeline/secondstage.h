@@ -85,6 +85,7 @@ public:
 
 	PostProcessingStep *getPostprocessStep(const std::string &name);
 	const PostProcessingStepDefinition &getPostProcessStepDef(const std::string &name);
+	void overridePostProcessStepDef(const PostProcessingStepDefinition &def);
 
 	const std::vector<PostProcessingStepState> &getStepsState() const { return m_steps_state; }
 	void setStepsState(const std::vector<PostProcessingStepState> &state) { m_steps_state = state; }
