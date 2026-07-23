@@ -89,7 +89,7 @@ std::unique_ptr<RenderStep> create3DStage(Client *client, v2f scale)
 {
 	RenderStep *step = new Draw3D();
 	if (g_settings->getBool("enable_post_processing")) {
-		PostProcessingPipeline *pipeline = new PostProcessingPipeline();
+		auto pipeline = new PostProcessingPipeline();
 		pipeline->addDraw3DStep((Draw3D *)step);
 
 		auto effect = addPostProcessing(pipeline, step, scale, client);

@@ -264,7 +264,10 @@ void ModApiGraphics::push_constants(lua_State *L, const ShaderConstants &constan
 		lua_settable(L, -3);
 
 		lua_pushinteger(L, 2);
-		lua_pushnumber(L, std::get<f32>(c.second));
+		if (std::holds_alternative<s32>(c.second))
+			lua_pushnumber(L, std::get<s32>(c.second));
+		else
+			lua_pushnumber(L, std::get<f32>(c.second));
 		lua_settable(L, -3);
 
 		lua_settable(L, -3);
@@ -275,7 +278,7 @@ void ModApiGraphics::read_shader_info(lua_State *L, ShaderInfo &info, bool &appl
 {
 	info.vertex_shader = getstringfield_default(L, -1, "vertex", "opengl_vertex.glsl");
 	info.geometry_shader = getstringfield_default(L, -1, "geometry", "opengl_geometry.glsl");
-	info.fragment_shader = getstringfield_default(L, -1, "fragment", "opengl_fragment.glsl");
+	info.fragment_shader = getstringfield_default(L, -1, "fragment", "");
 
 	if (info.fragment_shader.empty())
 		info.fragment_shader = getstringfield_default(L, -1, "src", "opengl_fragment.glsl");
@@ -309,8 +312,9 @@ void ModApiGraphics::read_shader_info(lua_State *L, ShaderInfo &info, bool &appl
 		lua_pushvalue(L, -4);
 		lua_settable(L, -3);
 
-		lua_pop(L, 3);
+		lua_pop(L, 2);
 	}
+	lua_pop(L, 1);
 }
 
 void ModApiGraphics::push_shader_info(lua_State *L, const ShaderInfo &info)
@@ -333,13 +337,13 @@ void ModApiGraphics::push_shader_info(lua_State *L, const ShaderInfo &info)
 	}
 	lua_setfield(L, -2, "includes");
 
-	lua_getglobal(L, "gfx");
+	/*lua_getglobal(L, "gfx");
 	lua_getfield(L, -1, "uniform_setters");
 	lua_getfield(L, -1, info.name.data());
 
 	if (lua_iscfunction(L, -1))
 		lua_setfield(L, -4, "on_set_uniforms");
-	lua_pop(L, 2);
+	lua_pop(L, 2);*/
 }
 
 int ModApiGraphics::l_register_material(lua_State *L)
@@ -676,7 +680,6 @@ void ModApiGraphics::read_texture_outputs(lua_State *L, std::vector<std::pair<u8
 		}
 		lua_pop(L, 1);
 	}
-	lua_pop(L, 1);
 }
 
 void ModApiGraphics::push_texture_outputs(lua_State *L, const std::vector<std::pair<u8, u8>> &tex_to_face_map)
@@ -685,17 +688,16 @@ void ModApiGraphics::push_texture_outputs(lua_State *L, const std::vector<std::p
 
 	for (u8 i = 0; i < tex_to_face_map.size(); i++) {
 		const auto &output = tex_to_face_map.at(i);
+		lua_pushinteger(L, i+1);
 		lua_newtable(L);
 
-		lua_pushinteger(L, 1);
 		lua_pushinteger(L, output.first);
-		lua_setfield(L, -3, "index");
+		lua_setfield(L, -2, "index");
 
-		lua_pushinteger(L, 2);
 		lua_pushinteger(L, output.second);
-		lua_setfield(L, -3, "face");
+		lua_setfield(L, -2, "face");
 
-		lua_settable(L, i);
+		lua_settable(L, -3);
 	}
 }
 
@@ -719,7 +721,6 @@ int ModApiGraphics::l_create_texture_buffer(lua_State *L)
 		}
 		lua_pop(L, 1);
 	}
-	lua_pop(L, 1);
 
 	auto tbuf = getClient(L)->getRenderingEngine()->getPipeline()->createTextureBuffer(name);
 
@@ -853,28 +854,27 @@ void ModApiGraphics::push_rect(lua_State *L, const core::rectf &r)
 }
 
 void ModApiGraphics::read_posteffect_def(
-	lua_State *L, PostProcessingStepDefinition &stepdef, ShaderInfo &shader, u8 &flags)
+	lua_State *L, PostProcessingStepDefinition &stepdef, ShaderInfo &shader)
 {
 	getstringfield(L, -1, "name", stepdef.name);
 
 	lua_getfield(L, -1, "shader");
 
 	if (lua_istable(L, -1)) {
-		flags |= (u8)PostProcessingStepDefProperties::SHADER;
 		shader.name = stepdef.name;
-		shader.vertex_shader = R"(
-			CENTROID_ out mediump vec2 varTexCoord;
 
-			void main(void)
-			{
-				varTexCoord.st = inTexCoord0.st;
-				gl_Position = vec4(inPosition, 1.0);
-			})";
 		bool apply_shadows;
 		read_shader_info(L, shader, apply_shadows);
 
+		shader.vertex_shader = R"(
+CENTROID_ out mediump vec2 varTexCoord;
+
+void main(void)
+{
+	varTexCoord.st = inTexCoord0.st;
+	gl_Position = vec4(inPosition, 1.0);
+})";
 		shader.geometry_shader = ""; // this kind of the shader is not allowed for the posteffect
-		shader.vertex_includes = {};
 	}
 	lua_pop(L, 1);
 
@@ -891,9 +891,8 @@ void ModApiGraphics::read_posteffect_def(
 				stepdef.inputs.emplace_back(readParam<s16>(L, -1));
 			lua_pop(L, 1);
 		}
-		lua_pop(L, 1);
 	}
-	lua_pop(L, 1);
+    lua_pop(L, 1);
 
 	lua_getfield(L, -1, "outputs");
 
@@ -940,7 +939,7 @@ void ModApiGraphics::push_posteffect_def(lua_State *L, const PostProcessingStepD
 	for (u8 i = 0; i < stepdef.inputs.size(); i++) {
 		const auto &input = stepdef.inputs.at(i);
 
-		lua_pushinteger(L, i);
+		lua_pushinteger(L, i+1);
 		lua_pushinteger(L, input);
 		lua_settable(L, -3);
 	}
@@ -969,10 +968,9 @@ int ModApiGraphics::l_add_posteffect(lua_State *L)
 
 	PostProcessingStepDefinition def;
 	ShaderInfo shader;
-	u8 flags;
-	read_posteffect_def(L, def, shader, flags);
+	read_posteffect_def(L, def, shader);
 
-	/*def.shader_id = getClient(L)->getShaderSource()->getShader(shader);
+	def.shader_id = getClient(L)->getShaderSource()->getShader(shader);
 
 	auto pipeline = getClient(L)->getRenderingEngine()->getPipeline();
 	auto tbuf = pipeline->getTextureBuffer(def.texture_buffer_name, true);
@@ -980,7 +978,7 @@ int ModApiGraphics::l_add_posteffect(lua_State *L)
 	if (!tbuf)
 		return 0;
 
-	auto postprocess_pipeline = dynamic_cast<PostProcessingPipeline *>(pipeline->getStep("Draw3D"));
+	auto postprocess_pipeline = getClient(L)->getRenderingEngine()->getPostProcessingPipeline();
 
 	if (!postprocess_pipeline)
 		return 0;
@@ -988,7 +986,7 @@ int ModApiGraphics::l_add_posteffect(lua_State *L)
 	RenderStep *step = postprocess_pipeline->addPostProcessStep(def);
 	step->setRenderSource(tbuf);
 	step->setRenderTarget(pipeline->createOwned<TextureBufferOutput>(
-		tbuf, def.outputs));*/
+		tbuf, def.outputs));
 
 	return 1;
 }
@@ -1000,16 +998,28 @@ int ModApiGraphics::l_get_posteffect_def(lua_State *L)
 		return 0;
 	}
 
-	auto pipeline = getClient(L)->getRenderingEngine()->getPipeline();
-	auto postprocess_pipeline = dynamic_cast<PostProcessingPipeline *>(pipeline->getStep("Draw3D"));
+	auto postprocess_pipeline = getClient(L)->getRenderingEngine()->getPostProcessingPipeline();
 
-	if (!postprocess_pipeline)
+	if (!postprocess_pipeline) {
+		lua_pushnil(L);
 		return 0;
+	}
 
 	std::string name = readParam<std::string>(L, 1);
 	auto def = postprocess_pipeline->getPostProcessStepDef(name);
 
 	auto shader = getClient(L)->getShaderSource()->getShaderInfo(def.shader_id);
+
+	if (def.outputs.empty()) {
+		auto step = postprocess_pipeline->getPostprocessStep(name);
+
+		if (step) {
+			auto tbuf_output = dynamic_cast<TextureBufferOutput *>(step->getRenderTarget());
+
+			if (tbuf_output)
+				def.outputs = tbuf_output->getTextureMap();
+		}
+	}
 	push_posteffect_def(L, def, shader);
 	
 	return 1;
@@ -1020,8 +1030,7 @@ int ModApiGraphics::l_set_posteffects_order(lua_State *L)
 	if (!lua_istable(L, -1))
 		return 0;
 
-	auto pipeline = getClient(L)->getRenderingEngine()->getPipeline();
-	auto postprocess_pipeline = dynamic_cast<PostProcessingPipeline *>(pipeline->getStep("Draw3D"));
+	auto postprocess_pipeline = getClient(L)->getRenderingEngine()->getPostProcessingPipeline();
 	std::vector<PostProcessingStepState> order;
 
 	int t = lua_gettop(L);
@@ -1039,7 +1048,6 @@ int ModApiGraphics::l_set_posteffects_order(lua_State *L)
 		}
 		lua_pop(L, 1);
 	}
-	lua_pop(L, 1);
 
 	postprocess_pipeline->setStepsState(order);
 
@@ -1048,9 +1056,7 @@ int ModApiGraphics::l_set_posteffects_order(lua_State *L)
 
 int ModApiGraphics::l_get_posteffects_order(lua_State *L)
 {
-	auto pipeline = getClient(L)->getRenderingEngine()->getPipeline();
-	auto postprocess_pipeline = dynamic_cast<PostProcessingPipeline *>(pipeline->getStep("Draw3D"));
-
+	auto postprocess_pipeline = getClient(L)->getRenderingEngine()->getPostProcessingPipeline();
 	auto state = postprocess_pipeline->getStepsState();
 
 	lua_newtable(L);
@@ -1058,7 +1064,7 @@ int ModApiGraphics::l_get_posteffects_order(lua_State *L)
 	for (u8 i = 0; i < state.size(); i++) {
 		const auto &step_state = state.at(i);
 
-		lua_pushinteger(L, i);
+		lua_pushinteger(L, i+1);
 		lua_newtable(L);
 
 		lua_pushlstring(L, step_state.name.data(), step_state.name.size());
@@ -1072,29 +1078,45 @@ int ModApiGraphics::l_get_posteffects_order(lua_State *L)
 	return 1;
 }
 
-int ModApiGraphics::l_override_posteffect_def(lua_State *L)
+int ModApiGraphics::l_override_posteffect_inputs(lua_State *L)
 {
-	if (!lua_istable(L, 1))
+	if (!lua_isstring(L, 1) || !lua_istable(L, 2))
 		return 0;
 
-	PostProcessingStepDefinition def;
-	ShaderInfo shader;
-	u8 flags;
-	read_posteffect_def(L, def, shader, flags);
+	std::string name = readParam<std::string>(L, 1);
 
-	def.shader_id = getClient(L)->getShaderSource()->getShader(shader);
+	auto postprocess_pipeline = getClient(L)->getRenderingEngine()->getPostProcessingPipeline();
 
-	auto pipeline = getClient(L)->getRenderingEngine()->getPipeline();
-	auto tbuf = pipeline->getTextureBuffer(def.texture_buffer_name, true);
+	std::vector<u8> inputs;
+	int t = lua_gettop(L);
 
-	if (!tbuf)
+	lua_pushnil(L);
+	while (lua_next(L, t)) {
+		if (lua_isnumber(L, -1))
+			inputs.emplace_back(readParam<s16>(L, -1));
+		lua_pop(L, 1);
+	}
+
+	postprocess_pipeline->overrideStepInputs(name, inputs);
+
+	return 1;
+}
+
+int ModApiGraphics::l_override_posteffect_outputs(lua_State *L)
+{
+	if (!lua_isstring(L, 1) || !lua_istable(L, 2))
 		return 0;
 
-	auto postprocess_pipeline = dynamic_cast<PostProcessingPipeline *>(pipeline->getStep("Draw3D"));
+	std::string name = readParam<std::string>(L, 1);
 
-	if (!postprocess_pipeline)
-		return 0;
-    return 1;
+	auto postprocess_pipeline = getClient(L)->getRenderingEngine()->getPostProcessingPipeline();
+
+	std::vector<std::pair<u8, u8>> outputs;
+	read_texture_outputs(L, outputs);
+
+	postprocess_pipeline->overrideStepOutputs(name, outputs);
+
+	return 1;
 }
 
 void ModApiGraphics::Initialize(lua_State *L, int top)
@@ -1123,6 +1145,8 @@ void ModApiGraphics::Initialize(lua_State *L, int top)
 	API_FCT(get_posteffect_def);
 	API_FCT(set_posteffects_order);
 	API_FCT(get_posteffects_order);
+	API_FCT(override_posteffect_inputs);
+	API_FCT(override_posteffect_outputs);
 
 	UniformSetter::Register(L);
 

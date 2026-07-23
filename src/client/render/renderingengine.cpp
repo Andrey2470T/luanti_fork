@@ -20,6 +20,7 @@
 #include "renderingengine.h"
 #include "client/pipeline/core.h"
 #include "client/pipeline/factory.h"
+#include "client/pipeline/secondstage.h"
 #include "filesys.h"
 #include "irrlicht_changes/static_text.h"
 #include "Utils/irr_ptr.h"
@@ -413,6 +414,16 @@ void RenderingEngine::autosaveScreensizeAndCo(
 			->isWindowMaximized();
 	if (is_window_maximized != initial_window_maximized)
 		g_settings->setBool("window_maximized", is_window_maximized);
+}
+
+PostProcessingPipeline *RenderingEngine::getPostProcessingPipeline()
+{
+	auto pipeline = getPipeline();
+
+	if (!pipeline)
+		return nullptr;
+
+	return dynamic_cast<PostProcessingPipeline *>(pipeline->getStep("Main"));
 }
 
 void RenderingEngine::createUBOs()

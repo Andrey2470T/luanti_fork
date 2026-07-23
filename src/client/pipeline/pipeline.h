@@ -185,6 +185,14 @@ public:
 
 	video::RenderTarget *getIrrRenderTarget(PipelineContext &context);
 
+	const std::vector<std::pair<u8, u8>> &getTextureMap() const { return texture_map; }
+	const std::pair<u8, u8> &getDepthStencil() const { return depth_stencil; }
+
+	void overrideTextureMap(const std::vector<std::pair<u8, u8>> &_texture_map)
+	{
+		texture_map = _texture_map;
+	}
+
 	void addOutput(u8 texture_index, u8 cubemap_face=0)
 	{
 		texture_map.emplace_back(texture_index, cubemap_face);

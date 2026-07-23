@@ -25,6 +25,7 @@ public:
 	virtual RenderTarget *getRenderTarget() override { return target; }
 	void setRenderSource(RenderSource *source) override;
 	void setRenderTarget(RenderTarget *target) override;
+	void overrideTextureMap(const std::vector<u8> &texture_map);
 	void reset(PipelineContext &context) override;
 	void run(PipelineContext &context) override;
 
@@ -59,14 +60,14 @@ class SwapTexturesStep;
 struct PostProcessingStepDefinition
 {
 	std::string name;
-	u32 shader_id;
+	u32 shader_id{0};
 	std::string texture_buffer_name;
 	std::vector<u8> inputs;
 	std::vector<std::pair<u8, u8>> outputs;
-	core::rectf viewport;
-	core::rectf cliprect;
-	video::E_BLEND_MODE blend_mode;
-	f32 line_width;
+	core::rectf viewport={0.0f, 0.0f, 1.0f, 1.0f};
+	core::rectf cliprect{0.0f, 0.0f, 0.0f, 0.0f};
+	video::E_BLEND_MODE blend_mode{video::EBM_NONE};
+	f32 line_width{1.0f};
 };
 
 class PostProcessingPipeline : public RenderPipeline
@@ -85,7 +86,9 @@ public:
 
 	PostProcessingStep *getPostprocessStep(const std::string &name);
 	const PostProcessingStepDefinition &getPostProcessStepDef(const std::string &name);
-	void overridePostProcessStepDef(const PostProcessingStepDefinition &def);
+
+	void overrideStepInputs(const std::string &name, const std::vector<u8> &inputs);
+	void overrideStepOutputs(const std::string &name, const std::vector<std::pair<u8, u8>> &outputs);
 
 	const std::vector<PostProcessingStepState> &getStepsState() const { return m_steps_state; }
 	void setStepsState(const std::vector<PostProcessingStepState> &state) { m_steps_state = state; }

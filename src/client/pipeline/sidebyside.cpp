@@ -33,7 +33,8 @@ void DrawImageStep::run(PipelineContext &context)
 	context.device->getVideoDriver()->draw2DImage(texture, pos);
 }
 
-void populateSideBySidePipeline(RenderPipeline *pipeline, Client *client, bool horizontal, bool flipped, v2f &virtual_size_scale)
+void populateSideBySidePipeline(RenderPipeline *pipeline, Client *client,
+	bool horizontal, bool flipped, v2f &virtual_size_scale)
 {
 	static const u8 TEXTURE_LEFT = 0;
 	static const u8 TEXTURE_RIGHT = 1;
