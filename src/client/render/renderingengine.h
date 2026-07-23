@@ -33,8 +33,8 @@ class LocalPlayer;
 class Hud;
 class Minimap;
 class AtlasPool;
-
 class RenderingCore;
+class PostProcessingPipeline;
 
 // Instead of a mechanism to disable fog we just set it to be really far away
 #define FOG_RANGE_ALL (100000 * BS)
@@ -221,6 +221,7 @@ public:
 	{
 		return core->getPipeline();
 	}
+	PostProcessingPipeline *getPostProcessingPipeline();
 
 	void createUBOs();
 

@@ -44,6 +44,13 @@ void PostProcessingStep::setRenderTarget(RenderTarget *_target)
 	target = _target;
 }
 
+void PostProcessingStep::overrideTextureMap(const std::vector<u8> &_texture_map)
+{
+	assert(_texture_map.size() <= video::MATERIAL_MAX_TEXTURES);
+	texture_map = _texture_map;
+	configureMaterial();
+}
+
 void PostProcessingStep::reset(PipelineContext &context)
 {
 }
@@ -129,7 +136,7 @@ SwapTexturesStep *PostProcessingPipeline::addSwapTexturesStep(TextureBuffer *buf
 
 PostProcessingStep *PostProcessingPipeline::getPostprocessStep(const std::string &name)
 {
-	if (std::find(m_special_steps.begin(), m_special_steps.end(), name) == m_special_steps.end())
+	if (std::find(m_special_steps.begin(), m_special_steps.end(), name) != m_special_steps.end())
 		return nullptr;
 	auto step = getStep(name);
 
@@ -150,9 +157,32 @@ const PostProcessingStepDefinition &PostProcessingPipeline::getPostProcessStepDe
 	return *found;
 }
 
-void PostProcessingPipeline::overridePostProcessStepDef(const PostProcessingStepDefinition &def)
+void PostProcessingPipeline::overrideStepInputs(const std::string &name, const std::vector<u8> &inputs)
 {
+	auto &def = const_cast<PostProcessingStepDefinition &>(getPostProcessStepDef(name));
+	auto step = getPostprocessStep(name);
 
+	if (!step)
+		return;
+	def.inputs = inputs;
+	step->overrideTextureMap(inputs);
+}
+
+void PostProcessingPipeline::overrideStepOutputs(const std::string &name, const std::vector<std::pair<u8, u8>> &outputs)
+{
+	auto &def = const_cast<PostProcessingStepDefinition &>(getPostProcessStepDef(name));
+	auto step = getPostprocessStep(name);
+
+	if (!step)
+		return;
+	def.outputs = outputs;
+
+	auto tbuf_output = (TextureBufferOutput *)step->getRenderTarget();
+
+	if (!tbuf_output)
+		return;
+
+	tbuf_output->overrideTextureMap(outputs);
 }
 
 void PostProcessingPipeline::run(PipelineContext &context)
@@ -283,7 +313,7 @@ RenderStep *addPostProcessing(PostProcessingPipeline *pipeline, RenderStep *prev
 
 	// post-processing stage
 
-	u8 source = 21;
+	u8 source = TEXTURE_COLOR;
 
 	// common downsampling step for bloom or autoexposure
 	if (enable_bloom || enable_auto_exposure) {
@@ -356,7 +386,7 @@ RenderStep *addPostProcessing(PostProcessingPipeline *pipeline, RenderStep *prev
 	}
 
 	// FXAA
-	u8 final_stage_source = 21;
+	u8 final_stage_source = TEXTURE_COLOR;;
 
 	if (enable_fxaa) {
 		final_stage_source = TEXTURE_FXAA;
