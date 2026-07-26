@@ -25,6 +25,16 @@ private:
 	RenderTarget *m_target {nullptr};
 };
 
+class Draw3DCubeMap : public Draw3D
+{
+	video::E_CUBEMAP_FACE curRenderedFace{video::ECMF_NEG_X};
+	v3f lastCameraDir{0.0f};
+public:
+	static inline const u8 TEXTURE_COLOR_CUBE = 22;
+	static inline const u8 TEXTURE_DEPTH_CUBE = 23;
+	virtual void run(PipelineContext &context) override;
+};
+
 class DrawWield : public RenderStep
 {
 public:

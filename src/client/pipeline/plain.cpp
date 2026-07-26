@@ -8,6 +8,7 @@
 #include "client/player/camera.h"
 #include "client/core/client.h"
 #include "client/render/clientmap.h"
+#include "client/render/renderingengine.h"
 #include "client/ui/hud.h"
 #include "client/ui/minimap.h"
 #include "client/shadows/dynamicshadowsrender.h"
@@ -25,6 +26,85 @@ void Draw3D::run(PipelineContext &context)
 		return;
 	context.hud->drawBlockBounds();
 	context.hud->drawSelectionMesh();
+}
+
+void Draw3DCubeMap::run(PipelineContext &context)
+{
+	auto tb_output = dynamic_cast<TextureBufferOutput *>(getRenderTarget());
+
+	if (!tb_output)
+		return;
+	
+	auto camera = context.client->getCamera()->getCameraNode();
+	v3f up = camera->getUpVector();
+	v3f pos = camera->getAbsolutePosition();
+	v3f target = camera->getTarget();
+	v3f fwd = (target - pos).normalize();
+
+	switch (curRenderedFace) {
+	case video::ECMF_POS_X:
+		fwd = fwd.crossProduct(up);
+		break;
+	case video::ECMF_NEG_X:
+		fwd = up.crossProduct(fwd);
+		break;
+	case video::ECMF_POS_Y: {
+		v3f up2 = up;
+		up = -fwd;
+		fwd = up2;
+		break;
+	}
+	case video::ECMF_NEG_Y: {
+		v3f up2 = up;
+		up = fwd;
+		fwd = -up2;
+		break;
+	}
+	case video::ECMF_NEG_Z:
+		fwd = -fwd;
+		break;
+	default:
+		break;
+	}
+
+	f32 prevFarValue = camera->getFarValue();
+	v3f prevTarget = camera->getTarget();
+	v3f prevUpVector = camera->getUpVector();
+	camera->setFarValue(2500.0f);
+	camera->setTarget(pos+fwd);
+	camera->setUpVector(up);
+	camera->updateMatrices();
+
+	tb_output->overrideTextureMap({{TEXTURE_COLOR_CUBE, curRenderedFace}});
+	tb_output->overrideDepthMap({TEXTURE_DEPTH_CUBE, curRenderedFace});
+
+	tb_output->activate(context);
+
+	context.device->getSceneManager()->drawAll();
+	context.device->getVideoDriver()->setTransform(video::ETS_WORLD, core::IdentityMatrix);
+	if (!context.show_hud)
+		return;
+	context.hud->drawBlockBounds();
+	context.hud->drawSelectionMesh();
+
+	camera->setFarValue(prevFarValue);
+	camera->setTarget(prevTarget);
+	camera->setUpVector(prevUpVector);
+	camera->updateMatrices();
+
+	auto driver = context.client->getRenderingEngine()->get_video_driver();
+	driver->setTransform(video::ETS_PROJECTION, camera->getProjectionMatrix());
+	driver->setTransform(video::ETS_VIEW, camera->getViewMatrix());
+
+	u8 nextRenderedFace = curRenderedFace;
+
+	/*if (nextRenderedFace == 3)
+		nextRenderedFace = 5;
+	else */if (nextRenderedFace == 5)
+		nextRenderedFace = 0;
+	else
+		nextRenderedFace++;
+	curRenderedFace = (video::E_CUBEMAP_FACE)nextRenderedFace;
 }
 
 void DrawWield::run(PipelineContext &context)

@@ -81,6 +81,7 @@ public:
 	PostProcessingStep *addPostProcessStep(const PostProcessingStepDefinition &def);
 
 	void addDraw3DStep(Draw3D *step);
+	void addDraw3DCubeStep(Draw3DCubeMap *step);
 	ResolveMSAAStep *addResolveMSAAStep(TextureBufferOutput *msaa, TextureBufferOutput *normal);
 	SwapTexturesStep *addSwapTexturesStep(TextureBuffer *buffer, u8 texture_a, u8 texture_b);
 
@@ -95,11 +96,12 @@ public:
 
 	void run(PipelineContext &context) override;
 private:
-	enum class SpecialSteps { DRAW3D, RESOLVE_MSAA, SWAP_TEXTURES };
+	enum class SpecialSteps { DRAW3D, DRAW3D_CUBE, RESOLVE_MSAA, SWAP_TEXTURES };
 
 	static std::vector<std::string> m_special_steps;
 
 	Draw3D *m_draw3d {nullptr};
+	Draw3DCubeMap *m_draw3d_cube {nullptr};
 	ResolveMSAAStep *m_resolve_msaa {nullptr};
 	SwapTexturesStep *m_swap_textures {nullptr};
 

@@ -91,7 +91,7 @@ void PostProcessingStep::setBilinearFilter(u8 index, bool value)
 	material.TextureLayers[index].MagFilter = value ? video::ETMAGF_LINEAR : video::ETMAGF_NEAREST;
 }
 
-std::vector<std::string> PostProcessingPipeline::m_special_steps = {"Draw3D", "ResolveMSAA", "SwapTextures"};
+std::vector<std::string> PostProcessingPipeline::m_special_steps = {"Draw3D", "Draw3DCube", "ResolveMSAA", "SwapTextures"};
 
 PostProcessingStep *PostProcessingPipeline::addPostprocessStep(const std::string &name, u32 shader_id, const std::vector<u8> &texture_map, bool alpha_blend)
 {
@@ -119,6 +119,12 @@ void PostProcessingPipeline::addDraw3DStep(Draw3D *step)
 {
 	addStep(m_special_steps[(u8)SpecialSteps::DRAW3D], own(std::unique_ptr<RenderStep>(step)));
 	m_draw3d = step;
+}
+
+void PostProcessingPipeline::addDraw3DCubeStep(Draw3DCubeMap *step)
+{
+	addStep(m_special_steps[(u8)SpecialSteps::DRAW3D_CUBE], own(std::unique_ptr<RenderStep>(step)));
+	m_draw3d_cube = step;
 }
 
 ResolveMSAAStep *PostProcessingPipeline::addResolveMSAAStep(TextureBufferOutput *msaa, TextureBufferOutput *normal)
@@ -197,6 +203,9 @@ void PostProcessingPipeline::run(PipelineContext &context)
 
 	if (m_resolve_msaa)
 		m_resolve_msaa->run(context);
+
+	if (m_draw3d_cube)
+		m_draw3d_cube->run(context);
 
 	for (auto &step_state : m_steps_state)
 	{
@@ -291,6 +300,9 @@ RenderStep *addPostProcessing(PostProcessingPipeline *pipeline, RenderStep *prev
 	buffer->setTexture(TEXTURE_EXPOSURE_2, core::dimension2du(1,1), "exposure_2", color_format, /*clear:*/ true);
 	buffer->setTexture(TEXTURE_DEPTH, scale, "3d_depthmap", depth_format);
 
+	buffer->setTexture(Draw3DCubeMap::TEXTURE_COLOR_CUBE, scale, "3d_render_cube", color_format, false, 0, true);
+	buffer->setTexture(Draw3DCubeMap::TEXTURE_DEPTH_CUBE, scale, "3d_depthmap_cube", depth_format, false, 0, true);
+
 	std::vector<u8> outputs_draw3d = { TEXTURE_COLOR, TEXTURE_NORMAL };
 	if (enable_bloom)
 		outputs_draw3d.emplace_back(TEXTURE_BLOOM_MASK);
@@ -304,6 +316,11 @@ RenderStep *addPostProcessing(PostProcessingPipeline *pipeline, RenderStep *prev
 	} else {
 		previousStep->setRenderTarget(pipeline->createOwned<TextureBufferOutput>(buffer, outputs_draw3d, TEXTURE_DEPTH));
 	}
+
+	auto draw3dCubeStep = new Draw3DCubeMap();
+	pipeline->addDraw3DCubeStep(draw3dCubeStep);
+	draw3dCubeStep->setRenderTarget(pipeline->createOwned<TextureBufferOutput>(
+		buffer, std::vector<u8> {Draw3DCubeMap::TEXTURE_COLOR_CUBE}, Draw3DCubeMap::TEXTURE_DEPTH_CUBE));
 
 	// shared variables
 	u32 shader_id;

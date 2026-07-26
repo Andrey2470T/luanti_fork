@@ -192,6 +192,10 @@ public:
 	{
 		texture_map = _texture_map;
 	}
+	void overrideDepthMap(const std::pair<u8, u8> &_depth_map)
+	{
+		depth_stencil = _depth_map;
+	}
 
 	void addOutput(u8 texture_index, u8 cubemap_face=0)
 	{
