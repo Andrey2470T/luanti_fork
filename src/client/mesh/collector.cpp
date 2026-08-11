@@ -20,6 +20,21 @@ void MeshCollector::append(TileSpec &tile, const scene::Vertex3D *vertices,
 	}
 }
 
+f32 clamp_uv_frac(f32 value) {
+    if (value == 0.0f) return 0.0f;
+
+    float iptr;
+    float frac_part = std::modf(value, &iptr);
+
+    if (frac_part < 0.0f)
+        return 0.0f;
+
+    if (frac_part == 0.0f)
+        return 1.0f;
+    
+    return frac_part;
+}
+
 void MeshCollector::append(TileLayer &layer, const scene::Vertex3D *vertices,
 		u32 numVertices, const u16 *indices, u32 numIndices, u8 layernum,
 		bool use_scale)
@@ -57,6 +72,8 @@ void MeshCollector::append(TileLayer &layer, const scene::Vertex3D *vertices,
 		std::memcpy(&pack_r_f, &pack_r, sizeof(pack_r_f));
 
 		auto uv = scale * vertices[i].TCoords;
+		uv.X = clamp_uv_frac(uv.X);
+		uv.Y = clamp_uv_frac(uv.Y);
 
 		// Convert the uv coords from the tile space to the atlas one
 		u32 relPosX = core::round32(uv.X * tileSize.X);
