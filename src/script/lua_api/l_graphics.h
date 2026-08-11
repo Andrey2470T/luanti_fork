@@ -64,7 +64,7 @@ private:
 	static int l_override_day_night_ratio(lua_State *L);
 	static int l_get_day_night_ratio(lua_State *L);
 
-	static void read_texture_def(lua_State *L, TextureBufferDefinition &texdef);
+	static void read_texture_def(lua_State *L, TextureBufferDefinition &texdef, v2f scale);
 	static void push_texture_def(lua_State *L, const TextureBufferDefinition &texdef);
 	static void read_texture_outputs(
 		lua_State *L, std::vector<std::pair<u8, u8>> &tex_to_face_map);

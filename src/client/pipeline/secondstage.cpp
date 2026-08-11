@@ -225,8 +225,8 @@ RenderStep *addPostProcessing(PostProcessingPipeline *pipeline, RenderStep *prev
 	auto driver = client->getSceneManager()->getVideoDriver();
 
 	// configure texture formats
-	video::ECOLOR_FORMAT color_format = selectColorFormat(driver);
-	video::ECOLOR_FORMAT depth_format = selectDepthFormat(driver);
+	video::ECOLOR_FORMAT color_format = TextureBuffer::selectColorFormat(driver);
+	video::ECOLOR_FORMAT depth_format = TextureBuffer::selectDepthFormat(driver);
 
 	verbosestream << "addPostProcessing(): color = "
 		<< video::pixelFormatsInfo[color_format].name << " depth = "
@@ -278,6 +278,8 @@ RenderStep *addPostProcessing(PostProcessingPipeline *pipeline, RenderStep *prev
 	if (enable_ssaa) {
 		scale *= antialiasing_scale;
 	}
+
+	pipeline->setScaleFactor(scale);
 
 	// color_format can be a normalized integer format, but bloom requires
 	// values outside of [0,1] so this needs to be a different one.

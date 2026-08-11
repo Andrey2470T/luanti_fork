@@ -7,6 +7,7 @@
 #include "client/ui/hud.h"
 #include "Video/RenderTarget.h"
 #include "Image/SColor.h"
+#include "settings.h"
 
 #include <vector>
 #include <memory>
@@ -37,7 +38,7 @@ const TextureBufferDefinition &TextureBuffer::getTextureDef(u8 index)
 
 void TextureBuffer::setTexture(
 	u8 index, core::dimension2du size, const std::string &name, video::ECOLOR_FORMAT format,
-	bool clear, u8 msaa, bool cubemap)
+	bool clear, bool use_msaa, bool cubemap)
 {
 	assert(index != NO_DEPTH_TEXTURE);
 
@@ -52,13 +53,13 @@ void TextureBuffer::setTexture(
 	definition.name = name;
 	definition.format = format;
 	definition.clear = clear;
-	definition.msaa = msaa;
+	definition.use_msaa = use_msaa;
 	definition.cubemap = cubemap;
 }
 
 void TextureBuffer::setTexture(
 	u8 index, v2f scale_factor, const std::string &name, video::ECOLOR_FORMAT format,
-	bool clear, u8 msaa, bool cubemap)
+	bool clear, bool use_msaa, bool cubemap)
 {
 	assert(index != NO_DEPTH_TEXTURE);
 
@@ -73,7 +74,7 @@ void TextureBuffer::setTexture(
 	definition.name = name;
 	definition.format = format;
 	definition.clear = clear;
-	definition.msaa = msaa;
+	definition.use_msaa = use_msaa;
 	definition.cubemap = cubemap;
 }
 
@@ -150,19 +151,21 @@ bool TextureBuffer::ensureTexture(video::GLTexture **texture, const TextureBuffe
 			return false;
 		}
 
+		u8 msaa = MYMAX(2, g_settings->getU16("fsaa"));
+
 		if (definition.clear) {
 			// We're not able to clear a render target texture
 			// We're not able to create a normal texture with MSAA
 			// (could be solved by more refactoring in Irrlicht, but not needed for now)
-			sanity_check(definition.msaa < 1);
+			sanity_check(!definition.use_msaa);
 
 			video::Image *image = new video::Image(definition.format, size);
 			// Cannot use image->fill because it's not implemented for all formats.
 			std::memset(image->getData(), 0, video::getDataSizeFromFormat(definition.format, size.Width, size.Height));
 			*texture = m_driver->addTexture(definition.name.c_str(), image);
 			image->drop();
-		} else if (definition.msaa > 0) {
-			*texture = m_driver->addRenderTargetTextureMs(size, definition.msaa, definition.name.c_str(), definition.format);
+		} else if (definition.use_msaa) {
+			*texture = m_driver->addRenderTargetTextureMs(size, msaa, definition.name.c_str(), definition.format);
 		} else {
 			if (definition.cubemap)
 				*texture = m_driver->addRenderTargetTextureCubemap(size, definition.name.c_str(), definition.format);
@@ -178,6 +181,25 @@ bool TextureBuffer::ensureTexture(video::GLTexture **texture, const TextureBuffe
 	}
 
 	return true;
+}
+
+video::ECOLOR_FORMAT TextureBuffer::selectColorFormat(video::VideoDriver *driver)
+{
+	u32 bits = g_settings->getU32("post_processing_texture_bits");
+	if (bits >= 16 && driver->queryTextureFormat(video::ECF_A16B16G16R16F))
+		return video::ECF_A16B16G16R16F;
+	if (bits >= 10 && driver->queryTextureFormat(video::ECF_A2R10G10B10))
+		return video::ECF_A2R10G10B10;
+	return video::ECF_A8R8G8B8;
+}
+
+video::ECOLOR_FORMAT TextureBuffer::selectDepthFormat(video::VideoDriver *driver)
+{
+	if (driver->queryTextureFormat(video::ECF_D24))
+		return video::ECF_D24;
+	if (driver->queryTextureFormat(video::ECF_D24S8))
+		return video::ECF_D24S8;
+	return video::ECF_D16; // fallback depth format
 }
 
 TextureBufferOutput::TextureBufferOutput(TextureBuffer *_buffer, u8 _texture_index)

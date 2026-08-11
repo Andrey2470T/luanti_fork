@@ -94,6 +94,9 @@ public:
 	const std::vector<PostProcessingStepState> &getStepsState() const { return m_steps_state; }
 	void setStepsState(const std::vector<PostProcessingStepState> &state) { m_steps_state = state; }
 
+	v2f getScaleFactor() const { return m_scale_f; }
+ 	void setScaleFactor(v2f factor) { m_scale_f = factor; }
+
 	void run(PipelineContext &context) override;
 private:
 	enum class SpecialSteps { DRAW3D, DRAW3D_CUBE, RESOLVE_MSAA, SWAP_TEXTURES };
@@ -107,6 +110,8 @@ private:
 
 	std::vector<PostProcessingStepState> m_steps_state;
 	std::vector<PostProcessingStepDefinition> m_steps_defs;
+
+	v2f m_scale_f {1.0f, 1.0f};
 };
 
 

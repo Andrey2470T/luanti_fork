@@ -104,11 +104,11 @@ struct TextureBufferDefinition
 	bool fixed_size { false };
 	bool dirty { false };
 	bool clear { false };
-	v2f scale_factor;
+	v2f scale_factor { 1.0f, 1.0f };
 	core::dimension2du size;
 	std::string name;
 	video::ECOLOR_FORMAT format;
-	u8 msaa;
+	bool use_msaa { false };
 	bool cubemap { false };
 };
 
@@ -133,7 +133,7 @@ public:
 	 */
 	void setTexture(
 		u8 index, core::dimension2du size, const std::string& name, video::ECOLOR_FORMAT format,
-		bool clear = false, u8 msaa = 0, bool cubemap = false);
+		bool clear = false, bool use_msaa = false, bool cubemap = false);
 
 	/**
 	 * Configure relative-size texture for the specific index
@@ -145,13 +145,15 @@ public:
 	 */
 	void setTexture(
 		u8 index, v2f scale_factor, const std::string& name, video::ECOLOR_FORMAT format,
-		bool clear = false, u8 msaa = 0, bool cubemap = false);
+		bool clear = false, bool use_msaa = false, bool cubemap = false);
 
 	virtual u8 getTextureCount() override { return m_textures.size(); }
 	virtual video::GLTexture *getTexture(u8 index) override;
 	const TextureBufferDefinition &getTextureDef(u8 index);
 	virtual void reset(PipelineContext &context) override;
 	void swapTextures(u8 texture_a, u8 texture_b);
+	static video::ECOLOR_FORMAT selectColorFormat(video::VideoDriver *driver);
+	static video::ECOLOR_FORMAT selectDepthFormat(video::VideoDriver *driver);
 private:
 	static const u8 NO_DEPTH_TEXTURE = 255;
 

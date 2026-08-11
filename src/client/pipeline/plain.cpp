@@ -198,8 +198,8 @@ RenderStep* addUpscaling(RenderPipeline *pipeline, RenderStep *previousStep, v2f
 		return previousStep;
 
 	auto driver = client->getSceneManager()->getVideoDriver();
-	video::ECOLOR_FORMAT color_format = selectColorFormat(driver);
-	video::ECOLOR_FORMAT depth_format = selectDepthFormat(driver);
+	video::ECOLOR_FORMAT color_format = TextureBuffer::selectColorFormat(driver);
+	video::ECOLOR_FORMAT depth_format = TextureBuffer::selectDepthFormat(driver);
 
 	// Initialize buffer
 	TextureBuffer *buffer = pipeline->createTextureBuffer("Plain");
@@ -232,23 +232,4 @@ void populatePlainPipeline(RenderPipeline *pipeline, Client *client)
 	step3D->setRenderTarget(pipeline->createOwned<ScreenTarget>());
 
 	pipeline->addStep<DrawHUD>("DrawHUD");
-}
-
-video::ECOLOR_FORMAT selectColorFormat(video::VideoDriver *driver)
-{
-	u32 bits = g_settings->getU32("post_processing_texture_bits");
-	if (bits >= 16 && driver->queryTextureFormat(video::ECF_A16B16G16R16F))
-		return video::ECF_A16B16G16R16F;
-	if (bits >= 10 && driver->queryTextureFormat(video::ECF_A2R10G10B10))
-		return video::ECF_A2R10G10B10;
-	return video::ECF_A8R8G8B8;
-}
-
-video::ECOLOR_FORMAT selectDepthFormat(video::VideoDriver *driver)
-{
-	if (driver->queryTextureFormat(video::ECF_D24))
-		return video::ECF_D24;
-	if (driver->queryTextureFormat(video::ECF_D24S8))
-		return video::ECF_D24S8;
-	return video::ECF_D16; // fallback depth format
 }

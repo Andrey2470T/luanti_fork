@@ -192,7 +192,7 @@ Defines parameters of creating OpenGL texture for the pipeline.
     -- Pixel format of texture data (default is "argb8")
     -- Supported pixel formats: "argb8"/"rgb8"/"d16"/"d32"/"d24s8"
     format = <Pixel format>,
-    msaa = <number>
+    msaa = true/false
 }
 ```
 

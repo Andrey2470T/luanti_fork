@@ -336,14 +336,6 @@ void ModApiGraphics::push_shader_info(lua_State *L, const ShaderInfo &info)
 		lua_settable(L, -3);
 	}
 	lua_setfield(L, -2, "includes");
-
-	/*lua_getglobal(L, "gfx");
-	lua_getfield(L, -1, "uniform_setters");
-	lua_getfield(L, -1, info.name.data());
-
-	if (lua_iscfunction(L, -1))
-		lua_setfield(L, -4, "on_set_uniforms");
-	lua_pop(L, 2);*/
 }
 
 int ModApiGraphics::l_register_material(lua_State *L)
@@ -588,7 +580,7 @@ int ModApiGraphics::l_get_day_night_ratio(lua_State *L)
 	return 1;
 }
 
-void ModApiGraphics::read_texture_def(lua_State *L, TextureBufferDefinition &texdef)
+void ModApiGraphics::read_texture_def(lua_State *L, TextureBufferDefinition &texdef, v2f scale)
 {
 	std::string type = getstringfield_default(L, -1, "type", "2d");
 	texdef.cubemap = type == "cubemap";
@@ -609,7 +601,11 @@ void ModApiGraphics::read_texture_def(lua_State *L, TextureBufferDefinition &tex
 
 	if (!size_present) {
 		lua_getfield(L, -1, "scale");
-		texdef.scale_factor = check_v2f(L, -1);
+
+		if (lua_istable(L, -1))
+			texdef.scale_factor = check_v2f(L, -1) * scale;
+		else
+			texdef.scale_factor = scale;
 		texdef.fixed_size = false;
 		lua_pop(L, 1);
 	}
@@ -621,7 +617,7 @@ void ModApiGraphics::read_texture_def(lua_State *L, TextureBufferDefinition &tex
 	};
 
 	texdef.format = mapStrToEnumFormat[getstringfield_default(L, -1, "format", "argb8")];
-	texdef.msaa = getintfield_default(L, -1, "msaa", 0);
+	texdef.use_msaa = getboolfield_default(L, -1, "msaa", false);
 }
 
 void ModApiGraphics::push_texture_def(lua_State *L, const TextureBufferDefinition &texdef)
@@ -661,7 +657,7 @@ void ModApiGraphics::push_texture_def(lua_State *L, const TextureBufferDefinitio
 	lua_pushlstring(L, mapEnumToStrFormat[texdef.format].c_str(), mapEnumToStrFormat[texdef.format].size());
 	lua_setfield(L, -2, "format");
 
-	lua_pushnumber(L, texdef.msaa);
+	lua_pushboolean(L, texdef.use_msaa);
 	lua_setfield(L, -2, "msaa");
 }
 
@@ -706,6 +702,8 @@ int ModApiGraphics::l_create_texture_buffer(lua_State *L)
 	if (!lua_isstring(L, 1) || !lua_istable(L, 2))
 		return 0;
 
+	auto postprocess_pipeline = getClient(L)->getRenderingEngine()->getPostProcessingPipeline();
+
 	std::string name = readParam<std::string>(L, 1);
 
 	std::vector<TextureBufferDefinition> definitions;
@@ -716,7 +714,7 @@ int ModApiGraphics::l_create_texture_buffer(lua_State *L)
 	while (lua_next(L, t)) {
 		if (lua_istable(L, -1)) {
 			TextureBufferDefinition newDef;
-			read_texture_def(L, newDef);
+			read_texture_def(L, newDef, postprocess_pipeline->getScaleFactor());
 			definitions.push_back(newDef);
 		}
 		lua_pop(L, 1);
@@ -731,9 +729,9 @@ int ModApiGraphics::l_create_texture_buffer(lua_State *L)
 		auto &def = definitions.at(i);
 
 		if (def.fixed_size)
-			tbuf->setTexture(i, def.size, def.name, def.format, false, def.msaa, def.cubemap);
+			tbuf->setTexture(i, def.size, def.name, def.format, false, def.use_msaa, def.cubemap);
 		else
-			tbuf->setTexture(i, def.scale_factor, def.name, def.format, false, def.msaa, def.cubemap);
+			tbuf->setTexture(i, def.scale_factor, def.name, def.format, false, def.use_msaa, def.cubemap);
 	}
 
 	return 1;
@@ -744,11 +742,13 @@ int ModApiGraphics::l_add_buffer_texture(lua_State *L)
 	if (!lua_isstring(L, 1) || !lua_isnumber(L, 2))
 		return 0;
 
+	auto postprocess_pipeline = getClient(L)->getRenderingEngine()->getPostProcessingPipeline();
+
 	std::string name = readParam<std::string>(L, 1);
 	u8 index = readParam<s16>(L, 2);
 
 	TextureBufferDefinition def;
-	read_texture_def(L, def);
+	read_texture_def(L, def, postprocess_pipeline->getScaleFactor());
 
 	auto tbuf = getClient(L)->getRenderingEngine()->getPipeline()->getTextureBuffer(name, true);
 
@@ -756,9 +756,9 @@ int ModApiGraphics::l_add_buffer_texture(lua_State *L)
 		return 0;
 
 	if (def.fixed_size)
-		tbuf->setTexture(index, def.size, def.name, def.format, false, def.msaa, def.cubemap);
+		tbuf->setTexture(index, def.size, def.name, def.format, false, def.use_msaa, def.cubemap);
 	else
-		tbuf->setTexture(index, def.scale_factor, def.name, def.format, false, def.msaa, def.cubemap);
+		tbuf->setTexture(index, def.scale_factor, def.name, def.format, false, def.use_msaa, def.cubemap);
 
 	return 1;
 }

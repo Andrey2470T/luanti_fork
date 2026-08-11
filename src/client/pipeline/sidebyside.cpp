@@ -41,8 +41,8 @@ void populateSideBySidePipeline(RenderPipeline *pipeline, Client *client,
 	static const u8 TEXTURE_DEPTH = 2;
 
 	auto driver = client->getSceneManager()->getVideoDriver();
-	video::ECOLOR_FORMAT color_format = selectColorFormat(driver);
-	video::ECOLOR_FORMAT depth_format = selectDepthFormat(driver);
+	video::ECOLOR_FORMAT color_format = TextureBuffer::selectColorFormat(driver);
+	video::ECOLOR_FORMAT depth_format = TextureBuffer::selectDepthFormat(driver);
 
 	v2f offset;
 	if (horizontal) {
