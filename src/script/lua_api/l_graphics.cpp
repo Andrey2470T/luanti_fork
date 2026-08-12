@@ -616,7 +616,27 @@ void ModApiGraphics::read_texture_def(lua_State *L, TextureBufferDefinition &tex
 		{"d16", video::ECF_D16}, {"d32", video::ECF_D32}, {"d24s32", video::ECF_D24S8}
 	};
 
-	texdef.format = mapStrToEnumFormat[getstringfield_default(L, -1, "format", "argb8")];
+	auto driver = getClient(L)->getRenderingEngine()->get_video_driver();
+
+	std::string format_str;
+	getstringfield(L, -1, "format", format_str);
+	std::string format_type = getstringfield_default(L, -1, "format_type", "color");
+
+	if (format_type == "color") {
+		if (format_str.empty()) texdef.format = TextureBuffer::selectColorFormat(driver);
+		else {
+			texdef.format = mapStrToEnumFormat[format_str];
+			assert(format_str != "d16" && format_str != "d32" && format_str != "d24s32");
+		}
+	}
+	else if (format_type == "depth") {
+		if (format_str.empty()) texdef.format = TextureBuffer::selectDepthFormat(driver);
+		else {
+			texdef.format = mapStrToEnumFormat[format_str];
+			assert(format_str == "d16" || format_str == "d32" || format_str == "d24s32");
+		}
+	}
+
 	texdef.use_msaa = getboolfield_default(L, -1, "msaa", false);
 }
 

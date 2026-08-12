@@ -189,9 +189,11 @@ Defines parameters of creating OpenGL texture for the pipeline.
     size = {x=<number>, y=<number>},
     -- Or scale factor instead
     scale = {x=<factor>, y=<factor>},
-    -- Pixel format of texture data (default is "argb8")
+    -- The pixel formats are auto selected by their type (if "format" field is not presented):
+    format_type = "color"/"depth",
     -- Supported pixel formats: "argb8"/"rgb8"/"d16"/"d32"/"d24s8"
     format = <Pixel format>,
+    -- Enable/disable the MSAA filter
     msaa = true/false
 }
 ```
