@@ -40,7 +40,7 @@ float computeFog()
 	return FogFactor;
 }
 
-out vec4 outColor0;
+out vec4 outColor[8];
 
 void main()
 {
@@ -63,5 +63,12 @@ void main()
 		Color = mix(FogColor, Color, FogFactor);
 	}
 
-	outColor0 = Color;
+	outColor[0] = Color;
+	outColor[1] = vec4(0.0);
+	outColor[2] = vec4(0.0);
+	outColor[3] = vec4(0.0);
+	outColor[4] = vec4(0.0);
+	outColor[5] = vec4(0.0);
+	outColor[6] = vec4(0.0);
+	outColor[7] = vec4(0.0);
 }
