@@ -345,46 +345,46 @@ public:
 		f32 saturation = lighting.saturation;
 		m_saturation_pixel.set(saturation, renderer);
 
+		// Map directional light to screen space
+		auto camera_node = m_client->getCamera()->getCameraNode();
+		core::matrix4 transform = camera_node->getProjectionMatrix();
+		transform *= camera_node->getViewMatrix();
+
+		if (m_sky->getSunVisible()) {
+			v3f sun_position = camera_node->getAbsolutePosition() +
+					10000.f * m_sky->getSunDirection();
+			transform.transformVect(sun_position);
+			sun_position.normalize();
+
+			m_sun_position_pixel.set(sun_position, renderer);
+
+			f32 sun_brightness = core::clamp(107.143f * m_sky->getSunDirection().Y, 0.f, 1.f);
+			m_sun_brightness_pixel.set(sun_brightness, renderer);
+		} else {
+			m_sun_position_pixel.set(v3f(0.f, 0.f, -1.f), renderer);
+
+			f32 sun_brightness = 0.f;
+			m_sun_brightness_pixel.set(sun_brightness, renderer);
+		}
+
+		if (m_sky->getMoonVisible()) {
+			v3f moon_position = camera_node->getAbsolutePosition() +
+					10000.f * m_sky->getMoonDirection();
+			transform.transformVect(moon_position);
+			moon_position.normalize();
+
+			m_moon_position_pixel.set(moon_position, renderer);
+
+			f32 moon_brightness = core::clamp(107.143f * m_sky->getMoonDirection().Y, 0.f, 1.f);
+			m_moon_brightness_pixel.set(moon_brightness, renderer);
+		} else {
+			m_moon_position_pixel.set(v3f(0.f, 0.f, -1.f), renderer);
+
+			f32 moon_brightness = 0.f;
+			m_moon_brightness_pixel.set(moon_brightness, renderer);
+		}
+
 		if (m_volumetric_light_enabled) {
-			// Map directional light to screen space
-			auto camera_node = m_client->getCamera()->getCameraNode();
-			core::matrix4 transform = camera_node->getProjectionMatrix();
-			transform *= camera_node->getViewMatrix();
-
-			if (m_sky->getSunVisible()) {
-				v3f sun_position = camera_node->getAbsolutePosition() +
-						10000.f * m_sky->getSunDirection();
-				transform.transformVect(sun_position);
-				sun_position.normalize();
-
-				m_sun_position_pixel.set(sun_position, renderer);
-
-				f32 sun_brightness = core::clamp(107.143f * m_sky->getSunDirection().Y, 0.f, 1.f);
-				m_sun_brightness_pixel.set(sun_brightness, renderer);
-			} else {
-				m_sun_position_pixel.set(v3f(0.f, 0.f, -1.f), renderer);
-
-				f32 sun_brightness = 0.f;
-				m_sun_brightness_pixel.set(sun_brightness, renderer);
-			}
-
-			if (m_sky->getMoonVisible()) {
-				v3f moon_position = camera_node->getAbsolutePosition() +
-						10000.f * m_sky->getMoonDirection();
-				transform.transformVect(moon_position);
-				moon_position.normalize();
-
-				m_moon_position_pixel.set(moon_position, renderer);
-
-				f32 moon_brightness = core::clamp(107.143f * m_sky->getMoonDirection().Y, 0.f, 1.f);
-				m_moon_brightness_pixel.set(moon_brightness, renderer);
-			} else {
-				m_moon_position_pixel.set(v3f(0.f, 0.f, -1.f), renderer);
-
-				f32 moon_brightness = 0.f;
-				m_moon_brightness_pixel.set(moon_brightness, renderer);
-			}
-
 			f32 volumetric_light_strength = lighting.volumetric_light_strength;
 			m_volumetric_light_strength_pixel.set(volumetric_light_strength, renderer);
 		}

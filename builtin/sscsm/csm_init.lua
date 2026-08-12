@@ -25,6 +25,7 @@ local allowed = {}
 
 -- standard
 allowed.assert = assert
+allowed.dump = dump
 allowed.error = error
 allowed.ipairs = ipairs
 allowed.next = next

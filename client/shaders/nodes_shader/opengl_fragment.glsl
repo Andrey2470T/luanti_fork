@@ -101,9 +101,17 @@ void main(void)
 	col = mixColorWithFog(col, eyeVec);
 	col = vec4(col.rgb, base.a);
 
+	vec4 normal = vec4(0.0, 0.0, 0.0, 1.0);
+	vec4 liquid_mask = vec4(0.0, 0.0, 0.0, 1.0);
+
+#if (defined(ENABLE_WATER_REFLECTIONS) && MATERIAL_WATER_REFLECTIONS && ENABLE_WAVING_WATER)
+	liquid_mask.r = 1.0;
+	normal.xyz = fNormal;
+#endif
+
 #ifndef ENABLE_BLOOM
-	outputColor(col, vec4(0.0));
+	outputColor(col, normal, liquid_mask);
 #else
-	outputColor(col, vec4(0.0), vec4(col.rgb * emissionLight, 1.0));
+	outputColor(col, normal, liquid_mask, vec4(col.rgb * emissionLight, 1.0));
 #endif
 }
