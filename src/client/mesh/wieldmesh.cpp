@@ -231,9 +231,26 @@ WieldMeshSceneNode::~WieldMeshSceneNode()
 		g_extrusion_mesh_cache = nullptr;
 }
 
+void setObjectShader(ShaderSource *shdrsrc, video::SMaterial &mat, bool use_atlas, bool has_lighting)
+{
+	ShaderInfo info = {"object_shader"};
+	info.basic_name = "object_shader";
+	if (use_atlas) {
+		info.constants["USE_ATLAS"] = 1;
+		info.name += "_atlas";
+	}
+
+	if (!has_lighting) {
+		info.constants["NO_LIGHTING"] = 1;
+		info.name += "_nolighting";
+	}
+	u32 shader_id = shdrsrc->getShader(info, TILE_MATERIAL_BASIC, true);
+	mat.MaterialType = shdrsrc->getShaderInfo(shader_id).material;
+}
+
 void WieldMeshSceneNode::setExtruded(const std::string &imagename,
 	const std::string &overlay_name, v3f wield_scale, ITextureSource *tsrc,
-	u8 num_frames)
+	ShaderSource *shdrsrc, u8 num_frames)
 {
 	video::GLTexture *texture = tsrc->getTexture(imagename);
 	if (!texture) {
@@ -271,9 +288,9 @@ void WieldMeshSceneNode::setExtruded(const std::string &imagename,
 	// Customize materials
 	for (u32 layer = 0; layer < m_meshnode->getMaterialCount(); layer++) {
 		video::SMaterial &material = m_meshnode->getMaterial(layer);
+		setObjectShader(shdrsrc, material, false, true);
 		material.TextureLayers[0].TextureWrapU = video::ETC_CLAMP_TO_EDGE;
 		material.TextureLayers[0].TextureWrapV = video::ETC_CLAMP_TO_EDGE;
-		material.MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL;
 		material.BlendMode = video::EBM_ALPHA;
 		material.BackfaceCulling = true;
 		// don't filter low-res textures, makes them look blurry
@@ -313,19 +330,6 @@ static scene::SMesh *createGenericNodeMesh(Client *client, MapNode n,
 		MapblockMeshGenerator(&mmd, &collector).generate();
 	}
 
-	ShaderSource *shdrsrc = client->getShaderSource();
-
-	ShaderInfo info = {"object_shader_atlas"};
-	info.basic_name = "object_shader";
-	info.constants["USE_ATLAS"] = 1;
-
-	if (!has_lighting) {
-		info.constants["NO_LIGHTING"] = 1;
-		info.name += "_nolighting";
-	}
-	u32 shader_id = shdrsrc->getShader(info, TILE_MATERIAL_BASIC, true);
-	auto material_type = shdrsrc->getShaderInfo(shader_id).material;
-
 	buffer_info->clear();
 	scene::SMesh *mesh = new scene::SMesh();
 	for (int layer = 0; layer < MAX_TILE_LAYERS; layer++) {
@@ -338,7 +342,7 @@ static scene::SMesh *createGenericNodeMesh(Client *client, MapNode n,
 			buf->append(&p.vertices[0], p.vertices.size(),
 					&p.indices[0], p.indices.size());
 
-			buf->Material.MaterialType = material_type;
+			setObjectShader(client->getShaderSource(), buf->Material, true, has_lighting);
 			// note: material type is left unset, overriden later
 			p.layer.applyMaterialOptions(buf->Material, layer);
 
@@ -353,6 +357,7 @@ static scene::SMesh *createGenericNodeMesh(Client *client, MapNode n,
 void WieldMeshSceneNode::setItem(const ItemStack &item, Client *client, bool check_wield_image)
 {
 	ITextureSource *tsrc = client->getTextureSource();
+	ShaderSource *shdrsrc = client->getShaderSource();
 	IItemDefManager *idef = client->getItemDefManager();
 	ItemVisualsManager *item_visuals = client->getItemVisualsManager();
 	const NodeDefManager *ndef = client->getNodeDefManager();
@@ -372,7 +377,7 @@ void WieldMeshSceneNode::setItem(const ItemStack &item, Client *client, bool che
 
 	// If wield_image needs to be checked and is defined, it overrides everything else
 	if (!wield_image.empty() && check_wield_image) {
-		setExtruded(wield_image, wield_overlay, wield_scale, tsrc, 1);
+		setExtruded(wield_image, wield_overlay, wield_scale, tsrc, shdrsrc, 1);
 		m_buffer_info.emplace_back();
 		// overlay is white, if present
 		m_buffer_info.emplace_back(true, video::SColor(0xFFFFFFFF));
@@ -387,7 +392,7 @@ void WieldMeshSceneNode::setItem(const ItemStack &item, Client *client, bool che
 		switch (f.drawtype) {
 		case NDT_AIRLIKE:
 			setExtruded("no_texture_airlike.png", "",
-				v3f(1), tsrc, 1);
+				v3f(1), tsrc, shdrsrc, 1);
 			break;
 		case NDT_SIGNLIKE:
 		case NDT_TORCHLIKE:
@@ -401,7 +406,7 @@ void WieldMeshSceneNode::setItem(const ItemStack &item, Client *client, bool che
 			const TileLayer &l1 = f.tiles[0].layers[1];
 			setExtruded(tsrc->getImageName(l0.image),
 				tsrc->getImageName(l1.image),
-				wscale, tsrc,
+				wscale, tsrc, shdrsrc,
 				l0.anim_info.getFrameCount());
 			// Add color
 			m_buffer_info.emplace_back(l0.has_color, l0.color);
@@ -412,7 +417,7 @@ void WieldMeshSceneNode::setItem(const ItemStack &item, Client *client, bool che
 			// use the plant tile
 			const TileLayer &l0 = f.special_tiles[0].layers[0];
 			setExtruded(tsrc->getImageName(l0.image),
-				"", wield_scale, tsrc,
+				"", wield_scale, tsrc, shdrsrc,
 				l0.anim_info.getFrameCount());
 			m_buffer_info.emplace_back(l0.has_color, l0.color);
 			break;
@@ -450,9 +455,9 @@ void WieldMeshSceneNode::setItem(const ItemStack &item, Client *client, bool che
 		const std::string inventory_image = item.getInventoryImage(idef).name;
 		if (!inventory_image.empty()) {
 			const std::string inventory_overlay = item.getInventoryOverlay(idef).name;
-			setExtruded(inventory_image, inventory_overlay, def.wield_scale, tsrc, 1);
+			setExtruded(inventory_image, inventory_overlay, def.wield_scale, tsrc, shdrsrc, 1);
 		} else {
-			setExtruded("no_texture.png", "", def.wield_scale, tsrc, 1);
+			setExtruded("no_texture.png", "", def.wield_scale, tsrc, shdrsrc, 1);
 		}
 
 		m_buffer_info.emplace_back();

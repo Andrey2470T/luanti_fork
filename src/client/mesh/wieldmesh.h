@@ -26,6 +26,7 @@ namespace scene
 struct ItemStack;
 class Client;
 class ITextureSource;
+class ShaderSource;
 struct ContentFeatures;
 class ShadowRenderer;
 
@@ -98,7 +99,7 @@ public:
 	virtual ~WieldMeshSceneNode();
 
 	void setExtruded(const std::string &imagename, const std::string &overlay_image,
-			v3f wield_scale, ITextureSource *tsrc, u8 num_frames);
+			v3f wield_scale, ITextureSource *tsrc, ShaderSource *shdrsrc, u8 num_frames);
 	void setItem(const ItemStack &item, Client *client,
 			bool check_wield_image = true);
 
