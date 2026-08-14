@@ -871,8 +871,8 @@ void ContentFeatures::updateTextures(AtlasPool *pool, ITextureSource *tsrc, Shad
 		}
 	}
 
-	u32 tile_shader = shdsrc->getShader({"nodes_shader", {}, {}, true,
-		"opengl_vertex.glsl", "opengl_geometry.glsl", "opengl_fragment.glsl", {},
+	u32 tile_shader = shdsrc->getShader({"nodes_shader", true,
+		{"opengl_vertex.glsl"}, {"opengl_geometry.glsl"}, {"opengl_fragment.glsl"}, {},
 		scene::Vertex3DExt::FORMAT}, material_type);
 
 	MaterialType overlay_material = material_type;
@@ -881,8 +881,8 @@ void ContentFeatures::updateTextures(AtlasPool *pool, ITextureSource *tsrc, Shad
 	else if (overlay_material == TILE_MATERIAL_LIQUID_OPAQUE)
 		overlay_material = TILE_MATERIAL_LIQUID_TRANSPARENT;
 
-	u32 overlay_shader = shdsrc->getShader({"nodes_shader", {}, {}, true,
-		"opengl_vertex.glsl", "opengl_geometry.glsl", "opengl_fragment.glsl", {},
+	u32 overlay_shader = shdsrc->getShader({"nodes_shader", true,
+		{"opengl_vertex.glsl"}, {"opengl_geometry.glsl"}, {"opengl_fragment.glsl"}, {},
 		scene::Vertex3DExt::FORMAT}, overlay_material);
 
 	// minimap pixel color = average color of top tile
@@ -926,8 +926,8 @@ void ContentFeatures::updateTextures(AtlasPool *pool, ITextureSource *tsrc, Shad
 			special_material = TILE_MATERIAL_WAVING_LEAVES;
 	}
 
-	u32 special_shader = shdsrc->getShader({"nodes_shader", {}, {}, true,
-		"opengl_vertex.glsl", "opengl_geometry.glsl", "opengl_fragment.glsl", {},
+	u32 special_shader = shdsrc->getShader({"nodes_shader", true,
+		{"opengl_vertex.glsl"}, {"opengl_geometry.glsl"}, {"opengl_fragment.glsl"}, {},
 		scene::Vertex3DExt::FORMAT}, special_material);
 
 	// Special tiles (fill in f->special_tiles[])

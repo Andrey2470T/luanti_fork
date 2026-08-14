@@ -276,6 +276,17 @@ const ShaderInfo& ShaderSource::getShaderInfo(u32 id) {
 	return m_shaders[id];
 }
 
+const ShaderInfo &ShaderSource::getShaderInfo(const std::string &name)
+{
+	std::lock_guard<std::mutex> lock(m_shader_mutex);
+	for (auto &i : m_shaders) {
+		if (i.name == name)
+			return i;
+	}
+	static ShaderInfo empty;
+	return empty;
+}
+
 u32 ShaderSource::getShader(
 	const ShaderInfo &info, bool apply_shadows,
 	IShaderUniformSetter *setter, bool force_recompile)
@@ -290,13 +301,13 @@ u32 ShaderSource::getShader(
 
 	info_c.setter = setter;
 
-	info_c.vertex_includes.emplace_back("common");
-	info_c.vertex_includes.emplace_back("matrices");
-	info_c.fragment_includes.emplace_back("common");
+	info_c.vertex_shader.includes.emplace_back("common");
+	info_c.vertex_shader.includes.emplace_back("matrices");
+	info_c.fragment_shader.includes.emplace_back("common");
 
 	if (apply_shadows && g_settings->getBool("enable_dynamic_shadows")) {
-		info_c.vertex_includes.emplace_back("shadow_vertex");
-		info_c.fragment_includes.emplace_back("shadow_fragment");
+		info_c.vertex_shader.includes.emplace_back("shadow_vertex");
+		info_c.fragment_shader.includes.emplace_back("shadow_fragment");
 	}
 
 	info_c.constants["CRACK_FRAME_SIZE"] = 16;
@@ -546,7 +557,7 @@ std::string ShaderGenerator::generateVertexHeader()
 	header += "#define inColor (inColor.bgra)\n";
 
 	// Append the files contents from /include shader subpath
-	for (auto &include : info.vertex_includes) {
+	for (auto &include : info.vertex_shader.includes) {
 		auto content = readIncludeShader(include);
 
 		if (content.empty())
@@ -590,7 +601,7 @@ std::string ShaderGenerator::generateFragmentHeader()
 	}
 
 	// Append the files contents from /include shader subpath
-	for (auto &include : info.fragment_includes) {
+	for (auto &include : info.fragment_shader.includes) {
 		auto content = readIncludeShader(include);
 
 		if (content.empty())
@@ -609,13 +620,13 @@ std::string ShaderGenerator::generateTypeShaderContent(video::E_SHADER_TYPE type
 
 	switch(type) {
 	case video::EST_VERTEX:
-		filename = info.vertex_shader;
+		filename = info.vertex_shader.getName();
 		break;
 	case video::EST_GEOMETRY:
-		filename = info.geometry_shader;
+		filename = info.geometry_shader.getName();
 		break;
 	case video::EST_FRAGMENT:
-		filename = info.fragment_shader;
+		filename = info.fragment_shader.getName();
 		break;
 	}
 

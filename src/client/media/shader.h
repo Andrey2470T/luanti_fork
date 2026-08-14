@@ -194,6 +194,19 @@ public:
 	}
 };
 
+struct SubShaderInfo {
+	std::string name;
+	std::string override_name = "";
+	std::vector<std::string> includes = {};
+
+	std::string getName() const
+	{
+		if (!override_name.empty())
+			return override_name;
+		return name;
+	}
+};
+
 /*
 	ShaderSource creates and caches shaders.
 
@@ -204,17 +217,13 @@ public:
 
 struct ShaderInfo {
 	std::string name;
-	// Vertex includes
-	std::vector<std::string> vertex_includes = {};
-	// Fragment includes
-	std::vector<std::string> fragment_includes = {};
 	bool transparent = false;
-	// Vertex shader filename
-	std::string vertex_shader = "opengl_vertex.glsl";
-	// Geometry shader filename
-	std::string geometry_shader = "opengl_geometry.glsl";
-	// Fragment shader filename
-	std::string fragment_shader = "opengl_fragment.glsl";
+	// Vertex shader
+	SubShaderInfo vertex_shader = {"opengl_vertex.glsl"};
+	// Geometry shader
+	SubShaderInfo geometry_shader = {"opengl_geometry.glsl"};
+	// Fragment shader
+	SubShaderInfo fragment_shader = {"opengl_fragment.glsl"};
 	// Input constants
 	ShaderConstants constants = {};
 	// Vertex Type Descriptor
@@ -245,6 +254,7 @@ public:
 	 * Use this to get the material ID to plug into `video::SMaterial`.
 	 */
 	const ShaderInfo& getShaderInfo(u32 id);
+	const ShaderInfo& getShaderInfo(const std::string &name);
 
 	/**
 	 * Generates or gets a shader.

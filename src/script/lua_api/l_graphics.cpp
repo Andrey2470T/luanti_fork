@@ -276,20 +276,20 @@ void ModApiGraphics::push_constants(lua_State *L, const ShaderConstants &constan
 
 void ModApiGraphics::read_shader_info(lua_State *L, ShaderInfo &info, bool &applyShadows)
 {
-	info.vertex_shader = getstringfield_default(L, -1, "vertex", "opengl_vertex.glsl");
-	info.geometry_shader = getstringfield_default(L, -1, "geometry", "opengl_geometry.glsl");
-	info.fragment_shader = getstringfield_default(L, -1, "fragment", "");
+	info.vertex_shader.name = getstringfield_default(L, -1, "vertex", "opengl_vertex.glsl");
+	info.geometry_shader.name = getstringfield_default(L, -1, "geometry", "opengl_geometry.glsl");
+	info.fragment_shader.name = getstringfield_default(L, -1, "fragment", "");
 
-	if (info.fragment_shader.empty())
-		info.fragment_shader = getstringfield_default(L, -1, "src", "opengl_fragment.glsl");
+	if (info.fragment_shader.name.empty())
+		info.fragment_shader.name = getstringfield_default(L, -1, "src", "opengl_fragment.glsl");
 
 	read_constants(L, info.constants);
 
-	getstringlistfield(L, -1, "vertex_includes", &info.vertex_includes);
-	getstringlistfield(L, -1, "fragment_includes", &info.fragment_includes);
+	getstringlistfield(L, -1, "vertex_includes", &info.vertex_shader.includes);
+	getstringlistfield(L, -1, "fragment_includes", &info.fragment_shader.includes);
 
-	if (info.fragment_includes.empty())
-		getstringlistfield(L, -1, "includes", &info.fragment_includes);
+	if (info.fragment_shader.includes.empty())
+		getstringlistfield(L, -1, "includes", &info.fragment_shader.includes);
 
 	std::unordered_map<std::string, scene::VertexDescriptor> mapNameToDesc = {
 		{"vertex3d", scene::Vertex3D::FORMAT},
@@ -321,7 +321,7 @@ void ModApiGraphics::push_shader_info(lua_State *L, const ShaderInfo &info)
 {
 	lua_newtable(L);
 
-	lua_pushlstring(L, info.fragment_shader.data(), info.fragment_shader.size());
+	lua_pushlstring(L, info.fragment_shader.name.data(), info.fragment_shader.name.size());
 	lua_setfield(L, -2, "src");
 
 	push_constants(L, info.constants);
@@ -329,8 +329,8 @@ void ModApiGraphics::push_shader_info(lua_State *L, const ShaderInfo &info)
 
 	lua_newtable(L);
 
-	for (u8 i = 0; i < info.fragment_includes.size(); i++) {
-		auto &include = info.fragment_includes.at(i);
+	for (u8 i = 0; i < info.fragment_shader.includes.size(); i++) {
+		auto &include = info.fragment_shader.includes.at(i);
 		lua_pushinteger(L, i+1);
 		lua_pushlstring(L, include.data(), include.size());
 		lua_settable(L, -3);
@@ -435,6 +435,47 @@ int ModApiGraphics::l_get_lighting(lua_State *L)
 	lua_setfield(L, -2, "ambient_color");
 
 	push_lighting(L, lighting);
+
+	return 1;
+}
+
+int ModApiGraphics::l_override_shader(lua_State *L)
+{
+	if (!lua_isstring(L, 1) || !lua_isstring(L, 2) || !lua_isstring(L, 3))
+		return 0;
+
+	auto shdrsrc = getClient(L)->getShaderSource();
+
+	auto name = readParam<std::string>(L, 1);
+
+	ShaderInfo info = shdrsrc->getShaderInfo(name);
+
+	auto shader_type = readParam<std::string>(L, 2);
+	auto filename = readParam<std::string>(L, 3);
+
+	if (shader_type == "vertex")
+		info.vertex_shader.override_name = filename;
+	else if (shader_type == "geometry")
+		info.geometry_shader.override_name = filename;
+	else if (shader_type == "fragment")
+		info.fragment_shader.override_name = filename;
+	else
+		return 0;
+
+	if (lua_istable(L, 4)) {
+		if (shader_type == "vertex")
+			getstringlistfield(L, 4, "vertex_includes", &info.vertex_shader.includes);
+		else if (shader_type == "fragment")
+			getstringlistfield(L, 4, "fragment_includes", &info.fragment_shader.includes);
+	}
+
+	if (lua_istable(L, 5))
+		read_constants(L, info.constants);
+
+	auto found_shadow_vertex = std::find(
+		info.vertex_shader.includes.begin(), info.vertex_shader.includes.end(), "shadow_vertex");
+	bool apply_shadows = found_shadow_vertex != info.vertex_shader.includes.end();
+	getClient(L)->getShaderSource()->getShader(info, apply_shadows, info.setter, true);
 
 	return 1;
 }
@@ -886,7 +927,7 @@ void ModApiGraphics::read_posteffect_def(
 		bool apply_shadows;
 		read_shader_info(L, shader, apply_shadows);
 
-		shader.vertex_shader = R"(
+		shader.vertex_shader.name = R"(
 CENTROID_ out mediump vec2 varTexCoord;
 
 void main(void)
@@ -894,7 +935,7 @@ void main(void)
 	varTexCoord.st = inTexCoord0.st;
 	gl_Position = vec4(inPosition, 1.0);
 })";
-		shader.geometry_shader = ""; // this kind of the shader is not allowed for the posteffect
+		shader.geometry_shader.name = ""; // this kind of the shader is not allowed for the posteffect
 	}
 	lua_pop(L, 1);
 
@@ -1144,6 +1185,7 @@ void ModApiGraphics::Initialize(lua_State *L, int top)
 	API_FCT(register_material);
 	API_FCT(set_lighting);
 	API_FCT(get_lighting);
+	API_FCT(override_shader);
 	API_FCT(set_sky);
 	API_FCT(get_sky);
 	API_FCT(set_sun);

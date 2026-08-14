@@ -34,6 +34,27 @@ GFX API functions
       All color parameters are ColorSpecs, alpha channel is ignored.
 * `gfx.get_lighting()`: analogous to the PlayerRef's eponymous method
     (see `server_lua_api/class_reference/object.md`).
+* `gfx.override_shader(name, type, file, includes, constants)`: replaces the current registered `type `shader
+    (vertex, geometry, fragment) to the `file` one of the program `name` including the new `constants` and `includes`.
+    If `file` is empty, `includes` and `constants` are nil, they will be reset to the default.
+
+    * Example: `gfx.override_shader("nodes_shader_2", "fragment", "reflecting_water.glsl", {"reflection.glsl"})`.
+    It will replace the current `nodes_shader/opengl_fragment.glsl` to the `reflecting_water.glsl`
+    with the `reflection.glsl` include for `TILE_MATERIAL_LIQUID_TRANSPARENT`.
+
+    * Mapping the nodes and object shader indexes to the material types:
+        0 - TILE_MATERIAL_BASIC,
+        1 - TILE_MATERIAL_ALPHA,
+        2 - TILE_MATERIAL_LIQUID_TRANSPARENT,
+        3 - TILE_MATERIAL_LIQUID_OPAQUE,
+        4 - TILE_MATERIAL_WAVING_LEAVES,
+        5 - TILE_MATERIAL_WAVING_PLANTS,
+        6 - TILE_MATERIAL_OPAQUE,
+        7 - TILE_MATERIAL_WAVING_LIQUID_BASIC,
+        8 - TILE_MATERIAL_WAVING_LIQUID_TRANSPARENT,
+        9 - TILE_MATERIAL_WAVING_LIQUID_OPAQUE,
+        10 - TILE_MATERIAL_PLAIN,
+        11 - TILE_MATERIAL_PLAIN_ALPHA
 
 The following set/get methods are analogous to the PlayerRef's eponymous methods
 (see `server_lua_api/class_reference/object.md`):

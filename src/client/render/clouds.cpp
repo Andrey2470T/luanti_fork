@@ -38,7 +38,7 @@ Clouds::Clouds(
 	m_material.FogEnable = true;
 	m_material.AntiAliasing = video::EAAM_SIMPLE;
 	{
-		auto sid = ssrc->getShader({"cloud_shader", {}, {}, true});
+		auto sid = ssrc->getShader({"cloud_shader", true});
 		m_material.MaterialType = ssrc->getShaderInfo(sid).material;
 	}
 

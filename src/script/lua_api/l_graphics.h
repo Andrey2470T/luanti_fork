@@ -46,6 +46,8 @@ private:
 	static int l_set_lighting(lua_State *L);
 	static int l_get_lighting(lua_State *L);
 
+	static int l_override_shader(lua_State *L);
+
 	static int l_set_sky(lua_State *L);
 	static int l_get_sky(lua_State *L);
 
