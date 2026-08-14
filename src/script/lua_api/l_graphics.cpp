@@ -953,7 +953,7 @@ void main(void)
 			lua_pop(L, 1);
 		}
 	}
-    lua_pop(L, 1);
+	lua_pop(L, 1);
 
 	lua_getfield(L, -1, "outputs");
 
@@ -1082,7 +1082,7 @@ int ModApiGraphics::l_get_posteffect_def(lua_State *L)
 		}
 	}
 	push_posteffect_def(L, def, shader);
-	
+
 	return 1;
 }
 

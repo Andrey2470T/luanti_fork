@@ -39,7 +39,7 @@ bool LuaMatrix4::check(lua_State *L, int index, core::matrix4 &result)
 	return true;
 }
 
-inline core::matrix4 &LuaMatrix4::create(lua_State *L)
+core::matrix4 &LuaMatrix4::create(lua_State *L)
 {
 	auto *mat = static_cast<LuaMatrix4 *>(lua_newuserdata(L, sizeof(LuaMatrix4)));
 	luaL_getmetatable(L, LuaMatrix4::className);

@@ -166,7 +166,7 @@ int LuaCamera::l_get_projection_matrix(lua_State *L)
 	Camera *camera = getobject(L, 1);
 	if (!camera)
 		return 0;
-	
+
 	core::matrix4 proj = camera->getCameraNode()->getProjectionMatrix();
 	LuaMatrix4::create(L) = proj;
 	return 1;
@@ -177,7 +177,7 @@ int LuaCamera::l_get_view_matrix(lua_State *L)
 	Camera *camera = getobject(L, 1);
 	if (!camera)
 		return 0;
-	
+
 	core::matrix4 view = camera->getCameraNode()->getViewMatrix();
 	LuaMatrix4::create(L) = view;
 	return 1;

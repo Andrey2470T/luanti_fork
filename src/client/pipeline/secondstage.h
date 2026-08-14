@@ -95,7 +95,7 @@ public:
 	void setStepsState(const std::vector<PostProcessingStepState> &state) { m_steps_state = state; }
 
 	v2f getScaleFactor() const { return m_scale_f; }
- 	void setScaleFactor(v2f factor) { m_scale_f = factor; }
+	void setScaleFactor(v2f factor) { m_scale_f = factor; }
 
 	void run(PipelineContext &context) override;
 private:

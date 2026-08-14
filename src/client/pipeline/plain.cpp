@@ -34,7 +34,7 @@ void Draw3DCubeMap::run(PipelineContext &context)
 
 	if (!tb_output)
 		return;
-	
+
 	auto camera = context.client->getCamera()->getCameraNode();
 	v3f up = camera->getUpVector();
 	v3f pos = camera->getAbsolutePosition();
