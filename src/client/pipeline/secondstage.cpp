@@ -248,8 +248,6 @@ RenderStep *addPostProcessing(PostProcessingPipeline *pipeline, RenderStep *prev
 
 	static const u8 TEXTURE_SCALE_DOWN = 11;
 	static const u8 TEXTURE_SCALE_UP = 15;
-	static const u8 TEXTURE_NORMAL = 19;
-	static const u8 TEXTURE_LIQUID = 25;
 
 	const bool enable_bloom = g_settings->getBool("enable_bloom");
 	const bool enable_volumetric_light = g_settings->getBool("enable_volumetric_lighting") && enable_bloom;
@@ -298,16 +296,14 @@ RenderStep *addPostProcessing(PostProcessingPipeline *pipeline, RenderStep *prev
 	}
 
 	buffer->setTexture(TEXTURE_COLOR, scale, "3d_render", color_format);
-	buffer->setTexture(TEXTURE_NORMAL, scale, "3d_normalmap", color_format);
 	buffer->setTexture(TEXTURE_EXPOSURE_1, core::dimension2du(1,1), "exposure_1", color_format, /*clear:*/ true);
 	buffer->setTexture(TEXTURE_EXPOSURE_2, core::dimension2du(1,1), "exposure_2", color_format, /*clear:*/ true);
 	buffer->setTexture(TEXTURE_DEPTH, scale, "3d_depthmap", depth_format);
-	buffer->setTexture(TEXTURE_LIQUID, scale, "3d_liquid", color_format);
 
 	buffer->setTexture(Draw3DCubeMap::TEXTURE_COLOR_CUBE, scale, "3d_render_cube", color_format, false, 0, true);
 	buffer->setTexture(Draw3DCubeMap::TEXTURE_DEPTH_CUBE, scale, "3d_depthmap_cube", depth_format, false, 0, true);
 
-	std::vector<u8> outputs_draw3d = { TEXTURE_COLOR, TEXTURE_NORMAL, TEXTURE_LIQUID };
+	std::vector<u8> outputs_draw3d = { TEXTURE_COLOR };
 	if (enable_bloom)
 		outputs_draw3d.emplace_back(TEXTURE_BLOOM_MASK);
 

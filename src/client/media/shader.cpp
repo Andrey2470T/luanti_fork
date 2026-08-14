@@ -301,13 +301,13 @@ u32 ShaderSource::getShader(
 
 	info_c.setter = setter;
 
-	info_c.vertex_shader.includes.emplace_back("common");
-	info_c.vertex_shader.includes.emplace_back("matrices");
-	info_c.fragment_shader.includes.emplace_back("common");
+	info_c.vertex_shader.addInclude("common");
+	info_c.vertex_shader.addInclude("matrices");
+	info_c.fragment_shader.addInclude("common");
 
 	if (apply_shadows && g_settings->getBool("enable_dynamic_shadows")) {
-		info_c.vertex_shader.includes.emplace_back("shadow_vertex");
-		info_c.fragment_shader.includes.emplace_back("shadow_fragment");
+		info_c.vertex_shader.addInclude("shadow_vertex");
+		info_c.fragment_shader.addInclude("shadow_fragment");
 	}
 
 	info_c.constants["CRACK_FRAME_SIZE"] = 16;

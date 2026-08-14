@@ -205,6 +205,11 @@ struct SubShaderInfo {
 			return override_name;
 		return name;
 	}
+	void addInclude(const std::string &include)
+	{
+		if (std::find(includes.begin(), includes.end(), include) == includes.end())
+			includes.emplace_back(include);
+	}
 };
 
 /*
