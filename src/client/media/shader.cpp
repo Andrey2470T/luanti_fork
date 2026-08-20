@@ -136,7 +136,7 @@ public:
 			constants["ENABLE_DITHERING"] = 1;
 
 		if (g_settings->getBool("enable_volumetric_lighting"))
-			constants["VOLUMETRIC_LIGHT"] = 1;
+			constants["ENABLE_VOLUMETRIC_LIGHT"] = 1;
 	}
 };
 

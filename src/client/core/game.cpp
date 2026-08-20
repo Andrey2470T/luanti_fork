@@ -268,7 +268,7 @@ public:
 
 		m_user_exposure_compensation = g_settings->getFloat("exposure_compensation", -1.0f, 1.0f);
 		m_bloom_enabled = g_settings->getBool("enable_bloom");
-		m_volumetric_light_enabled = g_settings->getBool("enable_volumetric_lighting") && m_bloom_enabled;
+		m_volumetric_light_enabled = g_settings->getBool("enable_volumetric_lighting");
 		m_cache_monitor_gamma = g_settings->getFloat("monitor_gamma", 1.0f, 4.0f);
 	}
 

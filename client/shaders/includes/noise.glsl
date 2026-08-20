@@ -66,3 +66,11 @@ vec3 gnoise(vec3 p){
 vec2 wave_noise(vec3 p, float off) {
 	return (gnoise(p + vec3(0.0, 0.0, off)) * 0.4 + gnoise(2.0 * p + vec3(0.0, off, off)) * 0.2 + gnoise(3.0 * p + vec3(0.0, off, off)) * 0.225 + gnoise(4.0 * p + vec3(-off, off, 0.0)) * 0.2).xz;
 }
+
+float white_noise_2d(vec2 p) {
+    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+}
+
+float white_noise_3d(vec3 uvd) {
+	return fract(dot(sin(uvd * vec3(13041.19699, 27723.29171, 61029.77801)), vec3(73137.11101, 37312.92319, 10108.89991)));
+}

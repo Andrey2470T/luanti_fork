@@ -115,7 +115,7 @@ RenderStep *addPostProcessing(RenderPipeline *pipeline, RenderStep *previousStep
 	static const u8 TEXTURE_SCALE_UP = 15;
 
 	const bool enable_bloom = g_settings->getBool("enable_bloom");
-	const bool enable_volumetric_light = g_settings->getBool("enable_volumetric_lighting") && enable_bloom;
+	const bool enable_volumetric_light = g_settings->getBool("enable_volumetric_lighting");
 	const bool enable_auto_exposure = g_settings->getBool("enable_auto_exposure");
 
 	const std::string antialiasing = g_settings->get("antialiasing");
@@ -206,16 +206,6 @@ RenderStep *addPostProcessing(RenderPipeline *pipeline, RenderStep *previousStep
 			source = TEXTURE_BLOOM;
 		}
 
-		if (enable_volumetric_light) {
-			buffer->setTexture(TEXTURE_VOLUME, scale, "volume", bloom_format);
-
-			shader_id = client->getShaderSource()->getShader({"volumetric_light"});
-			auto volume = pipeline->addStep<PostProcessingStep>("VolumetricLight", shader_id, std::vector<u8> { source, TEXTURE_DEPTH });
-			volume->setRenderSource(buffer);
-			volume->setRenderTarget(pipeline->createOwned<TextureBufferOutput>(buffer, TEXTURE_VOLUME));
-			source = TEXTURE_VOLUME;
-		}
-
 		// downsample
 		shader_id = client->getShaderSource()->getShader({"bloom_downsample"});
 		for (u8 i = 0; i < MIPMAP_LEVELS; i++) {
@@ -241,6 +231,15 @@ RenderStep *addPostProcessing(RenderPipeline *pipeline, RenderStep *previousStep
 			step->setRenderTarget(pipeline->createOwned<TextureBufferOutput>(buffer, u8(TEXTURE_SCALE_UP + i - 1)));
 			source = TEXTURE_SCALE_UP + i - 1;
 		}
+	}
+
+	if (enable_volumetric_light) {
+		buffer->setTexture(TEXTURE_VOLUME, scale, "volume", bloom_format);
+
+		shader_id = client->getShaderSource()->getShader({"volumetric_light"});
+		auto volume = pipeline->addStep<PostProcessingStep>("VolumetricLight", shader_id, std::vector<u8> { TEXTURE_COLOR, TEXTURE_DEPTH });
+		volume->setRenderSource(buffer);
+		volume->setRenderTarget(pipeline->createOwned<TextureBufferOutput>(buffer, TEXTURE_VOLUME));
 	}
 
 	// Dynamic Exposure pt2
@@ -270,7 +269,7 @@ RenderStep *addPostProcessing(RenderPipeline *pipeline, RenderStep *previousStep
 
 	// final merge
 	shader_id = client->getShaderSource()->getShader({"second_stage"});
-	PostProcessingStep *effect = pipeline->createOwned<PostProcessingStep>(shader_id, std::vector<u8> { final_stage_source, TEXTURE_SCALE_UP, TEXTURE_EXPOSURE_2 });
+	PostProcessingStep *effect = pipeline->createOwned<PostProcessingStep>(shader_id, std::vector<u8> { final_stage_source, TEXTURE_SCALE_UP, TEXTURE_VOLUME, TEXTURE_EXPOSURE_2 });
 	pipeline->addStep("SecondStage", effect);
 	if (enable_ssaa)
 		effect->setBilinearFilter(0, true);

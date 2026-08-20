@@ -859,7 +859,7 @@ enable_bloom (Enable Bloom) bool false
 
 #    Set to true to enable volumetric lighting effect (a.k.a. "Godrays").
 #
-#    Requires: enable_post_processing, enable_bloom
+#    Requires: enable_post_processing
 enable_volumetric_lighting (Volumetric lighting) bool false
 
 [**Other Effects]

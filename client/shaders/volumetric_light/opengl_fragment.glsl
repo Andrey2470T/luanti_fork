@@ -1,4 +1,5 @@
 #include<lighting>
+#include<noise>
 
 #define rendered texture0
 #define depthmap texture1
@@ -16,22 +17,12 @@ uniform float timeOfDay;
 
 CENTROID_ in mediump vec2 varTexCoord;
 
-const float far = 1000.;
-float mapDepth(float depth)
-{
-	return min(1., 1. / (1.00001 - depth) / far);
-}
-
-float noise(vec3 uvd) {
-	return fract(dot(sin(uvd * vec3(13041.19699, 27723.29171, 61029.77801)), vec3(73137.11101, 37312.92319, 10108.89991)));
-}
-
 float sampleVolumetricLight(vec2 uv, vec3 lightVec, float rawDepth)
 {
 	lightVec = 0.5 * lightVec / lightVec.z + 0.5;
 	const float samples = 30.;
 	float result = texture2D(depthmap, uv).r < 1. ? 0.0 : 1.0;
-	float bias = noise(vec3(uv, rawDepth));
+	float bias = white_noise_3d(vec3(uv, rawDepth));
 	vec2 samplepos;
 	for (float i = 1.; i < samples; i++) {
 		samplepos = mix(uv, lightVec.xy, (i + bias) / samples);
@@ -85,10 +76,6 @@ vec3 applyVolumetricLight(vec3 color, vec2 uv, float rawDepth)
 	// a factor of 5 tested well
 	color *= volumetricLightStrength * 5.0;
 
-	// if (sunPositionScreen.z < 0.)
-	// 	color.rg += 1. - clamp(abs((2. * uv.xy - 1.) - sunPositionScreen.xy / sunPositionScreen.z) * 1000., 0., 1.);
-	// if (moonPositionScreen.z < 0.)
-	// 	color.rg += 1. - clamp(abs((2. * uv.xy - 1.) - moonPositionScreen.xy / moonPositionScreen.z) * 1000., 0., 1.);
 	return color;
 }
 

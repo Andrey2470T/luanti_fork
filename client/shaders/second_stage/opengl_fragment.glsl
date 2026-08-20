@@ -1,5 +1,6 @@
 #define rendered texture0
 #define bloom texture1
+#define rays texture2
 
 #ifdef GL_ES
 // Dithering requires sufficient floating-point precision
@@ -13,6 +14,7 @@ struct ExposureParams {
 };
 
 uniform sampler2D bloom;
+uniform sampler2D rays;
 
 uniform vec2 texelSize0;
 
@@ -37,6 +39,17 @@ vec4 applyBloom(vec4 color, vec2 uv)
 	if (uv.x < 0.5)
 		return color;
 #endif
+	color.rgb += light;
+	return color;
+}
+
+#endif
+
+#ifdef ENABLE_VOLUMETRIC_LIGHT
+
+vec4 applyVolumetricLight(vec4 color, vec2 uv)
+{
+	vec3 light = texture2D(rays, uv).rgb;
 	color.rgb += light;
 	return color;
 }
@@ -94,6 +107,10 @@ void main(void)
 
 #ifdef ENABLE_BLOOM
 	color = applyBloom(color, uv);
+#endif
+
+#ifdef ENABLE_VOLUMETRIC_LIGHT
+	color = applyVolumetricLight(color, uv);
 #endif
 
 #ifdef ENABLE_BLOOM_DEBUG

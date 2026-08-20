@@ -1,5 +1,5 @@
 #ifdef ENABLE_AUTO_EXPOSURE
-#define exposureMap texture2
+#define exposureMap texture3
 
 uniform sampler2D exposureMap;
 
