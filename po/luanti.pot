@@ -3862,34 +3862,6 @@ msgid "Set to true to enable volumetric lighting effect (a.k.a. \"Godrays\")."
 msgstr ""
 
 #: src/settings_translation_file.cpp
-msgid "Other Effects"
-msgstr ""
-
-#: src/settings_translation_file.cpp
-msgid "Translucent foliage"
-msgstr ""
-
-#: src/settings_translation_file.cpp
-msgid "Simulate translucency when looking at foliage in the sunlight."
-msgstr ""
-
-#: src/settings_translation_file.cpp
-msgid "Node specular"
-msgstr ""
-
-#: src/settings_translation_file.cpp
-msgid "Apply specular shading to nodes."
-msgstr ""
-
-#: src/settings_translation_file.cpp
-msgid "Liquid reflections"
-msgstr ""
-
-#: src/settings_translation_file.cpp
-msgid "When enabled, liquid reflections are simulated."
-msgstr ""
-
-#: src/settings_translation_file.cpp
 msgid "Audio"
 msgstr ""
 

@@ -761,17 +761,15 @@ void MapblockMeshGenerator::drawLiquidTop()
 		int u = corner_resolve[i][0];
 		int w = corner_resolve[i][1];
 
-		if (data->m_enable_water_reflections) {
-			int x = vertices[i].Pos.X > 0;
-			int z = vertices[i].Pos.Z > 0;
+		int x = vertices[i].Pos.X > 0;
+		int z = vertices[i].Pos.Z > 0;
 
-			f32 dx = 0.5f * (cur_liquid.neighbors[z][x].level - cur_liquid.neighbors[z][x + 1].level +
-				cur_liquid.neighbors[z + 1][x].level - cur_liquid.neighbors[z + 1][x + 1].level);
-			f32 dz = 0.5f * (cur_liquid.neighbors[z][x].level - cur_liquid.neighbors[z + 1][x].level +
-				cur_liquid.neighbors[z][x + 1].level - cur_liquid.neighbors[z + 1][x + 1].level);
+		f32 dx = 0.5f * (cur_liquid.neighbors[z][x].level - cur_liquid.neighbors[z][x + 1].level +
+			cur_liquid.neighbors[z + 1][x].level - cur_liquid.neighbors[z + 1][x + 1].level);
+		f32 dz = 0.5f * (cur_liquid.neighbors[z][x].level - cur_liquid.neighbors[z + 1][x].level +
+			cur_liquid.neighbors[z][x + 1].level - cur_liquid.neighbors[z + 1][x + 1].level);
 
-			vertices[i].Normal = v3f(dx, 1., dz).normalize();
-		}
+		vertices[i].Normal = v3f(dx, 1., dz).normalize();
 
 		vertices[i].Pos.Y += cur_liquid.corner_levels[w][u] * BS;
 		if (data->m_smooth_lighting)
@@ -802,10 +800,6 @@ void MapblockMeshGenerator::drawLiquidTop()
 			dir.Y * vertex.TCoords.X + dir.X * vertex.TCoords.Y);
 		vertex.TCoords *= 0.75f; // hack scaling down the UVs a bit to prevent adjacent atlas tiles visibility at corners
 		vertex.TCoords += tcoord_center;
-
-		if (!data->m_enable_water_reflections) {
-			vertex.Normal = v3f(dx, 1., dz).normalize();
-		}
 	}
 
 	std::swap(vertices[0].TCoords, vertices[2].TCoords);

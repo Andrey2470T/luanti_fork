@@ -349,13 +349,6 @@ fake_function() {
 	gettext("Set to true to enable bloom effect.\nBright colors will bleed over the neighboring objects.");
 	gettext("Volumetric lighting");
 	gettext("Set to true to enable volumetric lighting effect (a.k.a. \"Godrays\").");
-	gettext("Other Effects");
-	gettext("Translucent foliage");
-	gettext("Simulate translucency when looking at foliage in the sunlight.");
-	gettext("Node specular");
-	gettext("Apply specular shading to nodes.");
-	gettext("Liquid reflections");
-	gettext("When enabled, liquid reflections are simulated.");
 	gettext("Audio");
 	gettext("Volume");
 	gettext("Volume of all sounds.\nRequires the sound system to be enabled.");

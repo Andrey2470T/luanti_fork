@@ -56,47 +56,6 @@ void main(void)
 		f_adj_shadow_strength, shadow_uncorrected
 	);
 #endif
-	// Fragment normal, can differ from vNormal which is derived from vertex normals.
-	vec3 fNormal = vNormal;
-
-	vec3 reflect_ray = -normalize(lightDir - fNormal * dot(lightDir, fNormal) * 2.0);
-
-	vec3 viewVec = normalize(worldPosition + cameraOffset - cameraPosition);
-
-		// Water reflections
-#if (defined(ENABLE_WATER_REFLECTIONS) && MATERIAL_WATER_REFLECTIONS && ENABLE_WAVING_WATER)
-		vec3 wavePos = worldPosition * vec3(2.0, 0.0, 2.0);
-		float off = animationTimer * WATER_WAVE_SPEED * 10.0;
-		wavePos.x /= WATER_WAVE_LENGTH * 3.0;
-		wavePos.z /= WATER_WAVE_LENGTH * 2.0;
-
-		// This is an analogous method to the bumpmap, except we get the gradient information directly from gnoise.
-		vec2 gradient = wave_noise(wavePos, off);
-		fNormal = normalize(normalize(fNormal) + vec3(gradient.x, 0., gradient.y) * WATER_WAVE_HEIGHT * abs(fNormal.y) * 0.25);
-		reflect_ray = -normalize(lightDir - fNormal * dot(lightDir, fNormal) * 2.0);
-		float fresnel_factor = dot(fNormal, viewVec);
-
-		float adjusted_night_ratio = pow(max(0.0, nightRatio), 0.6);
-		float brightness_factor = 1.0 - adjusted_night_ratio;
-
-		// A little trig hack. We go from the dot product of viewVec and normal to the dot product of viewVec and tangent to apply a fresnel effect.
-		fresnel_factor = clamp(pow(1.0 - fresnel_factor * fresnel_factor, 8.0), 0.0, 1.0) * 0.8 + 0.2;
-		col.rgb *= 0.5;
-		vec3 reflection_color = mix(vec3(max(fogColor.r, max(fogColor.g, fogColor.b))), fogColor.rgb, shadow_strength);
-
-		// Sky reflection
-		col.rgb += reflection_color * pow(fresnel_factor, 2.0) * 0.5 * brightness_factor;
-		vec3 water_reflect_color = 12.0 * dayLight * fresnel_factor * mtsmoothstep(0.85, 0.9, pow(clamp(dot(reflect_ray, viewVec), 0.0, 1.0), 32.0)) * max(1.0 - shadow_uncorrected, 0.0);
-
-		// This line exists to prevent ridiculously bright reflection colors.
-		water_reflect_color /= clamp(max(water_reflect_color.r, max(water_reflect_color.g, water_reflect_color.b)) * 0.375, 1.0, 400.0);
-		col.rgb += water_reflect_color * f_adj_shadow_strength * brightness_factor;
-#endif
-
-#if (MATERIAL_TYPE == TILE_MATERIAL_WAVING_PLANTS || MATERIAL_TYPE == TILE_MATERIAL_WAVING_LEAVES) && defined(ENABLE_TRANSLUCENT_FOLIAGE)
-		// Simulate translucent foliage.
-		col.rgb += 4.0 * dayLight * base.rgb * normalize(base.rgb * varColor.rgb * varColor.rgb) * f_adj_shadow_strength * pow(max(-dot(lightDir, viewVec), 0.0), 4.0) * max(1.0 - shadow_uncorrected, 0.0);
-#endif
 
 	col = mixColorWithFog(col, eyeVec);
 	col = vec4(col.rgb, base.a);

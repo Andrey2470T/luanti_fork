@@ -862,17 +862,6 @@ enable_bloom (Enable Bloom) bool false
 #    Requires: enable_post_processing
 enable_volumetric_lighting (Volumetric lighting) bool false
 
-[**Other Effects]
-
-#   Simulate translucency when looking at foliage in the sunlight.
-#
-enable_translucent_foliage (Translucent foliage) bool false
-
-#   When enabled, liquid reflections are simulated.
-#
-#   Requires: enable_waving_water
-enable_water_reflections (Liquid reflections) bool false
-
 [*Audio]
 
 #    Volume of all sounds.

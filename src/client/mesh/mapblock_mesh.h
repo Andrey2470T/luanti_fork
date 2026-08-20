@@ -50,7 +50,6 @@ struct MeshMakeData
 	v3s16 m_crack_pos_relative = v3s16(-1337,-1337,-1337);
 	bool m_generate_minimap = false;
 	bool m_smooth_lighting = false;
-	bool m_enable_water_reflections = false;
 
 	const NodeDefManager *m_nodedef;
 

@@ -910,16 +910,6 @@
 #    type: bool
 # enable_volumetric_lighting = false
 
-### Other Effects
-
-#    Simulate translucency when looking at foliage in the sunlight.
-#    type: bool
-# enable_translucent_foliage = false
-
-#    When enabled, liquid reflections are simulated.
-#    type: bool
-# enable_water_reflections = false
-
 ## Audio
 
 #    Volume of all sounds.

@@ -111,12 +111,6 @@ public:
 			constants["SOFTSHADOWRADIUS"] = shadow_soft_radius;
 		}
 
-		if (g_settings->getBool("enable_water_reflections"))
-			constants["ENABLE_WATER_REFLECTIONS"] = 1;
-
-		if (g_settings->getBool("enable_translucent_foliage"))
-			constants["ENABLE_TRANSLUCENT_FOLIAGE"] = 1;
-
 		if (g_settings->getBool("enable_bloom")) {
 			constants["ENABLE_BLOOM"] = 1;
 			if (g_settings->getBool("enable_bloom_debug"))

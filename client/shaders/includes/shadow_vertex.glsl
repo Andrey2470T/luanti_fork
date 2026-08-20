@@ -67,7 +67,7 @@ void vertexStage(
 	z_bias *= pFactor * pFactor / f_textureresolution / f_shadowfar;
 
 	shadowPerspPos = applyPerspectiveDistortion(m_ShadowViewProj * mWorld * (shadowPos + vec4(normalOffsetScale * nNormal, 0.0))).xyz;
-#if !defined(ENABLE_TRANSLUCENT_FOLIAGE) || MATERIAL_TYPE != TILE_MATERIAL_WAVING_LEAVES
+#if MATERIAL_TYPE != TILE_MATERIAL_WAVING_LEAVES
 	shadowPerspPos.z -= z_bias;
 #endif
 	perspFactor = pFactor;

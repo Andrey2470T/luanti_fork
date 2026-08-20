@@ -1,5 +1,5 @@
 float shadowCutoff(float x) {
-	#if defined(ENABLE_TRANSLUCENT_FOLIAGE) && MATERIAL_TYPE == TILE_MATERIAL_WAVING_LEAVES
+	#if MATERIAL_TYPE == TILE_MATERIAL_WAVING_LEAVES
 		return mtsmoothstep(0.0, 0.002, x);
 	#else
 		return step(0.0, x);
