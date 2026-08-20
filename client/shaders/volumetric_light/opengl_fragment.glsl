@@ -20,18 +20,40 @@ CENTROID_ in mediump vec2 varTexCoord;
 float sampleVolumetricLight(vec2 uv, vec3 lightVec, float rawDepth)
 {
 	lightVec = 0.5 * lightVec / lightVec.z + 0.5;
-	const float samples = 30.;
-	float result = texture2D(depthmap, uv).r < 1. ? 0.0 : 1.0;
+	const float samples = 32.;
+
+	float initialAlpha = texture2D(rendered, uv).a;
+	float result = (rawDepth >= 1.0) ? 1.0 : (1.0 - initialAlpha);
+
 	float bias = white_noise_3d(vec3(uv, rawDepth));
 	vec2 samplepos;
+
+	const float DECAY = 0.96;
+	float illumination_decay = 1.0;
+
 	for (float i = 1.; i < samples; i++) {
-		samplepos = mix(uv, lightVec.xy, (i + bias) / samples);
-		if (min(samplepos.x, samplepos.y) > 0. && max(samplepos.x, samplepos.y) < 1.)
-			result += texture2D(depthmap, samplepos).r < 1. ? 0.0 : 1.0;
+		samplepos = mix(uv, lightVec.xy, ((i + bias) / samples) * 0.8);
+
+		if (min(samplepos.x, samplepos.y) > 0. && max(samplepos.x, samplepos.y) < 1.) {
+			float sampleDepth = texture2D(depthmap, samplepos).r;
+			float sampleAlpha = texture2D(rendered, samplepos).a;
+
+			vec3 sampleColor = texture2D(rendered, samplepos).rgb;
+			float brightness = max(sampleColor.r, max(sampleColor.g, sampleColor.b));
+
+			if (sampleDepth >= 1.0 || brightness > 0.65) {
+				if (sampleDepth >= 1.0) {
+					result += 1.0 * illumination_decay;
+				} else {
+					result += (1.0 - sampleAlpha) * illumination_decay;
+				}
+			}
+		}
+		illumination_decay *= DECAY;
 	}
-	// We use the depth map to approximate the effect of depth on the light intensity.
-	// The exponent was chosen based on aesthetic preference.
-	return result / samples * pow(texture2D(depthmap, uv).r, 128.0);
+
+	float depthFactor = mix(1.0 - initialAlpha, 1.0, smoothstep(0.0, 0.95, rawDepth));
+	return (result / samples) * max(0.1, depthFactor);
 }
 
 vec3 getDirectLightScatteringAtGround()
@@ -50,9 +72,9 @@ vec3 getDirectLightScatteringAtGround()
 
 vec3 applyVolumetricLight(vec3 color, vec2 uv, float rawDepth)
 {
-	vec3 lookDirection = normalize(vec3(uv.x * 2. - 1., uv.y * 2. - 1., rawDepth));
+	vec3 lookDirection = normalize(vec3(uv.x * 2. - 1., uv.y * 2. - 1., 1.0));
 
-	const float boost = 4.0;
+	const float boost = 3.5;
 	float brightness = 0.;
 	vec3 sourcePosition = vec3(-1., -1., -1);
 
@@ -65,16 +87,20 @@ vec3 applyVolumetricLight(vec3 color, vec2 uv, float rawDepth)
 		sourcePosition = moonPositionScreen;
 	}
 
-	float cameraDirectionFactor = pow(clamp(dot(sourcePosition, vec3(0., 0., 1.)), 0.0, 0.7), 2.5);
-	float viewAngleFactor = pow(max(0., dot(sourcePosition, lookDirection)), 8.);
+	float dotLightView = max(0., dot(sourcePosition, lookDirection));
+	float sunGlowFactor = pow(dotLightView, 160.0);
+	float rayAngleFactor = pow(dotLightView, 4.0);
 
-	float lightFactor = brightness * sampleVolumetricLight(uv, sourcePosition, rawDepth) *
-			(0.05 * cameraDirectionFactor + 0.95 * viewAngleFactor);
+	float volumetricSample = sampleVolumetricLight(uv, sourcePosition, rawDepth);
 
-	color = mix(color, boost * getDirectLightScatteringAtGround() * getSkyColor(timeOfDay), lightFactor);
+	float lightFactor = brightness * volumetricSample * (sunGlowFactor * 0.3 + rayAngleFactor * 0.7);
 
-	// a factor of 5 tested well
-	color *= volumetricLightStrength * 5.0;
+	lightFactor *= volumetricLightStrength * 5.0;
+
+	vec3 scatteringColor = boost * getDirectLightScatteringAtGround() * getSkyColor(timeOfDay);
+
+	color = mix(color, color + scatteringColor, clamp(lightFactor, 0.0, 0.85));
+	color = 1.0 - exp(-color * 1.4);
 
 	return color;
 }
