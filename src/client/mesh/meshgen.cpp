@@ -299,7 +299,7 @@ void MapblockMeshGenerator::drawCuboid(const aabb3f &box,
 	}
 }
 
-void MapblockMeshGenerator::generateCuboidTextureCoords(const aabb3f &box, f32 *coords)
+void MapblockMeshGenerator::generateCuboidTextureCoords(const aabb3f &box, f32 *coords, bool world_aligned)
 {
 	f32 tx1 = (box.MinEdge.X / BS) + 0.5;
 	f32 ty1 = (box.MinEdge.Y / BS) + 0.5;
@@ -307,6 +307,25 @@ void MapblockMeshGenerator::generateCuboidTextureCoords(const aabb3f &box, f32 *
 	f32 tx2 = (box.MaxEdge.X / BS) + 0.5;
 	f32 ty2 = (box.MaxEdge.Y / BS) + 0.5;
 	f32 tz2 = (box.MaxEdge.Z / BS) + 0.5;
+
+	auto clamp_min_coord = [] (f32 min_c)
+	{
+		return min_c - std::floor(min_c);
+	};
+
+	auto clamp_max_coord = [] (f32 max_c)
+	{
+		return max_c - std::ceil(max_c - 1);
+	};
+
+	if (!world_aligned) {
+		tx1 = clamp_min_coord(tx1);
+		ty1 = clamp_min_coord(ty1);
+		tz1 = clamp_min_coord(tz1);
+		tx2 = clamp_max_coord(tx2);
+		ty2 = clamp_max_coord(ty2);
+		tz2 = clamp_max_coord(tz2);
+	}
 
 	f32 txc[24] = {
 		    tx1, 1 - tz2,     tx2, 1 - tz1, // up
@@ -332,6 +351,15 @@ void MapblockMeshGenerator::drawAutoLightedCuboid(aabb3f box, TileSpec &tile,
 	drawAutoLightedCuboid(box, &tile, 1, txc, mask);
 }
 
+bool detectWorldAligning(TileSpec *tiles, s32 tile_count)
+{
+	for (int i = 0; i < tile_count; ++i) {
+		if (tiles[i].world_aligned)
+			return true;
+	}
+	return false;
+}
+
 void MapblockMeshGenerator::drawAutoLightedCuboid(aabb3f box,
 		TileSpec *tiles, int tile_count, const f32 *txc, u8 mask)
 {
@@ -345,7 +373,7 @@ void MapblockMeshGenerator::drawAutoLightedCuboid(aabb3f box,
 	f32 dz2 = box.MaxEdge.Z;
 	if (scale) {
 		if (!txc) { // generate texture coords before scaling
-			generateCuboidTextureCoords(box, texture_coord_buf);
+			generateCuboidTextureCoords(box, texture_coord_buf, detectWorldAligning(tiles, tile_count));
 			txc = texture_coord_buf;
 		}
 		box.MinEdge *= cur_node.f->visual_scale;
@@ -354,7 +382,7 @@ void MapblockMeshGenerator::drawAutoLightedCuboid(aabb3f box,
 	box.MinEdge += cur_node.origin;
 	box.MaxEdge += cur_node.origin;
 	if (!txc) {
-		generateCuboidTextureCoords(box, texture_coord_buf);
+		generateCuboidTextureCoords(box, texture_coord_buf, detectWorldAligning(tiles, tile_count));
 		txc = texture_coord_buf;
 	}
 	if (data->m_smooth_lighting) {
@@ -445,7 +473,7 @@ void MapblockMeshGenerator::drawSolidNode()
 	f32 texture_coord_buf[24];
 	box.MinEdge += cur_node.origin;
 	box.MaxEdge += cur_node.origin;
-	generateCuboidTextureCoords(box, texture_coord_buf);
+	generateCuboidTextureCoords(box, texture_coord_buf, detectWorldAligning(tiles, 6));
 	if (data->m_smooth_lighting) {
 		LightPair lights[6][4];
 		for (int face = 0; face < 6; ++face) {

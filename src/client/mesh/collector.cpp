@@ -23,16 +23,16 @@ void MeshCollector::append(TileSpec &tile, const scene::Vertex3D *vertices,
 f32 clamp_uv_frac(f32 value) {
 	if (value == 0.0f) return 0.0f;
 
-	float iptr;
-	float frac_part = std::modf(value, &iptr);
+	f32 iptr;
+	f32 frac_part = std::modf(value, &iptr);
 
-    if (frac_part < 0.0f)
-        frac_part += 1.0f;
+	if (frac_part < 0.0f)
+		frac_part += 1.0f;
 
 	if (frac_part == 0.0f)
 		return 1.0f;
 
-    return frac_part;
+	return frac_part;
 }
 
 void MeshCollector::append(TileLayer &layer, const scene::Vertex3D *vertices,
