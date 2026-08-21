@@ -301,47 +301,23 @@ void MapblockMeshGenerator::drawCuboid(const aabb3f &box,
 
 void MapblockMeshGenerator::generateCuboidTextureCoords(const aabb3f &box, f32 *coords)
 {
-	v3f box_min_f(
-		(box.MinEdge.X / BS) + 0.5,
-		(box.MinEdge.Y / BS) + 0.5,
-		(box.MinEdge.Z / BS) + 0.5
-	);
-	v3f box_max_f(
-		(box.MaxEdge.X / BS) + 0.5,
-		(box.MaxEdge.Y / BS) + 0.5,
-		(box.MaxEdge.Z / BS) + 0.5
-	);
-
-	auto clamp_min_coord = [] (f32 min_c)
-	{
-		return min_c - std::floor(min_c);
-	};
-
-	auto clamp_max_coord = [] (f32 max_c)
-	{
-		return max_c - std::ceil(max_c - 1);
-	};
-
-	v3f tc1(
-		clamp_min_coord(box_min_f.X),
-		clamp_min_coord(box_min_f.Y),
-		clamp_min_coord(box_min_f.Z)
-	);
-	v3f tc2 (
-		clamp_max_coord(box_max_f.X),
-		clamp_max_coord(box_max_f.Y),
-		clamp_max_coord(box_max_f.Z)
-	);
+	f32 tx1 = (box.MinEdge.X / BS) + 0.5;
+	f32 ty1 = (box.MinEdge.Y / BS) + 0.5;
+	f32 tz1 = (box.MinEdge.Z / BS) + 0.5;
+	f32 tx2 = (box.MaxEdge.X / BS) + 0.5;
+	f32 ty2 = (box.MaxEdge.Y / BS) + 0.5;
+	f32 tz2 = (box.MaxEdge.Z / BS) + 0.5;
 
 	f32 txc[24] = {
-		   tc1.X, 1 - tc2.Z,     tc2.X, 1 - tc1.Z, // up
-		    tc1.X,     tc1.Z,     tc2.X,     tc2.Z, // down
-		    tc1.Z, 1 - tc2.Y,     tc2.Z, 1 - tc1.Y, // right
-		1 - tc2.Z, 1 - tc2.Y, 1 - tc1.Z, 1 - tc1.Y, // left
-		1 - tc2.X, 1 - tc2.Y, 1 - tc1.X, 1 - tc1.Y, // back
-		    tc1.X, 1 - tc2.Y,     tc2.X, 1 - tc1.Y, // front
+		    tx1, 1 - tz2,     tx2, 1 - tz1, // up
+		    tx1,     tz1,     tx2,     tz2, // down
+		    tz1, 1 - ty2,     tz2, 1 - ty1, // right
+		1 - tz2, 1 - ty2, 1 - tz1, 1 - ty1, // left
+		1 - tx2, 1 - ty2, 1 - tx1, 1 - ty1, // back
+		    tx1, 1 - ty2,     tx2, 1 - ty1, // front
 	};
-	for (int i = 0; i != 24; i++)
+
+	for (int i = 0; i != 24; ++i)
 		coords[i] = txc[i];
 }
 

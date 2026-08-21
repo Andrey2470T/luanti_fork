@@ -696,10 +696,6 @@ static void fillTileAttribs(AtlasPool *pool, ITextureSource *tsrc, TileLayer *la
 	layer->material_flags = 0;
 	if (backface_culling)
 		layer->material_flags |= MATERIAL_FLAG_BACKFACE_CULLING;
-	/*if (tiledef.tileable_horizontal)
-		layer->material_flags |= MATERIAL_FLAG_TILEABLE_HORIZONTAL;
-	if (tiledef.tileable_vertical)
-		layer->material_flags |= MATERIAL_FLAG_TILEABLE_VERTICAL;*/
 
 	// Color
 	layer->has_color = tiledef.has_color;
