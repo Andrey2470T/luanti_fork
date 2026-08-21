@@ -477,7 +477,7 @@ void MapblockMeshGenerator::drawSolidNode()
 				continue;
 			for (int k = 0; k < 4; k++) {
 				v3s16 corner = light_dirs[light_indices[face][k]];
-				f32 ao = 1.0f;
+				AOPair ao;
 				lights[face][k] = LightPair(getSmoothLightSolid(
 						blockpos_nodes + cur_node.p, tile_dirs[face], corner, data, ao));
 				lights[face][k].ambientOcclusion = ao;
@@ -498,7 +498,7 @@ void MapblockMeshGenerator::drawSolidNode()
 		});
 	} else {
 		drawCuboid(box, tiles, 6, texture_coord_buf, mask, [&] (int face, scene::Vertex3D vertices[4]) {
-			video::SColor color = encode_light(lights[face], cur_node.f->light_source, 0.0f);
+			video::SColor color = encode_light(lights[face], cur_node.f->light_source, {{0.0f, 0.0f}});
 			if (!cur_node.f->light_source)
 				applyFacesShading(color, vertices[0].Normal);
 			for (int j = 0; j < 4; j++) {

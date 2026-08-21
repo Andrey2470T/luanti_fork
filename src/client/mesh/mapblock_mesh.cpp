@@ -36,6 +36,8 @@ MeshMakeData::MeshMakeData(const NodeDefManager *ndef,
 	m_mesh_grid(mesh_grid),
 	m_nodedef(ndef)
 {
+	m_ao_gamma = rangelim(
+		g_settings->getFloat("ambient_occlusion_gamma"), 0.25, 4.0);
 	assert(m_side_length > 0);
 }
 

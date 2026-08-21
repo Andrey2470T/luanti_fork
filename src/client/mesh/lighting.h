@@ -7,10 +7,22 @@ struct MeshMakeData;
 
 extern const v3s16 light_dirs[8];
 
+struct AOPair
+{
+	std::pair<f32, f32> ao = {1.0f, 1.0f};
+
+	f32 day() const { return ao.first; }
+	f32 night() const { return ao.second; }
+
+	void boost(LightBank bank, f32 boost_ao);
+	f32 average() { return (day() + night()) / 2.0f; }
+	void gammaConvert(LightBank bank, u16 ao_16, f32 gamma);
+};
+
 struct LightPair {
 	u8 lightDay;
 	u8 lightNight;
-	f32 ambientOcclusion = 1.0f;
+	AOPair ambientOcclusion;
 
 	LightPair() = default;
 	explicit LightPair(u16 value) : lightDay(value & 0xff), lightNight(value >> 8) {}
@@ -25,7 +37,7 @@ struct LightInfo {
 	f32 light_day;
 	f32 light_night;
 	f32 light_boosted;
-	f32 ambient_occlusion = 1.0f;
+	AOPair ambient_occlusion;
 
 	LightPair getPair(float sunlight_boost = 0.0) const
 	{
@@ -39,7 +51,7 @@ struct LightInfo {
 struct LightFrame {
 	f32 lightsDay[8];
 	f32 lightsNight[8];
-	f32 ambientOcclusion[8] = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+	AOPair ambientOcclusion[8];
 	bool sunlight[8];
 };
 
@@ -60,10 +72,10 @@ video::SColor blendLightColor(const LightFrame &lframe, const v3f &vertex_pos, c
  * \param emissive_light amount of light the surface emits,
  * from 0 to LIGHT_SUN.
  */
-video::SColor encode_light(u16 light, u8 emissive_light, f32 ambient_occlusion=1.0f);
+video::SColor encode_light(u16 light, u8 emissive_light, AOPair ambient_occlusion={});
 
 // Compute light at node
 u16 getInteriorLight(MapNode n, s32 increment, const NodeDefManager *ndef);
 u16 getFaceLight(MapNode n, MapNode n2, const NodeDefManager *ndef);
-u16 getSmoothLightSolid(const v3s16 &p, const v3s16 &face_dir, const v3s16 &corner, MeshMakeData *data, f32 &ambient_occlusion_f);
-u16 getSmoothLightTransparent(const v3s16 &p, const v3s16 &corner, MeshMakeData *data, f32 &ambient_occlusion_f);
+u16 getSmoothLightSolid(const v3s16 &p, const v3s16 &face_dir, const v3s16 &corner, MeshMakeData *data, AOPair &ambient_occlusion_f);
+u16 getSmoothLightTransparent(const v3s16 &p, const v3s16 &corner, MeshMakeData *data, AOPair &ambient_occlusion_f);

@@ -52,6 +52,8 @@ struct MeshMakeData
 	bool m_smooth_lighting = false;
 	bool m_enable_water_reflections = false;
 
+	f32 m_ao_gamma = 1.0f;
+
 	const NodeDefManager *m_nodedef;
 
 	MeshMakeData(const NodeDefManager *ndef, u16 side_lingth, MeshGrid mesh_grid);
