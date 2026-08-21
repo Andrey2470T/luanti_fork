@@ -89,8 +89,8 @@ LightInfo blendLight(const LightFrame &lframe, const v3f &vertex_pos)
 		lightDay += dx * dy * dz * lframe.lightsDay[k];
 		lightNight += dx * dy * dz * lframe.lightsNight[k];
 		lightBoosted += dx * dy * dz * light_boosted;
-		ambientOcclusion.boost(LIGHTBANK_DAY, dx * dy * dz * lframe.ambientOcclusion[k].ao.first);
-		ambientOcclusion.boost(LIGHTBANK_NIGHT, dx * dy * dz * lframe.ambientOcclusion[k].ao.second);
+		ambientOcclusion.boost(LIGHTBANK_DAY, dx * dy * dz * lframe.ambientOcclusion[k].day());
+		ambientOcclusion.boost(LIGHTBANK_NIGHT, dx * dy * dz * lframe.ambientOcclusion[k].night());
 	}
 	return LightInfo{
 		std::min({lightDay, 255.0f}), std::min({lightNight, 255.0f}),
@@ -197,11 +197,10 @@ static u16 getSmoothLightCombined(const v3s16 &p,
 	const NodeDefManager *ndef = data->m_nodedef;
 
 	u16 ambient_occlusion = 0;
-	u16 light_count = 0;
 	u8 light_source_max = 0;
-	u16 light_day = 0;
-	u16 light_night = 0;
-	bool direct_sunlight = false;
+	u16 light_day_max = 0;
+	u16 light_night_max = 0;
+	u8 light_night_p = 0;
 
 	auto add_node = [&] (u8 i, bool obstructed = false) -> bool {
 		if (obstructed) {
@@ -218,11 +217,12 @@ static u16 getSmoothLightCombined(const v3s16 &p,
 		if (f.param_type == CPT_LIGHT && f.solidness != 2) {
 			u8 light_level_day = n.getLight(LIGHTBANK_DAY, f.getLightingFlags());
 			u8 light_level_night = n.getLight(LIGHTBANK_NIGHT, f.getLightingFlags());
-			if (light_level_day == LIGHT_SUN)
-				direct_sunlight = true;
-			light_day += decode_light(light_level_day);
-			light_night += decode_light(light_level_night);
-			light_count++;
+
+			if (i == 0)
+				light_night_p = light_level_night;
+
+			light_day_max = std::max((u16)decode_light(light_level_day), light_day_max);
+			light_night_max = std::max((u16)decode_light(light_level_night), light_night_max);
 		} else {
 			ambient_occlusion++;
 		}
@@ -246,38 +246,18 @@ static u16 getSmoothLightCombined(const v3s16 &p,
 			add_node(k + 4, !obstructed[k]);
 	}
 
-	if (light_count == 0) {
-		light_day = light_night = 0;
-	} else {
-		light_day /= light_count;
-		light_night /= light_count;
-	}
-
-	// boost direct sunlight, if any
-	if (direct_sunlight)
-		light_day = 0xFF;
-
-	// Boost brightness around light sources
-	bool skip_ambient_occlusion_day = false;
-	if (decode_light(light_source_max) >= light_day) {
-		light_day = decode_light(light_source_max);
-		skip_ambient_occlusion_day = true;
-	}
-
-	bool skip_ambient_occlusion_night = false;
-	if(decode_light(light_source_max) >= light_night) {
-		light_night = decode_light(light_source_max);
-		skip_ambient_occlusion_night = true;
-	}
+	// Skip the AO entirely if the node at 'p' has the block light below the max light source
+	bool skip_night_ambient_occlusion = (u16)decode_light(light_source_max) > light_night_max;
+	light_night_max = std::max(light_night_max, (u16)decode_light(light_source_max));
 
 	if (ambient_occlusion > 4) {
-		if (!skip_ambient_occlusion_day)
-			ambient_occlusion_f.gammaConvert(LIGHTBANK_DAY, ambient_occlusion, data->m_ao_gamma);
-		if (!skip_ambient_occlusion_night)
+		ambient_occlusion_f.gammaConvert(LIGHTBANK_DAY, ambient_occlusion, data->m_ao_gamma);
+
+		if (!skip_night_ambient_occlusion)
 			ambient_occlusion_f.gammaConvert(LIGHTBANK_NIGHT, ambient_occlusion, data->m_ao_gamma);
 	}
 
-	return light_day | (light_night << 8);
+	return light_day_max | (light_night_max << 8);
 }
 
 /*
