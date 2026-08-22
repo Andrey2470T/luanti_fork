@@ -354,7 +354,8 @@ void MapblockMeshGenerator::drawAutoLightedCuboid(aabb3f box, TileSpec &tile,
 bool detectWorldAligning(TileSpec *tiles, s32 tile_count)
 {
 	for (int i = 0; i < tile_count; ++i) {
-		if (tiles[i].world_aligned)
+		auto &layers = tiles[i].layers;
+		if (tiles[i].world_aligned && (layers[0].scale > 1 || layers[1].scale > 1))
 			return true;
 	}
 	return false;
